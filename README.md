@@ -1,6 +1,6 @@
 # Agent 调试平台
 
-AI 智能体调试与管理平台。
+AI 智能体调试与管理平台，基于 opencode 及 module_agent 插件，由 AI 完成需求设计、代码规范编写、模块设计、编码实现与代码审查，人工进行方案决策与把关。
 
 ## 技术栈
 
@@ -12,7 +12,7 @@ AI 智能体调试与管理平台。
 
 ## 功能模块
 
-- **LLM 模型管理** — 模型配置的增删改查，支持 OpenAI / Anthropic / Azure / Ollama / DeepSeek / 自定义平台
+- **LLM 模型管理** — 模型配置的增删改查，支持 OpenAI / Anthropic / Azure / Ollama / DeepSeek / 自定义平台；各平台模型调用器均已实现，当前仅 DeepSeek 已完成连通性验证及全流程测试
 - **工具注册与管理** — 工具元数据注册，支持 Java / TypeScript / Python / MCP HTTP 四种工具类型
 - **HOOK 管理** — HookInvoker 接口与 SystemHook 接口已定义，覆盖 SESSION_START/END、BEFORE/AFTER MESSAGE、BEFORE/AFTER TOOL_CALL 六个生命周期阶段，HOOK 管理功能后续实现
 - **智能体配置** — 智能体名称、系统提示词、关联模型与工具的配置管理

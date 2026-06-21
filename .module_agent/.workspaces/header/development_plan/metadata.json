@@ -64,5 +64,17 @@
     "plan_summary": "恢复四种工具表格的实现方式列",
     "code_reviewed": false,
     "plan_completed": true
+  },
+  {
+    "plan_id": "plan_15cce493-243e-45f6-a91c-7b9654edc675",
+    "plan_summary": "更新项目描述语句",
+    "code_reviewed": false,
+    "plan_completed": true
+  },
+  {
+    "plan_id": "plan_c356c632-3b20-4786-b2c0-4c88835d2019",
+    "plan_summary": "LLM 模型管理描述标注 DeepSeek 测试状态",
+    "code_reviewed": false,
+    "plan_completed": true
   }
 ]

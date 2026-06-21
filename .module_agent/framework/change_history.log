@@ -34,3 +34,5 @@
 [2026-06-21T13:16:20.049Z] [session: ses_115f56b00ffeyZ9wIfiub0TY5N] [2026-06-21] 补充 README.md 四种工具实现方式表格 TypeScript/Python 两行：桥接文件可手动放入或首次执行自动生成；开发指南补充环境依赖、函数签名、参数与返回说明
 [2026-06-21T13:18:23.839Z] [session: ses_115f56b00ffeyZ9wIfiub0TY5N] [2026-06-21] 简化 README.md 四种工具实现方式表格：移除"实现方式"和"运行时机制"列，保留"类型"和"第三方开发指南"两列；MCP HTTP 的 JSON-RPC/自动展开/Bearer Token 信息合并至开发指南列
 [2026-06-21T13:22:02.853Z] [session: ses_115f56b00ffeyZ9wIfiub0TY5N] [2026-06-21] 恢复 README.md 四种工具实现方式表格为三列结构（类型/实现方式/第三方开发指南）
+[2026-06-21T13:42:05.186Z] [session: ses_115f56b00ffeyZ9wIfiub0TY5N] [2026-06-21] 修改 README.md 第 3 行简介，补充：基于 opencode 及 module_agent 插件，由 AI 完成需求设计/代码规范/模块设计/编码实现/代码审查，人工进行方案决策与把关
+[2026-06-21T13:44:25.094Z] [session: ses_115f56b00ffeyZ9wIfiub0TY5N] [2026-06-21] 补充 README.md LLM 模型管理行：各平台模型调用器均已实现，当前仅 DeepSeek 已完成连通性验证及全流程测试
