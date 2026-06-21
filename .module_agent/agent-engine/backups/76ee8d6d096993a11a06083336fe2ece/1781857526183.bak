@@ -1,0 +1,262 @@
+package com.ghost616.platform.service.agent.invoker;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.ghost616.platform.dto.model.ToolCall;
+import com.ghost616.platform.dto.tool.ToolConfigDTO;
+import com.ghost616.platform.enums.ErrorCode;
+import com.ghost616.platform.exception.BusinessException;
+import com.ghost616.platform.service.agent.AgentExecutionContext;
+import lombok.extern.slf4j.Slf4j;
+
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.concurrent.TimeUnit;
+
+@Slf4j
+public class TypeScriptToolInvoker implements ToolInvoker {
+
+    private static final long TIMEOUT_SECONDS = 30;
+    private static final String RUNNER_FILE_NAME = "_runner.ts";
+
+    private final Path scriptDir;
+    private final Path runnerPath;
+    private volatile boolean runnerGenerated;
+
+    public TypeScriptToolInvoker(String scriptPath) {
+        this.scriptDir = Path.of(scriptPath).toAbsolutePath();
+        if (!Files.isDirectory(this.scriptDir)) {
+            throw new BusinessException(ErrorCode.TOOL_INVOKE_ERROR,
+                    "脚本路径不是目录: " + scriptPath);
+        }
+        this.runnerPath = this.scriptDir.resolve(RUNNER_FILE_NAME);
+        checkRuntimeEnvironment();
+    }
+
+    private void checkRuntimeEnvironment() {
+        boolean bunAvailable = isCommandAvailable("bun");
+        boolean nodeAvailable = isCommandAvailable("node");
+        if (!bunAvailable && !nodeAvailable) {
+            throw new BusinessException(ErrorCode.TOOL_RUNTIME_NOT_FOUND,
+                    "bun 和 node 运行时均不可用，请安装 bun（https://bun.sh）或 node（https://nodejs.org）");
+        }
+        log.info("脚本运行时检测: bun={}, node={}, scriptDir={}", bunAvailable, nodeAvailable, scriptDir);
+    }
+
+    private boolean isCommandAvailable(String command) {
+        try {
+            ProcessBuilder pb = new ProcessBuilder(command, "--version");
+            pb.redirectErrorStream(true);
+            Process process = pb.start();
+            boolean finished = process.waitFor(5, TimeUnit.SECONDS);
+            return finished && process.exitValue() == 0;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    @Override
+    public String execute(AgentExecutionContext ctx, String arguments) {
+        if (!runnerGenerated) {
+            synchronized (this) {
+                if (!runnerGenerated) {
+                    generateRunnerFile();
+                    runnerGenerated = true;
+                }
+            }
+        }
+
+        String jsonParams = serializeToJson(ctx, arguments);
+        String runtime = resolveRuntime();
+
+        try {
+            ProcessBuilder pb = new ProcessBuilder(runtime, runnerPath.toString(), jsonParams);
+            pb.directory(scriptDir.toFile());
+            pb.redirectErrorStream(true);
+            Process process = pb.start();
+
+            StringBuilder output = new StringBuilder();
+            try (BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    output.append(line).append(System.lineSeparator());
+                }
+            }
+
+            boolean finished = process.waitFor(TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            if (!finished) {
+                process.destroyForcibly();
+                log.error("工具执行超时 ({}秒): {}", TIMEOUT_SECONDS, scriptDir);
+                throw new BusinessException(ErrorCode.TOOL_EXECUTE_TIMEOUT,
+                        "工具执行超时（" + TIMEOUT_SECONDS + "秒）: " + scriptDir);
+            }
+
+            int exitCode = process.exitValue();
+            String result = output.toString().trim();
+            if (exitCode != 0) {
+                log.error("工具执行失败, exitCode={}, dir={}, output={}", exitCode, scriptDir, result);
+                throw new BusinessException(ErrorCode.TOOL_EXECUTE_ERROR,
+                        "工具执行失败, exitCode=" + exitCode + ": " + result);
+            }
+
+            return result;
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("执行工具异常: {}", scriptDir, e);
+            throw new BusinessException(ErrorCode.TOOL_EXECUTE_ERROR,
+                    "执行工具异常: " + scriptDir + " - " + e.getMessage());
+        }
+    }
+
+    private String resolveRuntime() {
+        return isCommandAvailable("bun") ? "bun" : "node";
+    }
+
+    private String serializeToJson(AgentExecutionContext ctx, String arguments) {
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            ObjectNode root = mapper.createObjectNode();
+
+            ObjectNode contextNode = mapper.createObjectNode();
+            contextNode.put("sessionId", ctx.getSessionId() != null ? ctx.getSessionId().toString() : null);
+            contextNode.put("agentId", ctx.getAgentId() != null ? ctx.getAgentId().toString() : null);
+            contextNode.put("systemPrompt", ctx.getSystemPrompt());
+            contextNode.put("modelId", ctx.getModelId() != null ? ctx.getModelId().toString() : null);
+
+            ArrayNode historyArray = mapper.createArrayNode();
+            for (AgentExecutionContext.HistoryEntry entry : ctx.getHistory()) {
+                ObjectNode entryNode = mapper.createObjectNode();
+                entryNode.put("role", entry.role());
+                entryNode.put("content", entry.content());
+                entryNode.put("reasoning", entry.reasoning());
+                entryNode.put("toolCallId", entry.toolCallId());
+                entryNode.put("sequenceNum", entry.sequenceNum());
+                if (entry.toolCalls() != null) {
+                    ArrayNode toolCallsArray = mapper.createArrayNode();
+                    for (ToolCall tc : entry.toolCalls()) {
+                        ObjectNode tcNode = mapper.createObjectNode();
+                        tcNode.put("id", tc.getId());
+                        tcNode.put("name", tc.getName());
+                        tcNode.put("arguments", tc.getArguments());
+                        toolCallsArray.add(tcNode);
+                    }
+                    entryNode.set("toolCalls", toolCallsArray);
+                }
+                historyArray.add(entryNode);
+            }
+            contextNode.set("history", historyArray);
+
+            ArrayNode toolsArray = mapper.createArrayNode();
+            for (ToolConfigDTO tool : ctx.getTools()) {
+                ObjectNode toolNode = mapper.createObjectNode();
+                toolNode.put("name", tool.getName());
+                toolNode.put("description", tool.getDescription());
+                toolNode.put("parameterSchema", tool.getParameterSchema());
+                toolsArray.add(toolNode);
+            }
+            contextNode.set("tools", toolsArray);
+
+            root.set("context", contextNode);
+            root.put("arguments", arguments);
+
+            return mapper.writeValueAsString(root);
+        } catch (Exception e) {
+            throw new BusinessException(ErrorCode.TOOL_INVOKE_ERROR,
+                    "序列化上下文失败: " + e.getMessage());
+        }
+    }
+
+    private void generateRunnerFile() {
+        try {
+            Files.writeString(runnerPath, RUNNER_TEMPLATE, StandardCharsets.UTF_8);
+            log.info("已生成桥接文件: {}", runnerPath);
+        } catch (Exception e) {
+            throw new BusinessException(ErrorCode.TOOL_INVOKE_ERROR,
+                    "生成桥接文件失败: " + runnerPath + " - " + e.getMessage());
+        }
+    }
+
+    private static final String RUNNER_TEMPLATE = """
+            // _runner.ts - Auto-generated bridge file for TypeScriptToolInvoker
+
+            interface ToolCall {
+                id?: string;
+                name?: string;
+                arguments?: string;
+            }
+
+            interface HistoryEntry {
+                role: string;
+                content?: string;
+                reasoning?: string;
+                toolCallId?: string;
+                sequenceNum: number;
+                createTime?: string;
+                toolCalls?: ToolCall[];
+            }
+
+            interface ToolInfo {
+                name: string;
+                description?: string;
+                parameterSchema?: string;
+            }
+
+            interface AgentExecutionContext {
+                sessionId?: string;
+                agentId?: string;
+                systemPrompt?: string;
+                modelId?: string;
+                history?: HistoryEntry[];
+                tools?: ToolInfo[];
+            }
+
+            interface ExecuteInput {
+                context: AgentExecutionContext;
+                arguments: string;
+            }
+
+            async function main() {
+                const jsonStr = process.argv[2];
+                if (!jsonStr) {
+                    console.error(JSON.stringify({ error: 'Missing JSON argument' }));
+                    process.exit(1);
+                }
+
+                let input: ExecuteInput;
+                try {
+                    input = JSON.parse(jsonStr);
+                } catch (e: any) {
+                    console.error(JSON.stringify({ error: 'JSON parse error: ' + e.message }));
+                    process.exit(1);
+                }
+
+                const { context, arguments: args } = input;
+
+                try {
+                    const module = await import('./index');
+                    if (typeof module.execute !== 'function') {
+                        throw new Error('index module does not export execute function');
+                    }
+                    const result = await module.execute(context, args);
+
+                    if (typeof result === 'string') {
+                        process.stdout.write(result);
+                    } else {
+                        process.stdout.write(JSON.stringify(result));
+                    }
+                } catch (e: any) {
+                    const errMsg = e instanceof Error ? e.message : String(e);
+                    console.error(JSON.stringify({ error: errMsg }));
+                    process.exit(1);
+                }
+            }
+
+            main();
+            """;
+}

@@ -1,0 +1,25 @@
+## 变更历史
+[2026-06-09T09:40:05.684Z] [session: ses_15441500effeX7lW8BjV1BbkcR] 初始化 framework 模块：创建后端 15 个文件（pom.xml, application.yml, 启动类, DTO, 实体基类, 5 个枚举, 2 个异常, 2 个配置类）和前端 9 个文件（package.json, vite.config.ts, tsconfig.json, index.html, main.tsx, App.tsx, api.ts, common.ts, index.css），共 24 个文件
+[2026-06-09T09:48:45.678Z] [session: ses_1543818f9ffe7IyxJKwBqw783D] 数据持久层迁移：JPA+H2 → MyBatis-Plus 3.5.7 + SQLite。修改 pom.xml（替换依赖）、application.yml（数据源+MyBatis-Plus 配置）、BaseEntity.java（MyBatis-Plus 注解替换 JPA 注解），新增 MybatisPlusConfig.java（分页拦截器+MapperScan）和 MyMetaObjectHandler.java（自动填充时间字段）。
+[2026-06-09T10:20:46.376Z] [session: ses_1541a66e2ffehCj7vjm5iYMRAR] [2026-06-09] ErrorCode.java: 新增 MODEL_NOT_FOUND ("MODEL-CONFIG-001", "模型配置不存在") 和 MODEL_ALREADY_EXISTS ("MODEL-CONFIG-002", "模型名称已存在") 两个错误码。
+[2026-06-09T10:43:42.762Z] [session: ses_1540647cdffecqMbMLFu5XD2wx] 新增 build.bat（一键编译打包：npm install → npm run build → 复制 dist 到 static → mvn clean package）和 dev.bat（开发模式启动：mvn spring-boot:run 新窗口 → 轮询 8080 → npm run dev，前端退出自动关闭后端）两个 Windows 批处理脚本
+[2026-06-09T10:52:45.749Z] [session: ses_153fd1827ffeywZuCPy44VkSYB] 修复 SYS-001：新增 schema.sql（model_config 表 DDL），修改 application.yml 添加 spring.sql.init.mode: always 使启动时自动建表
+[2026-06-10T02:08:26.269Z] [session: ses_150b6a531ffehDYqASxwZhLj9K] [2026-06-10] 为 PlatformType 枚举和 TypeScript 类型添加 DeepSeek 平台支持：Java 枚举新增 DEEPSEEK("DEEPSEEK", "DeepSeek")，TypeScript 联合类型新增 'DEEPSEEK'。
+[2026-06-10T02:47:04.458Z] [session: ses_15093693affeqnxMry5Vgg5cJO] PlatformType 枚举新增 defaultBaseUrl（默认接口地址）和 defaultModelNames（可用模型列表，List.of() 不可变列表）字段，覆盖 OPENAI/ANTHROPIC/AZURE/OLLAMA/DEEPSEEK/CUSTOM 六个平台的默认配置。
+[2026-06-10T08:30:58.639Z] [session: ses_14f58862affeX6hNwq0mtjV4iJ] feat: 在 App.tsx 中添加 ModelTest 页面路由 /models/:id/test
+[2026-06-10T08:57:33.564Z] [session: ses_14f40c077ffeohwraGZtcgrSSa] 添加工具管理页面路由和菜单项，移除 StrictMode 外层包裹。修改文件: src/main.tsx（移除 React.StrictMode 及 import React），src/App.tsx（新增 ToolOutlined 图标导入、ToolList 组件导入、工具管理菜单项、/tools 路由）。
+[2026-06-11T07:01:09.137Z] [session: ses_14a84d8bcffeeRw1TiGtnGpweg] [2026-06-11] 修改后端配置中 "Agent 平台" 为 "Agent 调试平台"：pom.xml 的 description 和 PlatformApplication.java 的 Javadoc
+[2026-06-11T07:29:52.838Z] [session: ses_14a6a013affeimAnRSA6SmsnTM] 更新 PlatformType 枚举中 DeepSeek 的默认模型名：deepseek-chat → deepseek-v4-flash，deepseek-reasoner → deepseek-v4-pro
+[2026-06-12T01:19:28.145Z] [session: ses_manual] schema.sql 新增 agent_config 表（智能体配置，含 model_id 索引）和 agent_tool 中间表（agent_id/tool_id 索引）
+[2026-06-15T05:46:41.543Z] [session: ses_1362f1b44ffeFF0zXPenEywD7c] 恢复 PlatformApplication.java 为 Spring Boot 启动类：移除无关的 com.datanew.db.infoextend 包代码，还原为 @SpringBootApplication 注解的标准启动类，无需 @MapperScan（已在 MybatisPlusConfig 中配置）
+[2026-06-15T07:56:13.377Z] [session: ses_135b8ee64ffeFdFRU7gS5mbyOW] [2026-06-15] 删除根目录 index.html：该文件内容为 com.datanew.db.infoextend 包的截断 Java 代码（行末截断，不完整），不属于本项目包结构，已清理删除。此前 PlatformApplication.java 和 ChatChunk.java 已做过同类清理。
+[2026-06-16T01:10:37.533Z] [session: ses_132057e8dffen0X7ZtC76GD9HZ] HookPhase 枚举新增 SYSTEM_POST("系统后置执行") 阶段值，用于标识所有 HOOK 执行完毕后触发的系统级后置 HOOK。同步更新前端 TypeScript HookPhase 类型联合。修改文件: HookPhase.java, common.ts
+[2026-06-16T01:28:24.513Z] [session: ses_132057e8dffen0X7ZtC76GD9HZ] 从 HookPhase.java 移除 SYSTEM_POST 枚举值，从前端 common.ts 移除对应 'SYSTEM_POST' 类型联合，恢复为原始六值。
+[2026-06-19T13:42:20.127Z] [session: ses_11fe21a95ffe870nE7cloquOo1] ErrorCode.java 新增 TOOL_SCHEMA_INVALID 枚举值（TOOL-SCHEMA-001，工具参数 Schema 格式无效），位于 TOOL_EXECUTE_ERROR 之后
+[2026-06-20T06:47:10.416Z] [session: ses_11c37c7b4ffe1YRaVenAcOlG4t] [2026-06-20] dev.bat 在 @echo off 后添加 chcp 65001 >nul，切换控制台编码页为 UTF-8，确保脚本中中文字符正常显示。
+[2026-06-20T06:53:46.495Z] [session: ses_11c37c7b4ffe1YRaVenAcOlG4t] [2026-06-20] dev.bat 后端临时批处理加入 chcp 65001 >nul，确保后端窗口也使用 UTF-8 编码显示。
+[2026-06-20T07:01:36.391Z] [session: ses_11c37c7b4ffe1YRaVenAcOlG4t] [2026-06-20] schema.sql tool_config 表新增 auth_config TEXT 列及 ALTER TABLE 迁移语句。
+[2026-06-20T07:06:11.081Z] [session: ses_11c37c7b4ffe1YRaVenAcOlG4t] [2026-06-20] application.yml 添加 spring.sql.init.continue-on-error: true，ALTER TABLE ADD COLUMN 重复执行时容错不阻断启动。
+[2026-06-20T11:13:50.486Z] [session: ses_11b43c079ffedGPmmJ3ihGpfJu] [2026-06-20] 修复 MCP 工具调用 Jackson 版本冲突：将 umbrella 依赖 `mcp` 2.0.0 替换为 `mcp-core` + `mcp-json-jackson2`（均 2.0.0），避免 `mcp-json-jackson3`（Jackson 3.x, 包名 `tools.jackson`）与 Spring Boot 3.2.5 管理的 Jackson 2.15.4（包名 `com.fasterxml.jackson`）冲突。properties 新增 `<jackson.version>2.20.1</jackson.version>` 统一 Jackson 版本。
+[2026-06-21T08:13:30.456Z] [session: ses_116c33fd7ffeBW6GOqQ1L8l8ts] [2026-06-21] 移除 pom.xml 中的 MCP SDK 依赖：io.modelcontextprotocol.sdk:mcp-core:2.0.0 和 io.modelcontextprotocol.sdk:mcp-json-jackson2:2.0.0。MCP 工具调用由 tool-registry 模块后续重构。
+[2026-06-21T10:21:35.050Z] [session: ses_116c33fd7ffeBW6GOqQ1L8l8ts] [2026-06-21] 新增 src/main/java/com/ghost616/platform/event/ToolChangedEvent.java，ApplicationEvent 子类，携带 toolId 供 Spring 事件机制在工具变更时发布/监听。

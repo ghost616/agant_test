@@ -1,0 +1,17 @@
+{
+  "workspaces": [
+    {
+      "name": "ghost",
+      "created_at": "2026-06-18T08:08:30.541Z"
+    }
+  ],
+  "bindings": {
+    "ses_12639f654ffe2mPW5t9o34K8oG": "ghost",
+    "ses_1228ec256ffe0s24z1YSQw39JW": "ghost",
+    "ses_1228bc574ffenEtXhFyb3oTk4y": "ghost",
+    "ses_12249b18affebi07G9uFyRK3a2": "ghost",
+    "ses_11cf35bc7ffeFa1GgPm9SfvD5r": "ghost",
+    "ses_11b51ca7bffecINEZzBkblEfC1": "ghost",
+    "ses_116ca4c2effe3qUxHtb1U22tjK": "ghost"
+  }
+}

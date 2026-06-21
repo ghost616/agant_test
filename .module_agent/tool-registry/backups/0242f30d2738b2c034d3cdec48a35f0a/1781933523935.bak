@@ -1,0 +1,34 @@
+package com.ghost616.platform.service.agent.invoker;
+
+import com.ghost616.platform.dto.tool.ToolConfigDTO;
+import com.ghost616.platform.service.agent.AgentExecutionContext;
+import com.ghost616.platform.service.tool.ToolConfigService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
+
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class ToolManager {
+
+    private final ToolConfigService toolConfigService;
+
+    public ToolInvoker getInvoker(String toolName) {
+        ToolConfigDTO toolConfig = toolConfigService.getImplByName(toolName);
+        switch (toolConfig.getToolType()) {
+            case JAVA:
+                return new JavaToolInvoker(toolConfig.getImplPath());
+            case TYPESCRIPT:
+                return new TypeScriptToolInvoker(toolConfig.getImplPath());
+            case PYTHON:
+                return new PythonToolInvoker(toolConfig.getImplPath());
+            default:
+                throw new UnsupportedOperationException("暂不支持的调用类型: " + toolConfig.getToolType());
+        }
+    }
+
+    public String execute(ToolInvoker invoker, AgentExecutionContext context, String arguments) {
+        return invoker.execute(context, arguments);
+    }
+}

@@ -1,0 +1,102 @@
+package com.ghost616.platform.systemtest;
+
+import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
+
+import com.ghost616.platform.dto.model.ChatChunk;
+import com.ghost616.platform.dto.model.ToolCall;
+import com.ghost616.platform.dto.model.ToolCallDelta;
+import com.ghost616.platform.enums.HookPhase;
+import com.ghost616.platform.service.agent.AgentContextManager;
+import com.ghost616.platform.service.agent.AgentExecutionContext;
+import com.ghost616.platform.service.agent.SessionManager;
+import com.ghost616.platform.service.agent.invoker.SystemPostHook;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
+
+@Component
+@RequiredArgsConstructor
+public class MessageSavePostHook implements SystemPostHook {
+
+    private final SessionManager sessionManager;
+    private final AgentContextManager agentContextManager;
+
+    private static class ToolAccumulator {
+        final StringBuilder id = new StringBuilder();
+        final StringBuilder name = new StringBuilder();
+        final StringBuilder arguments = new StringBuilder();
+    }
+
+    private static class SessionBuffer {
+        final StringBuilder contentBuffer = new StringBuilder();
+        final StringBuilder reasoningBuffer = new StringBuilder();
+        final ConcurrentHashMap<Integer, ToolAccumulator> toolCallBuffers = new ConcurrentHashMap<>();
+    }
+
+    private final ConcurrentHashMap<Long, SessionBuffer> buffers = new ConcurrentHashMap<>();
+
+    @Override
+    public HookPhase getPhase() {
+        return HookPhase.AFTER_MESSAGE_RECEIVE;
+    }
+
+    @Override
+    public void execute(AgentExecutionContext ctx, ChatChunk chunk) {
+        SessionBuffer sb = buffers.computeIfAbsent(ctx.getSessionId(), k -> new SessionBuffer());
+        if (chunk != null) {
+            if (chunk.getDelta() != null) {
+                sb.contentBuffer.append(chunk.getDelta());
+            }
+            if (chunk.getReasoning() != null) {
+                sb.reasoningBuffer.append(chunk.getReasoning());
+            }
+            ToolCallDelta tc = chunk.getToolCall();
+            if (tc != null) {
+                ToolAccumulator acc = sb.toolCallBuffers.computeIfAbsent(tc.getIndex(), k -> new ToolAccumulator());
+                if (tc.getId() != null) {
+                    acc.id.append(tc.getId());
+                }
+                if (tc.getName() != null) {
+                    acc.name.append(tc.getName());
+                }
+                if (tc.getArguments() != null) {
+                    acc.arguments.append(tc.getArguments());
+                }
+            }
+            if ("stop".equals(chunk.getFinishReason())) {
+                String content = sb.contentBuffer.toString();
+                String reasoning = sb.reasoningBuffer.length() > 0 ? sb.reasoningBuffer.toString() : null;
+                List<SessionManager.ToolCallData> toolCalls = null;
+                if (!sb.toolCallBuffers.isEmpty()) {
+                    toolCalls = sb.toolCallBuffers.values().stream()
+                            .map(a -> new SessionManager.ToolCallData(
+                                    a.id.toString(),
+                                    a.name.toString(),
+                                    a.arguments.toString()))
+                            .collect(Collectors.toList());
+                }
+                sessionManager.saveMessage(ctx.getSessionId(), "assistant", content, reasoning, null, toolCalls);
+                List<ToolCall> historyToolCalls = null;
+                if (!sb.toolCallBuffers.isEmpty()) {
+                    historyToolCalls = sb.toolCallBuffers.values().stream()
+                            .map(a -> ToolCall.builder()
+                                    .id(a.id.toString())
+                                    .name(a.name.toString())
+                                    .arguments(a.arguments.toString())
+                                    .build())
+                            .collect(Collectors.toList());
+                }
+                agentContextManager.addHistoryEntry(ctx.getSessionId(),
+                        new AgentExecutionContext.HistoryEntry(
+                                "assistant", content, reasoning, null,
+                                ctx.getHistory().size() + 1,
+                                LocalDateTime.now(),
+                                historyToolCalls != null ? Collections.unmodifiableList(historyToolCalls) : Collections.emptyList()));
+                buffers.remove(ctx.getSessionId());
+            }
+        }
+    }
+}

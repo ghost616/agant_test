@@ -1,0 +1,61 @@
+package com.ghost616.platform.service.agent;
+
+import com.ghost616.platform.dto.model.ToolCall;
+import com.ghost616.platform.dto.tool.ToolConfigDTO;
+import lombok.AccessLevel;
+import lombok.Getter;
+
+import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.List;
+
+@Getter
+public class AgentExecutionContext {
+
+    private final Long sessionId;
+    private final Long agentId;
+    private final String systemPrompt;
+    private Long modelId;
+    @Getter(AccessLevel.NONE)
+    private final List<HistoryEntry> history;
+    private final List<ToolConfigDTO> tools;
+    @Getter(AccessLevel.NONE)
+    private final AgentContextMutator mutator;
+
+    public AgentExecutionContext(Long sessionId, Long agentId, String systemPrompt, Long modelId,
+                                 List<HistoryEntry> history, List<ToolConfigDTO> tools,
+                                 AgentContextMutator mutator) {
+        this.sessionId = sessionId;
+        this.agentId = agentId;
+        this.systemPrompt = systemPrompt;
+        this.modelId = modelId;
+        this.history = history;
+        this.tools = tools;
+        this.mutator = mutator;
+        this.mutator.bind(this);
+    }
+
+    public List<HistoryEntry> getHistory() {
+        return Collections.unmodifiableList(history);
+    }
+
+    public record HistoryEntry(String role, String content, String reasoning, String toolCallId,
+                               int sequenceNum, LocalDateTime createTime, List<ToolCall> toolCalls) {
+    }
+
+    static class AgentContextMutator {
+        private AgentExecutionContext context;
+
+        public void bind(AgentExecutionContext context) {
+            this.context = context;
+        }
+
+        public void setModelId(Long modelId) {
+            context.modelId = modelId;
+        }
+
+        public void addHistoryEntry(HistoryEntry entry) {
+            context.history.add(entry);
+        }
+    }
+}

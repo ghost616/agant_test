@@ -1,0 +1,3 @@
+## 变更历史
+[2026-06-12T01:23:14.253Z] [session: ses_146961d3bffeV4TCg1G5avI3K2] 实现智能体配置模块完整后端 CRUD：新增 AgentConfig/AgentTool 实体、AgentConfigMapper/AgentToolMapper、AgentConfigDTO/AgentCreateRequest/AgentUpdateRequest DTO、AgentConfigService 接口及实现、AgentConfigController（/api/agents）、ErrorCode 新增 AGENT_NOT_FOUND/AGENT_ALREADY_EXISTS
+[2026-06-12T03:07:30.903Z] [session: ses_146341450ffeAwOYuhYmY7cXRp] 修复 AgentConfigDTO 的 Long 类型字段 JSON 序列化精度丢失问题：为 id、modelId 添加 @JsonSerialize(using = ToStringSerializer.class)，为 toolIds 添加 @JsonSerialize(contentUsing = ToStringSerializer.class)

@@ -1,0 +1,33 @@
+export interface Session {
+  id: number;
+  agentId: number;
+  modelId: number;
+  title: string;
+  systemPrompt?: string;
+  createTime: string;
+  updateTime: string;
+}
+
+export interface CreateSessionParams {
+  agentId: number;
+  modelId: number;
+  title?: string;
+}
+
+export interface ToolCallData {
+  toolCallId: string;
+  toolCallName: string;
+  toolCallArguments: string;
+}
+
+export interface SessionMessage {
+  id: number;
+  sessionId: number;
+  role: string;
+  content: string;
+  reasoning?: string;
+  toolCallId?: string;
+  sequenceNum: number;
+  createTime: string;
+  toolCalls?: ToolCallData[];
+}

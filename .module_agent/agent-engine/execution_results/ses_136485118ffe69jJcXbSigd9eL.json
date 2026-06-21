@@ -1,0 +1,9 @@
+[
+  {
+    "plan": "## 任务：重建 AgentExecutionContext.java\n\n文件路径：src/main/java/com/ghost616/platform/service/agent/AgentExecutionContext.java\n\n### 设计要求\n\n包名：com.ghost616.platform.service.agent\n注解：Lombok @Getter（提供只读访问）\n\n### 字段（均为 private）\n- Long sessionId（final）\n- Long agentId（final）\n- String systemPrompt（final）\n- Long modelId（非 final，可通过 mutator 修改）\n- List<HistoryEntry> history（final，列表本身可变用于 add）\n- List<ToolConfigDTO> tools（final）\n- AgentContextMutator mutator（final）\n\n### 构造器（手写，不使用 @RequiredArgsConstructor）\n参数：Long sessionId, Long agentId, String systemPrompt, Long modelId, List<HistoryEntry> history, List<ToolConfigDTO> tools, AgentContextMutator mutator\n- 赋值所有字段\n- 末尾调用 mutator.bind(this)\n\n### 内部类型\n\n#### HistoryEntry（public record）\n字段顺序：String role, String content, String reasoning, String toolCallId, int sequenceNum, LocalDateTime createTime, List<ToolCall> toolCalls\n- 注意：toolCalls 类型为 com.ghost616.platform.dto.model.ToolCall（与 ChatService 中 builder.toolCalls(entry.toolCalls()) 直接传递兼容）\n\n#### AgentContextMutator（public static class）\n- private AgentExecutionContext context 字段\n- public void bind(AgentExecutionContext context)：赋值 this.context = context\n- public void setModelId(Long modelId)：context.modelId = modelId\n- public void addHistoryEntry(HistoryEntry entry)：context.history.add(entry)\n- 无参构造器（默认即可）\n\n### Import\n- com.ghost616.platform.dto.model.ToolCall\n- com.ghost616.platform.dto.tool.ToolConfigDTO\n- lombok.Getter\n- java.time.LocalDateTime\n- java.util.List\n\n### 注意事项\n- 不添加注释\n- 不添加内部 ToolCall record（当前代码直接使用 dto.model.ToolCall）\n- modelId 字段不加 final，因为 mutator 需要修改它",
+    "status": "started",
+    "modified_files": [],
+    "summary": "力牧已启动",
+    "errors": []
+  }
+]

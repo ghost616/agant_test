@@ -1,0 +1,41 @@
+package com.ghost616.platform.systemtest;
+
+import java.util.concurrent.ConcurrentHashMap;
+
+import com.ghost616.platform.dto.model.ChatChunk;
+import com.ghost616.platform.enums.HookPhase;
+import com.ghost616.platform.service.agent.AgentExecutionContext;
+import com.ghost616.platform.service.agent.SessionManager;
+import com.ghost616.platform.service.agent.invoker.SystemPostHook;
+import com.ghost616.platform.service.hook.HookInvoker;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
+
+@Component
+@RequiredArgsConstructor
+public class MessageSavePostHook implements HookInvoker, SystemPostHook {
+
+    private final SessionManager sessionManager;
+
+    private final ConcurrentHashMap<Long, StringBuilder> buffers = new ConcurrentHashMap<>();
+
+    @Override
+    public HookPhase getPhase() {
+        return HookPhase.AFTER_MESSAGE_RECEIVE;
+    }
+
+    @Override
+    public void execute(AgentExecutionContext ctx, ChatChunk chunk) {
+        StringBuilder buffer = buffers.computeIfAbsent(ctx.getSessionId(), k -> new StringBuilder());
+        if (chunk != null && chunk.getDelta() != null) {
+            buffer.append(chunk.getDelta());
+        }
+        if (chunk != null && "stop".equals(chunk.getFinishReason())) {
+            String content = buffer.toString();
+            if (!content.isEmpty()) {
+                sessionManager.saveMessage(ctx.getSessionId(), "assistant", content, null, null, null);
+            }
+            buffers.remove(ctx.getSessionId());
+        }
+    }
+}

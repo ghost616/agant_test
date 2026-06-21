@@ -1,0 +1,80 @@
+import type { CommonStatus, PlatformType } from './common';
+
+export interface PlatformConfig {
+  platformType: PlatformType;
+  defaultBaseUrl: string;
+  modelNames: string[];
+}
+
+export interface ModelConfig {
+  id: string;
+  name: string;
+  platformType: PlatformType;
+  apiKey: string;
+  baseUrl: string;
+  modelName: string;
+  temperature: number;
+  maxTokens: number;
+  status: CommonStatus;
+  description: string;
+  createTime: string;
+  updateTime: string;
+}
+
+export type ModelFormData = Omit<ModelConfig, 'id' | 'status' | 'createTime' | 'updateTime'>;
+
+export interface Message {
+  role: string;
+  content: string;
+  toolCalls?: ToolCall[];
+  toolCallId?: string;
+}
+
+export interface UsageInfo {
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+}
+
+export interface ToolDefinition {
+  name: string;
+  description: string;
+  parameters: Record<string, unknown>;
+}
+
+export interface ToolCall {
+  id: string;
+  name: string;
+  arguments: string;
+}
+
+export interface ToolCallDelta {
+  index: number;
+  id: string;
+  name: string;
+  arguments?: string;
+}
+
+export interface ChatRequest {
+  messages: Message[];
+  tools?: ToolDefinition[];
+  temperature: number;
+  maxTokens: number;
+  model: string;
+  thinking?: boolean;
+}
+
+export interface ChatResponse {
+  content: string;
+  toolCalls?: ToolCall[];
+  usage: UsageInfo;
+  finishReason: string;
+}
+
+export interface ChatChunk {
+  delta: string;
+  toolCall?: ToolCallDelta;
+  finishReason: string;
+  index: number;
+  reasoning?: string;
+}

@@ -1,0 +1,11 @@
+{
+  "src/main/java/com/ghost616/platform/PlatformApplication.java": "4ceef962b9ca26c784c65cb793aedb3e",
+  "index.html": "eacf331f0ffc35d4b482f1d15a887d3b",
+  "src/main/java/com/ghost616/platform/enums/HookPhase.java": "f897d7d324a7a01f8434b75c7ed9c81b",
+  "src/main/java/com/ghost616/platform/enums/ErrorCode.java": "04bfe2059a7832ddae6814e7e508cde0",
+  "dev.bat": "18f2d65a247b9f48b3fc676d00a06112",
+  "src/main/resources/schema.sql": "4c56148b7dd60e39680bb79867bb62f1",
+  "src/main/resources/application.yml": "256c57f5b357be82840a9b2207f0dcd5",
+  "pom.xml": "600376dffeb79835ede4a0b285078036",
+  "src/main/java/com/ghost616/platform/event/ToolChangedEvent.java": "9fea7af4ad915fb37399a8545910c835"
+}

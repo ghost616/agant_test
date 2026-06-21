@@ -1,0 +1,9 @@
+{
+  "plan_id": "plan_efe8338d-18ea-4184-9bcb-a8a310bd6e58",
+  "module_name": "agent-engine",
+  "development_plan": "## agent-engine 模块修改\n\n### ToolManager.java → getSessionTools() 方法\n\n**当前问题**：第 48-58 行，MCP_HTTP 类型的父级 ToolSessionObject 通过 createInvoker(dto) 创建了 invoker，但 MCP 父级实际上代表的是 MCP 服务端点，不需要独立的 invoker。invoker 应由展开后的子工具各自持有。\n\n**修改方案**：\n- 将 `createInvoker(dto)` 调用移入非 MCP 分支\n- MCP_HTTP 分支中，父级 ToolSessionObject 的 invoker 设为 null\n- 展开后的子工具仍然通过 `createInvoker` 各自创建 invoker（第 53-55 行逻辑不变）\n\n**具体修改**（第 48-58 行）：\n```\n// 修改前\nToolInvoker invoker = createInvoker(dto);\nif (dto.getToolType() == ToolType.MCP_HTTP) {\n    ...\n    return new ToolSessionObject(dto, invoker, dto, expandedTools, expandedInvokers);\n}\nreturn new ToolSessionObject(dto, invoker, null, List.of(), List.of());\n\n// 修改后\nif (dto.getToolType() == ToolType.MCP_HTTP) {\n    ...\n    return new ToolSessionObject(dto, null, dto, expandedTools, expandedInvokers);\n}\nreturn new ToolSessionObject(dto, createInvoker(dto), null, List.of(), List.of());\n```",
+  "session_id": "ses_11658915dffeeoa2RKr96DUdtp",
+  "modified_files": [
+    "src/main/java/com/ghost616/platform/service/agent/invoker/ToolManager.java"
+  ]
+}

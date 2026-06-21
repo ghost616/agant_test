@@ -1,0 +1,9 @@
+{
+  "plan_id": "plan_a4205699-d74b-4a98-b503-042b9cd2e2d7",
+  "module_name": "agent-engine",
+  "development_plan": "将 expandMcpTools() 中 MCP 客户端的 requestTimeout 从 10 秒增加到 30 秒。\n\n**修改文件**: `src/main/java/com/ghost616/platform/service/agent/SessionManager.java`\n\n**具体变更**: `.requestTimeout(Duration.ofSeconds(10))` → `.requestTimeout(Duration.ofSeconds(30))`",
+  "session_id": "ses_11b121594ffe73TJJOVFXdO44d",
+  "modified_files": [
+    "src/main/java/com/ghost616/platform/service/agent/SessionManager.java"
+  ]
+}

@@ -1,0 +1,76 @@
+import { existsSync, readFileSync, statSync } from 'fs';
+import { resolve } from 'path';
+
+export interface ToolCall {
+    id?: string;
+    name?: string;
+    arguments?: string;
+}
+
+export interface HistoryEntry {
+    role: string;
+    content?: string;
+    reasoning?: string;
+    toolCallId?: string;
+    sequenceNum: number;
+    createTime?: string;
+    toolCalls?: ToolCall[];
+}
+
+export interface ToolInfo {
+    name: string;
+    description?: string;
+    parameterSchema?: string;
+}
+
+export interface AgentExecutionContext {
+    sessionId?: string;
+    agentId?: string;
+    systemPrompt?: string;
+    modelId?: string;
+    history?: HistoryEntry[];
+    tools?: ToolInfo[];
+}
+
+interface FileReadArgs {
+    path?: string;
+    encoding?: BufferEncoding;
+}
+
+export function execute(_ctx: AgentExecutionContext, args: string): string {
+    let parsed: FileReadArgs;
+    try {
+        parsed = JSON.parse(args) as FileReadArgs;
+    } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : String(e);
+        return JSON.stringify({ error: `Argument parse error: ${msg}` });
+    }
+
+    const filePath = parsed.path;
+    if (!filePath || typeof filePath !== 'string') {
+        return JSON.stringify({ error: 'Missing required parameter: path' });
+    }
+
+    const encoding: BufferEncoding = parsed.encoding || 'utf-8';
+
+    let absolutePath: string;
+    try {
+        absolutePath = resolve(filePath);
+    } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : String(e);
+        return JSON.stringify({ error: `Path resolve error: ${msg}` });
+    }
+
+    if (!existsSync(absolutePath)) {
+        return JSON.stringify({ error: `File not found: ${absolutePath}` });
+    }
+
+    try {
+        const content = readFileSync(absolutePath, { encoding });
+        const size = statSync(absolutePath).size;
+        return JSON.stringify({ path: absolutePath, size, content });
+    } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : String(e);
+        return JSON.stringify({ error: `File read error: ${msg}` });
+    }
+}

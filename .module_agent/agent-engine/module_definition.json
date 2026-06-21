@@ -1,0 +1,141 @@
+{
+  "module_name": "agent-engine",
+  "files": [
+    {
+      "path": "src/main/java/com/ghost616/platform/entity/Session.java",
+      "description": "会话实体，继承BaseEntity，@TableName(\"session\")"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/entity/Message.java",
+      "description": "消息实体（message 表），不继承 BaseEntity，含雪花ID、会话ID、角色、内容、推理、序号、工具调用ID、创建时间"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/entity/MessageToolCall.java",
+      "description": "工具调用记录实体，@TableName(\"message_tool_call\")"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/entity/SessionTool.java",
+      "description": "会话工具关联实体，@TableName(\"session_tool\")"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/service/agent/AgentExecutionContext.java",
+      "description": "智能体执行引擎核心上下文对象，mutator 字段 @Getter(AccessLevel.NONE) 隐藏 getter，AgentContextMutator 为包级可见 static 内部类"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/service/agent/invoker/ToolInvoker.java",
+      "description": "工具执行契约接口，定义 execute(AgentExecutionContext, String) 方法"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/service/agent/invoker/ToolManager.java",
+      "description": "工具调用管理器，注入 ToolConfigService/SessionToolMapper，提供 getInvoker(sessionId,toolName) 从会话工具列表查找调用器、getSessionTools(sessionId) 含 MCP 工具运行时展开和两级缓存、execute 封装调用。内部 record ToolSessionObject 含工具配置/调用器/MCP展开信息"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/service/agent/invoker/JavaToolInvoker.java",
+      "description": "Java 类型工具的 ToolInvoker 实现，通过全限定类名加载实现类，优先 Spring Bean 获取，fallback 反射实例化，委托执行"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/systemtest/SystemInfoTool.java",
+      "description": "系统信息工具，实现 ToolInvoker 接口，返回 OS/JVM/内存/磁盘等系统信息的 JSON 字符串"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/repository/MessageMapper.java",
+      "description": "Message 实体的 MyBatis-Plus Mapper 接口"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/repository/MessageToolCallMapper.java",
+      "description": "MessageToolCall 实体的 MyBatis-Plus Mapper 接口"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/repository/SessionToolMapper.java",
+      "description": "SessionTool 实体的 MyBatis-Plus Mapper 接口"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/service/agent/SessionManager.java",
+      "description": "会话管理组件，提供消息保存（含工具调用）和历史消息查询功能。getSessionTools() 和 expandMcpTools() 已迁移至 ToolManager"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/repository/SessionMapper.java",
+      "description": "Session 实体的 MyBatis-Plus Mapper 接口"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/dto/session/SessionDTO.java",
+      "description": "会话数据传输对象，包含 id/agentId/modelId/title/systemPrompt/createTime/updateTime，Long 字段使用 @JsonSerialize(ToStringSerializer) 防止前端精度丢失"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/service/session/SessionService.java",
+      "description": "会话服务接口，定义 listSessions、createSession、getSession、deleteSession 和 getMessages 方法"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/service/session/SessionServiceImpl.java",
+      "description": "会话服务实现，createSession 标注 @Transactional for-each 调用 BaseMapper.insert() 由 ASSIGN_ID 自动生成雪花 ID，deleteSession 先删 session_tool 再删 session"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/controller/SessionController.java",
+      "description": "会话 REST 控制器（/api/sessions），提供 GET 列表、GET /{id} 单会话、POST 创建、GET /{id}/messages 消息、DELETE 逻辑删除接口"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/dto/session/CreateSessionRequest.java",
+      "description": "创建会话请求 DTO，包含 agentId(必填)、modelId(必填)、title(必填)"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/dto/chat/ChatRequest.java",
+      "description": "流式对话请求 DTO，包含 sessionId(必填)、content(必填)、modelId(可选，覆盖会话默认模型)、thinking(可选，是否启用思考模式)"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/dto/chat/ChatChunk.java",
+      "description": "流式对话响应块 DTO，包含 delta/reasoning/finishReason"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/controller/ChatController.java",
+      "description": "对话 REST 控制器，注入 ChatService，POST /api/chat 端点委托 chatService.chat(request) 返回 SSE 流"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/service/agent/AgentContextBuilder.java",
+      "description": "上下文构建器，build 方法签名改为 build(sessionId, modelIdOverride, mutator)，将 mutator 作为构造器参数传入 AgentExecutionContext"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/service/agent/AgentContextManager.java",
+      "description": "Spring @Component 上下文缓存管理器，ConcurrentHashMap<Long, AgentSessionContext> 缓存，注入 SessionMapper/AgentConfigMapper/SessionManager。getOrCreate 通过 computeIfAbsent 线程安全构建上下文（Session→AgentConfig→modelId→tools/messages→HistoryEntry→AgentExecutionContext→AgentSessionContext）；remove 清除缓存；get 仅查询不创建。public record AgentSessionContext(AgentExecutionContext context, AgentContextMutator mutator, AtomicBoolean toolInvoking)"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/service/agent/ChatService.java",
+      "description": "对话服务，toToolDefinition 已移除，改用 ModelInvoker.toToolDefinition() 默认方法"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/service/agent/AgentConfigService.java",
+      "description": "智能体配置服务接口，定义6个方法：list/getById/create/update/delete/toggleStatus"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/service/agent/AgentConfigServiceImpl.java",
+      "description": "智能体配置服务实现，注入AgentConfigMapper和AgentToolMapper，实现CRUD+状态切换+名称重复校验+工具关联的批量插入与删除，toDTO方法查询agent_tool填充toolIds"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/service/agent/invoker/SystemPostHook.java",
+      "description": "系统后置 HOOK 标记接口，实现此接口的 HookInvoker Bean 在 initSystemHooks() 中被识别并加入 systemPostHooks 列表"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/controller/ToolExecutionController.java",
+      "description": "工具执行 REST 控制器，executeTools/toolStatus 返回 ApiResponse<Map<String,Object>>，continueChat 返回 Flux SSE 流"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/service/agent/ToolExecutionTracker.java",
+      "description": "工具执行状态跟踪器，setFailed 同步写 completedResults，新增 clear(sessionId) 方法"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/systemtest/MessageSavePostHook.java",
+      "description": "消息保存后置HOOK，已适配 chunk.getToolCalls() List，改为 for 循环遍历处理每个 ToolCallDelta"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/service/agent/invoker/MessageSavePostHook.java",
+      "description": "消息保存后置HOOK，id 为 null 时用 index 作为 fallback key 继续累加参数"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/service/agent/invoker/ToolCallQueueManager.java",
+      "description": "工具调用队列管理器，负责 enqueue/poll/peek/hasPending/clear 队列操作，数据结构 ConcurrentHashMap<Long, Deque<SessionManager.ToolCallData>>"
+    },
+    {
+      "path": "tools/file-reader/index.ts",
+      "description": "TypeScript 文件读取测试工具，用于测试 TypeScriptToolInvoker 的 bun/node 运行时桥接，导出 execute(ctx, args) 函数"
+    }
+  ]
+}

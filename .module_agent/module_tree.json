@@ -1,0 +1,32 @@
+{
+  "modules": [
+    {
+      "name": "framework",
+      "description": "系统框架模块，管理所有模块共用的文件"
+    },
+    {
+      "name": "llm-model",
+      "description": "LLM 模型配置与管理模块"
+    },
+    {
+      "name": "tool-registry",
+      "description": "工具注册与管理模块"
+    },
+    {
+      "name": "hook-manager",
+      "description": "HOOK 注册与管理模块"
+    },
+    {
+      "name": "agent-config",
+      "description": "智能体配置模块"
+    },
+    {
+      "name": "agent-engine",
+      "description": "智能体执行引擎"
+    },
+    {
+      "name": "frontend-ui",
+      "description": "前端交互界面"
+    }
+  ]
+}
