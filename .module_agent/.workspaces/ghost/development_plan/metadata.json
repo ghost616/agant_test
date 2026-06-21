@@ -24,50 +24,8 @@
     "plan_completed": false
   },
   {
-    "plan_id": "plan_a4205699-d74b-4a98-b503-042b9cd2e2d7",
-    "plan_summary": "expandMcpTools超时10s改30s",
-    "code_reviewed": true,
-    "plan_completed": true
-  },
-  {
-    "plan_id": "plan_43d82750-8336-40e8-8a33-66f6d9e8108a",
-    "plan_summary": "移除 pom.xml 中的 MCP SDK 依赖（mcp-core、mcp-json-jackson2）",
-    "code_reviewed": true,
-    "plan_completed": true
-  },
-  {
-    "plan_id": "plan_9c94b388-a386-437c-9200-1507611d5d1e",
-    "plan_summary": "用 java.net.http.HttpClient 替代 MCP SDK，实现 MCP JSON-RPC 通信",
-    "code_reviewed": true,
-    "plan_completed": true
-  },
-  {
-    "plan_id": "plan_555996a3-d9e2-4037-b30d-0fb5dbb20b29",
-    "plan_summary": "ToolManager 重构：getInvoker 增加 sessionId 参数，移入 getSessionTools/expandMcpTools，新增 ToolSessionObject 和缓存机制",
-    "code_reviewed": true,
-    "plan_completed": true
-  },
-  {
     "plan_id": "plan_efe8338d-18ea-4184-9bcb-a8a310bd6e58",
     "plan_summary": "ToolManager.getSessionTools：MCP_HTTP 父级 ToolSessionObject.invoker 设为 null",
-    "code_reviewed": false,
-    "plan_completed": true
-  },
-  {
-    "plan_id": "plan_712c3151-b95c-44b2-9695-321b6c447781",
-    "plan_summary": "新增 ToolChangedEvent 跨模块事件类（event/ToolChangedEvent.java）",
-    "code_reviewed": false,
-    "plan_completed": true
-  },
-  {
-    "plan_id": "plan_6b1b22d9-c79f-42f5-9a3d-b98045c9a1e3",
-    "plan_summary": "ToolConfigServiceImpl update/delete 发布 ToolChangedEvent",
-    "code_reviewed": false,
-    "plan_completed": true
-  },
-  {
-    "plan_id": "plan_de6e0a4d-4893-43dc-80fb-ef007525bc3b",
-    "plan_summary": "ToolManager 新增 clearSessionCache/clearToolCache + @EventListener，SessionServiceImpl 调用清理",
     "code_reviewed": false,
     "plan_completed": true
   }

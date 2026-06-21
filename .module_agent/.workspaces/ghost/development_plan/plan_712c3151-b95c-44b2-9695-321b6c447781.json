@@ -1,9 +1,0 @@
-{
-  "plan_id": "plan_712c3151-b95c-44b2-9695-321b6c447781",
-  "module_name": "framework",
-  "development_plan": "## framework 模块开发计划\n\n### 新增文件\n`src/main/java/com/ghost616/platform/event/ToolChangedEvent.java`\n\n```java\npackage com.ghost616.platform.event;\n\nimport org.springframework.context.ApplicationEvent;\n\npublic class ToolChangedEvent extends ApplicationEvent {\n    private final Long toolId;\n\n    public ToolChangedEvent(Object source, Long toolId) {\n        super(source);\n        this.toolId = toolId;\n    }\n\n    public Long getToolId() {\n        return toolId;\n    }\n}\n```\n\n- 继承 `ApplicationEvent`，供 Spring 事件机制使用\n- 包含 `toolId` 字段，标识变更的工具 ID\n- `source` 由发布方传入（即 ToolConfigServiceImpl）",
-  "session_id": "ses_116c33fd7ffeBW6GOqQ1L8l8ts",
-  "modified_files": [
-    "src/main/java/com/ghost616/platform/event/ToolChangedEvent.java"
-  ]
-}

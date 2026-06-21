@@ -16,5 +16,11 @@
     "plan_summary": "修正 README.md HOOK 描述为接口层面实际状态",
     "code_reviewed": true,
     "plan_completed": true
+  },
+  {
+    "plan_id": "plan_58a2c5da-aaf6-45d8-b7b6-4b6242a0d2e5",
+    "plan_summary": "修正智能体引擎描述并补充执行流程",
+    "code_reviewed": true,
+    "plan_completed": true
   }
 ]

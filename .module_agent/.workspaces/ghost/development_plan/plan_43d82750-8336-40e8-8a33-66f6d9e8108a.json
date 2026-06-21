@@ -1,9 +1,0 @@
-{
-  "plan_id": "plan_43d82750-8336-40e8-8a33-66f6d9e8108a",
-  "module_name": "framework",
-  "development_plan": "## framework 模块开发计划\n\n### 变更内容\n修改 `pom.xml`，移除两个 MCP SDK 依赖项：\n1. `io.modelcontextprotocol.sdk:mcp-core:2.0.0`\n2. `io.modelcontextprotocol.sdk:mcp-json-jackson2:2.0.0`\n\n### 实施步骤\n1. 打开 pom.xml，找到第 59-69 行中的两个 mcp 依赖\n2. 删除这两个 `<dependency>` 块（包括注释前后空白行，保持 XML 整洁）\n3. 执行 `mvn compile` 验证编译通过（MCP SDK 移除后使用该 SDK 的代码会报错，那些在 tool-registry 模块中后续处理）",
-  "session_id": "ses_116c33fd7ffeBW6GOqQ1L8l8ts",
-  "modified_files": [
-    "pom.xml"
-  ]
-}
