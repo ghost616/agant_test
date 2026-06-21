@@ -40,5 +40,11 @@
     "plan_summary": "工具调度步骤补充后台缓存说明",
     "code_reviewed": true,
     "plan_completed": true
+  },
+  {
+    "plan_id": "plan_71057082-e0a8-489d-8b99-614aea7110f3",
+    "plan_summary": "智能体执行流程后添加四种工具实现说明章节",
+    "code_reviewed": true,
+    "plan_completed": true
   }
 ]

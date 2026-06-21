@@ -1,0 +1,9 @@
+{
+  "plan_id": "plan_71057082-e0a8-489d-8b99-614aea7110f3",
+  "module_name": "framework",
+  "development_plan": "在 README.md \"## 智能体执行流程\"章节之后新增\"## 四种工具实现方式\"章节，包含表格说明四种工具类型的实现方式及第三方开发指南：\n\n- Java：实现 ToolInvoker 接口，全限定类名注册，反射加载委托执行。第三方：项目中实现接口 → 编译放入 classpath → 注册填入类名\n- TypeScript：目录下 index.ts 导出 execute(ctx, args)，运行时自动生成 _runner.ts 桥接文件（可从中 import AgentExecutionContext 等类型），bun 优先 node+tsx fallback。第三方：创建目录 → 编写 index.ts，从 ./_runner 导入类型 → 注册填入目录路径\n- Python：目录下 index.py 定义 execute(context, arguments)，运行时自动生成 _runner.py 桥接文件（可从中 import AgentExecutionContext 等类型），python3 优先 python fallback。第三方：创建目录 → 编写 index.py，从 _runner 导入类型 → 注册填入目录路径\n- MCP HTTP：注册服务端 URL，运行时 JSON-RPC 发现远程工具并展开，支持 Bearer Token 认证。第三方：部署 MCP 协议服务 → 注册填入 URL 和 Token\n\n风格与现有 README 保持一致，纯概念描述，避免代码片段和类名/方法名引用。",
+  "session_id": "ses_115f56b00ffeyZ9wIfiub0TY5N",
+  "modified_files": [
+    "README.md"
+  ]
+}
