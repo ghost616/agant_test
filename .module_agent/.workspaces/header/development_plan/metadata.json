@@ -34,5 +34,11 @@
     "plan_summary": "重写智能体执行流程为纯概念描述",
     "code_reviewed": true,
     "plan_completed": true
+  },
+  {
+    "plan_id": "plan_f679e833-55e3-4744-967b-116dcac35c19",
+    "plan_summary": "工具调度步骤补充后台缓存说明",
+    "code_reviewed": true,
+    "plan_completed": true
   }
 ]

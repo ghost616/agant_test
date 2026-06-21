@@ -1,0 +1,9 @@
+{
+  "plan_id": "plan_f679e833-55e3-4744-967b-116dcac35c19",
+  "module_name": "framework",
+  "development_plan": "修改 README.md \"智能体执行流程\"第 5 步\"工具调度\"，在原有描述基础上补充：模型返回的工具调用数据先被后台缓存到队列中，前端再逐条拉取异步执行。保持纯概念语言风格不变。",
+  "session_id": "ses_115f56b00ffeyZ9wIfiub0TY5N",
+  "modified_files": [
+    "README.md"
+  ]
+}

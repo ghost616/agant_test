@@ -29,3 +29,4 @@
 [2026-06-21T12:14:11.424Z] [session: ses_115f56b00ffeyZ9wIfiub0TY5N] [2026-06-21] 修改 README.md：第 19 行执行引擎描述改为"会话式智能体执行"，项目结构树之后新增"智能体执行流程"章节（加载上下文→调用 LLM→工具调度→HOOK 触发→SSE 推送）
 [2026-06-21T12:23:43.209Z] [session: ses_115f56b00ffeyZ9wIfiub0TY5N] [2026-06-21] 重写 README.md"智能体执行流程"章节，从 5 步通用描述改为 6 步紧贴代码实现的详细描述（AgentContextManager→ChatService→HOOK生命周期→LLM流式调用→工具执行循环→SSE推送）
 [2026-06-21T12:35:35.113Z] [session: ses_115f56b00ffeyZ9wIfiub0TY5N] [2026-06-21] 替换 README.md"智能体执行流程"章节为纯概念语言版本，6 步不含任何代码/类名/方法名
+[2026-06-21T12:40:42.840Z] [session: ses_115f56b00ffeyZ9wIfiub0TY5N] [2026-06-21] 补充 README.md 第 5 步"工具调度"：添加"后端先将工具调用数据缓存至队列，前端再逐条拉取异步提交执行任务"
