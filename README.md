@@ -95,14 +95,14 @@ build.bat
 
 ## 智能体执行流程
 
-1. **AgentContextManager.getOrCreate()** — 根据 sessionId 查询 Session 表 → 查 AgentConfig 获取 systemPrompt/modelId → ToolManager.getSessionTools() 查 session_tool 表获取工具列表 → SessionManager.getMessages() 获取 message/message_tool_call 历史 → 构建 AgentExecutionContext 缓存在 ConcurrentHashMap
+1. **上下文加载** — 根据会话 ID 加载智能体配置（系统提示词、默认模型、已挂载的工具列表），同时从数据库恢复历史消息记录，构建执行上下文并缓存
 
-2. **ChatService.chat()** — 接收 ChatRequest（sessionId/content/modelId），若非 `[tool_continue]` 标记则 sessionManager.saveMessage() 保存用户消息；modelInvokerManager.getInvoker(modelConfig) 获取平台 ModelInvoker；构建消息列表（system prompt + history + toolCalls）和 ToolDefinition
+2. **消息组装** — 将用户消息保存入库，拼装完整的消息列表（系统提示词 + 历史对话 + 工具调用记录），并将工具定义统一格式化后传给模型
 
-3. **HOOK 生命周期触发** — @PostConstruct 扫描所有 HookInvoker Spring Bean 按 HookPhase 分组到 `Map<HookPhase, List<HookInvoker>>`；SESSION_START 阶段在模型调用前触发；流式每 chunk 触发 BEFORE_MESSAGE_SEND；流完成后触发 AFTER_MESSAGE_RECEIVE；SystemPostHooks 在每个阶段后按顺序执行
+3. **HOOK 触发** — 在会话启动时、每条消息发送前、消息接收完成后，自动扫描并执行已注册的 HOOK 处理器，系统级 HOOK 在每个阶段后额外按优先级执行
 
-4. **LLM 流式调用** — invoker.invokeStream()（OpenAI / Anthropic / Azure / Ollama / DeepSeek / Custom）通过 SSE 或 NDJSON 解析为 `Flux<ChatChunk>`，AtomicBoolean hasToolCalls 标记本轮是否出现工具调用
+4. **模型调用** — 根据智能体配置的平台类型匹配对应的调用适配器，以流式方式请求 LLM，实时解析 SSE 或 NDJSON 格式的增量回复
 
-5. **工具执行循环** — 前端检测 ChatChunk.hasToolCalls → POST `/api/chat/{sessionId}/execute-tools`（CompletableFuture.supplyAsync 异步执行）→ 轮询 GET `/api/chat/{sessionId}/tool-status` → 全部工具执行完毕 → POST `/api/chat/{sessionId}/continue` → 工具结果保存为 role="tool" 消息，通过 AgentContextManager.addHistoryEntry() 加入上下文 → 递归调用 chatService.chat()
+5. **工具调度** — 若模型回复中包含工具调用指令，前端异步提交执行任务，后端从会话工具列表中查找对应工具实例执行，执行完成后将结果写回消息历史和上下文，继续下一轮模型调用
 
-6. **SSE 流式推送** — 整个执行过程通过 POST `/api/chat` 以 Server-Sent Events 将 ChatChunk（delta / reasoning / toolCalls / finishReason）实时推送至前端
+6. **流式推送** — 整个对话过程通过 SSE 将增量内容、推理过程、工具调用指令、完成状态实时推送到前端

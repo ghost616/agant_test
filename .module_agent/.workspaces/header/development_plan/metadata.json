@@ -28,5 +28,11 @@
     "plan_summary": "重写智能体执行流程，紧扣实际代码实现",
     "code_reviewed": true,
     "plan_completed": true
+  },
+  {
+    "plan_id": "plan_7eb7d9de-11a4-485c-8084-26e39856e220",
+    "plan_summary": "重写智能体执行流程为纯概念描述",
+    "code_reviewed": true,
+    "plan_completed": true
   }
 ]
