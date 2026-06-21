@@ -1,0 +1,9 @@
+{
+  "plan_id": "plan_bb121c49-e2d9-4d6d-911b-80973b25718f",
+  "module_name": "framework",
+  "development_plan": "修改 README.md \"四种工具实现方式\"表格，恢复为三列结构：类型 | 实现方式 | 第三方开发指南。实现方式列内容：\n- Java：实现 ToolInvoker 接口，全限定类名注册，反射加载委托执行\n- TypeScript：index.ts 导出 execute(ctx, args) 函数；_runner.ts 桥接文件可手动放入或首次执行时自动生成；bun 优先，node+tsx fallback\n- Python：index.py 定义 execute(context, arguments) 函数；_runner.py 桥接文件可手动放入或首次执行时自动生成；python3 优先，python fallback\n- MCP HTTP：注册服务 URL，运行时通过 JSON-RPC 协议发现远程工具并自动展开；支持 Bearer Token 认证\n第三方开发指南列保留现有精简内容。",
+  "session_id": "ses_115f56b00ffeyZ9wIfiub0TY5N",
+  "modified_files": [
+    "README.md"
+  ]
+}

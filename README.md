@@ -109,9 +109,9 @@ build.bat
 
 ## 四种工具实现方式
 
-| 类型 | 第三方开发指南 |
-|------|----------------|
-| Java | 项目中实现接口 → 编译放入 classpath → 注册填入类名 |
-| TypeScript | 环境依赖 bun 或 node+tsx 任一可用 → 创建目录 → 编写 index.ts，函数签名为 execute(ctx: AgentExecutionContext, args: string): string，从 ./_runner 导入类型，args 为 JSON 字符串格式的工具参数，返回执行结果字符串 → 注册填入目录路径 |
-| Python | 环境依赖 Python 3.10+ → 创建目录 → 编写 index.py，函数签名为 execute(context, arguments)，从 _runner 模块导入类型，arguments 为字典格式的工具参数，返回执行结果字符串 → 注册填入目录路径 |
-| MCP HTTP | 部署 MCP 协议服务 → 注册填入 URL 和 Token，运行时通过 JSON-RPC 协议发现远程工具并自动展开，支持 Bearer Token 认证 |
+| 类型 | 实现方式 | 第三方开发指南 |
+|------|----------|----------------|
+| Java | 实现 ToolInvoker 接口，全限定类名注册，反射加载委托执行 | 项目中实现接口 → 编译放入 classpath → 注册填入类名 |
+| TypeScript | index.ts 导出 execute(ctx, args) 函数；_runner.ts 桥接文件可手动放入或首次执行时自动生成；bun 优先，node+tsx fallback | 环境依赖 bun 或 node+tsx 任一可用 → 创建目录 → 编写 index.ts，函数签名为 execute(ctx: AgentExecutionContext, args: string): string，从 ./_runner 导入类型，args 为 JSON 字符串格式的工具参数，返回执行结果字符串 → 注册填入目录路径 |
+| Python | index.py 定义 execute(context, arguments) 函数；_runner.py 桥接文件可手动放入或首次执行时自动生成；python3 优先，python fallback | 环境依赖 Python 3.10+ → 创建目录 → 编写 index.py，函数签名为 execute(context, arguments)，从 _runner 模块导入类型，arguments 为字典格式的工具参数，返回执行结果字符串 → 注册填入目录路径 |
+| MCP HTTP | 注册服务 URL，运行时通过 JSON-RPC 协议发现远程工具并自动展开；支持 Bearer Token 认证 | 部署 MCP 协议服务 → 注册填入 URL 和 Token |

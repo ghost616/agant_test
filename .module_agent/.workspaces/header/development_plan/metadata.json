@@ -58,5 +58,11 @@
     "plan_summary": "移除四种工具表格的实现方式列",
     "code_reviewed": true,
     "plan_completed": true
+  },
+  {
+    "plan_id": "plan_bb121c49-e2d9-4d6d-911b-80973b25718f",
+    "plan_summary": "恢复四种工具表格的实现方式列",
+    "code_reviewed": false,
+    "plan_completed": true
   }
 ]
