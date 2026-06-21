@@ -4,5 +4,17 @@
     "plan_summary": "创建项目 README.md 文件",
     "code_reviewed": true,
     "plan_completed": true
+  },
+  {
+    "plan_id": "plan_4625844d-086d-4a34-a398-246498713499",
+    "plan_summary": "修正 README.md 项目描述并补充 MCP_HTTP 工具类型",
+    "code_reviewed": true,
+    "plan_completed": true
+  },
+  {
+    "plan_id": "plan_9a60a781-f3cb-4973-9593-d62bd92ec341",
+    "plan_summary": "修正 README.md HOOK 描述为接口层面实际状态",
+    "code_reviewed": true,
+    "plan_completed": true
   }
 ]

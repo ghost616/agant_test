@@ -7,5 +7,6 @@
   "src/main/resources/schema.sql": "4c56148b7dd60e39680bb79867bb62f1",
   "src/main/resources/application.yml": "256c57f5b357be82840a9b2207f0dcd5",
   "pom.xml": "600376dffeb79835ede4a0b285078036",
-  "src/main/java/com/ghost616/platform/event/ToolChangedEvent.java": "9fea7af4ad915fb37399a8545910c835"
+  "src/main/java/com/ghost616/platform/event/ToolChangedEvent.java": "9fea7af4ad915fb37399a8545910c835",
+  "README.md": "04c6e90faac2675aa89e2176d2eec7d8"
 }
