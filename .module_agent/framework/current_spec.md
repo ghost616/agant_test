@@ -59,3 +59,4 @@ src/index.css                                    -- 全局样式
 build.bat                                         -- Windows 一键编译打包脚本
 dev.bat                                           -- Windows 开发模式一键启动脚本
 - src/main/resources/schema.sql -- DDL 初始化脚本，model_config 表定义
+- README.md -- 项目说明文档，含技术栈、功能模块、快速启动指南、项目结构

@@ -116,6 +116,10 @@
     {
       "path": "src/main/java/com/ghost616/platform/event/ToolChangedEvent.java",
       "description": "ToolChangedEvent 事件类，继承 ApplicationEvent，含 toolId 字段和 getter，用于 Spring 事件机制发布工具变更通知"
+    },
+    {
+      "path": "README.md",
+      "description": "项目说明文档，含技术栈、功能模块、快速启动指南、项目结构"
     }
   ]
 }
