@@ -109,9 +109,9 @@ build.bat
 
 ## 四种工具实现方式
 
-| 工具类型 | 实现方式 | 运行时机制 | 第三方开发指南 |
-|----------|----------|------------|----------------|
-| Java | 实现工具调用接口，全限定类名注册 | 反射加载，委托执行 | 项目中实现接口 → 编译放入 classpath → 注册填入类名 |
-| TypeScript | 目录下 index.ts 导出 execute 函数，运行时自动生成桥接文件（可从中导入执行上下文等类型） | bun 优先，node + tsx 回退 | 创建目录 → 编写 index.ts，从 ./_runner 导入类型 → 注册填入目录路径 |
-| Python | 目录下 index.py 定义 execute 函数，运行时自动生成桥接文件（可从中导入执行上下文等类型） | python3 优先，python 回退 | 创建目录 → 编写 index.py，从 _runner 导入类型 → 注册填入目录路径 |
-| MCP HTTP | 注册服务端 URL，JSON-RPC 协议发现远程工具并展开 | Bearer Token 认证 | 部署 MCP 协议服务 → 注册填入 URL 和 Token |
+| 类型 | 第三方开发指南 |
+|------|----------------|
+| Java | 项目中实现接口 → 编译放入 classpath → 注册填入类名 |
+| TypeScript | 环境依赖 bun 或 node+tsx 任一可用 → 创建目录 → 编写 index.ts，函数签名为 execute(ctx: AgentExecutionContext, args: string): string，从 ./_runner 导入类型，args 为 JSON 字符串格式的工具参数，返回执行结果字符串 → 注册填入目录路径 |
+| Python | 环境依赖 Python 3.10+ → 创建目录 → 编写 index.py，函数签名为 execute(context, arguments)，从 _runner 模块导入类型，arguments 为字典格式的工具参数，返回执行结果字符串 → 注册填入目录路径 |
+| MCP HTTP | 部署 MCP 协议服务 → 注册填入 URL 和 Token，运行时通过 JSON-RPC 协议发现远程工具并自动展开，支持 Bearer Token 认证 |

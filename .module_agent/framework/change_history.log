@@ -31,3 +31,5 @@
 [2026-06-21T12:35:35.113Z] [session: ses_115f56b00ffeyZ9wIfiub0TY5N] [2026-06-21] 替换 README.md"智能体执行流程"章节为纯概念语言版本，6 步不含任何代码/类名/方法名
 [2026-06-21T12:40:42.840Z] [session: ses_115f56b00ffeyZ9wIfiub0TY5N] [2026-06-21] 补充 README.md 第 5 步"工具调度"：添加"后端先将工具调用数据缓存至队列，前端再逐条拉取异步提交执行任务"
 [2026-06-21T12:48:39.368Z] [session: ses_115f56b00ffeyZ9wIfiub0TY5N] [2026-06-21] 在 README.md"智能体执行流程"之后新增"四种工具实现方式"章节，表格涵盖 Java/TypeScript/Python/MCP HTTP 四种工具的实现方式、运行时机制和第三方开发指南
+[2026-06-21T13:16:20.049Z] [session: ses_115f56b00ffeyZ9wIfiub0TY5N] [2026-06-21] 补充 README.md 四种工具实现方式表格 TypeScript/Python 两行：桥接文件可手动放入或首次执行自动生成；开发指南补充环境依赖、函数签名、参数与返回说明
+[2026-06-21T13:18:23.839Z] [session: ses_115f56b00ffeyZ9wIfiub0TY5N] [2026-06-21] 简化 README.md 四种工具实现方式表格：移除"实现方式"和"运行时机制"列，保留"类型"和"第三方开发指南"两列；MCP HTTP 的 JSON-RPC/自动展开/Bearer Token 信息合并至开发指南列

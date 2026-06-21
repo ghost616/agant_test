@@ -1,0 +1,9 @@
+{
+  "plan_id": "plan_5086fb3c-d7a1-482e-97e3-f130fbd5e1a7",
+  "module_name": "framework",
+  "development_plan": "修改 README.md \"四种工具实现方式\"表格，移除中间\"实现方式\"列，只保留\"类型\"和\"第三方开发指南\"两列。MCP HTTP 原\"实现方式\"列中的关键信息（JSON-RPC 协议发现、自动展开、Bearer Token）合并到其开发指南列中。其余内容不变。",
+  "session_id": "ses_115f56b00ffeyZ9wIfiub0TY5N",
+  "modified_files": [
+    "README.md"
+  ]
+}

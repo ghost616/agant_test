@@ -46,5 +46,17 @@
     "plan_summary": "智能体执行流程后添加四种工具实现说明章节",
     "code_reviewed": true,
     "plan_completed": true
+  },
+  {
+    "plan_id": "plan_3626208e-7931-4ac1-b5c9-bfc2b751b81a",
+    "plan_summary": "完善 TS/Python 开发指南：运行环境、函数签名、类型导入、runner 手动放入",
+    "code_reviewed": true,
+    "plan_completed": true
+  },
+  {
+    "plan_id": "plan_5086fb3c-d7a1-482e-97e3-f130fbd5e1a7",
+    "plan_summary": "移除四种工具表格的实现方式列",
+    "code_reviewed": true,
+    "plan_completed": true
   }
 ]
