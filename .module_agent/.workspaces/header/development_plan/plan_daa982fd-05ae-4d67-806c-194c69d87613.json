@@ -1,0 +1,9 @@
+{
+  "plan_id": "plan_daa982fd-05ae-4d67-806c-194c69d87613",
+  "module_name": "framework",
+  "development_plan": "重写 README.md 第 96-102 行\"## 智能体执行流程\"章节，替换为紧贴实际代码实现的 6 步描述：\n\n1. **AgentContextManager.getOrCreate()** — 根据 sessionId 查询 Session 表 → 查 AgentConfig 获取 systemPrompt/modelId → ToolManager.getSessionTools() 查 session_tool 表获取工具列表 → SessionManager.getMessages() 获取 message/message_tool_call 历史 → 构建 AgentExecutionContext 缓存在 ConcurrentHashMap\n\n2. **ChatService.chat()** — 接收 ChatRequest（sessionId/content/modelId），若非 [tool_continue] 标记则 sessionManager.saveMessage() 保存用户消息；modelInvokerManager.getInvoker(modelConfig) 获取平台 ModelInvoker；构建消息列表（system prompt + history + toolCalls）和 ToolDefinition\n\n3. **HOOK 生命周期触发** — @PostConstruct 扫描所有 HookInvoker Spring Bean 按 HookPhase 分组到 Map<HookPhase, List<HookInvoker>>；SESSION_START 阶段在模型调用前触发；流式每 chunk 触发 BEFORE_MESSAGE_SEND；流完成后触发 AFTER_MESSAGE_RECEIVE；SystemPostHooks 在每个阶段后按顺序执行\n\n4. **LLM 流式调用** — invoker.invokeStream()（OpenAI/Anthropic/Azure/Ollama/DeepSeek/Custom）通过 SSE 或 NDJSON 解析为 Flux<ChatChunk>，AtomicBoolean hasToolCalls 标记本轮是否出现工具调用\n\n5. **工具执行循环** — 前端检测 ChatChunk.hasToolCalls → POST /api/chat/{sessionId}/execute-tools（CompletableFuture.supplyAsync 异步执行）→ 轮询 GET /api/chat/{sessionId}/tool-status → 全部工具执行完毕 → POST /api/chat/{sessionId}/continue → 工具结果保存为 role=\"tool\" 消息，通过 AgentContextManager.addHistoryEntry() 加入上下文 → 递归调用 chatService.chat()\n\n6. **SSE 流式推送** — 整个执行过程通过 POST /api/chat 以 Server-Sent Events 将 ChatChunk（delta/reasoning/toolCalls/finishReason）实时推送至前端",
+  "session_id": "ses_115f56b00ffeyZ9wIfiub0TY5N",
+  "modified_files": [
+    "README.md"
+  ]
+}
