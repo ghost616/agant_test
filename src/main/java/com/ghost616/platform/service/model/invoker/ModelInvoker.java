@@ -1,0 +1,87 @@
+package com.ghost616.platform.service.model.invoker;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghost616.platform.dto.model.ChatChunk;
+import com.ghost616.platform.dto.model.ChatRequest;
+import com.ghost616.platform.dto.model.ChatResponse;
+import com.ghost616.platform.dto.model.ToolDefinition;
+import com.ghost616.platform.dto.tool.ToolConfigDTO;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import reactor.core.publisher.Flux;
+
+/**
+ * 统一模型调用接口，屏蔽不同 LLM 提供商的差异。
+ */
+public interface ModelInvoker {
+
+    ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
+    /**
+     * 同步调用模型。
+     *
+     * @param request 对话请求
+     * @return 对话响应
+     */
+    ChatResponse invoke(ChatRequest request);
+
+    /**
+     * 流式调用模型。
+     *
+     * @param request 对话请求
+     * @return 流式对话片段
+     */
+    Flux<ChatChunk> invokeStream(ChatRequest request);
+
+    /**
+     * 连通性验证。
+     *
+     * @return 验证成功返回 true，否则返回 false
+     */
+    boolean verify();
+
+    /**
+     * 构建仅含名称和描述的最小工具定义，不包含参数 Schema。
+     *
+     * @param tool 工具配置
+     * @return 无 parameters 的 ToolDefinition
+     */
+    default ToolDefinition createMinimalToolDefinition(ToolConfigDTO tool) {
+        return ToolDefinition.builder()
+                .name(tool.getName())
+                .description(tool.getDescription())
+                .build();
+    }
+
+    /**
+     * 将工具配置 DTO 转换为 ToolDefinition，自动补全 JSON Schema 的 type 字段。
+     *
+     * @param tool 工具配置
+     * @return 工具定义
+     */
+    default ToolDefinition toToolDefinition(ToolConfigDTO tool) {
+        if (tool.getParameterSchema() == null || tool.getParameterSchema().isBlank()) {
+            return createMinimalToolDefinition(tool);
+        }
+        Map<String, Object> parameters;
+        try {
+            parameters = OBJECT_MAPPER.readValue(
+                    tool.getParameterSchema(),
+                    new TypeReference<Map<String, Object>>() {});
+        } catch (Exception e) {
+            parameters = Map.of("type", "object");
+        }
+        if (!parameters.containsKey("type")) {
+            Map<String, Object> wrapped = new LinkedHashMap<>();
+            wrapped.put("type", "object");
+            wrapped.put("properties", parameters);
+            parameters = wrapped;
+        }
+        return ToolDefinition.builder()
+                .name(tool.getName())
+                .description(tool.getDescription())
+                .parameters(parameters)
+                .build();
+    }
+}

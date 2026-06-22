@@ -1,0 +1,226 @@
+import { useCallback, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+  Button,
+  Form,
+  Input,
+  message,
+  Modal,
+  Popconfirm,
+  Select,
+  Space,
+  Table,
+} from 'antd';
+import type { ColumnsType } from 'antd/es/table';
+import type { Session, CreateSessionParams } from '../../types/session';
+import type { AgentConfig } from '../../types/agent';
+import type { ModelConfig } from '../../types/model';
+import { createSession, deleteSession, listSessions } from '../../services/session';
+import { listAgents } from '../../services/agent';
+import { listModels } from '../../services/model';
+
+function SessionList(): JSX.Element {
+  const navigate = useNavigate();
+  const [dataSource, setDataSource] = useState<Session[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [form] = Form.useForm<CreateSessionParams>();
+
+  const [agentList, setAgentList] = useState<AgentConfig[]>([]);
+  const [modelList, setModelList] = useState<ModelConfig[]>([]);
+  const [agentMap, setAgentMap] = useState<Record<string, string>>({});
+  const [modelMap, setModelMap] = useState<Record<string, string>>({});
+
+  const fetchList = useCallback(async () => {
+    setLoading(true);
+    try {
+      const result = await listSessions();
+      setDataSource(result);
+    } catch {
+      message.error('获取会话列表失败');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const fetchAgentsAndModels = useCallback(async () => {
+    try {
+      const [agents, models] = await Promise.all([
+        listAgents({ status: 'ENABLED' }),
+        listModels({ status: 'ENABLED' }),
+      ]);
+      setAgentList(agents);
+      setModelList(models);
+      const aMap: Record<string, string> = {};
+      agents.forEach((a) => { aMap[a.id] = a.name; });
+      setAgentMap(aMap);
+      const mMap: Record<string, string> = {};
+      models.forEach((m) => { mMap[m.id] = m.name; });
+      setModelMap(mMap);
+    } catch {
+      message.error('获取智能体/模型列表失败');
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchList();
+  }, [fetchList]);
+
+  useEffect(() => {
+    fetchAgentsAndModels();
+  }, [fetchAgentsAndModels]);
+
+  const handleAdd = (): void => {
+    form.resetFields();
+    setModalVisible(true);
+  };
+
+  const handleDelete = async (record: Session): Promise<void> => {
+    try {
+      await deleteSession(record.id);
+      message.success('删除成功');
+      fetchList();
+    } catch {
+      message.error('删除失败');
+    }
+  };
+
+  const handleModalOk = async (): Promise<void> => {
+    let values: CreateSessionParams;
+    try {
+      values = await form.validateFields();
+    } catch {
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const session = await createSession(values);
+      message.success('创建成功');
+      setModalVisible(false);
+      navigate(`/sessions/${session.id}/chat`);
+    } catch {
+      message.error('创建会话失败');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const columns: ColumnsType<Session> = [
+    {
+      title: '标题',
+      dataIndex: 'title',
+      width: 200,
+      ellipsis: true,
+    },
+    {
+      title: '智能体',
+      dataIndex: 'agentId',
+      width: 140,
+      render: (value: string) => agentMap[value] || '-',
+    },
+    {
+      title: '模型',
+      dataIndex: 'modelId',
+      width: 140,
+      render: (value: string) => modelMap[value] || '-',
+    },
+    {
+      title: '创建时间',
+      dataIndex: 'createTime',
+      width: 180,
+    },
+    {
+      title: '操作',
+      key: 'actions',
+      width: 180,
+      render: (_: unknown, record: Session) => (
+        <Space size="small">
+          <Button
+            type="link"
+            size="small"
+            onClick={() => navigate(`/sessions/${record.id}/chat`)}
+          >
+            继续会话
+          </Button>
+          <Popconfirm
+            title="确定删除该会话？"
+            onConfirm={() => handleDelete(record)}
+          >
+            <Button type="link" size="small" danger>
+              删除
+            </Button>
+          </Popconfirm>
+        </Space>
+      ),
+    },
+  ];
+
+  return (
+    <div>
+      <Space style={{ marginBottom: 16 }} wrap>
+        <Button type="primary" onClick={handleAdd}>
+          新建会话
+        </Button>
+      </Space>
+
+      <Table<Session>
+        rowKey="id"
+        columns={columns}
+        dataSource={dataSource}
+        loading={loading}
+        pagination={false}
+        scroll={{ x: 840 }}
+      />
+
+      <Modal
+        title="新建会话"
+        open={modalVisible}
+        onOk={handleModalOk}
+        onCancel={() => setModalVisible(false)}
+        confirmLoading={submitting}
+        width={480}
+        destroyOnClose
+      >
+        <Form form={form} layout="vertical" preserve={false}>
+          <Form.Item
+            name="agentId"
+            label="选择智能体"
+            rules={[{ required: true, message: '请选择智能体' }]}
+          >
+            <Select
+              placeholder="请选择智能体"
+              showSearch
+              optionFilterProp="label"
+              options={agentList.map((a) => ({
+                value: a.id,
+                label: a.name,
+              }))}
+            />
+          </Form.Item>
+          <Form.Item
+            name="modelId"
+            label="选择模型"
+            rules={[{ required: true, message: '请选择模型' }]}
+          >
+            <Select
+              placeholder="请选择模型"
+              showSearch
+              optionFilterProp="label"
+              options={modelList.map((m) => ({
+                value: m.id,
+                label: m.name,
+              }))}
+            />
+          </Form.Item>
+          <Form.Item name="title" label="标题">
+            <Input placeholder="可选，留空自动生成" maxLength={200} />
+          </Form.Item>
+        </Form>
+      </Modal>
+    </div>
+  );
+}
+
+export default SessionList;

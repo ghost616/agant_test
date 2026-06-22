@@ -1,0 +1,416 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import { Button, Input, message, Select, Spin, Switch, Typography } from 'antd';
+import {
+  UserOutlined,
+  RobotOutlined,
+  ToolOutlined,
+  InfoCircleOutlined,
+} from '@ant-design/icons';
+import { agentChatStream, getSessionMessages } from '../../services/session';
+import { listModels } from '../../services/model';
+import type { SessionMessage } from '../../types/session';
+import type { ModelConfig } from '../../types/model';
+
+type MessageRole = 'user' | 'assistant' | 'tool' | 'system';
+
+interface ChatMessage {
+  role: MessageRole;
+  content: string;
+  reasoning?: string;
+}
+
+const ROLE_CONFIG: Record<MessageRole, { label: string; icon: JSX.Element; color: string }> = {
+  user: { label: '你', icon: <UserOutlined />, color: '#569cd6' },
+  assistant: { label: '助手', icon: <RobotOutlined />, color: '#4ec9b0' },
+  tool: { label: '工具', icon: <ToolOutlined />, color: '#d7ba7d' },
+  system: { label: '系统', icon: <InfoCircleOutlined />, color: '#9cdcfe' },
+};
+
+const BUBBLE_STYLES: Record<MessageRole, React.CSSProperties> = {
+  user: {
+    background: '#1a3a5c',
+    borderRadius: 12,
+    padding: '10px 14px',
+    maxWidth: '75%',
+  },
+  assistant: {
+    background: '#2a2a2a',
+    borderRadius: 12,
+    padding: '10px 14px',
+    maxWidth: '75%',
+  },
+  tool: {
+    background: '#3a3a3a',
+    borderRadius: 12,
+    padding: '10px 14px',
+    maxWidth: '75%',
+  },
+  system: {
+    background: '#2d3748',
+    borderRadius: 12,
+    padding: '10px 14px',
+    maxWidth: '75%',
+  },
+};
+
+function AgentChat(): JSX.Element {
+  const { id } = useParams<{ id: string }>();
+  const sessionId = id!;
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [inputValue, setInputValue] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [historyLoading, setHistoryLoading] = useState(true);
+  const [currentResponse, setCurrentResponse] = useState('');
+  const [currentReasoning, setCurrentReasoning] = useState('');
+  const [thinking, setThinking] = useState(false);
+  const [modelId, setModelId] = useState<string | undefined>(undefined);
+  const [modelList, setModelList] = useState<ModelConfig[]>([]);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
+  const hasResponseRef = useRef(false);
+  const calledRef = useRef(false);
+
+  useEffect(() => {
+    if (containerRef.current) {
+      containerRef.current.scrollTop = containerRef.current.scrollHeight;
+    }
+  }, [messages, currentResponse, currentReasoning]);
+
+  useEffect(() => {
+    listModels({ status: 'ENABLED' })
+      .then(setModelList)
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (!sessionId || calledRef.current) return;
+    calledRef.current = true;
+
+    const loadHistory = async (): Promise<void> => {
+      try {
+        const historyMessages = await getSessionMessages(sessionId);
+        const mapped: ChatMessage[] = historyMessages.map((msg: SessionMessage) => ({
+          role: (['user', 'assistant', 'tool', 'system'].includes(msg.role)
+            ? msg.role
+            : 'assistant') as MessageRole,
+          content: msg.content,
+          reasoning: msg.reasoning || undefined,
+        }));
+        setMessages(mapped);
+      } catch {
+        message.error('加载历史消息失败');
+      } finally {
+        setHistoryLoading(false);
+      }
+    };
+
+    loadHistory();
+  }, [sessionId]);
+
+  const handleAbort = useCallback(() => {
+    if (abortRef.current) {
+      abortRef.current.abort();
+      abortRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => {
+    return () => handleAbort();
+  }, [handleAbort]);
+
+  const handleSend = useCallback(() => {
+    if (!inputValue.trim() || loading) return;
+
+    const userMsg: ChatMessage = { role: 'user', content: inputValue };
+    setMessages((prev) => [...prev, userMsg]);
+    setInputValue('');
+    setLoading(true);
+    setCurrentResponse('');
+    setCurrentReasoning('');
+    hasResponseRef.current = false;
+
+    abortRef.current = agentChatStream(
+      { sessionId, content: inputValue, modelId, thinking },
+      {
+        onDelta: (text: string) => {
+          hasResponseRef.current = true;
+          setCurrentResponse((prev) => prev + text);
+        },
+        onReasoning: (text: string) => {
+          hasResponseRef.current = true;
+          setCurrentReasoning((prev) => prev + text);
+        },
+        onDone: () => {
+          setCurrentResponse((prev) => {
+            setCurrentReasoning((reasoning) => {
+              const assistantMsg: ChatMessage = {
+                role: 'assistant',
+                content: prev,
+                reasoning: reasoning || undefined,
+              };
+              setMessages((msgs) => [...msgs, assistantMsg]);
+              return '';
+            });
+            return '';
+          });
+          if (!hasResponseRef.current) {
+            message.warning('未收到回复内容');
+          }
+          setLoading(false);
+          abortRef.current = null;
+        },
+        onError: (err: Error) => {
+          message.error(err.message || '请求失败');
+          setLoading(false);
+          abortRef.current = null;
+        },
+      },
+    );
+  }, [inputValue, loading, sessionId, modelId, thinking]);
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        handleSend();
+      }
+    },
+    [handleSend],
+  );
+
+  const renderRoleHeader = (role: MessageRole): JSX.Element => {
+    const config = ROLE_CONFIG[role];
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
+        <span style={{ color: config.color, fontSize: 14 }}>{config.icon}</span>
+        <Typography.Text strong style={{ color: config.color, fontSize: 12 }}>
+          {config.label}
+        </Typography.Text>
+      </div>
+    );
+  };
+
+  const renderReasoning = (reasoning: string): JSX.Element => (
+    <div
+      style={{
+        background: '#252525',
+        borderLeft: '3px solid #ffd700',
+        borderRadius: 4,
+        padding: '8px 12px',
+        marginBottom: 8,
+      }}
+      className="agent-chat-markdown"
+    >
+      <Typography.Text
+        style={{ color: '#ffd700', fontSize: 12, marginBottom: 4, display: 'block' }}
+      >
+        思考过程
+      </Typography.Text>
+      <div style={{ color: '#aaa', fontSize: 13, lineHeight: 1.7 }}>
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>{reasoning}</ReactMarkdown>
+      </div>
+    </div>
+  );
+
+  const renderMessage = (msg: ChatMessage, idx: number): JSX.Element => {
+    const isUser = msg.role === 'user';
+    return (
+      <div
+        key={idx}
+        style={{
+          display: 'flex',
+          justifyContent: isUser ? 'flex-end' : 'flex-start',
+          marginBottom: 16,
+        }}
+      >
+        <div style={{ maxWidth: '75%' }}>
+          {renderRoleHeader(msg.role)}
+          {msg.reasoning && renderReasoning(msg.reasoning)}
+          <div style={BUBBLE_STYLES[msg.role]} className="agent-chat-markdown">
+            <div style={{ color: '#d4d4d4', fontSize: 14, lineHeight: 1.8 }}>
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  if (!id) {
+    return (
+      <div style={{ textAlign: 'center', paddingTop: 100 }}>
+        <Typography.Text type="secondary">无效的会话</Typography.Text>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 180px)' }}>
+      <style>{`
+        .agent-chat-markdown pre {
+          background: #2d2d2d;
+          border-radius: 6px;
+          padding: 12px 16px;
+          overflow-x: auto;
+        }
+        .agent-chat-markdown code {
+          font-family: 'Consolas', 'Courier New', monospace;
+          font-size: 13px;
+        }
+        .agent-chat-markdown :not(pre) > code {
+          background: #2d2d2d;
+          padding: 2px 6px;
+          border-radius: 4px;
+        }
+        .agent-chat-markdown table {
+          border-collapse: collapse;
+          width: 100%;
+          margin: 12px 0;
+        }
+        .agent-chat-markdown th,
+        .agent-chat-markdown td {
+          border: 1px solid #444;
+          padding: 8px 12px;
+          text-align: left;
+        }
+        .agent-chat-markdown th {
+          background: #2d2d2d;
+          font-weight: 600;
+        }
+        .agent-chat-markdown blockquote {
+          border-left: 3px solid #555;
+          padding-left: 12px;
+          margin: 12px 0;
+          color: #aaa;
+        }
+        .agent-chat-markdown a {
+          color: #569cd6;
+        }
+        .agent-chat-markdown ul,
+        .agent-chat-markdown ol {
+          padding-left: 24px;
+        }
+        .agent-chat-markdown p {
+          margin: 8px 0;
+        }
+      `}</style>
+
+      <div
+        ref={containerRef}
+        style={{
+          flex: 1,
+          background: '#1e1e1e',
+          borderRadius: 8,
+          padding: 16,
+          overflowY: 'auto',
+          marginBottom: 16,
+          minHeight: 200,
+        }}
+      >
+        {historyLoading && (
+          <div style={{ textAlign: 'center', padding: 40 }}>
+            <Spin tip="加载历史消息..." />
+          </div>
+        )}
+
+        {!historyLoading && messages.length === 0 && !loading && (
+          <Typography.Text style={{ color: '#6a6a6a', fontSize: 14 }}>
+            发送消息开始对话
+          </Typography.Text>
+        )}
+
+        {!historyLoading && messages.map((msg, idx) => renderMessage(msg, idx))}
+
+        {loading && (
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'flex-start',
+              marginBottom: 16,
+            }}
+          >
+            <div style={{ maxWidth: '75%' }}>
+              {renderRoleHeader('assistant')}
+              {currentReasoning && renderReasoning(currentReasoning)}
+              {currentResponse ? (
+                <div style={BUBBLE_STYLES.assistant} className="agent-chat-markdown">
+                  <div style={{ color: '#d4d4d4', fontSize: 14, lineHeight: 1.8 }}>
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {currentResponse}
+                    </ReactMarkdown>
+                  </div>
+                </div>
+              ) : (
+                !currentReasoning && (
+                  <div style={{ marginTop: 8 }}>
+                    <Spin size="small" />
+                  </div>
+                )
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Typography.Text type="secondary" style={{ fontSize: 13, whiteSpace: 'nowrap' }}>
+            选择模型
+          </Typography.Text>
+          <Select
+            placeholder="选择模型"
+            allowClear
+            style={{ width: 200 }}
+            value={modelId}
+            onChange={setModelId}
+            options={modelList.map((m) => ({
+              value: m.id,
+              label: m.name,
+            }))}
+          />
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Typography.Text type="secondary" style={{ fontSize: 13 }}>
+            思考模式
+          </Typography.Text>
+          <Switch
+            checked={thinking}
+            onChange={setThinking}
+            size="small"
+          />
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', gap: 8 }}>
+        <Input.TextArea
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="输入消息，Enter 发送，Shift+Enter 换行"
+          rows={3}
+          autoSize={{ minRows: 2, maxRows: 6 }}
+        />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minWidth: 80 }}>
+          <Button
+            type="primary"
+            onClick={handleSend}
+            disabled={loading || !inputValue.trim()}
+            loading={loading}
+          >
+            发送
+          </Button>
+          {loading && (
+            <Button onClick={handleAbort} danger>
+              停止
+            </Button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default AgentChat;

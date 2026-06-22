@@ -1,0 +1,20 @@
+{
+  "sessions": [
+    {
+      "session_id": "ses_11ceb4369ffeuGipDH6hLaNlts",
+      "status": "started",
+      "files": [
+        "src/main/java/com/ghost616/platform/service/agent/invoker/ContextSerializer.java",
+        "src/main/java/com/ghost616/platform/service/agent/invoker/TypeScriptToolInvoker.java",
+        "src/main/java/com/ghost616/platform/service/agent/invoker/PythonToolInvoker.java"
+      ]
+    },
+    {
+      "session_id": "ses_11b06f239ffe5E0BYMTTVkR2PM",
+      "status": "started",
+      "files": [
+        "src/main/java/com/ghost616/platform/service/agent/SessionManager.java"
+      ]
+    }
+  ]
+}

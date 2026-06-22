@@ -1,0 +1,38 @@
+package com.ghost616.platform.systemtest;
+
+import com.ghost616.platform.dto.model.ChatChunk;
+import com.ghost616.platform.enums.HookPhase;
+import com.ghost616.platform.service.agent.AgentExecutionContext;
+import com.ghost616.platform.service.agent.SessionManager;
+import com.ghost616.platform.service.agent.invoker.SystemPostHook;
+import com.ghost616.platform.service.hook.HookInvoker;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
+
+@Component
+@RequiredArgsConstructor
+public class MessageSavePostHook implements HookInvoker, SystemPostHook {
+
+    private final SessionManager sessionManager;
+
+    private final StringBuilder buffer = new StringBuilder();
+
+    @Override
+    public HookPhase getPhase() {
+        return HookPhase.SYSTEM_POST;
+    }
+
+    @Override
+    public void execute(AgentExecutionContext ctx, ChatChunk chunk) {
+        if (chunk != null && chunk.getDelta() != null) {
+            buffer.append(chunk.getDelta());
+        }
+        if (chunk != null && "stop".equals(chunk.getFinishReason())) {
+            String content = buffer.toString();
+            if (!content.isEmpty()) {
+                sessionManager.saveMessage(ctx.getSessionId(), "assistant", content, null, null, null);
+            }
+            buffer.setLength(0);
+        }
+    }
+}

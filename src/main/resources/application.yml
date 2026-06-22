@@ -1,0 +1,28 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: agent-platform
+  sql:
+    init:
+      mode: always
+      continue-on-error: true
+  datasource:
+    url: jdbc:sqlite:data/agent_platform.db
+    driver-class-name: org.sqlite.JDBC
+
+mybatis-plus:
+  mapper-locations: classpath*:mapper/**/*.xml
+  type-aliases-package: com.ghost616.platform.entity
+  type-enums-package: com.ghost616.platform.enums
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      id-type: assign_id
+
+logging:
+  level:
+    root: INFO
+    com.ghost616.platform: INFO

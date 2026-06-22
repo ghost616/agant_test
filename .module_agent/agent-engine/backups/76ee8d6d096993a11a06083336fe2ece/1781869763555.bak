@@ -1,0 +1,229 @@
+package com.ghost616.platform.service.agent.invoker;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.ghost616.platform.dto.model.ToolCall;
+import com.ghost616.platform.dto.tool.ToolConfigDTO;
+import com.ghost616.platform.enums.ErrorCode;
+import com.ghost616.platform.exception.BusinessException;
+import com.ghost616.platform.service.agent.AgentExecutionContext;
+import lombok.extern.slf4j.Slf4j;
+
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+@Slf4j
+public class TypeScriptToolInvoker implements ToolInvoker {
+
+    private static final long TIMEOUT_SECONDS = 30;
+    private static final String RUNNER_FILE_NAME = "_runner.ts";
+
+    private final Path scriptDir;
+    private final Path runnerPath;
+    private final boolean bunAvailable;
+    private final boolean nodeAvailable;
+
+    public TypeScriptToolInvoker(String scriptPath) {
+        this.scriptDir = Path.of(scriptPath).toAbsolutePath();
+        if (!Files.isDirectory(this.scriptDir)) {
+            throw new BusinessException(ErrorCode.TOOL_INVOKE_ERROR,
+                    "脚本路径不是目录: " + scriptPath);
+        }
+        this.runnerPath = this.scriptDir.resolve(RUNNER_FILE_NAME);
+        this.bunAvailable = isCommandAvailable("bun");
+        this.nodeAvailable = isCommandAvailable("node");
+        if (!bunAvailable && !nodeAvailable) {
+            throw new BusinessException(ErrorCode.TOOL_RUNTIME_NOT_FOUND,
+                    "bun 和 node 运行时均不可用，请安装 bun（https://bun.sh）或 node（https://nodejs.org）");
+        }
+        log.info("脚本运行时检测: bun={}, node={}, scriptDir={}", bunAvailable, nodeAvailable, scriptDir);
+    }
+
+    private static boolean isWindows() {
+        String os = System.getProperty("os.name");
+        return os != null && os.toLowerCase().contains("windows");
+    }
+
+    private boolean isCommandAvailable(String command) {
+        try {
+            List<String> cmd;
+            if (isWindows()) {
+                cmd = List.of("cmd", "/c", command, "--version");
+            } else {
+                cmd = List.of(command, "--version");
+            }
+            ProcessBuilder pb = new ProcessBuilder(cmd);
+            pb.redirectErrorStream(true);
+            Process process = pb.start();
+            boolean finished = process.waitFor(5, TimeUnit.SECONDS);
+            return finished && process.exitValue() == 0;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    @Override
+    public String execute(AgentExecutionContext ctx, String arguments) {
+        if (!Files.exists(runnerPath)) {
+            synchronized (this) {
+                if (!Files.exists(runnerPath)) {
+                    generateRunnerFile();
+                }
+            }
+        }
+
+        String jsonParams = serializeToJson(ctx, arguments);
+        List<String> command = new ArrayList<>(resolveRuntime());
+        command.add(runnerPath.toString());
+        try {
+            ProcessBuilder pb = new ProcessBuilder(command);
+            pb.directory(scriptDir.toFile());
+            pb.redirectErrorStream(true);
+            Process process = pb.start();
+
+            try (java.io.OutputStream stdin = process.getOutputStream()) {
+                stdin.write(jsonParams.getBytes(StandardCharsets.UTF_8));
+            }
+
+            StringBuilder output = new StringBuilder();
+            try (BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    output.append(line).append('\n');
+                }
+            }
+
+            boolean finished = process.waitFor(TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            if (!finished) {
+                process.destroyForcibly();
+                log.error("工具执行超时 ({}秒): {}", TIMEOUT_SECONDS, scriptDir);
+                throw new BusinessException(ErrorCode.TOOL_EXECUTE_TIMEOUT,
+                        "工具执行超时（" + TIMEOUT_SECONDS + "秒）: " + scriptDir);
+            }
+
+            int exitCode = process.exitValue();
+            String result = output.toString().trim();
+            if (exitCode != 0) {
+                log.error("工具执行失败, exitCode={}, dir={}, output={}", exitCode, scriptDir, result);
+                throw new BusinessException(ErrorCode.TOOL_EXECUTE_ERROR,
+                        "工具执行失败, exitCode=" + exitCode + ": " + result);
+            }
+
+            return result;
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("执行工具异常: {}", scriptDir, e);
+            throw new BusinessException(ErrorCode.TOOL_EXECUTE_ERROR,
+                    "执行工具异常: " + scriptDir + " - " + e.getMessage());
+        }
+    }
+
+    private List<String> resolveRuntime() {
+        if (bunAvailable) {
+            if (isWindows()) {
+                return List.of("cmd", "/c", "bun");
+            }
+            return List.of("bun");
+        }
+        if (nodeAvailable) {
+            if (isWindows()) {
+                return List.of("cmd", "/c", "npx", "tsx");
+            }
+            return List.of("npx", "tsx");
+        }
+        throw new BusinessException(ErrorCode.TOOL_RUNTIME_NOT_FOUND,
+                "bun 和 node 运行时均不可用");
+    }
+
+    private String serializeToJson(AgentExecutionContext ctx, String arguments) {
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            ObjectNode root = mapper.createObjectNode();
+
+            ObjectNode contextNode = mapper.createObjectNode();
+            contextNode.put("sessionId", ctx.getSessionId() != null ? ctx.getSessionId().toString() : null);
+            contextNode.put("agentId", ctx.getAgentId() != null ? ctx.getAgentId().toString() : null);
+            contextNode.put("systemPrompt", ctx.getSystemPrompt());
+            contextNode.put("modelId", ctx.getModelId() != null ? ctx.getModelId().toString() : null);
+
+            ArrayNode historyArray = mapper.createArrayNode();
+            for (AgentExecutionContext.HistoryEntry entry : ctx.getHistory()) {
+                ObjectNode entryNode = mapper.createObjectNode();
+                entryNode.put("role", entry.role());
+                entryNode.put("content", entry.content());
+                entryNode.put("reasoning", entry.reasoning());
+                entryNode.put("toolCallId", entry.toolCallId());
+                entryNode.put("sequenceNum", entry.sequenceNum());
+                entryNode.put("createTime", entry.createTime() != null ? entry.createTime().toString() : null);
+                if (entry.toolCalls() != null) {
+                    ArrayNode toolCallsArray = mapper.createArrayNode();
+                    for (ToolCall tc : entry.toolCalls()) {
+                        ObjectNode tcNode = mapper.createObjectNode();
+                        tcNode.put("id", tc.getId());
+                        tcNode.put("name", tc.getName());
+                        tcNode.put("arguments", tc.getArguments());
+                        toolCallsArray.add(tcNode);
+                    }
+                    entryNode.set("toolCalls", toolCallsArray);
+                }
+                historyArray.add(entryNode);
+            }
+            contextNode.set("history", historyArray);
+
+            ArrayNode toolsArray = mapper.createArrayNode();
+            for (ToolConfigDTO tool : ctx.getTools()) {
+                ObjectNode toolNode = mapper.createObjectNode();
+                toolNode.put("name", tool.getName());
+                toolNode.put("description", tool.getDescription());
+                toolNode.put("parameterSchema", tool.getParameterSchema());
+                toolsArray.add(toolNode);
+            }
+            contextNode.set("tools", toolsArray);
+
+            root.set("context", contextNode);
+            root.put("arguments", arguments);
+
+            return mapper.writeValueAsString(root);
+        } catch (Exception e) {
+            throw new BusinessException(ErrorCode.TOOL_INVOKE_ERROR,
+                    "序列化上下文失败: " + e.getMessage());
+        }
+    }
+
+    private void generateRunnerFile() {
+        try {
+            Files.writeString(runnerPath, RUNNER_TEMPLATE, StandardCharsets.UTF_8);
+            log.info("已生成桥接文件: {}", runnerPath);
+        } catch (Exception e) {
+            throw new BusinessException(ErrorCode.TOOL_INVOKE_ERROR,
+                    "生成桥接文件失败: " + runnerPath + " - " + e.getMessage());
+        }
+    }
+
+    private static final String RUNNER_TEMPLATE = loadRunnerTemplate();
+
+    private static String loadRunnerTemplate() {
+        try (InputStream in = TypeScriptToolInvoker.class.getResourceAsStream("/agent/_runner.ts")) {
+            if (in == null) {
+                throw new BusinessException(ErrorCode.TOOL_INVOKE_ERROR,
+                        "未找到桥接文件模板: /agent/_runner.ts");
+            }
+            return new String(in.readAllBytes(), StandardCharsets.UTF_8);
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new BusinessException(ErrorCode.TOOL_INVOKE_ERROR,
+                    "加载桥接文件模板失败: " + e.getMessage());
+        }
+    }
+}

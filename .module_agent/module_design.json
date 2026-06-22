@@ -1,0 +1,127 @@
+{
+  "requirements": "requirements_design.md",
+  "modules": [
+    {
+      "name": "llm-model",
+      "description": "LLM 模型配置与管理模块",
+      "responsibilities": [
+        "添加、编辑、启用/禁用 LLM 模型",
+        "每个模型独立配置参数（API Key、Base URL、模型名、temperature、max_tokens 等）",
+        "支持验证模型连通性",
+        "提供统一的模型调用接口，屏蔽不同 LLM 提供商的差异",
+        "提供模型调用接口管理器，通过模型注册 ID 获取对应的模型调用接口"
+      ],
+      "dependencies": [],
+      "interfaces": [
+        "GET/POST/PUT/DELETE /api/models",
+        "POST /api/models/{id}/verify",
+        "POST /api/models/{id}/chat",
+        "GET /api/models/{id}/invoker（通过模型ID获取调用接口）"
+      ]
+    },
+    {
+      "name": "tool-registry",
+      "description": "工具注册与管理模块",
+      "responsibilities": [
+        "通过界面注册工具，选择类型（Java/TypeScript/Python），统一填写元信息",
+        "Java 填类路径，TS 填本地路径（入口 index.ts），Python 填本地路径（入口 index.py）",
+        "编辑、删除、启用/禁用已注册的工具",
+        "提供工具执行调度接口，根据类型路由到对应执行器",
+        "提供工具管理器，通过工具名称获取工具实现，供智能体引擎调用"
+      ],
+      "dependencies": [],
+      "interfaces": [
+        "GET/POST/PUT/DELETE /api/tools",
+        "POST /api/tools/{id}/execute",
+        "GET /api/tools/{name}/impl"
+      ]
+    },
+    {
+      "name": "hook-manager",
+      "description": "HOOK 注册与管理模块",
+      "responsibilities": [
+        "HOOK 统一基于 Java 接口实现，注册时登记类名、说明、生效阶段",
+        "编辑、删除、启用/禁用已注册的 HOOK",
+        "在智能体会话生命周期各阶段自动触发已挂载的 HOOK",
+        "提供 HOOK 管理器，供智能体引擎按阶段获取并执行 HOOK"
+      ],
+      "dependencies": [],
+      "interfaces": [
+        "GET/POST/PUT/DELETE /api/hooks"
+      ]
+    },
+    {
+      "name": "agent-config",
+      "description": "智能体配置模块",
+      "responsibilities": [
+        "可视化创建、编辑、删除智能体",
+        "为智能体选择关联 LLM 模型，挂载/卸载工具和 HOOK",
+        "配置智能体行为参数（名称、描述、系统提示词等）"
+      ],
+      "dependencies": [
+        "llm-model",
+        "tool-registry",
+        "hook-manager"
+      ],
+      "interfaces": [
+        "GET/POST/PUT/DELETE /api/agents"
+      ]
+    },
+    {
+      "name": "agent-engine",
+      "description": "智能体执行引擎",
+      "responsibilities": [
+        "加载智能体配置：根据智能体 ID 加载系统提示词、已挂载的工具列表和 HOOK 列表；LLM 模型以智能体配置为默认，支持用户在对话中切换",
+        "上下文管理：会话创建与维护、消息存储、上下文构建、上下文压缩（超10轮替换为历史查询文本）、历史回溯",
+        "对话编排：接收用户消息和所选模型，构建上下文，调用 LLM 统一接口",
+        "工具调用调度：LLM 返回 tool_use 时，通过工具管理器按名称获取工具实现并执行，结果回传 LLM",
+        "系统工具：内置系统级工具（如会话历史查询工具），由引擎自身实现，自动注入",
+        "HOOK 触发：消息接收后（完整数据）、工具调用前/后（完整数据）、消息发送前（累积数据+chunk）",
+        "流式推送：chunk 直接 SSE 推送至前端，前端自行拼装"
+      ],
+      "dependencies": [
+        "llm-model",
+        "tool-registry",
+        "hook-manager",
+        "agent-config"
+      ],
+      "interfaces": [
+        "POST /api/chat（流式 SSE，请求体含 modelId）",
+        "GET /api/sessions/{id}"
+      ]
+    },
+    {
+      "name": "frontend-ui",
+      "description": "前端交互界面",
+      "responsibilities": [
+        "模型配置界面：LLM 模型的添加、编辑、启用/禁用、连通性测试",
+        "工具管理界面：工具的注册、编辑、启用/禁用，支持选择类型和填写元信息",
+        "HOOK 管理界面：HOOK 的注册（类名、说明、生效阶段）、编辑、启用/禁用",
+        "智能体配置界面：智能体的创建、编辑、删除，填写系统提示词，关联默认模型，挂载工具和 HOOK",
+        "对话交互界面：选择智能体和模型，发送消息，流式接收 AI 回复，前端自行拼装显示"
+      ],
+      "dependencies": [
+        "llm-model",
+        "tool-registry",
+        "hook-manager",
+        "agent-config",
+        "agent-engine"
+      ],
+      "interfaces": []
+    },
+    {
+      "name": "framework",
+      "description": "系统框架模块，管理所有模块共用的文件",
+      "responsibilities": [
+        "项目根配置文件管理（pom.xml、package.json、vite.config.ts 等）",
+        "公共工具类和常量定义",
+        "公共异常处理和统一响应体",
+        "数据库基础配置和实体基类",
+        "应用启动和全局配置",
+        "共享的 DTO 和枚举定义"
+      ],
+      "dependencies": [],
+      "interfaces": []
+    }
+  ]
+}

@@ -1,0 +1,75 @@
+// _runner.ts - Auto-generated bridge file for TypeScriptToolInvoker
+
+export interface ToolCall {
+    id?: string;
+    name?: string;
+    arguments?: string;
+}
+
+export interface HistoryEntry {
+    role: string;
+    content?: string;
+    reasoning?: string;
+    toolCallId?: string;
+    sequenceNum: number;
+    createTime?: string;
+    toolCalls?: ToolCall[];
+}
+
+export interface ToolInfo {
+    name: string;
+    description?: string;
+    parameterSchema?: string;
+}
+
+export interface AgentExecutionContext {
+    sessionId?: string;
+    agentId?: string;
+    systemPrompt?: string;
+    modelId?: string;
+    history?: HistoryEntry[];
+    tools?: ToolInfo[];
+}
+
+export interface ExecuteInput {
+    context: AgentExecutionContext;
+    arguments: string;
+}
+
+async function main() {
+    const jsonStr = process.argv[2];
+    if (!jsonStr) {
+        console.error(JSON.stringify({ error: 'Missing JSON argument' }));
+        process.exit(1);
+    }
+
+    let input: ExecuteInput;
+    try {
+        input = JSON.parse(jsonStr);
+    } catch (e: any) {
+        console.error(JSON.stringify({ error: 'JSON parse error: ' + e.message }));
+        process.exit(1);
+    }
+
+    const { context, arguments: args } = input;
+
+    try {
+        const module = await import('./index');
+        if (typeof module.execute !== 'function') {
+            throw new Error('index module does not export execute function');
+        }
+        const result = await module.execute(context, args);
+
+        if (typeof result === 'string') {
+            process.stdout.write(result);
+        } else {
+            process.stdout.write(JSON.stringify(result));
+        }
+    } catch (e: any) {
+        const errMsg = e instanceof Error ? e.message : String(e);
+        console.error(JSON.stringify({ error: errMsg }));
+        process.exit(1);
+    }
+}
+
+main();

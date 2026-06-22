@@ -1,0 +1,113 @@
+{
+  "module_name": "llm-model",
+  "files": [
+    {
+      "path": "src/main/java/com/ghost616/platform/dto/model/Message.java",
+      "description": "对话消息 DTO（role/content/toolCalls/toolCallId）"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/dto/model/UsageInfo.java",
+      "description": "Token 用量信息 DTO（promptTokens/completionTokens/totalTokens）"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/dto/model/ToolDefinition.java",
+      "description": "工具定义 DTO（name/description/parameters JSON Schema）"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/dto/model/ToolCall.java",
+      "description": "工具调用 DTO（id/name/arguments）"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/dto/model/ToolCallDelta.java",
+      "description": "工具调用增量 DTO（流式 chunk 使用，id/name/arguments）"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/dto/model/ChatRequest.java",
+      "description": "对话请求 DTO（messages/tools/temperature/maxTokens/model）"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/dto/model/ChatResponse.java",
+      "description": "对话响应 DTO（content/toolCalls/usage/finishReason）"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/dto/model/ChatChunk.java",
+      "description": "流式对话片段 DTO（delta/reasoning/toolCalls/finishReason/index/hasToolCalls）"
+    },
+    {
+      "path": "src/types/model.ts",
+      "description": "前端模型相关 TypeScript 接口定义"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/entity/ModelConfig.java",
+      "description": "模型配置实体（name/platformType/apiKey/baseUrl/modelName/temperature/maxTokens/status/description）"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/dto/model/ModelConfigDTO.java",
+      "description": "模型配置响应 DTO"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/dto/model/ModelCreateRequest.java",
+      "description": "模型新增请求 DTO（含 @NotBlank/@NotNull 校验）"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/dto/model/ModelUpdateRequest.java",
+      "description": "模型编辑请求 DTO"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/repository/ModelConfigMapper.java",
+      "description": "模型配置 MyBatis-Plus Mapper"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/service/model/ModelConfigService.java",
+      "description": "模型配置业务服务接口（CRUD+状态切换）"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/service/model/ModelConfigServiceImpl.java",
+      "description": "模型配置业务服务实现（新增 ModelInvokerManager 注入，update/toggleStatus/delete 后调用 evict 清除缓存）"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/controller/ModelConfigController.java",
+      "description": "模型配置 REST 控制器（新增 /api/models/platform-config、verify、chat、chat/stream、invoker 端点）"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/dto/model/PlatformConfigResponse.java",
+      "description": "平台配置响应 DTO（platformType/defaultBaseUrl/modelNames）"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/config/RestClientConfig.java",
+      "description": "HTTP 客户端配置（RestClient/WebClient Builder 超时设置）"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/service/model/invoker/ModelInvoker.java",
+      "description": "统一模型调用接口（default toToolDefinition 新增 parameterSchema 空值前置检查）"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/service/model/invoker/ModelInvokerManager.java",
+      "description": "模型调用器工厂管理器（根据 PlatformType 创建 Invoker，支持缓存复用 + 外部注册/覆盖/删除）"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/service/model/invoker/OpenAIInvoker.java",
+      "description": "OpenAI 平台模型调用器（toToolDefinition 新增 parameterSchema 空值前置检查）"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/service/model/invoker/AnthropicInvoker.java",
+      "description": "Anthropic 平台模型调用器（toToolDefinition 新增 parameterSchema 空值前置检查）"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/service/model/invoker/AzureInvoker.java",
+      "description": "Azure OpenAI 平台模型调用器（concatMap 改为直接处理纯 JSON 原始块）"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/service/model/invoker/OllamaInvoker.java",
+      "description": "Ollama 平台模型调用器（toToolDefinition 新增 parameterSchema 空值前置检查）"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/service/model/invoker/DeepSeekInvoker.java",
+      "description": "DeepSeek 平台模型调用器（继承 OpenAIInvoker）"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/service/model/invoker/CustomInvoker.java",
+      "description": "自定义平台模型调用器（通用 OpenAI 兼容端点）"
+    }
+  ]
+}

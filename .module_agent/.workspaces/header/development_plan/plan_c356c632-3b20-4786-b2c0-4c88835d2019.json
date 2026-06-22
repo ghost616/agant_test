@@ -1,0 +1,9 @@
+{
+  "plan_id": "plan_c356c632-3b20-4786-b2c0-4c88835d2019",
+  "module_name": "framework",
+  "development_plan": "修改 README.md LLM 模型管理行，在原有描述末尾补充：各平台模型调用器均已实现，当前仅 DeepSeek 已完成连通性验证及全流程测试。",
+  "session_id": "ses_115f56b00ffeyZ9wIfiub0TY5N",
+  "modified_files": [
+    "README.md"
+  ]
+}

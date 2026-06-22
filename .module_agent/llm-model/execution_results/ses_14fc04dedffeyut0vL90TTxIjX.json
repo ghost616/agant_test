@@ -1,0 +1,10 @@
+{
+  "session_id": "ses_14fc04dedffeyut0vL90TTxIjX",
+  "plan": "ModelInvokerManager 添加 Invoker 缓存复用 + 外部注册/覆盖/删除能力",
+  "status": "success",
+  "modified_files": [
+    "src/main/java/com/ghost616/platform/service/model/invoker/ModelInvokerManager.java"
+  ],
+  "summary": "ModelInvokerManager 新增 ConcurrentHashMap<Long, ModelInvoker> 缓存，getInvoker 改为 cache.computeIfAbsent 实现缓存复用；提取 createInvoker 私有方法包含原有 switch 工厂逻辑；新增 register/evict/clear/cacheSize 四个公共方法，支持外部注册覆盖、按ID移除、清空缓存和监控调试。",
+  "errors": []
+}

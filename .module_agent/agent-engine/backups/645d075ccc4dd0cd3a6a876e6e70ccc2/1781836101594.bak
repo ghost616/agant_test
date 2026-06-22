@@ -1,0 +1,85 @@
+package com.ghost616.platform.service.session;
+
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.ghost616.platform.dto.session.SessionDTO;
+import com.ghost616.platform.entity.Session;
+import com.ghost616.platform.enums.ErrorCode;
+import com.ghost616.platform.exception.BusinessException;
+import com.ghost616.platform.repository.SessionMapper;
+import com.ghost616.platform.service.agent.AgentContextManager;
+import com.ghost616.platform.service.agent.SessionManager;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+@Service
+@RequiredArgsConstructor
+public class SessionServiceImpl implements SessionService {
+
+    private final SessionMapper sessionMapper;
+    private final SessionManager sessionManager;
+    private final AgentContextManager agentContextManager;
+
+    @Override
+    public List<SessionDTO> listSessions(Long agentId) {
+        LambdaQueryWrapper<Session> wrapper = new LambdaQueryWrapper<>();
+        if (agentId != null) {
+            wrapper.eq(Session::getAgentId, agentId);
+        }
+        wrapper.orderByDesc(Session::getCreateTime);
+
+        List<Session> entities = sessionMapper.selectList(wrapper);
+        return entities.stream().map(this::toDTO).toList();
+    }
+
+    @Override
+    public SessionDTO createSession(Long agentId, Long modelId, String title) {
+        Session entity = new Session();
+        entity.setAgentId(agentId);
+        entity.setModelId(modelId);
+        entity.setTitle(title);
+        sessionMapper.insert(entity);
+        return toDTO(entity);
+    }
+
+    @Override
+    public SessionDTO getSession(Long id) {
+        Session entity = sessionMapper.selectById(id);
+        if (entity == null) {
+            throw new BusinessException(ErrorCode.SESSION_NOT_FOUND);
+        }
+        return toDTO(entity);
+    }
+
+    @Override
+    public void deleteSession(Long id) {
+        Session entity = sessionMapper.selectById(id);
+        if (entity == null) {
+            throw new BusinessException(ErrorCode.SESSION_NOT_FOUND);
+        }
+        sessionMapper.deleteById(id);
+        agentContextManager.remove(id);
+    }
+
+    @Override
+    public List<SessionManager.MessageDTO> getMessages(Long sessionId) {
+        Session entity = sessionMapper.selectById(sessionId);
+        if (entity == null) {
+            throw new BusinessException(ErrorCode.SESSION_NOT_FOUND);
+        }
+        return sessionManager.getMessages(sessionId);
+    }
+
+    private SessionDTO toDTO(Session entity) {
+        return SessionDTO.builder()
+                .id(entity.getId())
+                .agentId(entity.getAgentId())
+                .modelId(entity.getModelId())
+                .title(entity.getTitle())
+                .systemPrompt(entity.getSystemPrompt())
+                .createTime(entity.getCreateTime())
+                .updateTime(entity.getUpdateTime())
+                .build();
+    }
+}

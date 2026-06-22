@@ -1,0 +1,13 @@
+{
+  "module_name": "hook-manager",
+  "files": [
+    {
+      "path": "src/main/java/com/ghost616/platform/service/hook/HookInvoker.java",
+      "description": "HOOK 执行契约接口，定义 getPhase() 和 execute(void) 方法"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/service/hook/SystemHook.java",
+      "description": "系统 HOOK 接口，继承 HookInvoker，新增 getIndex() 方法控制执行顺序"
+    }
+  ]
+}

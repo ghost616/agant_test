@@ -1,0 +1,11 @@
+{
+  "src/main/java/com/ghost616/platform/dto/model/ChatChunk.java": "d4f81834bcbcfe48e75e224d85abd279",
+  "src/main/java/com/ghost616/platform/service/model/invoker/OpenAIInvoker.java": "e459dc1302809b89f5959519f8ecfd36",
+  "src/main/java/com/ghost616/platform/service/model/invoker/AnthropicInvoker.java": "3d7b9ba871a00a590d25a34d360bcc59",
+  "src/types/model.ts": "7bde5072051ada357e02b8703c781310",
+  "src/main/java/com/ghost616/platform/service/agent/invoker/ToolCallBufferHook.java": "89e7fbb61a218c130325e986be5a58e2",
+  "src/main/java/com/ghost616/platform/systemtest/MessageSavePostHook.java": "bd5bda4483fa27cbf16af5d6c141bbd5",
+  "src/main/java/com/ghost616/platform/service/agent/ChatService.java": "432ef1273cf0ca936a04488deee8ea71",
+  "src/main/java/com/ghost616/platform/service/model/invoker/ModelInvoker.java": "f3b80f8b19182381901c5b8baf20742c",
+  "src/main/java/com/ghost616/platform/service/model/invoker/OllamaInvoker.java": "f20cb2af77db97f2f22b0d36e3ec9ce7"
+}

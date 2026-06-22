@@ -1,0 +1,108 @@
+package com.ghost616.platform.service.agent.invoker;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghost616.platform.enums.ErrorCode;
+import com.ghost616.platform.exception.BusinessException;
+import com.ghost616.platform.service.agent.AgentExecutionContext;
+import io.modelcontextprotocol.client.McpClient;
+import io.modelcontextprotocol.client.McpSyncClient;
+import io.modelcontextprotocol.client.transport.HttpClientStreamableHttpTransport;
+import io.modelcontextprotocol.spec.McpSchema;
+import lombok.extern.slf4j.Slf4j;
+
+import java.net.http.HttpRequest;
+import java.time.Duration;
+import java.util.List;
+import java.util.Map;
+
+@Slf4j
+public class McpHttpToolInvoker implements ToolInvoker {
+
+    private static final long TIMEOUT_SECONDS = 30;
+
+    private final String mcpServerUrl;
+    private final String toolName;
+    private final Map<String, String> headers;
+
+    public McpHttpToolInvoker(String mcpServerUrl, String toolName, String authConfig) {
+        this.mcpServerUrl = mcpServerUrl;
+        this.toolName = toolName;
+        this.headers = McpAuthConfigParser.parse(authConfig);
+        log.debug("MCP HTTP 调用器初始化: url={}, tool={}", mcpServerUrl, toolName);
+    }
+
+    @Override
+    public String execute(AgentExecutionContext ctx, String arguments) {
+        HttpClientStreamableHttpTransport transport = null;
+        McpSyncClient client = null;
+        try {
+            HttpRequest.Builder requestBuilder = HttpRequest.newBuilder();
+            for (Map.Entry<String, String> entry : headers.entrySet()) {
+                requestBuilder.header(entry.getKey(), entry.getValue());
+            }
+
+            transport = HttpClientStreamableHttpTransport
+                    .builder(mcpServerUrl)
+                    .requestBuilder(requestBuilder)
+                    .build();
+
+            client = McpClient.sync(transport)
+                    .requestTimeout(Duration.ofSeconds(TIMEOUT_SECONDS))
+                    .build();
+            client.initialize();
+
+            Map<String, Object> argsMap = parseArguments(arguments);
+
+            McpSchema.CallToolResult result = client.callTool(
+                    McpSchema.CallToolRequest.builder(this.toolName).arguments(argsMap).build());
+
+            List<McpSchema.Content> contents = result.content();
+            if (contents == null || contents.isEmpty()) {
+                return "";
+            }
+
+            StringBuilder sb = new StringBuilder();
+            for (McpSchema.Content content : contents) {
+                if (content instanceof McpSchema.TextContent textContent) {
+                    sb.append(textContent.text());
+                } else {
+                    sb.append(content.toString());
+                }
+            }
+            return sb.toString();
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("MCP HTTP 工具执行异常: url={}, tool={}", mcpServerUrl, toolName, e);
+            throw new BusinessException(ErrorCode.TOOL_EXECUTE_ERROR,
+                    "MCP HTTP 工具执行异常: " + e.getMessage());
+        } finally {
+            if (client != null) {
+                try {
+                    client.close();
+                } catch (Exception ignored) {
+                }
+            } else if (transport != null) {
+                try {
+                    transport.closeGracefully().block(Duration.ofSeconds(5));
+                } catch (Exception ignored) {
+                }
+            }
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> parseArguments(String arguments) {
+        if (arguments == null || arguments.isBlank()) {
+            return Map.of();
+        }
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            Map<String, Object> result = mapper.readValue(arguments, Map.class);
+            return result == null ? Map.of() : result;
+        } catch (Exception e) {
+            throw new BusinessException(ErrorCode.TOOL_INVOKE_ERROR,
+                    "MCP 工具参数解析失败: " + e.getMessage());
+        }
+    }
+}

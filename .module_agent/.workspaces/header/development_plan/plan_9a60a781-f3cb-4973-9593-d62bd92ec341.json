@@ -1,0 +1,9 @@
+{
+  "plan_id": "plan_9a60a781-f3cb-4973-9593-d62bd92ec341",
+  "module_name": "framework",
+  "development_plan": "修改 README.md 第 17 行 HOOK 描述，由原先的功能性管理描述改为当前实际接口层面的状态描述：\n- 提及 HookInvoker 接口和 SystemHook 接口已定义\n- 覆盖 SESSION_START/END、BEFORE/AFTER MESSAGE、BEFORE/AFTER TOOL_CALL 六个生命周期阶段\n- 说明 HOOK 管理功能后续实现",
+  "session_id": "ses_115f56b00ffeyZ9wIfiub0TY5N",
+  "modified_files": [
+    "README.md"
+  ]
+}

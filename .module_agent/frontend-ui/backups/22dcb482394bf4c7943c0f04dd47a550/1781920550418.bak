@@ -1,0 +1,175 @@
+import { useEffect, useRef, useState } from 'react';
+import { Button, Checkbox, Input, Select } from 'antd';
+import { DeleteOutlined, PlusOutlined } from '@ant-design/icons';
+
+interface PropertyDef {
+  id: number;
+  name: string;
+  type: string;
+  description: string;
+  required: boolean;
+}
+
+interface SchemaEditorProps {
+  value?: string;
+  onChange?: (val: string) => void;
+}
+
+const TYPE_OPTIONS = [
+  { value: 'string', label: 'string' },
+  { value: 'number', label: 'number' },
+  { value: 'boolean', label: 'boolean' },
+  { value: 'object', label: 'object' },
+  { value: 'array', label: 'array' },
+];
+
+const idCounter = { current: 0 };
+
+function nextId(): number {
+  idCounter.current += 1;
+  return idCounter.current;
+}
+
+function parseSchema(value?: string): PropertyDef[] {
+  if (!value) return [];
+  try {
+    const schema = JSON.parse(value);
+    if (
+      schema &&
+      typeof schema === 'object' &&
+      !Array.isArray(schema) &&
+      schema.type === 'object' &&
+      schema.properties &&
+      typeof schema.properties === 'object'
+    ) {
+      const required: string[] = Array.isArray(schema.required) ? schema.required : [];
+      return Object.entries(schema.properties as Record<string, Record<string, unknown>>).map(
+        ([name, def]) => ({
+          id: nextId(),
+          name,
+          type: typeof def?.type === 'string' ? def.type : 'string',
+          description: typeof def?.description === 'string' ? def.description : '',
+          required: required.includes(name),
+        }),
+      );
+    }
+  } catch {
+    // ignore parse errors, start with empty
+  }
+  return [];
+}
+
+function buildSchema(properties: PropertyDef[]): string {
+  const props: Record<string, { type: string; description?: string }> = {};
+  const required: string[] = [];
+  for (const p of properties) {
+    if (!p.name.trim()) continue;
+    const def: { type: string; description?: string } = { type: p.type };
+    if (p.description.trim()) {
+      def.description = p.description.trim();
+    }
+    props[p.name] = def;
+    if (p.required) {
+      required.push(p.name);
+    }
+  }
+  const result: Record<string, unknown> = {
+    type: 'object',
+    properties: props,
+  };
+  if (required.length > 0) {
+    result.required = required;
+  }
+  return JSON.stringify(result);
+}
+
+function SchemaEditor({ value, onChange }: SchemaEditorProps): JSX.Element {
+  const [properties, setProperties] = useState<PropertyDef[]>([]);
+  const lastEmittedRef = useRef<string | undefined>(undefined);
+
+  useEffect(() => {
+    if (value !== undefined && value !== lastEmittedRef.current) {
+      const parsed = parseSchema(value);
+      setProperties(parsed);
+      lastEmittedRef.current = value;
+    }
+  }, [value]);
+
+  const notify = (newProps: PropertyDef[]): void => {
+    setProperties(newProps);
+    const schema = buildSchema(newProps);
+    lastEmittedRef.current = schema;
+    onChange?.(schema);
+  };
+
+  const handleAdd = (): void => {
+    notify([
+      ...properties,
+      { id: nextId(), name: '', type: 'string', description: '', required: false },
+    ]);
+  };
+
+  const handleDelete = (id: number): void => {
+    notify(properties.filter((p) => p.id !== id));
+  };
+
+  const handlePropChange = (
+    id: number,
+    field: keyof PropertyDef,
+    val: string | boolean,
+  ): void => {
+    notify(properties.map((p) => (p.id === id ? { ...p, [field]: val } : p)));
+  };
+
+  return (
+    <div>
+      {properties.map((prop) => (
+        <div
+          key={prop.id}
+          style={{
+            display: 'flex',
+            gap: 8,
+            marginBottom: 8,
+            alignItems: 'center',
+          }}
+        >
+          <Input
+            placeholder="属性名"
+            value={prop.name}
+            onChange={(e) => handlePropChange(prop.id, 'name', e.target.value)}
+            style={{ width: 120 }}
+          />
+          <Select
+            value={prop.type}
+            onChange={(val) => handlePropChange(prop.id, 'type', val)}
+            options={TYPE_OPTIONS}
+            style={{ width: 110 }}
+          />
+          <Input
+            placeholder="描述"
+            value={prop.description}
+            onChange={(e) => handlePropChange(prop.id, 'description', e.target.value)}
+            style={{ flex: 1 }}
+          />
+          <Checkbox
+            checked={prop.required}
+            onChange={(e) => handlePropChange(prop.id, 'required', e.target.checked)}
+          >
+            必填
+          </Checkbox>
+          <Button
+            type="text"
+            danger
+            icon={<DeleteOutlined />}
+            onClick={() => handleDelete(prop.id)}
+          />
+        </div>
+      ))}
+      <Button type="dashed" onClick={handleAdd} icon={<PlusOutlined />} block>
+        添加属性
+      </Button>
+    </div>
+  );
+}
+
+export default SchemaEditor;

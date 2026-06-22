@@ -1,0 +1,398 @@
+import { useCallback, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+  Button,
+  Form,
+  Input,
+  InputNumber,
+  message,
+  Modal,
+  Popconfirm,
+  Select,
+  Space,
+  Switch,
+  Table,
+  Tag,
+} from 'antd';
+import type { ColumnsType } from 'antd/es/table';
+import type { CommonStatus, PlatformType } from '../../types/common';
+import type { ModelConfig, ModelFormData, PlatformConfig } from '../../types/model';
+import {
+  createModel,
+  deleteModel,
+  getPlatformConfig,
+  listModels,
+  updateModel,
+  updateModelStatus,
+} from '../../services/model';
+
+const PLATFORM_TYPE_LABELS: Record<PlatformType, string> = {
+  OPENAI: 'OpenAI',
+  ANTHROPIC: 'Anthropic',
+  AZURE: 'Azure',
+  OLLAMA: 'Ollama',
+  DEEPSEEK: 'DeepSeek',
+  CUSTOM: '自定义',
+};
+
+const PLATFORM_TYPE_OPTIONS = Object.entries(PLATFORM_TYPE_LABELS).map(([value, label]) => ({
+  value,
+  label,
+}));
+
+const STATUS_LABELS: Record<CommonStatus, string> = {
+  ENABLED: '启用',
+  DISABLED: '禁用',
+};
+
+const STATUS_OPTIONS = Object.entries(STATUS_LABELS).map(([value, label]) => ({
+  value,
+  label,
+}));
+
+function ModelList(): JSX.Element {
+  const navigate = useNavigate();
+  const [dataSource, setDataSource] = useState<ModelConfig[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [searchName, setSearchName] = useState('');
+  const [filterPlatformType, setFilterPlatformType] = useState<string | undefined>(undefined);
+  const [filterStatus, setFilterStatus] = useState<string | undefined>(undefined);
+
+  const [modalVisible, setModalVisible] = useState(false);
+  const [editingModel, setEditingModel] = useState<ModelConfig | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [form] = Form.useForm<ModelFormData>();
+
+  const [platformConfigs, setPlatformConfigs] = useState<PlatformConfig[]>([]);
+
+  useEffect(() => {
+    getPlatformConfig()
+      .then(setPlatformConfigs)
+      .catch(() => message.error('获取平台配置失败'));
+  }, []);
+
+  const watchedPlatformType = Form.useWatch('platformType', form) as PlatformType | undefined;
+
+  const currentConfig = platformConfigs.find(
+    (c) => c.platformType === watchedPlatformType,
+  );
+  const needsManualInput = !currentConfig?.defaultBaseUrl || !currentConfig?.modelNames?.length;
+  const showBaseUrl = needsManualInput;
+  const modelNameSelectOptions =
+    !needsManualInput && currentConfig?.modelNames?.length
+      ? currentConfig.modelNames.map((n) => ({ value: n, label: n }))
+      : [];
+  const isModelNameSelect = modelNameSelectOptions.length > 0;
+  const isCustom = watchedPlatformType === 'CUSTOM';
+
+  useEffect(() => {
+    if (editingModel) return;
+    if (!watchedPlatformType) return;
+    const config = platformConfigs.find((c) => c.platformType === watchedPlatformType);
+    if (!config) return;
+    form.setFieldValue('baseUrl', config.defaultBaseUrl);
+    form.setFieldValue('modelName', undefined);
+  }, [watchedPlatformType, editingModel, platformConfigs, form]);
+
+  const fetchList = useCallback(async () => {
+    setLoading(true);
+    try {
+      const result = await listModels({
+        name: searchName || undefined,
+        platformType: filterPlatformType,
+        status: filterStatus,
+      });
+      setDataSource(result);
+    } catch {
+      message.error('获取模型列表失败');
+    } finally {
+      setLoading(false);
+    }
+  }, [searchName, filterPlatformType, filterStatus]);
+
+  useEffect(() => {
+    fetchList();
+  }, [fetchList]);
+
+  const handleSearch = (value: string): void => {
+    setSearchName(value);
+  };
+
+  const handleAdd = (): void => {
+    setEditingModel(null);
+    form.resetFields();
+    const openaiConfig = platformConfigs.find((c) => c.platformType === 'OPENAI');
+    form.setFieldsValue({
+      platformType: 'OPENAI' as PlatformType,
+      baseUrl: openaiConfig?.defaultBaseUrl ?? undefined,
+    });
+    setModalVisible(true);
+  };
+
+  const handleEdit = (record: ModelConfig): void => {
+    setEditingModel(record);
+    setModalVisible(true);
+  };
+
+  useEffect(() => {
+    if (!editingModel || !modalVisible) return;
+    form.setFieldsValue({
+      name: editingModel.name,
+      platformType: editingModel.platformType,
+      apiKey: editingModel.apiKey,
+      baseUrl: editingModel.baseUrl,
+      modelName: editingModel.modelName,
+      temperature: editingModel.temperature,
+      maxTokens: editingModel.maxTokens,
+      description: editingModel.description,
+    });
+  }, [editingModel, modalVisible, form]);
+
+  const handleDelete = async (record: ModelConfig): Promise<void> => {
+    try {
+      await deleteModel(record.id);
+      message.success('删除成功');
+      fetchList();
+    } catch {
+      message.error('删除失败');
+    }
+  };
+
+  const handleStatusChange = async (
+    checked: boolean,
+    record: ModelConfig,
+  ): Promise<void> => {
+    const status: CommonStatus = checked ? 'ENABLED' : 'DISABLED';
+    try {
+      await updateModelStatus(record.id, status);
+      message.success(status === 'ENABLED' ? '已启用' : '已禁用');
+      fetchList();
+    } catch {
+      message.error('状态更新失败');
+    }
+  };
+
+  const handleModalOk = async (): Promise<void> => {
+    let values: ModelFormData;
+    try {
+      values = await form.validateFields();
+    } catch {
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      if (editingModel) {
+        await updateModel(editingModel.id, values);
+        message.success('更新成功');
+      } else {
+        await createModel(values);
+        message.success('创建成功');
+      }
+      setModalVisible(false);
+      fetchList();
+    } catch {
+      message.error(editingModel ? '更新失败' : '创建失败');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const columns: ColumnsType<ModelConfig> = [
+    {
+      title: '名称',
+      dataIndex: 'name',
+      width: 160,
+      ellipsis: true,
+    },
+    {
+      title: '平台类型',
+      dataIndex: 'platformType',
+      width: 120,
+      render: (value: PlatformType) => PLATFORM_TYPE_LABELS[value] || value,
+    },
+    {
+      title: '模型名称',
+      dataIndex: 'modelName',
+      width: 160,
+      ellipsis: true,
+    },
+    {
+      title: '温度',
+      dataIndex: 'temperature',
+      width: 80,
+      align: 'center',
+    },
+    {
+      title: '最大 Token',
+      dataIndex: 'maxTokens',
+      width: 100,
+      align: 'center',
+    },
+    {
+      title: '状态',
+      dataIndex: 'status',
+      width: 80,
+      render: (value: CommonStatus) => (
+        <Tag color={value === 'ENABLED' ? 'green' : 'red'}>
+          {STATUS_LABELS[value]}
+        </Tag>
+      ),
+    },
+    {
+      title: '创建时间',
+      dataIndex: 'createTime',
+      width: 180,
+    },
+    {
+      title: '操作',
+      key: 'actions',
+      width: 260,
+      render: (_: unknown, record: ModelConfig) => (
+        <Space size="small">
+          <Button
+            type="link"
+            size="small"
+            onClick={() => navigate(`/models/${record.id}/test`)}
+          >
+            测试
+          </Button>
+          <Button type="link" size="small" onClick={() => handleEdit(record)}>
+            编辑
+          </Button>
+          <Popconfirm
+            title="确定删除该模型？"
+            onConfirm={() => handleDelete(record)}
+          >
+            <Button type="link" size="small" danger>
+              删除
+            </Button>
+          </Popconfirm>
+          <Switch
+            checked={record.status === 'ENABLED'}
+            onChange={(checked) => handleStatusChange(checked, record)}
+          />
+        </Space>
+      ),
+    },
+  ];
+
+  return (
+    <div>
+      <Space style={{ marginBottom: 16 }} wrap>
+        <Input.Search
+          placeholder="搜索模型名称"
+          allowClear
+          style={{ width: 240 }}
+          onSearch={handleSearch}
+        />
+        <Select
+          placeholder="平台类型"
+          allowClear
+          style={{ width: 140 }}
+          options={PLATFORM_TYPE_OPTIONS}
+          value={filterPlatformType}
+          onChange={(value) => {
+            setFilterPlatformType(value);
+          }}
+        />
+        <Select
+          placeholder="状态"
+          allowClear
+          style={{ width: 120 }}
+          options={STATUS_OPTIONS}
+          value={filterStatus}
+          onChange={(value) => {
+            setFilterStatus(value);
+          }}
+        />
+        <Button type="primary" onClick={handleAdd}>
+          新增模型
+        </Button>
+      </Space>
+
+      <Table<ModelConfig>
+        rowKey="id"
+        columns={columns}
+        dataSource={dataSource}
+        loading={loading}
+        pagination={false}
+        scroll={{ x: 1100 }}
+      />
+
+      <Modal
+        title={editingModel ? '编辑模型' : '新增模型'}
+        open={modalVisible}
+        onOk={handleModalOk}
+        onCancel={() => setModalVisible(false)}
+        confirmLoading={submitting}
+        width={600}
+        destroyOnClose
+      >
+        <Form form={form} layout="vertical" preserve={false}>
+          <Form.Item
+            name="name"
+            label="名称"
+            rules={[{ required: true, message: '请输入模型名称' }]}
+          >
+            <Input placeholder="请输入模型名称" maxLength={100} />
+          </Form.Item>
+          <Form.Item
+            name="platformType"
+            label="平台类型"
+            rules={[{ required: true, message: '请选择平台类型' }]}
+          >
+            <Select options={PLATFORM_TYPE_OPTIONS} placeholder="请选择平台类型" />
+          </Form.Item>
+          <Form.Item name="apiKey" label="API Key">
+            <Input.Password placeholder="请输入 API Key" />
+          </Form.Item>
+          <Form.Item
+            name="baseUrl"
+            label="Base URL"
+            hidden={!showBaseUrl}
+            rules={[{ required: true, message: '请输入 Base URL' }]}
+          >
+            <Input
+              placeholder="请输入 Base URL"
+              disabled={!needsManualInput}
+            />
+          </Form.Item>
+          <Form.Item
+            name="modelName"
+            label="模型名称"
+            rules={[
+              {
+                required: true,
+                message: isModelNameSelect ? '请选择模型' : '请输入模型名称',
+              },
+            ]}
+          >
+            {isModelNameSelect ? (
+              <Select
+                options={modelNameSelectOptions}
+                placeholder="请选择模型"
+                showSearch
+              />
+            ) : (
+              <Input placeholder="如 gpt-4o、claude-3-opus" />
+            )}
+          </Form.Item>
+          <Space size="large">
+            <Form.Item name="temperature" label="温度">
+              <InputNumber min={0} max={2} step={0.1} style={{ width: 140 }} />
+            </Form.Item>
+            <Form.Item name="maxTokens" label="最大 Token">
+              <InputNumber min={1} max={200000} style={{ width: 140 }} />
+            </Form.Item>
+          </Space>
+          <Form.Item name="description" label="描述">
+            <Input.TextArea placeholder="请输入描述" rows={3} maxLength={500} showCount />
+          </Form.Item>
+        </Form>
+      </Modal>
+    </div>
+  );
+}
+
+export default ModelList;

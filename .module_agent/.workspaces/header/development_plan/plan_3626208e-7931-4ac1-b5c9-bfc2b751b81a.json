@@ -1,0 +1,9 @@
+{
+  "plan_id": "plan_3626208e-7931-4ac1-b5c9-bfc2b751b81a",
+  "module_name": "framework",
+  "development_plan": "修改 README.md \"四种工具实现方式\"表格中 TypeScript 和 Python 两行的\"实现方式\"和\"第三方开发指南\"列，补充以下信息：\n\nTypeScript 实现方式：补充\"_runner.ts 桥接文件可手动放入工具目录或首次执行时自动生成\"\nTypeScript 开发指南：补充环境依赖（bun 或 node+tsx 任一可用）、函数签名（execute(ctx: AgentExecutionContext, args: string): string）、类型导入来源（从 ./_runner 导入）、参数与返回说明\n\nPython 实现方式：补充\"_runner.py 桥接文件可手动放入工具目录或首次执行时自动生成\"\nPython 开发指南：补充环境依赖（Python 3.10+）、函数签名（execute(context, arguments)）、类型导入来源（从 _runner 模块导入）、参数与返回说明\n\nJava 和 MCP HTTP 行不变。保持纯概念风格。",
+  "session_id": "ses_115f56b00ffeyZ9wIfiub0TY5N",
+  "modified_files": [
+    "README.md"
+  ]
+}

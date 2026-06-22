@@ -1,0 +1,131 @@
+package com.ghost616.platform.service.agent.invoker;
+
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
+
+import com.ghost616.platform.dto.model.ChatChunk;
+import com.ghost616.platform.dto.model.ToolCallDelta;
+import com.ghost616.platform.enums.HookPhase;
+import com.ghost616.platform.service.agent.AgentExecutionContext;
+import com.ghost616.platform.service.agent.SessionManager;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
+
+@Slf4j
+@Component
+public class ToolCallBufferHook implements SystemPostHook {
+
+    private static class ToolAccumulator {
+        final StringBuilder id = new StringBuilder();
+        final StringBuilder name = new StringBuilder();
+        final StringBuilder arguments = new StringBuilder();
+    }
+
+    private static class SessionBuffer {
+        final StringBuilder contentBuffer = new StringBuilder();
+        final ConcurrentHashMap<String, ToolAccumulator> toolCallBuffers = new ConcurrentHashMap<>();
+    }
+
+    private final ConcurrentHashMap<Long, Deque<SessionManager.ToolCallData>> toolCallQueues = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Long, SessionBuffer> buffers = new ConcurrentHashMap<>();
+
+    @Override
+    public HookPhase getPhase() {
+        return HookPhase.AFTER_MESSAGE_RECEIVE;
+    }
+
+    @Override
+    public void execute(AgentExecutionContext ctx, ChatChunk chunk) {
+        if (chunk == null) {
+            return;
+        }
+        Long sessionId = ctx.getSessionId();
+
+        if ("tool_calls".equals(chunk.getFinishReason())) {
+            SessionBuffer sb = buffers.remove(sessionId);
+            if (sb == null) {
+                return;
+            }
+            if (!sb.toolCallBuffers.isEmpty()) {
+                List<SessionManager.ToolCallData> toolCalls = sb.toolCallBuffers.values().stream()
+                        .map(e -> new SessionManager.ToolCallData(
+                                e.id.toString(),
+                                e.name.toString(),
+                                e.arguments.toString()))
+                        .collect(Collectors.toList());
+                Deque<SessionManager.ToolCallData> queue = toolCallQueues.computeIfAbsent(sessionId,
+                        k -> new ArrayDeque<>());
+                queue.addAll(toolCalls);
+                log.info("sessionId={} 已入队 {} 个工具调用", sessionId, toolCalls.size());
+            }
+            return;
+        }
+
+        SessionBuffer sb = buffers.computeIfAbsent(sessionId, k -> new SessionBuffer());
+        if (chunk.getDelta() != null) {
+            sb.contentBuffer.append(chunk.getDelta());
+        }
+        ToolCallDelta tc = chunk.getToolCall();
+        if (tc != null) {
+            String key = tc.getId();
+            if (key == null && !sb.toolCallBuffers.isEmpty()) {
+                key = sb.toolCallBuffers.keySet().stream().reduce((first, second) -> second).orElse(null);
+            }
+            if (key == null) {
+                key = "";
+            }
+            ToolAccumulator acc = sb.toolCallBuffers.computeIfAbsent(key, k -> new ToolAccumulator());
+            if (tc.getId() != null) {
+                acc.id.append(tc.getId());
+            }
+            if (tc.getName() != null) {
+                acc.name.append(tc.getName());
+            }
+            if (tc.getArguments() != null) {
+                acc.arguments.append(tc.getArguments());
+            }
+        }
+    }
+
+    public void enqueue(Long sessionId, SessionManager.ToolCallData toolCallData) {
+        Deque<SessionManager.ToolCallData> queue = toolCallQueues.computeIfAbsent(sessionId,
+                k -> new ArrayDeque<>());
+        queue.addLast(toolCallData);
+    }
+
+    public SessionManager.ToolCallData poll(Long sessionId) {
+        Deque<SessionManager.ToolCallData> queue = toolCallQueues.get(sessionId);
+        if (queue == null || queue.isEmpty()) {
+            return null;
+        }
+        return queue.pollFirst();
+    }
+
+    public SessionManager.ToolCallData peek(Long sessionId) {
+        Deque<SessionManager.ToolCallData> queue = toolCallQueues.get(sessionId);
+        if (queue == null || queue.isEmpty()) {
+            return null;
+        }
+        return queue.peekFirst();
+    }
+
+    public boolean hasPending(Long sessionId) {
+        Deque<SessionManager.ToolCallData> queue = toolCallQueues.get(sessionId);
+        return queue != null && !queue.isEmpty();
+    }
+
+    public void clear(Long sessionId) {
+        buffers.remove(sessionId);
+        toolCallQueues.remove(sessionId);
+        log.debug("sessionId={} 已清理工具调用缓冲数据", sessionId);
+    }
+
+    public String getContent(Long sessionId) {
+        SessionBuffer sb = buffers.get(sessionId);
+        return sb != null ? sb.contentBuffer.toString() : null;
+    }
+}

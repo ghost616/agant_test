@@ -1,0 +1,9 @@
+{
+  "plan_id": "plan_58a2c5da-aaf6-45d8-b7b6-4b6242a0d2e5",
+  "module_name": "framework",
+  "development_plan": "修改 README.md 两处：\n1. 第 19 行：将\"多智能体会话执行，支持工具调用与推理链\"去掉\"多智能体\"，结合上下文合理表述\n2. 在项目结构树之后新增\"## 智能体执行流程\"章节，介绍引擎执行流程：加载智能体配置和上下文 → 构建消息并调用 LLM → 工具调用调度（LLM 返回 tool_use 时通过 ToolManager 获取工具执行并回传结果）→ HOOK 生命周期触发 → SSE 流式推送至前端",
+  "session_id": "ses_115f56b00ffeyZ9wIfiub0TY5N",
+  "modified_files": [
+    "README.md"
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "plan_id": "plan_15cce493-243e-45f6-a91c-7b9654edc675",
+  "module_name": "framework",
+  "development_plan": "修改 README.md 第 3 行，将\"AI 智能体调试与管理平台。\"替换为\"AI 智能体调试与管理平台，基于 opencode 及 module_agent 插件，由 AI 完成需求设计、代码规范编写、模块设计、编码实现与代码审查，人工进行方案决策与把关。\"",
+  "session_id": "ses_115f56b00ffeyZ9wIfiub0TY5N",
+  "modified_files": [
+    "README.md"
+  ]
+}

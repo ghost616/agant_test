@@ -1,0 +1,155 @@
+## 概述 / 适用范围
+- 语言: Java 17（后端），TypeScript 5（前端），TypeScript（工具脚本），Python 3.10+（工具脚本）
+- 架构: 前后端分离，REST API 通信
+- 框架: Spring Boot 3（后端），React 18 + Vite（前端）
+- 构建: Maven（后端），Vite（前端）
+- 数据库: 可配置关系型数据库，默认内置 H2
+- 目标: 统一团队代码风格，提高代码可读性和可维护性
+- 适用范围: 所有开发人员，所有模块
+
+## 命名规范
+### Java 后端
+- 包名: 全小写，点分隔（com.ghost616.platform.module）
+- 类名: 大驼峰（PascalCase），如 AgentService、ToolRegistry
+- 接口名: 大驼峰，不加 I 前缀，如 HookInterceptor、ToolExecutor
+- 方法名: 小驼峰（camelCase），动词开头，如 registerTool、executeAgent
+- 变量名: 小驼峰，有意义全名，如 agentName、toolList
+- 常量: 全大写，下划线分隔，如 MAX_SESSION_ROUNDS
+- 枚举: 大驼峰类名，枚举值全大写
+
+### TypeScript / React 前端
+- 文件名: 组件用大驼峰（AgentCard.tsx），工具/hook 用小驼峰（useApi.ts）
+- 组件名: 大驼峰（PascalCase），如 ToolRegistryPanel
+- 函数/变量: 小驼峰，如 fetchModels、handleSubmit
+- 接口/类型: 大驼峰，如 AgentConfig、ToolMeta
+- 常量: 全大写，下划线分隔，如 API_BASE_URL
+
+### 工具脚本（TypeScript / Python）
+- 工具代码规范由实现方自行管理，平台仅规定入口函数定义：
+  - TypeScript 入口文件 index.ts，导出 `execute` 函数
+  - Python 入口文件 index.py，定义 `execute` 函数
+
+## 格式规范
+### Java
+- 缩进: 4 空格
+- 行宽: 120 字符
+- 大括号: 行尾开，下一行闭（K&R 风格）
+- import: 不使用通配符，按字母序排列，分组：java/jakarta → 第三方 → 项目内
+- 空行: 方法间一个空行，逻辑块间一个空行
+
+### TypeScript / React
+- 缩进: 2 空格
+- 行宽: 100 字符
+- 大括号: JSX 属性换行时首属性另起一行
+- import: 第三方包在上，项目内导入在下，按字母序排列
+- 行尾分号: 必须
+- 引号: 字符串用单引号，JSX 属性用双引号
+
+## 注释规范
+### Java
+- 类/接口: Javadoc，说明用途和主要职责
+- 公共方法: Javadoc，包含 @param、@return、@throws
+- 私有方法: 简单说明即可
+- 行内注释: 仅解释复杂逻辑，不描述"做什么"（代码已说明）
+- TODO/FIXME: 格式为 `// TODO: 描述` `// FIXME: 描述`，需标注日期和作者
+
+### TypeScript / React
+- 组件: JSDoc 说明用途和 Props
+- 公共函数: JSDoc 包含 @param、@returns
+- 复杂逻辑: 行内注释说明意图
+- TODO/FIXME: 格式为 `// TODO(作者): 描述`
+
+## 编码最佳实践
+### Java
+- 单一职责: 每个类只负责一个模块功能
+- 方法长度: 不超过 50 行
+- 魔法数字: 使用常量或枚举替代
+- 异常处理: 业务异常统一使用自定义异常类，禁止吞异常
+- 日志: 使用 SLF4J，异常日志包含上下文信息
+- 空判断: 使用 Optional 或 Objects.requireNonNull
+- 依赖注入: 使用 Lombok @RequiredArgsConstructor 构造器注入
+- 实体类: 使用 Lombok @Data、@Builder 等注解替代手写 getter/setter
+
+### TypeScript / React
+- 组件: 单一职责，一个组件只做一件事
+- 函数长度: 不超过 40 行
+- 类型: 禁止 any，使用明确类型
+- 状态管理: 优先使用 React hooks
+- 异常: API 调用统一错误处理，用户友好提示
+- 魔法数字/字符串: 提取为常量
+
+## 文件组织与模块化
+### 后端 Java（Spring Boot）
+```
+src/main/java/com/ghost616/platform/
+├── config/          # 配置类
+├── controller/      # REST 控制器
+├── service/         # 业务服务
+│   ├── agent/       # 智能体服务
+│   ├── tool/        # 工具服务
+│   ├── model/       # 模型服务
+│   └── hook/        # HOOK 服务
+├── repository/      # 数据访问层
+├── entity/          # 数据库实体
+├── dto/             # 数据传输对象
+├── enums/           # 枚举
+├── exception/       # 异常定义
+└── util/            # 工具类
+```
+
+### 前端 React
+```
+src/
+├── components/      # 通用组件
+├── pages/           # 页面组件
+│   ├── tools/       # 工具管理
+│   ├── agents/      # 智能体配置
+│   ├── models/      # 模型配置
+│   ├── hooks/       # HOOK 管理
+│   └── chat/        # 对话交互
+├── hooks/           # 自定义 hooks
+├── services/        # API 请求封装
+├── types/           # TypeScript 类型定义
+└── utils/           # 工具函数
+```
+
+### 模块划分原则
+- 按功能域划分模块，模块间通过接口通信
+- 公共 API 通过模块根目录 index 统一暴露
+- 避免循环依赖，发现循环依赖需重构
+
+## 测试规范
+### Java 后端
+- 测试框架: JUnit 5 + Mockito
+- 测试文件: 与被测类同包，类名加 Test 后缀（AgentServiceTest）
+- 覆盖率: 核心业务逻辑（service 层）覆盖率 ≥ 70%
+- 单元测试: 覆盖 service 层所有公共方法
+- 集成测试: 覆盖 controller 层关键 API
+
+### TypeScript 前端
+- 测试框架: Vitest + React Testing Library
+- 测试文件: 与组件同目录，文件名加 .test 后缀（AgentCard.test.tsx）
+- 覆盖率: 暂不强制，鼓励核心组件覆盖
+- 单元测试: 覆盖工具函数和关键 hooks
+
+## 其他专项
+### 日志规范
+- 框架: SLF4J + Logback
+- 级别: ERROR（系统错误）、WARN（可恢复异常）、INFO（关键业务流程）、DEBUG（调试信息）
+- 格式: `[时间] [级别] [线程] [类名] - 消息`
+- 规则: 禁止日志中打印敏感信息（API Key、密码等）
+
+### 安全规范
+- 敏感信息: API Key、密码等不在代码和日志中硬编码，使用环境变量或配置文件
+- 输入校验: 所有外部输入必须校验，防止注入
+- SQL: 使用 JPA 参数化查询，禁止拼接 SQL
+
+### 错误码约定
+- 格式: 模块前缀-错误类型-序号，如 TOOL-REG-001
+- 模块前缀: SYS（系统）、TOOL（工具）、AGENT（智能体）、HOOK（HOOK）、MODEL（模型）、SESSION（会话）
+- 统一异常响应体: `{ "code": "TOOL-REG-001", "message": "工具注册失败", "detail": "..." }`
+
+### Git Commit 规范
+- 格式: `<type>: <subject>`
+- type: feat（新功能）、fix（修复）、refactor（重构）、docs（文档）、test（测试）、chore（构建/工具）
+- subject: 简明扼要，不超过 72 字符，中文

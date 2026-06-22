@@ -1,0 +1,84 @@
+package com.ghost616.platform.service.agent.invoker;
+
+import com.ghost616.platform.service.agent.AgentExecutionContext;
+import lombok.extern.slf4j.Slf4j;
+
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+@Slf4j
+public class TypeScriptToolInvoker implements ToolInvoker {
+
+    private static final long TIMEOUT_SECONDS = 30;
+
+    private final String scriptPath;
+
+    public TypeScriptToolInvoker(String scriptPath) {
+        this.scriptPath = scriptPath;
+    }
+
+    @Override
+    public String execute(AgentExecutionContext ctx, String arguments) {
+        Path path = Path.of(scriptPath);
+        if (!Files.exists(path)) {
+            throw new IllegalArgumentException("脚本文件不存在: " + scriptPath);
+        }
+
+        List<String> command = buildCommand(path, arguments);
+        try {
+            ProcessBuilder pb = new ProcessBuilder(command);
+            pb.redirectErrorStream(true);
+            Process process = pb.start();
+
+            StringBuilder output = new StringBuilder();
+            try (BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    output.append(line).append("\n");
+                }
+            }
+
+            boolean finished = process.waitFor(TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            if (!finished) {
+                process.destroyForcibly();
+                throw new RuntimeException("脚本执行超时（" + TIMEOUT_SECONDS + "秒）: " + scriptPath);
+            }
+
+            int exitCode = process.exitValue();
+            if (exitCode != 0) {
+                log.error("脚本执行失败, exitCode={}, output={}", exitCode, output);
+                throw new RuntimeException("脚本执行失败, exitCode=" + exitCode + ": " + output.toString().trim());
+            }
+
+            return output.toString().trim();
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("执行脚本异常: {}", scriptPath, e);
+            throw new RuntimeException("执行脚本异常: " + scriptPath, e);
+        }
+    }
+
+    private List<String> buildCommand(Path scriptPath, String arguments) {
+        String fileName = scriptPath.getFileName().toString().toLowerCase();
+        List<String> command = new ArrayList<>();
+
+        if (fileName.endsWith(".ts")) {
+            command.add("npx");
+            command.add("tsx");
+        } else {
+            command.add("node");
+        }
+
+        command.add(scriptPath.toAbsolutePath().toString());
+        command.add(arguments != null ? arguments : "{}");
+        return command;
+    }
+}

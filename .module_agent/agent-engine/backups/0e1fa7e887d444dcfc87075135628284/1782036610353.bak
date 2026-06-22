@@ -1,0 +1,157 @@
+package com.ghost616.platform.service.agent;
+
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghost616.platform.dto.tool.ToolConfigDTO;
+import com.ghost616.platform.entity.Message;
+import com.ghost616.platform.entity.MessageToolCall;
+import com.ghost616.platform.entity.SessionTool;
+import com.ghost616.platform.enums.ToolType;
+import com.ghost616.platform.repository.MessageMapper;
+import com.ghost616.platform.repository.MessageToolCallMapper;
+import com.ghost616.platform.repository.SessionToolMapper;
+import com.ghost616.platform.service.agent.invoker.McpAuthConfigParser;
+import com.ghost616.platform.service.agent.invoker.McpJsonRpcClient;
+import com.ghost616.platform.service.tool.ToolConfigService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class SessionManager {
+
+    private final MessageMapper messageMapper;
+    private final MessageToolCallMapper messageToolCallMapper;
+    private final SessionToolMapper sessionToolMapper;
+    private final ToolConfigService toolConfigService;
+
+    public Long saveMessage(Long sessionId, String role, String content, String reasoning,
+                            String toolCallId, List<ToolCallData> toolCalls) {
+        Message message = new Message();
+        message.setSessionId(sessionId);
+        message.setRole(role);
+        message.setContent(content);
+        message.setReasoning(reasoning);
+        message.setToolCallId(toolCallId);
+
+        LambdaQueryWrapper<Message> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Message::getSessionId, sessionId)
+                .orderByDesc(Message::getSequenceNum)
+                .last("LIMIT 1");
+        Message lastMessage = messageMapper.selectOne(wrapper);
+        int sequenceNum = (lastMessage != null) ? lastMessage.getSequenceNum() + 1 : 1;
+        message.setSequenceNum(sequenceNum);
+
+        messageMapper.insert(message);
+        Long messageId = message.getId();
+
+        if (toolCalls != null && !toolCalls.isEmpty()) {
+            for (ToolCallData tc : toolCalls) {
+                MessageToolCall mtc = new MessageToolCall();
+                mtc.setMessageId(messageId);
+                mtc.setToolCallId(tc.toolCallId());
+                mtc.setToolCallName(tc.toolCallName());
+                mtc.setToolCallArguments(tc.toolCallArguments());
+                messageToolCallMapper.insert(mtc);
+            }
+        }
+
+        return messageId;
+    }
+
+    public List<MessageDTO> getMessages(Long sessionId) {
+        LambdaQueryWrapper<Message> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Message::getSessionId, sessionId)
+                .orderByAsc(Message::getSequenceNum);
+        List<Message> messages = messageMapper.selectList(wrapper);
+
+        List<MessageDTO> result = new ArrayList<>();
+        for (Message msg : messages) {
+            LambdaQueryWrapper<MessageToolCall> tcWrapper = new LambdaQueryWrapper<>();
+            tcWrapper.eq(MessageToolCall::getMessageId, msg.getId());
+            List<MessageToolCall> toolCalls = messageToolCallMapper.selectList(tcWrapper);
+
+            List<ToolCallData> toolCallDataList = toolCalls.stream()
+                    .map(tc -> new ToolCallData(tc.getToolCallId(), tc.getToolCallName(), tc.getToolCallArguments()))
+                    .collect(Collectors.toList());
+
+            result.add(new MessageDTO(
+                    msg.getId(), msg.getSessionId(), msg.getRole(), msg.getContent(),
+                    msg.getReasoning(), msg.getToolCallId(), msg.getSequenceNum(),
+                    msg.getCreateTime(), toolCallDataList));
+        }
+
+        return result;
+    }
+
+    public List<ToolConfigDTO> getSessionTools(Long sessionId) {
+        LambdaQueryWrapper<SessionTool> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(SessionTool::getSessionId, sessionId);
+        List<SessionTool> sessionTools = sessionToolMapper.selectList(wrapper);
+
+        List<ToolConfigDTO> result = new ArrayList<>();
+        for (SessionTool st : sessionTools) {
+            ToolConfigDTO dto = toolConfigService.getById(st.getToolId());
+            if (dto.getToolType() == ToolType.MCP_HTTP) {
+                result.addAll(expandMcpTools(dto));
+            } else {
+                result.add(dto);
+            }
+        }
+        return result;
+    }
+
+    private List<ToolConfigDTO> expandMcpTools(ToolConfigDTO mcpConfig) {
+        Map<String, String> headers;
+        try {
+            headers = McpAuthConfigParser.parse(mcpConfig.getAuthConfig());
+        } catch (Exception e) {
+            log.warn("解析 MCP 认证配置失败，跳过: {}", mcpConfig.getAuthConfig(), e);
+            return List.of(mcpConfig);
+        }
+
+        try {
+            McpJsonRpcClient client = new McpJsonRpcClient(mcpConfig.getImplPath(), headers);
+            client.initialize();
+
+            List<Map<String, Object>> tools = client.listTools();
+            ObjectMapper mapper = new ObjectMapper();
+            List<ToolConfigDTO> expanded = new ArrayList<>();
+            for (Map<String, Object> tool : tools) {
+                try {
+                    expanded.add(ToolConfigDTO.builder()
+                            .name((String) tool.get("name"))
+                            .toolType(ToolType.MCP_HTTP)
+                            .description((String) tool.get("description"))
+                            .parameterSchema(mapper.writeValueAsString(tool.get("inputSchema")))
+                            .implPath(mcpConfig.getImplPath())
+                            .authConfig(mcpConfig.getAuthConfig())
+                            .build());
+                } catch (Exception e) {
+                    log.warn("序列化 MCP 工具 Schema 失败: {}", tool.get("name"), e);
+                }
+            }
+            log.info("MCP 工具展开结果: url={}, 展开数量={}, {}", mcpConfig.getImplPath(), expanded.size(), expanded.stream().map(ToolConfigDTO::getName).toList());
+            return expanded;
+        } catch (Exception e) {
+            log.warn("获取 MCP 工具列表失败，保持原配置: url={}", mcpConfig.getImplPath(), e);
+            return List.of(mcpConfig);
+        }
+    }
+
+    public record ToolCallData(String toolCallId, String toolCallName, String toolCallArguments) {
+    }
+
+    public record MessageDTO(Long id, Long sessionId, String role, String content, String reasoning,
+                             String toolCallId, Integer sequenceNum, LocalDateTime createTime,
+                             List<ToolCallData> toolCalls) {
+    }
+}

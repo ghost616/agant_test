@@ -1,0 +1,36 @@
+package com.datanew.db.infoextend;
+
+import com.datanew.constants.FieldType;
+import com.datanew.db.DNJDBCConnector;
+import com.datanew.db.DNJDBCDataset;
+import com.datanew.db.DatabaseInfo;
+import com.datanew.db.JavaDbConnectionInfo;
+import com.datanew.db.constant.DriverClassConsts;
+import com.datanew.enums.DataBaseType;
+import com.datanew.i18n.LczResMessage;
+import com.datanew.resource.enums.DBMessage;
+import com.datanew.utils.EmptyVeify;
+
+import java.sql.SQLException;
+import java.sql.Types;
+import java.util.Map;
+import java.util.Properties;
+
+/**
+ * @author ghost.he
+ * @createTime 2023/5/30 13:34
+ * @description
+ */
+public class PostgresqlExtend implements DBInfoExtend {
+    @Override
+    public DataBaseType getDataBaseType() {
+        return DataBaseType.POSTGRESQL;
+    }
+
+    @Override
+    public String getDriver(Map<String, Object> extraParams) {
+        return DriverClassConsts.POSTGRESQL;
+    }
+
+    @Override
+    public String getUrl(Properties params, Map<

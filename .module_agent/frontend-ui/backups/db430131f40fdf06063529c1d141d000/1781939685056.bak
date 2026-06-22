@@ -1,0 +1,27 @@
+export interface ApiResponse<T> {
+  code: string;
+  success: boolean;
+  message: string;
+  data: T;
+}
+
+export interface PageResult<T> {
+  list: T[];
+  total: number;
+  page: number;
+  size: number;
+}
+
+export type CommonStatus = 'ENABLED' | 'DISABLED';
+
+export type ToolType = 'JAVA' | 'TYPESCRIPT' | 'PYTHON';
+
+export type HookPhase =
+  | 'SESSION_START'
+  | 'SESSION_END'
+  | 'BEFORE_MESSAGE_SEND'
+  | 'AFTER_MESSAGE_RECEIVE'
+  | 'BEFORE_TOOL_CALL'
+  | 'AFTER_TOOL_CALL';
+
+export type PlatformType = 'OPENAI' | 'ANTHROPIC' | 'AZURE' | 'OLLAMA' | 'DEEPSEEK' | 'CUSTOM';

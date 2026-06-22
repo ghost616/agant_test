@@ -1,0 +1,80 @@
+[
+  {
+    "plan_id": "plan_2f2ccf3f-4a88-4384-9f82-f76211cf14e9",
+    "plan_summary": "创建项目 README.md 文件",
+    "code_reviewed": true,
+    "plan_completed": true
+  },
+  {
+    "plan_id": "plan_4625844d-086d-4a34-a398-246498713499",
+    "plan_summary": "修正 README.md 项目描述并补充 MCP_HTTP 工具类型",
+    "code_reviewed": true,
+    "plan_completed": true
+  },
+  {
+    "plan_id": "plan_9a60a781-f3cb-4973-9593-d62bd92ec341",
+    "plan_summary": "修正 README.md HOOK 描述为接口层面实际状态",
+    "code_reviewed": true,
+    "plan_completed": true
+  },
+  {
+    "plan_id": "plan_58a2c5da-aaf6-45d8-b7b6-4b6242a0d2e5",
+    "plan_summary": "修正智能体引擎描述并补充执行流程",
+    "code_reviewed": true,
+    "plan_completed": true
+  },
+  {
+    "plan_id": "plan_daa982fd-05ae-4d67-806c-194c69d87613",
+    "plan_summary": "重写智能体执行流程，紧扣实际代码实现",
+    "code_reviewed": true,
+    "plan_completed": true
+  },
+  {
+    "plan_id": "plan_7eb7d9de-11a4-485c-8084-26e39856e220",
+    "plan_summary": "重写智能体执行流程为纯概念描述",
+    "code_reviewed": true,
+    "plan_completed": true
+  },
+  {
+    "plan_id": "plan_f679e833-55e3-4744-967b-116dcac35c19",
+    "plan_summary": "工具调度步骤补充后台缓存说明",
+    "code_reviewed": true,
+    "plan_completed": true
+  },
+  {
+    "plan_id": "plan_71057082-e0a8-489d-8b99-614aea7110f3",
+    "plan_summary": "智能体执行流程后添加四种工具实现说明章节",
+    "code_reviewed": true,
+    "plan_completed": true
+  },
+  {
+    "plan_id": "plan_3626208e-7931-4ac1-b5c9-bfc2b751b81a",
+    "plan_summary": "完善 TS/Python 开发指南：运行环境、函数签名、类型导入、runner 手动放入",
+    "code_reviewed": true,
+    "plan_completed": true
+  },
+  {
+    "plan_id": "plan_5086fb3c-d7a1-482e-97e3-f130fbd5e1a7",
+    "plan_summary": "移除四种工具表格的实现方式列",
+    "code_reviewed": true,
+    "plan_completed": true
+  },
+  {
+    "plan_id": "plan_bb121c49-e2d9-4d6d-911b-80973b25718f",
+    "plan_summary": "恢复四种工具表格的实现方式列",
+    "code_reviewed": false,
+    "plan_completed": true
+  },
+  {
+    "plan_id": "plan_15cce493-243e-45f6-a91c-7b9654edc675",
+    "plan_summary": "更新项目描述语句",
+    "code_reviewed": false,
+    "plan_completed": true
+  },
+  {
+    "plan_id": "plan_c356c632-3b20-4786-b2c0-4c88835d2019",
+    "plan_summary": "LLM 模型管理描述标注 DeepSeek 测试状态",
+    "code_reviewed": false,
+    "plan_completed": true
+  }
+]

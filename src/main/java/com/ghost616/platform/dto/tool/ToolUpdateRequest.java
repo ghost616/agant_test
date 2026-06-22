@@ -1,0 +1,33 @@
+package com.ghost616.platform.dto.tool;
+
+import com.ghost616.platform.enums.CommonStatus;
+import com.ghost616.platform.enums.ToolType;
+import jakarta.validation.constraints.Pattern;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class ToolUpdateRequest {
+
+    @Pattern(regexp = "^[a-z0-9_]+$", message = "工具名称仅允许小写字母、数字和下划线")
+    private String name;
+
+    private ToolType toolType;
+
+    private String description;
+
+    private String parameterSchema;
+
+    private String returnSchema;
+
+    private String implPath;
+
+    private String authConfig;
+
+    private CommonStatus status;
+}

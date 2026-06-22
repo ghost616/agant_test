@@ -1,0 +1,9 @@
+{
+  "plan_id": "plan_4625844d-086d-4a34-a398-246498713499",
+  "module_name": "framework",
+  "development_plan": "修改 README.md 两处：\n1. 第 3 行：将\"基于多智能体协同的 AI 应用调试与管理平台\"改为\"AI 智能体调试与管理平台\"（去掉不准确的\"多智能体协同\"描述）\n2. 第 16 行：将\"支持 Java / TypeScript / Python 三种工具类型\"改为\"支持 Java / TypeScript / Python / MCP HTTP 四种工具类型\"（补充已实现的 MCP_HTTP 工具类型）",
+  "session_id": "ses_115f56b00ffeyZ9wIfiub0TY5N",
+  "modified_files": [
+    "README.md"
+  ]
+}

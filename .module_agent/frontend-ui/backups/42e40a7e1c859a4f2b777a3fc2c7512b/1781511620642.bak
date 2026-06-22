@@ -1,0 +1,26 @@
+import type { CommonStatus } from './common';
+
+export interface AgentConfig {
+  id: number;
+  name: string;
+  description?: string;
+  systemPrompt?: string;
+  modelId?: number;
+  status: CommonStatus;
+  toolIds: number[];
+  createTime: string;
+  updateTime: string;
+}
+
+export interface AgentFormData {
+  name: string;
+  description?: string;
+  systemPrompt?: string;
+  modelId?: number;
+  toolIds?: number[];
+}
+
+export interface AgentListParams {
+  name?: string;
+  status?: CommonStatus;
+}
