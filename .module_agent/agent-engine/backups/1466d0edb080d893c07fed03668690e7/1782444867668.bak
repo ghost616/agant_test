@@ -82,47 +82,19 @@ public class AgentContextManager {
                     effectiveModelId, history, tools, mutator,
                     loadSessionVariables(id), new HashMap<>());
 
-            injectVariableCallbacks(mutator, session.getId());
-
             return new AgentSessionContext(context, mutator, new AtomicBoolean(false));
         });
     }
 
-    private Map<String, String> loadSessionVariables(Long sessionId) {
+    private Map<String, Object> loadSessionVariables(Long sessionId) {
         List<SessionVariable> variables = sessionVariableMapper.selectList(
                 new LambdaQueryWrapper<SessionVariable>()
                         .eq(SessionVariable::getSessionId, sessionId));
-        Map<String, String> result = new HashMap<>();
+        Map<String, Object> result = new HashMap<>();
         for (SessionVariable sv : variables) {
             result.put(sv.getVariableKey(), sv.getVariableValue());
         }
         return result;
-    }
-
-    private void injectVariableCallbacks(AgentExecutionContext.AgentContextMutator mutator, Long sessionId) {
-        mutator.sessionVarPutCallback = (key, value) -> {
-            List<SessionVariable> existing = sessionVariableMapper.selectList(
-                    new LambdaQueryWrapper<SessionVariable>()
-                            .eq(SessionVariable::getSessionId, sessionId)
-                            .eq(SessionVariable::getVariableKey, key));
-            if (existing != null && !existing.isEmpty()) {
-                SessionVariable sv = existing.get(0);
-                sv.setVariableValue(value);
-                sessionVariableMapper.updateById(sv);
-            } else {
-                SessionVariable sv = new SessionVariable();
-                sv.setSessionId(sessionId);
-                sv.setVariableKey(key);
-                sv.setVariableValue(value);
-                sessionVariableMapper.insert(sv);
-            }
-        };
-        mutator.sessionVarRemoveCallback = (key) -> {
-            sessionVariableMapper.delete(
-                    new LambdaQueryWrapper<SessionVariable>()
-                            .eq(SessionVariable::getSessionId, sessionId)
-                            .eq(SessionVariable::getVariableKey, key));
-        };
     }
 
     public AgentSessionContext get(Long sessionId) {

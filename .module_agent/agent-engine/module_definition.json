@@ -19,7 +19,7 @@
     },
     {
       "path": "src/main/java/com/ghost616/platform/service/agent/AgentExecutionContext.java",
-      "description": "智能体执行引擎核心上下文对象，mutator 字段 @Getter(AccessLevel.NONE) 隐藏 getter，AgentContextMutator 为包级可见 static 内部类"
+      "description": "AgentContextMutator sessionVarPutCallback/sessionVarRemoveCallback + putSessionVariable/removeSessionVariable，新增 getSessionVariableKeys/getConversationVariableKeys"
     },
     {
       "path": "src/main/java/com/ghost616/platform/service/agent/invoker/ToolInvoker.java",
@@ -95,7 +95,7 @@
     },
     {
       "path": "src/main/java/com/ghost616/platform/service/agent/AgentContextManager.java",
-      "description": "Spring @Component 上下文缓存管理器，ConcurrentHashMap<Long, AgentSessionContext> 缓存，注入 SessionMapper/AgentConfigMapper/SessionManager。getOrCreate 通过 computeIfAbsent 线程安全构建上下文（Session→AgentConfig→modelId→tools/messages→HistoryEntry→AgentExecutionContext→AgentSessionContext）；remove 清除缓存；get 仅查询不创建。public record AgentSessionContext(AgentExecutionContext context, AgentContextMutator mutator, AtomicBoolean toolInvoking)"
+      "description": "loadSessionVariables() 返回 Map&lt;String,String&gt;，回调中移除 String.valueOf() 包装"
     },
     {
       "path": "src/main/java/com/ghost616/platform/service/agent/ChatService.java",
@@ -136,6 +136,42 @@
     {
       "path": "tools/file-reader/index.ts",
       "description": "TypeScript 文件读取测试工具，用于测试 TypeScriptToolInvoker 的 bun/node 运行时桥接，导出 execute(ctx, args) 函数"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/entity/SessionVariable.java",
+      "description": "会话变量实体，@TableName(\"session_variable\")，继承BaseEntity，字段 sessionId/variableKey/variableValue"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/repository/SessionVariableMapper.java",
+      "description": "SessionVariable 实体的 MyBatis-Plus Mapper 接口"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/service/agent/invoker/ContextSerializer.java",
+      "description": "上下文序列化器，serializeToJson() 新增 sessionVariables/conversationVariables JSON 序列化"
+    },
+    {
+      "path": "src/main/resources/agent/_runner.ts",
+      "description": "TypeScript 桥接模板，新增 VariableChanges 接口、createVariableProxy 函数（Proxy 拦截 set/delete）、diff 变更集、结构化 JSON 输出"
+    },
+    {
+      "path": "tools/file-reader/_runner.ts",
+      "description": "文件读取工具桥接文件，同步模板 Proxy 变量追踪 + 结构化 JSON 输出"
+    },
+    {
+      "path": "tools/session-var-write-py/index.py",
+      "description": "Session 变量写入工具 (Python)，接收 {key,value}，写入 context.session_variables[key]=value，返回 {\"status\":\"ok\"}"
+    },
+    {
+      "path": "tools/session-var-read-py/index.py",
+      "description": "Session 变量读取工具 (Python)，接收 {key}，读取 context.session_variables.get(key)，返回 {key,value,exists}"
+    },
+    {
+      "path": "tools/session-var-write-ts/index.ts",
+      "description": "Session 变量写入工具 (TypeScript)，接收 {key,value}，写入 context.sessionVariables[key]=value，返回 {\"status\":\"ok\"}"
+    },
+    {
+      "path": "tools/session-var-read-ts/index.ts",
+      "description": "Session 变量读取工具 (TypeScript)，接收 {key}，读取 context.sessionVariables?.[key]，返回 {key,value,exists}"
     }
   ]
 }

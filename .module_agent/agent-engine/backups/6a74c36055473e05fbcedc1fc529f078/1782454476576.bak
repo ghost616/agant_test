@@ -10,7 +10,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -76,14 +75,6 @@ public class AgentExecutionContext {
 
     public void removeConversationVariable(String key) {
         conversationVariables.remove(key);
-    }
-
-    public Set<String> getSessionVariableKeys() {
-        return sessionVariables.keySet();
-    }
-
-    public Set<String> getConversationVariableKeys() {
-        return conversationVariables.keySet();
     }
 
     public record HistoryEntry(String role, String content, String reasoning, String toolCallId,

@@ -1,7 +1,0 @@
-{
-  "plan_id": "plan_988f0193-1bf5-4c20-85a3-fbb6f15150ff",
-  "module_name": "agent-engine",
-  "development_plan": "MessageSavePostHook.java 第109行 key 选取逻辑修改：\n\n当前 id 优先导致 chunk1(id) 和 chunk2(index) 分到不同 accumulator。改为 index 优先：\n\nString key;\nif (tc.getIndex() != null) {\n    key = String.valueOf(tc.getIndex());\n} else if (tc.getId() != null) {\n    key = tc.getId();\n} else {\n    continue;\n}",
-  "session_id": "ses_120499d48ffevtZd9mfw2segb2",
-  "modified_files": []
-}

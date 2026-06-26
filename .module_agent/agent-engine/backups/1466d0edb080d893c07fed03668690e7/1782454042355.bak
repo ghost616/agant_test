@@ -88,11 +88,11 @@ public class AgentContextManager {
         });
     }
 
-    private Map<String, String> loadSessionVariables(Long sessionId) {
+    private Map<String, Object> loadSessionVariables(Long sessionId) {
         List<SessionVariable> variables = sessionVariableMapper.selectList(
                 new LambdaQueryWrapper<SessionVariable>()
                         .eq(SessionVariable::getSessionId, sessionId));
-        Map<String, String> result = new HashMap<>();
+        Map<String, Object> result = new HashMap<>();
         for (SessionVariable sv : variables) {
             result.put(sv.getVariableKey(), sv.getVariableValue());
         }
@@ -107,13 +107,13 @@ public class AgentContextManager {
                             .eq(SessionVariable::getVariableKey, key));
             if (existing != null && !existing.isEmpty()) {
                 SessionVariable sv = existing.get(0);
-                sv.setVariableValue(value);
+                sv.setVariableValue(String.valueOf(value));
                 sessionVariableMapper.updateById(sv);
             } else {
                 SessionVariable sv = new SessionVariable();
                 sv.setSessionId(sessionId);
                 sv.setVariableKey(key);
-                sv.setVariableValue(value);
+                sv.setVariableValue(String.valueOf(value));
                 sessionVariableMapper.insert(sv);
             }
         };

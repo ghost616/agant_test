@@ -1,7 +1,0 @@
-{
-  "plan_id": "plan_ca0e50af-d1a8-4e58-bb79-c01df1508ab0",
-  "module_name": "agent-engine",
-  "development_plan": "MessageSavePostHook.java 第107-108行日志移除 tc.getIndex() 引用，改为：\nlog.info(\"sessionId={} ToolCallDelta id={} name={} arguments={}\",\n    sessionId, tc.getId(), tc.getName(), tc.getArguments());",
-  "session_id": "ses_120499d48ffevtZd9mfw2segb2",
-  "modified_files": []
-}

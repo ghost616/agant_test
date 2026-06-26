@@ -1,7 +1,5 @@
 package com.ghost616.platform.service.agent.invoker;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghost616.platform.enums.ErrorCode;
 import com.ghost616.platform.exception.BusinessException;
 import com.ghost616.platform.service.agent.AgentExecutionContext;
@@ -22,7 +20,6 @@ public class PythonToolInvoker implements ToolInvoker {
 
     private static final long TIMEOUT_SECONDS = 30;
     private static final String RUNNER_FILE_NAME = "_runner.py";
-    private static final ObjectMapper MAPPER = new ObjectMapper();
 
     private final Path scriptDir;
     private final Path runnerPath;
@@ -119,7 +116,7 @@ public class PythonToolInvoker implements ToolInvoker {
                         "工具执行失败, exitCode=" + exitCode + ": " + result);
             }
 
-            return parseResult(ctx, result);
+            return result;
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
@@ -132,42 +129,6 @@ public class PythonToolInvoker implements ToolInvoker {
             } catch (Exception ignored) {
             }
         }
-    }
-
-    private String parseResult(AgentExecutionContext ctx, String raw) {
-        try {
-            JsonNode root = MAPPER.readTree(raw);
-            if (root.has("result")) {
-                if (root.has("sessionVariables")) {
-                    JsonNode sv = root.get("sessionVariables");
-                    if (sv.has("added")) {
-                        JsonNode added = sv.get("added");
-                        added.fields().forEachRemaining(e -> ctx.putSessionVariable(e.getKey(), e.getValue().asText()));
-                    }
-                    if (sv.has("removed")) {
-                        for (JsonNode key : sv.get("removed")) {
-                            ctx.removeSessionVariable(key.asText());
-                        }
-                    }
-                }
-                if (root.has("conversationVariables")) {
-                    JsonNode cv = root.get("conversationVariables");
-                    if (cv.has("added")) {
-                        JsonNode added = cv.get("added");
-                        added.fields().forEachRemaining(e -> ctx.putConversationVariable(e.getKey(), e.getValue().asText()));
-                    }
-                    if (cv.has("removed")) {
-                        for (JsonNode key : cv.get("removed")) {
-                            ctx.removeConversationVariable(key.asText());
-                        }
-                    }
-                }
-                return root.get("result").asText();
-            }
-        } catch (Exception e) {
-            log.debug("非结构化 JSON 输出，按纯文本返回: {}", e.getMessage());
-        }
-        return raw;
     }
 
     private List<String> resolveRuntime() {

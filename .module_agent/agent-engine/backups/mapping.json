@@ -27,5 +27,10 @@
   "tools/file-reader/index.ts": "7656a61422f572d74199d0f04373c19e",
   "src/main/resources/agent/_runner.ts": "4a83cfb352838e222fa2d6079361ef04",
   "src/main/java/com/ghost616/platform/service/model/invoker/ModelInvoker.java": "f3b80f8b19182381901c5b8baf20742c",
-  "src/main/java/com/ghost616/platform/service/agent/SessionManager.java": "0e1fa7e887d444dcfc87075135628284"
+  "src/main/java/com/ghost616/platform/service/agent/SessionManager.java": "0e1fa7e887d444dcfc87075135628284",
+  "src/main/java/com/ghost616/platform/service/agent/invoker/ContextSerializer.java": "d98b18de203eb8ab9a8f12cb2c6484b4",
+  "tools/file-reader/_runner.ts": "6e170da9a633751e0095927375377ab2",
+  "src/main/resources/agent/_runner.py": "2ae9ba9905ad89472db46047f647c64d",
+  "tools/math-calc/_runner.py": "a45b650356eef11cdfda8a1c24a8f20b",
+  "src/main/java/com/ghost616/platform/service/agent/invoker/PythonToolInvoker.java": "629d82d3a20b15817deec1fe317cbfa4"
 }

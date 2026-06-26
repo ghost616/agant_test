@@ -31,6 +31,56 @@ class ToolInfo:
         self.parameter_schema = data.get("parameterSchema")
 
 
+class VariableProxy:
+    def __init__(self, data):
+        self._data = dict(data or {})
+        self._added = {}
+        self._removed = []
+
+    def __getitem__(self, key):
+        return self._data[key]
+
+    def __setitem__(self, key, value):
+        self._data[key] = value
+        self._added[key] = value
+        if key in self._removed:
+            self._removed.remove(key)
+
+    def __delitem__(self, key):
+        if key in self._data:
+            del self._data[key]
+        self._removed.append(key)
+        if key in self._added:
+            del self._added[key]
+
+    def __contains__(self, key):
+        return key in self._data
+
+    def get(self, key, default=None):
+        return self._data.get(key, default)
+
+    def keys(self):
+        return self._data.keys()
+
+    def items(self):
+        return self._data.items()
+
+    def values(self):
+        return self._data.values()
+
+    def __iter__(self):
+        return iter(self._data)
+
+    def __len__(self):
+        return len(self._data)
+
+    def __repr__(self):
+        return repr(self._data)
+
+    def get_changes(self):
+        return {"added": dict(self._added), "removed": list(self._removed)}
+
+
 class AgentExecutionContext:
     def __init__(self, data):
         self.session_id = data.get("sessionId")
@@ -41,6 +91,8 @@ class AgentExecutionContext:
         self.history = [HistoryEntry(h) for h in history_data] if history_data else []
         tools_data = data.get("tools")
         self.tools = [ToolInfo(t) for t in tools_data] if tools_data else []
+        self.session_variables = data.get("sessionVariables") or {}
+        self.conversation_variables = data.get("conversationVariables") or {}
 
 
 class ExecuteInput:
@@ -70,18 +122,33 @@ def main():
 
     execute_input = ExecuteInput(raw_data)
 
+    session_snapshot = dict(execute_input.context.session_variables or {})
+    conversation_snapshot = dict(execute_input.context.conversation_variables or {})
+
+    session_proxy = VariableProxy(session_snapshot)
+    conversation_proxy = VariableProxy(conversation_snapshot)
+
+    execute_input.context.session_variables = session_proxy
+    execute_input.context.conversation_variables = conversation_proxy
+
     try:
         import index
 
         if not callable(getattr(index, "execute", None)):
             raise RuntimeError("index module does not export execute function")
 
-        result = index.execute(execute_input.context, execute_input.arguments)
+        raw_result = index.execute(execute_input.context, execute_input.arguments)
 
-        if isinstance(result, str):
-            sys.stdout.write(result)
-        else:
-            sys.stdout.write(json.dumps(result))
+        session_changes = session_proxy.get_changes()
+        conversation_changes = conversation_proxy.get_changes()
+
+        output = {
+            "result": raw_result if isinstance(raw_result, str) else json.dumps(raw_result),
+            "sessionVariables": session_changes,
+            "conversationVariables": conversation_changes,
+        }
+
+        sys.stdout.write(json.dumps(output))
     except Exception as e:
         print(json.dumps({"error": str(e)}), file=sys.stderr)
         sys.exit(1)

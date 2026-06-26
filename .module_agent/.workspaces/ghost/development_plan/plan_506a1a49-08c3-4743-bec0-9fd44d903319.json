@@ -1,7 +1,0 @@
-{
-  "plan_id": "plan_506a1a49-08c3-4743-bec0-9fd44d903319",
-  "module_name": "agent-engine",
-  "development_plan": "TypeScriptToolInvoker.java execute() 方法第83行 serializeToJson 之后新增日志：\nlog.info(\"scriptDir={} arguments={}\", scriptDir, arguments);",
-  "session_id": "ses_120499d48ffevtZd9mfw2segb2",
-  "modified_files": []
-}

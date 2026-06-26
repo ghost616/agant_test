@@ -1,9 +1,0 @@
-{
-  "plan_id": "plan_978584aa-de06-4126-b59d-68fbbb934baf",
-  "module_name": "framework",
-  "development_plan": "schema.sql: 新增 session_variable 表 DDL，字段含 id(BIGINT 雪花ID)、session_id(BIGINT)、variable_key(VARCHAR)、variable_value(TEXT)、create_time(DATETIME)",
-  "session_id": "ses_0fe29fe04ffeG1jK93zDff59ys",
-  "modified_files": [
-    "src/main/resources/schema.sql"
-  ]
-}

@@ -60,20 +60,6 @@ public final class ContextSerializer {
             }
             contextNode.set("tools", toolsArray);
 
-            ObjectNode sessionVarsNode = MAPPER.createObjectNode();
-            for (String key : ctx.getSessionVariableKeys()) {
-                String value = ctx.getSessionVariable(key);
-                sessionVarsNode.put(key, value);
-            }
-            contextNode.set("sessionVariables", sessionVarsNode);
-
-            ObjectNode conversationVarsNode = MAPPER.createObjectNode();
-            for (String key : ctx.getConversationVariableKeys()) {
-                String value = ctx.getConversationVariable(key);
-                conversationVarsNode.put(key, value);
-            }
-            contextNode.set("conversationVariables", conversationVarsNode);
-
             root.set("context", contextNode);
             root.put("arguments", arguments);
 
