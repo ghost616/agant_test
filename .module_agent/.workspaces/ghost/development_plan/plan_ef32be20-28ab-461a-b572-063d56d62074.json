@@ -1,0 +1,7 @@
+{
+  "plan_id": "plan_ef32be20-28ab-461a-b572-063d56d62074",
+  "module_name": "agent-engine",
+  "development_plan": "1. AgentExecutionContext.java 构造器新增 recentMessageCount 参数并存储为字段，新增 getter\n2. AgentContextManager.java getOrCreate() 中从 AgentConfig 获取 recentMessageCount，传入 AgentExecutionContext 构造器\n3. ChatService.java chat() 中构建 messages 列表时，根据 context.getRecentMessageCount() 截取 history 最近 N 条（取 history 尾部子列表），截取规则：按配对截取（user+assistant/tool 消息对），每条消息都要保留对应的工具调用；当 recentMessageCount 为 null 或 <= 0 时保持全部历史不截取",
+  "session_id": "ses_0fc8842f0ffe2osPrjPa6M4gup",
+  "modified_files": []
+}

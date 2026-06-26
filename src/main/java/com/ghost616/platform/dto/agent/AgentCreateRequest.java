@@ -23,5 +23,7 @@ public class AgentCreateRequest {
 
     private Long modelId;
 
+    private Integer recentMessageCount;
+
     private List<Long> toolIds;
 }

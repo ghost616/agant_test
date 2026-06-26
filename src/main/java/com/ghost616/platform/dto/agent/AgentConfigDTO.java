@@ -25,6 +25,7 @@ public class AgentConfigDTO {
     @JsonSerialize(using = ToStringSerializer.class)
     private Long modelId;
     private CommonStatus status;
+    private Integer recentMessageCount;
     @JsonSerialize(contentUsing = ToStringSerializer.class)
     private List<Long> toolIds;
     private LocalDateTime createTime;

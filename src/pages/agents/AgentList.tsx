@@ -3,6 +3,7 @@ import {
   Button,
   Form,
   Input,
+  InputNumber,
   message,
   Modal,
   Popconfirm,
@@ -116,6 +117,7 @@ function AgentList(): JSX.Element {
       systemPrompt: editingAgent.systemPrompt,
       modelId: editingAgent.modelId,
       toolIds: editingAgent.toolIds,
+      recentMessageCount: editingAgent.recentMessageCount,
     });
   }, [editingAgent, modalVisible, form]);
 
@@ -188,6 +190,13 @@ function AgentList(): JSX.Element {
       width: 140,
       render: (value: string | undefined) =>
         value ? modelMap[value] || '-' : '-',
+    },
+    {
+      title: '最近消息',
+      dataIndex: 'recentMessageCount',
+      width: 100,
+      render: (value: number | undefined) =>
+        value === undefined || value === null ? '-' : value,
     },
     {
       title: '状态',
@@ -309,6 +318,18 @@ function AgentList(): JSX.Element {
                 value: t.id,
                 label: t.name,
               }))}
+            />
+          </Form.Item>
+          <Form.Item
+            name="recentMessageCount"
+            label="最近消息数量"
+            initialValue={10}
+          >
+            <InputNumber
+              placeholder="请输入最近消息数量"
+              min={1}
+              max={100}
+              style={{ width: '100%' }}
             />
           </Form.Item>
         </Form>

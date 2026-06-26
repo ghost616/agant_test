@@ -21,3 +21,6 @@
   - DELETE /{id} — 删除
   - PUT /{id}/status — 切换状态
 - **ErrorCode**: 新增 AGENT_NOT_FOUND、AGENT_ALREADY_EXISTS
+- **Entity**: AgentConfig 新增 recentMessageCount 字段（@TableField("recent_message_count")，默认值 10）
+- **DTO**: AgentConfigDTO、AgentCreateRequest、AgentUpdateRequest 均新增 recentMessageCount 字段
+- **Service**: create() 将 request.getRecentMessageCount() 写入 entity；update() 新增判断 if null 后更新；toDTO() 新增 .recentMessageCount() 映射

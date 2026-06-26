@@ -89,15 +89,15 @@ public class ChatService {
         String content = request.getContent();
         Long modelId = request.getModelId();
 
-        AgentExecutionContext.AgentContextMutator mutator = new AgentExecutionContext.AgentContextMutator();
         AgentContextManager.AgentSessionContext sessionContext =
-                agentContextManager.getOrCreate(sessionId, modelId, mutator);
+                agentContextManager.getOrCreate(sessionId, modelId);
         AgentExecutionContext context = sessionContext.context();
         AgentExecutionContext.AgentContextMutator contextMutator = sessionContext.mutator();
 
         boolean isToolContinue = TOOL_CONTINUE_MARKER.equals(content);
 
         if (!isToolContinue) {
+            contextMutator.clearConversationVariables();
             sessionManager.saveMessage(sessionId, "user", content, null, null, null);
 
             AgentExecutionContext.HistoryEntry userEntry = new AgentExecutionContext.HistoryEntry(
@@ -131,7 +131,13 @@ public class ChatService {
                 .content(context.getSystemPrompt() != null ? context.getSystemPrompt() : "")
                 .build());
 
-        for (AgentExecutionContext.HistoryEntry entry : context.getHistory()) {
+        List<AgentExecutionContext.HistoryEntry> historyEntries = context.getHistory();
+        Integer recentCount = context.getRecentMessageCount();
+        if (recentCount != null && recentCount > 0 && recentCount < historyEntries.size()) {
+            historyEntries = truncateByPairs(historyEntries, recentCount);
+        }
+
+        for (AgentExecutionContext.HistoryEntry entry : historyEntries) {
             Message.MessageBuilder builder = Message.builder()
                     .role(entry.role())
                     .content(entry.content());
@@ -186,5 +192,20 @@ public class ChatService {
                     triggerHooks(HookPhase.AFTER_MESSAGE_RECEIVE, context, completeChunk);
                     executePostHooks(context, completeChunk);
                 });
+    }
+
+    private static List<AgentExecutionContext.HistoryEntry> truncateByPairs(
+            List<AgentExecutionContext.HistoryEntry> history, int pairCount) {
+        List<Integer> userIndices = new ArrayList<>();
+        for (int i = 0; i < history.size(); i++) {
+            if ("user".equals(history.get(i).role())) {
+                userIndices.add(i);
+            }
+        }
+        if (userIndices.size() <= pairCount) {
+            return history;
+        }
+        int startIndex = userIndices.get(userIndices.size() - pairCount);
+        return history.subList(startIndex, history.size());
     }
 }

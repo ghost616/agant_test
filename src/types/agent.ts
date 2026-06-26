@@ -8,6 +8,7 @@ export interface AgentConfig {
   modelId?: string;
   status: CommonStatus;
   toolIds: string[];
+  recentMessageCount?: number;
   createTime: string;
   updateTime: string;
 }
@@ -18,6 +19,7 @@ export interface AgentFormData {
   systemPrompt?: string;
   modelId?: string;
   toolIds?: string[];
+  recentMessageCount?: number;
 }
 
 export interface AgentListParams {

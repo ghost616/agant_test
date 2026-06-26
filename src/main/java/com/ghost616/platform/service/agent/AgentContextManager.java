@@ -37,8 +37,7 @@ public class AgentContextManager {
 
     private final ConcurrentHashMap<Long, AgentSessionContext> cache = new ConcurrentHashMap<>();
 
-    public AgentSessionContext getOrCreate(Long sessionId, Long modelIdOverride,
-                                           AgentExecutionContext.AgentContextMutator mutator) {
+    public AgentSessionContext getOrCreate(Long sessionId, Long modelIdOverride) {
         return cache.computeIfAbsent(sessionId, id -> {
             Session session = sessionMapper.selectById(id);
             if (session == null) {
@@ -76,10 +75,14 @@ public class AgentContextManager {
                         msg.sequenceNum(), msg.createTime(), Collections.unmodifiableList(toolCalls)));
             }
 
+            AgentExecutionContext.AgentContextMutator mutator = new AgentExecutionContext.AgentContextMutator();
+
             AgentExecutionContext context = new AgentExecutionContext(
                     sessionId, session.getAgentId(),
                     agentConfig.getSystemPrompt(),
-                    effectiveModelId, history, tools, mutator,
+                    effectiveModelId,
+                    agentConfig.getRecentMessageCount(),
+                    history, tools, mutator,
                     loadSessionVariables(id), new HashMap<>());
 
             injectVariableCallbacks(mutator, session.getId());

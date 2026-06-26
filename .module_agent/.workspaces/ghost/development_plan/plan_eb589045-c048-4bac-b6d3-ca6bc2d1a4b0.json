@@ -1,0 +1,10 @@
+{
+  "plan_id": "plan_eb589045-c048-4bac-b6d3-ca6bc2d1a4b0",
+  "module_name": "frontend-ui",
+  "development_plan": "1. src/types/agent.ts: AgentConfig 和 AgentFormData 接口均新增 recentMessageCount?: number 字段\n2. src/pages/agents/AgentList.tsx:\n   - 表单新增 Form.Item name=\"recentMessageCount\" label=\"最近消息数量\" 的 InputNumber，默认值 10，min=1，max=100\n   - 编辑回填时添加 recentMessageCount 字段\n   - 表格 columns 新增一列显示 recentMessageCount，title=\"最近消息\"",
+  "session_id": "ses_0fc7c2a70ffe7fO3WOMX31lxzL",
+  "modified_files": [
+    "src/types/agent.ts",
+    "src/pages/agents/AgentList.tsx"
+  ]
+}

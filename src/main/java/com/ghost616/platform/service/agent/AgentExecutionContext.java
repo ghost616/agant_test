@@ -21,6 +21,7 @@ public class AgentExecutionContext {
     private final Long agentId;
     private final String systemPrompt;
     private Long modelId;
+    private final Integer recentMessageCount;
     @Getter(AccessLevel.NONE)
     private final List<HistoryEntry> history;
     private final List<ToolConfigDTO> tools;
@@ -32,6 +33,7 @@ public class AgentExecutionContext {
     private final Map<String, String> conversationVariables;
 
     public AgentExecutionContext(Long sessionId, Long agentId, String systemPrompt, Long modelId,
+                                  Integer recentMessageCount,
                                  List<HistoryEntry> history, List<ToolConfigDTO> tools,
                                  AgentContextMutator mutator,
                                   Map<String, String> sessionVariables,
@@ -40,6 +42,7 @@ public class AgentExecutionContext {
         this.agentId = agentId;
         this.systemPrompt = systemPrompt;
         this.modelId = modelId;
+        this.recentMessageCount = recentMessageCount;
         this.history = history;
         this.tools = tools;
         this.mutator = mutator;
@@ -116,6 +119,12 @@ public class AgentExecutionContext {
         public void removeSessionVariable(String key) {
             if (sessionVarRemoveCallback != null) {
                 sessionVarRemoveCallback.accept(key);
+            }
+        }
+
+        public void clearConversationVariables() {
+            if (context != null) {
+                context.conversationVariables.clear();
             }
         }
     }

@@ -11,7 +11,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import jakarta.annotation.PostConstruct;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,12 +35,15 @@ import com.ghost616.platform.repository.SessionMapper;
 import com.ghost616.platform.service.agent.invoker.SystemPostHook;
 import com.ghost616.platform.service.hook.HookInvoker;
 import com.ghost616.platform.service.hook.SystemHook;
+import com.ghost616.platform.service.model.invoker.ModelInvoker;
 import com.ghost616.platform.service.model.invoker.ModelInvokerManager;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class ChatService {
+
+    public static final String TOOL_CONTINUE_MARKER = "[tool_continue]";
 
     private final AgentContextManager agentContextManager;
     private final SessionManager sessionManager;
@@ -87,20 +89,24 @@ public class ChatService {
         String content = request.getContent();
         Long modelId = request.getModelId();
 
-        AgentExecutionContext.AgentContextMutator mutator = new AgentExecutionContext.AgentContextMutator();
         AgentContextManager.AgentSessionContext sessionContext =
-                agentContextManager.getOrCreate(sessionId, modelId, mutator);
+                agentContextManager.getOrCreate(sessionId, modelId);
         AgentExecutionContext context = sessionContext.context();
         AgentExecutionContext.AgentContextMutator contextMutator = sessionContext.mutator();
 
-        sessionManager.saveMessage(sessionId, "user", content, null, null, null);
+        boolean isToolContinue = TOOL_CONTINUE_MARKER.equals(content);
 
-        AgentExecutionContext.HistoryEntry userEntry = new AgentExecutionContext.HistoryEntry(
-                "user", content, null, null,
-                context.getHistory().size() + 1,
-                LocalDateTime.now(),
-                Collections.emptyList());
-        contextMutator.addHistoryEntry(userEntry);
+        if (!isToolContinue) {
+            contextMutator.clearConversationVariables();
+            sessionManager.saveMessage(sessionId, "user", content, null, null, null);
+
+            AgentExecutionContext.HistoryEntry userEntry = new AgentExecutionContext.HistoryEntry(
+                    "user", content, null, null,
+                    context.getHistory().size() + 1,
+                    LocalDateTime.now(),
+                    Collections.emptyList());
+            contextMutator.addHistoryEntry(userEntry);
+        }
 
         if (modelId != null && !modelId.equals(context.getModelId())) {
             Session session = sessionMapper.selectById(sessionId);
@@ -132,14 +138,20 @@ public class ChatService {
             if (entry.toolCalls() != null && !entry.toolCalls().isEmpty()) {
                 builder.toolCalls(entry.toolCalls());
             }
+            if (entry.reasoning() != null && !entry.reasoning().isEmpty()
+                    && entry.toolCalls() != null && !entry.toolCalls().isEmpty()) {
+                builder.reasoning(entry.reasoning());
+            }
             if (entry.toolCallId() != null) {
                 builder.toolCallId(entry.toolCallId());
             }
             messages.add(builder.build());
         }
 
+        ModelInvoker invoker = modelInvokerManager.getInvoker(modelConfig);
+
         List<ToolDefinition> tools = context.getTools().stream()
-                .map(this::toToolDefinition)
+                .map(invoker::toToolDefinition)
                 .toList();
 
         com.ghost616.platform.dto.model.ChatRequest chatRequest =
@@ -151,13 +163,11 @@ public class ChatService {
 
         AtomicBoolean hasToolCalls = new AtomicBoolean(false);
 
-        Flux<ChatChunk> stream = modelInvokerManager
-                .getInvoker(modelConfig)
-                .invokeStream(chatRequest);
+        Flux<ChatChunk> stream = invoker.invokeStream(chatRequest);
 
         return stream
                 .doOnNext(chunk -> {
-                    if (chunk.getToolCall() != null) {
+                    if (chunk.getToolCalls() != null && !chunk.getToolCalls().isEmpty()) {
                         hasToolCalls.set(true);
                     }
                     if (chunk.getFinishReason() != null) {
@@ -176,22 +186,5 @@ public class ChatService {
                     triggerHooks(HookPhase.AFTER_MESSAGE_RECEIVE, context, completeChunk);
                     executePostHooks(context, completeChunk);
                 });
-    }
-
-    private ToolDefinition toToolDefinition(ToolConfigDTO tool) {
-        Map<String, Object> parameters;
-        try {
-            parameters = objectMapper.readValue(
-                    tool.getParameterSchema(),
-                    new TypeReference<Map<String, Object>>() {});
-        } catch (Exception e) {
-            log.warn("解析工具 {} 的 parameterSchema 失败，使用空 Map 兜底", tool.getName(), e);
-            parameters = Collections.emptyMap();
-        }
-        return ToolDefinition.builder()
-                .name(tool.getName())
-                .description(tool.getDescription())
-                .parameters(parameters)
-                .build();
     }
 }

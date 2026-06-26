@@ -7,7 +7,6 @@ spring:
   sql:
     init:
       mode: always
-      continue-on-error: true
   datasource:
     url: jdbc:sqlite:data/agent_platform.db
     driver-class-name: org.sqlite.JDBC

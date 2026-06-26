@@ -81,6 +81,10 @@
 - 模型列表和工具列表数据通过 Promise.all 并行加载用于表单下拉选择
 - 路由 /agents 注册，侧边栏"智能体管理"菜单项（RobotOutlined 图标）
 - 智能体列表表格添加 pagination={false}，移除分页器，全量展示
+- AgentConfig 与 AgentFormData 类型新增 recentMessageCount?: number 字段（最近消息数量）
+- 新增/编辑 Modal 新增 Form.Item name="recentMessageCount" label="最近消息数量"：InputNumber，initialValue=10、min=1、max=100、宽度 100%
+- 编辑回填时同步设置 recentMessageCount 字段
+- Table columns 新增"最近消息"列（dataIndex=recentMessageCount，width 100），值为空时显示 '-'
 ## 会话管理界面
 
 - 会话列表页面 `/sessions`，支持会话列表展示、新建会话、删除会话、继续会话

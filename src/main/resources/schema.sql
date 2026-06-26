@@ -28,7 +28,6 @@ CREATE TABLE IF NOT EXISTS tool_config (
     update_time      TIMESTAMP,
     deleted          INTEGER DEFAULT 0
 );
-ALTER TABLE tool_config ADD COLUMN auth_config TEXT;
 
 CREATE TABLE IF NOT EXISTS session (
     id            BIGINT PRIMARY KEY,
@@ -81,10 +80,12 @@ CREATE TABLE IF NOT EXISTS agent_config (
     system_prompt TEXT,
     model_id      BIGINT,
     status        VARCHAR(32),
-    create_time   TIMESTAMP,
-    update_time   TIMESTAMP,
-    deleted       INTEGER DEFAULT 0
+    create_time             TIMESTAMP,
+    update_time             TIMESTAMP,
+    recent_message_count    INTEGER DEFAULT 10,
+    deleted                 INTEGER DEFAULT 0
 );
+
 CREATE INDEX IF NOT EXISTS idx_agent_config_model_id ON agent_config(model_id);
 
 CREATE TABLE IF NOT EXISTS agent_tool (
@@ -100,7 +101,9 @@ CREATE TABLE IF NOT EXISTS session_variable (
     session_id     BIGINT,
     variable_key   VARCHAR(255),
     variable_value TEXT,
-    create_time    DATETIME
+    create_time    TIMESTAMP,
+    update_time    TIMESTAMP,
+    deleted        INTEGER DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS idx_session_variable_session_id ON session_variable(session_id);
 CREATE INDEX IF NOT EXISTS idx_session_variable_key ON session_variable(session_id, variable_key);

@@ -22,4 +22,7 @@ public class AgentConfig extends BaseEntity {
     private Long modelId;
 
     private CommonStatus status;
+
+    @TableField("recent_message_count")
+    private Integer recentMessageCount = 10;
 }

@@ -21,5 +21,7 @@ public class AgentUpdateRequest {
 
     private Long modelId;
 
+    private Integer recentMessageCount;
+
     private List<Long> toolIds;
 }

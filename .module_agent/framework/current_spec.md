@@ -22,6 +22,9 @@ application.yml 中 spring.sql.init 新增 continue-on-error: true，使 SQL 初
 [2026-06-21] pom.xml 已移除 MCP SDK 依赖（mcp-core + mcp-json-jackson2 2.0.0），MCP 工具调用功能将在 tool-registry 模块中通过不同方式重构。
 [2026-06-21] 新增 ToolChangedEvent 事件类（ApplicationEvent 子类），携带 toolId，供 Spring 事件机制在工具变更时发布/监听。
 - schema.sql 新增 session_variable 表（会话变量：id 雪花主键/session_id/variable_key VARCHAR(255)/variable_value TEXT/create_time DATETIME），含 idx_session_variable_session_id 单列索引和 idx_session_variable_key(session_id, variable_key) 组合索引。
+session_variable 表记录变更：移除 DATETIME 使用 TIMESTAMP 类型，补充缺失列 update_time 和 deleted，并新增 ALTER TABLE 迁移语句兼容已有数据库。
+agent_config 表新增 recent_message_count INTEGER DEFAULT 10 列及对应 ALTER TABLE 迁移语句，用于控制会话中保留的最近消息数量。
+新增 SchemaMigration 启动组件（@Component + ApplicationRunner + @Order(1)），通过 PRAGMA table_info 检测列是否存在并按需执行 ALTER TABLE，替代 schema.sql 中硬编码的 ALTER TABLE 迁移语句。迁移清单：tool_config.auth_config、session_variable.update_time、session_variable.deleted、agent_config.recent_message_count。application.yml 已移除无用的 spring.sql.init.continue-on-error 配置。
 ## 文件结构
 
 ```

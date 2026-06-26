@@ -57,6 +57,7 @@ public class AgentConfigServiceImpl implements AgentConfigService {
         entity.setDescription(request.getDescription());
         entity.setSystemPrompt(request.getSystemPrompt());
         entity.setModelId(request.getModelId());
+        entity.setRecentMessageCount(request.getRecentMessageCount());
         entity.setStatus(CommonStatus.ENABLED);
 
         agentConfigMapper.insert(entity);
@@ -92,6 +93,9 @@ public class AgentConfigServiceImpl implements AgentConfigService {
         }
         if (request.getModelId() != null) {
             entity.setModelId(request.getModelId());
+        }
+        if (request.getRecentMessageCount() != null) {
+            entity.setRecentMessageCount(request.getRecentMessageCount());
         }
 
         agentConfigMapper.updateById(entity);
@@ -165,6 +169,7 @@ public class AgentConfigServiceImpl implements AgentConfigService {
                 .systemPrompt(entity.getSystemPrompt())
                 .modelId(entity.getModelId())
                 .status(entity.getStatus())
+                .recentMessageCount(entity.getRecentMessageCount())
                 .toolIds(toolIds)
                 .createTime(entity.getCreateTime())
                 .updateTime(entity.getUpdateTime())

@@ -19,7 +19,7 @@
     },
     {
       "path": "src/main/java/com/ghost616/platform/service/agent/AgentExecutionContext.java",
-      "description": "AgentContextMutator sessionVarPutCallback/sessionVarRemoveCallback + putSessionVariable/removeSessionVariable，新增 getSessionVariableKeys/getConversationVariableKeys"
+      "description": "构造器新增 recentMessageCount 字段及 getter，AgentContextMutator 含 clearConversationVariables"
     },
     {
       "path": "src/main/java/com/ghost616/platform/service/agent/invoker/ToolInvoker.java",
@@ -95,11 +95,11 @@
     },
     {
       "path": "src/main/java/com/ghost616/platform/service/agent/AgentContextManager.java",
-      "description": "loadSessionVariables() 返回 Map&lt;String,String&gt;，回调中移除 String.valueOf() 包装"
+      "description": "getOrCreate() 内部 new mutator，传入 agentConfig.getRecentMessageCount() 到 context 构造器"
     },
     {
       "path": "src/main/java/com/ghost616/platform/service/agent/ChatService.java",
-      "description": "对话服务，toToolDefinition 已移除，改用 ModelInvoker.toToolDefinition() 默认方法"
+      "description": "chat() 从 sessionContext 获取 mutator，非工具继续路径调用 clearConversationVariables；新增 truncateByPairs 按配对截取历史"
     },
     {
       "path": "src/main/java/com/ghost616/platform/service/agent/AgentConfigService.java",

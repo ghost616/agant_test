@@ -111,7 +111,7 @@
     },
     {
       "path": "src/main/resources/schema.sql",
-      "description": "DDL 初始化脚本，含 model_config/tool_config/session/message/message_tool_call/session_tool/agent_config/agent_tool/session_variable 表定义及索引"
+      "description": "数据库初始化脚本，包含所有建表语句和迁移 ALTER 语句（agent_config 新增 recent_message_count 列）"
     },
     {
       "path": "src/main/java/com/ghost616/platform/event/ToolChangedEvent.java",
@@ -120,6 +120,10 @@
     {
       "path": "README.md",
       "description": "项目说明文档，含技术栈、功能模块、快速启动指南、项目结构"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/config/SchemaMigration.java",
+      "description": "数据库 Schema 迁移组件，ApplicationRunner 在启动时执行 PRAGMA 检测+ALTER TABLE，替代 schema.sql 中的静态迁移语句"
     }
   ]
 }
