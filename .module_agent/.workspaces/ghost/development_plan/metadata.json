@@ -1,2 +1,14 @@
 [
+  {
+    "plan_id": "plan_53d2950c-f22a-4d0c-99aa-571f6e46eecd",
+    "plan_summary": "agent-engine: AgentExecutionContext添加会话级/对话级变量Map及操作方法",
+    "code_reviewed": true,
+    "plan_completed": true
+  },
+  {
+    "plan_id": "plan_978584aa-de06-4126-b59d-68fbbb934baf",
+    "plan_summary": "framework: schema.sql新增session_variable表",
+    "code_reviewed": true,
+    "plan_completed": true
+  }
 ]

@@ -21,6 +21,7 @@ application.yml 中 spring.sql.init 新增 continue-on-error: true，使 SQL 初
 - pom.xml 的 MCP SDK 依赖从 umbrella `mcp` 替换为 `mcp-core` + `mcp-json-jackson2`（均 2.0.0），避免 Jackson 3.x（`mcp-json-jackson3`）与 Spring Boot 3.2.5 的 Jackson 2.x 冲突。同时 properties 新增 `<jackson.version>2.20.1</jackson.version>` 统一 Jackson 版本。
 [2026-06-21] pom.xml 已移除 MCP SDK 依赖（mcp-core + mcp-json-jackson2 2.0.0），MCP 工具调用功能将在 tool-registry 模块中通过不同方式重构。
 [2026-06-21] 新增 ToolChangedEvent 事件类（ApplicationEvent 子类），携带 toolId，供 Spring 事件机制在工具变更时发布/监听。
+- schema.sql 新增 session_variable 表（会话变量：id 雪花主键/session_id/variable_key VARCHAR(255)/variable_value TEXT/create_time DATETIME），含 idx_session_variable_session_id 单列索引和 idx_session_variable_key(session_id, variable_key) 组合索引。
 ## 文件结构
 
 ```

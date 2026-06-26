@@ -7,5 +7,6 @@
   "src/main/java/com/ghost616/platform/systemtest/MessageSavePostHook.java": "bd5bda4483fa27cbf16af5d6c141bbd5",
   "src/main/java/com/ghost616/platform/service/agent/ChatService.java": "432ef1273cf0ca936a04488deee8ea71",
   "src/main/java/com/ghost616/platform/service/model/invoker/ModelInvoker.java": "f3b80f8b19182381901c5b8baf20742c",
-  "src/main/java/com/ghost616/platform/service/model/invoker/OllamaInvoker.java": "f20cb2af77db97f2f22b0d36e3ec9ce7"
+  "src/main/java/com/ghost616/platform/service/model/invoker/OllamaInvoker.java": "f20cb2af77db97f2f22b0d36e3ec9ce7",
+  "src/main/java/com/ghost616/platform/dto/model/Message.java": "eadfbbbd04afda84139124f429d57f95"
 }

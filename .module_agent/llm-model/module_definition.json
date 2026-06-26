@@ -3,7 +3,7 @@
   "files": [
     {
       "path": "src/main/java/com/ghost616/platform/dto/model/Message.java",
-      "description": "对话消息 DTO（role/content/toolCalls/toolCallId）"
+      "description": "对话消息 DTO（role/content/toolCalls/toolCallId/reasoning）"
     },
     {
       "path": "src/main/java/com/ghost616/platform/dto/model/UsageInfo.java",
@@ -87,7 +87,7 @@
     },
     {
       "path": "src/main/java/com/ghost616/platform/service/model/invoker/OpenAIInvoker.java",
-      "description": "OpenAI 平台模型调用器（toToolDefinition 新增 parameterSchema 空值前置检查）"
+      "description": "OpenAI 平台模型调用器（buildMessages 新增 reasoning_content 映射）"
     },
     {
       "path": "src/main/java/com/ghost616/platform/service/model/invoker/AnthropicInvoker.java",

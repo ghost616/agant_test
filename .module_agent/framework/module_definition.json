@@ -111,7 +111,7 @@
     },
     {
       "path": "src/main/resources/schema.sql",
-      "description": "DDL 初始化脚本，含 model_config/tool_config/session/message/message_tool_call/session_tool/agent_config/agent_tool 表定义及索引"
+      "description": "DDL 初始化脚本，含 model_config/tool_config/session/message/message_tool_call/session_tool/agent_config/agent_tool/session_variable 表定义及索引"
     },
     {
       "path": "src/main/java/com/ghost616/platform/event/ToolChangedEvent.java",

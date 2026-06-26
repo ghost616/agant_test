@@ -138,6 +138,10 @@ public class ChatService {
             if (entry.toolCalls() != null && !entry.toolCalls().isEmpty()) {
                 builder.toolCalls(entry.toolCalls());
             }
+            if (entry.reasoning() != null && !entry.reasoning().isEmpty()
+                    && entry.toolCalls() != null && !entry.toolCalls().isEmpty()) {
+                builder.reasoning(entry.reasoning());
+            }
             if (entry.toolCallId() != null) {
                 builder.toolCallId(entry.toolCallId());
             }

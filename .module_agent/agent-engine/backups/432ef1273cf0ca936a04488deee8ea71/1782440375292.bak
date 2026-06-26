@@ -3,13 +3,14 @@ package com.ghost616.platform.service.agent;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import jakarta.annotation.PostConstruct;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,12 +34,16 @@ import com.ghost616.platform.repository.ModelConfigMapper;
 import com.ghost616.platform.repository.SessionMapper;
 import com.ghost616.platform.service.agent.invoker.SystemPostHook;
 import com.ghost616.platform.service.hook.HookInvoker;
+import com.ghost616.platform.service.hook.SystemHook;
+import com.ghost616.platform.service.model.invoker.ModelInvoker;
 import com.ghost616.platform.service.model.invoker.ModelInvokerManager;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class ChatService {
+
+    public static final String TOOL_CONTINUE_MARKER = "[tool_continue]";
 
     private final AgentContextManager agentContextManager;
     private final SessionManager sessionManager;
@@ -67,12 +72,16 @@ public class ChatService {
     private void triggerHooks(HookPhase phase, AgentExecutionContext ctx, ChatChunk chunk) {
         List<HookInvoker> hooks = systemHooks.get(phase);
         if (hooks != null) {
-            hooks.forEach(h -> h.execute(ctx, chunk));
+            hooks.stream()
+                    .sorted(Comparator.comparingInt(h -> ((SystemHook) h).getIndex()))
+                    .forEach(h -> h.execute(ctx, chunk));
         }
     }
 
     private void executePostHooks(AgentExecutionContext ctx, ChatChunk chunk) {
-        systemPostHooks.forEach(h -> h.execute(ctx, chunk));
+        systemPostHooks.stream()
+                .sorted(Comparator.comparingInt(h -> ((SystemHook) h).getIndex()))
+                .forEach(h -> h.execute(ctx, chunk));
     }
 
     public Flux<ServerSentEvent<ChatChunk>> chat(ChatRequest request) {
@@ -86,14 +95,18 @@ public class ChatService {
         AgentExecutionContext context = sessionContext.context();
         AgentExecutionContext.AgentContextMutator contextMutator = sessionContext.mutator();
 
-        sessionManager.saveMessage(sessionId, "user", content, null, null, null);
+        boolean isToolContinue = TOOL_CONTINUE_MARKER.equals(content);
 
-        AgentExecutionContext.HistoryEntry userEntry = new AgentExecutionContext.HistoryEntry(
-                "user", content, null, null,
-                context.getHistory().size() + 1,
-                LocalDateTime.now(),
-                Collections.emptyList());
-        contextMutator.addHistoryEntry(userEntry);
+        if (!isToolContinue) {
+            sessionManager.saveMessage(sessionId, "user", content, null, null, null);
+
+            AgentExecutionContext.HistoryEntry userEntry = new AgentExecutionContext.HistoryEntry(
+                    "user", content, null, null,
+                    context.getHistory().size() + 1,
+                    LocalDateTime.now(),
+                    Collections.emptyList());
+            contextMutator.addHistoryEntry(userEntry);
+        }
 
         if (modelId != null && !modelId.equals(context.getModelId())) {
             Session session = sessionMapper.selectById(sessionId);
@@ -131,8 +144,10 @@ public class ChatService {
             messages.add(builder.build());
         }
 
+        ModelInvoker invoker = modelInvokerManager.getInvoker(modelConfig);
+
         List<ToolDefinition> tools = context.getTools().stream()
-                .map(this::toToolDefinition)
+                .map(invoker::toToolDefinition)
                 .toList();
 
         com.ghost616.platform.dto.model.ChatRequest chatRequest =
@@ -142,12 +157,18 @@ public class ChatService {
                         .thinking(request.getThinking())
                         .build();
 
-        Flux<ChatChunk> stream = modelInvokerManager
-                .getInvoker(modelConfig)
-                .invokeStream(chatRequest);
+        AtomicBoolean hasToolCalls = new AtomicBoolean(false);
+
+        Flux<ChatChunk> stream = invoker.invokeStream(chatRequest);
 
         return stream
                 .doOnNext(chunk -> {
+                    if (chunk.getToolCalls() != null && !chunk.getToolCalls().isEmpty()) {
+                        hasToolCalls.set(true);
+                    }
+                    if (chunk.getFinishReason() != null) {
+                        chunk.setHasToolCalls(hasToolCalls.get());
+                    }
                     triggerHooks(HookPhase.BEFORE_MESSAGE_SEND, context, chunk);
                     executePostHooks(context, chunk);
                 })
@@ -155,25 +176,11 @@ public class ChatService {
                         .data(chunk)
                         .build())
                 .doOnComplete(() -> {
-                    triggerHooks(HookPhase.AFTER_MESSAGE_RECEIVE, context, null);
-                    executePostHooks(context, ChatChunk.builder().finishReason("stop").build());
+                    ChatChunk completeChunk = ChatChunk.builder()
+                            .hasToolCalls(hasToolCalls.get())
+                            .build();
+                    triggerHooks(HookPhase.AFTER_MESSAGE_RECEIVE, context, completeChunk);
+                    executePostHooks(context, completeChunk);
                 });
-    }
-
-    private ToolDefinition toToolDefinition(ToolConfigDTO tool) {
-        Map<String, Object> parameters;
-        try {
-            parameters = objectMapper.readValue(
-                    tool.getParameterSchema(),
-                    new TypeReference<Map<String, Object>>() {});
-        } catch (Exception e) {
-            log.warn("解析工具 {} 的 parameterSchema 失败，使用空 Map 兜底", tool.getName(), e);
-            parameters = Collections.emptyMap();
-        }
-        return ToolDefinition.builder()
-                .name(tool.getName())
-                .description(tool.getDescription())
-                .parameters(parameters)
-                .build();
     }
 }

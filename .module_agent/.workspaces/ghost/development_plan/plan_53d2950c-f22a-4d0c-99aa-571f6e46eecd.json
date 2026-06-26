@@ -1,0 +1,10 @@
+{
+  "plan_id": "plan_53d2950c-f22a-4d0c-99aa-571f6e46eecd",
+  "module_name": "agent-engine",
+  "development_plan": "AgentExecutionContext.java: 新增 sessionVariables 和 conversationVariables 两个 Map<String, Object> 字段；提供 putSessionVariable(key,value)、putConversationVariable(key,value)、getSessionVariable(key)、getConversationVariable(key) 四个方法，不暴露公共 getter；AgentContextManager.getOrCreate() 初始化两个 Map 为空 HashMap",
+  "session_id": "ses_0fe46b57affe1INbKaUWyx5Gjh",
+  "modified_files": [
+    "src/main/java/com/ghost616/platform/service/agent/AgentExecutionContext.java",
+    "src/main/java/com/ghost616/platform/service/agent/AgentContextManager.java"
+  ]
+}

@@ -37,3 +37,4 @@
 [2026-06-21T13:42:05.186Z] [session: ses_115f56b00ffeyZ9wIfiub0TY5N] [2026-06-21] 修改 README.md 第 3 行简介，补充：基于 opencode 及 module_agent 插件，由 AI 完成需求设计/代码规范/模块设计/编码实现/代码审查，人工进行方案决策与把关
 [2026-06-21T13:44:25.094Z] [session: ses_115f56b00ffeyZ9wIfiub0TY5N] [2026-06-21] 补充 README.md LLM 模型管理行：各平台模型调用器均已实现，当前仅 DeepSeek 已完成连通性验证及全流程测试
 [2026-06-22T08:08:31.703Z] [session: ses_111a15299ffeFBmvQs0Q5cUugn] [2026-06-22] npm install：安装 @codemirror/view、@codemirror/state、@codemirror/commands、@codemirror/language、@codemirror/lang-json 共 5 个缺失包，解决 Vite 构建 Failed to resolve import "@codemirror/view" 错误。更新 package-lock.json。
+[2026-06-26T02:51:26.877Z] [session: ses_0fe29fe04ffeG1jK93zDff59ys] schema.sql 新增 session_variable 表 DDL（id BIGINT 雪花主键、session_id BIGINT、variable_key VARCHAR(255)、variable_value TEXT、create_time DATETIME），并添加 idx_session_variable_session_id 及 idx_session_variable_key(session_id, variable_key) 索引。

@@ -18,6 +18,7 @@ AgentContextManager.java: Spring @Component 上下文缓存管理器，使用 Co
 ## ChatService.java
 
 ChatService.toToolDefinition() 私有方法已移除，工具定义转换逻辑迁移至 ModelInvoker.toToolDefinition() 默认方法。chat() 方法中 invoker 变量提前声明，统一用于 toToolDefinition 和 invokeStream 调用。
+chat() 方法 messages 构建时，对 HistoryEntry 中 toolCalls 非空且 reasoning 非空的条目，通过 builder.reasoning(entry.reasoning()) 将思考内容传入 Message DTO，确保 DeepSeek 等模型的 reasoning_content 能透传到 LLM API。
 ## MessageSavePostHook
 
 已适配 chunk.getToolCalls() 返回 List，改为 for 循环遍历处理每个 ToolCallDelta。toolCallBuffers key Integer→String，getIndex→getId+兜底。累积逻辑（id/name/arguments 的 StringBuilder append）不变。
@@ -62,3 +63,6 @@ ToolManager.java: Spring @Component，注入 ToolConfigService 和 SessionToolMa
 ## SessionManager
 
 SessionManager.java: Spring @Component，注入 MessageMapper 和 MessageToolCallMapper，提供 saveMessage（sequenceNum 自增+工具调用批量保存）、getMessages（按序返回含 toolCalls 的 MessageDTO 列表）两个方法。内部 record ToolCallData 和 MessageDTO 供 ToolExecutionController 等组件使用。getSessionTools() 和 expandMcpTools() 已迁移至 ToolManager。
+## AgentExecutionContext.java
+
+新增 sessionVariables 和 conversationVariables 两个 Map&lt;String, Object&gt; 字段（@Getter(AccessLevel.NONE) 不暴露公共 getter）；提供 putSessionVariable/getSessionVariable/putConversationVariable/getConversationVariable 四个方法进行读写。构造器接收两个 Map 参数由 AgentContextManager.getOrCreate() 传入空 HashMap 初始化。

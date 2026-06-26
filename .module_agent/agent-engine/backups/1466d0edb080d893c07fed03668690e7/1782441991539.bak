@@ -15,7 +15,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -74,8 +73,7 @@ public class AgentContextManager {
             AgentExecutionContext context = new AgentExecutionContext(
                     sessionId, session.getAgentId(),
                     agentConfig.getSystemPrompt(),
-                    effectiveModelId, history, tools, mutator,
-                    new HashMap<>(), new HashMap<>());
+                    effectiveModelId, history, tools, mutator);
 
             return new AgentSessionContext(context, mutator, new AtomicBoolean(false));
         });

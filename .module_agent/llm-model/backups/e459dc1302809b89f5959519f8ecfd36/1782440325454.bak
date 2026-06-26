@@ -218,9 +218,6 @@ public class OpenAIInvoker implements ModelInvoker {
             if ("tool".equals(msg.getRole()) && msg.getToolCallId() != null) {
                 m.put("tool_call_id", msg.getToolCallId());
             }
-            if (msg.getReasoning() != null && !msg.getReasoning().isEmpty()) {
-                m.put("reasoning_content", msg.getReasoning());
-            }
             result.add(m);
         }
         return result;
