@@ -87,6 +87,7 @@ class AgentExecutionContext:
         self.agent_id = data.get("agentId")
         self.system_prompt = data.get("systemPrompt")
         self.model_id = data.get("modelId")
+        self.recent_message_count = data.get("recentMessageCount")
         history_data = data.get("history")
         self.history = [HistoryEntry(h) for h in history_data] if history_data else []
         tools_data = data.get("tools")

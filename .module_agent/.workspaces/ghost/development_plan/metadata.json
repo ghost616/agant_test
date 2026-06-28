@@ -34,5 +34,23 @@
     "plan_summary": "创建 SchemaMigration 启动组件替代 schema.sql ALTER TABLE",
     "code_reviewed": true,
     "plan_completed": true
+  },
+  {
+    "plan_id": "plan_cd914821-6414-4654-8d46-6811a5e9082d",
+    "plan_summary": "为 AgentExecutionContext 接口的 Java 序列化器、TypeScript 桥接模板及工具 TS 接口添加 recentMessageCount 属性",
+    "code_reviewed": true,
+    "plan_completed": true
+  },
+  {
+    "plan_id": "plan_ce6fc26c-276a-4c10-9b37-c75dc8fec749",
+    "plan_summary": "为 Python 桥接模板 _runner.py 的 AgentExecutionContext 类添加 recent_message_count 属性",
+    "code_reviewed": true,
+    "plan_completed": true
+  },
+  {
+    "plan_id": "plan_51f60d02-1f17-4e03-b5fb-55b183a521fe",
+    "plan_summary": "创建 SystemTool 系统工具接口，继承 ToolInvoker，新增 getDescription 和 getParameterSchema 方法",
+    "code_reviewed": true,
+    "plan_completed": true
   }
 ]

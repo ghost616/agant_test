@@ -77,9 +77,11 @@ AgentContextMutator 新增 clearConversationVariables() 方法，清除绑定 co
 ## ContextSerializer.java
 
 serializeToJson() 新增 sessionVariables 和 conversationVariables 序列化：通过 ctx.getSessionVariableKeys()/getConversationVariableKeys() 遍历，逐个 key-value 写入 ObjectNode 并挂到 contextJSON 上。
+serializeToJson() 新增 recentMessageCount JSON 序列化（ctx.getRecentMessageCount()），插入在 modelId 之后
 ## _runner.ts 模板
 
 新增 VariableChanges 接口和 createVariableProxy() 工具函数：对 sessionVariables/conversationVariables 创建 Proxy 拦截 set/delete 操作，执行后 diff 对比原始快照生成变更集 {added:{},removed:[]}，输出结构化 JSON {result,sessionVariables,conversationVariables}，兼容旧格式降级。
+AgentExecutionContext 接口新增 recentMessageCount?: number 可选字段
 ## TypeScriptToolInvoker.java
 
 新增 parseResult() 私有方法：解析结构化 JSON 输出 {result,sessionVariables,conversationVariables}，遍历 added/removed 调用 ctx.putSessionVariable/removeSessionVariable 和 ctx.putConversationVariable/removeConversationVariable 同步变量到 Java 上下文；非结构化 JSON 降级按纯文本返回。execute() 返回改为 parseResult(ctx,result)。

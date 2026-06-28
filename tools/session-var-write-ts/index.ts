@@ -25,6 +25,7 @@ export interface AgentExecutionContext {
     agentId?: string;
     systemPrompt?: string;
     modelId?: string;
+    recentMessageCount?: number;
     history?: HistoryEntry[];
     tools?: ToolInfo[];
     sessionVariables?: Record<string, string>;

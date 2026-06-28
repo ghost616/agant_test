@@ -22,6 +22,7 @@
 - 序列化上下文为 _input.json → 执行 python _runner.py _input.json → 30 秒超时 → 返回输出
 - ToolManager.getInvoker() 中 case PYTHON 路由到 PythonToolInvoker
 - _runner.py 桥接脚本：解析 JSON → 动态导入 index.py → 调用 execute(context, arguments) → 输出结果
+_runner.py AgentExecutionContext 新增 recent_message_count 属性，从 data 中解析 recentMessageCount 字段
 ## 代码审查修复
 
 - ContextSerializer：提取 serializeToJson() 为静态工具类，消除 TypeScriptToolInvoker 和 PythonToolInvoker 中的重复代码

@@ -135,7 +135,7 @@
     },
     {
       "path": "tools/file-reader/index.ts",
-      "description": "TypeScript 文件读取测试工具，用于测试 TypeScriptToolInvoker 的 bun/node 运行时桥接，导出 execute(ctx, args) 函数"
+      "description": "TypeScript 文件读取测试工具，用于测试 TypeScriptToolInvoker 的 bun/node 运行时桥接，AgentExecutionContext 含 sessionId/agentId/systemPrompt/modelId/recentMessageCount/history/tools，导出 execute(ctx, args) 函数"
     },
     {
       "path": "src/main/java/com/ghost616/platform/entity/SessionVariable.java",
@@ -147,11 +147,11 @@
     },
     {
       "path": "src/main/java/com/ghost616/platform/service/agent/invoker/ContextSerializer.java",
-      "description": "上下文序列化器，serializeToJson() 新增 sessionVariables/conversationVariables JSON 序列化"
+      "description": "上下文序列化器，serializeToJson() 序列化 sessionId/agentId/systemPrompt/modelId/recentMessageCount/history/tools/sessionVariables/conversationVariables 至 JSON ObjectNode"
     },
     {
       "path": "src/main/resources/agent/_runner.ts",
-      "description": "TypeScript 桥接模板，新增 VariableChanges 接口、createVariableProxy 函数（Proxy 拦截 set/delete）、diff 变更集、结构化 JSON 输出"
+      "description": "TypeScript 桥接模板，AgentExecutionContext 含 sessionId/agentId/systemPrompt/modelId/recentMessageCount/history/tools/sessionVariables/conversationVariables，含 VariableChanges 接口、createVariableProxy 函数（Proxy 拦截 set/delete）、diff 变更集、结构化 JSON 输出"
     },
     {
       "path": "tools/file-reader/_runner.ts",
@@ -167,11 +167,15 @@
     },
     {
       "path": "tools/session-var-write-ts/index.ts",
-      "description": "Session 变量写入工具 (TypeScript)，接收 {key,value}，写入 context.sessionVariables[key]=value，返回 {\"status\":\"ok\"}"
+      "description": "Session 变量写入工具 (TypeScript)，AgentExecutionContext 含 sessionId/agentId/systemPrompt/modelId/recentMessageCount/history/tools/sessionVariables/conversationVariables，接收 {key,value} 写入 context.sessionVariables"
     },
     {
       "path": "tools/session-var-read-ts/index.ts",
-      "description": "Session 变量读取工具 (TypeScript)，接收 {key}，读取 context.sessionVariables?.[key]，返回 {key,value,exists}"
+      "description": "Session 变量读取工具 (TypeScript)，AgentExecutionContext 含 sessionId/agentId/systemPrompt/modelId/recentMessageCount/history/tools/sessionVariables/conversationVariables，接收 {key} 返回 {key,value,exists}"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/service/agent/invoker/SystemTool.java",
+      "description": "系统工具接口，继承 ToolInvoker，定义 getDescription() 返回工具说明和 getParameterSchema() 返回 JSON Schema 参数定义"
     }
   ]
 }

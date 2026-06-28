@@ -31,7 +31,7 @@
     },
     {
       "path": "src/main/resources/agent/_runner.py",
-      "description": "Python 桥接模板，从 _input.json 读取上下文，动态导入 index.py 并调用 execute()"
+      "description": "Python 桥接模板，从 _input.json 读取上下文，动态导入 index.py 并调用 execute()。AgentExecutionContext 解析 sessionId/agentId/systemPrompt/modelId/recentMessageCount/history/tools/sessionVariables/conversationVariables"
     },
     {
       "path": "src/main/java/com/ghost616/platform/service/agent/invoker/PythonToolInvoker.java",

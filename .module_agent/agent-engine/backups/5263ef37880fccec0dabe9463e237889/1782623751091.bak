@@ -25,21 +25,21 @@ export interface AgentExecutionContext {
     agentId?: string;
     systemPrompt?: string;
     modelId?: string;
-    recentMessageCount?: number;
     history?: HistoryEntry[];
     tools?: ToolInfo[];
     sessionVariables?: Record<string, string>;
     conversationVariables?: Record<string, string>;
 }
 
-interface ReadArgs {
+interface WriteArgs {
     key?: string;
+    value?: string;
 }
 
 export function execute(_ctx: AgentExecutionContext, args: string): string {
-    let parsed: ReadArgs;
+    let parsed: WriteArgs;
     try {
-        parsed = JSON.parse(args) as ReadArgs;
+        parsed = JSON.parse(args) as WriteArgs;
     } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : String(e);
         return JSON.stringify({ error: `Argument parse error: ${msg}` });
@@ -49,8 +49,13 @@ export function execute(_ctx: AgentExecutionContext, args: string): string {
     if (!key) {
         return JSON.stringify({ error: 'key 参数不能为空' });
     }
+    const value = parsed.value ?? '';
 
-    const value = _ctx.sessionVariables?.[key] ?? null;
+    if (_ctx.sessionVariables) {
+        _ctx.sessionVariables[key] = value;
+    } else {
+        return JSON.stringify({ error: 'sessionVariables 不可用' });
+    }
 
-    return JSON.stringify({ key, value, exists: value !== null });
+    return JSON.stringify({ status: 'ok' });
 }
