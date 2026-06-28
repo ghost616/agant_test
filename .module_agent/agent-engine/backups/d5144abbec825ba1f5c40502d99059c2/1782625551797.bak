@@ -18,7 +18,6 @@ import com.ghost616.platform.service.agent.AgentExecutionContext;
 import com.ghost616.platform.service.agent.ChatService;
 import com.ghost616.platform.service.agent.SessionManager;
 import com.ghost616.platform.service.agent.ToolExecutionTracker;
-import com.ghost616.platform.service.agent.invoker.SystemToolManager;
 import com.ghost616.platform.service.agent.invoker.ToolCallQueueManager;
 import com.ghost616.platform.service.agent.invoker.ToolInvoker;
 import com.ghost616.platform.service.agent.invoker.ToolManager;
@@ -41,7 +40,6 @@ public class ToolExecutionController {
 
     private final ToolCallQueueManager toolCallQueueManager;
     private final ToolManager toolManager;
-    private final SystemToolManager systemToolManager;
     private final SessionManager sessionManager;
     private final ChatService chatService;
     private final AgentContextManager agentContextManager;
@@ -58,24 +56,15 @@ public class ToolExecutionController {
             return ApiResponse.success(result);
         }
 
-        String peekToolCallName = peekData.toolCallName();
         ToolInvoker invoker;
         try {
-            if (peekToolCallName.startsWith("_sys_")) {
-                String sysToolName = peekToolCallName.substring("_sys_".length());
-                invoker = systemToolManager.getSystemTool(sysToolName);
-                if (invoker == null) {
-                    throw new BusinessException(ErrorCode.TOOL_INVOKE_ERROR, "系统工具不存在: " + sysToolName);
-                }
-            } else {
-                invoker = toolManager.getInvoker(sessionId, peekToolCallName);
-            }
+            invoker = toolManager.getInvoker(sessionId, peekData.toolCallName());
         } catch (Exception e) {
-            log.error("sessionId={} 获取工具调用器失败, toolName={}", sessionId, peekToolCallName, e);
+            log.error("sessionId={} 获取工具调用器失败, toolName={}", sessionId, peekData.toolCallName(), e);
             Map<String, Object> result = new HashMap<>();
             result.put("status", "failed");
             result.put("toolId", peekData.toolCallId());
-            result.put("toolName", peekToolCallName);
+            result.put("toolName", peekData.toolCallName());
             result.put("arguments", peekData.toolCallArguments());
             result.put("hasMore", toolCallQueueManager.hasPending(sessionId));
             result.put("message", e.getMessage());

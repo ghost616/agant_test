@@ -79,7 +79,7 @@
     },
     {
       "path": "src/main/java/com/ghost616/platform/service/model/invoker/ModelInvoker.java",
-      "description": "统一模型调用接口（default toToolDefinition 新增 parameterSchema 空值前置检查）"
+      "description": "统一模型调用接口（toToolDefinition/createMinimalToolDefinition 默认实现委托给 ToolDefinitionConverter）"
     },
     {
       "path": "src/main/java/com/ghost616/platform/service/model/invoker/ModelInvokerManager.java",

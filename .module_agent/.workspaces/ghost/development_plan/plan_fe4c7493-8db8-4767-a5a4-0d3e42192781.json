@@ -1,9 +1,0 @@
-{
-  "plan_id": "plan_fe4c7493-8db8-4767-a5a4-0d3e42192781",
-  "module_name": "framework",
-  "development_plan": "schema.sql 中 agent_config 表的 CREATE TABLE 新增 recent_message_count INTEGER DEFAULT 10 列，末尾新增 ALTER TABLE agent_config ADD COLUMN recent_message_count INTEGER DEFAULT 10 迁移语句",
-  "session_id": "ses_0fc7e430fffeqliPwbv478obGj",
-  "modified_files": [
-    "src/main/resources/schema.sql"
-  ]
-}

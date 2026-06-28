@@ -99,7 +99,7 @@
     },
     {
       "path": "src/main/java/com/ghost616/platform/service/agent/ChatService.java",
-      "description": "chat() 从 sessionContext 获取 mutator，非工具继续路径调用 clearConversationVariables；新增 truncateByPairs 按配对截取历史"
+      "description": "chat() 构建 tools 时合并 systemToolManager.getToolDefinitions(invoker) 系统工具定义列表，从 sessionContext 获取 mutator，非工具继续路径调用 clearConversationVariables；新增 truncateByPairs 按配对截取历史"
     },
     {
       "path": "src/main/java/com/ghost616/platform/service/agent/AgentConfigService.java",
@@ -115,7 +115,7 @@
     },
     {
       "path": "src/main/java/com/ghost616/platform/controller/ToolExecutionController.java",
-      "description": "工具执行 REST 控制器，executeTools/toolStatus 返回 ApiResponse<Map<String,Object>>，continueChat 返回 Flux SSE 流"
+      "description": "executeTools() 检测 toolCallName 是否 startsWith(_sys_)，是则从 SystemToolManager 获取 invoker，否则走原有 toolManager.getInvoker 流程；toolStatus/continueChat 提供工具执行状态轮询和继续对话接口"
     },
     {
       "path": "src/main/java/com/ghost616/platform/service/agent/ToolExecutionTracker.java",
@@ -175,7 +175,15 @@
     },
     {
       "path": "src/main/java/com/ghost616/platform/service/agent/invoker/SystemTool.java",
-      "description": "系统工具接口，继承 ToolInvoker，定义 getDescription() 返回工具说明和 getParameterSchema() 返回 JSON Schema 参数定义"
+      "description": "系统工具接口，继承 ToolInvoker，定义 getToolName() 返回工具名称、getDescription() 返回工具说明、getParameterSchema() 返回 JSON Schema 参数定义"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/service/agent/invoker/SystemToolManager.java",
+      "description": "系统工具管理器，@PostConstruct 扫描 SystemTool Bean 按 getToolName() 注册，getSystemTool(name) 按名称获取，getToolDefinitions() 通过 ToolDefinitionConverter.convert() 构建带 _sys_ 前缀的 ToolDefinition 列表（无需 ModelInvoker）"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/service/agent/invoker/ToolDefinitionConverter.java",
+      "description": "工具定义转换工具类，final 私有构造仅含静态方法：convert(ToolConfigDTO) 解析 parameterSchema JSON 补全 type 字段返回 ToolDefinition，createMinimal(ToolConfigDTO) 仅 name+description 不含 parameters"
     }
   ]
 }

@@ -1,56 +1,14 @@
 [
   {
-    "plan_id": "plan_5a80b7f0-d1d6-4150-b6cc-2babfb461672",
-    "plan_summary": "用户发起对话时清理对话变量",
-    "code_reviewed": true,
-    "plan_completed": true
-  },
-  {
-    "plan_id": "plan_fe4c7493-8db8-4767-a5a4-0d3e42192781",
-    "plan_summary": "agent_config 表新增 recent_message_count 列（默认10）",
-    "code_reviewed": true,
-    "plan_completed": true
-  },
-  {
-    "plan_id": "plan_01f815c7-ee66-4ac6-8eb1-db8109f87585",
-    "plan_summary": "AgentConfig 实体/DTO/请求/服务 新增 recentMessageCount 字段",
-    "code_reviewed": true,
-    "plan_completed": true
-  },
-  {
     "plan_id": "plan_ef32be20-28ab-461a-b572-063d56d62074",
     "plan_summary": "agent-engine 加载并应用 recentMessageCount 截取历史消息",
     "code_reviewed": false,
     "plan_completed": false
   },
   {
-    "plan_id": "plan_eb589045-c048-4bac-b6d3-ca6bc2d1a4b0",
-    "plan_summary": "前端智能体页面新增 recentMessageCount 配置项",
-    "code_reviewed": true,
-    "plan_completed": true
-  },
-  {
-    "plan_id": "plan_cb977457-f9e1-4add-806b-934b79fed1ba",
-    "plan_summary": "创建 SchemaMigration 启动组件替代 schema.sql ALTER TABLE",
-    "code_reviewed": true,
-    "plan_completed": true
-  },
-  {
-    "plan_id": "plan_cd914821-6414-4654-8d46-6811a5e9082d",
-    "plan_summary": "为 AgentExecutionContext 接口的 Java 序列化器、TypeScript 桥接模板及工具 TS 接口添加 recentMessageCount 属性",
-    "code_reviewed": true,
-    "plan_completed": true
-  },
-  {
-    "plan_id": "plan_ce6fc26c-276a-4c10-9b37-c75dc8fec749",
-    "plan_summary": "为 Python 桥接模板 _runner.py 的 AgentExecutionContext 类添加 recent_message_count 属性",
-    "code_reviewed": true,
-    "plan_completed": true
-  },
-  {
-    "plan_id": "plan_51f60d02-1f17-4e03-b5fb-55b183a521fe",
-    "plan_summary": "创建 SystemTool 系统工具接口，继承 ToolInvoker，新增 getDescription 和 getParameterSchema 方法",
-    "code_reviewed": true,
-    "plan_completed": true
+    "plan_id": "plan_37a458b3-200f-4f84-8755-518eb39dbd79",
+    "plan_summary": "修复 ToolExecutionController 变量重名编译错误",
+    "code_reviewed": false,
+    "plan_completed": false
   }
 ]

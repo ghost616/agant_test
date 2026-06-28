@@ -11,7 +11,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import jakarta.annotation.PostConstruct;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,9 +33,9 @@ import com.ghost616.platform.exception.BusinessException;
 import com.ghost616.platform.repository.ModelConfigMapper;
 import com.ghost616.platform.repository.SessionMapper;
 import com.ghost616.platform.service.agent.invoker.SystemPostHook;
-import com.ghost616.platform.service.agent.invoker.ToolCallBufferHook;
 import com.ghost616.platform.service.hook.HookInvoker;
 import com.ghost616.platform.service.hook.SystemHook;
+import com.ghost616.platform.service.model.invoker.ModelInvoker;
 import com.ghost616.platform.service.model.invoker.ModelInvokerManager;
 
 @Slf4j
@@ -53,8 +52,6 @@ public class ChatService {
     private final SessionMapper sessionMapper;
     private final ObjectMapper objectMapper;
     private final ApplicationContext applicationContext;
-    private final ToolCallBufferHook toolCallBufferHook;
-    private final ToolExecutionTracker toolExecutionTracker;
 
     private final Map<HookPhase, List<HookInvoker>> systemHooks = new HashMap<>();
     private final List<HookInvoker> systemPostHooks = new ArrayList<>();
@@ -92,15 +89,15 @@ public class ChatService {
         String content = request.getContent();
         Long modelId = request.getModelId();
 
-        AgentExecutionContext.AgentContextMutator mutator = new AgentExecutionContext.AgentContextMutator();
         AgentContextManager.AgentSessionContext sessionContext =
-                agentContextManager.getOrCreate(sessionId, modelId, mutator);
+                agentContextManager.getOrCreate(sessionId, modelId);
         AgentExecutionContext context = sessionContext.context();
         AgentExecutionContext.AgentContextMutator contextMutator = sessionContext.mutator();
 
         boolean isToolContinue = TOOL_CONTINUE_MARKER.equals(content);
 
         if (!isToolContinue) {
+            contextMutator.clearConversationVariables();
             sessionManager.saveMessage(sessionId, "user", content, null, null, null);
 
             AgentExecutionContext.HistoryEntry userEntry = new AgentExecutionContext.HistoryEntry(
@@ -134,12 +131,22 @@ public class ChatService {
                 .content(context.getSystemPrompt() != null ? context.getSystemPrompt() : "")
                 .build());
 
-        for (AgentExecutionContext.HistoryEntry entry : context.getHistory()) {
+        List<AgentExecutionContext.HistoryEntry> historyEntries = context.getHistory();
+        Integer recentCount = context.getRecentMessageCount();
+        if (recentCount != null && recentCount > 0 && recentCount < historyEntries.size()) {
+            historyEntries = truncateByPairs(historyEntries, recentCount);
+        }
+
+        for (AgentExecutionContext.HistoryEntry entry : historyEntries) {
             Message.MessageBuilder builder = Message.builder()
                     .role(entry.role())
                     .content(entry.content());
             if (entry.toolCalls() != null && !entry.toolCalls().isEmpty()) {
                 builder.toolCalls(entry.toolCalls());
+            }
+            if (entry.reasoning() != null && !entry.reasoning().isEmpty()
+                    && entry.toolCalls() != null && !entry.toolCalls().isEmpty()) {
+                builder.reasoning(entry.reasoning());
             }
             if (entry.toolCallId() != null) {
                 builder.toolCallId(entry.toolCallId());
@@ -147,8 +154,10 @@ public class ChatService {
             messages.add(builder.build());
         }
 
+        ModelInvoker invoker = modelInvokerManager.getInvoker(modelConfig);
+
         List<ToolDefinition> tools = context.getTools().stream()
-                .map(this::toToolDefinition)
+                .map(invoker::toToolDefinition)
                 .toList();
 
         com.ghost616.platform.dto.model.ChatRequest chatRequest =
@@ -160,13 +169,11 @@ public class ChatService {
 
         AtomicBoolean hasToolCalls = new AtomicBoolean(false);
 
-        Flux<ChatChunk> stream = modelInvokerManager
-                .getInvoker(modelConfig)
-                .invokeStream(chatRequest);
+        Flux<ChatChunk> stream = invoker.invokeStream(chatRequest);
 
         return stream
                 .doOnNext(chunk -> {
-                    if (chunk.getToolCall() != null) {
+                    if (chunk.getToolCalls() != null && !chunk.getToolCalls().isEmpty()) {
                         hasToolCalls.set(true);
                     }
                     if (chunk.getFinishReason() != null) {
@@ -184,25 +191,21 @@ public class ChatService {
                             .build();
                     triggerHooks(HookPhase.AFTER_MESSAGE_RECEIVE, context, completeChunk);
                     executePostHooks(context, completeChunk);
-                    toolCallBufferHook.clear(sessionId);
-                    toolExecutionTracker.clear(sessionId);
                 });
     }
 
-    private ToolDefinition toToolDefinition(ToolConfigDTO tool) {
-        Map<String, Object> parameters;
-        try {
-            parameters = objectMapper.readValue(
-                    tool.getParameterSchema(),
-                    new TypeReference<Map<String, Object>>() {});
-        } catch (Exception e) {
-            log.warn("解析工具 {} 的 parameterSchema 失败，使用空 Map 兜底", tool.getName(), e);
-            parameters = Collections.emptyMap();
+    private static List<AgentExecutionContext.HistoryEntry> truncateByPairs(
+            List<AgentExecutionContext.HistoryEntry> history, int pairCount) {
+        List<Integer> userIndices = new ArrayList<>();
+        for (int i = 0; i < history.size(); i++) {
+            if ("user".equals(history.get(i).role())) {
+                userIndices.add(i);
+            }
         }
-        return ToolDefinition.builder()
-                .name(tool.getName())
-                .description(tool.getDescription())
-                .parameters(parameters)
-                .build();
+        if (userIndices.size() <= pairCount) {
+            return history;
+        }
+        int startIndex = userIndices.get(userIndices.size() - pairCount);
+        return history.subList(startIndex, history.size());
     }
 }

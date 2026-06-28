@@ -33,6 +33,7 @@ import com.ghost616.platform.exception.BusinessException;
 import com.ghost616.platform.repository.ModelConfigMapper;
 import com.ghost616.platform.repository.SessionMapper;
 import com.ghost616.platform.service.agent.invoker.SystemPostHook;
+import com.ghost616.platform.service.agent.invoker.SystemToolManager;
 import com.ghost616.platform.service.hook.HookInvoker;
 import com.ghost616.platform.service.hook.SystemHook;
 import com.ghost616.platform.service.model.invoker.ModelInvoker;
@@ -52,6 +53,7 @@ public class ChatService {
     private final SessionMapper sessionMapper;
     private final ObjectMapper objectMapper;
     private final ApplicationContext applicationContext;
+    private final SystemToolManager systemToolManager;
 
     private final Map<HookPhase, List<HookInvoker>> systemHooks = new HashMap<>();
     private final List<HookInvoker> systemPostHooks = new ArrayList<>();
@@ -156,9 +158,11 @@ public class ChatService {
 
         ModelInvoker invoker = modelInvokerManager.getInvoker(modelConfig);
 
-        List<ToolDefinition> tools = context.getTools().stream()
+        List<ToolDefinition> tools = new ArrayList<>();
+        tools.addAll(context.getTools().stream()
                 .map(invoker::toToolDefinition)
-                .toList();
+                .toList());
+        tools.addAll(systemToolManager.getToolDefinitions());
 
         com.ghost616.platform.dto.model.ChatRequest chatRequest =
                 com.ghost616.platform.dto.model.ChatRequest.builder()

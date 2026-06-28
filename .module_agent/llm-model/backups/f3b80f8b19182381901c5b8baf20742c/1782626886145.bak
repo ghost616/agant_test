@@ -1,17 +1,22 @@
 package com.ghost616.platform.service.model.invoker;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghost616.platform.dto.model.ChatChunk;
 import com.ghost616.platform.dto.model.ChatRequest;
 import com.ghost616.platform.dto.model.ChatResponse;
 import com.ghost616.platform.dto.model.ToolDefinition;
 import com.ghost616.platform.dto.tool.ToolConfigDTO;
-import com.ghost616.platform.service.agent.invoker.ToolDefinitionConverter;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import reactor.core.publisher.Flux;
 
 /**
  * 统一模型调用接口，屏蔽不同 LLM 提供商的差异。
  */
 public interface ModelInvoker {
+
+    ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     /**
      * 同步调用模型。
@@ -43,7 +48,10 @@ public interface ModelInvoker {
      * @return 无 parameters 的 ToolDefinition
      */
     default ToolDefinition createMinimalToolDefinition(ToolConfigDTO tool) {
-        return ToolDefinitionConverter.createMinimal(tool);
+        return ToolDefinition.builder()
+                .name(tool.getName())
+                .description(tool.getDescription())
+                .build();
     }
 
     /**
@@ -53,6 +61,27 @@ public interface ModelInvoker {
      * @return 工具定义
      */
     default ToolDefinition toToolDefinition(ToolConfigDTO tool) {
-        return ToolDefinitionConverter.convert(tool);
+        if (tool.getParameterSchema() == null || tool.getParameterSchema().isBlank()) {
+            return createMinimalToolDefinition(tool);
+        }
+        Map<String, Object> parameters;
+        try {
+            parameters = OBJECT_MAPPER.readValue(
+                    tool.getParameterSchema(),
+                    new TypeReference<Map<String, Object>>() {});
+        } catch (Exception e) {
+            parameters = Map.of("type", "object");
+        }
+        if (!parameters.containsKey("type")) {
+            Map<String, Object> wrapped = new LinkedHashMap<>();
+            wrapped.put("type", "object");
+            wrapped.put("properties", parameters);
+            parameters = wrapped;
+        }
+        return ToolDefinition.builder()
+                .name(tool.getName())
+                .description(tool.getDescription())
+                .parameters(parameters)
+                .build();
     }
 }

@@ -35,5 +35,7 @@
   "src/main/java/com/ghost616/platform/service/agent/invoker/PythonToolInvoker.java": "629d82d3a20b15817deec1fe317cbfa4",
   "tools/session-var-read-ts/index.ts": "66855dd44c7c66fce5ea75b5910d5f15",
   "tools/session-var-write-ts/index.ts": "5263ef37880fccec0dabe9463e237889",
-  "src/main/java/com/ghost616/platform/service/agent/invoker/SystemTool.java": "820278fc8e7cf569a53436c079f70112"
+  "src/main/java/com/ghost616/platform/service/agent/invoker/SystemTool.java": "820278fc8e7cf569a53436c079f70112",
+  "src/main/java/com/ghost616/platform/service/agent/invoker/SystemToolManager.java": "54f4ab78d0c7762c1068e2a05dd5e84e",
+  "src/main/java/com/ghost616/platform/service/agent/invoker/ToolDefinitionConverter.java": "614764de527eb8872ee164407058bfb0"
 }

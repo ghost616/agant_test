@@ -1,9 +1,0 @@
-{
-  "plan_id": "plan_51f60d02-1f17-4e03-b5fb-55b183a521fe",
-  "module_name": "agent-engine",
-  "development_plan": "在 agent-engine 模块中创建 SystemTool 系统工具接口：\n\n1. 新建 src/main/java/com/ghost616/platform/service/agent/invoker/SystemTool.java：\n   - 接口继承 ToolInvoker\n   - 添加 String getDescription() 方法，返回工具说明\n   - 添加 String getParameterSchema() 方法，返回 JSON Schema 格式的工具参数定义\n   - 不修改其他文件（包括 SystemInfoTool）\n\n包名：com.ghost616.platform.service.agent.invoker",
-  "session_id": "ses_0f358a07cffeFDVHl5IJPNUxPA",
-  "modified_files": [
-    "src/main/java/com/ghost616/platform/service/agent/invoker/SystemTool.java"
-  ]
-}
