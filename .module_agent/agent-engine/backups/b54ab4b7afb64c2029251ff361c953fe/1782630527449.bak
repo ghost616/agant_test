@@ -71,7 +71,7 @@ public class MessageSavePostHook implements SystemPostHook {
             log.info("sessionId={} 保存消息, content={}, reasoning={}, toolCalls数量={}",
                     sessionId, content, reasoning,
                     toolCalls != null ? toolCalls.size() : 0);
-            sessionManager.saveMessage(sessionId, "assistant", content, reasoning, null, null, toolCalls);
+            sessionManager.saveMessage(sessionId, "assistant", content, reasoning, null, toolCalls);
             if (toolCalls != null && !toolCalls.isEmpty()) {
                 toolCallQueueManager.enqueue(sessionId, toolCalls);
             }

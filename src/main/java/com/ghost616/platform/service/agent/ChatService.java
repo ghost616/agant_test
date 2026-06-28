@@ -103,7 +103,7 @@ public class ChatService {
 
         if (!isToolContinue) {
             contextMutator.clearConversationVariables();
-            sessionManager.saveMessage(sessionId, "user", content, null, null, null);
+            sessionManager.saveMessage(sessionId, "user", content, null, null, null, null);
 
             AgentExecutionContext.HistoryEntry userEntry = new AgentExecutionContext.HistoryEntry(
                     "user", content, null, null,

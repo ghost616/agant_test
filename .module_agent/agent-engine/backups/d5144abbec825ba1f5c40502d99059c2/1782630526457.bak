@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghost616.platform.dto.ApiResponse;
 import com.ghost616.platform.dto.chat.ChatRequest;
 import com.ghost616.platform.dto.model.ChatChunk;
@@ -47,7 +46,6 @@ public class ToolExecutionController {
     private final ChatService chatService;
     private final AgentContextManager agentContextManager;
     private final ToolExecutionTracker toolExecutionTracker;
-    private final ObjectMapper objectMapper;
 
     @PostMapping("/{sessionId}/execute-tools")
     public ApiResponse<Map<String, Object>> executeTools(@PathVariable Long sessionId) {
@@ -160,16 +158,7 @@ public class ToolExecutionController {
         List<ToolExecutionTracker.ToolResult> results = toolExecutionTracker.getAndClearResults(sessionId);
 
         for (ToolExecutionTracker.ToolResult r : results) {
-            try {
-                Map<String, String> toolResultMap = new HashMap<>();
-                toolResultMap.put("toolName", r.toolName());
-                toolResultMap.put("arguments", r.arguments());
-                toolResultMap.put("result", r.result());
-                String toolResultJson = objectMapper.writeValueAsString(toolResultMap);
-                sessionManager.saveMessage(sessionId, "tool", r.result(), null, r.toolId(), toolResultJson, null);
-            } catch (Exception e) {
-                log.error("sessionId={} 构建 toolResult JSON 失败", sessionId, e);
-            }
+            sessionManager.saveMessage(sessionId, "tool", r.result(), null, r.toolId(), null);
         }
 
         if (!results.isEmpty()) {

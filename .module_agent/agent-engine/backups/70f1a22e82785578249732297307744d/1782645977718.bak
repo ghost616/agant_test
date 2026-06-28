@@ -34,8 +34,8 @@ public class Message {
     @TableField("tool_call_id")
     private String toolCallId;
 
-    @TableField("tool_result")
-    private String toolResult;
+    @TableField("tool_name")
+    private String toolName;
 
     @TableField(value = "create_time", fill = FieldFill.INSERT)
     private LocalDateTime createTime;

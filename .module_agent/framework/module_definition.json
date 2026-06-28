@@ -123,7 +123,7 @@
     },
     {
       "path": "src/main/java/com/ghost616/platform/config/SchemaMigration.java",
-      "description": "数据库 Schema 迁移组件，ApplicationRunner 在启动时执行 PRAGMA 检测+ALTER TABLE，替代 schema.sql 中的静态迁移语句"
+      "description": "数据库 Schema 迁移组件，ApplicationRunner 在启动时执行 PRAGMA 检测+ALTER TABLE，替代 schema.sql 中的静态迁移语句。migrations 列表新增 message.tool_name (VARCHAR(255)) 迁移项"
     }
   ]
 }

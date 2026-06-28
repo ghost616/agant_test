@@ -27,7 +27,7 @@ interface ChatMessage {
   role: MessageRole;
   content: string;
   reasoning?: string;
-  toolResult?: string;
+  toolName?: string;
 }
 
 const ROLE_CONFIG: Record<MessageRole, { label: string; icon: JSX.Element; color: string }> = {
@@ -102,25 +102,14 @@ function AgentChat(): JSX.Element {
         ]);
         setModelList(models);
         setModelId(session.modelId);
-        const mapped: ChatMessage[] = historyMessages.map((msg: SessionMessage) => {
-          let content = msg.content;
-          if (msg.role === 'tool' && msg.toolResult) {
-            try {
-              const tr = JSON.parse(msg.toolResult);
-              content = `**工具: ${tr.toolName}**\n\n**参数:**\n\`\`\`json\n${tr.arguments}\n\`\`\`\n\n**执行结果:**\n${tr.result}`;
-            } catch {
-              // keep original content
-            }
-          }
-          return {
-            role: (['user', 'assistant', 'tool', 'system'].includes(msg.role)
-              ? msg.role
-              : 'assistant') as MessageRole,
-            content,
-            reasoning: msg.reasoning || undefined,
-            toolResult: msg.toolResult || undefined,
-          };
-        });
+        const mapped: ChatMessage[] = historyMessages.map((msg: SessionMessage) => ({
+          role: (['user', 'assistant', 'tool', 'system'].includes(msg.role)
+            ? msg.role
+            : 'assistant') as MessageRole,
+          content: msg.content,
+          reasoning: msg.reasoning || undefined,
+          toolName: msg.toolName || undefined,
+        }));
         setMessages(mapped);
       } catch {
         message.error('加载历史消息失败');
@@ -250,7 +239,7 @@ function AgentChat(): JSX.Element {
           onDone: (hasMoreTools) => {
             setCurrentResponse((prev) => {
               setCurrentReasoning((reasoning) => {
-                if ((prev && prev.trim()) || (reasoning && reasoning.trim())) {
+                if (prev && prev.trim()) {
                   setMessages((msgs) => [
                     ...msgs,
                     {
@@ -316,7 +305,7 @@ function AgentChat(): JSX.Element {
         onDone: (hasToolCalls: boolean) => {
           setCurrentResponse((prev) => {
             setCurrentReasoning((reasoning) => {
-              if ((prev && prev.trim()) || (reasoning && reasoning.trim())) {
+              if (prev && prev.trim()) {
                 setMessages((msgs) => [
                   ...msgs,
                   {
@@ -407,14 +396,17 @@ function AgentChat(): JSX.Element {
       >
         <div style={{ maxWidth: '75%' }}>
           {renderRoleHeader(msg.role)}
-          {msg.reasoning && renderReasoning(msg.reasoning)}
-          {msg.content.trim() && (
-            <div style={BUBBLE_STYLES[msg.role]} className="agent-chat-markdown">
-              <div style={{ color: '#d4d4d4', fontSize: 14, lineHeight: 1.8 }}>
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
-              </div>
-            </div>
+          {msg.role === 'tool' && (
+            <Typography.Text style={{ color: '#d7ba7d', fontSize: 11, marginBottom: 4, display: 'block' }}>
+              {msg.toolName || ''}
+            </Typography.Text>
           )}
+          {msg.reasoning && renderReasoning(msg.reasoning)}
+          <div style={BUBBLE_STYLES[msg.role]} className="agent-chat-markdown">
+            <div style={{ color: '#d4d4d4', fontSize: 14, lineHeight: 1.8 }}>
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+            </div>
+          </div>
         </div>
       </div>
     );

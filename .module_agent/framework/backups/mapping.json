@@ -8,5 +8,6 @@
   "src/main/resources/application.yml": "256c57f5b357be82840a9b2207f0dcd5",
   "pom.xml": "600376dffeb79835ede4a0b285078036",
   "src/main/java/com/ghost616/platform/event/ToolChangedEvent.java": "9fea7af4ad915fb37399a8545910c835",
-  "README.md": "04c6e90faac2675aa89e2176d2eec7d8"
+  "README.md": "04c6e90faac2675aa89e2176d2eec7d8",
+  "src/main/java/com/ghost616/platform/config/SchemaMigration.java": "fed1d4048accefa7f7649a9285dd0ec5"
 }

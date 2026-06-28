@@ -1,0 +1,9 @@
+{
+  "plan_id": "plan_e19e2955-f6e9-47e7-a9a1-c7a39d161d4a",
+  "module_name": "frontend-ui",
+  "development_plan": "修改 AgentChat.tsx 的 loadHistory 函数中历史消息映射逻辑：当 msg.role === 'tool' 且 msg.toolName 非空时，将 \"**工具: {toolName}**\\n\\n\" 拼接到 msg.content 前面，使历史工具消息的 toolName 像流式消息一样嵌入 content 中显示。",
+  "session_id": "ses_0f2336f01ffexz3ndUepSh15rV",
+  "modified_files": [
+    "src/pages/sessions/AgentChat.tsx"
+  ]
+}

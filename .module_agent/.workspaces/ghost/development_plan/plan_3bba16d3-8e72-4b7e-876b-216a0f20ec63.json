@@ -1,0 +1,10 @@
+{
+  "plan_id": "plan_3bba16d3-8e72-4b7e-876b-216a0f20ec63",
+  "module_name": "frontend-ui",
+  "development_plan": "1. src/types/session.ts：SessionMessage 接口中 toolName 字段替换为 toolResult（类型 String，可选）\n2. src/pages/sessions/AgentChat.tsx：\n   - ChatMessage 接口：toolName 替换为 toolResult\n   - loadHistory 历史消息映射：msg.toolName 改为 msg.toolResult；对 tool 角色消息且 toolResult 非空时，解析 toolResult JSON 获取 toolName/arguments/result，格式化为 \"**工具: {toolName}**\\n\\n**参数:**\\n\\`\\`\\`json\\n{arguments}\\n\\`\\`\\`\\n\\n**执行结果:**\\n{result}\" 作为 content\n   - 移除之前对 tool 消息单独拼接 toolName 到 content 的逻辑（统一由 toolResult 驱动）",
+  "session_id": "ses_0f2336f01ffexz3ndUepSh15rV",
+  "modified_files": [
+    "src/types/session.ts",
+    "src/pages/sessions/AgentChat.tsx"
+  ]
+}

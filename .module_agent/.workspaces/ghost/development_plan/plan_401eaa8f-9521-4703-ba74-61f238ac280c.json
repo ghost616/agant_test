@@ -1,0 +1,12 @@
+{
+  "plan_id": "plan_401eaa8f-9521-4703-ba74-61f238ac280c",
+  "module_name": "agent-engine",
+  "development_plan": "修改 ToolExecutionController.java 第 169 行 continueChat() 方法中的 saveMessage 调用：将第5个参数 toolCallId 从 null 改为 r.toolId()",
+  "session_id": "ses_0f205712cffeYnf4nVd99rxeR8",
+  "modified_files": [
+    "src/main/java/com/ghost616/platform/entity/Message.java",
+    "src/main/java/com/ghost616/platform/service/agent/SessionManager.java",
+    "src/main/java/com/ghost616/platform/controller/ToolExecutionController.java",
+    "src/main/java/com/ghost616/platform/config/SchemaMigration.java"
+  ]
+}

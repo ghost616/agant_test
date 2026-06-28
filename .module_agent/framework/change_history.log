@@ -41,3 +41,4 @@
 [2026-06-26T10:13:24.340Z] [session: ses_0fc9538ebffeuB9wAsfk1ZwOnQ] [2026-06-26] schema.sql: session_variable 表 CREATE TABLE 添加 update_time TIMESTAMP 和 deleted INTEGER DEFAULT 0 列，末尾新增 ALTER TABLE 迁移语句兼容已有数据库
 [2026-06-26T10:38:12.614Z] [session: ses_0fc7e430fffeqliPwbv478obGj] schema.sql: agent_config 表新增 recent_message_count INTEGER DEFAULT 10 列及对应 ALTER TABLE 迁移语句
 [2026-06-26T10:55:20.172Z] [session: ses_0fc7e430fffeqliPwbv478obGj] 新增 SchemaMigration.java 启动组件替代 schema.sql ALTER TABLE 迁移；schema.sql 删除 4 条 ALTER TABLE；application.yml 移除 continue-on-error
+[2026-06-28T07:11:03.350Z] [session: ses_0f3113eddffe0ccsHFrXvG4JOy] feat: SchemaMigration.migrations 列表新增 message.tool_name (VARCHAR(255)) 迁移项，启动时检测 message 表无 tool_name 列则 ALTER TABLE 添加。配合 agent-engine 的 Message 实体 toolName 字段改造。

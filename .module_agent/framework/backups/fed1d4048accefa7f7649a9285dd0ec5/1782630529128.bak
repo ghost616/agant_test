@@ -40,8 +40,7 @@ public class SchemaMigration implements ApplicationRunner {
                 new Migration("tool_config", "auth_config", "TEXT", null),
                 new Migration("session_variable", "update_time", "TIMESTAMP", null),
                 new Migration("session_variable", "deleted", "INTEGER", "0"),
-                new Migration("agent_config", "recent_message_count", "INTEGER", "10"),
-                new Migration("message", "tool_result", "TEXT", null)
+                new Migration("agent_config", "recent_message_count", "INTEGER", "10")
         );
 
         for (Migration migration : migrations) {

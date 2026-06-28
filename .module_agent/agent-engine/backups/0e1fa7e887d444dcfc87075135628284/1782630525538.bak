@@ -23,14 +23,13 @@ public class SessionManager {
     private final MessageToolCallMapper messageToolCallMapper;
 
     public Long saveMessage(Long sessionId, String role, String content, String reasoning,
-                            String toolCallId, String toolResult, List<ToolCallData> toolCalls) {
+                            String toolCallId, List<ToolCallData> toolCalls) {
         Message message = new Message();
         message.setSessionId(sessionId);
         message.setRole(role);
         message.setContent(content);
         message.setReasoning(reasoning);
         message.setToolCallId(toolCallId);
-        message.setToolResult(toolResult);
 
         LambdaQueryWrapper<Message> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Message::getSessionId, sessionId)
@@ -76,7 +75,7 @@ public class SessionManager {
             result.add(new MessageDTO(
                     msg.getId(), msg.getSessionId(), msg.getRole(), msg.getContent(),
                     msg.getReasoning(), msg.getToolCallId(), msg.getSequenceNum(),
-                    msg.getCreateTime(), msg.getToolResult(), toolCallDataList));
+                    msg.getCreateTime(), toolCallDataList));
         }
 
         return result;
@@ -87,6 +86,6 @@ public class SessionManager {
 
     public record MessageDTO(Long id, Long sessionId, String role, String content, String reasoning,
                              String toolCallId, Integer sequenceNum, LocalDateTime createTime,
-                             String toolResult, List<ToolCallData> toolCalls) {
+                             List<ToolCallData> toolCalls) {
     }
 }

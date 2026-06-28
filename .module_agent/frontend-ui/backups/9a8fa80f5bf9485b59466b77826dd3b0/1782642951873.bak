@@ -27,7 +27,7 @@ interface ChatMessage {
   role: MessageRole;
   content: string;
   reasoning?: string;
-  toolResult?: string;
+  toolName?: string;
 }
 
 const ROLE_CONFIG: Record<MessageRole, { label: string; icon: JSX.Element; color: string }> = {
@@ -102,25 +102,14 @@ function AgentChat(): JSX.Element {
         ]);
         setModelList(models);
         setModelId(session.modelId);
-        const mapped: ChatMessage[] = historyMessages.map((msg: SessionMessage) => {
-          let content = msg.content;
-          if (msg.role === 'tool' && msg.toolResult) {
-            try {
-              const tr = JSON.parse(msg.toolResult);
-              content = `**工具: ${tr.toolName}**\n\n**参数:**\n\`\`\`json\n${tr.arguments}\n\`\`\`\n\n**执行结果:**\n${tr.result}`;
-            } catch {
-              // keep original content
-            }
-          }
-          return {
-            role: (['user', 'assistant', 'tool', 'system'].includes(msg.role)
-              ? msg.role
-              : 'assistant') as MessageRole,
-            content,
-            reasoning: msg.reasoning || undefined,
-            toolResult: msg.toolResult || undefined,
-          };
-        });
+        const mapped: ChatMessage[] = historyMessages.map((msg: SessionMessage) => ({
+          role: (['user', 'assistant', 'tool', 'system'].includes(msg.role)
+            ? msg.role
+            : 'assistant') as MessageRole,
+          content: msg.content,
+          reasoning: msg.reasoning || undefined,
+          toolName: msg.toolName || undefined,
+        }));
         setMessages(mapped);
       } catch {
         message.error('加载历史消息失败');

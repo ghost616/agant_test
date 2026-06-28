@@ -128,3 +128,9 @@
 - 每次新发送消息或工具流程正常结束时重置 toolLoopCount
 - AgentChat.tsx 流式数据为空不显示：handleSend 和 executeToolLoop 中 onDone 回调添加 content 非空检查（prev && prev.trim()），为空则跳过不添加 assistant 消息
 - 工具执行气泡补充 arguments 参数显示：工具开始执行气泡 content 加入 JSON 格式参数；工具完成/失败气泡同样补充参数显示
+- SessionMessage 接口新增 toolName 可选字段，历史消息加载映射时保留该字段
+- tool 角色消息渲染时在角色头下方显示工具名称（toolName），为空时显示空字符串
+- loadHistory 中历史消息映射：当 msg.role === 'tool' 且 msg.toolName 非空时，将 "**工具: {toolName}**\n\n" 拼接到 msg.content 前面，使历史工具消息的 toolName 像流式消息一样嵌入 content 中显示
+- SessionMessage 接口：toolName 字段替换为 toolResult（String，可选），存储工具执行结果的 JSON
+- ChatMessage 接口：toolName 替换为 toolResult
+- loadHistory 历史消息映射：tool 角色且 toolResult 非空时，解析 toolResult JSON 获取 toolName/arguments/result，格式化为完整工具执行结果 markdown 作为 content（替代之前仅拼接 toolName 前缀的逻辑）

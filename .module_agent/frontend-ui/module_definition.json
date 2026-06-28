@@ -39,7 +39,7 @@
     },
     {
       "path": "src/types/session.ts",
-      "description": "会话类型定义，含 Session、CreateSessionParams、SessionMessage、ToolCallData 接口"
+      "description": "会话类型定义，含 Session、CreateSessionParams、SessionMessage（含 toolResult 替代 toolName，存储工具执行结果 JSON）、ToolCallData 接口"
     },
     {
       "path": "src/services/session.ts",
@@ -51,7 +51,7 @@
     },
     {
       "path": "src/pages/sessions/AgentChat.tsx",
-      "description": "智能体对话页面：流式空数据跳过添加消息；工具气泡补充 arguments JSON 参数显示"
+      "description": "智能体对话页面：renderMessage 仅 content 非空时渲染气泡；onDone 回调条件扩展为检查 content 或 reasoning 任一非空；工具气泡补充 arguments JSON 参数显示；loadHistory 中 tool 角色且 toolResult 非空时解析 JSON 格式化为完整工具执行结果 markdown 作为 content（替代之前仅拼接 toolName 前缀的逻辑）"
     },
     {
       "path": "src/components/JsonEditor.tsx",

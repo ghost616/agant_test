@@ -7,7 +7,7 @@
     },
     {
       "path": "src/main/java/com/ghost616/platform/entity/Message.java",
-      "description": "消息实体（message 表），不继承 BaseEntity，含雪花ID、会话ID、角色、内容、推理、序号、工具调用ID、创建时间"
+      "description": "消息实体（message 表），不继承 BaseEntity，含雪花ID、会话ID、角色、内容、推理、序号、工具调用ID、工具结果(toolResult，@TableField(\"tool_result\"))、创建时间"
     },
     {
       "path": "src/main/java/com/ghost616/platform/entity/MessageToolCall.java",
@@ -51,7 +51,7 @@
     },
     {
       "path": "src/main/java/com/ghost616/platform/service/agent/SessionManager.java",
-      "description": "会话管理组件，提供消息保存（含工具调用）和历史消息查询功能。getSessionTools() 和 expandMcpTools() 已迁移至 ToolManager"
+      "description": "会话管理组件，提供消息保存（含工具调用）和历史消息查询功能。getSessionTools() 和 expandMcpTools() 已迁移至 ToolManager。saveMessage() 签名在 toolCallId 与 toolCalls 之间含 toolResult 参数并 message.setToolResult(toolResult)；内部 record MessageDTO 含 toolResult 字段；getMessages() 构造 MessageDTO 时传入 msg.getToolResult()"
     },
     {
       "path": "src/main/java/com/ghost616/platform/repository/SessionMapper.java",
@@ -99,7 +99,7 @@
     },
     {
       "path": "src/main/java/com/ghost616/platform/service/agent/ChatService.java",
-      "description": "chat() 构建 messages 后调用 foldMessageGroups() 按消息组折叠超出 recentMessageCount 的历史数据（折叠组保留 user+替换为折叠提示 assistant），根据 _sys_his_msgs_index 会话变量豁免指定组；构建 tools 时合并系统工具定义列表"
+      "description": "chat() 构建 messages 后调用 foldMessageGroups() 按消息组折叠超出 recentMessageCount 的历史数据（折叠组保留 user+替换为折叠提示 assistant，foldMessageGroups 用 messages.get(i).getRole() 访问角色），根据 _sys_his_msgs_index 会话变量豁免指定组；构建 tools 时合并系统工具定义列表；saveMessage() 用户消息保存调用适配新签名（toolName 传 null）"
     },
     {
       "path": "src/main/java/com/ghost616/platform/service/agent/AgentConfigService.java",
@@ -115,7 +115,7 @@
     },
     {
       "path": "src/main/java/com/ghost616/platform/controller/ToolExecutionController.java",
-      "description": "executeTools() 检测 toolCallName 是否 startsWith(_sys_)，是则从 SystemToolManager 获取 invoker，否则走原有 toolManager.getInvoker 流程；toolStatus/continueChat 提供工具执行状态轮询和继续对话接口"
+      "description": "executeTools() 检测 toolCallName 是否 startsWith(_sys_)，是则从 SystemToolManager 获取 invoker，否则走原有 toolManager.getInvoker 流程；toolStatus/continueChat 提供工具执行状态轮询和继续对话接口。continueChat() 遍历结果构建 toolResult JSON（含 toolName/arguments/result），作为 saveMessage 的 toolResult 参数传入（toolCallId 传 null），注入 ObjectMapper 序列化"
     },
     {
       "path": "src/main/java/com/ghost616/platform/service/agent/ToolExecutionTracker.java",
@@ -127,7 +127,7 @@
     },
     {
       "path": "src/main/java/com/ghost616/platform/service/agent/invoker/MessageSavePostHook.java",
-      "description": "消息保存后置HOOK，id 为 null 时用 index 作为 fallback key 继续累加参数"
+      "description": "消息保存后置HOOK，id 为 null 时用 index 作为 fallback key 继续累加参数。saveMessage() 调用适配新签名，toolName 参数传 null"
     },
     {
       "path": "src/main/java/com/ghost616/platform/service/agent/invoker/ToolCallQueueManager.java",

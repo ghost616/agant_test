@@ -5,9 +5,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import jakarta.annotation.PostConstruct;
@@ -35,8 +36,10 @@ import com.ghost616.platform.exception.BusinessException;
 import com.ghost616.platform.repository.ModelConfigMapper;
 import com.ghost616.platform.repository.SessionMapper;
 import com.ghost616.platform.service.agent.invoker.SystemPostHook;
+import com.ghost616.platform.service.agent.invoker.SystemToolManager;
 import com.ghost616.platform.service.hook.HookInvoker;
 import com.ghost616.platform.service.hook.SystemHook;
+import com.ghost616.platform.service.model.invoker.ModelInvoker;
 import com.ghost616.platform.service.model.invoker.ModelInvokerManager;
 
 @Slf4j
@@ -53,6 +56,7 @@ public class ChatService {
     private final SessionMapper sessionMapper;
     private final ObjectMapper objectMapper;
     private final ApplicationContext applicationContext;
+    private final SystemToolManager systemToolManager;
 
     private final Map<HookPhase, List<HookInvoker>> systemHooks = new HashMap<>();
     private final List<HookInvoker> systemPostHooks = new ArrayList<>();
@@ -90,15 +94,15 @@ public class ChatService {
         String content = request.getContent();
         Long modelId = request.getModelId();
 
-        AgentExecutionContext.AgentContextMutator mutator = new AgentExecutionContext.AgentContextMutator();
         AgentContextManager.AgentSessionContext sessionContext =
-                agentContextManager.getOrCreate(sessionId, modelId, mutator);
+                agentContextManager.getOrCreate(sessionId, modelId);
         AgentExecutionContext context = sessionContext.context();
         AgentExecutionContext.AgentContextMutator contextMutator = sessionContext.mutator();
 
         boolean isToolContinue = TOOL_CONTINUE_MARKER.equals(content);
 
         if (!isToolContinue) {
+            contextMutator.clearConversationVariables();
             sessionManager.saveMessage(sessionId, "user", content, null, null, null);
 
             AgentExecutionContext.HistoryEntry userEntry = new AgentExecutionContext.HistoryEntry(
@@ -139,15 +143,25 @@ public class ChatService {
             if (entry.toolCalls() != null && !entry.toolCalls().isEmpty()) {
                 builder.toolCalls(entry.toolCalls());
             }
+            if (entry.reasoning() != null && !entry.reasoning().isEmpty()
+                    && entry.toolCalls() != null && !entry.toolCalls().isEmpty()) {
+                builder.reasoning(entry.reasoning());
+            }
             if (entry.toolCallId() != null) {
                 builder.toolCallId(entry.toolCallId());
             }
             messages.add(builder.build());
         }
 
-        List<ToolDefinition> tools = context.getTools().stream()
-                .map(this::toToolDefinition)
-                .toList();
+        messages = foldMessageGroups(messages, context);
+
+        ModelInvoker invoker = modelInvokerManager.getInvoker(modelConfig);
+
+        List<ToolDefinition> tools = new ArrayList<>();
+        tools.addAll(context.getTools().stream()
+                .map(invoker::toToolDefinition)
+                .toList());
+        tools.addAll(systemToolManager.getToolDefinitions());
 
         com.ghost616.platform.dto.model.ChatRequest chatRequest =
                 com.ghost616.platform.dto.model.ChatRequest.builder()
@@ -158,9 +172,7 @@ public class ChatService {
 
         AtomicBoolean hasToolCalls = new AtomicBoolean(false);
 
-        Flux<ChatChunk> stream = modelInvokerManager
-                .getInvoker(modelConfig)
-                .invokeStream(chatRequest);
+        Flux<ChatChunk> stream = invoker.invokeStream(chatRequest);
 
         return stream
                 .doOnNext(chunk -> {
@@ -185,31 +197,66 @@ public class ChatService {
                 });
     }
 
-    private ToolDefinition toToolDefinition(ToolConfigDTO tool) {
-        Map<String, Object> parameters;
-        try {
-            parameters = objectMapper.readValue(
-                    tool.getParameterSchema(),
-                    new TypeReference<Map<String, Object>>() {});
-        } catch (Exception e) {
-            log.warn("解析工具 {} 的 parameterSchema 失败，使用默认 schema 兜底", tool.getName(), e);
-            parameters = Map.of("type", "object");
+    private static List<Message> foldMessageGroups(List<Message> messages, AgentExecutionContext context) {
+        Integer recentCount = context.getRecentMessageCount();
+        if (recentCount == null || recentCount <= 0) {
+            return messages;
         }
-        if (!parameters.containsKey("type")) {
-            Map<String, Object> wrapped = new LinkedHashMap<>();
-            wrapped.put("type", "object");
-            wrapped.put("properties", parameters);
-            parameters = wrapped;
+
+        Set<Integer> expandedIndices = parseExpandedIndices(
+                context.getConversationVariable("_sys_his_msgs_index"));
+
+        List<List<Message>> groups = new ArrayList<>();
+        int i = 1;
+        while (i < messages.size()) {
+            int groupStart = i;
+            i++;
+            while (i < messages.size() && !"user".equals(messages.get(i).getRole())) {
+                i++;
+            }
+            List<Message> group = new ArrayList<>();
+            for (int j = groupStart; j < i; j++) {
+                group.add(messages.get(j));
+            }
+            groups.add(group);
         }
-        ToolDefinition result = ToolDefinition.builder()
-                .name(tool.getName())
-                .description(tool.getDescription())
-                .parameters(parameters)
-                .build();
-        try {
-            log.info("toolName={} toolDefinition={}", tool.getName(), objectMapper.writeValueAsString(result));
-        } catch (Exception ignored) {
+
+        if (groups.size() <= recentCount) {
+            return messages;
         }
+
+        int foldEnd = groups.size() - recentCount;
+
+        List<Message> result = new ArrayList<>();
+        result.add(messages.get(0));
+
+        for (int g = 0; g < groups.size(); g++) {
+            if (g < foldEnd && !expandedIndices.contains(g)) {
+                List<Message> group = groups.get(g);
+                result.add(group.get(0));
+                result.add(Message.builder()
+                        .role("assistant")
+                        .content("此为历史消息索引为" + g + "，如果想要展开请调用历史消息工具")
+                        .build());
+            } else {
+                result.addAll(groups.get(g));
+            }
+        }
+
         return result;
+    }
+
+    private static Set<Integer> parseExpandedIndices(String jsonStr) {
+        if (jsonStr == null || jsonStr.isBlank()) {
+            return Collections.emptySet();
+        }
+        try {
+            List<Integer> list = new ObjectMapper().readValue(
+                    jsonStr, new TypeReference<List<Integer>>() {});
+            return new HashSet<>(list);
+        } catch (Exception e) {
+            log.warn("解析 _sys_his_msgs_index 失败: {}", jsonStr, e);
+            return Collections.emptySet();
+        }
     }
 }
