@@ -10,5 +10,11 @@
     "plan_summary": "修复 ToolExecutionController 变量重名编译错误",
     "code_reviewed": false,
     "plan_completed": false
+  },
+  {
+    "plan_id": "plan_62129586-6f20-4306-89f6-efcfab485f5e",
+    "plan_summary": "修复 ChatService.java:214 .role() 编译错误",
+    "code_reviewed": false,
+    "plan_completed": true
   }
 ]

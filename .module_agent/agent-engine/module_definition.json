@@ -99,7 +99,7 @@
     },
     {
       "path": "src/main/java/com/ghost616/platform/service/agent/ChatService.java",
-      "description": "chat() 构建 tools 时合并 systemToolManager.getToolDefinitions(invoker) 系统工具定义列表，从 sessionContext 获取 mutator，非工具继续路径调用 clearConversationVariables；新增 truncateByPairs 按配对截取历史"
+      "description": "chat() 构建 messages 后调用 foldMessageGroups() 按消息组折叠超出 recentMessageCount 的历史数据（折叠组保留 user+替换为折叠提示 assistant），根据 _sys_his_msgs_index 会话变量豁免指定组；构建 tools 时合并系统工具定义列表"
     },
     {
       "path": "src/main/java/com/ghost616/platform/service/agent/AgentConfigService.java",

@@ -5,12 +5,15 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import jakarta.annotation.PostConstruct;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -133,13 +136,7 @@ public class ChatService {
                 .content(context.getSystemPrompt() != null ? context.getSystemPrompt() : "")
                 .build());
 
-        List<AgentExecutionContext.HistoryEntry> historyEntries = context.getHistory();
-        Integer recentCount = context.getRecentMessageCount();
-        if (recentCount != null && recentCount > 0 && recentCount < historyEntries.size()) {
-            historyEntries = truncateByPairs(historyEntries, recentCount);
-        }
-
-        for (AgentExecutionContext.HistoryEntry entry : historyEntries) {
+        for (AgentExecutionContext.HistoryEntry entry : context.getHistory()) {
             Message.MessageBuilder builder = Message.builder()
                     .role(entry.role())
                     .content(entry.content());
@@ -155,6 +152,8 @@ public class ChatService {
             }
             messages.add(builder.build());
         }
+
+        messages = foldMessageGroups(messages, context);
 
         ModelInvoker invoker = modelInvokerManager.getInvoker(modelConfig);
 
@@ -198,18 +197,66 @@ public class ChatService {
                 });
     }
 
-    private static List<AgentExecutionContext.HistoryEntry> truncateByPairs(
-            List<AgentExecutionContext.HistoryEntry> history, int pairCount) {
-        List<Integer> userIndices = new ArrayList<>();
-        for (int i = 0; i < history.size(); i++) {
-            if ("user".equals(history.get(i).role())) {
-                userIndices.add(i);
+    private static List<Message> foldMessageGroups(List<Message> messages, AgentExecutionContext context) {
+        Integer recentCount = context.getRecentMessageCount();
+        if (recentCount == null || recentCount <= 0) {
+            return messages;
+        }
+
+        Set<Integer> expandedIndices = parseExpandedIndices(
+                context.getConversationVariable("_sys_his_msgs_index"));
+
+        List<List<Message>> groups = new ArrayList<>();
+        int i = 1;
+        while (i < messages.size()) {
+            int groupStart = i;
+            i++;
+            while (i < messages.size() && !"user".equals(messages.get(i).getRole())) {
+                i++;
+            }
+            List<Message> group = new ArrayList<>();
+            for (int j = groupStart; j < i; j++) {
+                group.add(messages.get(j));
+            }
+            groups.add(group);
+        }
+
+        if (groups.size() <= recentCount) {
+            return messages;
+        }
+
+        int foldEnd = groups.size() - recentCount;
+
+        List<Message> result = new ArrayList<>();
+        result.add(messages.get(0));
+
+        for (int g = 0; g < groups.size(); g++) {
+            if (g < foldEnd && !expandedIndices.contains(g)) {
+                List<Message> group = groups.get(g);
+                result.add(group.get(0));
+                result.add(Message.builder()
+                        .role("assistant")
+                        .content("此为历史消息索引为" + g + "，如果想要展开请调用历史消息工具")
+                        .build());
+            } else {
+                result.addAll(groups.get(g));
             }
         }
-        if (userIndices.size() <= pairCount) {
-            return history;
+
+        return result;
+    }
+
+    private static Set<Integer> parseExpandedIndices(String jsonStr) {
+        if (jsonStr == null || jsonStr.isBlank()) {
+            return Collections.emptySet();
         }
-        int startIndex = userIndices.get(userIndices.size() - pairCount);
-        return history.subList(startIndex, history.size());
+        try {
+            List<Integer> list = new ObjectMapper().readValue(
+                    jsonStr, new TypeReference<List<Integer>>() {});
+            return new HashSet<>(list);
+        } catch (Exception e) {
+            log.warn("解析 _sys_his_msgs_index 失败: {}", jsonStr, e);
+            return Collections.emptySet();
+        }
     }
 }
