@@ -1,7 +1,6 @@
 package com.ghost616.platform.service.agent;
 
 import com.ghost616.platform.dto.model.ToolCall;
-import com.ghost616.platform.dto.skill.SkillConfigDTO;
 import com.ghost616.platform.dto.tool.ToolConfigDTO;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -32,12 +31,10 @@ public class AgentExecutionContext {
     private final Map<String, String> sessionVariables;
     @Getter(AccessLevel.NONE)
     private final Map<String, String> conversationVariables;
-    private final List<SkillConfigDTO> skills;
 
     public AgentExecutionContext(Long sessionId, Long agentId, String systemPrompt, Long modelId,
                                   Integer recentMessageCount,
                                  List<HistoryEntry> history, List<ToolConfigDTO> tools,
-                                 List<SkillConfigDTO> skills,
                                  AgentContextMutator mutator,
                                   Map<String, String> sessionVariables,
                                   Map<String, String> conversationVariables) {
@@ -48,7 +45,6 @@ public class AgentExecutionContext {
         this.recentMessageCount = recentMessageCount;
         this.history = history;
         this.tools = tools;
-        this.skills = skills;
         this.mutator = mutator;
         this.sessionVariables = sessionVariables;
         this.conversationVariables = conversationVariables;

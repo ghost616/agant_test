@@ -2,6 +2,7 @@ package com.ghost616.platform.dto.skill;
 
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
+import com.ghost616.platform.dto.tool.ToolConfigDTO;
 import com.ghost616.platform.enums.CommonStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -30,6 +31,8 @@ public class SkillConfigDTO {
 
     @JsonSerialize(contentUsing = ToStringSerializer.class)
     private List<Long> toolIds;
+
+    private List<ToolConfigDTO> skillTools;
 
     private LocalDateTime createTime;
 

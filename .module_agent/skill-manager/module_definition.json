@@ -19,15 +19,15 @@
     },
     {
       "path": "src/main/java/com/ghost616/platform/dto/skill/SkillConfigDTO.java",
-      "description": "SKILL 响应 DTO，包含 id、name、description、prompt、status、toolIds、createTime、updateTime"
+      "description": "SKILL 响应 DTO，包含 id、name、description、prompt、status、toolIds、skillTools（非持久化，List<ToolConfigDTO>，加载时由 agent-engine 填充）、createTime、updateTime"
     },
     {
       "path": "src/main/java/com/ghost616/platform/dto/skill/SkillCreateRequest.java",
-      "description": "SKILL 创建请求 DTO，name 和 prompt 为必填字段，name 字段校验仅允许小写字母、数字和下划线（@Pattern），toolIds 为可选关联工具 ID 列表"
+      "description": "SKILL 创建请求 DTO，name 和 prompt 为必填字段，name 字段校验仅允许小写字母、数字和下划线且禁止 _sys_ 前缀（@Pattern），toolIds 为可选关联工具 ID 列表"
     },
     {
       "path": "src/main/java/com/ghost616/platform/dto/skill/SkillUpdateRequest.java",
-      "description": "SKILL 更新请求 DTO，所有字段可选，支持更新 name、description、prompt、status、toolIds，name 字段校验仅允许小写字母、数字和下划线（@Pattern）"
+      "description": "SKILL 更新请求 DTO，所有字段可选，支持更新 name、description、prompt、status、toolIds，name 字段校验仅允许小写字母、数字和下划线且禁止 _sys_ 前缀（@Pattern）"
     },
     {
       "path": "src/main/java/com/ghost616/platform/service/skill/SkillConfigService.java",

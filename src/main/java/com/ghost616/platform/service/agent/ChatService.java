@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -27,6 +28,7 @@ import com.ghost616.platform.dto.model.ChatChunk;
 import com.ghost616.platform.dto.model.Message;
 import com.ghost616.platform.dto.model.ToolCall;
 import com.ghost616.platform.dto.model.ToolDefinition;
+import com.ghost616.platform.dto.skill.SkillConfigDTO;
 import com.ghost616.platform.dto.tool.ToolConfigDTO;
 import com.ghost616.platform.entity.ModelConfig;
 import com.ghost616.platform.entity.Session;
@@ -136,6 +138,41 @@ public class ChatService {
                 .content(context.getSystemPrompt() != null ? context.getSystemPrompt() : "")
                 .build());
 
+        List<SkillConfigDTO> skills = context.getSkills();
+        if (skills != null && !skills.isEmpty()) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("以下是可用的技能（SKILL）列表：\n");
+            for (SkillConfigDTO skill : skills) {
+                sb.append("- ").append(skill.getName());
+                if (skill.getDescription() != null && !skill.getDescription().isEmpty()) {
+                    sb.append(": ").append(skill.getDescription());
+                }
+                sb.append("\n");
+            }
+            sb.append("\n使用 _sys_load_skills 系统工具加载技能，使用 _sys_unload_skills 卸载技能。");
+            sb.append(" 加载后技能的工具将变为可用。");
+            messages.add(Message.builder()
+                    .role("system")
+                    .content(sb.toString())
+                    .build());
+        }
+
+        List<SkillConfigDTO> loadedSkills = parseLoadedSkills(context, skills);
+        if (!loadedSkills.isEmpty()) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("以下技能已加载，请按照其提示词指导执行任务：\n\n");
+            for (SkillConfigDTO skill : loadedSkills) {
+                sb.append("## ").append(skill.getName()).append("\n");
+                if (skill.getPrompt() != null && !skill.getPrompt().isEmpty()) {
+                    sb.append(skill.getPrompt()).append("\n\n");
+                }
+            }
+            messages.add(Message.builder()
+                    .role("system")
+                    .content(sb.toString())
+                    .build());
+        }
+
         for (AgentExecutionContext.HistoryEntry entry : context.getHistory()) {
             Message.MessageBuilder builder = Message.builder()
                     .role(entry.role())
@@ -157,11 +194,23 @@ public class ChatService {
 
         ModelInvoker invoker = modelInvokerManager.getInvoker(modelConfig);
 
-        List<ToolDefinition> tools = new ArrayList<>();
-        tools.addAll(context.getTools().stream()
-                .map(invoker::toToolDefinition)
-                .toList());
-        tools.addAll(systemToolManager.getToolDefinitions());
+        Map<String, ToolDefinition> toolMap = new LinkedHashMap<>();
+        for (ToolConfigDTO t : context.getTools()) {
+            ToolDefinition def = invoker.toToolDefinition(t);
+            toolMap.put(def.getName(), def);
+        }
+        for (ToolDefinition def : systemToolManager.getToolDefinitions()) {
+            toolMap.put(def.getName(), def);
+        }
+        for (SkillConfigDTO skill : loadedSkills) {
+            if (skill.getSkillTools() != null) {
+                for (ToolConfigDTO st : skill.getSkillTools()) {
+                    ToolDefinition def = invoker.toToolDefinition(st);
+                    toolMap.put(def.getName(), def);
+                }
+            }
+        }
+        List<ToolDefinition> tools = new ArrayList<>(toolMap.values());
 
         com.ghost616.platform.dto.model.ChatRequest chatRequest =
                 com.ghost616.platform.dto.model.ChatRequest.builder()
@@ -195,6 +244,33 @@ public class ChatService {
                     triggerHooks(HookPhase.AFTER_MESSAGE_RECEIVE, context, completeChunk);
                     executePostHooks(context, completeChunk);
                 });
+    }
+
+    private List<SkillConfigDTO> parseLoadedSkills(AgentExecutionContext context, List<SkillConfigDTO> skills) {
+        String json = context.getSessionVariable("_sys_loading_SKILLS");
+        if (json == null || json.isBlank()) {
+            return List.of();
+        }
+        List<String> loadedNames;
+        try {
+            loadedNames = objectMapper.readValue(json, new TypeReference<List<String>>() {});
+        } catch (Exception e) {
+            log.warn("解析 _sys_loading_SKILLS 失败: {}", json, e);
+            return List.of();
+        }
+        if (loadedNames == null || loadedNames.isEmpty()) {
+            return List.of();
+        }
+        Set<String> nameSet = new HashSet<>(loadedNames);
+        List<SkillConfigDTO> result = new ArrayList<>();
+        if (skills != null) {
+            for (SkillConfigDTO skill : skills) {
+                if (nameSet.contains(skill.getName())) {
+                    result.add(skill);
+                }
+            }
+        }
+        return result;
     }
 
     private static List<Message> foldMessageGroups(List<Message> messages, AgentExecutionContext context) {

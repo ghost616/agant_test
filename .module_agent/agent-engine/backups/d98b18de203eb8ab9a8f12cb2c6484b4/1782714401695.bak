@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.ghost616.platform.dto.model.ToolCall;
-import com.ghost616.platform.dto.skill.SkillConfigDTO;
 import com.ghost616.platform.dto.tool.ToolConfigDTO;
 import com.ghost616.platform.enums.ErrorCode;
 import com.ghost616.platform.exception.BusinessException;
@@ -75,27 +74,6 @@ public final class ContextSerializer {
                 conversationVarsNode.put(key, value);
             }
             contextNode.set("conversationVariables", conversationVarsNode);
-
-            ArrayNode skillsArray = MAPPER.createArrayNode();
-            for (SkillConfigDTO skill : ctx.getSkills()) {
-                ObjectNode skillNode = MAPPER.createObjectNode();
-                skillNode.put("name", skill.getName());
-                skillNode.put("description", skill.getDescription());
-                skillNode.put("prompt", skill.getPrompt());
-                if (skill.getSkillTools() != null) {
-                    ArrayNode skillToolsArray = MAPPER.createArrayNode();
-                    for (ToolConfigDTO st : skill.getSkillTools()) {
-                        ObjectNode stNode = MAPPER.createObjectNode();
-                        stNode.put("name", st.getName());
-                        stNode.put("description", st.getDescription());
-                        stNode.put("parameterSchema", st.getParameterSchema());
-                        skillToolsArray.add(stNode);
-                    }
-                    skillNode.set("skillTools", skillToolsArray);
-                }
-                skillsArray.add(skillNode);
-            }
-            contextNode.set("skills", skillsArray);
 
             root.set("context", contextNode);
             root.put("arguments", arguments);

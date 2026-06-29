@@ -5,6 +5,7 @@
 - ToolCreateRequest.implPath 增加 @NotBlank(message = "实现路径不能为空") 校验注解，确保创建工具时必须提供实现路径。
 - GET /api/tools/{name}/impl：按工具名称查询工具实现信息，返回 ToolConfigDTO。Controller 新增 getImplByName 端点；Service 接口新增 getImplByName(String name) 方法，ServiceImpl 通过 LambdaQueryWrapper 按名称等值查询，不存在时抛出 TOOL_NOT_FOUND 异常。
 - ToolConfigDTO.id 字段添加 @JsonSerialize(using = ToStringSerializer.class) 注解，防止前端 JavaScript 处理雪花 ID 时精度丢失。
+- ToolCreateRequest 与 ToolUpdateRequest 的 name 字段 @Pattern 正则改为 `^(?!_sys_)[a-z0-9_]+$`，在原有"仅允许小写字母、数字、下划线"基础上禁止以 `_sys_` 开头（系统保留前缀），提示信息为"工具名称不允许以 _sys_ 开头"。
 ## Schema 验证与规范化
 
 - ToolConfigServiceImpl.create() 和 update() 在设置 parameterSchema 前调用 normalizeParameterSchema() 进行 JSON 合法性校验

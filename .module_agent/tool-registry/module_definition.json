@@ -11,11 +11,11 @@
     },
     {
       "path": "src/main/java/com/ghost616/platform/dto/tool/ToolCreateRequest.java",
-      "description": "新增 authConfig 字段"
+      "description": "工具创建请求 DTO，包含 name/toolType/description/parameterSchema/returnSchema/implPath/authConfig/status；name 字段通过 @Pattern 校验，仅允许小写字母、数字、下划线且不允许以 _sys_ 开头（系统保留前缀）"
     },
     {
       "path": "src/main/java/com/ghost616/platform/dto/tool/ToolUpdateRequest.java",
-      "description": "新增 authConfig 字段"
+      "description": "工具更新请求 DTO，包含 name/toolType/description/parameterSchema/returnSchema/implPath/authConfig/status；name 字段通过 @Pattern 校验，仅允许小写字母、数字、下划线且不允许以 _sys_ 开头（系统保留前缀）"
     },
     {
       "path": "src/main/java/com/ghost616/platform/repository/ToolConfigMapper.java",

@@ -23,6 +23,13 @@ export interface ToolInfo {
     parameterSchema?: string;
 }
 
+export interface SkillInfo {
+    name: string;
+    description?: string;
+    prompt?: string;
+    skillTools?: ToolInfo[];
+}
+
 export interface AgentExecutionContext {
     sessionId?: string;
     agentId?: string;
@@ -31,6 +38,7 @@ export interface AgentExecutionContext {
     recentMessageCount?: number;
     history?: HistoryEntry[];
     tools?: ToolInfo[];
+    skills?: SkillInfo[];
 }
 
 interface FileReadArgs {

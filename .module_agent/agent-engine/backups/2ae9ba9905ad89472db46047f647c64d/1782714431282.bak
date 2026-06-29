@@ -31,15 +31,6 @@ class ToolInfo:
         self.parameter_schema = data.get("parameterSchema")
 
 
-class SkillInfo:
-    def __init__(self, data):
-        self.name = data.get("name", "")
-        self.description = data.get("description")
-        self.prompt = data.get("prompt")
-        skill_tools_data = data.get("skillTools")
-        self.skill_tools = [ToolInfo(st) for st in skill_tools_data] if skill_tools_data else []
-
-
 class VariableProxy:
     def __init__(self, data):
         self._data = dict(data or {})
@@ -101,8 +92,6 @@ class AgentExecutionContext:
         self.history = [HistoryEntry(h) for h in history_data] if history_data else []
         tools_data = data.get("tools")
         self.tools = [ToolInfo(t) for t in tools_data] if tools_data else []
-        skills_data = data.get("skills")
-        self.skills = [SkillInfo(s) for s in skills_data] if skills_data else []
         self.session_variables = data.get("sessionVariables") or {}
         self.conversation_variables = data.get("conversationVariables") or {}
 

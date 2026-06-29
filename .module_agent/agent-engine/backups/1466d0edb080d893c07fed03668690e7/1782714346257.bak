@@ -2,24 +2,15 @@ package com.ghost616.platform.service.agent;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.ghost616.platform.dto.model.ToolCall;
-import com.ghost616.platform.dto.skill.SkillConfigDTO;
 import com.ghost616.platform.dto.tool.ToolConfigDTO;
 import com.ghost616.platform.entity.AgentConfig;
-import com.ghost616.platform.entity.AgentSkill;
 import com.ghost616.platform.entity.Session;
 import com.ghost616.platform.entity.SessionVariable;
-import com.ghost616.platform.entity.SkillConfig;
-import com.ghost616.platform.entity.SkillTool;
-import com.ghost616.platform.entity.ToolConfig;
 import com.ghost616.platform.enums.ErrorCode;
 import com.ghost616.platform.exception.BusinessException;
 import com.ghost616.platform.repository.AgentConfigMapper;
-import com.ghost616.platform.repository.AgentSkillMapper;
 import com.ghost616.platform.repository.SessionMapper;
 import com.ghost616.platform.repository.SessionVariableMapper;
-import com.ghost616.platform.repository.SkillConfigMapper;
-import com.ghost616.platform.repository.SkillToolMapper;
-import com.ghost616.platform.repository.ToolConfigMapper;
 import com.ghost616.platform.service.agent.invoker.ToolManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -43,10 +34,6 @@ public class AgentContextManager {
     private final SessionManager sessionManager;
     private final ToolManager toolManager;
     private final SessionVariableMapper sessionVariableMapper;
-    private final AgentSkillMapper agentSkillMapper;
-    private final SkillConfigMapper skillConfigMapper;
-    private final SkillToolMapper skillToolMapper;
-    private final ToolConfigMapper toolConfigMapper;
 
     private final ConcurrentHashMap<Long, AgentSessionContext> cache = new ConcurrentHashMap<>();
 
@@ -67,8 +54,6 @@ public class AgentContextManager {
             List<ToolConfigDTO> tools = toolManager.getSessionTools(id).stream()
                     .map(ToolManager.ToolSessionObject::toolConfig)
                     .toList();
-
-            List<SkillConfigDTO> skills = buildSkills(session.getAgentId());
 
             List<SessionManager.MessageDTO> messages = sessionManager.getMessages(id);
             List<AgentExecutionContext.HistoryEntry> history = new ArrayList<>();
@@ -97,7 +82,7 @@ public class AgentContextManager {
                     agentConfig.getSystemPrompt(),
                     effectiveModelId,
                     agentConfig.getRecentMessageCount(),
-                    history, tools, skills, mutator,
+                    history, tools, mutator,
                     loadSessionVariables(id), new HashMap<>());
 
             injectVariableCallbacks(mutator, session.getId());
@@ -141,63 +126,6 @@ public class AgentContextManager {
                             .eq(SessionVariable::getSessionId, sessionId)
                             .eq(SessionVariable::getVariableKey, key));
         };
-    }
-
-    private List<SkillConfigDTO> buildSkills(Long agentId) {
-        List<AgentSkill> agentSkills = agentSkillMapper.selectList(
-                new LambdaQueryWrapper<AgentSkill>()
-                        .eq(AgentSkill::getAgentId, agentId));
-        if (agentSkills == null || agentSkills.isEmpty()) {
-            return List.of();
-        }
-
-        List<Long> skillIds = agentSkills.stream()
-                .map(AgentSkill::getSkillId)
-                .distinct()
-                .toList();
-
-        List<SkillConfig> skillConfigs = skillConfigMapper.selectBatchIds(skillIds);
-        if (skillConfigs == null || skillConfigs.isEmpty()) {
-            return List.of();
-        }
-
-        List<SkillConfigDTO> result = new ArrayList<>();
-        for (SkillConfig sc : skillConfigs) {
-            if (sc.getStatus() == null || sc.getStatus() != com.ghost616.platform.enums.CommonStatus.ENABLED) {
-                continue;
-            }
-
-            List<SkillTool> skillTools = skillToolMapper.selectList(
-                    new LambdaQueryWrapper<SkillTool>()
-                            .eq(SkillTool::getSkillId, sc.getId()));
-            List<Long> toolIds = skillTools.stream()
-                    .map(SkillTool::getToolId)
-                    .toList();
-
-            List<ToolConfigDTO> toolDTOs = List.of();
-            if (!toolIds.isEmpty()) {
-                List<ToolConfig> toolConfigs = toolConfigMapper.selectBatchIds(toolIds);
-                toolDTOs = new ArrayList<>();
-                for (ToolConfig tc : toolConfigs) {
-                    toolDTOs.add(ToolConfigDTO.builder()
-                            .id(tc.getId())
-                            .name(tc.getName())
-                            .description(tc.getDescription())
-                            .parameterSchema(tc.getParameterSchema())
-                            .build());
-                }
-            }
-
-            result.add(SkillConfigDTO.builder()
-                    .id(sc.getId())
-                    .name(sc.getName())
-                    .description(sc.getDescription())
-                    .prompt(sc.getPrompt())
-                    .skillTools(toolDTOs)
-                    .build());
-        }
-
-        return result;
     }
 
     public AgentSessionContext get(Long sessionId) {

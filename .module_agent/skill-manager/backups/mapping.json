@@ -1,5 +1,6 @@
 {
   "src/main/java/com/ghost616/platform/dto/skill/SkillCreateRequest.java": "5807d9b2c7149d20b0f39cb88f0d5b67",
   "src/main/java/com/ghost616/platform/dto/skill/SkillUpdateRequest.java": "573a666be20c8a8b153c883b63f6adfe",
-  "src/main/java/com/ghost616/platform/controller/SkillConfigController.java": "6b8da8eadbbad35760afff3e2f8f238c"
+  "src/main/java/com/ghost616/platform/controller/SkillConfigController.java": "6b8da8eadbbad35760afff3e2f8f238c",
+  "src/main/java/com/ghost616/platform/dto/skill/SkillConfigDTO.java": "5eeb8b014ca1121248b77a99ed5caca7"
 }

@@ -19,7 +19,7 @@
     },
     {
       "path": "src/main/java/com/ghost616/platform/service/agent/AgentExecutionContext.java",
-      "description": "构造器新增 recentMessageCount 字段及 getter，AgentContextMutator 含 clearConversationVariables"
+      "description": "AgentExecutionContext 构造器含 sessionId/agentId/systemPrompt/modelId/recentMessageCount/history/tools/skills(skillConfig列表+关联工具)/mutator/sessionVariables/conversationVariables，含变量 CRUD 方法和 AgentContextMutator 内部类（clearConversationVariables）"
     },
     {
       "path": "src/main/java/com/ghost616/platform/service/agent/invoker/ToolInvoker.java",
@@ -95,11 +95,11 @@
     },
     {
       "path": "src/main/java/com/ghost616/platform/service/agent/AgentContextManager.java",
-      "description": "getOrCreate() 内部 new mutator，传入 agentConfig.getRecentMessageCount() 到 context 构造器"
+      "description": "getOrCreate() 内部 new mutator，从 AgentConfig 获取 recentMessageCount，通过 ToolManager 加载工具，通过 buildSkills() 四级链路（AgentSkill→SkillConfig→SkillTool→ToolConfig）加载技能配置及关联工具列表传入 context 构造器"
     },
     {
       "path": "src/main/java/com/ghost616/platform/service/agent/ChatService.java",
-      "description": "chat() 构建 messages 后调用 foldMessageGroups() 按消息组折叠超出 recentMessageCount 的历史数据（折叠组保留 user+替换为折叠提示 assistant，foldMessageGroups 用 messages.get(i).getRole() 访问角色），根据 _sys_his_msgs_index 会话变量豁免指定组；构建 tools 时合并系统工具定义列表；saveMessage() 用户消息保存调用适配新签名（toolName 传 null）"
+      "description": "chat() 构建 messages 后调用 foldMessageGroups() 按消息组折叠超出 recentMessageCount 的历史数据，根据 _sys_his_msgs_index 会话变量豁免指定组；构建 tools 时合并系统工具定义列表和已加载 SKILL 的 skillTools（LinkedHashMap 按 name 去重）；系统提示词后注入技能列表和已加载技能提示词 system 消息；saveMessage() 用户消息保存调用适配新签名（toolName 传 null）"
     },
     {
       "path": "src/main/java/com/ghost616/platform/service/agent/AgentConfigService.java",
@@ -147,11 +147,11 @@
     },
     {
       "path": "src/main/java/com/ghost616/platform/service/agent/invoker/ContextSerializer.java",
-      "description": "上下文序列化器，serializeToJson() 序列化 sessionId/agentId/systemPrompt/modelId/recentMessageCount/history/tools/sessionVariables/conversationVariables 至 JSON ObjectNode"
+      "description": "上下文序列化器，serializeToJson() 序列化 sessionId/agentId/systemPrompt/modelId/recentMessageCount/history/tools/skills(含skillTools子项)/sessionVariables/conversationVariables 至 JSON ObjectNode"
     },
     {
       "path": "src/main/resources/agent/_runner.ts",
-      "description": "TypeScript 桥接模板，AgentExecutionContext 含 sessionId/agentId/systemPrompt/modelId/recentMessageCount/history/tools/sessionVariables/conversationVariables，含 VariableChanges 接口、createVariableProxy 函数（Proxy 拦截 set/delete）、diff 变更集、结构化 JSON 输出"
+      "description": "TypeScript 桥接模板，AgentExecutionContext 含 sessionId/agentId/systemPrompt/modelId/recentMessageCount/history/tools/skills(SkillInfo[])/sessionVariables/conversationVariables，含 VariableChanges 接口、createVariableProxy 函数（Proxy 拦截 set/delete）、diff 变更集、结构化 JSON 输出"
     },
     {
       "path": "tools/file-reader/_runner.ts",
@@ -184,6 +184,14 @@
     {
       "path": "src/main/java/com/ghost616/platform/service/agent/invoker/ToolDefinitionConverter.java",
       "description": "工具定义转换工具类，final 私有构造仅含静态方法：convert(ToolConfigDTO) 解析 parameterSchema JSON 补全 type 字段返回 ToolDefinition，createMinimal(ToolConfigDTO) 仅 name+description 不含 parameters"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/service/agent/invoker/LoadSkillsSystemTool.java",
+      "description": "load_skills 系统工具（@Component），实现 SystemTool，按 names 从 ctx.getSkills() 匹配可用技能，读写 _sys_loading_SKILLS 会话变量（JSON数组）去重合并，返回加载数量及名称列表"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/service/agent/invoker/UnloadSkillsSystemTool.java",
+      "description": "unload_skills 系统工具（@Component），实现 SystemTool，从 _sys_loading_SKILLS 会话变量移除指定名称的技能并写回，返回卸载数量"
     }
   ]
 }

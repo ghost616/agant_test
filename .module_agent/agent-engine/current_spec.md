@@ -9,6 +9,7 @@ JavaToolInvoker.java: 实现 ToolInvoker 接口，构造时接收全限定类名
 ToolManager.java: Spring @Component，注入 ApplicationContext 和 ToolConfigService，提供 getInvoker(String toolName) 按工具名称查询 ToolConfigDTO，对 JAVA 类型使用 JavaToolInvoker 加载；提供 execute(ToolInvoker, ...) 方法封装调用。
 SessionServiceImpl.createSession(): 在 sessionMapper.insert(entity) 之后查询 agent_tool 表获取该智能体关联的所有工具 ID，为每个工具创建 SessionTool 记录（含 sessionId 和 toolId）并逐个插入 session_tool 表，确保创建会话后 AgentContextManager.getOrCreate() 能通过 sessionManager.getSessionTools() 查询到会话工具列表。
 SessionServiceImpl.createSession() 添加 @Transactional 保证原子性；使用 SessionToolMapper.insertBatch(List) 批量插入替代逐条 insert；deleteSession() 新增删除 session_tool 记录避免孤儿数据；变量名 at/st 改为 agentTool/sessionTool 提高可读性。
+新增 LoadSkillsSystemTool（load_skills，按名称从 ctx.getSkills() 匹配可用技能，读写 _sys_loading_SKILLS 会话变量实现去重合并加载）和 UnloadSkillsSystemTool（unload_skills，从 _sys_loading_SKILLS 移除指定名称并写回）。两者均为 @Component，由 SystemToolManager 自动注册。
 ## 实体定义
 
 Message 实体对应 message 表，不继承 BaseEntity（无 update_time/deleted 列）。字段：id (雪花ID)、sessionId、role、content、reasoning、sequenceNum、toolCallId、toolResult (String, @TableField("tool_result"))、createTime。
@@ -17,6 +18,7 @@ Message 实体对应 message 表，不继承 BaseEntity（无 update_time/delete
 loadSessionVariables() 返回类型改为 Map&lt;String,String&gt;；injectVariableCallbacks() 回调中移除 String.valueOf() 包装（value 已确认是 String）。
 getOrCreate() 移除 AgentContextMutator 参数，方法内部自行 new AgentContextMutator()。
 getOrCreate() 从 AgentConfig 获取 recentMessageCount 传入 AgentExecutionContext 构造器。
+getOrCreate() 新增 skills 加载逻辑：buildSkills() 私有方法通过 AgentSkillMapper→SkillConfigMapper→SkillToolMapper→ToolConfigMapper 四级链路查询技能配置及关联工具列表，仅加载 ENABLED 状态的技能，构建 SkillConfigDTO 列表传入 AgentExecutionContext 构造器。
 ## ChatService.java
 
 ChatService.toToolDefinition() 私有方法已移除，工具定义转换逻辑迁移至 ModelInvoker.toToolDefinition() 默认方法。chat() 方法中 invoker 变量提前声明，统一用于 toToolDefinition 和 invokeStream 调用。
@@ -24,6 +26,7 @@ chat() 方法 messages 构建时，对 HistoryEntry 中 toolCalls 非空且 reas
 chat() 移除外部 new AgentContextMutator() 和 getOrCreate mutator 参数传入；非工具继续路径（!isToolContinue）调用 contextMutator.clearConversationVariables() 清除上一轮对话变量。
 chat() 构建 messages 时根据 context.getRecentMessageCount() 按配对截取 history 最近 N 条。新增 truncateByPairs() 私有方法：按 user 消息划分配对，取尾部 pairCount 个配对的子列表。recentMessageCount 为 null 或 <=0 时保持全部历史。
 fix: 修复编译错误 — foldMessageGroups() 中第 214 行将 record 风格 messages.get(i).role() 修正为 Lombok @Data 生成的 getter messages.get(i).getRole()（Message DTO 为 @Data 类，访问角色须用 getRole()）。
+chat() 新增 SKILL 注入逻辑：(1) 系统提示词后追加技能列表 system 消息（列出可用技能名称和描述，告知 _sys_load_skills/_sys_unload_skills 系统工具使用方法），(2) 解析 _sys_loading_SKILLS 会话变量获取已加载技能并追加提示词 system 消息，(3) 工具列表用 LinkedHashMap 按 name 去重合并已加载技能的 skillTools（经 invoker.toToolDefinition 转换）。新增 parseLoadedSkills() 私有方法解析 JSON 数组匹配技能配置。
 ## MessageSavePostHook
 
 已适配 chunk.getToolCalls() 返回 List，改为 for 循环遍历处理每个 ToolCallDelta。toolCallBuffers key Integer→String，getIndex→getId+兜底。累积逻辑（id/name/arguments 的 StringBuilder append）不变。
@@ -74,20 +77,24 @@ Map&lt;String,Object&gt; 改为 Map&lt;String,String&gt;，所有 putSessionVari
 新增 getSessionVariableKeys() 和 getConversationVariableKeys() 返回 Set&lt;String&gt;，供 ContextSerializer 遍历变量用于 JSON 序列化。
 AgentContextMutator 新增 clearConversationVariables() 方法，清除绑定 context 的 conversationVariables Map。
 构造器新增 recentMessageCount(Integer) 参数，存储为字段并通过 @Getter 生成 getRecentMessageCount()。recentMessageCount 为 null 或 <=0 时表示不截取历史。
+构造器新增 skills 字段（List&lt;SkillConfigDTO&gt;）及 Lombok @Getter，skills 为只读不可变列表，供工具执行时查看智能体关联的 SKILL 配置。
 ## ContextSerializer.java
 
 serializeToJson() 新增 sessionVariables 和 conversationVariables 序列化：通过 ctx.getSessionVariableKeys()/getConversationVariableKeys() 遍历，逐个 key-value 写入 ObjectNode 并挂到 contextJSON 上。
 serializeToJson() 新增 recentMessageCount JSON 序列化（ctx.getRecentMessageCount()），插入在 modelId 之后
+serializeToJson() 新增 skills 序列化：遍历 ctx.getSkills()，每个 skill 输出 name/description/prompt，skillTools 子数组输出 name/description/parameterSchema。
 ## _runner.ts 模板
 
 新增 VariableChanges 接口和 createVariableProxy() 工具函数：对 sessionVariables/conversationVariables 创建 Proxy 拦截 set/delete 操作，执行后 diff 对比原始快照生成变更集 {added:{},removed:[]}，输出结构化 JSON {result,sessionVariables,conversationVariables}，兼容旧格式降级。
 AgentExecutionContext 接口新增 recentMessageCount?: number 可选字段
+新增 SkillInfo 接口（name/description/prompt/skillTools: ToolInfo[]），AgentExecutionContext 接口新增 skills?: SkillInfo[]。
 ## TypeScriptToolInvoker.java
 
 新增 parseResult() 私有方法：解析结构化 JSON 输出 {result,sessionVariables,conversationVariables}，遍历 added/removed 调用 ctx.putSessionVariable/removeSessionVariable 和 ctx.putConversationVariable/removeConversationVariable 同步变量到 Java 上下文；非结构化 JSON 降级按纯文本返回。execute() 返回改为 parseResult(ctx,result)。
 ## _runner.py 模板
 
 新增 VariableProxy 类（dict 代理包装）：重写 `__setitem__`/`__delitem__` 捕获写入和删除操作，`get_changes()` 返回变更集 `{added:{},removed:[]}`。AgentExecutionContext 读取 sessionVariables/conversationVariables 到 session_variables/conversation_variables 属性。main() 执行前 Proxy 替换、执行后 diff 输出结构化 JSON `{result,sessionVariables,conversationVariables}`。
+新增 SkillInfo 类（解析 name/description/prompt/skill_tools），skill_tools 解析为 ToolInfo 列表。AgentExecutionContext 解析中新增 self.skills 字段。
 ## PythonToolInvoker.java
 
 新增 parseResult() 私有方法：解析结构化 JSON 输出 `{result,sessionVariables,conversationVariables}`，遍历 added/removed 调用 ctx.putSessionVariable/removeSessionVariable 和 ctx.putConversationVariable/removeConversationVariable 同步变量到 Java 上下文；非结构化 JSON 降级按纯文本返回。execute() 返回改为 parseResult(ctx,result)。

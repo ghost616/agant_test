@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ToolUpdateRequest {
 
-    @Pattern(regexp = "^[a-z0-9_]+$", message = "工具名称仅允许小写字母、数字和下划线")
+    @Pattern(regexp = "^(?!_sys_)[a-z0-9_]+$", message = "工具名称不允许以 _sys_ 开头")
     private String name;
 
     private ToolType toolType;
