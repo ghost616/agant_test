@@ -112,7 +112,7 @@ public class ToolManager {
                         return tso.mcpExpandedInvokers().get(i);
                     }
                 }
-            } if (dto.getName().equals(toolName)) {
+            } else if (dto.getName().equals(toolName)) {
                 return tso.invoker();
             }
         }

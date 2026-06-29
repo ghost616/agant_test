@@ -39,7 +39,6 @@ public class ToolManager {
 
     private final ConcurrentHashMap<Long, List<ToolSessionObject>> sessionToolCache = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<Long, ToolSessionObject> toolCache = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<Long, List<Long>> sessionSkillToolIdsCache = new ConcurrentHashMap<>();
 
     public ToolInvoker getInvoker(Long sessionId, String toolName) {
         List<ToolSessionObject> sessionTools = getSessionTools(sessionId);
@@ -71,49 +70,42 @@ public class ToolManager {
     }
 
     private ToolInvoker resolveSkillToolByName(Long sessionId, String toolName) {
-        List<Long> toolIds = sessionSkillToolIdsCache.computeIfAbsent(sessionId, sid -> {
-            Session session = sessionMapper.selectById(sid);
-            if (session == null || session.getAgentId() == null) {
-                return List.of();
-            }
-
-            List<AgentSkill> agentSkills = agentSkillMapper.selectList(
-                    new LambdaQueryWrapper<AgentSkill>()
-                            .eq(AgentSkill::getAgentId, session.getAgentId()));
-            if (agentSkills == null || agentSkills.isEmpty()) {
-                return List.of();
-            }
-
-            List<Long> skillIds = agentSkills.stream()
-                    .map(AgentSkill::getSkillId)
-                    .distinct()
-                    .toList();
-
-            List<SkillTool> skillTools = skillToolMapper.selectList(
-                    new LambdaQueryWrapper<SkillTool>()
-                            .in(SkillTool::getSkillId, skillIds));
-            return skillTools.stream()
-                    .map(SkillTool::getToolId)
-                    .distinct()
-                    .toList();
-        });
-
-        if (toolIds.isEmpty()) {
+        Session session = sessionMapper.selectById(sessionId);
+        if (session == null || session.getAgentId() == null) {
             return null;
         }
 
+        List<AgentSkill> agentSkills = agentSkillMapper.selectList(
+                new LambdaQueryWrapper<AgentSkill>()
+                        .eq(AgentSkill::getAgentId, session.getAgentId()));
+        if (agentSkills == null || agentSkills.isEmpty()) {
+            return null;
+        }
+
+        List<Long> skillIds = agentSkills.stream()
+                .map(AgentSkill::getSkillId)
+                .distinct()
+                .toList();
+
+        List<SkillTool> skillTools = skillToolMapper.selectList(
+                new LambdaQueryWrapper<SkillTool>()
+                        .in(SkillTool::getSkillId, skillIds));
+        List<Long> toolIds = skillTools.stream()
+                .map(SkillTool::getToolId)
+                .distinct()
+                .toList();
+
         for (Long toolId : toolIds) {
-            ToolSessionObject tso = toolCache.computeIfAbsent(toolId,
-                    id -> buildToolSessionObject(toolConfigService.getById(id)));
-            ToolConfigDTO dto = tso.toolConfig();
-            if (!tso.mcpExpandedTools().isEmpty()) {
-                for (int i = 0; i < tso.mcpExpandedTools().size(); i++) {
-                    if (tso.mcpExpandedTools().get(i).getName().equals(toolName)) {
-                        return tso.mcpExpandedInvokers().get(i);
+            ToolConfigDTO dto = toolConfigService.getById(toolId);
+            if (dto.getToolType() == ToolType.MCP_HTTP) {
+                List<McpExpandedToolDTO> expanded = expandMcpTools(dto);
+                for (McpExpandedToolDTO expDto : expanded) {
+                    if (expDto.getName().equals(toolName)) {
+                        return createInvoker(expDto);
                     }
                 }
-            } if (dto.getName().equals(toolName)) {
-                return tso.invoker();
+            } else if (dto.getName().equals(toolName)) {
+                return createInvoker(dto);
             }
         }
 
@@ -211,7 +203,6 @@ public class ToolManager {
 
     public void clearSessionCache(Long sessionId) {
         sessionToolCache.remove(sessionId);
-        sessionSkillToolIdsCache.remove(sessionId);
     }
 
     public void clearToolCache(Long toolId) {

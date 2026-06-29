@@ -27,7 +27,7 @@
     },
     {
       "path": "src/main/java/com/ghost616/platform/service/agent/invoker/ToolManager.java",
-      "description": "工具调用管理器，注入 ToolConfigService/SessionToolMapper，提供 getInvoker(sessionId,toolName) 从会话工具列表查找调用器、getSessionTools(sessionId) 含 MCP 工具运行时展开和两级缓存、execute 封装调用。内部 record ToolSessionObject 含工具配置/调用器/MCP展开信息"
+      "description": "工具调用管理器，注入 ToolConfigService/SessionToolMapper/SessionMapper/AgentSkillMapper/SkillToolMapper。getInvoker(sessionId,toolName) 先从 getSessionTools 查询（仅 session_tool 表），未找到则 fallback resolveSkillToolByName。resolveSkillToolByName 通过 sessionSkillToolIdsCache 缓存 toolIds 查询链路，遍历时复用 toolCache.computeIfAbsent 获取 ToolSessionObject（含已展开的 MCP 工具），避免重复 getById 和 expandMcpTools。getSessionTools(sessionId) 仅从 session_tool 表查询并展开 MCP。提取 buildToolSessionObject/expandToolSession 公共方法。expandMcpTools 为 public。clearSessionCache 同步清理两个缓存"
     },
     {
       "path": "src/main/java/com/ghost616/platform/service/agent/invoker/JavaToolInvoker.java",
@@ -95,11 +95,11 @@
     },
     {
       "path": "src/main/java/com/ghost616/platform/service/agent/AgentContextManager.java",
-      "description": "getOrCreate() 内部 new mutator，从 AgentConfig 获取 recentMessageCount，通过 ToolManager 加载工具，通过 buildSkills() 四级链路（AgentSkill→SkillConfig→SkillTool→ToolConfig）加载技能配置及关联工具列表传入 context 构造器"
+      "description": "getOrCreate() 内部 new mutator，从 AgentConfig 获取 recentMessageCount，通过 ToolManager 加载工具，通过 buildSkills() 加载技能配置及关联工具列表传入 context 构造器。buildSkills() 经 AgentSkill→SkillConfig→SkillTool 链路查询，技能关联工具改用 toolConfigService.getById(toolId) 获取完整 ToolConfigDTO（含 toolType/implPath/authConfig），对 MCP_HTTP 类型调用 toolManager.expandMcpTools(dto) 展开为多个工具合并入 skillTools，非 MCP 直接加入"
     },
     {
       "path": "src/main/java/com/ghost616/platform/service/agent/ChatService.java",
-      "description": "chat() 构建 messages 后调用 foldMessageGroups() 按消息组折叠超出 recentMessageCount 的历史数据，根据 _sys_his_msgs_index 会话变量豁免指定组；构建 tools 时合并系统工具定义列表和已加载 SKILL 的 skillTools（LinkedHashMap 按 name 去重）；系统提示词后注入技能列表和已加载技能提示词 system 消息；saveMessage() 用户消息保存调用适配新签名（toolName 传 null）"
+      "description": "chat() 构建 messages 后调用 foldMessageGroups() 按消息组折叠超出 recentMessageCount 的历史数据，根据 _sys_his_msgs_index 会话变量豁免指定组；构建 tools 时合并系统工具定义列表和已加载 SKILL 的 skillTools（LinkedHashMap 按 name 去重）；系统提示词后注入技能列表系统消息（明确说明技能本身不是工具、需先加载再使用、禁止直接以技能名作为工具调用）和已加载技能提示词 system 消息；saveMessage() 用户消息保存调用适配新签名（toolName 传 null）"
     },
     {
       "path": "src/main/java/com/ghost616/platform/service/agent/AgentConfigService.java",

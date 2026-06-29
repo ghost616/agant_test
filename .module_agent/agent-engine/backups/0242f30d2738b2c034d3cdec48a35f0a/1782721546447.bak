@@ -103,17 +103,16 @@ public class ToolManager {
         }
 
         for (Long toolId : toolIds) {
-            ToolSessionObject tso = toolCache.computeIfAbsent(toolId,
-                    id -> buildToolSessionObject(toolConfigService.getById(id)));
-            ToolConfigDTO dto = tso.toolConfig();
-            if (!tso.mcpExpandedTools().isEmpty()) {
-                for (int i = 0; i < tso.mcpExpandedTools().size(); i++) {
-                    if (tso.mcpExpandedTools().get(i).getName().equals(toolName)) {
-                        return tso.mcpExpandedInvokers().get(i);
+            ToolConfigDTO dto = toolConfigService.getById(toolId);
+            if (dto.getToolType() == ToolType.MCP_HTTP) {
+                List<McpExpandedToolDTO> expanded = expandMcpTools(dto);
+                for (McpExpandedToolDTO expDto : expanded) {
+                    if (expDto.getName().equals(toolName)) {
+                        return createInvoker(expDto);
                     }
                 }
-            } if (dto.getName().equals(toolName)) {
-                return tso.invoker();
+            } else if (dto.getName().equals(toolName)) {
+                return createInvoker(dto);
             }
         }
 

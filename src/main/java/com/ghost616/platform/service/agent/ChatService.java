@@ -141,7 +141,7 @@ public class ChatService {
         List<SkillConfigDTO> skills = context.getSkills();
         if (skills != null && !skills.isEmpty()) {
             StringBuilder sb = new StringBuilder();
-            sb.append("以下是可用的技能（SKILL）列表：\n");
+            sb.append("以下是可用的技能（SKILL）列表（技能本身不是工具，需先加载再使用其关联的工具）：\n");
             for (SkillConfigDTO skill : skills) {
                 sb.append("- ").append(skill.getName());
                 if (skill.getDescription() != null && !skill.getDescription().isEmpty()) {
@@ -149,8 +149,7 @@ public class ChatService {
                 }
                 sb.append("\n");
             }
-            sb.append("\n使用 _sys_load_skills 系统工具加载技能，使用 _sys_unload_skills 卸载技能。");
-            sb.append(" 加载后技能的工具将变为可用。");
+            sb.append("\n请使用 _sys_load_skills 系统工具加载所需技能。加载后，该技能的关联工具将变为可用，届时再调用具体工具。禁止直接以技能名称作为工具调用。");
             messages.add(Message.builder()
                     .role("system")
                     .content(sb.toString())

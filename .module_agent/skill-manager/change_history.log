@@ -3,3 +3,4 @@
 [2026-06-29T03:51:03.916Z] [session: ses_0ee807fc3ffeghtIR3MQwGtufM] [2026-06-29] 统一 SKILL name 验证与工具 name 一致：SkillCreateRequest 和 SkillUpdateRequest 的 name 字段添加 @Pattern(regexp = "^[a-z0-9_]+$") 注解，SkillConfigController.update 方法添加 @Valid 注解
 [2026-06-29T06:24:06.986Z] [session: ses_0edf3e5edffeOqCguf3cAqZbgV] SkillConfigDTO 新增 skillTools 字段（List<ToolConfigDTO>），位于 toolIds 之后，为非持久化字段，由 agent-engine 加载 SKILL 时填充。新增 import com.ghost616.platform.dto.tool.ToolConfigDTO。
 [2026-06-29T07:13:38.052Z] [session: ses_0edf3e5edffeOqCguf3cAqZbgV] SkillCreateRequest 和 SkillUpdateRequest 的 name 字段 @Pattern 正则更新为 ^(?!_sys_)[a-z0-9_]+$，禁止以 _sys_ 开头。
+[2026-06-29T10:55:13.266Z] [session: ses_0ecfbb4b1ffe8g6BS0lsAJOBEJ] 修复 SKILL 名称校验的错误提示信息：SkillCreateRequest 和 SkillUpdateRequest 的 @Pattern message 从 "SKILL 名称不允许以 _sys_ 开头" 改为 "SKILL 名称仅允许小写字母、数字、下划线，且不允许以 _sys_ 开头"，使提示信息完整描述正则约束，避免用户误判

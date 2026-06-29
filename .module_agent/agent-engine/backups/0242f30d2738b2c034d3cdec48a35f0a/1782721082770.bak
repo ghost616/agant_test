@@ -22,6 +22,7 @@ import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -39,85 +40,68 @@ public class ToolManager {
 
     private final ConcurrentHashMap<Long, List<ToolSessionObject>> sessionToolCache = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<Long, ToolSessionObject> toolCache = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<Long, List<Long>> sessionSkillToolIdsCache = new ConcurrentHashMap<>();
 
     public ToolInvoker getInvoker(Long sessionId, String toolName) {
         List<ToolSessionObject> sessionTools = getSessionTools(sessionId);
-        ToolInvoker invoker = sessionTools.stream()
+        return sessionTools.stream()
                 .filter(tso -> tso.toolConfig().getName().equals(toolName))
                 .map(ToolSessionObject::invoker)
                 .findFirst()
                 .orElse(null);
-        if (invoker != null) {
-            return invoker;
-        }
-        return resolveSkillToolByName(sessionId, toolName);
     }
 
     public List<ToolSessionObject> getSessionTools(Long sessionId) {
         return sessionToolCache.computeIfAbsent(sessionId, id -> {
+            LinkedHashMap<String, ToolSessionObject> merged = new LinkedHashMap<>();
+
             LambdaQueryWrapper<SessionTool> wrapper = new LambdaQueryWrapper<>();
             wrapper.eq(SessionTool::getSessionId, id);
             List<SessionTool> sessionTools = sessionToolMapper.selectList(wrapper);
-
-            List<ToolSessionObject> result = new ArrayList<>();
             for (SessionTool st : sessionTools) {
                 ToolSessionObject tso = toolCache.computeIfAbsent(st.getToolId(),
                         toolId -> buildToolSessionObject(toolConfigService.getById(toolId)));
-                result.addAll(expandToolSession(tso));
+                for (ToolSessionObject flat : expandToolSession(tso)) {
+                    merged.put(flat.toolConfig().getName(), flat);
+                }
             }
-            return result;
+
+            for (Long toolId : resolveSkillToolIds(id)) {
+                ToolSessionObject tso = toolCache.computeIfAbsent(toolId,
+                        tid -> buildToolSessionObject(toolConfigService.getById(tid)));
+                for (ToolSessionObject flat : expandToolSession(tso)) {
+                    merged.putIfAbsent(flat.toolConfig().getName(), flat);
+                }
+            }
+
+            return new ArrayList<>(merged.values());
         });
     }
 
-    private ToolInvoker resolveSkillToolByName(Long sessionId, String toolName) {
-        List<Long> toolIds = sessionSkillToolIdsCache.computeIfAbsent(sessionId, sid -> {
-            Session session = sessionMapper.selectById(sid);
-            if (session == null || session.getAgentId() == null) {
-                return List.of();
-            }
-
-            List<AgentSkill> agentSkills = agentSkillMapper.selectList(
-                    new LambdaQueryWrapper<AgentSkill>()
-                            .eq(AgentSkill::getAgentId, session.getAgentId()));
-            if (agentSkills == null || agentSkills.isEmpty()) {
-                return List.of();
-            }
-
-            List<Long> skillIds = agentSkills.stream()
-                    .map(AgentSkill::getSkillId)
-                    .distinct()
-                    .toList();
-
-            List<SkillTool> skillTools = skillToolMapper.selectList(
-                    new LambdaQueryWrapper<SkillTool>()
-                            .in(SkillTool::getSkillId, skillIds));
-            return skillTools.stream()
-                    .map(SkillTool::getToolId)
-                    .distinct()
-                    .toList();
-        });
-
-        if (toolIds.isEmpty()) {
-            return null;
+    private List<Long> resolveSkillToolIds(Long sessionId) {
+        Session session = sessionMapper.selectById(sessionId);
+        if (session == null || session.getAgentId() == null) {
+            return List.of();
         }
 
-        for (Long toolId : toolIds) {
-            ToolSessionObject tso = toolCache.computeIfAbsent(toolId,
-                    id -> buildToolSessionObject(toolConfigService.getById(id)));
-            ToolConfigDTO dto = tso.toolConfig();
-            if (!tso.mcpExpandedTools().isEmpty()) {
-                for (int i = 0; i < tso.mcpExpandedTools().size(); i++) {
-                    if (tso.mcpExpandedTools().get(i).getName().equals(toolName)) {
-                        return tso.mcpExpandedInvokers().get(i);
-                    }
-                }
-            } if (dto.getName().equals(toolName)) {
-                return tso.invoker();
-            }
+        List<AgentSkill> agentSkills = agentSkillMapper.selectList(
+                new LambdaQueryWrapper<AgentSkill>()
+                        .eq(AgentSkill::getAgentId, session.getAgentId()));
+        if (agentSkills == null || agentSkills.isEmpty()) {
+            return List.of();
         }
 
-        return null;
+        List<Long> skillIds = agentSkills.stream()
+                .map(AgentSkill::getSkillId)
+                .distinct()
+                .toList();
+
+        List<SkillTool> skillTools = skillToolMapper.selectList(
+                new LambdaQueryWrapper<SkillTool>()
+                        .in(SkillTool::getSkillId, skillIds));
+        return skillTools.stream()
+                .map(SkillTool::getToolId)
+                .distinct()
+                .toList();
     }
 
     private ToolSessionObject buildToolSessionObject(ToolConfigDTO dto) {
@@ -211,7 +195,6 @@ public class ToolManager {
 
     public void clearSessionCache(Long sessionId) {
         sessionToolCache.remove(sessionId);
-        sessionSkillToolIdsCache.remove(sessionId);
     }
 
     public void clearToolCache(Long toolId) {

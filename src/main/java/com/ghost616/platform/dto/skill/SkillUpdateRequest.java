@@ -15,7 +15,7 @@ import java.util.List;
 @AllArgsConstructor
 public class SkillUpdateRequest {
 
-    @Pattern(regexp = "^(?!_sys_)[a-z0-9_]+$", message = "SKILL 名称不允许以 _sys_ 开头")
+    @Pattern(regexp = "^(?!_sys_)[a-z0-9_]+$", message = "SKILL 名称仅允许小写字母、数字、下划线，且不允许以 _sys_ 开头")
     private String name;
 
     private String description;

@@ -4,15 +4,9 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghost616.platform.dto.tool.McpExpandedToolDTO;
 import com.ghost616.platform.dto.tool.ToolConfigDTO;
-import com.ghost616.platform.entity.AgentSkill;
-import com.ghost616.platform.entity.Session;
 import com.ghost616.platform.entity.SessionTool;
-import com.ghost616.platform.entity.SkillTool;
 import com.ghost616.platform.enums.ToolType;
-import com.ghost616.platform.repository.AgentSkillMapper;
-import com.ghost616.platform.repository.SessionMapper;
 import com.ghost616.platform.repository.SessionToolMapper;
-import com.ghost616.platform.repository.SkillToolMapper;
 import com.ghost616.platform.event.ToolChangedEvent;
 import com.ghost616.platform.service.agent.AgentExecutionContext;
 import com.ghost616.platform.service.tool.ToolConfigService;
@@ -33,25 +27,17 @@ public class ToolManager {
 
     private final ToolConfigService toolConfigService;
     private final SessionToolMapper sessionToolMapper;
-    private final SessionMapper sessionMapper;
-    private final AgentSkillMapper agentSkillMapper;
-    private final SkillToolMapper skillToolMapper;
 
     private final ConcurrentHashMap<Long, List<ToolSessionObject>> sessionToolCache = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<Long, ToolSessionObject> toolCache = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<Long, List<Long>> sessionSkillToolIdsCache = new ConcurrentHashMap<>();
 
     public ToolInvoker getInvoker(Long sessionId, String toolName) {
         List<ToolSessionObject> sessionTools = getSessionTools(sessionId);
-        ToolInvoker invoker = sessionTools.stream()
+        return sessionTools.stream()
                 .filter(tso -> tso.toolConfig().getName().equals(toolName))
                 .map(ToolSessionObject::invoker)
                 .findFirst()
                 .orElse(null);
-        if (invoker != null) {
-            return invoker;
-        }
-        return resolveSkillToolByName(sessionId, toolName);
     }
 
     public List<ToolSessionObject> getSessionTools(Long sessionId) {
@@ -62,88 +48,32 @@ public class ToolManager {
 
             List<ToolSessionObject> result = new ArrayList<>();
             for (SessionTool st : sessionTools) {
-                ToolSessionObject tso = toolCache.computeIfAbsent(st.getToolId(),
-                        toolId -> buildToolSessionObject(toolConfigService.getById(toolId)));
-                result.addAll(expandToolSession(tso));
+                ToolSessionObject tso = toolCache.computeIfAbsent(st.getToolId(), toolId -> {
+                    ToolConfigDTO dto = toolConfigService.getById(toolId);
+                    if (dto.getToolType() == ToolType.MCP_HTTP) {
+                        List<McpExpandedToolDTO> expandedTools = expandMcpTools(dto);
+                        List<ToolInvoker> expandedInvokers = expandedTools.stream()
+                                .map(this::createInvoker)
+                                .toList();
+                        return new ToolSessionObject(dto, null, dto, expandedTools, expandedInvokers);
+                    }
+                    return new ToolSessionObject(dto, createInvoker(dto), null, List.of(), List.of());
+                });
+
+                if (!tso.mcpExpandedTools().isEmpty()) {
+                    for (int i = 0; i < tso.mcpExpandedTools().size(); i++) {
+                        McpExpandedToolDTO expandedTool = tso.mcpExpandedTools().get(i);
+                        ToolInvoker expandedInvoker = tso.mcpExpandedInvokers().get(i);
+                        result.add(new ToolSessionObject(
+                                expandedTool, expandedInvoker, tso.mcpOriginalConfig(),
+                                List.of(), List.of()));
+                    }
+                } else {
+                    result.add(tso);
+                }
             }
             return result;
         });
-    }
-
-    private ToolInvoker resolveSkillToolByName(Long sessionId, String toolName) {
-        List<Long> toolIds = sessionSkillToolIdsCache.computeIfAbsent(sessionId, sid -> {
-            Session session = sessionMapper.selectById(sid);
-            if (session == null || session.getAgentId() == null) {
-                return List.of();
-            }
-
-            List<AgentSkill> agentSkills = agentSkillMapper.selectList(
-                    new LambdaQueryWrapper<AgentSkill>()
-                            .eq(AgentSkill::getAgentId, session.getAgentId()));
-            if (agentSkills == null || agentSkills.isEmpty()) {
-                return List.of();
-            }
-
-            List<Long> skillIds = agentSkills.stream()
-                    .map(AgentSkill::getSkillId)
-                    .distinct()
-                    .toList();
-
-            List<SkillTool> skillTools = skillToolMapper.selectList(
-                    new LambdaQueryWrapper<SkillTool>()
-                            .in(SkillTool::getSkillId, skillIds));
-            return skillTools.stream()
-                    .map(SkillTool::getToolId)
-                    .distinct()
-                    .toList();
-        });
-
-        if (toolIds.isEmpty()) {
-            return null;
-        }
-
-        for (Long toolId : toolIds) {
-            ToolSessionObject tso = toolCache.computeIfAbsent(toolId,
-                    id -> buildToolSessionObject(toolConfigService.getById(id)));
-            ToolConfigDTO dto = tso.toolConfig();
-            if (!tso.mcpExpandedTools().isEmpty()) {
-                for (int i = 0; i < tso.mcpExpandedTools().size(); i++) {
-                    if (tso.mcpExpandedTools().get(i).getName().equals(toolName)) {
-                        return tso.mcpExpandedInvokers().get(i);
-                    }
-                }
-            } if (dto.getName().equals(toolName)) {
-                return tso.invoker();
-            }
-        }
-
-        return null;
-    }
-
-    private ToolSessionObject buildToolSessionObject(ToolConfigDTO dto) {
-        if (dto.getToolType() == ToolType.MCP_HTTP) {
-            List<McpExpandedToolDTO> expandedTools = expandMcpTools(dto);
-            List<ToolInvoker> expandedInvokers = expandedTools.stream()
-                    .map(this::createInvoker)
-                    .toList();
-            return new ToolSessionObject(dto, null, dto, expandedTools, expandedInvokers);
-        }
-        return new ToolSessionObject(dto, createInvoker(dto), null, List.of(), List.of());
-    }
-
-    private List<ToolSessionObject> expandToolSession(ToolSessionObject tso) {
-        if (tso.mcpExpandedTools().isEmpty()) {
-            return List.of(tso);
-        }
-        List<ToolSessionObject> flattened = new ArrayList<>();
-        for (int i = 0; i < tso.mcpExpandedTools().size(); i++) {
-            McpExpandedToolDTO expandedTool = tso.mcpExpandedTools().get(i);
-            ToolInvoker expandedInvoker = tso.mcpExpandedInvokers().get(i);
-            flattened.add(new ToolSessionObject(
-                    expandedTool, expandedInvoker, tso.mcpOriginalConfig(),
-                    List.of(), List.of()));
-        }
-        return flattened;
     }
 
     public List<McpExpandedToolDTO> expandMcpTools(ToolConfigDTO mcpConfig) {
@@ -211,7 +141,6 @@ public class ToolManager {
 
     public void clearSessionCache(Long sessionId) {
         sessionToolCache.remove(sessionId);
-        sessionSkillToolIdsCache.remove(sessionId);
     }
 
     public void clearToolCache(Long toolId) {
