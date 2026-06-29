@@ -111,7 +111,7 @@
     },
     {
       "path": "src/main/resources/schema.sql",
-      "description": "数据库初始化脚本，包含所有建表语句和迁移 ALTER 语句（agent_config 新增 recent_message_count 列）"
+      "description": "数据库初始化脚本，包含所有建表语句和迁移语句（新增 agent_skill 中间表含 agent_id/skill_id 双索引）"
     },
     {
       "path": "src/main/java/com/ghost616/platform/event/ToolChangedEvent.java",

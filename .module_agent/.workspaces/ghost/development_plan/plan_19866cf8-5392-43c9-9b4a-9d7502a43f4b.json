@@ -1,0 +1,9 @@
+{
+  "plan_id": "plan_19866cf8-5392-43c9-9b4a-9d7502a43f4b",
+  "module_name": "framework",
+  "development_plan": "## 计划：schema.sql 添加 agent_skill 表\n\n### 问题\nagent_skill 表不存在，导致查询报错 SQLITE_ERROR: no such table: agent_skill\n\n### 修改\n文件：src/main/resources/schema.sql\n\n在 agent_tool 建表语句后（第 97 行 idx_agent_tool_tool_id 索引之后）添加 agent_skill 表及其索引：\n\n```sql\nCREATE TABLE IF NOT EXISTS agent_skill (\n    id       BIGINT PRIMARY KEY,\n    agent_id BIGINT NOT NULL,\n    skill_id  BIGINT NOT NULL\n);\nCREATE INDEX IF NOT EXISTS idx_agent_skill_agent_id ON agent_skill(agent_id);\nCREATE INDEX IF NOT EXISTS idx_agent_skill_skill_id ON agent_skill(skill_id);\n```\n\n结构与 agent_tool 完全一致，只是字段名和表名替换。\n",
+  "session_id": "ses_0ee2f1fe8ffeFp5MLAxmZNmxJo",
+  "modified_files": [
+    "src/main/resources/schema.sql"
+  ]
+}

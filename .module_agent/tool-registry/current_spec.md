@@ -42,3 +42,5 @@ validateImplPath() MCP_HTTP 分支：URL 格式校验通过后，通过 McpSyncC
 validateImplPath() MCP_HTTP 分支连通性测试使用 HttpClientSseClientTransport（SSE 传输）替代 HttpClientStreamableHttpTransport，通过 SSE 端点验证 MCP 协议握手。
 validateImplPath() 增加 authConfig 参数，MCP_HTTP 分支连通性测试通过 McpAuthConfigParser.parse() 解析认证 headers，构建 HttpRequest.Builder 传入 HttpClientSseClientTransport.Builder.requestBuilder()，确保带认证的 MCP 端点也能通过握手验证。
 validateImplPath() MCP_HTTP 分支：authConfig 增加 null/blank 判空，解析异常时 log.warn 并降级为无认证连接，参考 SessionManager.expandMcpTools() 的 try-catch 模式。
+ToolManager.expandMcpTools() 展开 MCP 远程工具时，.name() 使用 `mcpConfig.getName() + "_" + tool.get("name")` 格式添加配置工具名前缀，避免不同 MCP 服务器的同名工具混淆。
+ToolManager.expandMcpTools() 返回类型改为 List<McpExpandedToolDTO>，展开时 name 使用"配置名_远程名"作为展示名，remoteToolName 保存远程原始工具名。createInvoker() MCP_HTTP 分支通过 instanceof 获取 remoteToolName 传给 McpHttpToolInvoker，确保 MCP 远程调用使用正确工具名。

@@ -41,7 +41,7 @@ public class SkillConfigController {
 
     @PutMapping("/{id}")
     public ApiResponse<SkillConfigDTO> update(@PathVariable Long id,
-                                              @RequestBody SkillUpdateRequest request) {
+                                              @Valid @RequestBody SkillUpdateRequest request) {
         SkillConfigDTO result = skillConfigService.update(id, request);
         return ApiResponse.success(result);
     }

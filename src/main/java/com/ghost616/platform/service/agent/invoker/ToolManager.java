@@ -2,6 +2,7 @@ package com.ghost616.platform.service.agent.invoker;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghost616.platform.dto.tool.McpExpandedToolDTO;
 import com.ghost616.platform.dto.tool.ToolConfigDTO;
 import com.ghost616.platform.entity.SessionTool;
 import com.ghost616.platform.enums.ToolType;
@@ -50,7 +51,7 @@ public class ToolManager {
                 ToolSessionObject tso = toolCache.computeIfAbsent(st.getToolId(), toolId -> {
                     ToolConfigDTO dto = toolConfigService.getById(toolId);
                     if (dto.getToolType() == ToolType.MCP_HTTP) {
-                        List<ToolConfigDTO> expandedTools = expandMcpTools(dto);
+                        List<McpExpandedToolDTO> expandedTools = expandMcpTools(dto);
                         List<ToolInvoker> expandedInvokers = expandedTools.stream()
                                 .map(this::createInvoker)
                                 .toList();
@@ -61,7 +62,7 @@ public class ToolManager {
 
                 if (!tso.mcpExpandedTools().isEmpty()) {
                     for (int i = 0; i < tso.mcpExpandedTools().size(); i++) {
-                        ToolConfigDTO expandedTool = tso.mcpExpandedTools().get(i);
+                        McpExpandedToolDTO expandedTool = tso.mcpExpandedTools().get(i);
                         ToolInvoker expandedInvoker = tso.mcpExpandedInvokers().get(i);
                         result.add(new ToolSessionObject(
                                 expandedTool, expandedInvoker, tso.mcpOriginalConfig(),
@@ -75,13 +76,13 @@ public class ToolManager {
         });
     }
 
-    private List<ToolConfigDTO> expandMcpTools(ToolConfigDTO mcpConfig) {
+    private List<McpExpandedToolDTO> expandMcpTools(ToolConfigDTO mcpConfig) {
         Map<String, String> headers;
         try {
             headers = McpAuthConfigParser.parse(mcpConfig.getAuthConfig());
         } catch (Exception e) {
             log.warn("解析 MCP 认证配置失败，跳过: {}", mcpConfig.getAuthConfig(), e);
-            return List.of(mcpConfig);
+            return List.of();
         }
 
         try {
@@ -90,16 +91,17 @@ public class ToolManager {
 
             List<Map<String, Object>> tools = client.listTools();
             ObjectMapper mapper = new ObjectMapper();
-            List<ToolConfigDTO> expanded = new ArrayList<>();
+            List<McpExpandedToolDTO> expanded = new ArrayList<>();
             for (Map<String, Object> tool : tools) {
                 try {
-                    expanded.add(ToolConfigDTO.builder()
-                            .name((String) tool.get("name"))
+                    expanded.add(McpExpandedToolDTO.builder()
+                            .name(mcpConfig.getName() + "_" + tool.get("name"))
                             .toolType(ToolType.MCP_HTTP)
                             .description((String) tool.get("description"))
                             .parameterSchema(mapper.writeValueAsString(tool.get("inputSchema")))
                             .implPath(mcpConfig.getImplPath())
                             .authConfig(mcpConfig.getAuthConfig())
+                            .remoteToolName((String) tool.get("name"))
                             .build());
                 } catch (Exception e) {
                     log.warn("序列化 MCP 工具 Schema 失败: {}", tool.get("name"), e);
@@ -110,7 +112,7 @@ public class ToolManager {
             return expanded;
         } catch (Exception e) {
             log.warn("获取 MCP 工具列表失败，保持原配置: url={}", mcpConfig.getImplPath(), e);
-            return List.of(mcpConfig);
+            return List.of();
         }
     }
 
@@ -123,7 +125,10 @@ public class ToolManager {
             case PYTHON:
                 return new PythonToolInvoker(toolConfig.getImplPath());
             case MCP_HTTP:
-                return new McpHttpToolInvoker(toolConfig.getImplPath(), toolConfig.getName(),
+                String remoteName = toolConfig instanceof McpExpandedToolDTO mcp
+                        ? mcp.getRemoteToolName()
+                        : toolConfig.getName();
+                return new McpHttpToolInvoker(toolConfig.getImplPath(), remoteName,
                         toolConfig.getAuthConfig());
             default:
                 throw new UnsupportedOperationException("暂不支持的调用类型: " + toolConfig.getToolType());
@@ -149,7 +154,7 @@ public class ToolManager {
 
     public record ToolSessionObject(ToolConfigDTO toolConfig, ToolInvoker invoker,
                                     ToolConfigDTO mcpOriginalConfig,
-                                    List<ToolConfigDTO> mcpExpandedTools,
+                                    List<McpExpandedToolDTO> mcpExpandedTools,
                                     List<ToolInvoker> mcpExpandedInvokers) {
     }
 }

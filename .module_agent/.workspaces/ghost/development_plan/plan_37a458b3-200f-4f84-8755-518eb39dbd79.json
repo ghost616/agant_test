@@ -1,7 +1,0 @@
-{
-  "plan_id": "plan_37a458b3-200f-4f84-8755-518eb39dbd79",
-  "module_name": "agent-engine",
-  "development_plan": "修复 ToolExecutionController.java executeTools() 方法中的编译错误：\n\n1. 第 61 行 String toolCallName 重命名为 String peekToolCallName，避免与第 104 行 final String toolCallName 重名\n2. 同步更新第 64、65、71、74、78 行中对 toolCallName 的引用为 peekToolCallName\n3. _sys_ 前缀在前端输出 map 中保持不变（peekToolCallName 仍包含 _sys_ 前缀），仅在求取 SystemTool invoker 时局部去前缀",
-  "session_id": "ses_0f358a07cffeFDVHl5IJPNUxPA",
-  "modified_files": []
-}

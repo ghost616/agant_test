@@ -1,17 +1,5 @@
 {
   "framework": [
-    "ses_0fc7e430fffeqliPwbv478obGj"
-  ],
-  "agent-config": [
-    "ses_0fc7df247ffeBxqNEwGTy2nzE8"
-  ],
-  "frontend-ui": [
-    "ses_0f2336f01ffexz3ndUepSh15rV"
-  ],
-  "agent-engine": [
-    "ses_0f205712cffeYnf4nVd99rxeR8"
-  ],
-  "skill-manager": [
-    "ses_0eef16ae4ffeRluqd1QjUJv5bO"
+    "ses_0ee2f1fe8ffeFp5MLAxmZNmxJo"
   ]
 }

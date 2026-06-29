@@ -10,5 +10,6 @@
   "src/pages/tools/SchemaEditor.tsx": "22dcb482394bf4c7943c0f04dd47a550",
   "src/components/JsonEditor.tsx": "0a3b344635caf5f4315fe9ff225181b5",
   "src/types/tool.ts": "5feb470524c2e082d4b43fc44e295d63",
-  "src/types/common.ts": "db430131f40fdf06063529c1d141d000"
+  "src/types/common.ts": "db430131f40fdf06063529c1d141d000",
+  "src/App.tsx": "46ef2374da6211486f3a408db68b2bcb"
 }

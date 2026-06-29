@@ -27,7 +27,7 @@
     },
     {
       "path": "src/types/agent.ts",
-      "description": "智能体配置类型定义，含 AgentConfig/AgentFormData（均含 recentMessageCount?:number 最近消息数量）/AgentListParams"
+      "description": "智能体配置类型定义，含 AgentConfig（新增 skillIds: string[] 技能ID列表）/AgentFormData（新增 skillIds?: string[]）/AgentListParams"
     },
     {
       "path": "src/services/agent.ts",
@@ -35,7 +35,7 @@
     },
     {
       "path": "src/pages/agents/AgentList.tsx",
-      "description": "智能体管理列表页面，含筛选搜索、表格展示（含\"最近消息\"列）、新增/编辑/删除/启用禁用功能，关联模型和工具选择；表单含 recentMessageCount（InputNumber 默认10/min1/max100）；Table pagination={false} 全量展示"
+      "description": "智能体管理列表页面，含筛选搜索、表格展示、新增/编辑（name/description/systemPrompt/modelId/toolIds/skillIds/recentMessageCount）/删除 Popconfirm/启用禁用 Switch；关联模型/工具/技能选择（Promise.all 并行加载）；Table pagination={false} 全量展示"
     },
     {
       "path": "src/types/session.ts",
@@ -56,6 +56,18 @@
     {
       "path": "src/components/JsonEditor.tsx",
       "description": "CodeMirror JSON 编辑器：移除 basicSetup 改用独立扩展组装（view/commands/language/lang-json），解决多实例冲突"
+    },
+    {
+      "path": "src/types/skill.ts",
+      "description": "技能配置类型定义，含 SkillConfig（id/name/description/prompt/status/toolIds/createTime/updateTime）/SkillFormData/SkillListParams"
+    },
+    {
+      "path": "src/services/skill.ts",
+      "description": "技能管理 API 服务封装，含列表/CRUD/状态更新接口"
+    },
+    {
+      "path": "src/pages/skills/SkillList.tsx",
+      "description": "技能管理列表页面，含筛选搜索、表格展示（名称/描述/状态Tag/创建时间/操作）、新增/编辑（name/description/prompt/toolIds）/删除PopupConfirm/启用禁用Switch，关联工具选择；Table pagination={false} 全量展示"
     }
   ]
 }

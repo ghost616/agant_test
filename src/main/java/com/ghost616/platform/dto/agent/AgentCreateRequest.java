@@ -26,4 +26,6 @@ public class AgentCreateRequest {
     private Integer recentMessageCount;
 
     private List<Long> toolIds;
+
+    private List<Long> skillIds;
 }

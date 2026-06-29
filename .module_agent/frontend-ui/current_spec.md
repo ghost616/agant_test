@@ -85,6 +85,7 @@
 - 新增/编辑 Modal 新增 Form.Item name="recentMessageCount" label="最近消息数量"：InputNumber，initialValue=10、min=1、max=100、宽度 100%
 - 编辑回填时同步设置 recentMessageCount 字段
 - Table columns 新增"最近消息"列（dataIndex=recentMessageCount，width 100），值为空时显示 '-'
+- 新增/编辑 Modal 新增 skills 多选：通过 Promise.all 并行加载模型/工具/技能列表，新增 skillList state 存储技能数据，fetchModelsAndTools 改名为 fetchRefData 同步加载三种引用数据，表单中添加 skillIds (Select multiple) 字段实现技能多选，编辑回填时同步设置 skillIds
 ## 会话管理界面
 
 - 会话列表页面 `/sessions`，支持会话列表展示、新建会话、删除会话、继续会话
@@ -134,3 +135,15 @@
 - SessionMessage 接口：toolName 字段替换为 toolResult（String，可选），存储工具执行结果的 JSON
 - ChatMessage 接口：toolName 替换为 toolResult
 - loadHistory 历史消息映射：tool 角色且 toolResult 非空时，解析 toolResult JSON 获取 toolName/arguments/result，格式化为完整工具执行结果 markdown 作为 content（替代之前仅拼接 toolName 前缀的逻辑）
+## 技能管理界面
+
+- 技能配置管理页面 `/skills`，支持技能列表展示、搜索筛选、新增/编辑/删除/启用禁用
+- Table 列：名称、描述(ellipsis)、状态(Tag green/red)、创建时间、操作(编辑/删除Popconfirm/Switch)
+- 筛选栏：名称搜索(Input.Search)、状态筛选(Select)
+- 新增/编辑 Modal：name(必填)、description、prompt(必填 TextArea rows=6)、toolIds(Select multiple 从工具列表获取)
+- 删除使用 Popconfirm 确认
+- 启用/禁用使用 Switch 切换
+- API 服务封装：listSkills、getSkill、createSkill、updateSkill、deleteSkill、updateSkillStatus
+- 工具列表数据用于表单 toolIds 下拉选择
+- 路由 /skills 已注册，侧边栏"技能管理"菜单项（ThunderboltOutlined 图标）
+- Table pagination={false} 全量展示

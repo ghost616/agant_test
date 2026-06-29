@@ -27,6 +27,8 @@ import {
 } from '../../services/agent';
 import { listModels } from '../../services/model';
 import { listTools } from '../../services/tool';
+import { listSkills } from '../../services/skill';
+import type { SkillConfig } from '../../types/skill';
 
 const STATUS_LABELS: Record<CommonStatus, string> = {
   ENABLED: '启用',
@@ -51,6 +53,7 @@ function AgentList(): JSX.Element {
 
   const [modelList, setModelList] = useState<ModelConfig[]>([]);
   const [toolList, setToolList] = useState<ToolConfig[]>([]);
+  const [skillList, setSkillList] = useState<SkillConfig[]>([]);
   const [modelMap, setModelMap] = useState<Record<string, string>>({});
 
   const fetchList = useCallback(async () => {
@@ -68,21 +71,23 @@ function AgentList(): JSX.Element {
     }
   }, [searchName, filterStatus]);
 
-  const fetchModelsAndTools = useCallback(async () => {
+  const fetchRefData = useCallback(async () => {
     try {
-      const [models, tools] = await Promise.all([
+      const [models, tools, skills] = await Promise.all([
         listModels({}),
         listTools({}),
+        listSkills({}),
       ]);
       setModelList(models);
       setToolList(tools);
+      setSkillList(skills);
       const map: Record<string, string> = {};
       models.forEach((m) => {
         map[m.id] = m.name;
       });
       setModelMap(map);
     } catch {
-      message.error('获取模型/工具列表失败');
+      message.error('获取模型/工具/技能列表失败');
     }
   }, []);
 
@@ -91,8 +96,8 @@ function AgentList(): JSX.Element {
   }, [fetchList]);
 
   useEffect(() => {
-    fetchModelsAndTools();
-  }, [fetchModelsAndTools]);
+    fetchRefData();
+  }, [fetchRefData]);
 
   const handleSearch = (value: string): void => {
     setSearchName(value);
@@ -117,6 +122,7 @@ function AgentList(): JSX.Element {
       systemPrompt: editingAgent.systemPrompt,
       modelId: editingAgent.modelId,
       toolIds: editingAgent.toolIds,
+      skillIds: editingAgent.skillIds,
       recentMessageCount: editingAgent.recentMessageCount,
     });
   }, [editingAgent, modalVisible, form]);
@@ -317,6 +323,19 @@ function AgentList(): JSX.Element {
               options={toolList.map((t) => ({
                 value: t.id,
                 label: t.name,
+              }))}
+            />
+          </Form.Item>
+          <Form.Item name="skillIds" label="挂载技能">
+            <Select
+              mode="multiple"
+              placeholder="请选择挂载技能"
+              allowClear
+              showSearch
+              optionFilterProp="label"
+              options={skillList.map((s) => ({
+                value: s.id,
+                label: s.name,
               }))}
             />
           </Form.Item>

@@ -2,13 +2,20 @@ import { useState } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { Layout, Menu } from 'antd';
 import type { MenuProps } from 'antd';
-import { ApiOutlined, MessageOutlined, RobotOutlined, ToolOutlined } from '@ant-design/icons';
+import {
+  ApiOutlined,
+  MessageOutlined,
+  RobotOutlined,
+  ThunderboltOutlined,
+  ToolOutlined,
+} from '@ant-design/icons';
 import ModelList from './pages/models/ModelList';
 import ModelTest from './pages/models/ModelTest';
 import ToolList from './pages/tools/ToolList';
 import AgentList from './pages/agents/AgentList';
 import SessionList from './pages/sessions/SessionList';
 import AgentChat from './pages/sessions/AgentChat';
+import SkillList from './pages/skills/SkillList';
 
 const { Header, Sider, Content } = Layout;
 
@@ -22,6 +29,11 @@ const MENU_ITEMS: MenuProps['items'] = [
     key: '/tools',
     icon: <ToolOutlined />,
     label: '工具管理',
+  },
+  {
+    key: '/skills',
+    icon: <ThunderboltOutlined />,
+    label: '技能管理',
   },
   {
     key: '/agents',
@@ -89,6 +101,7 @@ function App() {
             <Route path="/models/:id/test" element={<ModelTest />} />
             <Route path="/tools" element={<ToolList />} />
             <Route path="/agents" element={<AgentList />} />
+            <Route path="/skills" element={<SkillList />} />
             <Route path="/sessions" element={<SessionList />} />
             <Route path="/sessions/:id/chat" element={<AgentChat />} />
           </Routes>

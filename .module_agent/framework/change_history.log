@@ -42,3 +42,4 @@
 [2026-06-26T10:38:12.614Z] [session: ses_0fc7e430fffeqliPwbv478obGj] schema.sql: agent_config 表新增 recent_message_count INTEGER DEFAULT 10 列及对应 ALTER TABLE 迁移语句
 [2026-06-26T10:55:20.172Z] [session: ses_0fc7e430fffeqliPwbv478obGj] 新增 SchemaMigration.java 启动组件替代 schema.sql ALTER TABLE 迁移；schema.sql 删除 4 条 ALTER TABLE；application.yml 移除 continue-on-error
 [2026-06-28T07:11:03.350Z] [session: ses_0f3113eddffe0ccsHFrXvG4JOy] feat: SchemaMigration.migrations 列表新增 message.tool_name (VARCHAR(255)) 迁移项，启动时检测 message 表无 tool_name 列则 ALTER TABLE 添加。配合 agent-engine 的 Message 实体 toolName 字段改造。
+[2026-06-29T05:19:21.924Z] [session: ses_0ee2f1fe8ffeFp5MLAxmZNmxJo] [2026-06-29] schema.sql 在 agent_tool 建表后新增 agent_skill 中间表（agent_id/skill_id 关联），结构与 agent_tool 一致，含 idx_agent_skill_agent_id 和 idx_agent_skill_skill_id 两个索引

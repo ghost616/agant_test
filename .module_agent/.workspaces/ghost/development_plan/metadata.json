@@ -1,44 +1,8 @@
 [
   {
-    "plan_id": "plan_ef32be20-28ab-461a-b572-063d56d62074",
-    "plan_summary": "agent-engine 加载并应用 recentMessageCount 截取历史消息",
-    "code_reviewed": true,
-    "plan_completed": false
-  },
-  {
-    "plan_id": "plan_37a458b3-200f-4f84-8755-518eb39dbd79",
-    "plan_summary": "修复 ToolExecutionController 变量重名编译错误",
-    "code_reviewed": true,
-    "plan_completed": false
-  },
-  {
-    "plan_id": "plan_e19e2955-f6e9-47e7-a9a1-c7a39d161d4a",
-    "plan_summary": "历史工具消息 toolName 嵌入 content，与流式显示一致",
+    "plan_id": "plan_19866cf8-5392-43c9-9b4a-9d7502a43f4b",
+    "plan_summary": "schema.sql 添加 agent_skill 建表语句",
     "code_reviewed": true,
     "plan_completed": true
-  },
-  {
-    "plan_id": "plan_423dc76a-bdbe-4d72-a341-5043399aaf59",
-    "plan_summary": "Message 实体 toolName→toolResult 字段替换及全链路适配",
-    "code_reviewed": true,
-    "plan_completed": true
-  },
-  {
-    "plan_id": "plan_3bba16d3-8e72-4b7e-876b-216a0f20ec63",
-    "plan_summary": "前端适配 toolResult 字段并格式化显示工具名/参数/结果",
-    "code_reviewed": true,
-    "plan_completed": true
-  },
-  {
-    "plan_id": "plan_401eaa8f-9521-4703-ba74-61f238ac280c",
-    "plan_summary": "continueChat saveMessage 传入 toolCallId",
-    "code_reviewed": true,
-    "plan_completed": true
-  },
-  {
-    "plan_id": "plan_742488b8-4bdc-4079-b054-884f50e78d2f",
-    "plan_summary": "实现 SKILL CRUD 后端（实体、Mapper、DTO、Service、Controller）",
-    "code_reviewed": true,
-    "plan_completed": false
   }
 ]

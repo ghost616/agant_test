@@ -122,6 +122,37 @@
       ],
       "dependencies": [],
       "interfaces": []
+    },
+    {
+      "name": "skill-manager",
+      "description": "SKILL 配置与管理模块",
+      "responsibilities": [
+        "SKILL 的 CRUD 操作（创建、读取、更新、删除）",
+        "SKILL 状态管理（启用/禁用）",
+        "SKILL 与工具的关联管理（多对多）",
+        "提供 SKILL 管理器，供智能体引擎按名称获取 SKILL 实现"
+      ],
+      "dependencies": [
+        "tool-registry"
+      ],
+      "functions": [
+        {
+          "name": "SKILL CRUD",
+          "description": "提供 /api/skills 接口，支持 SKILL 的创建、列表查询、详情、更新、删除，包含名称去重校验和事务管理"
+        },
+        {
+          "name": "SKILL 工具关联",
+          "description": "通过 skill_tool 关联表管理 SKILL 与工具的多对多关系，创建/更新时校验工具 ID 有效性"
+        },
+        {
+          "name": "SKILL 状态切换",
+          "description": "PATCH /api/skills/{id}/toggle-status 接口，支持启用/禁用 SKILL"
+        },
+        {
+          "name": "SKILL 管理器",
+          "description": "提供 getSkillImpl(name) 接口，供 agent-engine 按名称获取 SKILL 的提示词和关联工具列表"
+        }
+      ]
     }
   ]
 }

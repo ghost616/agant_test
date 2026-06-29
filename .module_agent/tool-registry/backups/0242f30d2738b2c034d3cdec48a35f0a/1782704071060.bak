@@ -1,0 +1,155 @@
+package com.ghost616.platform.service.agent.invoker;
+
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghost616.platform.dto.tool.ToolConfigDTO;
+import com.ghost616.platform.entity.SessionTool;
+import com.ghost616.platform.enums.ToolType;
+import com.ghost616.platform.repository.SessionToolMapper;
+import com.ghost616.platform.event.ToolChangedEvent;
+import com.ghost616.platform.service.agent.AgentExecutionContext;
+import com.ghost616.platform.service.tool.ToolConfigService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.event.EventListener;
+import org.springframework.stereotype.Component;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class ToolManager {
+
+    private final ToolConfigService toolConfigService;
+    private final SessionToolMapper sessionToolMapper;
+
+    private final ConcurrentHashMap<Long, List<ToolSessionObject>> sessionToolCache = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Long, ToolSessionObject> toolCache = new ConcurrentHashMap<>();
+
+    public ToolInvoker getInvoker(Long sessionId, String toolName) {
+        List<ToolSessionObject> sessionTools = getSessionTools(sessionId);
+        return sessionTools.stream()
+                .filter(tso -> tso.toolConfig().getName().equals(toolName))
+                .map(ToolSessionObject::invoker)
+                .findFirst()
+                .orElse(null);
+    }
+
+    public List<ToolSessionObject> getSessionTools(Long sessionId) {
+        return sessionToolCache.computeIfAbsent(sessionId, id -> {
+            LambdaQueryWrapper<SessionTool> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(SessionTool::getSessionId, id);
+            List<SessionTool> sessionTools = sessionToolMapper.selectList(wrapper);
+
+            List<ToolSessionObject> result = new ArrayList<>();
+            for (SessionTool st : sessionTools) {
+                ToolSessionObject tso = toolCache.computeIfAbsent(st.getToolId(), toolId -> {
+                    ToolConfigDTO dto = toolConfigService.getById(toolId);
+                    if (dto.getToolType() == ToolType.MCP_HTTP) {
+                        List<ToolConfigDTO> expandedTools = expandMcpTools(dto);
+                        List<ToolInvoker> expandedInvokers = expandedTools.stream()
+                                .map(this::createInvoker)
+                                .toList();
+                        return new ToolSessionObject(dto, null, dto, expandedTools, expandedInvokers);
+                    }
+                    return new ToolSessionObject(dto, createInvoker(dto), null, List.of(), List.of());
+                });
+
+                if (!tso.mcpExpandedTools().isEmpty()) {
+                    for (int i = 0; i < tso.mcpExpandedTools().size(); i++) {
+                        ToolConfigDTO expandedTool = tso.mcpExpandedTools().get(i);
+                        ToolInvoker expandedInvoker = tso.mcpExpandedInvokers().get(i);
+                        result.add(new ToolSessionObject(
+                                expandedTool, expandedInvoker, tso.mcpOriginalConfig(),
+                                List.of(), List.of()));
+                    }
+                } else {
+                    result.add(tso);
+                }
+            }
+            return result;
+        });
+    }
+
+    private List<ToolConfigDTO> expandMcpTools(ToolConfigDTO mcpConfig) {
+        Map<String, String> headers;
+        try {
+            headers = McpAuthConfigParser.parse(mcpConfig.getAuthConfig());
+        } catch (Exception e) {
+            log.warn("解析 MCP 认证配置失败，跳过: {}", mcpConfig.getAuthConfig(), e);
+            return List.of(mcpConfig);
+        }
+
+        try {
+            McpJsonRpcClient client = new McpJsonRpcClient(mcpConfig.getImplPath(), headers);
+            client.initialize();
+
+            List<Map<String, Object>> tools = client.listTools();
+            ObjectMapper mapper = new ObjectMapper();
+            List<ToolConfigDTO> expanded = new ArrayList<>();
+            for (Map<String, Object> tool : tools) {
+                try {
+                    expanded.add(ToolConfigDTO.builder()
+                            .name(mcpConfig.getName() + "_" + tool.get("name"))
+                            .toolType(ToolType.MCP_HTTP)
+                            .description((String) tool.get("description"))
+                            .parameterSchema(mapper.writeValueAsString(tool.get("inputSchema")))
+                            .implPath(mcpConfig.getImplPath())
+                            .authConfig(mcpConfig.getAuthConfig())
+                            .build());
+                } catch (Exception e) {
+                    log.warn("序列化 MCP 工具 Schema 失败: {}", tool.get("name"), e);
+                }
+            }
+            log.info("MCP 工具展开结果: url={}, 展开数量={}, {}", mcpConfig.getImplPath(), expanded.size(),
+                    expanded.stream().map(ToolConfigDTO::getName).toList());
+            return expanded;
+        } catch (Exception e) {
+            log.warn("获取 MCP 工具列表失败，保持原配置: url={}", mcpConfig.getImplPath(), e);
+            return List.of(mcpConfig);
+        }
+    }
+
+    private ToolInvoker createInvoker(ToolConfigDTO toolConfig) {
+        switch (toolConfig.getToolType()) {
+            case JAVA:
+                return new JavaToolInvoker(toolConfig.getImplPath());
+            case TYPESCRIPT:
+                return new TypeScriptToolInvoker(toolConfig.getImplPath());
+            case PYTHON:
+                return new PythonToolInvoker(toolConfig.getImplPath());
+            case MCP_HTTP:
+                return new McpHttpToolInvoker(toolConfig.getImplPath(), toolConfig.getName(),
+                        toolConfig.getAuthConfig());
+            default:
+                throw new UnsupportedOperationException("暂不支持的调用类型: " + toolConfig.getToolType());
+        }
+    }
+
+    public String execute(ToolInvoker invoker, AgentExecutionContext context, String arguments) {
+        return invoker.execute(context, arguments);
+    }
+
+    public void clearSessionCache(Long sessionId) {
+        sessionToolCache.remove(sessionId);
+    }
+
+    public void clearToolCache(Long toolId) {
+        toolCache.remove(toolId);
+    }
+
+    @EventListener
+    public void onToolChanged(ToolChangedEvent event) {
+        clearToolCache(event.getToolId());
+    }
+
+    public record ToolSessionObject(ToolConfigDTO toolConfig, ToolInvoker invoker,
+                                    ToolConfigDTO mcpOriginalConfig,
+                                    List<ToolConfigDTO> mcpExpandedTools,
+                                    List<ToolInvoker> mcpExpandedInvokers) {
+    }
+}

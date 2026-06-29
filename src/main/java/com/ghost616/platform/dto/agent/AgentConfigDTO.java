@@ -28,6 +28,8 @@ public class AgentConfigDTO {
     private Integer recentMessageCount;
     @JsonSerialize(contentUsing = ToStringSerializer.class)
     private List<Long> toolIds;
+    @JsonSerialize(contentUsing = ToStringSerializer.class)
+    private List<Long> skillIds;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
 }

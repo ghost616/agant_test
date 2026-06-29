@@ -5,14 +5,14 @@ import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import com.ghost616.platform.enums.CommonStatus;
 import com.ghost616.platform.enums.ToolType;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDateTime;
 
 @Data
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
 public class ToolConfigDTO {

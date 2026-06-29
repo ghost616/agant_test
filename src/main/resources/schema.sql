@@ -96,6 +96,14 @@ CREATE TABLE IF NOT EXISTS agent_tool (
 CREATE INDEX IF NOT EXISTS idx_agent_tool_agent_id ON agent_tool(agent_id);
 CREATE INDEX IF NOT EXISTS idx_agent_tool_tool_id ON agent_tool(tool_id);
 
+CREATE TABLE IF NOT EXISTS agent_skill (
+    id       BIGINT PRIMARY KEY,
+    agent_id BIGINT NOT NULL,
+    skill_id  BIGINT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_agent_skill_agent_id ON agent_skill(agent_id);
+CREATE INDEX IF NOT EXISTS idx_agent_skill_skill_id ON agent_skill(skill_id);
+
 CREATE TABLE IF NOT EXISTS skill_config (
     id          BIGINT PRIMARY KEY,
     name        VARCHAR(255) NOT NULL,

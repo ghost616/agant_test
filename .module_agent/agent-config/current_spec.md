@@ -24,3 +24,8 @@
 - **Entity**: AgentConfig 新增 recentMessageCount 字段（@TableField("recent_message_count")，默认值 10）
 - **DTO**: AgentConfigDTO、AgentCreateRequest、AgentUpdateRequest 均新增 recentMessageCount 字段
 - **Service**: create() 将 request.getRecentMessageCount() 写入 entity；update() 新增判断 if null 后更新；toDTO() 新增 .recentMessageCount() 映射
+- **Entity**: 新增 AgentSkill 关联实体（映射 agent_skill 表，含 agentId/skillId）
+- **Mapper**: 新增 AgentSkillMapper（继承 BaseMapper<AgentSkill>）
+- **DTO**: AgentConfigDTO、AgentCreateRequest、AgentUpdateRequest 均新增 skillIds 字段
+- **Service**: create() 新增 skillIds 批量插入 + 校验；update() 新增 skillIds 先删后插 + 校验；delete() 新增 agent_skill 清理；toDTO() 新增 skillIds 填充；新增 validateSkillIds() 校验方法
+- **事务与校验**: create/update/delete 均添加 @Transactional 注解；create 中 validateSkillIds 在数据库写入之前调用

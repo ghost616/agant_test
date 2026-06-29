@@ -7,7 +7,7 @@
     },
     {
       "path": "src/main/java/com/ghost616/platform/dto/tool/ToolConfigDTO.java",
-      "description": "新增 authConfig 字段"
+      "description": "工具配置 DTO，包含 id/name/toolType/description/parameterSchema/returnSchema/implPath/authConfig/status/createTime/updateTime，使用 @SuperBuilder 支持子类继承"
     },
     {
       "path": "src/main/java/com/ghost616/platform/dto/tool/ToolCreateRequest.java",
@@ -60,6 +60,14 @@
     {
       "path": "src/main/java/com/ghost616/platform/service/tool/ToolConfigServiceImpl.java",
       "description": "工具配置服务实现，validateImplPath 校验 JAVA/TYPESCRIPT/PYTHON/MCP_HTTP 四种类型的实现路径，MCP_HTTP 通过 HttpClientSseClientTransport + McpAuthConfigParser 解析认证 headers 进行 MCP 协议握手验证"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/service/agent/invoker/ToolManager.java",
+      "description": "工具管理器，管理会话工具缓存、工具调用器路由（JAVA/TYPESCRIPT/PYTHON/MCP_HTTP）、MCP 工具展开（expandMcpTools 返回 McpExpandedToolDTO，name=配置名_远程名展示，remoteToolName=远程原始名）、createInvoker 通过 instanceof 获取远程名、工具变更事件监听"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/dto/tool/McpExpandedToolDTO.java",
+      "description": "MCP 展开工具 DTO，继承 ToolConfigDTO，新增 remoteToolName 字段区分展示名与远程调用名"
     }
   ]
 }
