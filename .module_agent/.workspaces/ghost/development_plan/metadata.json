@@ -2,13 +2,13 @@
   {
     "plan_id": "plan_ef32be20-28ab-461a-b572-063d56d62074",
     "plan_summary": "agent-engine 加载并应用 recentMessageCount 截取历史消息",
-    "code_reviewed": false,
+    "code_reviewed": true,
     "plan_completed": false
   },
   {
     "plan_id": "plan_37a458b3-200f-4f84-8755-518eb39dbd79",
     "plan_summary": "修复 ToolExecutionController 变量重名编译错误",
-    "code_reviewed": false,
+    "code_reviewed": true,
     "plan_completed": false
   },
   {
@@ -34,5 +34,11 @@
     "plan_summary": "continueChat saveMessage 传入 toolCallId",
     "code_reviewed": true,
     "plan_completed": true
+  },
+  {
+    "plan_id": "plan_742488b8-4bdc-4079-b054-884f50e78d2f",
+    "plan_summary": "实现 SKILL CRUD 后端（实体、Mapper、DTO、Service、Controller）",
+    "code_reviewed": true,
+    "plan_completed": false
   }
 ]

@@ -27,6 +27,10 @@
     {
       "name": "frontend-ui",
       "description": "前端交互界面"
+    },
+    {
+      "name": "skill-manager",
+      "description": "SKILL 配置与管理模块"
     }
   ]
 }

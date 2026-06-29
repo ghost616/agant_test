@@ -1,0 +1,45 @@
+{
+  "module_name": "skill-manager",
+  "files": [
+    {
+      "path": "src/main/java/com/ghost616/platform/entity/SkillConfig.java",
+      "description": "SKILL 配置实体（extends BaseEntity），映射 skill_config 表，包含 name、description、prompt、status 字段"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/entity/SkillTool.java",
+      "description": "SKILL-工具关联实体，映射 skill_tool 表，包含 skillId 和 toolId 字段"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/repository/SkillConfigMapper.java",
+      "description": "MyBatis-Plus Mapper 接口，继承 BaseMapper<SkillConfig>"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/repository/SkillToolMapper.java",
+      "description": "MyBatis-Plus Mapper 接口，继承 BaseMapper<SkillTool>"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/dto/skill/SkillConfigDTO.java",
+      "description": "SKILL 响应 DTO，包含 id、name、description、prompt、status、toolIds、createTime、updateTime"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/dto/skill/SkillCreateRequest.java",
+      "description": "SKILL 创建请求 DTO，name 和 prompt 为必填字段，toolIds 为可选关联工具 ID 列表"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/dto/skill/SkillUpdateRequest.java",
+      "description": "SKILL 更新请求 DTO，所有字段可选，支持更新 name、description、prompt、status、toolIds"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/service/skill/SkillConfigService.java",
+      "description": "SKILL 服务接口，定义 list、getById、create、update、delete、toggleStatus 方法"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/service/skill/SkillConfigServiceImpl.java",
+      "description": "SKILL 服务实现，包含事务管理（create/update/delete）、名称去重校验、关联工具 ID 有效性校验、skill_tool 关联表维护"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/controller/SkillConfigController.java",
+      "description": "SKILL REST 控制器，路径 /api/skills，提供 CRUD + toggleStatus 接口"
+    }
+  ]
+}

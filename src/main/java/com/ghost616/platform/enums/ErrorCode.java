@@ -28,6 +28,9 @@ public enum ErrorCode {
     AGENT_NOT_FOUND("AGENT-CONFIG-001", "智能体配置不存在"),
     AGENT_ALREADY_EXISTS("AGENT-CONFIG-002", "智能体名称已存在"),
 
+    SKILL_NOT_FOUND("SKILL-CONFIG-001", "SKILL 配置不存在"),
+    SKILL_ALREADY_EXISTS("SKILL-CONFIG-002", "SKILL 名称已存在"),
+
     SESSION_NOT_FOUND("SESSION-001", "会话不存在");
 
     private final String code;
