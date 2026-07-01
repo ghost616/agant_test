@@ -39,5 +39,7 @@
   "src/main/java/com/ghost616/platform/service/agent/invoker/SystemToolManager.java": "54f4ab78d0c7762c1068e2a05dd5e84e",
   "src/main/java/com/ghost616/platform/service/agent/invoker/ToolDefinitionConverter.java": "614764de527eb8872ee164407058bfb0",
   "src/main/java/com/ghost616/platform/service/agent/invoker/HistoryQuerySystemTool.java": "b763b70ea32d6db1b3c02c3cf31197e0",
-  "src/main/java/com/ghost616/platform/config/SchemaMigration.java": "fed1d4048accefa7f7649a9285dd0ec5"
+  "src/main/java/com/ghost616/platform/config/SchemaMigration.java": "fed1d4048accefa7f7649a9285dd0ec5",
+  "src/main/java/com/ghost616/platform/repository/MessageMapper.java": "c2ce71365ef5e0e8f137cb2b83b95dbd",
+  "src/main/java/com/ghost616/platform/repository/MessageToolCallMapper.java": "8fd5df4606d7ede028bcd03327bd4f30"
 }

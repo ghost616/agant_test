@@ -39,11 +39,11 @@
     },
     {
       "path": "src/main/java/com/ghost616/platform/repository/MessageMapper.java",
-      "description": "Message 实体的 MyBatis-Plus Mapper 接口"
+      "description": "Message 实体的 MyBatis-Plus Mapper 接口，提供 deleteBySessionIdAndGeSequenceNum 方法按会话和序号范围删除消息"
     },
     {
       "path": "src/main/java/com/ghost616/platform/repository/MessageToolCallMapper.java",
-      "description": "MessageToolCall 实体的 MyBatis-Plus Mapper 接口"
+      "description": "MessageToolCall 实体的 MyBatis-Plus Mapper 接口，提供 deleteByMessageIds 方法批量删除指定消息ID的工具调用记录"
     },
     {
       "path": "src/main/java/com/ghost616/platform/repository/SessionToolMapper.java",
@@ -51,7 +51,7 @@
     },
     {
       "path": "src/main/java/com/ghost616/platform/service/agent/SessionManager.java",
-      "description": "会话管理组件，提供消息保存（含工具调用）和历史消息查询功能。getSessionTools() 和 expandMcpTools() 已迁移至 ToolManager。saveMessage() 签名在 toolCallId 与 toolCalls 之间含 toolResult 参数并 message.setToolResult(toolResult)；内部 record MessageDTO 含 toolResult 字段；getMessages() 构造 MessageDTO 时传入 msg.getToolResult()"
+      "description": "会话管理组件，提供消息保存（含工具调用）、历史消息查询和回退功能。saveMessage() 签名在 toolCallId 与 toolCalls 之间含 toolResult 参数并 message.setToolResult(toolResult)；内部 record MessageDTO 含 toolResult 字段；getMessages() 构造 MessageDTO 时传入 msg.getToolResult()；rollbackToLastUserMessage() 回退到最后一条用户消息（先删 tool_call 再删 message）"
     },
     {
       "path": "src/main/java/com/ghost616/platform/repository/SessionMapper.java",
@@ -63,15 +63,15 @@
     },
     {
       "path": "src/main/java/com/ghost616/platform/service/session/SessionService.java",
-      "description": "会话服务接口，定义 listSessions、createSession、getSession、deleteSession 和 getMessages 方法"
+      "description": "会话服务接口，定义 listSessions、createSession、getSession、deleteSession、getMessages 和 rollback 方法"
     },
     {
       "path": "src/main/java/com/ghost616/platform/service/session/SessionServiceImpl.java",
-      "description": "会话服务实现，createSession 标注 @Transactional for-each 调用 BaseMapper.insert() 由 ASSIGN_ID 自动生成雪花 ID，deleteSession 先删 session_tool 再删 session"
+      "description": "会话服务实现，createSession 标注 @Transactional for-each 调用 BaseMapper.insert() 由 ASSIGN_ID 自动生成雪花 ID，deleteSession 先删 session_tool 再删 session，rollback 校验会话存在性后委托 sessionManager 回退并清理上下文缓存"
     },
     {
       "path": "src/main/java/com/ghost616/platform/controller/SessionController.java",
-      "description": "会话 REST 控制器（/api/sessions），提供 GET 列表、GET /{id} 单会话、POST 创建、GET /{id}/messages 消息、DELETE 逻辑删除接口"
+      "description": "会话 REST 控制器（/api/sessions），提供 GET 列表、GET /{id} 单会话、POST 创建、GET /{id}/messages 消息、POST /{id}/rollback 回退和 DELETE 逻辑删除接口"
     },
     {
       "path": "src/main/java/com/ghost616/platform/dto/session/CreateSessionRequest.java",

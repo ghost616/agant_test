@@ -16,6 +16,4 @@ public interface SessionService {
     void deleteSession(Long id);
 
     List<SessionManager.MessageDTO> getMessages(Long sessionId);
-
-    int rollback(Long sessionId);
 }

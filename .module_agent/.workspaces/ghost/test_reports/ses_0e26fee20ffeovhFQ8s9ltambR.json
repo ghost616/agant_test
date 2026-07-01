@@ -1,0 +1,5 @@
+{
+  "lizhu_session_id": "ses_0e26fee20ffeovhFQ8s9ltambR",
+  "content": "## 测试报告：Session Rollback (`POST /api/sessions/{id}/rollback`)\n\n- **测试时间**: 2026-07-01T20:25:09+08:00\n- **测试框架**: JUnit 5 + Mockito\n- **测试文件**: `src/test/java/com/ghost616/platform/session/SessionRollbackTest.java`\n- **测试结果**: ✅ 全部通过\n\n### 用例执行情况\n\n| # | 用例名 | 类型 | 结果 |\n|---|--------|------|------|\n| 1 | rollback_正常回退_返回删除数量 | 单元测试 | ✅ 通过 |\n| 2 | rollback_会话不存在_抛出SESSION_NOT_FOUND | 单元测试 | ✅ 通过 |\n| 3 | rollback_会话无用户消息_抛出SESSION_NO_USER_MESSAGE | 单元测试 | ✅ 通过 |\n| 4 | rollback_SessionManager有用户消息_删除后续消息 | 单元测试 | ✅ 通过 |\n| 5 | rollback_SessionManager无用户消息_抛出异常 | 单元测试 | ✅ 通过 |\n\n- **总用例数**: 5\n- **通过**: 5\n- **失败**: 0\n- **跳过**: 0\n",
+  "timestamp": "2026-07-01T12:25:14.015Z"
+}

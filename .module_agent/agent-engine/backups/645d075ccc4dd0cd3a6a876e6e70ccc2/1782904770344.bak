@@ -94,18 +94,6 @@ public class SessionServiceImpl implements SessionService {
     }
 
     @Override
-    @Transactional
-    public int rollback(Long sessionId) {
-        Session entity = sessionMapper.selectById(sessionId);
-        if (entity == null) {
-            throw new BusinessException(ErrorCode.SESSION_NOT_FOUND);
-        }
-        int deleted = sessionManager.rollbackToLastUserMessage(sessionId);
-        agentContextManager.remove(sessionId);
-        return deleted;
-    }
-
-    @Override
     public List<SessionManager.MessageDTO> getMessages(Long sessionId) {
         Session entity = sessionMapper.selectById(sessionId);
         if (entity == null) {

@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_0e29d589fffe0FzhJYn3PzKAqj",
+  "content": "### 测试目标\n测试 `POST /api/sessions/{id}/rollback` 接口\n\n### 测试框架\nJUnit 5 + Mockito + Spring Boot Test + MockMvc\n\n### 测试用例\n\n1. **正常回退** —— 会话有 user + assistant 消息，rollback 后只保留 assistant 之前的数据，返回正确的删除数量（单元测试）\n2. **会话无消息** —— 调用 rollback 返回 SESSION_NO_USER_MESSAGE 错误（单元测试）\n3. **会话不存在** —— 调用 rollback 返回 SESSION_NOT_FOUND 错误（单元测试）\n4. **接口集成测试** —— 通过 MockMvc 调用 `POST /api/sessions/{id}/rollback`，验证 HTTP 200 + 返回正确删除数（集成测试）\n5. **接口集成测试** —— 通过 MockMvc 调用不存在的 session，验证返回错误码（集成测试）\n\n测试文件：`src/test/java/com/ghost616/platform/session/SessionRollbackTest.java`",
+  "timestamp": "2026-07-01T12:03:26.682Z"
+}

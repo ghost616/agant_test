@@ -10,6 +10,9 @@ ToolManager.java: Spring @Component，注入 ApplicationContext 和 ToolConfigSe
 SessionServiceImpl.createSession(): 在 sessionMapper.insert(entity) 之后查询 agent_tool 表获取该智能体关联的所有工具 ID，为每个工具创建 SessionTool 记录（含 sessionId 和 toolId）并逐个插入 session_tool 表，确保创建会话后 AgentContextManager.getOrCreate() 能通过 sessionManager.getSessionTools() 查询到会话工具列表。
 SessionServiceImpl.createSession() 添加 @Transactional 保证原子性；使用 SessionToolMapper.insertBatch(List) 批量插入替代逐条 insert；deleteSession() 新增删除 session_tool 记录避免孤儿数据；变量名 at/st 改为 agentTool/sessionTool 提高可读性。
 新增 LoadSkillsSystemTool（load_skills，按名称从 ctx.getSkills() 匹配可用技能，读写 _sys_loading_SKILLS 会话变量实现去重合并加载）和 UnloadSkillsSystemTool（unload_skills，从 _sys_loading_SKILLS 移除指定名称并写回）。两者均为 @Component，由 SystemToolManager 自动注册。
+- SessionService: 会话服务接口，定义 listSessions、createSession、getSession、deleteSession、getMessages 和 rollback 方法
+- SessionServiceImpl: 会话服务实现，rollback 校验会话存在性后委托 sessionManager.rollbackToLastUserMessage 并清理上下文缓存
+- SessionController: 会话 REST 控制器（/api/sessions），新增 POST /{id}/rollback 端点返回删除消息数
 ## 实体定义
 
 Message 实体对应 message 表，不继承 BaseEntity（无 update_time/deleted 列）。字段：id (雪花ID)、sessionId、role、content、reasoning、sequenceNum、toolCallId、toolResult (String, @TableField("tool_result"))、createTime。
@@ -72,6 +75,8 @@ ToolManager.java: Spring @Component，注入 ToolConfigService 和 SessionToolMa
 ## SessionManager
 
 saveMessage() 方法的 toolName 参数已替换为 toolResult (String)，内部调用 message.setToolResult()。MessageDTO record 中 toolName 字段替换为 toolResult。getMessages() 构造 MessageDTO 时传入 msg.getToolResult()。
+- saveMessage() 的 toolName 参数已替换为 toolResult (String)，内部调用 message.setToolResult()。MessageDTO record 中 toolName 字段替换为 toolResult。getMessages() 构造 MessageDTO 时传入 msg.getToolResult()。
+- rollbackToLastUserMessage(Long sessionId) 回退到最后一条 user 消息：查询最大 sequenceNum 的 user 消息，获取 sequenceNum，查询所有 >= 该值的消息ID，先删关联 message_tool_call 再删 message 记录，返回删除的消息数
 ## AgentExecutionContext.java
 
 Map&lt;String,Object&gt; 改为 Map&lt;String,String&gt;，所有 putSessionVariable/getSessionVariable/putConversationVariable/getConversationVariable 方法签名以及 AgentContextMutator.BiConsumer 回调参数类型同步改为 String。

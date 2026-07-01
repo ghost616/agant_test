@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_0e298f5f0ffet6mBEthI3iK4fc",
+  "content": "# 会话消息回退接口测试\n\n## 测试场景\n\n### 1. 正常回退\n- 创建会话（POST /api/sessions）\n- 发送若干条消息（通过 ChatService / 直接插入 message 表模拟多轮对话）\n- 调用 POST /api/sessions/{id}/rollback\n- 预期：返回删除的消息数量（int），会话消息列表回退到最后一条 user 消息位置\n\n### 2. 会话不存在\n- 调用 POST /api/sessions/{nonExistentId}/rollback\n- 预期：返回 SESSION_NOT_FOUND 错误\n\n### 3. 会话中无用户消息\n- 创建会话后不发送任何用户消息\n- 调用 POST /api/sessions/{id}/rollback\n- 预期：返回 SESSION_NO_USER_MESSAGE 错误\n\n### 4. 删除消息时同时删除关联 tool_call\n- 创建会话，插入包含工具调用记录的消息\n- 调用回退接口\n- 预期：message_tool_call 表中关联记录也被删除\n\n### 5. 回退后上下文缓存被清理\n- 创建会话并发送消息\n- 调用回退接口\n- 预期：AgentContextManager 中该 session 的缓存被移除（下次 getOrCreate 会重新构建）",
+  "timestamp": "2026-07-01T11:20:43.905Z"
+}
