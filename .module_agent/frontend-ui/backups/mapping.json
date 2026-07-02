@@ -11,5 +11,7 @@
   "src/components/JsonEditor.tsx": "0a3b344635caf5f4315fe9ff225181b5",
   "src/types/tool.ts": "5feb470524c2e082d4b43fc44e295d63",
   "src/types/common.ts": "db430131f40fdf06063529c1d141d000",
-  "src/App.tsx": "46ef2374da6211486f3a408db68b2bcb"
+  "src/App.tsx": "46ef2374da6211486f3a408db68b2bcb",
+  "src\\services\\session.ts": "fd2948219b1e1d6629abbbd83254968c",
+  "src\\pages\\sessions\\AgentChat.tsx": "9b0b606a6488660373e2a41a6413a711"
 }

@@ -19,7 +19,7 @@
     },
     {
       "path": "src/main/java/com/ghost616/platform/service/agent/AgentExecutionContext.java",
-      "description": "AgentExecutionContext 构造器含 sessionId/agentId/systemPrompt/modelId/recentMessageCount/history/tools/skills(skillConfig列表+关联工具)/mutator/sessionVariables/conversationVariables，含变量 CRUD 方法和 AgentContextMutator 内部类（clearConversationVariables）"
+      "description": "AgentExecutionContext 构造器含 sessionId/agentId/systemPrompt/modelId/recentMessageCount/history/tools/skills(skillConfig列表+关联工具)/mutator/sessionVariables/conversationVariables，含变量 CRUD 方法和 AgentContextMutator 内部类（clearConversationVariables/setStopped/resetStopped），AtomicBoolean stopped 字段及 isStopped() 停止检查"
     },
     {
       "path": "src/main/java/com/ghost616/platform/service/agent/invoker/ToolInvoker.java",
@@ -87,7 +87,7 @@
     },
     {
       "path": "src/main/java/com/ghost616/platform/controller/ChatController.java",
-      "description": "对话 REST 控制器，注入 ChatService，POST /api/chat 端点委托 chatService.chat(request) 返回 SSE 流"
+      "description": "对话 REST 控制器，注入 ChatService 和 AgentContextManager，POST /api/chat 端点委托 chatService.chat(request) 返回 SSE 流，POST /api/chat/{sessionId}/stop 端点支持停止对话"
     },
     {
       "path": "src/main/java/com/ghost616/platform/service/agent/AgentContextBuilder.java",
@@ -99,7 +99,7 @@
     },
     {
       "path": "src/main/java/com/ghost616/platform/service/agent/ChatService.java",
-      "description": "chat() 构建 messages 后调用 foldMessageGroups() 按消息组折叠超出 recentMessageCount 的历史数据，根据 _sys_his_msgs_index 会话变量豁免指定组；构建 tools 时合并系统工具定义列表和已加载 SKILL 的 skillTools（LinkedHashMap 按 name 去重）；系统提示词后注入技能列表系统消息（明确说明技能本身不是工具、需先加载再使用、禁止直接以技能名作为工具调用）和已加载技能提示词 system 消息；saveMessage() 用户消息保存调用适配新签名（toolName 传 null）"
+      "description": "chat() 构建 messages 后调用 foldMessageGroups() 按消息组折叠超出 recentMessageCount 的历史数据，根据 _sys_his_msgs_index 会话变量豁免指定组；构建 tools 时合并系统工具定义列表和已加载 SKILL 的 skillTools（LinkedHashMap 按 name 去重）；系统提示词后注入技能列表系统消息（明确说明技能本身不是工具、需先加载再使用、禁止直接以技能名作为工具调用）和已加载技能提示词 system 消息；saveMessage() 用户消息保存调用适配新签名（toolName 传 null）；流管线添加 takeWhile 停止检查和 doOnCancel 回调"
     },
     {
       "path": "src/main/java/com/ghost616/platform/service/agent/AgentConfigService.java",
@@ -115,7 +115,7 @@
     },
     {
       "path": "src/main/java/com/ghost616/platform/controller/ToolExecutionController.java",
-      "description": "executeTools() 检测 toolCallName 是否 startsWith(_sys_)，是则从 SystemToolManager 获取 invoker，否则走原有 toolManager.getInvoker 流程；toolStatus/continueChat 提供工具执行状态轮询和继续对话接口。continueChat() 遍历结果构建 toolResult JSON（含 toolName/arguments/result），作为 saveMessage 的 toolResult 参数传入（toolCallId 传 null），注入 ObjectMapper 序列化"
+      "description": "executeTools() 检测 toolCallName 是否 startsWith(_sys_)，是则从 SystemToolManager 获取 invoker，否则走原有 toolManager.getInvoker 流程；toolStatus/continueChat 提供工具执行状态轮询和继续对话接口。continueChat() 遍历结果构建 toolResult JSON（含 toolName/arguments/result），作为 saveMessage 的 toolResult 参数传入（toolCallId 传 null），注入 ObjectMapper 序列化。executeTools 和 continueChat 中增加 context.isStopped() 停止检查，已停止时清空队列/追踪器并返回"
     },
     {
       "path": "src/main/java/com/ghost616/platform/service/agent/ToolExecutionTracker.java",

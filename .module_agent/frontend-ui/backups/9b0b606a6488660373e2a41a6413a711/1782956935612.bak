@@ -17,7 +17,6 @@ import {
   getSessionMessages,
   getToolStatus,
   rollbackSession,
-  stopChat,
 } from '../../services/session';
 import { listModels } from '../../services/model';
 import type { SessionMessage } from '../../types/session';
@@ -135,13 +134,12 @@ function AgentChat(): JSX.Element {
   }, [sessionId, loadHistory]);
 
   const handleAbort = useCallback(() => {
-    stopChat(sessionId).catch(() => {});
     toolAbortRef.current = true;
     if (abortRef.current) {
       abortRef.current.abort();
       abortRef.current = null;
     }
-  }, [sessionId]);
+  }, []);
 
   useEffect(() => {
     return () => handleAbort();

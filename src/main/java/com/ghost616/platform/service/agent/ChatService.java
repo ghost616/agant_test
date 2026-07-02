@@ -223,6 +223,7 @@ public class ChatService {
         Flux<ChatChunk> stream = invoker.invokeStream(chatRequest);
 
         return stream
+                .takeWhile(chunk -> !context.isStopped())
                 .doOnNext(chunk -> {
                     if (chunk.getToolCalls() != null && !chunk.getToolCalls().isEmpty()) {
                         hasToolCalls.set(true);
@@ -242,7 +243,8 @@ public class ChatService {
                             .build();
                     triggerHooks(HookPhase.AFTER_MESSAGE_RECEIVE, context, completeChunk);
                     executePostHooks(context, completeChunk);
-                });
+                })
+                .doOnCancel(() -> contextMutator.setStopped());
     }
 
     private List<SkillConfigDTO> parseLoadedSkills(AgentExecutionContext context, List<SkillConfigDTO> skills) {

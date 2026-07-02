@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_0df7c5485ffeO4ui1cvRaxOioP",
+  "content": "## 需要测试的功能\n\n1. **stopChat API** (`src/services/session.ts`)\n   - 导出名为 `stopChat` 的函数\n   - 调用 `POST /api/chat/${sessionId}/stop`\n   - 返回 `Promise<void>`\n\n2. **停止按钮增强** (`src/pages/sessions/AgentChat.tsx`)\n   - 导入了 `stopChat` 函数\n   - `handleAbort` 方法先调用 `stopChat(sessionId).catch(() => {})` 通知后端\n   - 再执行原有的 `toolAbortRef.current = true` 和 `abortRef.current.abort()` 逻辑\n   - `stopChat` 是 fire-and-forget 异步调用，不阻塞后续 abort 操作",
+  "timestamp": "2026-07-02T01:49:25.066Z"
+}

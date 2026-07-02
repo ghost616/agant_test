@@ -147,10 +147,6 @@ export interface ToolStatusResult {
   hasMore?: boolean;
 }
 
-export async function stopChat(sessionId: string): Promise<void> {
-  await api.post(`/chat/${sessionId}/stop`);
-}
-
 export async function rollbackSession(sessionId: string): Promise<void> {
   await api.post(`/sessions/${sessionId}/rollback`);
 }

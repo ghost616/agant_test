@@ -43,7 +43,7 @@
     },
     {
       "path": "src/services/session.ts",
-      "description": "会话 API 服务封装：listSessions/createSession/getSession/deleteSession/getSessionMessages/rollbackSession/agentChatStream/continueChatStream（共用 processSSEStream）；executeTools/getToolStatus；ExecuteToolsResult.toolId/toolName/arguments 可选"
+      "description": "会话相关 API 封装，包括列表/创建/获取/删除会话、获取历史消息、SSE 流式聊天（agentChatStream/continueChatStream）、工具执行（executeTools/getToolStatus）、工具执行状态轮询（pollToolStatus）、回滚会话（rollbackSession）、停止 AI 回复（stopChat）"
     },
     {
       "path": "src/pages/sessions/SessionList.tsx",

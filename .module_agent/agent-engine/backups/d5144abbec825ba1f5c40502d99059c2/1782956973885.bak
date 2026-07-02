@@ -102,14 +102,6 @@ public class ToolExecutionController {
             return ApiResponse.success(result);
         }
         AgentExecutionContext context = sessionCtx.context();
-        if (context.isStopped()) {
-            toolCallQueueManager.clear(sessionId);
-            toolExecutionTracker.clear(sessionId);
-            Map<String, Object> result = new HashMap<>();
-            result.put("status", "empty");
-            result.put("hasMore", false);
-            return ApiResponse.success(result);
-        }
         final String toolCallId = toolCall.toolCallId();
         final String toolCallName = toolCall.toolCallName();
         final String toolCallArguments = toolCall.toolCallArguments();
@@ -163,13 +155,6 @@ public class ToolExecutionController {
         ToolExecutionTracker.ToolExecutionStatus status = toolExecutionTracker.getCurrentExecution(sessionId);
         if (status != null && "executing".equals(status.status())) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "仍有工具正在执行中");
-        }
-
-        AgentContextManager.AgentSessionContext sessionCtx = agentContextManager.get(sessionId);
-        if (sessionCtx != null && sessionCtx.context().isStopped()) {
-            toolCallQueueManager.clear(sessionId);
-            toolExecutionTracker.clear(sessionId);
-            return Flux.empty();
         }
 
         List<ToolExecutionTracker.ToolResult> results = toolExecutionTracker.getAndClearResults(sessionId);
