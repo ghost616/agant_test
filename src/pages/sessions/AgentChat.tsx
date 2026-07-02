@@ -16,6 +16,7 @@ import {
   getSession,
   getSessionMessages,
   getToolStatus,
+  rollbackSession,
 } from '../../services/session';
 import { listModels } from '../../services/model';
 import type { SessionMessage } from '../../types/session';
@@ -89,48 +90,48 @@ function AgentChat(): JSX.Element {
     }
   }, [messages, currentResponse, currentReasoning]);
 
+  const loadHistory = useCallback(async (): Promise<void> => {
+    try {
+      const [session, models, historyMessages] = await Promise.all([
+        getSession(sessionId),
+        listModels({ status: 'ENABLED' }),
+        getSessionMessages(sessionId),
+      ]);
+      setModelList(models);
+      setModelId(session.modelId);
+      const mapped: ChatMessage[] = historyMessages.map((msg: SessionMessage) => {
+        let content = msg.content;
+        if (msg.role === 'tool' && msg.toolResult) {
+          try {
+            const tr = JSON.parse(msg.toolResult);
+            content = `**工具: ${tr.toolName}**\n\n**参数:**\n\`\`\`json\n${tr.arguments}\n\`\`\`\n\n**执行结果:**\n${tr.result}`;
+          } catch {
+            // keep original content
+          }
+        }
+        return {
+          role: (['user', 'assistant', 'tool', 'system'].includes(msg.role)
+            ? msg.role
+            : 'assistant') as MessageRole,
+          content,
+          reasoning: msg.reasoning || undefined,
+          toolResult: msg.toolResult || undefined,
+        };
+      });
+      setMessages(mapped);
+    } catch {
+      message.error('加载历史消息失败');
+    } finally {
+      setHistoryLoading(false);
+    }
+  }, [sessionId]);
+
   useEffect(() => {
     if (!sessionId || calledRef.current) return;
     calledRef.current = true;
 
-    const loadHistory = async (): Promise<void> => {
-      try {
-        const [session, models, historyMessages] = await Promise.all([
-          getSession(sessionId),
-          listModels({ status: 'ENABLED' }),
-          getSessionMessages(sessionId),
-        ]);
-        setModelList(models);
-        setModelId(session.modelId);
-        const mapped: ChatMessage[] = historyMessages.map((msg: SessionMessage) => {
-          let content = msg.content;
-          if (msg.role === 'tool' && msg.toolResult) {
-            try {
-              const tr = JSON.parse(msg.toolResult);
-              content = `**工具: ${tr.toolName}**\n\n**参数:**\n\`\`\`json\n${tr.arguments}\n\`\`\`\n\n**执行结果:**\n${tr.result}`;
-            } catch {
-              // keep original content
-            }
-          }
-          return {
-            role: (['user', 'assistant', 'tool', 'system'].includes(msg.role)
-              ? msg.role
-              : 'assistant') as MessageRole,
-            content,
-            reasoning: msg.reasoning || undefined,
-            toolResult: msg.toolResult || undefined,
-          };
-        });
-        setMessages(mapped);
-      } catch {
-        message.error('加载历史消息失败');
-      } finally {
-        setHistoryLoading(false);
-      }
-    };
-
     loadHistory();
-  }, [sessionId]);
+  }, [sessionId, loadHistory]);
 
   const handleAbort = useCallback(() => {
     toolAbortRef.current = true;
@@ -610,6 +611,19 @@ function AgentChat(): JSX.Element {
               停止
             </Button>
           )}
+          <Button
+            disabled={loading || toolExecuting}
+            onClick={async () => {
+              try {
+                await rollbackSession(sessionId);
+                await loadHistory();
+              } catch {
+                message.error('回滚失败');
+              }
+            }}
+          >
+            回滚
+          </Button>
         </div>
       </div>
     </div>

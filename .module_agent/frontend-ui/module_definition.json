@@ -43,7 +43,7 @@
     },
     {
       "path": "src/services/session.ts",
-      "description": "会话 API 服务封装：listSessions/createSession/getSession/deleteSession/getSessionMessages/agentChatStream/continueChatStream（共用 processSSEStream）；executeTools/getToolStatus；ExecuteToolsResult.toolId/toolName/arguments 可选"
+      "description": "会话 API 服务封装：listSessions/createSession/getSession/deleteSession/getSessionMessages/rollbackSession/agentChatStream/continueChatStream（共用 processSSEStream）；executeTools/getToolStatus；ExecuteToolsResult.toolId/toolName/arguments 可选"
     },
     {
       "path": "src/pages/sessions/SessionList.tsx",
@@ -51,7 +51,7 @@
     },
     {
       "path": "src/pages/sessions/AgentChat.tsx",
-      "description": "智能体对话页面：renderMessage 仅 content 非空时渲染气泡；onDone 回调条件扩展为检查 content 或 reasoning 任一非空；工具气泡补充 arguments JSON 参数显示；loadHistory 中 tool 角色且 toolResult 非空时解析 JSON 格式化为完整工具执行结果 markdown 作为 content（替代之前仅拼接 toolName 前缀的逻辑）"
+      "description": "智能体对话页面：loadHistory 提取为独立 useCallback 供回滚复用；底部按钮区新增回滚按钮（loading/toolExecuting 时禁用），调用 rollbackSession+loadHistory 刷新；renderMessage 仅 content 非空时渲染气泡；onDone 回调条件扩展为检查 content 或 reasoning 任一非空；工具气泡补充 arguments JSON 参数显示；loadHistory 中 tool 角色且 toolResult 非空时解析 JSON 格式化为完整工具执行结果 markdown 作为 content（替代之前仅拼接 toolName 前缀的逻辑）"
     },
     {
       "path": "src/components/JsonEditor.tsx",

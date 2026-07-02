@@ -147,10 +147,6 @@ export interface ToolStatusResult {
   hasMore?: boolean;
 }
 
-export async function rollbackSession(sessionId: string): Promise<void> {
-  await api.post(`/sessions/${sessionId}/rollback`);
-}
-
 export async function executeTools(sessionId: string): Promise<ExecuteToolsResult> {
   const res = await api.post<ApiResponse<ExecuteToolsResult>>(
     `/chat/${sessionId}/execute-tools`,

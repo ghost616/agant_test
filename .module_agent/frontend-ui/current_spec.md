@@ -135,6 +135,9 @@
 - SessionMessage 接口：toolName 字段替换为 toolResult（String，可选），存储工具执行结果的 JSON
 - ChatMessage 接口：toolName 替换为 toolResult
 - loadHistory 历史消息映射：tool 角色且 toolResult 非空时，解析 toolResult JSON 获取 toolName/arguments/result，格式化为完整工具执行结果 markdown 作为 content（替代之前仅拼接 toolName 前缀的逻辑）
+- 新增 rollbackSession API（POST /api/sessions/{sessionId}/rollback），用于后端回退会话
+- AgentChat 页面：loadHistory 从 useEffect 匿名函数提取为独立 useCallback 函数，供回滚按钮复用
+- AgentChat 页面底部按钮区新增"回滚"按钮：先调用 rollbackSession 触发后端回退，成功后调用 loadHistory 刷新消息列表；loading/toolExecuting 时按钮禁用
 ## 技能管理界面
 
 - 技能配置管理页面 `/skills`，支持技能列表展示、搜索筛选、新增/编辑/删除/启用禁用
