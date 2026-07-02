@@ -147,7 +147,7 @@
     },
     {
       "path": "src/main/java/com/ghost616/platform/service/agent/invoker/ContextSerializer.java",
-      "description": "上下文序列化器，serializeToJson() 序列化 sessionId/agentId/systemPrompt/modelId/recentMessageCount/history/tools/skills(含skillTools子项)/sessionVariables/conversationVariables 至 JSON ObjectNode"
+      "description": "上下文序列化器，serializeToJson() 序列化 sessionId/agentId/systemPrompt/modelId/recentMessageCount/stopped/history/tools/skills(含skillTools子项)/sessionVariables/conversationVariables 至 JSON ObjectNode"
     },
     {
       "path": "src/main/resources/agent/_runner.ts",

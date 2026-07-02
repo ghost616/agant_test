@@ -104,6 +104,7 @@ public class ChatService {
         boolean isToolContinue = TOOL_CONTINUE_MARKER.equals(content);
 
         if (!isToolContinue) {
+            contextMutator.resetStopped();
             contextMutator.clearConversationVariables();
             sessionManager.saveMessage(sessionId, "user", content, null, null, null, null);
 

@@ -105,7 +105,6 @@ class AgentExecutionContext:
         self.skills = [SkillInfo(s) for s in skills_data] if skills_data else []
         self.session_variables = data.get("sessionVariables") or {}
         self.conversation_variables = data.get("conversationVariables") or {}
-        self.stopped = data.get("stopped", False)
 
 
 class ExecuteInput:

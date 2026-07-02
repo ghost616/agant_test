@@ -74,7 +74,7 @@ class ChatServiceTest {
     }
 
     @Test
-    void takeWhile_stopped为true时停止发射() {
+    void takeWhile_stopped为true时_非toolContinue消息会resetStopped_正常发射() {
         ChatRequest request = ChatRequest.builder()
                 .sessionId(1L)
                 .content("hello")
@@ -98,8 +98,12 @@ class ChatServiceTest {
         Flux<ServerSentEvent<ChatChunk>> result = chatService.chat(request);
 
         StepVerifier.create(result)
+                .expectNextMatches(sse -> "chunk1".equals(sse.data().getDelta()))
+                .expectNextMatches(sse -> "chunk2".equals(sse.data().getDelta()))
                 .expectComplete()
                 .verify();
+
+        assertTrue(context.isStopped() == false);
     }
 
     @Test
@@ -130,6 +134,36 @@ class ChatServiceTest {
                 })
                 .expectComplete()
                 .verify();
+    }
+
+    @Test
+    void toolContinue路径不应调用resetStopped() {
+        ChatRequest request = ChatRequest.builder()
+                .sessionId(1L)
+                .content(ChatService.TOOL_CONTINUE_MARKER)
+                .modelId(1L)
+                .build();
+
+        when(agentContextManager.getOrCreate(1L, 1L)).thenReturn(sessionContext);
+        when(sessionMapper.selectById(1L)).thenReturn(null);
+
+        ModelConfig modelConfig = new ModelConfig();
+        modelConfig.setId(1L);
+        when(modelConfigMapper.selectById(1L)).thenReturn(modelConfig);
+        when(modelInvokerManager.getInvoker(modelConfig)).thenReturn(modelInvoker);
+
+        ChatChunk chunk1 = ChatChunk.builder().delta("chunk1").build();
+        when(modelInvoker.invokeStream(any())).thenReturn(Flux.just(chunk1));
+
+        mutator.setStopped();
+
+        Flux<ServerSentEvent<ChatChunk>> result = chatService.chat(request);
+
+        StepVerifier.create(result)
+                .expectComplete()
+                .verify();
+
+        assertTrue(context.isStopped());
     }
 
     @Test

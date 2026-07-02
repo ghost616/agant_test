@@ -1,1 +1,9 @@
-[]
+[
+  {
+    "plan_id": "plan_c629a604-8db7-4e1f-98e5-d4929c4a9bb4",
+    "plan_summary": "将对话 stopped 状态同步到 Python/TS 工具上下文对象",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  }
+]

@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_0de6ee575ffeVKTovmJ3OGCgc2",
+  "content": "## 待测试功能\n\n1. **ContextSerializer.java** — serializeToJson() 序列化输出中包含 stopped 字段且值与 ctx.isStopped() 一致\n2. **_runner.py** — AgentExecutionContext 初始化后 self.stopped 取值正确（默认 False，传入 True 时为 True）\n3. **_runner.ts** — AgentExecutionContext 接口包含 stopped?: boolean 字段，解析 JSON 后可以访问\n\n## 涉及的代码文件\n\n- src/main/java/com/ghost616/platform/service/agent/invoker/ContextSerializer.java\n- src/main/resources/agent/_runner.py\n- src/main/resources/agent/_runner.ts",
+  "timestamp": "2026-07-02T06:43:35.914Z"
+}

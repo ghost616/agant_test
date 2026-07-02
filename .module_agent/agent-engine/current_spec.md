@@ -35,6 +35,7 @@ chat() 构建 messages 时根据 context.getRecentMessageCount() 按配对截取
 fix: 修复编译错误 — foldMessageGroups() 中第 214 行将 record 风格 messages.get(i).role() 修正为 Lombok @Data 生成的 getter messages.get(i).getRole()（Message DTO 为 @Data 类，访问角色须用 getRole()）。
 chat() 新增 SKILL 注入逻辑：(1) 系统提示词后追加技能列表 system 消息（列出可用技能名称和描述，告知 _sys_load_skills/_sys_unload_skills 系统工具使用方法），(2) 解析 _sys_loading_SKILLS 会话变量获取已加载技能并追加提示词 system 消息，(3) 工具列表用 LinkedHashMap 按 name 去重合并已加载技能的 skillTools（经 invoker.toToolDefinition 转换）。新增 parseLoadedSkills() 私有方法解析 JSON 数组匹配技能配置。
 技能列表系统消息格式优化：开头明确说明"技能本身不是工具，需先加载再使用其关联的工具"；结尾改为"请使用 _sys_load_skills 系统工具加载所需技能。加载后，该技能的关联工具将变为可用，届时再调用具体工具。禁止直接以技能名称作为工具调用。"，防止 LLM 将 SKILL 名称误当作工具调用。
+chat() 中 !isToolContinue（用户主动发起的新消息）路径在 clearConversationVariables() 前调用 contextMutator.resetStopped()，重置缓存 context 的停止标记，修复停止后同一会话再次发送新消息 SSE 流被立即截断的问题。工具继续路径（isToolContinue）不调用 resetStopped()，保持停止语义不受影响。
 ## MessageSavePostHook
 
 已适配 chunk.getToolCalls() 返回 List，改为 for 循环遍历处理每个 ToolCallDelta。toolCallBuffers key Integer→String，getIndex→getId+兜底。累积逻辑（id/name/arguments 的 StringBuilder append）不变。
@@ -93,11 +94,13 @@ AgentContextMutator 新增 clearConversationVariables() 方法，清除绑定 co
 serializeToJson() 新增 sessionVariables 和 conversationVariables 序列化：通过 ctx.getSessionVariableKeys()/getConversationVariableKeys() 遍历，逐个 key-value 写入 ObjectNode 并挂到 contextJSON 上。
 serializeToJson() 新增 recentMessageCount JSON 序列化（ctx.getRecentMessageCount()），插入在 modelId 之后
 serializeToJson() 新增 skills 序列化：遍历 ctx.getSkills()，每个 skill 输出 name/description/prompt，skillTools 子数组输出 name/description/parameterSchema。
+serializeToJson() 新增 contextNode.put("stopped", ctx.isStopped()) 序列化停止标记，位于 recentMessageCount 之后。
 ## _runner.ts 模板
 
 新增 VariableChanges 接口和 createVariableProxy() 工具函数：对 sessionVariables/conversationVariables 创建 Proxy 拦截 set/delete 操作，执行后 diff 对比原始快照生成变更集 {added:{},removed:[]}，输出结构化 JSON {result,sessionVariables,conversationVariables}，兼容旧格式降级。
 AgentExecutionContext 接口新增 recentMessageCount?: number 可选字段
 新增 SkillInfo 接口（name/description/prompt/skillTools: ToolInfo[]），AgentExecutionContext 接口新增 skills?: SkillInfo[]。
+AgentExecutionContext 接口新增 stopped?: boolean 可选字段，位于 conversationVariables 之后。
 ## TypeScriptToolInvoker.java
 
 新增 parseResult() 私有方法：解析结构化 JSON 输出 {result,sessionVariables,conversationVariables}，遍历 added/removed 调用 ctx.putSessionVariable/removeSessionVariable 和 ctx.putConversationVariable/removeConversationVariable 同步变量到 Java 上下文；非结构化 JSON 降级按纯文本返回。execute() 返回改为 parseResult(ctx,result)。
@@ -105,6 +108,7 @@ AgentExecutionContext 接口新增 recentMessageCount?: number 可选字段
 
 新增 VariableProxy 类（dict 代理包装）：重写 `__setitem__`/`__delitem__` 捕获写入和删除操作，`get_changes()` 返回变更集 `{added:{},removed:[]}`。AgentExecutionContext 读取 sessionVariables/conversationVariables 到 session_variables/conversation_variables 属性。main() 执行前 Proxy 替换、执行后 diff 输出结构化 JSON `{result,sessionVariables,conversationVariables}`。
 新增 SkillInfo 类（解析 name/description/prompt/skill_tools），skill_tools 解析为 ToolInfo 列表。AgentExecutionContext 解析中新增 self.skills 字段。
+AgentExecutionContext 新增 self.stopped = data.get("stopped", False) 字段，位于 conversation_variables 之后。
 ## PythonToolInvoker.java
 
 新增 parseResult() 私有方法：解析结构化 JSON 输出 `{result,sessionVariables,conversationVariables}`，遍历 added/removed 调用 ctx.putSessionVariable/removeSessionVariable 和 ctx.putConversationVariable/removeConversationVariable 同步变量到 Java 上下文；非结构化 JSON 降级按纯文本返回。execute() 返回改为 parseResult(ctx,result)。

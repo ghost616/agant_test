@@ -42,7 +42,6 @@ export interface AgentExecutionContext {
     skills?: SkillInfo[];
     sessionVariables?: Record<string, string>;
     conversationVariables?: Record<string, string>;
-    stopped?: boolean;
 }
 
 export interface ExecuteInput {

@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_0de99808effeP1uNoJuOgpjvOv",
+  "content": "## 待测试功能\n\n### 1. 停止后重新发送消息功能\n- **涉及文件**: `src/main/java/com/ghost616/platform/service/agent/ChatService.java`\n- **测试场景**:\n  1. 用户点击停止后（`context.stopped = true`），同一会话再次发送新消息（非 `[tool_continue]`），对话应能正常继续（SSE 流不会立即截断）\n  2. `[tool_continue]`（工具继续）路径不应调用 `resetStopped()`\n  3. `resetStopped()` 在 `!isToolContinue` 分支中被调用\n\n### 2. 编译验证\n- `mvn compile` 应通过",
+  "timestamp": "2026-07-02T05:57:18.492Z"
+}
