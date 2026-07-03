@@ -1,0 +1,11 @@
+[
+  {
+    "plan_id": "plan_18a80aff-6602-4046-9441-2dc8bc132cee",
+    "plan": "Bug Fix 1：子智能体工具消息中遗漏 reasoning/思考内容；Bug Fix 2：子智能体执行工具后未返回 — 添加诊断日志",
+    "modified_files": [
+      "src/main/java/com/ghost616/platform/service/agent/invoker/SpawnSubAgentSystemTool.java"
+    ],
+    "summary": "Bug Fix 1 (reasoning 遗漏)：在 SpawnSubAgentSystemTool chunk 解析循环中新增 StringBuilder reasoningBuilder，累积 chunk.getReasoning() 并在构建 assistant message 时通过 .reasoning() 传入 Message DTO，修正了子智能体思考内容被丢弃的问题。Bug Fix 2 (诊断日志)：在迭代开始/LLM 调用前后/工具执行前后共 6 处新增 INFO 级别日志，异常日志增加迭代次数和工具名上下文信息，便于定位子智能体卡住问题。离朱测试未返回结果（可能超时或未启动），代码变更已验证通过编译。",
+    "errors": []
+  }
+]

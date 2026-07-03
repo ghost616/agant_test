@@ -192,6 +192,10 @@
     {
       "path": "src/main/java/com/ghost616/platform/service/agent/invoker/UnloadSkillsSystemTool.java",
       "description": "unload_skills 系统工具（@Component），实现 SystemTool，从 _sys_loading_SKILLS 会话变量移除指定名称的技能并写回，返回卸载数量"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/service/agent/invoker/SpawnSubAgentSystemTool.java",
+      "description": "子智能体系统工具，负责启动子智能体执行任务。注入 ToolManager 依赖用于子智能体工具解析和执行；实现流式 chunk 中 tool_calls 的累积解析及 reasoning 内容的累积透传；实现多轮 LLM 对话循环（最大 10 次迭代），自动处理工具调用与结果回传；过滤 _sys_ 前缀系统工具防止递归调用；包含全流程 INFO 级别诊断日志；达到最大迭代次数返回 max_iterations 状态。"
     }
   ]
 }

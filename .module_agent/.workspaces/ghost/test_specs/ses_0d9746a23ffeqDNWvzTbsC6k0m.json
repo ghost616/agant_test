@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_0d9746a23ffeqDNWvzTbsC6k0m",
+  "content": "## 待测试功能\n\n### 1. reasoning 内容累积与透传\n- **文件**: src/main/java/com/ghost616/platform/service/agent/invoker/SpawnSubAgentSystemTool.java\n- **功能说明**: 子智能体 LLM 返回的 stream chunk 中包含 reasoning 内容时，应正确累积到 reasoningBuilder，并在构建 assistant message 时通过 .reasoning() 传入 Message DTO\n- **测试要点**:\n  - chunk.getReasoning() 非空时追加到 reasoningBuilder\n  - 最终 assistant message 的 reasoning 字段等于所有 chunk reasoning 的拼接\n  - chunk.getReasoning() 为 null 时不影响 content 和 toolCalls 的构建\n\n### 2. 诊断日志输出\n- **文件**: src/main/java/com/ghost616/platform/service/agent/invoker/SpawnSubAgentSystemTool.java\n- **功能说明**: 关键节点新增 6 处 INFO 级别日志\n- **测试要点**:\n  - 迭代开始时输出日志包含迭代次数和消息列表长度\n  - LLM 调用前后分别输出日志\n  - 工具执行前后分别输出日志含工具名称和参数/结果长度\n  - 异常日志包含迭代次数和工具名上下文\n",
+  "timestamp": "2026-07-03T05:55:51.773Z"
+}
