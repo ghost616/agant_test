@@ -1,0 +1,9 @@
+{
+  "plan_id": "plan_11ca4304-d1cf-4838-a651-d08940d8c9d1",
+  "module_name": "framework",
+  "development_plan": "### Bug 描述\n修复上一问题后，dev.bat 再次报错：Could not resolve dependencies: com.ghost616:agent-base:jar:1.0.0-SNAPSHOT\n\n### 根因\nmvn spring-boot:run -pl platform-app 只编译 target 模块，但 platform-app 依赖 agent-base，agent-base 未安装到本地 Maven 仓库，导致依赖解析失败。\n\n### 修改方案\n在 dev.bat 的 Maven 命令中增加 -am（also-make）参数：mvn spring-boot:run -pl platform-app -am，Maven 会先自动编译 agent-base 再编译 platform-app。\n\n### 涉及文件\n- dev.bat — 第 30 行",
+  "session_id": "ses_0ceac0ac8ffeKT5xilWo2W5RXN",
+  "modified_files": [
+    "dev.bat"
+  ]
+}

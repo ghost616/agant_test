@@ -1,0 +1,17 @@
+package com.ghost616.platform.config;
+
+import com.ghost616.agentbase.service.model.invoker.ModelInvokerDataProvider;
+import com.ghost616.platform.service.model.invoker.ModelInvokerManager;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+/**
+ * 模型调用器管理器配置，创建 ModelInvokerManager 实例。 */
+@Configuration
+public class ModelInvokerConfiguration {
+
+    @Bean
+    public ModelInvokerManager modelInvokerManager(ModelInvokerDataProvider dataProvider) {
+        return new ModelInvokerManager(dataProvider);
+    }
+}

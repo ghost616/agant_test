@@ -1,0 +1,20 @@
+{
+  "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultMessageDataProvider.java": "d9f773467e3edc5dcf57fbcffb534efb",
+  "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultContextDataProvider.java": "e49203866d50ac50200a7f800cee28bf",
+  "platform-app/src/main/java/com/ghost616/platform/controller/SessionController.java": "54fb2923c766652845a8ab0386c79941",
+  "platform-app/src/main/java/com/ghost616/platform/service/session/SessionService.java": "438c8b4fcf3e15805722a5ce87ed5dd0",
+  "platform-app/src/main/java/com/ghost616/platform/service/session/SessionServiceImpl.java": "da89cd42ed1d18bfd12dc8ed765adb62",
+  "platform-app/src/main/java/com/ghost616/platform/service/model/invoker/DefaultModelInvokerDataProvider.java": "93d864232e1651ed059751330a3f66cb",
+  "platform-app/src/main/java/com/ghost616/platform/service/agent/invoker/SpawnSubAgentSystemTool.java": "66c0efe25e1901de3865bce0f79ffeab",
+  "platform-app/src/main/java/com/ghost616/platform/config/ModelInvokerConfiguration.java": "2d1dc0132ae12c87dde8f14e4c5187a8",
+  "platform-app/src/main/java/com/ghost616/platform/config/AgentContextConfiguration.java": "f2678f44409cc76125b40dd8d0a9f984",
+  "platform-app/src/main/java/com/ghost616/platform/repository/MessageMapper.java": "3c74116f456540715a02578ecc3bea6d",
+  "platform-app/src/main/java/com/ghost616/platform/service/agent/ChatService.java": "bb73ba5095cdcb438125c7734e6326d6",
+  "platform-app/src/main/java/com/ghost616/platform/service/agent/invoker/MessageSavePostHook.java": "201214d333ccf7388f6feccc39912153",
+  "platform-app/src/main/java/com/ghost616/platform/controller/ToolExecutionController.java": "ee3597712b8d84b066d0e042d2419086",
+  "platform-app/src/main/java/com/ghost616/platform/controller/ChatController.java": "d1d6fea3f600570f789a5029c3b19226",
+  "platform-app/src/test/java/com/ghost616/platform/controller/ToolExecutionControllerTest.java": "44880c11bb46e315d1c68cf4b93212f6",
+  "platform-app/src/test/java/com/ghost616/platform/session/SessionRollbackTest.java": "511a557b5ef6dd4365b6ebaf5de06414",
+  "platform-app/src/test/java/com/ghost616/platform/service/agent/ChatServiceTest.java": "cb4587564bb145b362b5cd3104af5257",
+  "platform-app/src/main/java/com/ghost616/platform/PlatformApplication.java": "e7a1ae0848ce5fe57a924677f5caf06a"
+}

@@ -1,0 +1,10 @@
+{
+  "plan_id": "plan_bcc928c4-885c-4e61-aa79-08323bf2e757",
+  "module_name": "platform-app",
+  "development_plan": "### 依赖\nagent-base 已完成：expandMcpTools 从 ToolDataProvider 接口移至 ToolManager 内部。\n\n### 修改方案\n\n**1. DefaultToolDataProvider.java** — 删除 expandMcpTools 方法：\n删除 `expandMcpTools` 方法实现（第 82-121 行）及其相关 import（McpAuthConfigParser, McpJsonRpcClient, McpExpandedToolDTO, ObjectMapper, Map）。\n\n**2. DefaultContextDataProvider.java** — 移除 expandMcpTools 调用：\n第 108-112 行，将：\n```java\nif (dto.getToolType() == ToolType.MCP_HTTP) {\n    toolDTOs.addAll(toolDataProvider.expandMcpTools(dto));\n} else {\n    toolDTOs.add(dto);\n}\n```\n简化为：\n```java\ntoolDTOs.add(dto);\n```\nToolManager 会在构建会话工具时内部处理 MCP 展开。\n\n### 涉及文件\n- platform-app/src/main/java/.../service/agent/DefaultToolDataProvider.java\n- platform-app/src/main/java/.../service/agent/DefaultContextDataProvider.java",
+  "session_id": "ses_0ce9045a0ffe2i7ddeKAKsysBe",
+  "modified_files": [
+    "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultToolDataProvider.java",
+    "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultContextDataProvider.java"
+  ]
+}

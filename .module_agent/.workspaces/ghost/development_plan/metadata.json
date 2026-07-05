@@ -1,9 +1,114 @@
 [
   {
-    "plan_id": "plan_18a80aff-6602-4046-9441-2dc8bc132cee",
-    "plan_summary": "SpawnSubAgentSystemTool：修复 reasoning 遗漏 + 添加诊断日志",
+    "plan_id": "plan_d2d30e25-d826-4448-a556-e259dbc0865a",
+    "plan_summary": "修复 dev.bat Maven 启动命令，指定 platform-app 模块执行",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_11ca4304-d1cf-4838-a651-d08940d8c9d1",
+    "plan_summary": "dev.bat 补加 -am 参数，自动编译 agent-base 依赖",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_ce16f999-2935-42aa-96c0-fc16bb7ec090",
+    "plan_summary": "改用 -f 指定 platform-app POM + 先安装 agent-base",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_013c032b-b9b7-4909-a972-aa7641b0ff9c",
+    "plan_summary": "编译全项目后运行 platform-app",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_47623e1c-eaf2-45b5-a152-eb9c9280fdb2",
+    "plan_summary": "修复 platform-app 中 7 个文件的 agent-base import 缺失/错误",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_1a184f7f-0705-42d9-b8ec-6070e547dbef",
+    "plan_summary": "修复 platform-app 与 agent-base API 不兼容导致的编译错误",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_5867dcee-dbba-41f3-a9af-9b0447e77eed",
+    "plan_summary": "修复 3 个测试文件的 agent-base API 迁移编译错误",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_7dda1a1c-8a8a-41d7-97c1-10ac9876a391",
+    "plan_summary": "PlatformApplication 添加 ComponentScan 扫描 agent-base 包",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_e3ad8434-4e2c-4323-b59e-7365f5b5202f",
+    "plan_summary": "SystemToolManager 解耦 Spring，改用 SystemToolProvider",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_8048f896-12ec-46bc-bbf5-14ef100a96a6",
+    "plan_summary": "恢复 AgentContextConfiguration + 回退 scanBasePackages",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_a1d57db0-0dec-430f-8dd5-2597b9fb678e",
+    "plan_summary": "ToolCallQueueManager 去掉 @Component",
     "code_reviewed": false,
     "plan_completed": true,
     "test_passed": true
+  },
+  {
+    "plan_id": "plan_53aa5b8a-c292-4abc-b99e-0804992d7516",
+    "plan_summary": "AgentContextConfiguration 添加 toolCallQueueManager @Bean",
+    "code_reviewed": false,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_fdf2164b-b2dc-4633-a19c-b3553e2bad20",
+    "plan_summary": "systemPrompt 为 null 时不抛异常，用空字符串",
+    "code_reviewed": false,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_b3ac232b-2273-419a-8689-3e4b7f4c4812",
+    "plan_summary": "expandMcpTools 移入 ToolManager，从 ToolDataProvider 移除",
+    "code_reviewed": false,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_bcc928c4-885c-4e61-aa79-08323bf2e757",
+    "plan_summary": "删除 DefaultToolDataProvider.expandMcpTools，简化 DefaultContextDataProvider",
+    "code_reviewed": false,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_562f5ee1-0046-4c7d-a671-263f84f60445",
+    "plan_summary": "AgentContextManager 添加工具名日志",
+    "code_reviewed": false,
+    "plan_completed": false,
+    "test_passed": false
   }
 ]

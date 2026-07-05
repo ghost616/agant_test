@@ -1,27 +1,15 @@
 智能体执行引擎：对话编排、工具调度、HOOK 触发、上下文管理、流式 SSE 推送
 ## 数据模型
 
-- SessionService: 会话服务接口，定义 listSessions、createSession、getSession、deleteSession 和 getMessages 方法
-- SessionServiceImpl: 会话服务实现，getSession 通过 selectById 查询并校验非空后 toDTO 返回
-- SessionController: 会话 REST 控制器（/api/sessions），提供 GET 列表查询、GET /{id} 单会话查询、POST 创建、GET /{id}/messages 消息列表和 DELETE 逻辑删除接口
-ChatService.java: 构建 system 消息时对 context.getSystemPrompt() 增加空值判断，若为 null 设为空字符串 ""，避免发送 `"content": null` 给 LLM API。
-JavaToolInvoker.java: 实现 ToolInvoker 接口，构造时接收全限定类名和 ApplicationContext，优先通过 Spring Bean 获取实现类实例，fallback Class.forName().newInstance() 反射实例化；execute() 委托给加载的实现类执行。
-ToolManager.java: Spring @Component，注入 ApplicationContext 和 ToolConfigService，提供 getInvoker(String toolName) 按工具名称查询 ToolConfigDTO，对 JAVA 类型使用 JavaToolInvoker 加载；提供 execute(ToolInvoker, ...) 方法封装调用。
-SessionServiceImpl.createSession(): 在 sessionMapper.insert(entity) 之后查询 agent_tool 表获取该智能体关联的所有工具 ID，为每个工具创建 SessionTool 记录（含 sessionId 和 toolId）并逐个插入 session_tool 表，确保创建会话后 AgentContextManager.getOrCreate() 能通过 sessionManager.getSessionTools() 查询到会话工具列表。
-SessionServiceImpl.createSession() 添加 @Transactional 保证原子性；使用 SessionToolMapper.insertBatch(List) 批量插入替代逐条 insert；deleteSession() 新增删除 session_tool 记录避免孤儿数据；变量名 at/st 改为 agentTool/sessionTool 提高可读性。
-新增 LoadSkillsSystemTool（load_skills，按名称从 ctx.getSkills() 匹配可用技能，读写 _sys_loading_SKILLS 会话变量实现去重合并加载）和 UnloadSkillsSystemTool（unload_skills，从 _sys_loading_SKILLS 移除指定名称并写回）。两者均为 @Component，由 SystemToolManager 自动注册。
-新增 SpawnSubAgentSystemTool（spawn_sub_agent，启动子智能体执行任务，参数 agentName(必填)/task(必填)/modelId(可选)），execute 返回 {"status":"not_implemented"} 存根。
-- SessionService: 会话服务接口，定义 listSessions、createSession、getSession、deleteSession、getMessages 和 rollback 方法
-- SessionServiceImpl: 会话服务实现，rollback 校验会话存在性后委托 sessionManager.rollbackToLastUserMessage 并清理上下文缓存
-- SessionController: 会话 REST 控制器（/api/sessions），新增 POST /{id}/rollback 端点返回删除消息数
-- AgentExecutionContext 新增 AtomicBoolean stopped 字段（默认 false），手动实现 isStopped() 返回停止状态，AgentContextMutator 新增 setStopped()/resetStopped() 设置/重置停止标记
-- ChatService 流式管线新增 takeWhile(chunk -> !context.isStopped()) 停止检查和 doOnCancel(() -> contextMutator.setStopped()) 客户端断开标记
-- ChatController 新增 POST /api/chat/{sessionId}/stop 端点，通过 AgentContextManager.get(sessionId) 获取上下文后调用 mutator.setStopped()
-- ToolExecutionController.executeTools() 获取上下文后检查 context.isStopped()，若停止则清空队列/追踪器返回 status=empty；continueChat() 工具状态检查后增加停止检查，已停止则清空后返回空 Flux
 
-SpawnSubAgentSystemTool 完整实现：注入 ToolManager 依赖；实现流式 chunk 中 tool_calls 的累积解析（ToolAccumulator 模式）；实现多轮 LLM 对话循环（最大 10 次迭代），无 tool_calls 时返回累积内容，有 tool_calls 时构建 assistant 消息并执行工具后继续循环；过滤 _sys_ 前缀系统工具防止递归 spawn_sub_agent；达到最大迭代次数返回 max_iterations 状态；工具执行结果通过 toolManager.getInvoker() 获取调用器执行。
+## AgentContextManager Builder 模式改造
 
-SpawnSubAgentSystemTool 修复：chunk 循环中新增 reasoningBuilder 累积 chunk.getReasoning()，构建 assistant message 时通过 .reasoning(reasoningBuilder.toString()) 传入；新增 6 处 INFO 级别诊断日志（迭代开始/LLM 调用前后/工具执行前后/异常上下文增强）。
+- ContextDataProvider 接口：定义 getAgentId/getSystemPrompt/getDefaultModelId/getRecentMessageCount/loadSkills/loadSessionVariables/saveSessionVariable/deleteSessionVariable 共 8 个方法，输入输出全部为基础类型和 DTO
+- DefaultContextDataProvider @Component 实现：注入 SessionMapper/AgentConfigMapper/SessionVariableMapper/AgentSkillMapper/SkillConfigMapper/SkillToolMapper/ToolConfigService/ToolManager，封装原 AgentContextManager 中的 Mapper 查询逻辑
+- AgentContextConfiguration @Configuration：通过 @Bean 创建 AgentContextManager，注入 ContextDataProvider/SessionManager/ToolManager
+- AgentContextManager 重构：移除 @Component/@RequiredArgsConstructor/@Slf4j，移除全部 Mapper 注入，构造函数注入 ContextDataProvider/SessionManager/ToolManager；getOrCreate 改为 build(sessionId) 实例方法返回 Builder 内部类，Builder 支持 .modelIdOverride(id) 链式调用和 .build() 组装 AgentExecutionContext；保留缓存 cache/get/remove/addHistoryEntry/AgentSessionContext
+- ChatService 适配新 API：agentContextManager.getOrCreate(sessionId, modelId) → agentContextManager.build(sessionId).modelIdOverride(modelId).build()
+
 ## 实体定义
 
 Message 实体对应 message 表，不继承 BaseEntity（无 update_time/deleted 列）。字段：id (雪花ID)、sessionId、role、content、reasoning、sequenceNum、toolCallId、toolResult (String, @TableField("tool_result"))、createTime。

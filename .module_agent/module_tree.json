@@ -31,6 +31,14 @@
     {
       "name": "skill-manager",
       "description": "SKILL 配置与管理模块"
+    },
+    {
+      "name": "agent-base",
+      "description": "Agent 基础框架模块，提供核心接口、上下文管理和工具调度基础组件"
+    },
+    {
+      "name": "platform-app",
+      "description": "主应用模块，包含 Spring Boot 入口、Controller、Config、Entity、Repository 及其他未归属子模块的代码"
     }
   ]
 }

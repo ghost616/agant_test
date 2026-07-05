@@ -1,0 +1,135 @@
+package com.ghost616.agentbase.service.agent;
+
+import com.ghost616.agentbase.dto.model.ToolCall;
+import com.ghost616.agentbase.dto.skill.SkillConfigDTO;
+import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
+import com.ghost616.agentbase.enums.ErrorCode;
+import com.ghost616.agentbase.exception.BusinessException;
+import com.ghost616.agentbase.service.agent.invoker.ToolManager;
+
+import lombok.extern.slf4j.Slf4j;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+@Slf4j
+public class AgentContextManager {
+
+    private final ContextDataProvider dataProvider;
+    private final SessionManager sessionManager;
+    private final ToolManager toolManager;
+
+    private final ConcurrentHashMap<Long, AgentSessionContext> cache = new ConcurrentHashMap<>();
+
+    public AgentContextManager(ContextDataProvider dataProvider, SessionManager sessionManager, ToolManager toolManager) {
+        this.dataProvider = dataProvider;
+        this.sessionManager = sessionManager;
+        this.toolManager = toolManager;
+    }
+
+    public Builder build(Long sessionId) {
+        return new Builder(sessionId);
+    }
+
+    public class Builder {
+        private final Long sessionId;
+        private Long modelIdOverride;
+
+        private Builder(Long sessionId) {
+            this.sessionId = sessionId;
+        }
+
+        public Builder modelIdOverride(Long modelId) {
+            this.modelIdOverride = modelId;
+            return this;
+        }
+
+        public AgentSessionContext build() {
+            return cache.computeIfAbsent(sessionId, id -> {
+                Long agentId = dataProvider.getAgentId(id);
+                if (agentId == null) {
+                    throw new BusinessException(ErrorCode.SESSION_NOT_FOUND);
+                }
+
+                String systemPrompt = dataProvider.getSystemPrompt(agentId);
+                if (systemPrompt == null) {
+                    systemPrompt = "";
+                }
+
+                Long effectiveModelId = (modelIdOverride != null) ? modelIdOverride : dataProvider.getDefaultModelId(agentId);
+
+                List<ToolConfigDTO> tools = toolManager.getSessionTools(id).stream()
+                        .map(ToolManager.ToolSessionObject::toolConfig)
+                        .toList();
+                log.info("sessionId={} 已注册工具: {}", id,
+                        tools.stream().map(ToolConfigDTO::getName).toList());
+
+                List<SkillConfigDTO> skills = dataProvider.loadSkills(agentId);
+
+                List<MessageDataProvider.MessageDTO> messages = sessionManager.getMessages(id);
+                List<AgentExecutionContext.HistoryEntry> history = new ArrayList<>();
+                for (MessageDataProvider.MessageDTO msg : messages) {
+                    List<ToolCall> toolCalls;
+                    if (msg.toolCalls() != null && !msg.toolCalls().isEmpty()) {
+                        toolCalls = msg.toolCalls().stream()
+                                .map(tc -> ToolCall.builder()
+                                        .id(tc.toolCallId())
+                                        .name(tc.toolCallName())
+                                        .arguments(tc.toolCallArguments())
+                                        .build())
+                                .toList();
+                    } else {
+                        toolCalls = Collections.emptyList();
+                    }
+                    history.add(new AgentExecutionContext.HistoryEntry(
+                            msg.role(), msg.content(), msg.reasoning(), msg.toolCallId(),
+                            msg.sequenceNum(), msg.createTime(), Collections.unmodifiableList(toolCalls)));
+                }
+
+                AgentExecutionContext.AgentContextMutator mutator = new AgentExecutionContext.AgentContextMutator();
+
+                AgentExecutionContext context = new AgentExecutionContext(
+                        sessionId, agentId, systemPrompt, effectiveModelId,
+                        dataProvider.getRecentMessageCount(agentId),
+                        history, tools, skills, mutator,
+                        dataProvider.loadSessionVariables(id), new HashMap<>());
+
+                injectVariableCallbacks(mutator, sessionId);
+
+                return new AgentSessionContext(context, mutator, new AtomicBoolean(false));
+            });
+        }
+
+        private void injectVariableCallbacks(AgentExecutionContext.AgentContextMutator mutator, Long sessionId) {
+            mutator.sessionVarPutCallback = (key, value) ->
+                    dataProvider.saveSessionVariable(sessionId, key, value);
+            mutator.sessionVarRemoveCallback = (key) ->
+                    dataProvider.deleteSessionVariable(sessionId, key);
+        }
+    }
+
+    public AgentSessionContext get(Long sessionId) {
+        return cache.get(sessionId);
+    }
+
+    public void addHistoryEntry(Long sessionId, AgentExecutionContext.HistoryEntry entry) {
+        AgentSessionContext ctx = cache.get(sessionId);
+        if (ctx != null) {
+            ctx.mutator().addHistoryEntry(entry);
+        }
+    }
+
+    public void remove(Long sessionId) {
+        cache.remove(sessionId);
+    }
+
+    public record AgentSessionContext(AgentExecutionContext context,
+                                      AgentExecutionContext.AgentContextMutator mutator,
+                                      AtomicBoolean toolInvoking) {
+    }
+}

@@ -26,6 +26,9 @@ session_variable 表记录变更：移除 DATETIME 使用 TIMESTAMP 类型，补
 agent_config 表新增 recent_message_count INTEGER DEFAULT 10 列及对应 ALTER TABLE 迁移语句，用于控制会话中保留的最近消息数量。
 新增 SchemaMigration 启动组件（@Component + ApplicationRunner + @Order(1)），通过 PRAGMA table_info 检测列是否存在并按需执行 ALTER TABLE，替代 schema.sql 中硬编码的 ALTER TABLE 迁移语句。迁移清单：tool_config.auth_config、session_variable.update_time、session_variable.deleted、agent_config.recent_message_count。application.yml 已移除无用的 spring.sql.init.continue-on-error 配置。
 schema.sql 新增 agent_skill 中间表（agent_id/skill_id 关联），结构与 agent_tool 一致，含 agent_skill_agent_id 和 agent_skill_skill_id 两个索引。
+- dev.bat 后端启动命令由 mvn spring-boot:run 改为 mvn spring-boot:run -pl platform-app，指定在 platform-app 子模块执行，避免聚合 POM 无主类报错
+- dev.bat 后端启动命令增加 -am 参数：mvn spring-boot:run -pl platform-app -am，Maven 自动编译依赖模块 agent-base，解决依赖解析失败问题
+- dev.bat 后端启动改为两步命令：mvn install -pl agent-base -DskipTests -q 安装依赖 + mvn spring-boot:run -f platform-app/pom.xml 启动子模块，避免 -pl 对 spring-boot:run 不生效的问题
 ## 文件结构
 
 ```

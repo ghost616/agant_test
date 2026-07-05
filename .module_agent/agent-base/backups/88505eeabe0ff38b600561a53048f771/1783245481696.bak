@@ -1,0 +1,17 @@
+package com.ghost616.agentbase.service.agent;
+
+import com.ghost616.agentbase.dto.tool.McpExpandedToolDTO;
+import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
+
+import java.util.List;
+
+public interface ToolDataProvider {
+
+    List<Long> getSessionToolIds(Long sessionId);
+
+    ToolConfigDTO getToolById(Long toolId);
+
+    List<Long> getSkillToolIds(Long sessionId);
+
+    List<McpExpandedToolDTO> expandMcpTools(ToolConfigDTO mcpConfig);
+}

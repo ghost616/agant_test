@@ -18,18 +18,6 @@
       "description": "会话工具关联实体，@TableName(\"session_tool\")"
     },
     {
-      "path": "src/main/java/com/ghost616/platform/service/agent/AgentExecutionContext.java",
-      "description": "AgentExecutionContext 构造器含 sessionId/agentId/systemPrompt/modelId/recentMessageCount/history/tools/skills(skillConfig列表+关联工具)/mutator/sessionVariables/conversationVariables，含变量 CRUD 方法和 AgentContextMutator 内部类（clearConversationVariables/setStopped/resetStopped），AtomicBoolean stopped 字段及 isStopped() 停止检查"
-    },
-    {
-      "path": "src/main/java/com/ghost616/platform/service/agent/invoker/ToolInvoker.java",
-      "description": "工具执行契约接口，定义 execute(AgentExecutionContext, String) 方法"
-    },
-    {
-      "path": "src/main/java/com/ghost616/platform/service/agent/invoker/ToolManager.java",
-      "description": "工具调用管理器，注入 ToolConfigService/SessionToolMapper/SessionMapper/AgentSkillMapper/SkillToolMapper。getInvoker(sessionId,toolName) 先从 getSessionTools 查询（仅 session_tool 表），未找到则 fallback resolveSkillToolByName。resolveSkillToolByName 通过 sessionSkillToolIdsCache 缓存 toolIds 查询链路，遍历时复用 toolCache.computeIfAbsent 获取 ToolSessionObject（含已展开的 MCP 工具），避免重复 getById 和 expandMcpTools。getSessionTools(sessionId) 仅从 session_tool 表查询并展开 MCP。提取 buildToolSessionObject/expandToolSession 公共方法。expandMcpTools 为 public。clearSessionCache 同步清理两个缓存"
-    },
-    {
       "path": "src/main/java/com/ghost616/platform/service/agent/invoker/JavaToolInvoker.java",
       "description": "Java 类型工具的 ToolInvoker 实现，通过全限定类名加载实现类，优先 Spring Bean 获取，fallback 反射实例化，委托执行"
     },
@@ -48,10 +36,6 @@
     {
       "path": "src/main/java/com/ghost616/platform/repository/SessionToolMapper.java",
       "description": "SessionTool 实体的 MyBatis-Plus Mapper 接口"
-    },
-    {
-      "path": "src/main/java/com/ghost616/platform/service/agent/SessionManager.java",
-      "description": "会话管理组件，提供消息保存（含工具调用）、历史消息查询和回退功能。saveMessage() 签名在 toolCallId 与 toolCalls 之间含 toolResult 参数并 message.setToolResult(toolResult)；内部 record MessageDTO 含 toolResult 字段；getMessages() 构造 MessageDTO 时传入 msg.getToolResult()；rollbackToLastUserMessage() 回退到最后一条用户消息（先删 tool_call 再删 message）"
     },
     {
       "path": "src/main/java/com/ghost616/platform/repository/SessionMapper.java",
@@ -88,14 +72,6 @@
     {
       "path": "src/main/java/com/ghost616/platform/controller/ChatController.java",
       "description": "对话 REST 控制器，注入 ChatService 和 AgentContextManager，POST /api/chat 端点委托 chatService.chat(request) 返回 SSE 流，POST /api/chat/{sessionId}/stop 端点支持停止对话"
-    },
-    {
-      "path": "src/main/java/com/ghost616/platform/service/agent/AgentContextBuilder.java",
-      "description": "上下文构建器，build 方法签名改为 build(sessionId, modelIdOverride, mutator)，将 mutator 作为构造器参数传入 AgentExecutionContext"
-    },
-    {
-      "path": "src/main/java/com/ghost616/platform/service/agent/AgentContextManager.java",
-      "description": "getOrCreate() 内部 new mutator，从 AgentConfig 获取 recentMessageCount，通过 ToolManager 加载工具，通过 buildSkills() 加载技能配置及关联工具列表传入 context 构造器。buildSkills() 经 AgentSkill→SkillConfig→SkillTool 链路查询，技能关联工具改用 toolConfigService.getById(toolId) 获取完整 ToolConfigDTO（含 toolType/implPath/authConfig），对 MCP_HTTP 类型调用 toolManager.expandMcpTools(dto) 展开为多个工具合并入 skillTools，非 MCP 直接加入"
     },
     {
       "path": "src/main/java/com/ghost616/platform/service/agent/ChatService.java",
@@ -174,18 +150,6 @@
       "description": "Session 变量读取工具 (TypeScript)，AgentExecutionContext 含 sessionId/agentId/systemPrompt/modelId/recentMessageCount/history/tools/sessionVariables/conversationVariables，接收 {key} 返回 {key,value,exists}"
     },
     {
-      "path": "src/main/java/com/ghost616/platform/service/agent/invoker/SystemTool.java",
-      "description": "系统工具接口，继承 ToolInvoker，定义 getToolName() 返回工具名称、getDescription() 返回工具说明、getParameterSchema() 返回 JSON Schema 参数定义"
-    },
-    {
-      "path": "src/main/java/com/ghost616/platform/service/agent/invoker/SystemToolManager.java",
-      "description": "系统工具管理器，@PostConstruct 扫描 SystemTool Bean 按 getToolName() 注册，getSystemTool(name) 按名称获取，getToolDefinitions() 通过 ToolDefinitionConverter.convert() 构建带 _sys_ 前缀的 ToolDefinition 列表（无需 ModelInvoker）"
-    },
-    {
-      "path": "src/main/java/com/ghost616/platform/service/agent/invoker/ToolDefinitionConverter.java",
-      "description": "工具定义转换工具类，final 私有构造仅含静态方法：convert(ToolConfigDTO) 解析 parameterSchema JSON 补全 type 字段返回 ToolDefinition，createMinimal(ToolConfigDTO) 仅 name+description 不含 parameters"
-    },
-    {
       "path": "src/main/java/com/ghost616/platform/service/agent/invoker/LoadSkillsSystemTool.java",
       "description": "load_skills 系统工具（@Component），实现 SystemTool，按 names 从 ctx.getSkills() 匹配可用技能，读写 _sys_loading_SKILLS 会话变量（JSON数组）去重合并，返回加载数量及名称列表"
     },
@@ -196,6 +160,14 @@
     {
       "path": "src/main/java/com/ghost616/platform/service/agent/invoker/SpawnSubAgentSystemTool.java",
       "description": "子智能体系统工具，负责启动子智能体执行任务。注入 ToolManager 依赖用于子智能体工具解析和执行；实现流式 chunk 中 tool_calls 的累积解析及 reasoning 内容的累积透传；实现多轮 LLM 对话循环（最大 10 次迭代），自动处理工具调用与结果回传；过滤 _sys_ 前缀系统工具防止递归调用；包含全流程 INFO 级别诊断日志；达到最大迭代次数返回 max_iterations 状态。"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/service/agent/DefaultContextDataProvider.java",
+      "description": "ContextDataProvider 的 @Component 默认实现，注入 SessionMapper/AgentConfigMapper/SessionVariableMapper/AgentSkillMapper/SkillConfigMapper/SkillToolMapper/ToolConfigService/ToolManager，封装原 AgentContextManager 中的 Mapper 查询/写入逻辑"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/config/AgentContextConfiguration.java",
+      "description": "@Configuration 类，通过 @Bean 创建 AgentContextManager 实例，注入 ContextDataProvider/SessionManager/ToolManager"
     }
   ]
 }

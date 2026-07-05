@@ -1,0 +1,23 @@
+package com.ghost616.platform.service.session;
+
+import com.ghost616.platform.dto.session.SessionDTO;
+
+import java.util.List;
+
+import com.ghost616.agentbase.service.agent.MessageDataProvider;
+
+
+public interface SessionService {
+
+    List<SessionDTO> listSessions(Long agentId);
+
+    SessionDTO createSession(Long agentId, Long modelId, String title);
+
+    SessionDTO getSession(Long id);
+
+    void deleteSession(Long id);
+
+    List<MessageDataProvider.MessageDTO> getMessages(Long sessionId);
+
+    int rollback(Long sessionId);
+}

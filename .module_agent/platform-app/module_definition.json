@@ -1,0 +1,57 @@
+{
+  "module_name": "platform-app",
+  "files": [
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultMessageDataProvider.java",
+      "description": "默认消息数据提供者实现，负责消息的持久化存储、查询和回滚，实现 agent-base 的 MessageDataProvider 接口"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultContextDataProvider.java",
+      "description": "默认上下文数据提供者实现，负责加载智能体配置、技能配置、会话变量等上下文数据，实现 agent-base 的 ContextDataProvider 接口"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/controller/SessionController.java",
+      "description": "会话管理 REST 控制器，提供会话的 CRUD、消息查询、回滚等 HTTP API 端点"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/service/session/SessionService.java",
+      "description": "会话管理服务接口，定义会话 CRUD、消息查询、回滚等业务方法"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/service/session/SessionServiceImpl.java",
+      "description": "会话管理服务实现，包含会话创建（含工具绑定）、查询、删除、回滚等业务逻辑"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/service/model/invoker/DefaultModelInvokerDataProvider.java",
+      "description": "默认模型调用器数据提供者实现，根据平台类型（OpenAI/Anthropic/Azure/Ollama/DeepSeek/Custom）创建对应的 ModelInvoker 实例"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/invoker/SpawnSubAgentSystemTool.java",
+      "description": "子智能体生成系统工具实现，支持启动子智能体执行任务并管理其多轮对话与工具调用，实现 agent-base 的 SystemTool 接口"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/config/AgentContextConfiguration.java",
+      "description": "Agent 上下文 Spring 配置类，声明 ToolManager、SessionManager、AgentContextManager 的 @Bean。SystemToolManager 由 @Component 自动检测"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/repository/MessageMapper.java",
+      "description": "MyBatis-Plus 消息数据访问层，继承 BaseMapper<Message>，提供按 sessionId 和 sequenceNum 批量删除的自定义方法"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/ChatService.java",
+      "description": "聊天服务核心实现，处理用户消息、技能加载、历史折叠、LLM 流式调用、钩子触发等完整对话流程"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/invoker/MessageSavePostHook.java",
+      "description": "消息保存后置钩子，在 LLM 流式响应完成后将累积的 assistant 消息和 tool calls 持久化到数据库"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/controller/ToolExecutionController.java",
+      "description": "工具执行控制器，提供工具执行、状态轮询、继续对话等 HTTP 接口"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/controller/ChatController.java",
+      "description": "聊天控制器，提供 SSE 流式聊天和停止聊天接口"
+    }
+  ]
+}

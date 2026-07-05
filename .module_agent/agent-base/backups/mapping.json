@@ -1,0 +1,7 @@
+{
+  "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/SystemToolManager.java": "798d20d111d512ec0df0e47c5d3aa912",
+  "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/ToolCallQueueManager.java": "0507c1deee69aedd1e7cb808020cea9f",
+  "agent-base/src/main/java/com/ghost616/agentbase/service/agent/AgentContextManager.java": "3d89b60a6cb8e04bed7273ff2e560b4f",
+  "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ToolDataProvider.java": "88505eeabe0ff38b600561a53048f771",
+  "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/ToolManager.java": "9555084e819949311820ade2747da21d"
+}

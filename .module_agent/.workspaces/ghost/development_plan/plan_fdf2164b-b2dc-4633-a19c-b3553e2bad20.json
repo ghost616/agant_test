@@ -1,0 +1,9 @@
+{
+  "plan_id": "plan_fdf2164b-b2dc-4633-a19c-b3553e2bad20",
+  "module_name": "agent-base",
+  "development_plan": "### Bug 描述\n创建 agent 时 systemPrompt 为非必填字段，为 null 是合法的。但 AgentContextManager.build() 中 `systemPrompt == null` 时抛出 AGENT_NOT_FOUND，导致已存在但无系统提示词的 agent 无法使用。\n\n### 修改方案\n修改 `agent-base/AgentContextManager.java` 第 56-59 行：\n```java\n// 修改前\nString systemPrompt = dataProvider.getSystemPrompt(agentId);\nif (systemPrompt == null) {\n    throw new BusinessException(ErrorCode.AGENT_NOT_FOUND);\n}\n\n// 修改后\nString systemPrompt = dataProvider.getSystemPrompt(agentId);\nif (systemPrompt == null) {\n    systemPrompt = \"\";\n}\n```\n\nagent 存在但 systemPrompt 为空用空字符串代替，不阻断流程。\n\n### 涉及文件\n- agent-base/src/main/java/.../service/agent/AgentContextManager.java",
+  "session_id": "ses_0ce70660dffeh1RNe93nbI3ILA",
+  "modified_files": [
+    "agent-base/src/main/java/com/ghost616/agentbase/service/agent/AgentContextManager.java"
+  ]
+}

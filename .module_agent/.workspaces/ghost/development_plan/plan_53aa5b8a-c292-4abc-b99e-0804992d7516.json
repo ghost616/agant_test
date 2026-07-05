@@ -1,0 +1,9 @@
+{
+  "plan_id": "plan_53aa5b8a-c292-4abc-b99e-0804992d7516",
+  "module_name": "platform-app",
+  "development_plan": "### 依赖\nagent-base 已修改：ToolCallQueueManager 不再有 @Component，需要手动注册。\n\n### 修改方案\n在 `AgentContextConfiguration.java` 中添加 `toolCallQueueManager` @Bean：\n```java\n@Bean\npublic ToolCallQueueManager toolCallQueueManager() {\n    return new ToolCallQueueManager();\n}\n```\n需要添加 import：\n- `import com.ghost616.agentbase.service.agent.invoker.ToolCallQueueManager;`\n\n### 涉及文件\n- platform-app/src/main/java/.../config/AgentContextConfiguration.java",
+  "session_id": "ses_0ce9045a0ffe2i7ddeKAKsysBe",
+  "modified_files": [
+    "platform-app/src/main/java/com/ghost616/platform/config/AgentContextConfiguration.java"
+  ]
+}

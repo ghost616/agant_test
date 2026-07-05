@@ -1,0 +1,61 @@
+{
+  "module_name": "agent-base",
+  "files": [
+    {
+      "path": "src/main/java/com/ghost616/platform/service/agent/AgentExecutionContext.java",
+      "description": "AgentExecutionContext 构造器含 sessionId/agentId/systemPrompt/modelId/recentMessageCount/history/tools/skills(skillConfig列表+关联工具)/mutator/sessionVariables/conversationVariables，含变量 CRUD 方法和 AgentContextMutator 内部类（clearConversationVariables/setStopped/resetStopped），AtomicBoolean stopped 字段及 isStopped() 停止检查"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/service/agent/invoker/ToolInvoker.java",
+      "description": "工具执行契约接口，定义 execute(AgentExecutionContext, String) 方法"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/service/agent/invoker/ToolManager.java",
+      "description": "工具调用管理器，注入 ToolConfigService/SessionToolMapper/SessionMapper/AgentSkillMapper/SkillToolMapper。getInvoker(sessionId,toolName) 先从 getSessionTools 查询（仅 session_tool 表），未找到则 fallback resolveSkillToolByName。resolveSkillToolByName 通过 sessionSkillToolIdsCache 缓存 toolIds 查询链路，遍历时复用 toolCache.computeIfAbsent 获取 ToolSessionObject（含已展开的 MCP 工具），避免重复 getById 和 expandMcpTools。getSessionTools(sessionId) 仅从 session_tool 表查询并展开 MCP。提取 buildToolSessionObject/expandToolSession 公共方法。expandMcpTools 为 public。clearSessionCache 同步清理两个缓存"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/service/agent/SessionManager.java",
+      "description": "会话管理组件，提供消息保存（含工具调用）、历史消息查询和回退功能。saveMessage() 签名在 toolCallId 与 toolCalls 之间含 toolResult 参数并 message.setToolResult(toolResult)；内部 record MessageDTO 含 toolResult 字段；getMessages() 构造 MessageDTO 时传入 msg.getToolResult()；rollbackToLastUserMessage() 回退到最后一条用户消息（先删 tool_call 再删 message）"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/service/agent/AgentContextBuilder.java",
+      "description": "上下文构建器，build 方法签名改为 build(sessionId, modelIdOverride, mutator)，将 mutator 作为构造器参数传入 AgentExecutionContext"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/service/agent/AgentContextManager.java",
+      "description": "AgentContextManager（非 @Component，通过 @Bean 注册）：注入 ContextDataProvider/SessionManager/ToolManager，管理会话上下文缓存 ConcurrentHashMap；提供 build(sessionId) 实例方法返回 Builder 内部类（支持 modelIdOverride 链式调用），Builder.build() 通过 cache.computeIfAbsent 使用 dataProvider 查询 agent/session 数据、toolManager 加载工具、sessionManager 获取历史消息，组装 AgentExecutionContext；保留 get/remove/addHistoryEntry 方法"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/service/agent/invoker/SystemTool.java",
+      "description": "系统工具接口，继承 ToolInvoker，定义 getToolName() 返回工具名称、getDescription() 返回工具说明、getParameterSchema() 返回 JSON Schema 参数定义"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/service/agent/invoker/SystemToolManager.java",
+      "description": "系统工具管理器，@PostConstruct 扫描 SystemTool Bean 按 getToolName() 注册，getSystemTool(name) 按名称获取，getToolDefinitions() 通过 ToolDefinitionConverter.convert() 构建带 _sys_ 前缀的 ToolDefinition 列表（无需 ModelInvoker）"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/service/agent/invoker/ToolDefinitionConverter.java",
+      "description": "工具定义转换工具类，final 私有构造仅含静态方法：convert(ToolConfigDTO) 解析 parameterSchema JSON 补全 type 字段返回 ToolDefinition，createMinimal(ToolConfigDTO) 仅 name+description 不含 parameters"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/service/agent/ContextDataProvider.java",
+      "description": "上下文数据提供者接口，定义 8 个方法（getAgentId/getSystemPrompt/getDefaultModelId/getRecentMessageCount/loadSkills/loadSessionVariables/saveSessionVariable/deleteSessionVariable），输入输出全部使用基础类型和 DTO，不暴露 Entity"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/service/model/invoker/ModelInvokerDataProvider.java",
+      "description": "模型调用器数据提供者接口，定义 createInvoker 工厂方法，根据平台类型和参数创建对应的 ModelInvoker 实例"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/service/agent/MessageDataProvider.java",
+      "description": "消息数据提供者接口，定义 saveMessage/getMessages/rollbackToLastUserMessage 纯 DTO 方法及内嵌 ToolCallData/MessageDTO record"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/service/agent/ToolDataProvider.java",
+      "description": "工具数据提供者接口，定义 getSessionToolIds/getToolById/getSkillToolIds/expandMcpTools 方法"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/service/agent/invoker/SystemToolProvider.java",
+      "description": "系统工具提供者接口，定义 discoverSystemTools 方法"
+    }
+  ]
+}

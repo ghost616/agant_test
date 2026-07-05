@@ -1,0 +1,15 @@
+{
+  "plan_id": "plan_47623e1c-eaf2-45b5-a152-eb9c9280fdb2",
+  "module_name": "platform-app",
+  "development_plan": "### Bug 描述\nmvn install 编译 platform-app 时报多个\"找不到符号\"错误，原因是 platform-app 中的文件引用 agent-base 模块的类但缺少 import 或引用了错误的类路径。\n\n### 根因\n项目拆分为多模块后，agent-base 类位于 com.ghost616.agentbase.* 包，platform-app 文件位于 com.ghost616.platform.* 包，跨包引用需要 import 语句，多个文件缺失或写错。\n\n### 修复方案\n\n**1. DefaultMessageDataProvider.java** — 添加 3 条 import：\n   - `import com.ghost616.agentbase.service.agent.MessageDataProvider;`\n   - `import com.ghost616.agentbase.service.agent.MessageDataProvider.ToolCallData;`\n   - `import com.ghost616.agentbase.service.agent.MessageDataProvider.MessageDTO;`\n\n**2. DefaultContextDataProvider.java** — 添加 1 条 import：\n   - `import com.ghost616.agentbase.service.agent.ContextDataProvider;`\n\n**3. SessionController.java** — 将 `SessionManager.MessageDTO` 改为 `MessageDataProvider.MessageDTO`，添加 import：\n   - `import com.ghost616.agentbase.service.agent.MessageDataProvider;`\n\n**4. SessionService.java** — 将 `SessionManager.MessageDTO` 改为 `MessageDataProvider.MessageDTO`，保留已有 import：\n   - 将 `import com.ghost616.agentbase.service.agent.SessionManager;` 改为 `import com.ghost616.agentbase.service.agent.MessageDataProvider;`\n\n**5. SessionServiceImpl.java** — 与 SessionService 同理\n\n**6. DefaultModelInvokerDataProvider.java** — 添加 import：\n   - `import com.ghost616.agentbase.service.model.invoker.ModelInvokerDataProvider;`\n\n**7. SpawnSubAgentSystemTool.java** — 添加 import：\n   - `import com.ghost616.agentbase.service.agent.invoker.SystemTool;`\n\n### 涉及文件\n- platform-app/src/main/java/.../service/agent/DefaultMessageDataProvider.java\n- platform-app/src/main/java/.../service/agent/DefaultContextDataProvider.java\n- platform-app/src/main/java/.../controller/SessionController.java\n- platform-app/src/main/java/.../service/session/SessionService.java\n- platform-app/src/main/java/.../service/session/SessionServiceImpl.java\n- platform-app/src/main/java/.../service/model/invoker/DefaultModelInvokerDataProvider.java\n- platform-app/src/main/java/.../service/agent/invoker/SpawnSubAgentSystemTool.java",
+  "session_id": "ses_0ce9045a0ffe2i7ddeKAKsysBe",
+  "modified_files": [
+    "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultMessageDataProvider.java",
+    "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultContextDataProvider.java",
+    "platform-app/src/main/java/com/ghost616/platform/controller/SessionController.java",
+    "platform-app/src/main/java/com/ghost616/platform/service/session/SessionService.java",
+    "platform-app/src/main/java/com/ghost616/platform/service/session/SessionServiceImpl.java",
+    "platform-app/src/main/java/com/ghost616/platform/service/model/invoker/DefaultModelInvokerDataProvider.java",
+    "platform-app/src/main/java/com/ghost616/platform/service/agent/invoker/SpawnSubAgentSystemTool.java"
+  ]
+}

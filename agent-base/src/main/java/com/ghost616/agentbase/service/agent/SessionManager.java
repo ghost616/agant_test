@@ -1,0 +1,77 @@
+package com.ghost616.agentbase.service.agent;
+
+import java.util.List;
+
+public class SessionManager {
+
+    private final MessageDataProvider dataProvider;
+
+    public SessionManager(MessageDataProvider dataProvider) {
+        this.dataProvider = dataProvider;
+    }
+
+    public MessageSaveBuilder save() {
+        return new MessageSaveBuilder();
+    }
+
+    public class MessageSaveBuilder {
+        private Long sessionId;
+        private String role;
+        private String content;
+        private String reasoning;
+        private String toolCallId;
+        private String toolResult;
+        private List<MessageDataProvider.ToolCallData> toolCalls;
+
+        private MessageSaveBuilder() {
+        }
+
+        public MessageSaveBuilder sessionId(Long sessionId) {
+            this.sessionId = sessionId;
+            return this;
+        }
+
+        public MessageSaveBuilder role(String role) {
+            this.role = role;
+            return this;
+        }
+
+        public MessageSaveBuilder content(String content) {
+            this.content = content;
+            return this;
+        }
+
+        public MessageSaveBuilder reasoning(String reasoning) {
+            this.reasoning = reasoning;
+            return this;
+        }
+
+        public MessageSaveBuilder toolCallId(String toolCallId) {
+            this.toolCallId = toolCallId;
+            return this;
+        }
+
+        public MessageSaveBuilder toolResult(String toolResult) {
+            this.toolResult = toolResult;
+            return this;
+        }
+
+        public MessageSaveBuilder toolCalls(List<MessageDataProvider.ToolCallData> toolCalls) {
+            this.toolCalls = toolCalls;
+            return this;
+        }
+
+        public Long save() {
+            return dataProvider.saveMessage(sessionId, role, content, reasoning,
+                    toolCallId, toolResult, toolCalls);
+        }
+    }
+
+    public List<MessageDataProvider.MessageDTO> getMessages(Long sessionId) {
+        return dataProvider.getMessages(sessionId);
+    }
+
+    public int rollbackToLastUserMessage(Long sessionId) {
+        return dataProvider.rollbackToLastUserMessage(sessionId);
+    }
+}

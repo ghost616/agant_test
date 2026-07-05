@@ -1,0 +1,12 @@
+package com.ghost616.platform;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication(scanBasePackages = {"com.ghost616.platform", "com.ghost616.agentbase"})
+public class PlatformApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(PlatformApplication.class, args);
+    }
+}

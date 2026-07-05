@@ -1,0 +1,158 @@
+package com.ghost616.platform.service.agent;
+
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.ghost616.agentbase.dto.skill.SkillConfigDTO;
+import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
+import com.ghost616.platform.entity.AgentConfig;
+import com.ghost616.platform.entity.AgentSkill;
+import com.ghost616.platform.entity.Session;
+import com.ghost616.platform.entity.SessionVariable;
+import com.ghost616.platform.entity.SkillConfig;
+import com.ghost616.platform.entity.SkillTool;
+import com.ghost616.agentbase.enums.CommonStatus;
+import com.ghost616.platform.repository.AgentConfigMapper;
+import com.ghost616.platform.repository.AgentSkillMapper;
+import com.ghost616.platform.repository.SessionMapper;
+import com.ghost616.platform.repository.SessionVariableMapper;
+import com.ghost616.platform.repository.SkillConfigMapper;
+import com.ghost616.platform.repository.SkillToolMapper;
+import com.ghost616.platform.service.tool.ToolConfigService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import com.ghost616.agentbase.service.agent.ContextDataProvider;
+
+
+@Component
+@RequiredArgsConstructor
+public class DefaultContextDataProvider implements ContextDataProvider {
+
+    private final SessionMapper sessionMapper;
+    private final AgentConfigMapper agentConfigMapper;
+    private final SessionVariableMapper sessionVariableMapper;
+    private final AgentSkillMapper agentSkillMapper;
+    private final SkillConfigMapper skillConfigMapper;
+    private final SkillToolMapper skillToolMapper;
+    private final ToolConfigService toolConfigService;
+
+    @Override
+    public Long getAgentId(Long sessionId) {
+        Session session = sessionMapper.selectById(sessionId);
+        return session != null ? session.getAgentId() : null;
+    }
+
+    @Override
+    public String getSystemPrompt(Long agentId) {
+        AgentConfig agentConfig = agentConfigMapper.selectById(agentId);
+        return agentConfig != null ? agentConfig.getSystemPrompt() : null;
+    }
+
+    @Override
+    public Long getDefaultModelId(Long agentId) {
+        AgentConfig agentConfig = agentConfigMapper.selectById(agentId);
+        return agentConfig != null ? agentConfig.getModelId() : null;
+    }
+
+    @Override
+    public Integer getRecentMessageCount(Long agentId) {
+        AgentConfig agentConfig = agentConfigMapper.selectById(agentId);
+        return agentConfig != null ? agentConfig.getRecentMessageCount() : null;
+    }
+
+    @Override
+    public List<SkillConfigDTO> loadSkills(Long agentId) {
+        if (agentId == null) {
+            return List.of();
+        }
+
+        List<AgentSkill> agentSkills = agentSkillMapper.selectList(
+                new LambdaQueryWrapper<AgentSkill>()
+                        .eq(AgentSkill::getAgentId, agentId));
+        if (agentSkills == null || agentSkills.isEmpty()) {
+            return List.of();
+        }
+
+        List<Long> skillIds = agentSkills.stream()
+                .map(AgentSkill::getSkillId)
+                .distinct()
+                .toList();
+
+        List<SkillConfig> skillConfigs = skillConfigMapper.selectBatchIds(skillIds);
+        if (skillConfigs == null || skillConfigs.isEmpty()) {
+            return List.of();
+        }
+
+        List<SkillConfigDTO> result = new ArrayList<>();
+        for (SkillConfig sc : skillConfigs) {
+            if (sc.getStatus() == null || sc.getStatus() != CommonStatus.ENABLED) {
+                continue;
+            }
+
+            List<SkillTool> skillTools = skillToolMapper.selectList(
+                    new LambdaQueryWrapper<SkillTool>()
+                            .eq(SkillTool::getSkillId, sc.getId()));
+            List<Long> toolIds = skillTools.stream()
+                    .map(SkillTool::getToolId)
+                    .toList();
+
+            List<ToolConfigDTO> toolDTOs = new ArrayList<>();
+            for (Long toolId : toolIds) {
+                ToolConfigDTO dto = toolConfigService.getById(toolId);
+                toolDTOs.add(dto);
+            }
+
+            result.add(SkillConfigDTO.builder()
+                    .id(sc.getId())
+                    .name(sc.getName())
+                    .description(sc.getDescription())
+                    .prompt(sc.getPrompt())
+                    .skillTools(toolDTOs)
+                    .build());
+        }
+
+        return result;
+    }
+
+    @Override
+    public Map<String, String> loadSessionVariables(Long sessionId) {
+        List<SessionVariable> variables = sessionVariableMapper.selectList(
+                new LambdaQueryWrapper<SessionVariable>()
+                        .eq(SessionVariable::getSessionId, sessionId));
+        Map<String, String> result = new HashMap<>();
+        for (SessionVariable sv : variables) {
+            result.put(sv.getVariableKey(), sv.getVariableValue());
+        }
+        return result;
+    }
+
+    @Override
+    public void saveSessionVariable(Long sessionId, String key, String value) {
+        List<SessionVariable> existing = sessionVariableMapper.selectList(
+                new LambdaQueryWrapper<SessionVariable>()
+                        .eq(SessionVariable::getSessionId, sessionId)
+                        .eq(SessionVariable::getVariableKey, key));
+        if (existing != null && !existing.isEmpty()) {
+            SessionVariable sv = existing.get(0);
+            sv.setVariableValue(value);
+            sessionVariableMapper.updateById(sv);
+        } else {
+            SessionVariable sv = new SessionVariable();
+            sv.setSessionId(sessionId);
+            sv.setVariableKey(key);
+            sv.setVariableValue(value);
+            sessionVariableMapper.insert(sv);
+        }
+    }
+
+    @Override
+    public void deleteSessionVariable(Long sessionId, String key) {
+        sessionVariableMapper.delete(
+                new LambdaQueryWrapper<SessionVariable>()
+                        .eq(SessionVariable::getSessionId, sessionId)
+                        .eq(SessionVariable::getVariableKey, key));
+    }
+}

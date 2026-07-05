@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_0ce70660dffeh1RNe93nbI3ILA",
+  "content": "## 待测试功能\n\n### 涉及文件\n- `agent-base/src/main/java/com/ghost616/agentbase/service/agent/AgentContextManager.java`（已修改）\n\n### 需要测试的功能点\n1. systemPrompt 为 null 时，build() 使用空字符串，不抛出异常\n2. systemPrompt 正常返回时，build() 使用返回的值\n3. agentId 为 null 时仍抛出 SESSION_NOT_FOUND（无回归）\n",
+  "timestamp": "2026-07-05T09:43:49.063Z"
+}

@@ -1,0 +1,10 @@
+{
+  "plan_id": "plan_8048f896-12ec-46bc-bbf5-14ef100a96a6",
+  "module_name": "platform-app",
+  "development_plan": "### 依赖\n依赖 agent-base 已先修改：SystemToolManager 改用 SystemToolProvider 构造器（不再有 @Component）。\n\n### 修改方案\n\n**1. AgentContextConfiguration.java** — 恢复 systemToolManager @Bean：\n```java\n@Bean\npublic SystemToolManager systemToolManager(ApplicationContext applicationContext) {\n    SystemToolProvider provider = () -> {\n        Map<String, SystemTool> beans = applicationContext.getBeansOfType(SystemTool.class);\n        Map<String, SystemTool> tools = new HashMap<>();\n        for (SystemTool tool : beans.values()) {\n            String toolName = tool.getToolName();\n            if (toolName != null && !toolName.isBlank()) {\n                tools.put(toolName, tool);\n            }\n        }\n        return tools;\n    };\n    return new SystemToolManager(provider);\n}\n```\n需要添加回 imports：`SystemTool`、`SystemToolManager`、`SystemToolProvider`、`ApplicationContext`、`HashMap`、`Map`\n\n**2. PlatformApplication.java** — 回退 `scanBasePackages`：\n将 `@SpringBootApplication(scanBasePackages = {\"com.ghost616.platform\", \"com.ghost616.agentbase\"})` 改回 `@SpringBootApplication`\n\n### 涉及文件\n- platform-app/src/main/java/.../config/AgentContextConfiguration.java\n- platform-app/src/main/java/.../PlatformApplication.java",
+  "session_id": "ses_0ce9045a0ffe2i7ddeKAKsysBe",
+  "modified_files": [
+    "platform-app/src/main/java/com/ghost616/platform/config/AgentContextConfiguration.java",
+    "platform-app/src/main/java/com/ghost616/platform/PlatformApplication.java"
+  ]
+}

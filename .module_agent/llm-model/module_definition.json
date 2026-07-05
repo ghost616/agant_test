@@ -83,7 +83,7 @@
     },
     {
       "path": "src/main/java/com/ghost616/platform/service/model/invoker/ModelInvokerManager.java",
-      "description": "模型调用器工厂管理器（根据 PlatformType 创建 Invoker，支持缓存复用 + 外部注册/覆盖/删除）"
+      "description": "模型调用器工厂管理器（非 @Component），构造器注入 ModelInvokerDataProvider，负责 Invoker 缓存复用（ConcurrentHashMap）+ 外部注册/覆盖/删除（register/evict/clear/cacheSize/getInvokerById）"
     },
     {
       "path": "src/main/java/com/ghost616/platform/service/model/invoker/OpenAIInvoker.java",
@@ -108,6 +108,14 @@
     {
       "path": "src/main/java/com/ghost616/platform/service/model/invoker/CustomInvoker.java",
       "description": "自定义平台模型调用器（通用 OpenAI 兼容端点）"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/service/model/invoker/DefaultModelInvokerDataProvider.java",
+      "description": "默认模型调用器数据提供者实现（@Component），注入 RestClient.Builder/WebClient.Builder，根据平台类型 switch-case 创建各平台 Invoker 实例"
+    },
+    {
+      "path": "src/main/java/com/ghost616/platform/config/ModelInvokerConfiguration.java",
+      "description": "模型调用器管理器配置（@Configuration），声明 @Bean 创建 ModelInvokerManager 实例，注入 ModelInvokerDataProvider"
     }
   ]
 }

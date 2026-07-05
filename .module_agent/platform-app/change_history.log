@@ -1,0 +1,18 @@
+## 变更历史
+[2026-07-05T07:53:05.669Z] [session: ses_0cebca3c7ffetrSyqK4ip70BNY] 修复 4 个文件的 agent-base import 问题：删除 DefaultContextDataProvider.java、DefaultMessageDataProvider.java、DefaultModelInvokerDataProvider.java、AgentContextConfiguration.java 中的损坏 import（缺少子包路径）和重复 import，保留正确的子包路径 import。
+[2026-07-05T08:41:19.413Z] [session: ses_0ce9045a0ffe2i7ddeKAKsysBe] 修复 7 个文件的 agent-base import 缺失/错误问题：
+- DefaultMessageDataProvider.java: 添加 MessageDataProvider、ToolCallData、MessageDTO import
+- DefaultContextDataProvider.java: 添加 ContextDataProvider import
+- SessionController.java: 替换 SessionManager.MessageDTO -> MessageDataProvider.MessageDTO，更新 import
+- SessionService.java: 替换 SessionManager.MessageDTO -> MessageDataProvider.MessageDTO，更新 import
+- SessionServiceImpl.java: 替换 SessionManager.MessageDTO -> MessageDataProvider.MessageDTO，更新 import
+- DefaultModelInvokerDataProvider.java: 添加 ModelInvokerDataProvider import
+- SpawnSubAgentSystemTool.java: 添加 SystemTool import
+[2026-07-05T08:49:59.705Z] [session: ses_0ce9045a0ffe2i7ddeKAKsysBe] 修复 agent-base API 变更导致的编译错误：
+- ModelInvokerConfiguration.java: 删除 @Bean（ModelInvokerManager 已 @Component）
+- AgentContextConfiguration.java: 删除 systemToolManager @Bean（SystemToolManager 已 @Component），清理无用 import
+- MessageMapper.java: import 改为 com.ghost616.platform.entity.Message
+- ChatService.java: ChatRequest import 改为 platform.dto.chat；getOrCreate→build 链式；saveMessage→save().role().content() 链式；内部 LLM ChatRequest 使用 agent-base 全限定名
+- MessageSavePostHook.java: 添加 MessageDataProvider import；ToolCallData 引用迁移；saveMessage→链式调用
+- ToolExecutionController.java: 同上
+- ChatController.java: ChatRequest import 同步改为 platform.dto.chat

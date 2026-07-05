@@ -1,0 +1,36 @@
+package com.ghost616.platform.config;
+
+import com.ghost616.agentbase.service.agent.AgentContextManager;
+import com.ghost616.agentbase.service.agent.ContextDataProvider;
+import com.ghost616.agentbase.service.agent.MessageDataProvider;
+import com.ghost616.agentbase.service.agent.SessionManager;
+import com.ghost616.agentbase.service.agent.ToolDataProvider;
+import com.ghost616.agentbase.service.agent.invoker.ToolManager;
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+
+@Configuration
+@RequiredArgsConstructor
+public class AgentContextConfiguration {
+
+    private final ContextDataProvider contextDataProvider;
+    private final MessageDataProvider messageDataProvider;
+    private final ToolDataProvider toolDataProvider;
+
+    @Bean
+    public ToolManager toolManager() {
+        return new ToolManager(toolDataProvider);
+    }
+
+    @Bean
+    public SessionManager sessionManager() {
+        return new SessionManager(messageDataProvider);
+    }
+
+    @Bean
+    public AgentContextManager agentContextManager() {
+        return new AgentContextManager(contextDataProvider, sessionManager(), toolManager());
+    }
+}

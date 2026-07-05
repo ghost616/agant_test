@@ -1,0 +1,9 @@
+{
+  "plan_id": "plan_d2d30e25-d826-4448-a556-e259dbc0865a",
+  "module_name": "framework",
+  "development_plan": "### Bug 描述\ndev.bat 启动时报错: Unable to find a suitable main class, please add a 'mainClass' property\n\n### 根因\ndev.bat 在项目根目录执行 `mvn spring-boot:run`，但根 pom.xml 是 `<packaging>pom</packaging>`（聚合 POM），不含主类。Spring Boot 主类 `PlatformApplication.java` 在子模块 `platform-app` 中。\n\n### 修改方案\n修改 `dev.bat` 文件，将 Maven 后端启动命令从 `mvn spring-boot:run` 改为 `mvn spring-boot:run -pl platform-app`，指定只在 platform-app 子模块中执行 spring-boot:run。\n\n### 涉及文件\n- `dev.bat` — 第 30 行",
+  "session_id": "ses_0ceac0ac8ffeKT5xilWo2W5RXN",
+  "modified_files": [
+    "dev.bat"
+  ]
+}

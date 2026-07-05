@@ -1,0 +1,15 @@
+package com.ghost616.platform.repository;
+
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import org.apache.ibatis.annotations.Delete;
+import org.apache.ibatis.annotations.Mapper;
+
+import com.ghost616.platform.entity.Message;
+
+
+@Mapper
+public interface MessageMapper extends BaseMapper<Message> {
+
+    @Delete("DELETE FROM message WHERE session_id = #{sessionId} AND sequence_num >= #{sequenceNum}")
+    int deleteBySessionIdAndGeSequenceNum(Long sessionId, Integer sequenceNum);
+}
