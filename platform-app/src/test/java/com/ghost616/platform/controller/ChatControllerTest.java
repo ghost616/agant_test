@@ -1,12 +1,16 @@
 package com.ghost616.platform.controller;
 
+import com.ghost616.agentbase.dto.chat.ChatRequest;
+import com.ghost616.agentbase.dto.model.ChatChunk;
 import com.ghost616.platform.dto.ApiResponse;
-import com.ghost616.platform.service.agent.ChatService;
+import com.ghost616.agentbase.service.agent.ChatService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.codec.ServerSentEvent;
+import reactor.core.publisher.Flux;
 
 import java.util.Map;
 
@@ -30,6 +34,20 @@ class ChatControllerTest {
     private ChatController chatController;
 
     private final Long sessionId = 1L;
+
+    @Test
+    void chat_调用chatService并返回SSE流() {
+        ChatRequest request = new ChatRequest();
+        ChatChunk chunk = ChatChunk.builder().delta("test").build();
+        Flux<ServerSentEvent<ChatChunk>> expectedFlux = Flux.just(
+                ServerSentEvent.builder(chunk).build());
+        when(chatService.chat(request)).thenReturn(expectedFlux);
+
+        Flux<ServerSentEvent<ChatChunk>> result = chatController.chat(request);
+
+        assertNotNull(result);
+        verify(chatService).chat(request);
+    }
 
     @Test
     void stopChat_会话存在_返回status_stopped() {

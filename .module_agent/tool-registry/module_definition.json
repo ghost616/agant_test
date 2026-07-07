@@ -2,72 +2,56 @@
   "module_name": "tool-registry",
   "files": [
     {
-      "path": "src/main/java/com/ghost616/platform/entity/ToolConfig.java",
-      "description": "新增 authConfig 字段"
-    },
-    {
-      "path": "src/main/java/com/ghost616/platform/dto/tool/ToolConfigDTO.java",
-      "description": "工具配置 DTO，包含 id/name/toolType/description/parameterSchema/returnSchema/implPath/authConfig/status/createTime/updateTime，使用 @SuperBuilder 支持子类继承"
-    },
-    {
-      "path": "src/main/java/com/ghost616/platform/dto/tool/ToolCreateRequest.java",
-      "description": "工具创建请求 DTO，包含 name/toolType/description/parameterSchema/returnSchema/implPath/authConfig/status；name 字段通过 @Pattern 校验，仅允许小写字母、数字、下划线且不允许以 _sys_ 开头（系统保留前缀）"
-    },
-    {
-      "path": "src/main/java/com/ghost616/platform/dto/tool/ToolUpdateRequest.java",
-      "description": "工具更新请求 DTO，包含 name/toolType/description/parameterSchema/returnSchema/implPath/authConfig/status；name 字段通过 @Pattern 校验，仅允许小写字母、数字、下划线且不允许以 _sys_ 开头（系统保留前缀）"
-    },
-    {
-      "path": "src/main/java/com/ghost616/platform/repository/ToolConfigMapper.java",
-      "description": "工具配置 MyBatis-Plus Mapper"
-    },
-    {
-      "path": "src/main/java/com/ghost616/platform/service/tool/ToolConfigService.java",
-      "description": "工具配置服务接口，新增 getImplByName(String name) 方法"
-    },
-    {
-      "path": "src/main/java/com/ghost616/platform/controller/ToolConfigController.java",
-      "description": "工具配置 REST 控制器，新增 GET /{name}/impl 端点"
-    },
-    {
       "path": "src/main/resources/agent/_runner.py",
       "description": "Python 桥接模板，从 _input.json 读取上下文，动态导入 index.py 并调用 execute()。AgentExecutionContext 解析 sessionId/agentId/systemPrompt/modelId/recentMessageCount/history/tools/sessionVariables/conversationVariables"
-    },
-    {
-      "path": "src/main/java/com/ghost616/platform/service/agent/invoker/PythonToolInvoker.java",
-      "description": "Python 工具执行器，实现 ToolInvoker 接口，检测 python/python3 运行时，进程调用并管理超时"
-    },
-    {
-      "path": "src/main/java/com/ghost616/platform/service/agent/invoker/ContextSerializer.java",
-      "description": "上下文序列化工具类，将 AgentExecutionContext 和 arguments 序列化为 JSON，供各 Invoker 共享使用"
     },
     {
       "path": "tools/math-calc/index.py",
       "description": "数学计算测试 Python 工具，安全求值（禁用 __builtins__），支持 math 模块所有函数"
     },
     {
-      "path": "src/main/java/com/ghost616/platform/service/agent/invoker/McpHttpToolInvoker.java",
-      "description": "MCP HTTP 远程工具调用器，基于 mcp-java-sdk 2.0.0，支持 Bearer/APIKey 认证"
+      "path": "platform-app/src/main/java/com/ghost616/platform/enums/ToolType.java",
+      "description": "工具类型枚举：JAVA/TYPESCRIPT/PYTHON"
     },
     {
-      "path": "src/main/java/com/ghost616/platform/service/agent/invoker/McpAuthConfigParser.java",
-      "description": "MCP 认证配置解析工具类，静态方法 parse() 解析 JSON 返回 headers Map"
+      "path": "platform-app/src/main/java/com/ghost616/platform/entity/ToolConfig.java",
+      "description": "工具配置实体，含 authConfig 字段"
     },
     {
-      "path": "src/main/java/com/ghost616/platform/service/agent/SessionManager.java",
-      "description": "会话管理器，getSessionTools() 对 MCP_HTTP 工具运行时发现并展开为多个远程工具 DTO"
+      "path": "platform-app/src/main/java/com/ghost616/platform/dto/tool/ToolCreateRequest.java",
+      "description": "工具创建请求 DTO，name 字段 @Pattern 校验"
     },
     {
-      "path": "src/main/java/com/ghost616/platform/service/tool/ToolConfigServiceImpl.java",
-      "description": "工具配置服务实现，validateImplPath 校验 JAVA/TYPESCRIPT/PYTHON/MCP_HTTP 四种类型的实现路径，MCP_HTTP 通过 HttpClientSseClientTransport + McpAuthConfigParser 解析认证 headers 进行 MCP 协议握手验证"
+      "path": "platform-app/src/main/java/com/ghost616/platform/dto/tool/ToolUpdateRequest.java",
+      "description": "工具更新请求 DTO"
     },
     {
-      "path": "src/main/java/com/ghost616/platform/service/agent/invoker/ToolManager.java",
-      "description": "工具管理器，管理会话工具缓存、工具调用器路由（JAVA/TYPESCRIPT/PYTHON/MCP_HTTP）、MCP 工具展开（expandMcpTools 返回 McpExpandedToolDTO，name=配置名_远程名展示，remoteToolName=远程原始名）、createInvoker 通过 instanceof 获取远程名、工具变更事件监听"
+      "path": "platform-app/src/main/java/com/ghost616/platform/repository/ToolConfigMapper.java",
+      "description": "工具配置 MyBatis-Plus Mapper"
     },
     {
-      "path": "src/main/java/com/ghost616/platform/dto/tool/McpExpandedToolDTO.java",
-      "description": "MCP 展开工具 DTO，继承 ToolConfigDTO，新增 remoteToolName 字段区分展示名与远程调用名"
+      "path": "platform-app/src/main/java/com/ghost616/platform/service/tool/ToolConfigService.java",
+      "description": "工具配置服务接口，含 getImplByName(String name) 方法"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/controller/ToolConfigController.java",
+      "description": "工具配置 REST 控制器"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/invoker/PythonToolInvoker.java",
+      "description": "Python 工具执行器，实现 ToolInvoker 接口"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/invoker/McpHttpToolInvoker.java",
+      "description": "MCP HTTP 远程工具调用器"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/invoker/McpAuthConfigParser.java",
+      "description": "MCP 认证配置解析工具类"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/service/tool/ToolConfigServiceImpl.java",
+      "description": "工具配置服务实现，含四种类型的 validateImplPath 校验"
     }
   ]
 }

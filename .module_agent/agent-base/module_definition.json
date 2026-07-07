@@ -2,60 +2,252 @@
   "module_name": "agent-base",
   "files": [
     {
-      "path": "src/main/java/com/ghost616/platform/service/agent/AgentExecutionContext.java",
-      "description": "AgentExecutionContext 构造器含 sessionId/agentId/systemPrompt/modelId/recentMessageCount/history/tools/skills(skillConfig列表+关联工具)/mutator/sessionVariables/conversationVariables，含变量 CRUD 方法和 AgentContextMutator 内部类（clearConversationVariables/setStopped/resetStopped），AtomicBoolean stopped 字段及 isStopped() 停止检查"
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/AgentExecutionContext.java",
+      "description": "AgentExecutionContext 构造器含 sessionId/agentId/systemPrompt/modelId/recentMessageCount/history/tools/skills/mutator/sessionVariables/conversationVariables，含变量 CRUD 方法和 AgentContextMutator 内部类"
     },
     {
-      "path": "src/main/java/com/ghost616/platform/service/agent/invoker/ToolInvoker.java",
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/ToolInvoker.java",
       "description": "工具执行契约接口，定义 execute(AgentExecutionContext, String) 方法"
     },
     {
-      "path": "src/main/java/com/ghost616/platform/service/agent/invoker/ToolManager.java",
-      "description": "工具调用管理器，注入 ToolConfigService/SessionToolMapper/SessionMapper/AgentSkillMapper/SkillToolMapper。getInvoker(sessionId,toolName) 先从 getSessionTools 查询（仅 session_tool 表），未找到则 fallback resolveSkillToolByName。resolveSkillToolByName 通过 sessionSkillToolIdsCache 缓存 toolIds 查询链路，遍历时复用 toolCache.computeIfAbsent 获取 ToolSessionObject（含已展开的 MCP 工具），避免重复 getById 和 expandMcpTools。getSessionTools(sessionId) 仅从 session_tool 表查询并展开 MCP。提取 buildToolSessionObject/expandToolSession 公共方法。expandMcpTools 为 public。clearSessionCache 同步清理两个缓存"
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/ToolManager.java",
+      "description": "工具调用管理器，注入 ToolConfigService，负责工具缓存和调用器路由"
     },
     {
-      "path": "src/main/java/com/ghost616/platform/service/agent/SessionManager.java",
-      "description": "会话管理组件，提供消息保存（含工具调用）、历史消息查询和回退功能。saveMessage() 签名在 toolCallId 与 toolCalls 之间含 toolResult 参数并 message.setToolResult(toolResult)；内部 record MessageDTO 含 toolResult 字段；getMessages() 构造 MessageDTO 时传入 msg.getToolResult()；rollbackToLastUserMessage() 回退到最后一条用户消息（先删 tool_call 再删 message）"
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/SessionManager.java",
+      "description": "会话管理组件，提供消息保存、历史消息查询和回退功能"
     },
     {
-      "path": "src/main/java/com/ghost616/platform/service/agent/AgentContextBuilder.java",
-      "description": "上下文构建器，build 方法签名改为 build(sessionId, modelIdOverride, mutator)，将 mutator 作为构造器参数传入 AgentExecutionContext"
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/AgentContextBuilder.java",
+      "description": "上下文构建器，build 方法构建 AgentExecutionContext"
     },
     {
-      "path": "src/main/java/com/ghost616/platform/service/agent/AgentContextManager.java",
-      "description": "AgentContextManager（非 @Component，通过 @Bean 注册）：注入 ContextDataProvider/SessionManager/ToolManager，管理会话上下文缓存 ConcurrentHashMap；提供 build(sessionId) 实例方法返回 Builder 内部类（支持 modelIdOverride 链式调用），Builder.build() 通过 cache.computeIfAbsent 使用 dataProvider 查询 agent/session 数据、toolManager 加载工具、sessionManager 获取历史消息，组装 AgentExecutionContext；保留 get/remove/addHistoryEntry 方法"
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/AgentContextManager.java",
+      "description": "AgentContextManager，管理会话上下文缓存 ConcurrentHashMap"
     },
     {
-      "path": "src/main/java/com/ghost616/platform/service/agent/invoker/SystemTool.java",
-      "description": "系统工具接口，继承 ToolInvoker，定义 getToolName() 返回工具名称、getDescription() 返回工具说明、getParameterSchema() 返回 JSON Schema 参数定义"
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/SystemTool.java",
+      "description": "系统工具接口，继承 ToolInvoker，定义 getToolName()/getDescription()/getParameterSchema()"
     },
     {
-      "path": "src/main/java/com/ghost616/platform/service/agent/invoker/SystemToolManager.java",
-      "description": "系统工具管理器，@PostConstruct 扫描 SystemTool Bean 按 getToolName() 注册，getSystemTool(name) 按名称获取，getToolDefinitions() 通过 ToolDefinitionConverter.convert() 构建带 _sys_ 前缀的 ToolDefinition 列表（无需 ModelInvoker）"
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/SystemToolManager.java",
+      "description": "系统工具管理器，@PostConstruct 扫描 SystemTool Bean 按名称注册"
     },
     {
-      "path": "src/main/java/com/ghost616/platform/service/agent/invoker/ToolDefinitionConverter.java",
-      "description": "工具定义转换工具类，final 私有构造仅含静态方法：convert(ToolConfigDTO) 解析 parameterSchema JSON 补全 type 字段返回 ToolDefinition，createMinimal(ToolConfigDTO) 仅 name+description 不含 parameters"
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/ToolDefinitionConverter.java",
+      "description": "工具定义转换工具类，final 私有构造仅含静态方法"
     },
     {
-      "path": "src/main/java/com/ghost616/platform/service/agent/ContextDataProvider.java",
-      "description": "上下文数据提供者接口，定义 8 个方法（getAgentId/getSystemPrompt/getDefaultModelId/getRecentMessageCount/loadSkills/loadSessionVariables/saveSessionVariable/deleteSessionVariable），输入输出全部使用基础类型和 DTO，不暴露 Entity"
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ContextDataProvider.java",
+      "description": "上下文数据提供者接口，定义 agent 配置、技能、会话变量等数据查询方法"
     },
     {
-      "path": "src/main/java/com/ghost616/platform/service/model/invoker/ModelInvokerDataProvider.java",
-      "description": "模型调用器数据提供者接口，定义 createInvoker 工厂方法，根据平台类型和参数创建对应的 ModelInvoker 实例"
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/model/invoker/ModelInvokerFactory.java",
+      "description": "模型调用器工厂接口，定义 createInvoker(ModelConfigData) 方法"
     },
     {
-      "path": "src/main/java/com/ghost616/platform/service/agent/MessageDataProvider.java",
-      "description": "消息数据提供者接口，定义 saveMessage/getMessages/rollbackToLastUserMessage 纯 DTO 方法及内嵌 ToolCallData/MessageDTO record"
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/model/invoker/ModelInvokerManager.java",
+      "description": "模型调用器管理器，ConcurrentHashMap 缓存 ModelInvoker"
     },
     {
-      "path": "src/main/java/com/ghost616/platform/service/agent/ToolDataProvider.java",
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/MessageDataProvider.java",
+      "description": "消息数据提供者接口，定义 saveMessage/getMessages/rollbackToLastUserMessage 及 MessageDTO 等 record"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ToolDataProvider.java",
       "description": "工具数据提供者接口，定义 getSessionToolIds/getToolById/getSkillToolIds/expandMcpTools 方法"
     },
     {
-      "path": "src/main/java/com/ghost616/platform/service/agent/invoker/SystemToolProvider.java",
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/SystemToolProvider.java",
       "description": "系统工具提供者接口，定义 discoverSystemTools 方法"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/HookInvoker.java",
+      "description": "HOOK 执行契约接口，定义 getPhase() 和 execute(AgentExecutionContext, ChatChunk) 方法"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/SystemHook.java",
+      "description": "系统 HOOK 接口，扩展 HookInvoker，新增 getIndex() 默认方法"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/SystemPostHook.java",
+      "description": "系统后置 HOOK 标记接口，继承 SystemHook"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/MessageSavePostHook.java",
+      "description": "消息保存后置 HOOK 实现，在 AFTER_MESSAGE_RECEIVE 阶段处理流式消息持久化"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ToolExecutionTracker.java",
+      "description": "工具执行状态跟踪器，ConcurrentHashMap 管理会话级别工具执行状态"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/dto/model/ModelConfigData.java",
+      "description": "模型配置数据 record，包含 id/apiKey/baseUrl/modelName/temperature/maxTokens/platformType 字段"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ChatDataProvider.java",
+      "description": "聊天数据提供者接口，定义 getModelConfig/updateSessionModelId/getHooks 方法"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/dto/chat/ChatRequest.java",
+      "description": "聊天请求 DTO，包含 sessionId/content/modelId/thinking 字段"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ChatService.java",
+      "description": "聊天服务核心实现，处理用户消息、技能加载、历史折叠、LLM 流式调用、钩子触发等完整对话流程"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/ContextSerializer.java",
+      "description": "上下文序列化器，序列化 AgentExecutionContext 和 arguments 至 JSON 供各 Invoker 共享使用"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/HistoryQuerySystemTool.java",
+      "description": "历史查询系统工具，查询会话历史消息"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/JavaToolInvoker.java",
+      "description": "Java 类型工具的 ToolInvoker 实现"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/LoadSkillsSystemTool.java",
+      "description": "load_skills 系统工具，按名称从技能列表加载技能并写入会话变量"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/McpAuthConfigParser.java",
+      "description": "MCP 认证配置解析工具类，解析 JSON 返回 headers Map"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/McpHttpToolInvoker.java",
+      "description": "MCP HTTP 远程工具调用器"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/McpJsonRpcClient.java",
+      "description": "MCP JSON-RPC 客户端"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/PythonToolInvoker.java",
+      "description": "Python 工具执行器，检测 python/python3 运行时，进程调用并管理超时"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/ToolCallQueueManager.java",
+      "description": "工具调用队列管理器，ConcurrentHashMap 管理会话级别工具调用队列"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/TypeScriptToolInvoker.java",
+      "description": "TypeScript 工具执行器，bun/node 运行时桥接"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/UnloadSkillsSystemTool.java",
+      "description": "unload_skills 系统工具，从会话变量移除指定技能"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/model/invoker/ModelInvokerDataProvider.java",
+      "description": "模型调用器数据提供者接口，定义 createInvoker 工厂方法"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/model/invoker/ModelInvoker.java",
+      "description": "统一模型调用接口，定义 chat/chatStream 方法"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/dto/model/ChatChunk.java",
+      "description": "流式对话片段 DTO"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/dto/model/ChatRequest.java",
+      "description": "对话请求 DTO"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/dto/model/ChatResponse.java",
+      "description": "对话响应 DTO"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/dto/model/Message.java",
+      "description": "对话消息 DTO"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/dto/model/ToolCall.java",
+      "description": "工具调用 DTO"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/dto/model/ToolCallDelta.java",
+      "description": "工具调用增量 DTO"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/dto/model/ToolDefinition.java",
+      "description": "工具定义 DTO"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/dto/model/UsageInfo.java",
+      "description": "Token 用量信息 DTO"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/dto/skill/SkillConfigDTO.java",
+      "description": "技能配置响应 DTO"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/dto/tool/ToolConfigDTO.java",
+      "description": "工具配置 DTO"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/dto/tool/McpExpandedToolDTO.java",
+      "description": "MCP 展开工具 DTO"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/enums/CommonStatus.java",
+      "description": "通用启用/禁用状态枚举"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/enums/ErrorCode.java",
+      "description": "错误码枚举"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/enums/HookPhase.java",
+      "description": "HOOK 阶段枚举"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/enums/ToolType.java",
+      "description": "工具类型枚举"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/exception/BaseException.java",
+      "description": "基础异常，extends RuntimeException"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/exception/BusinessException.java",
+      "description": "业务逻辑异常"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/event/ToolChangedEvent.java",
+      "description": "工具变更事件类"
+    },
+    {
+      "path": "agent-base/pom.xml",
+      "description": "Agent 基础框架 Maven 子模块构建文件"
+    },
+    {
+      "path": "agent-base/src/test/java/com/ghost616/agentbase/service/agent/ChatServiceTest.java",
+      "description": "ChatService 单元测试"
+    },
+    {
+      "path": "agent-base/src/test/java/com/ghost616/agentbase/service/agent/AgentContextManagerTest.java",
+      "description": "AgentContextManager 单元测试"
+    },
+    {
+      "path": "agent-base/src/test/java/com/ghost616/agentbase/service/agent/invoker/SystemToolManagerTest.java",
+      "description": "SystemToolManager 单元测试"
+    },
+    {
+      "path": "agent-base/src/test/java/com/ghost616/agentbase/service/agent/invoker/ToolManagerTest.java",
+      "description": "ToolManager 单元测试"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ToolExecutionService.java",
+      "description": "工具执行服务，提供 executeTool/getToolStatus/continueAfterTools 方法封装工具异步执行、状态查询和工具结果回传继续对话的完整业务逻辑，包含内部记录 ToolExecutionResult 和 ToolStatusResult"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/util/JsonMapper.java",
+      "description": "公用 JSON 工具类，提供静态 ObjectMapper MAPPER 实例，供各组件直接引用"
     }
   ]
 }

@@ -38,14 +38,13 @@
     },
     {
       "name": "hook-manager",
-      "description": "HOOK 注册与管理模块",
+      "description": "[已合并至 agent-base] HOOK 注册与管理模块，原负责 HOOK CRUD/状态管理/阶段触发，现已并入 agent-base 模块",
       "responsibilities": [
-        "HOOK 统一基于 Java 接口实现，注册时登记类名、说明、生效阶段",
-        "编辑、删除、启用/禁用已注册的 HOOK",
-        "在智能体会话生命周期各阶段自动触发已挂载的 HOOK",
-        "提供 HOOK 管理器，供智能体引擎按阶段获取并执行 HOOK"
+        "已合并至 agent-base"
       ],
-      "dependencies": [],
+      "dependencies": [
+        "agent-base"
+      ],
       "interfaces": [
         "GET/POST/PUT/DELETE /api/hooks"
       ]
@@ -61,7 +60,7 @@
       "dependencies": [
         "llm-model",
         "tool-registry",
-        "hook-manager"
+        "agent-base"
       ],
       "interfaces": [
         "GET/POST/PUT/DELETE /api/agents"
@@ -82,8 +81,8 @@
       "dependencies": [
         "llm-model",
         "tool-registry",
-        "hook-manager",
-        "agent-config"
+        "agent-config",
+        "agent-base"
       ],
       "interfaces": [
         "POST /api/chat（流式 SSE，请求体含 modelId）",
@@ -151,6 +150,76 @@
         {
           "name": "SKILL 管理器",
           "description": "提供 getSkillImpl(name) 接口，供 agent-engine 按名称获取 SKILL 的提示词和关联工具列表"
+        }
+      ]
+    },
+    {
+      "name": "agent-base",
+      "description": "Agent 基础框架模块，提供核心接口、上下文管理和工具/技能/HOOK 调度基础组件，独立 Maven 子项目（com.ghost616.agentbase 包）。已合并原 hook-manager 模块",
+      "responsibilities": [
+        "定义工具执行、会话管理、上下文构建、消息数据提供者等核心接口",
+        "提供系统工具/系统 HOOK 等抽象基类和标记接口",
+        "提供模型调用器工厂接口和模型配置数据 record",
+        "提供工具定义转换工具类",
+        "提供会话变量和对话变量管理能力",
+        "定义代理执行上下文和停止控制机制",
+        "HOOK 执行契约定义（HookInvoker/SystemHook/SystemPostHook）",
+        "消息保存后置 HOOK 处理和流式消息持久化"
+      ],
+      "dependencies": [],
+      "functions": [
+        {
+          "name": "核心接口定义",
+          "description": "ToolInvoker、HookInvoker、SystemTool、SystemHook、ContextDataProvider、MessageDataProvider、ToolDataProvider、ChatDataProvider、ModelInvokerFactory 等接口"
+        },
+        {
+          "name": "代理执行上下文",
+          "description": "AgentExecutionContext 封装会话信息、工具列表、技能列表、历史消息、会话变量、对话变量及停止控制"
+        },
+        {
+          "name": "上下文管理器",
+          "description": "AgentContextManager 管理会话上下文缓存和构建"
+        },
+        {
+          "name": "系统工具框架",
+          "description": "SystemToolManager 自动发现和注册系统工具、ToolDefinitionConverter 转换工具定义"
+        },
+        {
+          "name": "模型调用器抽象",
+          "description": "ModelInvokerManager 缓存和路由模型调用器"
+        }
+      ]
+    },
+    {
+      "name": "platform-app",
+      "description": "主应用模块，包含 Spring Boot 入口、Controller、Config、Entity、Repository 和平台实现代码，独立 Maven 子项目（com.ghost616.platform 包）",
+      "responsibilities": [
+        "Spring Boot 应用启动和自动配置",
+        "REST API 控制器（模型/工具/智能体/技能/会话/对话/工具执行）",
+        "MyBatis-Plus 数据访问层（Mapper 接口）",
+        "数据库实体定义（Entity）",
+        "业务服务实现（Service）",
+        "各平台模型调用器实现（OpenAI/Anthropic/Azure/Ollama/DeepSeek/Custom）",
+        "默认数据提供者实现（ContextDataProvider/MessageDataProvider/ChatDataProvider/ModelInvokerFactory）",
+        "Agent 上下文和聊天服务 Bean 配置",
+        "数据库 Schema 管理和迁移",
+        "项目前端资源托管"
+      ],
+      "dependencies": [
+        "agent-base",
+        "llm-model",
+        "tool-registry",
+        "agent-config",
+        "skill-manager"
+      ],
+      "functions": [
+        {
+          "name": "应用启动",
+          "description": "PlatformApplication 作为 Spring Boot 入口，配置组件扫描和 Mapper 扫描"
+        },
+        {
+          "name": "平台实现层",
+          "description": "提供 agent-base 中各接口的平台特定实现和 Spring Bean 注册"
         }
       ]
     }

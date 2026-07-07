@@ -1,9 +1,0 @@
-{
-  "plan_id": "plan_ce16f999-2935-42aa-96c0-fc16bb7ec090",
-  "module_name": "framework",
-  "development_plan": "### Bug 描述\n之前改用 `mvn spring-boot:run -pl platform-app -am` 后，Maven 仍对根 POM (agent-platform) 执行 spring-boot:run，报同样的 mainClass 错误。\n\n### 根因\n在 reactor 多模块构建中，`-pl` 参数对 spring-boot:run 的模块限定不生效，Maven 仍对根 POM 执行插件。\n\n### 修改方案\n改用更可靠的两步方案：\n1. 先用 `mvn install -pl agent-base -DskipTests -q` 将依赖模块 agent-base 安装到本地 Maven 仓库\n2. 再用 `mvn spring-boot:run -f platform-app/pom.xml` 直接以 platform-app 的 POM 启动\n\n最终命令：`mvn install -pl agent-base -DskipTests -q && mvn spring-boot:run -f platform-app/pom.xml`\n\n### 涉及文件\n- dev.bat — 第 30 行",
-  "session_id": "ses_0ceac0ac8ffeKT5xilWo2W5RXN",
-  "modified_files": [
-    "dev.bat"
-  ]
-}

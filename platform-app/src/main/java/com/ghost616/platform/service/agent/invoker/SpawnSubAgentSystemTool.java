@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghost616.platform.entity.ModelConfig;
 import com.ghost616.platform.repository.ModelConfigMapper;
-import com.ghost616.platform.service.model.invoker.ModelInvokerManager;
+import com.ghost616.agentbase.service.model.invoker.ModelInvokerManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -24,6 +24,7 @@ import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
 import com.ghost616.agentbase.service.agent.AgentExecutionContext;
 import com.ghost616.agentbase.service.agent.invoker.ToolInvoker;
 import com.ghost616.agentbase.service.agent.invoker.ToolManager;
+import com.ghost616.agentbase.dto.model.ModelConfigData;
 import com.ghost616.agentbase.service.model.invoker.ModelInvoker;
 import com.ghost616.agentbase.service.agent.invoker.SystemTool;
 
@@ -81,7 +82,8 @@ public class SpawnSubAgentSystemTool implements SystemTool {
                 return "{\"error\":\"model not found: " + modelId + "\"}";
             }
 
-            ModelInvoker invoker = modelInvokerManager.getInvoker(modelConfig);
+            ModelConfigData configData = new ModelConfigData(modelConfig.getId(), modelConfig.getApiKey(), modelConfig.getBaseUrl(), modelConfig.getModelName(), modelConfig.getTemperature(), modelConfig.getMaxTokens(), modelConfig.getPlatformType().name());
+            ModelInvoker invoker = modelInvokerManager.getInvoker(configData);
 
             List<ToolDefinition> toolDefs = new ArrayList<>();
             for (ToolConfigDTO t : ctx.getTools()) {

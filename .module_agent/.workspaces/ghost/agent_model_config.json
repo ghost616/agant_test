@@ -5,7 +5,7 @@
   },
   "gaotao": {
     "providerID": "deepseek",
-    "modelID": "deepseek-v4-flash"
+    "modelID": "deepseek-v4-pro"
   },
   "lizhu": {
     "providerID": "deepseek",

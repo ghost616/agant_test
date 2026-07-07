@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_0cad74c2effe7Nvlw4CQgg6cJ0",
+  "content": "# ChatService 单元测试\n\n## 需要测试的功能\n\n### 1. initHooks() 方法\n- 验证 chatDataProvider.getHooks() 被调用一次\n- 验证 HookInvoker 被正确分类到 systemHooks（按 phase 分组）或 systemPostHooks\n- 验证 SystemPostHook 实例被放入 systemPostHooks 列表\n- 验证 SystemHook（非 Post）实例被放入 systemHooks 映射\n\n### 2. 构造函数\n- 验证所有 6 个依赖通过构造函数注入后正确初始化\n\n## 涉及的文件\n- `src/main/java/com/ghost616/agentbase/service/agent/ChatService.java`\n- `src/test/java/com/ghost616/agentbase/service/agent/ChatServiceTest.java`（新文件）\n",
+  "timestamp": "2026-07-06T02:03:50.909Z"
+}

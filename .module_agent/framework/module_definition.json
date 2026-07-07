@@ -18,62 +18,6 @@
       "description": "TypeScript 配置，ESNext target，react-jsx，strict，bundler moduleResolution"
     },
     {
-      "path": "src/main/java/com/ghost616/platform/PlatformApplication.java",
-      "description": "Spring Boot 启动类，@SpringBootApplication"
-    },
-    {
-      "path": "src/main/resources/application.yml",
-      "description": "应用配置，端口 8080，SQLite 数据库 data/agent_platform.db，MyBatis-Plus 配置（assign_id、逻辑删除、SQL 日志）"
-    },
-    {
-      "path": "src/main/java/com/ghost616/platform/dto/ApiResponse.java",
-      "description": "统一 API 响应体 {code,success,message,data}，含 success/fail 静态工厂方法"
-    },
-    {
-      "path": "src/main/java/com/ghost616/platform/dto/PageResult.java",
-      "description": "分页结果 {list,total,page,size}，of(Page,List) 工厂方法"
-    },
-    {
-      "path": "src/main/java/com/ghost616/platform/entity/BaseEntity.java",
-      "description": "实体基类 @Data，@TableId ASSIGN_ID，@TableField 自动填充 createTime/updateTime，implements Serializable"
-    },
-    {
-      "path": "src/main/java/com/ghost616/platform/enums/ErrorCode.java",
-      "description": "错误码枚举：含 SYS/MODEL/TOOL/AGENT/SESSION 五大类错误码，新增 TOOL_SCHEMA_INVALID"
-    },
-    {
-      "path": "src/main/java/com/ghost616/platform/enums/CommonStatus.java",
-      "description": "通用启用/禁用状态枚举"
-    },
-    {
-      "path": "src/main/java/com/ghost616/platform/enums/ToolType.java",
-      "description": "工具类型枚举：JAVA/TYPESCRIPT/PYTHON"
-    },
-    {
-      "path": "src/main/java/com/ghost616/platform/enums/HookPhase.java",
-      "description": "HOOK 阶段枚举：SESSION_START/END, BEFORE/AFTER MESSAGE, BEFORE/AFTER TOOL_CALL"
-    },
-    {
-      "path": "src/main/java/com/ghost616/platform/enums/PlatformType.java",
-      "description": "LLM 平台类型枚举：OPENAI/ANTHROPIC/AZURE/OLLAMA/DEEPSEEK/CUSTOM，含 defaultBaseUrl 和 defaultModelNames 默认配置（DeepSeek 已更新为 v4 模型名）"
-    },
-    {
-      "path": "src/main/java/com/ghost616/platform/exception/BaseException.java",
-      "description": "平台基础异常，extends RuntimeException，含 errorCode 和 detail 字段"
-    },
-    {
-      "path": "src/main/java/com/ghost616/platform/exception/BusinessException.java",
-      "description": "业务逻辑异常，extends BaseException"
-    },
-    {
-      "path": "src/main/java/com/ghost616/platform/config/GlobalExceptionHandler.java",
-      "description": "全局异常处理器 @RestControllerAdvice，处理 BaseException/Validation/兜底异常"
-    },
-    {
-      "path": "src/main/java/com/ghost616/platform/config/WebConfig.java",
-      "description": "Web MVC 配置，CORS 允许所有来源"
-    },
-    {
       "path": "src/main.tsx",
       "description": "React 入口，ReactDOM.createRoot + BrowserRouter（已移除 StrictMode）"
     },
@@ -94,14 +38,6 @@
       "description": "全局样式，CSS reset，CSS 变量（主色调/字体/边框）"
     },
     {
-      "path": "src/main/java/com/ghost616/platform/config/MybatisPlusConfig.java",
-      "description": "MyBatis-Plus 配置类，MapperScan + SQLite 分页拦截器"
-    },
-    {
-      "path": "src/main/java/com/ghost616/platform/config/MyMetaObjectHandler.java",
-      "description": "MyBatis-Plus 元对象处理器，自动填充 createTime/updateTime"
-    },
-    {
       "path": "build.bat",
       "description": "Windows 一键编译打包脚本，检查 node_modules、npm run build、复制 dist 到 static、mvn clean package -DskipTests"
     },
@@ -110,20 +46,16 @@
       "description": "Windows 开发模式一键启动脚本，新窗口启动 mvn spring-boot:run、轮询端口 8080 就绪、启动 npm run dev，前端退出后自动关闭后端进程"
     },
     {
-      "path": "src/main/resources/schema.sql",
-      "description": "数据库初始化脚本，包含所有建表语句和迁移语句（新增 agent_skill 中间表含 agent_id/skill_id 双索引）"
-    },
-    {
-      "path": "src/main/java/com/ghost616/platform/event/ToolChangedEvent.java",
-      "description": "ToolChangedEvent 事件类，继承 ApplicationEvent，含 toolId 字段和 getter，用于 Spring 事件机制发布工具变更通知"
-    },
-    {
       "path": "README.md",
       "description": "项目说明文档，含技术栈、功能模块、快速启动指南、项目结构"
     },
     {
-      "path": "src/main/java/com/ghost616/platform/config/SchemaMigration.java",
-      "description": "数据库 Schema 迁移组件，ApplicationRunner 在启动时执行 PRAGMA 检测+ALTER TABLE，替代 schema.sql 中的静态迁移语句。migrations 列表新增 message.tool_name (VARCHAR(255)) 迁移项"
+      "path": ".vscode/settings.json",
+      "description": "VS Code 项目配置文件"
+    },
+    {
+      "path": "platform-app/data/agent_platform.db",
+      "description": "SQLite 数据库文件（运行时数据）"
     }
   ]
 }

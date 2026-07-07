@@ -31,7 +31,7 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/config/AgentContextConfiguration.java",
-      "description": "Agent 上下文 Spring 配置类，声明 ToolManager、SessionManager、AgentContextManager 的 @Bean。SystemToolManager 由 @Component 自动检测"
+      "description": "Agent 上下文 Spring 配置类，声明 ToolManager、SessionManager、AgentContextManager、MessageSavePostHook、DefaultChatDataProvider、ChatService、ToolExecutionTracker、ToolExecutionService 的 @Bean。SystemToolManager 由 @Component 自动检测。ChatService 创建后调用 initHooks() 初始化钩子系统。"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/repository/MessageMapper.java",
@@ -39,19 +39,75 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/ChatService.java",
-      "description": "聊天服务核心实现，处理用户消息、技能加载、历史折叠、LLM 流式调用、钩子触发等完整对话流程"
-    },
-    {
-      "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/invoker/MessageSavePostHook.java",
-      "description": "消息保存后置钩子，在 LLM 流式响应完成后将累积的 assistant 消息和 tool calls 持久化到数据库"
+      "description": "聊天服务核心实现，处理用户消息、技能加载、历史折叠、LLM 流式调用、钩子触发等完整对话流程。import HookInvoker/SystemHook/SystemPostHook 自 agent-base 包。"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/controller/ToolExecutionController.java",
-      "description": "工具执行控制器，提供工具执行、状态轮询、继续对话等 HTTP 接口"
+      "description": "工具执行控制器，提供工具执行、状态轮询、继续对话等 HTTP 接口，业务逻辑委托给 agent-base 的 ToolExecutionService"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/controller/ChatController.java",
-      "description": "聊天控制器，提供 SSE 流式聊天和停止聊天接口"
+      "description": "聊天控制器，提供 SSE 流式聊天和停止聊天接口。ChatRequest 和 ChatService 依赖自 agent-base 模块导入。"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/service/model/invoker/DefaultModelInvokerFactory.java",
+      "description": "默认模型调用器工厂实现，注入 RestClient.Builder 和 WebClient.Builder，根据 ModelConfigData.platformType() 创建对应平台（OPENAI/ANTHROPIC/AZURE/OLLAMA/DEEPSEEK/CUSTOM）的 ModelInvoker 实例"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultChatDataProvider.java",
+      "description": "默认聊天数据提供者实现，实现 ChatDataProvider 接口，注入 ModelConfigMapper、SessionMapper 和 ApplicationContext，提供 getModelConfig（查询模型配置并转为 ModelConfigData）、updateSessionModelId（更新会话模型 ID）、getHooks（获取所有 HookInvoker Bean）方法"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/PlatformApplication.java",
+      "description": "Spring Boot 启动类，@SpringBootApplication"
+    },
+    {
+      "path": "platform-app/src/main/resources/application.yml",
+      "description": "应用配置，端口 8080，SQLite 数据库 data/agent_platform.db，MyBatis-Plus 配置"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/dto/ApiResponse.java",
+      "description": "统一 API 响应体 {code,success,message,data}，含 success/fail 静态工厂方法"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/dto/PageResult.java",
+      "description": "分页结果 {list,total,page,size}，of(Page,List) 工厂方法"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/entity/BaseEntity.java",
+      "description": "实体基类 @Data，@TableId ASSIGN_ID，@TableField 自动填充 createTime/updateTime，implements Serializable"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/config/GlobalExceptionHandler.java",
+      "description": "全局异常处理器 @RestControllerAdvice，处理 BaseException/Validation/兜底异常"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/config/WebConfig.java",
+      "description": "Web MVC 配置，CORS 允许所有来源"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/config/MybatisPlusConfig.java",
+      "description": "MyBatis-Plus 配置类，MapperScan + SQLite 分页拦截器"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/config/MyMetaObjectHandler.java",
+      "description": "MyBatis-Plus 元对象处理器，自动填充 createTime/updateTime"
+    },
+    {
+      "path": "platform-app/src/main/resources/schema.sql",
+      "description": "数据库初始化脚本，包含所有建表语句和迁移语句"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/config/SchemaMigration.java",
+      "description": "数据库 Schema 迁移组件，ApplicationRunner 启动时执行 PRAGMA 检测+ALTER TABLE"
+    },
+    {
+      "path": "platform-app/pom.xml",
+      "description": "主应用 Maven 子模块构建文件"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultToolDataProvider.java",
+      "description": "默认工具数据提供者实现，实现 ToolDataProvider 接口，负责工具和技能工具查询"
     }
   ]
 }

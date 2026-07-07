@@ -1,9 +1,0 @@
-{
-  "plan_id": "plan_e3ad8434-4e2c-4323-b59e-7365f5b5202f",
-  "module_name": "agent-base",
-  "development_plan": "### 目的\nSystemToolManager 应脱离 Spring 依赖，通过 SystemToolProvider 接口接收系统工具，而不是通过 ApplicationContext 扫描。\n\n### 修改方案\n修改 `agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/SystemToolManager.java`：\n1. 删除 `@Component`、`@RequiredArgsConstructor` 注解\n2. 删除 `@PostConstruct` 注解\n3. 将 `private final ApplicationContext applicationContext;` 改为 `private final SystemToolProvider provider;`\n4. 将构造函数改为接受 `SystemToolProvider` 参数\n5. 删除 `import org.springframework.context.ApplicationContext;`、`import org.springframework.stereotype.Component;`、`import jakarta.annotation.PostConstruct;`\n6. 将 `@PostConstruct void initSystemTools()` 改为私有方法，在构造函数中调用：\n   ```java\n   public SystemToolManager(SystemToolProvider provider) {\n       this.provider = provider;\n       initSystemTools();\n   }\n   ```\n7. `initSystemTools()` 中 `applicationContext.getBeansOfType(SystemTool.class)` 改为 `provider.discoverSystemTools()`\n\n### 涉及文件\n- agent-base/src/main/java/.../service/agent/invoker/SystemToolManager.java",
-  "session_id": "ses_0ce70660dffeh1RNe93nbI3ILA",
-  "modified_files": [
-    "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/SystemToolManager.java"
-  ]
-}

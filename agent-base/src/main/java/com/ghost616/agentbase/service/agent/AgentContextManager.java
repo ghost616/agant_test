@@ -2,8 +2,10 @@ package com.ghost616.agentbase.service.agent;
 
 import com.ghost616.agentbase.dto.model.ToolCall;
 import com.ghost616.agentbase.dto.skill.SkillConfigDTO;
+import com.ghost616.agentbase.dto.tool.McpExpandedToolDTO;
 import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
 import com.ghost616.agentbase.enums.ErrorCode;
+import com.ghost616.agentbase.enums.ToolType;
 import com.ghost616.agentbase.exception.BusinessException;
 import com.ghost616.agentbase.service.agent.invoker.ToolManager;
 
@@ -66,10 +68,22 @@ public class AgentContextManager {
                 List<ToolConfigDTO> tools = toolManager.getSessionTools(id).stream()
                         .map(ToolManager.ToolSessionObject::toolConfig)
                         .toList();
-                log.info("sessionId={} 已注册工具: {}", id,
-                        tools.stream().map(ToolConfigDTO::getName).toList());
 
                 List<SkillConfigDTO> skills = dataProvider.loadSkills(agentId);
+
+                for (SkillConfigDTO skill : skills) {
+                    if (skill.getSkillTools() != null) {
+                        List<ToolConfigDTO> expandedTools = new ArrayList<>();
+                        for (ToolConfigDTO tool : skill.getSkillTools()) {
+                            if (tool.getToolType() == ToolType.MCP_HTTP && !(tool instanceof McpExpandedToolDTO)) {
+                                expandedTools.addAll(toolManager.expandMcpTools(tool));
+                            } else {
+                                expandedTools.add(tool);
+                            }
+                        }
+                        skill.setSkillTools(expandedTools);
+                    }
+                }
 
                 List<MessageDataProvider.MessageDTO> messages = sessionManager.getMessages(id);
                 List<AgentExecutionContext.HistoryEntry> history = new ArrayList<>();

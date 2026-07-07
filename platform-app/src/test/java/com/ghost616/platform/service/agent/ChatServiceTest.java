@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghost616.platform.entity.ModelConfig;
 import com.ghost616.platform.repository.ModelConfigMapper;
 import com.ghost616.platform.repository.SessionMapper;
-import com.ghost616.platform.service.model.invoker.ModelInvokerManager;
+import com.ghost616.agentbase.service.model.invoker.ModelInvokerManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,12 +28,14 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 import com.ghost616.agentbase.dto.model.ChatChunk;
-import com.ghost616.platform.dto.chat.ChatRequest;
+import com.ghost616.agentbase.dto.chat.ChatRequest;
 import com.ghost616.agentbase.service.agent.AgentContextManager;
 import com.ghost616.agentbase.service.agent.AgentExecutionContext;
 import com.ghost616.agentbase.service.agent.SessionManager;
 import com.ghost616.agentbase.service.agent.invoker.SystemToolManager;
+import com.ghost616.agentbase.dto.model.ModelConfigData;
 import com.ghost616.agentbase.service.model.invoker.ModelInvoker;
+import com.ghost616.agentbase.service.agent.ChatService;
 
 
 @ExtendWith(MockitoExtension.class)
@@ -102,7 +104,7 @@ class ChatServiceTest {
         ModelConfig modelConfig = new ModelConfig();
         modelConfig.setId(1L);
         when(modelConfigMapper.selectById(1L)).thenReturn(modelConfig);
-        when(modelInvokerManager.getInvoker(modelConfig)).thenReturn(modelInvoker);
+        when(modelInvokerManager.getInvoker(any(ModelConfigData.class))).thenReturn(modelInvoker);
 
         ChatChunk chunk1 = ChatChunk.builder().delta("chunk1").build();
         ChatChunk chunk2 = ChatChunk.builder().delta("chunk2").build();
@@ -138,7 +140,7 @@ class ChatServiceTest {
         ModelConfig modelConfig = new ModelConfig();
         modelConfig.setId(1L);
         when(modelConfigMapper.selectById(1L)).thenReturn(modelConfig);
-        when(modelInvokerManager.getInvoker(modelConfig)).thenReturn(modelInvoker);
+        when(modelInvokerManager.getInvoker(any(ModelConfigData.class))).thenReturn(modelInvoker);
 
         ChatChunk chunk1 = ChatChunk.builder().delta("chunk1").build();
         when(modelInvoker.invokeStream(any())).thenReturn(Flux.just(chunk1));
@@ -171,7 +173,7 @@ class ChatServiceTest {
         ModelConfig modelConfig = new ModelConfig();
         modelConfig.setId(1L);
         when(modelConfigMapper.selectById(1L)).thenReturn(modelConfig);
-        when(modelInvokerManager.getInvoker(modelConfig)).thenReturn(modelInvoker);
+        when(modelInvokerManager.getInvoker(any(ModelConfigData.class))).thenReturn(modelInvoker);
 
         ChatChunk chunk1 = ChatChunk.builder().delta("chunk1").build();
         when(modelInvoker.invokeStream(any())).thenReturn(Flux.just(chunk1));
@@ -204,7 +206,7 @@ class ChatServiceTest {
         ModelConfig modelConfig = new ModelConfig();
         modelConfig.setId(1L);
         when(modelConfigMapper.selectById(1L)).thenReturn(modelConfig);
-        when(modelInvokerManager.getInvoker(modelConfig)).thenReturn(modelInvoker);
+        when(modelInvokerManager.getInvoker(any(ModelConfigData.class))).thenReturn(modelInvoker);
 
         ChatChunk chunk1 = ChatChunk.builder().delta("chunk1").build();
         when(modelInvoker.invokeStream(any())).thenReturn(Flux.just(chunk1).delayElements(Duration.ofMillis(100)));

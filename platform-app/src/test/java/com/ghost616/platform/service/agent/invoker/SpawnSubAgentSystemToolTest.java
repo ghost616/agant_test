@@ -8,7 +8,7 @@ import ch.qos.logback.core.AppenderBase;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghost616.platform.entity.ModelConfig;
 import com.ghost616.platform.repository.ModelConfigMapper;
-import com.ghost616.platform.service.model.invoker.ModelInvokerManager;
+import com.ghost616.agentbase.service.model.invoker.ModelInvokerManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -38,6 +38,7 @@ import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
 import com.ghost616.agentbase.service.agent.AgentExecutionContext;
 import com.ghost616.agentbase.service.agent.invoker.ToolInvoker;
 import com.ghost616.agentbase.service.agent.invoker.ToolManager;
+import com.ghost616.agentbase.dto.model.ModelConfigData;
 import com.ghost616.agentbase.service.model.invoker.ModelInvoker;
 
 
@@ -85,7 +86,7 @@ class SpawnSubAgentSystemToolTest {
         ));
 
         when(modelConfigMapper.selectById(any())).thenReturn(modelConfig);
-        when(modelInvokerManager.getInvoker(modelConfig)).thenReturn(modelInvoker);
+        when(modelInvokerManager.getInvoker(any(ModelConfigData.class))).thenReturn(modelInvoker);
         when(modelInvoker.invokeStream(any())).thenReturn(Flux.just(ChatChunk.builder().delta("ok").build()));
 
         String result = tool.execute(context, "{\"agentName\":\"test\",\"task\":\"do\"}");
@@ -102,7 +103,7 @@ class SpawnSubAgentSystemToolTest {
         ));
 
         when(modelConfigMapper.selectById(any())).thenReturn(modelConfig);
-        when(modelInvokerManager.getInvoker(modelConfig)).thenReturn(modelInvoker);
+        when(modelInvokerManager.getInvoker(any(ModelConfigData.class))).thenReturn(modelInvoker);
         when(modelInvoker.invokeStream(any())).thenReturn(Flux.just(ChatChunk.builder().delta("ok").build()));
 
         String result = tool.execute(context, "{\"agentName\":\"test\",\"task\":\"do\"}");
@@ -115,7 +116,7 @@ class SpawnSubAgentSystemToolTest {
     @Test
     void 单个tool_call跨多个chunk时正确累积id_name_arguments() {
         when(modelConfigMapper.selectById(any())).thenReturn(modelConfig);
-        when(modelInvokerManager.getInvoker(modelConfig)).thenReturn(modelInvoker);
+        when(modelInvokerManager.getInvoker(any(ModelConfigData.class))).thenReturn(modelInvoker);
 
         ChatChunk c1 = ChatChunk.builder()
                 .toolCalls(List.of(
@@ -147,7 +148,7 @@ class SpawnSubAgentSystemToolTest {
     @Test
     void index作为key_id为空时最终id回退为index字符串() {
         when(modelConfigMapper.selectById(any())).thenReturn(modelConfig);
-        when(modelInvokerManager.getInvoker(modelConfig)).thenReturn(modelInvoker);
+        when(modelInvokerManager.getInvoker(any(ModelConfigData.class))).thenReturn(modelInvoker);
 
         ChatChunk chunk = ChatChunk.builder()
                 .toolCalls(List.of(
@@ -171,7 +172,7 @@ class SpawnSubAgentSystemToolTest {
     @Test
     void 多个tool_call并行时各自独立累积() {
         when(modelConfigMapper.selectById(any())).thenReturn(modelConfig);
-        when(modelInvokerManager.getInvoker(modelConfig)).thenReturn(modelInvoker);
+        when(modelInvokerManager.getInvoker(any(ModelConfigData.class))).thenReturn(modelInvoker);
 
         ChatChunk chunk = ChatChunk.builder()
                 .toolCalls(List.of(
@@ -201,7 +202,7 @@ class SpawnSubAgentSystemToolTest {
     @Test
     void 无tool_calls时直接返回content() {
         when(modelConfigMapper.selectById(any())).thenReturn(modelConfig);
-        when(modelInvokerManager.getInvoker(modelConfig)).thenReturn(modelInvoker);
+        when(modelInvokerManager.getInvoker(any(ModelConfigData.class))).thenReturn(modelInvoker);
         when(modelInvoker.invokeStream(any())).thenReturn(Flux.just(ChatChunk.builder().delta("Hello world").build()));
 
         String result = tool.execute(context, "{\"agentName\":\"test\",\"task\":\"say hello\"}");
@@ -214,7 +215,7 @@ class SpawnSubAgentSystemToolTest {
     @Test
     void tool_calls触发后执行工具并回传结果进入第二轮() {
         when(modelConfigMapper.selectById(any())).thenReturn(modelConfig);
-        when(modelInvokerManager.getInvoker(modelConfig)).thenReturn(modelInvoker);
+        when(modelInvokerManager.getInvoker(any(ModelConfigData.class))).thenReturn(modelInvoker);
 
         ChatChunk round1 = ChatChunk.builder()
                 .toolCalls(List.of(
@@ -241,7 +242,7 @@ class SpawnSubAgentSystemToolTest {
     @Test
     void 达到10次最大迭代次数返回max_iterations() {
         when(modelConfigMapper.selectById(any())).thenReturn(modelConfig);
-        when(modelInvokerManager.getInvoker(modelConfig)).thenReturn(modelInvoker);
+        when(modelInvokerManager.getInvoker(any(ModelConfigData.class))).thenReturn(modelInvoker);
 
         ChatChunk toolCallChunk = ChatChunk.builder()
                 .toolCalls(List.of(
@@ -264,7 +265,7 @@ class SpawnSubAgentSystemToolTest {
     @Test
     void 工具未找到时返回error并继续循环() {
         when(modelConfigMapper.selectById(any())).thenReturn(modelConfig);
-        when(modelInvokerManager.getInvoker(modelConfig)).thenReturn(modelInvoker);
+        when(modelInvokerManager.getInvoker(any(ModelConfigData.class))).thenReturn(modelInvoker);
 
         ChatChunk chunk = ChatChunk.builder()
                 .toolCalls(List.of(
@@ -287,7 +288,7 @@ class SpawnSubAgentSystemToolTest {
     @Test
     void 工具执行异常时捕获异常返回error并继续循环() {
         when(modelConfigMapper.selectById(any())).thenReturn(modelConfig);
-        when(modelInvokerManager.getInvoker(modelConfig)).thenReturn(modelInvoker);
+        when(modelInvokerManager.getInvoker(any(ModelConfigData.class))).thenReturn(modelInvoker);
 
         ChatChunk chunk = ChatChunk.builder()
                 .toolCalls(List.of(
@@ -313,7 +314,7 @@ class SpawnSubAgentSystemToolTest {
     @Test
     void reasoning跨多chunk正确累积到assistant消息() {
         when(modelConfigMapper.selectById(any())).thenReturn(modelConfig);
-        when(modelInvokerManager.getInvoker(modelConfig)).thenReturn(modelInvoker);
+        when(modelInvokerManager.getInvoker(any(ModelConfigData.class))).thenReturn(modelInvoker);
 
         ChatChunk r1 = ChatChunk.builder().delta("Hello").reasoning("Step 1: think").toolCalls(List.of(
                 ToolCallDelta.builder().index(0).id("call_1").name("tool_x").arguments("{}").build()
@@ -345,7 +346,7 @@ class SpawnSubAgentSystemToolTest {
     @Test
     void reasoning为null时不影响content和toolCalls构建() {
         when(modelConfigMapper.selectById(any())).thenReturn(modelConfig);
-        when(modelInvokerManager.getInvoker(modelConfig)).thenReturn(modelInvoker);
+        when(modelInvokerManager.getInvoker(any(ModelConfigData.class))).thenReturn(modelInvoker);
 
         ChatChunk chunk = ChatChunk.builder().delta("Just content").build();
         ChatChunk finalChunk = ChatChunk.builder().delta("done").build();
@@ -362,7 +363,7 @@ class SpawnSubAgentSystemToolTest {
     @Test
     void reasoning与toolCalls同时存在时均正确构建() {
         when(modelConfigMapper.selectById(any())).thenReturn(modelConfig);
-        when(modelInvokerManager.getInvoker(modelConfig)).thenReturn(modelInvoker);
+        when(modelInvokerManager.getInvoker(any(ModelConfigData.class))).thenReturn(modelInvoker);
 
         ChatChunk chunk = ChatChunk.builder()
                 .delta("Answer")
@@ -413,7 +414,7 @@ class SpawnSubAgentSystemToolTest {
         appender.start();
 
         when(modelConfigMapper.selectById(any())).thenReturn(modelConfig);
-        when(modelInvokerManager.getInvoker(modelConfig)).thenReturn(modelInvoker);
+        when(modelInvokerManager.getInvoker(any(ModelConfigData.class))).thenReturn(modelInvoker);
         when(modelInvoker.invokeStream(any())).thenReturn(Flux.just(ChatChunk.builder().delta("ok").build()));
 
         tool.execute(context, "{\"agentName\":\"test\",\"task\":\"log test\"}");
@@ -434,7 +435,7 @@ class SpawnSubAgentSystemToolTest {
         appender.start();
 
         when(modelConfigMapper.selectById(any())).thenReturn(modelConfig);
-        when(modelInvokerManager.getInvoker(modelConfig)).thenReturn(modelInvoker);
+        when(modelInvokerManager.getInvoker(any(ModelConfigData.class))).thenReturn(modelInvoker);
         when(modelInvoker.invokeStream(any())).thenReturn(Flux.just(ChatChunk.builder().delta("ok").build()));
 
         tool.execute(context, "{\"agentName\":\"test\",\"task\":\"log llm\"}");
@@ -457,7 +458,7 @@ class SpawnSubAgentSystemToolTest {
         appender.start();
 
         when(modelConfigMapper.selectById(any())).thenReturn(modelConfig);
-        when(modelInvokerManager.getInvoker(modelConfig)).thenReturn(modelInvoker);
+        when(modelInvokerManager.getInvoker(any(ModelConfigData.class))).thenReturn(modelInvoker);
 
         ChatChunk chunk = ChatChunk.builder()
                 .toolCalls(List.of(
@@ -492,7 +493,7 @@ class SpawnSubAgentSystemToolTest {
         appender.start();
 
         when(modelConfigMapper.selectById(any())).thenReturn(modelConfig);
-        when(modelInvokerManager.getInvoker(modelConfig)).thenReturn(modelInvoker);
+        when(modelInvokerManager.getInvoker(any(ModelConfigData.class))).thenReturn(modelInvoker);
         ChatChunk chunk = ChatChunk.builder()
                 .toolCalls(List.of(
                         ToolCallDelta.builder().index(0).id("call_1").name("bad_tool").arguments("{}").build()

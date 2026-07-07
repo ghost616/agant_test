@@ -1,0 +1,13 @@
+{
+  "plan_id": "plan_829becab-0a44-4533-bbf4-b80c1be657d0",
+  "module_name": "agent-base",
+  "development_plan": "在 agent-base 模块中创建公用 JsonMapper 工具类，将 ChatService 和 ToolExecutionService 中的 ObjectMapper 构造器注入改为引用该工具类：\n\n1. **创建 util/JsonMapper.java**（新增文件）\n   - 包路径：com.ghost616.agentbase.util\n   - 提供 public static final ObjectMapper MAPPER = new ObjectMapper()\n   - 类为 final，私有构造器\n\n2. **修改 ChatService.java**\n   - 移除 private final ObjectMapper objectMapper 字段\n   - 移除构造器中 ObjectMapper objectMapper 参数\n   - 所有 objectMapper.xxx() 调用改为 JsonMapper.MAPPER.xxx()\n   - 移除 import com.fasterxml.jackson.databind.ObjectMapper，新增 import com.ghost616.agentbase.util.JsonMapper\n\n3. **修改 ToolExecutionService.java**\n   - 移除 private final ObjectMapper objectMapper 字段\n   - 移除构造器中 ObjectMapper objectMapper 参数\n   - 所有 objectMapper.xxx() 调用改为 JsonMapper.MAPPER.xxx()\n   - 移除 import com.fasterxml.jackson.databind.ObjectMapper，新增 import com.ghost616.agentbase.util.JsonMapper\n\n4. **修改 ChatServiceTest.java**（如存在）\n   - 移除 private ObjectMapper objectMapper 字段和 @Mock/@BeforeEach 初始化\n   - 无需 mock ObjectMapper，JsonMapper 为静态工具类\n\n5. **修改 ToolExecutionServiceTest.java**（如存在）\n   - 同上，移除 ObjectMapper mock",
+  "session_id": "ses_0c43231dfffepLinbQk0YPCccV",
+  "modified_files": [
+    "agent-base/src/main/java/com/ghost616/agentbase/util/JsonMapper.java",
+    "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ChatService.java",
+    "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ToolExecutionService.java",
+    "agent-base/src/test/java/com/ghost616/agentbase/service/agent/ChatServiceTest.java",
+    "agent-base/src/test/java/com/ghost616/agentbase/service/agent/ToolExecutionServiceTest.java"
+  ]
+}

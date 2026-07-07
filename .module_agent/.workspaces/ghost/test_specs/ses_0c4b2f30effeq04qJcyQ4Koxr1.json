@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_0c4b2f30effeq04qJcyQ4Koxr1",
+  "content": "## 待测试功能\n\n### 1. ToolManager.expandMcpTools 访问权限\n- 文件: `src/main/java/com/ghost616/agentbase/service/agent/invoker/ToolManager.java`\n- 验证 `expandMcpTools(ToolConfigDTO)` 方法从 private 改为 public，外部可调用\n\n### 2. AgentContextManager.Builder.build() 技能MCP工具展开\n- 文件: `src/main/java/com/ghost616/agentbase/service/agent/AgentContextManager.java`\n- 在加载 skills 后，遍历每个 SkillConfigDTO 的 `skillTools` 列表\n- 若工具类型为 `MCP_HTTP`，调用 `toolManager.expandMcpTools(tool)` 展开\n- 将展开后的 `McpExpandedToolDTO` 列表替换原始 MCP 配置 DTO\n- 非 MCP_HTTP 类型工具保持不变\n\n### 涉及代码文件\n- `src/main/java/com/ghost616/agentbase/service/agent/invoker/ToolManager.java`\n- `src/main/java/com/ghost616/agentbase/service/agent/AgentContextManager.java`\n",
+  "timestamp": "2026-07-07T06:40:18.559Z"
+}

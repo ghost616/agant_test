@@ -1,7 +1,7 @@
 package com.ghost616.platform.controller;
 
 import com.ghost616.platform.dto.ApiResponse;
-import com.ghost616.platform.service.agent.ChatService;
+import com.ghost616.agentbase.service.agent.ChatService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -17,7 +17,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.ghost616.agentbase.dto.model.ChatChunk;
-import com.ghost616.platform.dto.chat.ChatRequest;
+import com.ghost616.agentbase.dto.chat.ChatRequest;
 import com.ghost616.agentbase.service.agent.AgentContextManager;
 
 

@@ -3,5 +3,7 @@
   "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/ToolCallQueueManager.java": "0507c1deee69aedd1e7cb808020cea9f",
   "agent-base/src/main/java/com/ghost616/agentbase/service/agent/AgentContextManager.java": "3d89b60a6cb8e04bed7273ff2e560b4f",
   "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ToolDataProvider.java": "88505eeabe0ff38b600561a53048f771",
-  "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/ToolManager.java": "9555084e819949311820ade2747da21d"
+  "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/ToolManager.java": "9555084e819949311820ade2747da21d",
+  "platform-app/src/main/java/com/ghost616/platform/service/agent/ToolExecutionTracker.java": "43ea373ce45bbdf7773300b3ec721216",
+  "platform-app/src/main/java/com/ghost616/platform/service/model/invoker/ModelInvokerManager.java": "b16ed1bb41ac4eac926291f477a18950"
 }

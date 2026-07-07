@@ -4,3 +4,16 @@
 [2026-07-05T09:16:08.483Z] [session: ses_0ce70660dffeh1RNe93nbI3ILA] SystemToolManager: 移除 @Component/@RequiredArgsConstructor/@PostConstruct 及 ApplicationContext 依赖，改为通过构造函数注入 SystemToolProvider 接口，initSystemTools() 改为私有方法在构造函数中调用，使用 provider.discoverSystemTools() 发现系统工具
 [2026-07-05T09:27:48.261Z] [session: ses_0ce70660dffeh1RNe93nbI3ILA] ToolCallQueueManager: 移除 @Component 注解及对应 import，脱离 Spring 依赖
 [2026-07-05T09:43:41.246Z] [session: ses_0ce70660dffeh1RNe93nbI3ILA] AgentContextManager.Builder.build(): systemPrompt 为 null 时不再抛出 AGENT_NOT_FOUND，改为使用空字符串
+[2026-07-06T00:36:40.351Z] [session: ses_0cb258690ffe9BowBPR2wQv0By] ToolManager.expandMcpTools: 在构建 McpExpandedToolDTO 时，提取 remoteName/prefixedName，若 description 包含 remoteName 则替换为 prefixedName，减少 description 中原始工具名的引用混淆
+[2026-07-06T00:43:01.442Z] [session: ] 从 [hook-manager] 移入文件定义: src/main/java/com/ghost616/platform/service/hook/HookInvoker.java, src/main/java/com/ghost616/platform/service/hook/SystemHook.java
+[2026-07-06T00:43:06.614Z] [session: ] 从 [platform-app] 移入文件定义: 
+[2026-07-06T00:43:12.432Z] [session: ] 从 [platform-app] 移入文件定义: platform-app/src/main/java/com/ghost616/platform/service/agent/invoker/MessageSavePostHook.java
+[2026-07-06T00:44:53.515Z] [session: ses_0cb258690ffe9BowBPR2wQv0By] 从 platform-app 迁移 4 个文件：HookInvoker/SystemHook/SystemPostHook/MessageSavePostHook，改包名为 com.ghost616.agentbase.service.agent.invoker；MessageSavePostHook 去掉 @Component/@RequiredArgsConstructor，改为显式构造函数
+[2026-07-06T01:03:43.085Z] [session: ] 从 [platform-app] 移入文件定义: 
+[2026-07-06T01:06:17.847Z] [session: ses_0cb0a20cfffemUw8EmX0GtOR7O] 迁移 ToolExecutionTracker.java 从 platform-app 到 agent-base，改包名为 com.ghost616.agentbase.service.agent，去掉 @Component，保留 @Slf4j，删除 platform-app 原文件
+[2026-07-06T01:22:54.230Z] [session: ] 从 [platform-app] 移入文件定义: 
+[2026-07-06T01:25:37.398Z] [session: ses_0cb0a20cfffemUw8EmX0GtOR7O] 新建 ModelConfigData record（dto/model），新建 ModelInvokerFactory 接口（service.model.invoker），迁移 ModelInvokerManager 从 platform-app 到 agent-base：改包名、去掉 @Component/@RequiredArgsConstructor/Builder 字段、添加 ModelInvokerFactory 字段和显式构造函数、createInvoker 委托给工厂、getInvoker 参数改为 ModelConfigData 通过 config.id() 缓存，删除 platform-app 原文件
+[2026-07-06T02:03:19.710Z] [session: ses_0cad74c2effe7Nvlw4CQgg6cJ0] 新建 ChatDataProvider 接口；从 platform-app 移入 ChatRequest.java（改包名为 com.ghost616.agentbase.dto.chat）；移入 ChatService.java（改包名为 com.ghost616.agentbase.service.agent，去掉 @Service/@RequiredArgsConstructor/@PostConstruct，替换 ModelConfigMapper/SessionMapper/ApplicationContext 依赖为 ChatDataProvider，initSystemHooks 改为 public initHooks 使用 getHooks()，chat() 中的数据访问改为 ChatDataProvider 方法）；删除 platform-app 原文件
+[2026-07-07T06:40:05.445Z] [session: ses_0c4b2f30effeq04qJcyQ4Koxr1] ToolManager.expandMcpTools 改为 public；AgentContextManager.Builder.build() 在加载 skills 后遍历 skillTools，对 MCP_HTTP 类型调用 toolManager.expandMcpTools() 展开
+[2026-07-07T09:00:56.044Z] [session: ses_0c43231dfffepLinbQk0YPCccV] 新建 ToolExecutionService（com.ghost616.agentbase.service.agent），封装 ToolExecutionController 中的工具执行/状态查询/继续对话业务逻辑，含 ToolExecutionResult 和 ToolStatusResult 两个内部 record
+[2026-07-07T09:38:39.918Z] [session: ses_0c43231dfffepLinbQk0YPCccV] 创建 util/JsonMapper 工具类，替换 ChatService/ToolExecutionService 中 ObjectMapper 构造器注入为静态引用；更新对应测试文件

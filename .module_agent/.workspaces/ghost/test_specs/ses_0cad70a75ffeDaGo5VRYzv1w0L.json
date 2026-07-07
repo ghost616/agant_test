@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_0cad70a75ffeDaGo5VRYzv1w0L",
+  "content": "# 待测试功能\n\n## 涉及的代码文件\n- platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultChatDataProvider.java\n- platform-app/src/main/java/com/ghost616/platform/config/AgentContextConfiguration.java\n- platform-app/src/main/java/com/ghost616/platform/controller/ChatController.java\n\n## 需要测试的功能\n\n### 1. DefaultChatDataProvider\n- getModelConfig(Long id): 调用 ModelConfigMapper.selectById，将 entity 转为 ModelConfigData，null 时返回 null\n- updateSessionModelId(Long id, Long modelId): 查 Session，setModelId，updateById\n- getHooks(): 从 ApplicationContext 获取所有 HookInvoker Bean\n\n### 2. AgentContextConfiguration\n- @Bean defaultChatDataProvider() 正确创建 DefaultChatDataProvider 实例\n- @Bean chatService() 正确创建 ChatService 并调用 initHooks()\n\n### 3. ChatController\n- POST /api/chat 返回 SSE 流\n- POST /api/chat/{sessionId}/stop 返回 stopped 状态",
+  "timestamp": "2026-07-06T02:04:05.812Z"
+}

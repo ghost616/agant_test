@@ -16,5 +16,8 @@
   "platform-app/src/test/java/com/ghost616/platform/controller/ToolExecutionControllerTest.java": "44880c11bb46e315d1c68cf4b93212f6",
   "platform-app/src/test/java/com/ghost616/platform/session/SessionRollbackTest.java": "511a557b5ef6dd4365b6ebaf5de06414",
   "platform-app/src/test/java/com/ghost616/platform/service/agent/ChatServiceTest.java": "cb4587564bb145b362b5cd3104af5257",
-  "platform-app/src/main/java/com/ghost616/platform/PlatformApplication.java": "e7a1ae0848ce5fe57a924677f5caf06a"
+  "platform-app/src/main/java/com/ghost616/platform/PlatformApplication.java": "e7a1ae0848ce5fe57a924677f5caf06a",
+  "platform-app/src/main/java/com/ghost616/platform/controller/ModelConfigController.java": "b9a2eb9e69ac023bdb1c688d38b2fa40",
+  "platform-app/src/main/java/com/ghost616/platform/service/model/ModelConfigServiceImpl.java": "f7957856b566de657d597b1fd738d0fd",
+  "platform-app/src/test/java/com/ghost616/platform/service/agent/invoker/SpawnSubAgentSystemToolTest.java": "82d3faf9a58bd715049048624a6c55e4"
 }

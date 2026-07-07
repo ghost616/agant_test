@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_0c43231dfffepLinbQk0YPCccV",
+  "content": "# ToolExecutionService 待测试功能\n\n## 涉及文件\n- agent-base/src/main/java/com/ghost616/agentbase/service/agent/ToolExecutionService.java\n\n## 需要测试的功能\n\n### 1. executeTool(Long sessionId)\n- 队列为空时返回 status=\"empty\"\n- 工具名以 _sys_ 前缀开头时调用 SystemToolManager.getSystemTool 解析\n- 非 _sys_ 前缀时调用 ToolManager.getInvoker 解析\n- 无法获取调用器（invoker==null）时返回 status=\"failed\" 及对应 message\n- 获取调用器过程抛出异常时返回 status=\"failed\"\n- poll 后获取 AgentSessionContext，若为 null 返回 status=\"error\"\n- context.isStopped() 时清理队列和跟踪器，返回 status=\"empty\"\n- 正常流程：setExecuting 标记执行中，CompletableFuture 异步执行，返回 status=\"executing\"\n\n### 2. getToolStatus(Long sessionId)\n- 无执行中状态时返回 status=\"idle\"\n- 有执行中状态时返回对应 status/toolId/toolName/arguments/hasMore/result\n\n### 3. continueAfterTools(Long sessionId)\n- 工具正在执行中（status=executing）时抛出 BusinessException\n- session stopped 时清理并返回 Flux.empty()\n- 正常流程：获取已完成结果、持久化 toolResult、添加 HistoryEntry、清理队列和跟踪器、构造 TOOL_CONTINUE_MARKER 请求调用 chatService.chat()\n",
+  "timestamp": "2026-07-07T09:01:12.344Z"
+}

@@ -16,3 +16,29 @@
 - MessageSavePostHook.java: 添加 MessageDataProvider import；ToolCallData 引用迁移；saveMessage→链式调用
 - ToolExecutionController.java: 同上
 - ChatController.java: ChatRequest import 同步改为 platform.dto.chat
+[2026-07-06T00:43:06.582Z] [session: ] 移出文件定义到 [agent-base]: 
+[2026-07-06T00:43:12.410Z] [session: ] 移出文件定义到 [agent-base]: platform-app/src/main/java/com/ghost616/platform/service/agent/invoker/MessageSavePostHook.java
+[2026-07-06T00:45:11.314Z] [session: ses_0cb1db78bffesgixgNFzRPiOrk] 适配 agent-base 模块 HookInvoker/SystemHook/SystemPostHook/MessageSavePostHook 迁移：
+- ChatService.java: HookInvoker/SystemHook/SystemPostHook import 路径改为 com.ghost616.agentbase.service.agent.invoker
+- AgentContextConfiguration.java: 新增 import com.ghost616.agentbase.service.agent.invoker.MessageSavePostHook，新增 @Bean messageSavePostHook(SessionManager, AgentContextManager, ToolCallQueueManager)
+[2026-07-06T01:03:43.061Z] [session: ] 移出文件定义到 [agent-base]: 
+[2026-07-06T01:07:57.108Z] [session: ses_0cb088db5ffeZbjWLWWQdVazpR] 适配 ToolExecutionTracker import 从 platform-app 迁移到 agent-base：ToolExecutionController.java 和 ToolExecutionControllerTest.java 中 import com.ghost616.platform.service.agent.ToolExecutionTracker 改为 import com.ghost616.agentbase.service.agent.ToolExecutionTracker
+[2026-07-06T01:22:54.206Z] [session: ] 移出文件定义到 [agent-base]: 
+[2026-07-06T01:27:57.041Z] [session: ses_0cb088db5ffeZbjWLWWQdVazpR] 适配 ModelInvokerManager 从 platform-app 迁移到 agent-base：
+1. 新建 DefaultModelInvokerFactory（实现 ModelInvokerFactory），注入 RestClient.Builder 和 WebClient.Builder，根据 platformType 创建对应 Invoker
+2. ModelConfigController.java — import 从 com.ghost616.platform.service.model.invocker 改为 com.ghost616.agentbase.service.model.invoker；getInvoker 调用改为构建 ModelConfigData 后传入
+3. ModelConfigServiceImpl.java — import 同上更新
+4. SpawnSubAgentSystemTool.java — import 同上更新；getInvoker(modelConfig) 改为 new ModelConfigData(...).getInvoker(configData)
+5. ChatService.java — import 同上更新；getInvoker(modelConfig) 同上
+6. AgentContextConfiguration.java — 新增 @Bean defaultModelInvokerFactory(RestClient.Builder, WebClient.Builder)，新增 @Bean modelInvokerManager(ModelInvokerFactory)
+7. ChatServiceTest.java — import 更新；getInvoker 模拟改为 any(ModelConfigData.class)
+8. SpawnSubAgentSystemToolTest.java — import 更新；getInvoker 模拟改为 any(ModelConfigData.class)
+9. 删除已过时的 ModelInvokerConfiguration.java 注释文件
+[2026-07-06T02:03:44.510Z] [session: ses_0cad70a75ffeDaGo5VRYzv1w0L] [2026-07-06T01:30:00.000Z] [session: ses_0cad70a75ffeDaGo5VRYzv1w0L] 实施 platform-app 模块变更：
+- 新建 DefaultChatDataProvider.java，实现 ChatDataProvider 接口，注入 ModelConfigMapper/SessionMapper/ApplicationContext，提供 getModelConfig/updateSessionModelId/getHooks 方法
+- AgentContextConfiguration.java 新增 @Bean defaultChatDataProvider() 和 @Bean chatService()，chatService 创建后调用 initHooks()
+- ChatController.java 中 ChatRequest import 从 com.ghost616.platform.dto.chat 改为 com.ghost616.agentbase.dto.chat，ChatService import 从 com.ghost616.platform.service.agent 改为 com.ghost616.agentbase.service.agent
+[2026-07-06T02:13:36.750Z] [session: ses_0cad70a75ffeDaGo5VRYzv1w0L] [2026-07-06T02:13:00.000Z] [session: ses_0cad70a75ffeDaGo5VRYzv1w0L] 离朱测试通过：DefaultChatDataProviderTest(7/7)、AgentContextConfigurationTest(2/2)、ChatControllerTest(3/3)，覆盖率100%。
+[2026-07-07T09:07:00.749Z] [session: ses_0c42c3424ffeNur936PW4hO627] 重构 ToolExecutionController，将所有业务逻辑委托给 agent-base 的 ToolExecutionService：
+- ToolExecutionController.java: 移除 ToolCallQueueManager、ToolManager、SystemToolManager、SessionManager、ChatService、AgentContextManager、ToolExecutionTracker、ObjectMapper 字段及所有旧 import；新增 ToolExecutionService 注入；三个方法改为委托调用
+- AgentContextConfiguration.java: 新增 @Bean toolExecutionTracker() 和 @Bean toolExecutionService(...) 以支持依赖注入

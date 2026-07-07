@@ -1,9 +1,0 @@
-{
-  "plan_id": "plan_7dda1a1c-8a8a-41d7-97c1-10ac9876a391",
-  "module_name": "platform-app",
-  "development_plan": "### Bug 描述\n启动时 Spring 找不到 SystemToolManager bean：`Parameter 7 of constructor in ChatService required a bean of type 'com.ghost616.agentbase.service.agent.invoker.SystemToolManager' that could not be found.`\n\n### 根因\n`@SpringBootApplication` 默认只扫描 `com.ghost616.platform` 包及其子包。`SystemToolManager`（@Component）和 `ToolCallQueueManager`（@Component）位于 `com.ghost616.agentbase` 包中，ComponentScan 未覆盖到。\n\n之前从 AgentContextConfiguration 删除了 systemToolManager @Bean（避免与 @Component 冲突），但 Spring 默认扫描范围不包含 agent-base。\n\n### 修复\n在 `PlatformApplication.java` 的 `@SpringBootApplication` 注解上添加 `scanBasePackages = {\"com.ghost616.platform\", \"com.ghost616.agentbase\"}`，使 Spring 扫描两个根包。\n\n### 涉及文件\n- platform-app/src/main/java/com/ghost616/platform/PlatformApplication.java",
-  "session_id": "ses_0ce9045a0ffe2i7ddeKAKsysBe",
-  "modified_files": [
-    "platform-app/src/main/java/com/ghost616/platform/PlatformApplication.java"
-  ]
-}

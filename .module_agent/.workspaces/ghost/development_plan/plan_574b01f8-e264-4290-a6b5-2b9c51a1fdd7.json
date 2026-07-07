@@ -1,0 +1,7 @@
+{
+  "plan_id": "plan_574b01f8-e264-4290-a6b5-2b9c51a1fdd7",
+  "module_name": "agent-base",
+  "development_plan": "修复 ChatService.java 中审查发现的 3 个问题：\n\n1. **initHooks() 方法**（约第 71 行）：在 else 分支中，对非 SystemPostHook 的 HookInvoker 添加 instanceof SystemHook 判断：\n   - 若是 SystemHook → 加入 systemHooks（保持现有逻辑）\n   - 若不是（普通 HookInvoker）→ 加入新的 regularPhaseHooks Map<HookPhase, List<HookInvoker>> 字段\n   - 需新增字段：private final Map<HookPhase, List<HookInvoker>> regularPhaseHooks = new HashMap<>();\n\n2. **triggerHooks() 方法**（约第 84 行）：增加对普通 HookInvoker 的处理：\n   - 从 regularPhaseHooks 获取该 phase 的普通 HookInvoker 列表\n   - 直接遍历执行（无需排序，因为没有 getIndex 方法）\n   - 执行顺序：先执行普通 HookInvoker，再执行排序后的 SystemHook\n\n3. **parseExpandedIndices() 方法**（约第 330 行）：将 new ObjectMapper() 改为复用注入的 objectMapper 字段",
+  "session_id": "ses_0cad74c2effe7Nvlw4CQgg6cJ0",
+  "modified_files": []
+}

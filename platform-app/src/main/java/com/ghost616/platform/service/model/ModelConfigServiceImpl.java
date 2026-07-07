@@ -7,7 +7,7 @@ import com.ghost616.platform.dto.model.ModelUpdateRequest;
 import com.ghost616.platform.entity.ModelConfig;
 import com.ghost616.platform.enums.PlatformType;
 import com.ghost616.platform.repository.ModelConfigMapper;
-import com.ghost616.platform.service.model.invoker.ModelInvokerManager;
+import com.ghost616.agentbase.service.model.invoker.ModelInvokerManager;
 import lombok.RequiredArgsConstructor;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import org.springframework.stereotype.Service;

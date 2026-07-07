@@ -1,9 +1,0 @@
-{
-  "plan_id": "plan_a1d57db0-0dec-430f-8dd5-2597b9fb678e",
-  "module_name": "agent-base",
-  "development_plan": "### 修改方案\n修改 `agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/ToolCallQueueManager.java`：\n1. 删除类上的 `@Component` 注解\n2. 删除 `import org.springframework.stereotype.Component;`\n\n### 涉及文件\n- agent-base/src/main/java/.../invoker/ToolCallQueueManager.java",
-  "session_id": "ses_0ce70660dffeh1RNe93nbI3ILA",
-  "modified_files": [
-    "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/ToolCallQueueManager.java"
-  ]
-}

@@ -4,10 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghost616.agentbase.service.agent.AgentExecutionContext;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
-
 @Slf4j
-@Component
 public class HistoryQuerySystemTool implements SystemTool {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();

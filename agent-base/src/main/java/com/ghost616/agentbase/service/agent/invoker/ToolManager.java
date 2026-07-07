@@ -126,7 +126,7 @@ public class ToolManager {
         }
     }
 
-    private List<McpExpandedToolDTO> expandMcpTools(ToolConfigDTO mcpConfig) {
+    public List<McpExpandedToolDTO> expandMcpTools(ToolConfigDTO mcpConfig) {
         Map<String, String> headers;
         try {
             headers = McpAuthConfigParser.parse(mcpConfig.getAuthConfig());
@@ -142,14 +142,20 @@ public class ToolManager {
             List<McpExpandedToolDTO> expanded = new ArrayList<>();
             for (Map<String, Object> tool : tools) {
                 try {
+                    String remoteName = (String) tool.get("name");
+                    String prefixedName = mcpConfig.getName() + "_" + remoteName;
+                    String description = (String) tool.get("description");
+                    if (description != null) {
+                        description = description.replace(remoteName, prefixedName);
+                    }
                     expanded.add(McpExpandedToolDTO.builder()
-                            .name(mcpConfig.getName() + "_" + tool.get("name"))
+                            .name(prefixedName)
                             .toolType(ToolType.MCP_HTTP)
-                            .description((String) tool.get("description"))
+                            .description(description)
                             .parameterSchema(mapper.writeValueAsString(tool.get("inputSchema")))
                             .implPath(mcpConfig.getImplPath())
                             .authConfig(mcpConfig.getAuthConfig())
-                            .remoteToolName((String) tool.get("name"))
+                            .remoteToolName(remoteName)
                             .build());
                 } catch (Exception e) {
                     log.warn("序列化 MCP 工具 Schema 失败: {}", tool.get("name"), e);
