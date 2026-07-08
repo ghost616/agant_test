@@ -222,6 +222,32 @@
           "description": "提供 agent-base 中各接口的平台特定实现和 Spring Bean 注册"
         }
       ]
+    },
+    {
+      "name": "agent-integration",
+      "description": "Agent 整合与扩展模块，整合 agent-base 核心组件，提供 ModelInvoker 实现和 Agent 组件组装能力",
+      "responsibilities": [
+        "整合 agent-base 核心接口，提供模型调用器的具体实现",
+        "提供 Build 类用于组装 Agent 组件（ChatService、ToolExecutionService）",
+        "管理 ModelInvoker 工厂和各类模型调用的实现"
+      ],
+      "dependencies": [
+        "agent-base"
+      ],
+      "functions": [
+        {
+          "name": "ModelInvoker 实现",
+          "description": "OpenAI、Ollama、Anthropic、Azure、DeepSeek、Custom 六大平台模型调用器"
+        },
+        {
+          "name": "DefaultModelInvokerFactory",
+          "description": "基于平台类型的 ModelInvoker 工厂实现"
+        },
+        {
+          "name": "Build 组装类",
+          "description": "接收 ContextDataProvider、MessageDataProvider、ToolDataProvider、SystemToolProvider、ModelInvokerFactory、ChatDataProvider，自动组装并输出 ChatService 和 ToolExecutionService"
+        }
+      ]
     }
   ]
 }

@@ -1,0 +1,2 @@
+专长：Java 17 后端开发，Spring Boot 3 框架，Maven 多模块项目结构。
+其他约定：新代码包名使用 com.ghost616.agentinteg，依赖 agent-base 模块的接口定义。

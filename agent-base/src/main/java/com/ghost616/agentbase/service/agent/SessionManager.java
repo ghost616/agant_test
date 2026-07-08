@@ -2,6 +2,9 @@ package com.ghost616.agentbase.service.agent;
 
 import java.util.List;
 
+import com.ghost616.agentbase.enums.ErrorCode;
+import com.ghost616.agentbase.exception.BusinessException;
+
 public class SessionManager {
 
     private final MessageDataProvider dataProvider;
@@ -10,7 +13,7 @@ public class SessionManager {
         this.dataProvider = dataProvider;
     }
 
-    public MessageSaveBuilder save() {
+    public MessageSaveBuilder messageSave() {
         return new MessageSaveBuilder();
     }
 
@@ -62,6 +65,15 @@ public class SessionManager {
         }
 
         public Long save() {
+            if (sessionId == null) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "sessionId 不能为空");
+            }
+            if (role == null) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "role 不能为空");
+            }
+            if (content == null) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "content 不能为空");
+            }
             return dataProvider.saveMessage(sessionId, role, content, reasoning,
                     toolCallId, toolResult, toolCalls);
         }

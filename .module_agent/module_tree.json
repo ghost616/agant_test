@@ -39,6 +39,10 @@
     {
       "name": "platform-app",
       "description": "主应用模块，包含 Spring Boot 入口、Controller、Config、Entity、Repository 及其他未归属子模块的代码"
+    },
+    {
+      "name": "agent-integration",
+      "description": "Agent 整合与扩展模块，整合 agent-base 核心组件，提供 ModelInvoker 实现和 Agent 组件组装能力"
     }
   ]
 }

@@ -42,3 +42,13 @@
 [2026-07-07T09:07:00.749Z] [session: ses_0c42c3424ffeNur936PW4hO627] 重构 ToolExecutionController，将所有业务逻辑委托给 agent-base 的 ToolExecutionService：
 - ToolExecutionController.java: 移除 ToolCallQueueManager、ToolManager、SystemToolManager、SessionManager、ChatService、AgentContextManager、ToolExecutionTracker、ObjectMapper 字段及所有旧 import；新增 ToolExecutionService 注入；三个方法改为委托调用
 - AgentContextConfiguration.java: 新增 @Bean toolExecutionTracker() 和 @Bean toolExecutionService(...) 以支持依赖注入
+[2026-07-08T01:20:53.236Z] [session: ses_0c0b02dcdffeA6e30cNokg5pUG] 修复 AgentContextConfigurationTest.java 编译错误：移除 chatService() 调用中多余的 ObjectMapper 参数（第4个实参），删除未使用的 ObjectMapper 导入和局部变量声明
+[2026-07-08T02:23:58.332Z] [session: ses_0c078c9ddffe4it4GO1wwcqIRo] [2026-07-08] [session: ses_0c078c9ddffe4it4GO1wwcqIRo] 重构 platform-app：
+- 删除 8 个已迁移到 agent-integration 的文件（6 个 ModelInvoker + DefaultModelInvokerFactory + DefaultModelInvokerDataProvider）
+- platform-app/pom.xml 新增 agent-integration 依赖
+- 修改 agent-integration/Build.java：添加 sessionManager()、toolCallQueueManager()、agentContextManager() getter，build() 改为幂等
+- 重写 AgentContextConfiguration.java：使用 Build 类管理组件，MessageSavePostHook 通过 Build.getter 获取 sessionManager/toolCallQueueManager/agentContextManager 而非传 null
+[2026-07-08T02:37:01.057Z] [session: ses_0c078c9ddffe4it4GO1wwcqIRo] [2026-07-08] [session: ses_0c078c9ddffe4it4GO1wwcqIRo] 补充 AgentContextConfiguration Bean 注册：新增 @Bean sessionManager(Build)、@Bean agentContextManager(Build)、@Bean toolManager(Build)、@Bean modelInvokerManager(Build)，简化 MessageSavePostHook 使用注入 Bean 参数
+[2026-07-08T06:56:30.065Z] [session: ses_0bf7d00cbffe5yADLXA4AdNjhq] chatService() @Bean 添加 @DependsOn("messageSavePostHook") 注解，确保 MessageSavePostHook 在 initHooks() 之前已创建
+[2026-07-08T07:23:01.736Z] [session: ses_0bf7d00cbffe5yADLXA4AdNjhq] 移除 messageSavePostHook() @Bean、@DependsOn("messageSavePostHook") 注解及 MessageSavePostHook import（该 hook 现由 AgentAssembler 的 ChatDataProvider 代理内部管理）
+[2026-07-08T07:32:53.429Z] [session: ses_0bf7d00cbffe5yADLXA4AdNjhq] 移除 historyQuerySystemTool()/loadSkillsSystemTool()/unloadSkillsSystemTool() 三个 @Bean 及对应 import（由 AgentAssembler 的 SystemToolProvider 代理内部管理）

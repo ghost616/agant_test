@@ -1,0 +1,37 @@
+{
+  "module_name": "agent-integration",
+  "files": [
+    {
+      "path": "agent-integration/src/main/java/com/ghost616/agentinteg/model/invoker/OpenAIInvoker.java",
+      "description": "OpenAI 平台模型调用器，实现 ModelInvoker 接口，支持同步/流式调用、模型验证、tool definition 转换"
+    },
+    {
+      "path": "agent-integration/src/main/java/com/ghost616/agentinteg/model/invoker/OllamaInvoker.java",
+      "description": "Ollama 平台模型调用器，实现 ModelInvoker 接口，支持同步/流式调用、模型验证、tool definition 转换"
+    },
+    {
+      "path": "agent-integration/src/main/java/com/ghost616/agentinteg/model/invoker/AnthropicInvoker.java",
+      "description": "Anthropic 平台模型调用器，实现 ModelInvoker 接口，支持同步/流式调用（SSE 事件解析）、模型验证、tool definition 转换"
+    },
+    {
+      "path": "agent-integration/src/main/java/com/ghost616/agentinteg/model/invoker/AzureInvoker.java",
+      "description": "Azure OpenAI 平台模型调用器，继承 OpenAIInvoker，覆盖 API URL 构建和 api-key 认证方式"
+    },
+    {
+      "path": "agent-integration/src/main/java/com/ghost616/agentinteg/model/invoker/DeepSeekInvoker.java",
+      "description": "DeepSeek 平台模型调用器（OpenAI 完全兼容），继承 OpenAIInvoker 无需覆写"
+    },
+    {
+      "path": "agent-integration/src/main/java/com/ghost616/agentinteg/model/invoker/CustomInvoker.java",
+      "description": "自定义平台模型调用器（通用 OpenAI 兼容端点），继承 OpenAIInvoker 无需覆写"
+    },
+    {
+      "path": "agent-integration/src/main/java/com/ghost616/agentinteg/model/invoker/DefaultModelInvokerFactory.java",
+      "description": "默认 ModelInvokerFactory 实现，根据平台类型（OPENAI/ANTHROPIC/AZURE/OLLAMA/DEEPSEEK/CUSTOM）创建对应的 Invoker 实例"
+    },
+    {
+      "path": "agent-integration/src/main/java/com/ghost616/agentinteg/Build.java",
+      "description": "Agent 组件组装类，接收 DataProvider 和 ModelInvokerFactory 等依赖，build() 方法组装完整的 ChatService 和 ToolExecutionService 实例"
+    }
+  ]
+}

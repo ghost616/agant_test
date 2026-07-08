@@ -115,16 +115,52 @@ class ToolExecutionServiceTest {
     }
 
     @Test
-    void executeTool_invoker为null时返回failed() {
+    void executeTool_invoker为null时消费队列_hasMore为false() {
         MessageDataProvider.ToolCallData peekData = new MessageDataProvider.ToolCallData("tid3", "unknownTool", "{}");
         when(toolCallQueueManager.peek(sessionId)).thenReturn(peekData);
         when(toolManager.getInvoker(sessionId, "unknownTool")).thenReturn(null);
+        when(toolCallQueueManager.poll(sessionId)).thenReturn(peekData);
+        when(toolCallQueueManager.hasPending(sessionId)).thenReturn(false);
 
         ToolExecutionService.ToolExecutionResult result = toolExecutionService.executeTool(sessionId);
 
+        verify(toolCallQueueManager).poll(sessionId);
+        verify(toolCallQueueManager).hasPending(sessionId);
         assertEquals("failed", result.status());
         assertEquals("tid3", result.toolId());
+        assertEquals("{}", result.arguments());
+        assertFalse(result.hasMore());
         assertEquals("工具调用器不存在", result.message());
+    }
+
+    @Test
+    void executeTool_invoker为null时消费队列_hasMore为true() {
+        MessageDataProvider.ToolCallData peekData = new MessageDataProvider.ToolCallData("tidx", "unknownTool", "{}");
+        when(toolCallQueueManager.peek(sessionId)).thenReturn(peekData);
+        when(toolManager.getInvoker(sessionId, "unknownTool")).thenReturn(null);
+        when(toolCallQueueManager.poll(sessionId)).thenReturn(peekData);
+        when(toolCallQueueManager.hasPending(sessionId)).thenReturn(true);
+
+        ToolExecutionService.ToolExecutionResult result = toolExecutionService.executeTool(sessionId);
+
+        verify(toolCallQueueManager).poll(sessionId);
+        assertTrue(result.hasMore());
+        assertEquals("failed", result.status());
+        assertEquals("工具调用器不存在", result.message());
+    }
+
+    @Test
+    void executeTool_invoker为null时poll后无pending则hasMore为false() {
+        MessageDataProvider.ToolCallData peekData = new MessageDataProvider.ToolCallData("tidy", "unknownTool", "{}");
+        when(toolCallQueueManager.peek(sessionId)).thenReturn(peekData);
+        when(toolManager.getInvoker(sessionId, "unknownTool")).thenReturn(null);
+        when(toolCallQueueManager.poll(sessionId)).thenReturn(peekData);
+        when(toolCallQueueManager.hasPending(sessionId)).thenReturn(false);
+
+        ToolExecutionService.ToolExecutionResult result = toolExecutionService.executeTool(sessionId);
+
+        assertFalse(result.hasMore());
+        assertEquals("failed", result.status());
     }
 
     @Test
@@ -283,7 +319,7 @@ class ToolExecutionServiceTest {
         when(saveBuilder.toolCallId(any())).thenReturn(saveBuilder);
         when(saveBuilder.toolResult(any())).thenReturn(saveBuilder);
         when(saveBuilder.save()).thenReturn(100L);
-        when(sessionManager.save()).thenReturn(saveBuilder);
+        when(sessionManager.messageSave()).thenReturn(saveBuilder);
 
         Flux<ServerSentEvent<ChatChunk>> expectedFlux = Flux.empty();
         when(chatService.chat(any())).thenReturn(expectedFlux);
@@ -326,7 +362,7 @@ class ToolExecutionServiceTest {
 
         toolExecutionService.continueAfterTools(sessionId);
 
-        verify(sessionManager, never()).save();
+        verify(sessionManager, never()).messageSave();
         verify(agentContextManager, never()).addHistoryEntry(any(), any());
     }
 }

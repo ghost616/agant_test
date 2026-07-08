@@ -29,7 +29,7 @@ ModelInvokerFactory 接口（com.ghost616.agentbase.service.model.invoker.ModelI
 ## ChatService
 
 ChatService 聊天服务，非 Spring 组件。通过构造函数注入 AgentContextManager/SessionManager/ModelInvokerManager/ObjectMapper/SystemToolManager/ChatDataProvider。提供 initHooks() 通过 ChatDataProvider 发现并注册 HOOK（区分 SystemHook/SystemPostHook），chat(ChatRequest) 方法构建消息上下文与工具列表，调用 ModelInvoker 流式推理，通过 HOOK 机制在 SESSION_START/BEFORE_MESSAGE_SEND/AFTER_MESSAGE_RECEIVE 阶段拦截处理。内部包含 parseLoadedSkills 解析已加载技能、foldMessageGroups 按 recentMessageCount 折叠历史消息。
-
+refreshHooks() 可重复调用，每次调用前清空 systemHooks/systemPostHooks/regularPhaseHooks 再重新加载，替代原有的 initHooks()（仅能调用一次）
 ## ChatDataProvider
 
 聊天数据提供者接口（com.ghost616.agentbase.service.agent.ChatDataProvider），定义三个方法：getModelConfig(Long modelId) 按 ID 获取 ModelConfigData、updateSessionModelId(Long sessionId, Long modelId) 更新会话的模型 ID、getHooks() 获取所有已注册的 HookInvoker。用于解耦 ChatService 与具体数据访问层。
@@ -49,3 +49,6 @@ AgentContextManager（非 @Component，通过 @Bean 注册）：注入 ContextDa
 ## JsonMapper
 
 公用 JSON 工具类（com.ghost616.agentbase.util.JsonMapper），final 类私有构造器，提供 public static final ObjectMapper MAPPER 实例。供 ChatService/ToolExecutionService 等组件直接引用，替代构造器注入方式。
+## SessionManager
+
+会话管理组件，提供 MessageSaveBuilder 链式构建消息保存、getMessages 历史消息查询和 rollbackToLastUserMessage 回退功能。MessageSaveBuilder.save() 方法在调用 dataProvider.saveMessage() 前对 sessionId/role/content 进行非空校验，任一为 null 时抛出 BusinessException(ErrorCode.PARAM_INVALID)。

@@ -27,7 +27,7 @@ echo [2/5] Ensuring data directory exists...
 if not exist "data\" mkdir data
 
 echo [3/5] Starting backend in new window...
-echo cd /d "%~dp0" ^&^& chcp 65001 ^>nul ^&^& mvn install -DskipTests -q ^&^& mvn spring-boot:run -f platform-app/pom.xml > "%TEMP%\agent_platform_backend.bat"
+echo cd /d "%~dp0" ^&^& chcp 65001 ^>nul ^&^& mvn install -DskipTests -q ^&^& mvn spring-boot:run -f platform-app/pom.xml -Dspring-boot.run.jvmArguments="-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005" > "%TEMP%\agent_platform_backend.bat"
 start "AgentPlatformBackend" cmd /k "%TEMP%\agent_platform_backend.bat"
 
 echo.

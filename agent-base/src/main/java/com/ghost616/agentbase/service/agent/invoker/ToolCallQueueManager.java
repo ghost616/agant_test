@@ -20,7 +20,7 @@ public class ToolCallQueueManager {
         Deque<MessageDataProvider.ToolCallData> queue = toolCallQueues.computeIfAbsent(sessionId,
                 k -> new ArrayDeque<>());
         queue.addAll(toolCalls);
-        log.info("sessionId={} 已入队 {} 个工具调用", sessionId, toolCalls.size());
+        log.debug("sessionId={} 已入队 {} 个工具调用", sessionId, toolCalls.size());
     }
 
     public MessageDataProvider.ToolCallData poll(Long sessionId) {

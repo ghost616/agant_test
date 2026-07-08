@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_0bfca07a5ffe1Prkh5cQiqzcVG",
+  "content": "## ToolExecutionService.executeTool() invoker 为 null 时消费队列\n\n### 涉及功能\n1. invoker 为 null 时调用 toolCallQueueManager.poll(sessionId) 消费当前失败的工具\n2. hasMore 基于 poll 后的队列状态重新计算，而非 poll 前\n3. 其他分支行为不变\n\n### 涉及文件\n- agent-base/src/main/java/com/ghost616/agentbase/service/agent/ToolExecutionService.java",
+  "timestamp": "2026-07-08T06:10:51.754Z"
+}

@@ -131,7 +131,7 @@ public class ToolManager {
         try {
             headers = McpAuthConfigParser.parse(mcpConfig.getAuthConfig());
         } catch (Exception e) {
-            log.warn("解析 MCP 认证配置失败，跳过: {}", mcpConfig.getAuthConfig(), e);
+            log.debug("解析 MCP 认证配置失败，跳过: {}", mcpConfig.getAuthConfig(), e);
             return List.of();
         }
         try {
@@ -158,13 +158,13 @@ public class ToolManager {
                             .remoteToolName(remoteName)
                             .build());
                 } catch (Exception e) {
-                    log.warn("序列化 MCP 工具 Schema 失败: {}", tool.get("name"), e);
+                    log.debug("序列化 MCP 工具 Schema 失败: {}", tool.get("name"), e);
                 }
             }
-            log.info("MCP 工具展开结果: url={}, 展开数量={}", mcpConfig.getImplPath(), expanded.size());
+            log.debug("MCP 工具展开结果: url={}, 展开数量={}", mcpConfig.getImplPath(), expanded.size());
             return expanded;
         } catch (Exception e) {
-            log.warn("获取 MCP 工具列表失败: url={}", mcpConfig.getImplPath(), e);
+            log.debug("获取 MCP 工具列表失败: url={}", mcpConfig.getImplPath(), e);
             return List.of();
         }
     }

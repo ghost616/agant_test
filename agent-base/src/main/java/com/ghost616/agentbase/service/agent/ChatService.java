@@ -64,7 +64,10 @@ public class ChatService {
         this.chatDataProvider = chatDataProvider;
     }
 
-    public void initHooks() {
+    public void refreshHooks() {
+        systemHooks.clear();
+        systemPostHooks.clear();
+        regularPhaseHooks.clear();
         List<HookInvoker> hooks = chatDataProvider.getHooks();
         for (HookInvoker hook : hooks) {
             HookPhase phase = hook.getPhase();
@@ -112,7 +115,7 @@ public class ChatService {
         if (!isToolContinue) {
             contextMutator.resetStopped();
             contextMutator.clearConversationVariables();
-            sessionManager.save().sessionId(sessionId).role("user").content(content).save();
+            sessionManager.messageSave().sessionId(sessionId).role("user").content(content).save();
 
             AgentExecutionContext.HistoryEntry userEntry = new AgentExecutionContext.HistoryEntry(
                     "user", content, null, null,
@@ -223,6 +226,8 @@ public class ChatService {
 
         AtomicBoolean hasToolCalls = new AtomicBoolean(false);
 
+        log.info("sessionId={} messages: {}", sessionId, messages);
+
         Flux<ChatChunk> stream = invoker.invokeStream(chatRequest);
 
         return stream
@@ -259,7 +264,7 @@ public class ChatService {
         try {
             loadedNames = JsonMapper.MAPPER.readValue(json, new TypeReference<List<String>>() {});
         } catch (Exception e) {
-            log.warn("解析 _sys_loading_SKILLS 失败: {}", json, e);
+            log.debug("解析 _sys_loading_SKILLS 失败: {}", json, e);
             return List.of();
         }
         if (loadedNames == null || loadedNames.isEmpty()) {
@@ -335,7 +340,7 @@ public class ChatService {
                     jsonStr, new TypeReference<List<Integer>>() {});
             return new HashSet<>(list);
         } catch (Exception e) {
-            log.warn("解析 _sys_his_msgs_index 失败: {}", jsonStr, e);
+            log.debug("解析 _sys_his_msgs_index 失败: {}", jsonStr, e);
             return Collections.emptySet();
         }
     }

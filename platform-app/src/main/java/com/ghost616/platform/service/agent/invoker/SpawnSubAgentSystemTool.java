@@ -103,21 +103,21 @@ public class SpawnSubAgentSystemTool implements SystemTool {
                     .build());
 
             for (int iter = 0; iter < MAX_ITERATIONS; iter++) {
-                log.info("子智能体迭代 {}/{}，当前消息列表长度 {}", iter + 1, MAX_ITERATIONS, messages.size());
+                log.debug("子智能体迭代 {}/{}，当前消息列表长度 {}", iter + 1, MAX_ITERATIONS, messages.size());
 
                 ChatRequest chatRequest = ChatRequest.builder()
                         .messages(messages)
                         .tools(toolDefs.isEmpty() ? null : toolDefs)
                         .build();
 
-                log.info("子智能体 LLM 调用开始，消息数 {}，工具数 {}", messages.size(), toolDefs.size());
+                log.debug("子智能体 LLM 调用开始，消息数 {}，工具数 {}", messages.size(), toolDefs.size());
 
                 List<ChatChunk> chunks = invoker.invokeStream(chatRequest).collectList().block();
                 StringBuilder contentBuilder = new StringBuilder();
                 StringBuilder reasoningBuilder = new StringBuilder();
                 Map<String, ToolAccumulator> toolCallBuffers = new LinkedHashMap<>();
 
-                log.info("子智能体 LLM 调用完成，收到 {} chunks", chunks != null ? chunks.size() : 0);
+                log.debug("子智能体 LLM 调用完成，收到 {} chunks", chunks != null ? chunks.size() : 0);
 
                 if (chunks != null) {
                     for (ChatChunk chunk : chunks) {
@@ -159,7 +159,7 @@ public class SpawnSubAgentSystemTool implements SystemTool {
                     }
                 }
 
-                log.info("子智能体 LLM 调用完成，解析出 {} 个 toolCall", toolCallBuffers.size());
+                log.debug("子智能体 LLM 调用完成，解析出 {} 个 toolCall", toolCallBuffers.size());
 
                 if (toolCallBuffers.isEmpty()) {
                     return "{\"content\":" + objectMapper.writeValueAsString(contentBuilder.toString()) + ",\"status\":\"ok\"}";
@@ -185,7 +185,7 @@ public class SpawnSubAgentSystemTool implements SystemTool {
                         .build());
 
                 for (ToolCall tc : toolCalls) {
-                    log.info("子智能体执行工具：{}，参数长度 {}", tc.getName(), tc.getArguments() != null ? tc.getArguments().length() : 0);
+                    log.debug("子智能体执行工具：{}，参数长度 {}", tc.getName(), tc.getArguments() != null ? tc.getArguments().length() : 0);
                     ToolInvoker toolInvoker = toolManager.getInvoker(ctx.getSessionId(), tc.getName());
                     String result;
                     if (toolInvoker == null) {
@@ -193,7 +193,7 @@ public class SpawnSubAgentSystemTool implements SystemTool {
                     } else {
                         try {
                             result = toolInvoker.execute(ctx, tc.getArguments());
-                            log.info("子智能体工具 {} 执行完成，结果长度 {}", tc.getName(), result != null ? result.length() : 0);
+                            log.debug("子智能体工具 {} 执行完成，结果长度 {}", tc.getName(), result != null ? result.length() : 0);
                         } catch (Exception e) {
                             log.error("子智能体迭代 {} 工具 {} 执行失败: {}", iter + 1, tc.getName(), e.getMessage(), e);
                             result = objectMapper.writeValueAsString(Map.of("error", e.getMessage()));

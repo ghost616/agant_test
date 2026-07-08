@@ -20,6 +20,7 @@
 
     <modules>
         <module>agent-base</module>
+        <module>agent-integration</module>
         <module>platform-app</module>
     </modules>
 

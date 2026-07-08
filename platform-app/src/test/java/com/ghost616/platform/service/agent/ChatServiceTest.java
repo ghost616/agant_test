@@ -80,7 +80,7 @@ class ChatServiceTest {
         when(systemToolManager.getToolDefinitions()).thenReturn(java.util.Collections.emptyList());
 
         SessionManager.MessageSaveBuilder saveBuilder = mock(SessionManager.MessageSaveBuilder.class);
-        when(sessionManager.save()).thenReturn(saveBuilder);
+        when(sessionManager.messageSave()).thenReturn(saveBuilder);
         when(saveBuilder.sessionId(any())).thenReturn(saveBuilder);
         when(saveBuilder.role(any())).thenReturn(saveBuilder);
         when(saveBuilder.content(any())).thenReturn(saveBuilder);

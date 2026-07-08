@@ -14,36 +14,169 @@
     "test_passed": false
   },
   {
-    "plan_id": "plan_750bcdf9-67e3-48dd-b7d0-735d7e2d6fec",
-    "plan_summary": "创建 ToolExecutionService 将 ToolExecutionController 业务逻辑封装到 agent-base",
+    "plan_id": "plan_cedb8e1c-2171-4db3-920c-b350ead0b2d0",
+    "plan_summary": "审查 agent-integration 新建模块代码",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": false
+  },
+  {
+    "plan_id": "plan_3cfaca6c-4461-470b-a571-05441fd0691d",
+    "plan_summary": "审查 platform-app 重构代码",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": false
+  },
+  {
+    "plan_id": "plan_c12b5d56-c5f7-45e0-b5f0-cc1e42fd6b2b",
+    "plan_summary": "修复 Build 类：暴露内部组件 getter + 缓存 Result",
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
   },
   {
-    "plan_id": "plan_87f926af-4477-4d6a-9c95-904d0d8cbc53",
-    "plan_summary": "修改 ToolExecutionController 委托给 ToolExecutionService",
+    "plan_id": "plan_a39e5c27-e013-4d82-902b-f4ab906ba89b",
+    "plan_summary": "补充缺失 Bean 注册：SessionManager、AgentContextManager、ToolManager、ModelInvokerManager",
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
   },
   {
-    "plan_id": "plan_1b7c9f74-e06d-4b1f-9776-6c7b4b00960c",
-    "plan_summary": "AgentContextConfiguration.agentContextManager 改为参数注入",
+    "plan_id": "plan_c9ec767c-7835-4dd4-b950-cddadad84619",
+    "plan_summary": "简化 messageSavePostHook：移除冗余参数，统一使用 Build getter",
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
   },
   {
-    "plan_id": "plan_829becab-0a44-4533-bbf4-b80c1be657d0",
-    "plan_summary": "创建公用 JsonMapper，ChatService/ToolExecutionService 移除 ObjectMapper 注入",
+    "plan_id": "plan_aa809be7-589d-49c1-a7fe-8fa8a2a17089",
+    "plan_summary": "重命名 Build → AgentAssembler",
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
   },
   {
-    "plan_id": "plan_6f094531-32ff-48fd-940a-23d099c74a1c",
-    "plan_summary": "AgentContextConfiguration 移除 ObjectMapper 参数修复编译错误",
+    "plan_id": "plan_559e90ab-96f2-4a23-a70f-ad3fbbaf3cc9",
+    "plan_summary": "修复测试文件 Build → AgentAssembler 改名",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_0ecea8e0-850c-40b7-913b-7769e227aa27",
+    "plan_summary": "修复测试 Build → AgentAssembler",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_ad28c429-474d-4072-89c0-1bac7eb97c0c",
+    "plan_summary": "修复测试 agentBuild → agentAssembler 方法调用",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_93a8e340-bbe2-4296-982e-8c6d7c87ef87",
+    "plan_summary": "agent-base: info/warn → debug（17处，10个文件）",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_08053663-d092-4fb6-bfd5-f81e3a4f1f36",
+    "plan_summary": "platform-app: info/warn → debug（13处，6个文件）",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_81c66183-427c-49b1-a63c-91415a561b74",
+    "plan_summary": "MessageSaveBuilder.save() 添加 sessionId/role/content 非空校验",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_16dfc879-e923-4b0c-b82f-a9e07ff0d203",
+    "plan_summary": "ChatService invokeStream 前打印 messages",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_47fc50c5-10c3-4117-aa7b-631e7a03446f",
+    "plan_summary": "executeTool invoker为null时poll消费工具防止死循环",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_e1f8b11f-2581-437f-9bf0-1ca414b1f5c7",
+    "plan_summary": "dev.bat 添加 JVM 远程调试配置（JDWP 端口 5005）",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_7208d046-c795-4b06-9d91-d552d8ffbecf",
+    "plan_summary": "AgentAssembler.build() 移除 initHooks() 调用",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_ac402f05-d03d-4fae-a4e9-a262dfccfdbb",
+    "plan_summary": "chatService Bean 中显式调用 initHooks + @DependsOn",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_a3394e94-9a30-4505-9722-b9324c2e78b2",
+    "plan_summary": "initHooks 重命名为 refreshHooks 并改为可重入",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_4af452e9-70de-4372-bd33-657a01e1e248",
+    "plan_summary": "AgentAssembler.build() 移除 initHooks 调用",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_edc922f3-7a35-4f94-9f7d-cfb83021f6d0",
+    "plan_summary": "chatService Bean 中 build() 后调用 refreshHooks()",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_7bb0d611-6dac-4295-933a-7ebfdaac5bff",
+    "plan_summary": "ChatDataProvider 代理补充 MessageSavePostHook",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_9f170c0a-5f85-4f53-b991-27ccb461118b",
+    "plan_summary": "移除 messageSavePostHook Bean 和 @DependsOn",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_739a0459-b860-4bf7-b692-1ff3061fd958",
+    "plan_summary": "SystemToolProvider 代理补充系统工具",
+    "code_reviewed": false,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_121334fb-65a6-4f6f-95ea-1b2d4080c2e5",
+    "plan_summary": "移除三个系统工具 Bean",
     "code_reviewed": false,
     "plan_completed": true,
     "test_passed": true

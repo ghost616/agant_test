@@ -1,0 +1,9 @@
+{
+  "plan_id": "plan_c9ec767c-7835-4dd4-b950-cddadad84619",
+  "module_name": "platform-app",
+  "development_plan": "## 任务：简化 messageSavePostHook 方法参数\n\n修改文件 `E:\\test_tool\\platform-app\\src\\main\\java\\com\\ghost616\\platform\\config\\AgentContextConfiguration.java`\n\n### 变更内容\n\n将第 73-80 行的 messageSavePostHook 方法：\n```java\n    @Bean\n    public MessageSavePostHook messageSavePostHook(\n            SessionManager sessionManager,\n            AgentContextManager agentContextManager,\n            Build agentBuild) {\n        agentBuild.build();\n        return new MessageSavePostHook(sessionManager, agentContextManager, agentBuild.toolCallQueueManager());\n    }\n```\n\n改为：\n```java\n    @Bean\n    public MessageSavePostHook messageSavePostHook(Build agentBuild) {\n        agentBuild.build();\n        return new MessageSavePostHook(agentBuild.sessionManager(), agentBuild.agentContextManager(), agentBuild.toolCallQueueManager());\n    }\n```\n\n其他所有代码保持不变。",
+  "session_id": "ses_0c078c9ddffe4it4GO1wwcqIRo",
+  "modified_files": [
+    "platform-app/src/main/java/com/ghost616/platform/config/AgentContextConfiguration.java"
+  ]
+}

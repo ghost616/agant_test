@@ -1,0 +1,12 @@
+{
+  "plan_id": "plan_08053663-d092-4fb6-bfd5-f81e3a4f1f36",
+  "module_name": "platform-app",
+  "development_plan": "## 任务：将 log.info 和 log.warn 改为 log.debug\n\n对 platform-app 模块中以下 6 个文件执行替换：\n\n1. `platform-app/src/main/java/com/ghost616/platform/config/SchemaMigration.java:37` — `log.info(` → `log.debug(`\n2. `platform-app/src/main/java/com/ghost616/platform/config/SchemaMigration.java:50` — `log.info(` → `log.debug(`\n3. `platform-app/src/main/java/com/ghost616/platform/config/SchemaMigration.java:53` — `log.info(` → `log.debug(`\n4. `platform-app/src/main/java/com/ghost616/platform/config/SchemaMigration.java:60` — `log.info(` → `log.debug(`\n5. `platform-app/src/main/java/com/ghost616/platform/service/agent/invoker/SpawnSubAgentSystemTool.java:106` — `log.info(` → `log.debug(`\n6. `platform-app/src/main/java/com/ghost616/platform/service/agent/invoker/SpawnSubAgentSystemTool.java:113` — `log.info(` → `log.debug(`\n7. `platform-app/src/main/java/com/ghost616/platform/service/agent/invoker/SpawnSubAgentSystemTool.java:120` — `log.info(` → `log.debug(`\n8. `platform-app/src/main/java/com/ghost616/platform/service/agent/invoker/SpawnSubAgentSystemTool.java:162` — `log.info(` → `log.debug(`\n9. `platform-app/src/main/java/com/ghost616/platform/service/agent/invoker/SpawnSubAgentSystemTool.java:188` — `log.info(` → `log.debug(`\n10. `platform-app/src/main/java/com/ghost616/platform/service/agent/invoker/SpawnSubAgentSystemTool.java:196` — `log.info(` → `log.debug(`\n11. `platform-app/src/main/java/com/ghost616/platform/config/GlobalExceptionHandler.java:31` — `log.warn(` → `log.debug(`\n12. `platform-app/src/main/java/com/ghost616/platform/config/GlobalExceptionHandler.java:48` — `log.warn(` → `log.debug(`\n13. `platform-app/src/main/java/com/ghost616/platform/service/tool/ToolConfigServiceImpl.java:209` — `log.warn(` → `log.debug(`\n\n只改 `log.info` 和 `log.warn`，不动 `log.error` 和 `log.debug`。",
+  "session_id": "ses_0c078c9ddffe4it4GO1wwcqIRo",
+  "modified_files": [
+    "platform-app/src/main/java/com/ghost616/platform/config/SchemaMigration.java",
+    "platform-app/src/main/java/com/ghost616/platform/service/agent/invoker/SpawnSubAgentSystemTool.java",
+    "platform-app/src/main/java/com/ghost616/platform/config/GlobalExceptionHandler.java",
+    "platform-app/src/main/java/com/ghost616/platform/service/tool/ToolConfigServiceImpl.java"
+  ]
+}

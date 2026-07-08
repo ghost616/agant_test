@@ -206,7 +206,7 @@ public class ToolConfigServiceImpl implements ToolConfigService {
                     try {
                         authHeaders = McpAuthConfigParser.parse(authConfig);
                     } catch (Exception e) {
-                        log.warn("解析 MCP 认证配置失败，使用无认证连接: {} - {}", implPath, e.getMessage());
+                        log.debug("解析 MCP 认证配置失败，使用无认证连接: {} - {}", implPath, e.getMessage());
                     }
                 }
                 McpJsonRpcClient client = new McpJsonRpcClient(implPath, authHeaders);

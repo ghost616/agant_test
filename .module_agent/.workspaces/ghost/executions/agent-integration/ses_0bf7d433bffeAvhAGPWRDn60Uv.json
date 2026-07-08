@@ -1,0 +1,38 @@
+[
+  {
+    "plan_id": "plan_7208d046-c795-4b06-9d91-d552d8ffbecf",
+    "plan": "移除 AgentAssembler.build() 中的 chatService.initHooks()，改为在 AgentContextConfiguration 的 chatService Bean 中显式调用",
+    "modified_files": [
+      "agent-integration/src/main/java/com/ghost616/agentinteg/AgentAssembler.java",
+      "platform-app/src/main/java/com/ghost616/platform/config/AgentContextConfiguration.java"
+    ],
+    "summary": "已将 chatService.initHooks() 从 AgentAssembler.build() 中移除，移至 AgentContextConfiguration 的 chatService Bean 方法中显式调用，以解决 MessageSavePostHook 创建时序问题",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_4af452e9-70de-4372-bd33-657a01e1e248",
+    "plan": "移除 AgentAssembler.build() 中的 chatService.initHooks()/refreshHooks() 调用，改为在 AgentContextConfiguration 的 chatService Bean 中显式执行 refreshHooks()",
+    "modified_files": [
+      "agent-integration/src/main/java/com/ghost616/agentinteg/AgentAssembler.java",
+      "platform-app/src/main/java/com/ghost616/platform/config/AgentContextConfiguration.java"
+    ],
+    "summary": "已将 chatService.refreshHooks() 从 AgentAssembler.build() 中移除，移至 AgentContextConfiguration 的 chatService Bean 方法中显式调用。AgentAssembler.java:76 移除调用，AgentContextConfiguration.java:131 新增 refreshHooks() 调用，并添加 @DependsOn(\"messageSavePostHook\") 确保 Bean 时序。",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_7bb0d611-6dac-4295-933a-7ebfdaac5bff",
+    "plan": "在 AgentAssembler.build() 中：\n1. 构造 ChatDataProvider 代理，delegate getModelConfig() 和 updateSessionModelId() 到原始 chatDataProvider\n2. 代理的 getHooks() 方法：调用原始 getHooks() 获取列表，检查是否已含 MessageSavePostHook，若无则懒创建并添加\n3. MessageSavePostHook 依赖 sessionManager/agentContextManager/toolCallQueueManager（均在 build 中先创建）\n4. ChatService 使用代理 ChatDataProvider 而非原始实例\n5. 暴露 messageSavePostHook 的 getter，并在 Result record 中包含",
+    "modified_files": [],
+    "summary": "力牧已接收新计划",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_739a0459-b860-4bf7-b692-1ff3061fd958",
+    "plan": "引入 SystemToolProviderProxy 代理，确保 history_query/load_skills/unload_skills 系统工具始终可用",
+    "modified_files": [
+      "agent-integration/src/main/java/com/ghost616/agentinteg/AgentAssembler.java"
+    ],
+    "summary": "在 AgentAssembler.build() 中引入 SystemToolProviderProxy，对原始 SystemToolProvider 进行代理。代理的 discoverSystemTools() 调用原始获取 Map 后，通过 putIfAbsent() 补全 history_query/load_skills/unload_skills 三个系统工具。SystemToolManager 使用代理实例而非原始实例。三个工具均无构造依赖，直接 new 创建。",
+    "errors": []
+  }
+]

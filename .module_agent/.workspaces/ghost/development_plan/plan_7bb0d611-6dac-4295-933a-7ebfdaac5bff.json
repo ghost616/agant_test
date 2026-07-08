@@ -1,0 +1,9 @@
+{
+  "plan_id": "plan_7bb0d611-6dac-4295-933a-7ebfdaac5bff",
+  "module_name": "agent-integration",
+  "development_plan": "在 AgentAssembler.build() 中：\n1. 构造 ChatDataProvider 代理，delegate getModelConfig() 和 updateSessionModelId() 到原始 chatDataProvider\n2. 代理的 getHooks() 方法：调用原始 getHooks() 获取列表，检查是否已含 MessageSavePostHook，若无则懒创建并添加\n3. MessageSavePostHook 依赖 sessionManager/agentContextManager/toolCallQueueManager（均在 build 中先创建）\n4. ChatService 使用代理 ChatDataProvider 而非原始实例\n5. 暴露 messageSavePostHook 的 getter，并在 Result record 中包含",
+  "session_id": "ses_0bf7d433bffeAvhAGPWRDn60Uv",
+  "modified_files": [
+    "agent-integration/src/main/java/com/ghost616/agentinteg/AgentAssembler.java"
+  ]
+}

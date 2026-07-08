@@ -1,0 +1,17 @@
+{
+  "plan_id": "plan_93a8e340-bbe2-4296-982e-8c6d7c87ef87",
+  "module_name": "agent-base",
+  "development_plan": "## 任务：将 log.info 和 log.warn 改为 log.debug\n\n对 agent-base 模块中以下 10 个文件执行替换：\n\n1. `agent-base/src/main/java/com/ghost616/agentbase/service/agent/ToolExecutionTracker.java:43` — `log.info(` → `log.debug(`\n2. `agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/PythonToolInvoker.java:45` — `log.info(` → `log.debug(`\n3. `agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/PythonToolInvoker.java:193` — `log.info(` → `log.debug(`\n4. `agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/SystemToolManager.java:33` — `log.info(` → `log.debug(`\n5. `agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/ToolCallQueueManager.java:23` — `log.info(` → `log.debug(`\n6. `agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/ToolManager.java:164` — `log.info(` → `log.debug(`\n7. `agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/TypeScriptToolInvoker.java:45` — `log.info(` → `log.debug(`\n8. `agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/TypeScriptToolInvoker.java:192` — `log.info(` → `log.debug(`\n9. `agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/MessageSavePostHook.java:76` — `log.info(` → `log.debug(`\n10. `agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/MessageSavePostHook.java:112` — `log.info(` → `log.debug(`\n11. `agent-base/src/main/java/com/ghost616/agentbase/service/agent/ChatService.java:262` — `log.warn(` → `log.debug(`\n12. `agent-base/src/main/java/com/ghost616/agentbase/service/agent/ChatService.java:338` — `log.warn(` → `log.debug(`\n13. `agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/LoadSkillsSystemTool.java:64` — `log.warn(` → `log.debug(`\n14. `agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/SystemToolManager.java:29` — `log.warn(` → `log.debug(`\n15. `agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/ToolManager.java:134` — `log.warn(` → `log.debug(`\n16. `agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/ToolManager.java:161` — `log.warn(` → `log.debug(`\n17. `agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/ToolManager.java:167` — `log.warn(` → `log.debug(`\n\n只改 `log.info` 和 `log.warn`，不动 `log.error` 和 `log.debug`。",
+  "session_id": "ses_0c02d9610ffebxSPnPAHB4jJh9",
+  "modified_files": [
+    "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ToolExecutionTracker.java",
+    "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/PythonToolInvoker.java",
+    "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/SystemToolManager.java",
+    "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/ToolCallQueueManager.java",
+    "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/ToolManager.java",
+    "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/TypeScriptToolInvoker.java",
+    "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/MessageSavePostHook.java",
+    "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ChatService.java",
+    "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/LoadSkillsSystemTool.java"
+  ]
+}

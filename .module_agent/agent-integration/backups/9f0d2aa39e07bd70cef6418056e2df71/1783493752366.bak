@@ -1,0 +1,88 @@
+package com.ghost616.agentinteg;
+
+import com.ghost616.agentbase.service.agent.AgentContextManager;
+import com.ghost616.agentbase.service.agent.ChatDataProvider;
+import com.ghost616.agentbase.service.agent.ChatService;
+import com.ghost616.agentbase.service.agent.ContextDataProvider;
+import com.ghost616.agentbase.service.agent.MessageDataProvider;
+import com.ghost616.agentbase.service.agent.SessionManager;
+import com.ghost616.agentbase.service.agent.ToolDataProvider;
+import com.ghost616.agentbase.service.agent.ToolExecutionService;
+import com.ghost616.agentbase.service.agent.ToolExecutionTracker;
+import com.ghost616.agentbase.service.agent.invoker.SystemToolManager;
+import com.ghost616.agentbase.service.agent.invoker.SystemToolProvider;
+import com.ghost616.agentbase.service.agent.invoker.ToolCallQueueManager;
+import com.ghost616.agentbase.service.agent.invoker.ToolManager;
+import com.ghost616.agentbase.service.model.invoker.ModelInvokerFactory;
+import com.ghost616.agentbase.service.model.invoker.ModelInvokerManager;
+
+public class AgentAssembler {
+
+    private final ContextDataProvider contextDataProvider;
+    private final MessageDataProvider messageDataProvider;
+    private final ToolDataProvider toolDataProvider;
+    private final SystemToolProvider systemToolProvider;
+    private final ModelInvokerFactory modelInvokerFactory;
+    private final ChatDataProvider chatDataProvider;
+
+    private ToolManager toolManager;
+    private ToolCallQueueManager toolCallQueueManager;
+    private SystemToolManager systemToolManager;
+    private SessionManager sessionManager;
+    private AgentContextManager agentContextManager;
+    private ModelInvokerManager modelInvokerManager;
+    private ToolExecutionTracker toolExecutionTracker;
+    private Result cachedResult;
+    private boolean built = false;
+
+    public AgentAssembler(ContextDataProvider contextDataProvider,
+                 MessageDataProvider messageDataProvider,
+                 ToolDataProvider toolDataProvider,
+                 SystemToolProvider systemToolProvider,
+                 ModelInvokerFactory modelInvokerFactory,
+                 ChatDataProvider chatDataProvider) {
+        this.contextDataProvider = contextDataProvider;
+        this.messageDataProvider = messageDataProvider;
+        this.toolDataProvider = toolDataProvider;
+        this.systemToolProvider = systemToolProvider;
+        this.modelInvokerFactory = modelInvokerFactory;
+        this.chatDataProvider = chatDataProvider;
+    }
+
+    public ToolManager toolManager() { return toolManager; }
+    public ToolCallQueueManager toolCallQueueManager() { return toolCallQueueManager; }
+    public SystemToolManager systemToolManager() { return systemToolManager; }
+    public SessionManager sessionManager() { return sessionManager; }
+    public AgentContextManager agentContextManager() { return agentContextManager; }
+    public ModelInvokerManager modelInvokerManager() { return modelInvokerManager; }
+    public ToolExecutionTracker toolExecutionTracker() { return toolExecutionTracker; }
+
+    public Result build() {
+        if (built) {
+            return cachedResult;
+        }
+        toolManager = new ToolManager(toolDataProvider);
+        toolCallQueueManager = new ToolCallQueueManager();
+        systemToolManager = new SystemToolManager(systemToolProvider);
+        sessionManager = new SessionManager(messageDataProvider);
+        agentContextManager = new AgentContextManager(
+                contextDataProvider, sessionManager, toolManager);
+        modelInvokerManager = new ModelInvokerManager(modelInvokerFactory);
+        toolExecutionTracker = new ToolExecutionTracker();
+
+        ChatService chatService = new ChatService(
+                agentContextManager, sessionManager, modelInvokerManager,
+                systemToolManager, chatDataProvider);
+        chatService.initHooks();
+
+        ToolExecutionService toolExecutionService = new ToolExecutionService(
+                toolCallQueueManager, toolManager, systemToolManager,
+                sessionManager, chatService, agentContextManager, toolExecutionTracker);
+
+        cachedResult = new Result(chatService, toolExecutionService);
+        built = true;
+        return cachedResult;
+    }
+
+    public record Result(ChatService chatService, ToolExecutionService toolExecutionService) {}
+}

@@ -1,0 +1,34 @@
+[
+  {
+    "plan_id": "plan_ac402f05-d03d-4fae-a4e9-a262dfccfdbb",
+    "plan": "在 AgentContextConfiguration.java 中：\n1. 修改 chatService() Bean 方法：在 agentAssembler.build() 获取 ChatService 后，显式调用 chatService.initHooks()\n2. 在 chatService() Bean 方法上添加 @DependsOn(\"messageSavePostHook\") 注解，确保 MessageSavePostHook 在 initHooks() 之前已创建",
+    "modified_files": [],
+    "summary": "力牧已启动",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_edc922f3-7a35-4f94-9f7d-cfb83021f6d0",
+    "plan": "为 chatService() Bean 添加 @DependsOn(\"messageSavePostHook\") 注解，确保 MessageSavePostHook 在 initHooks()/refreshHooks() 之前已创建；同时在 build() 后调用 chatService.refreshHooks() 注册所有 HOOK",
+    "modified_files": [
+      "platform-app/src/main/java/com/ghost616/platform/config/AgentContextConfiguration.java"
+    ],
+    "summary": "1. AgentContextConfiguration.java: 新增 @DependsOn  import 及 @DependsOn(\"messageSavePostHook\") 注解\\n2. 已调用 chatService.refreshHooks()，替代原已删除的 initHooks() 方法\\n3. 重建 agent-base、agent-integration 后编译通过，AgentContextConfigurationTest 4/4 全部通过",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_9f170c0a-5f85-4f53-b991-27ccb461118b",
+    "plan": "移除 AgentContextConfiguration 中的 messageSavePostHook Bean 及相关依赖",
+    "modified_files": [
+      "platform-app/src/main/java/com/ghost616/platform/config/AgentContextConfiguration.java"
+    ],
+    "summary": "1. 移除 messageSavePostHook() @Bean 方法\\n2. 移除 @DependsOn(\"messageSavePostHook\") 注解\\n3. 移除 MessageSavePostHook 及 @DependsOn import\\n4. AgentContextConfigurationTest 4/4 全部通过",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_121334fb-65a6-4f6f-95ea-1b2d4080c2e5",
+    "plan": "在 AgentContextConfiguration.java 中：\n1. 移除 historyQuerySystemTool() Bean 方法\n2. 移除 loadSkillsSystemTool() Bean 方法\n3. 移除 unloadSkillsSystemTool() Bean 方法\n4. 移除对应的 import（HistoryQuerySystemTool, LoadSkillsSystemTool, UnloadSkillsSystemTool）\n这三个系统工具现由 AgentAssembler 的 SystemToolProvider 代理内部管理",
+    "modified_files": [],
+    "summary": "力牧已接收新计划",
+    "errors": []
+  }
+]

@@ -1,0 +1,9 @@
+[
+  {
+    "plan_id": "plan_e1f8b11f-2581-437f-9bf0-1ca414b1f5c7",
+    "plan": "在 dev.bat 第 30 行的后端启动命令中，为 spring-boot:run 添加 JVM 远程调试参数：\n-Dspring-boot.run.jvmArguments=\"-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005\"\n注意处理 bat 文件中引号和特殊字符的转义，确保生成的临时 bat 文件能正确执行。",
+    "modified_files": [],
+    "summary": "力牧已启动",
+    "errors": []
+  }
+]

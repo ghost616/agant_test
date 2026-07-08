@@ -17,3 +17,9 @@
 [2026-07-07T06:40:05.445Z] [session: ses_0c4b2f30effeq04qJcyQ4Koxr1] ToolManager.expandMcpTools 改为 public；AgentContextManager.Builder.build() 在加载 skills 后遍历 skillTools，对 MCP_HTTP 类型调用 toolManager.expandMcpTools() 展开
 [2026-07-07T09:00:56.044Z] [session: ses_0c43231dfffepLinbQk0YPCccV] 新建 ToolExecutionService（com.ghost616.agentbase.service.agent），封装 ToolExecutionController 中的工具执行/状态查询/继续对话业务逻辑，含 ToolExecutionResult 和 ToolStatusResult 两个内部 record
 [2026-07-07T09:38:39.918Z] [session: ses_0c43231dfffepLinbQk0YPCccV] 创建 util/JsonMapper 工具类，替换 ChatService/ToolExecutionService 中 ObjectMapper 构造器注入为静态引用；更新对应测试文件
+[2026-07-08T03:44:04.159Z] [session: ses_0c02d9610ffebxSPnPAHB4jJh9] 会话级别日志降级：将 10 处 log.info 改为 log.debug，7 处 log.warn 改为 log.debug，涉及 9 个文件（ToolExecutionTracker/PythonToolInvoker/SystemToolManager/ToolCallQueueManager/ToolManager/TypeScriptToolInvoker/MessageSavePostHook/ChatService/LoadSkillsSystemTool）
+[2026-07-08T05:20:19.618Z] [session: ses_0c02d9610ffebxSPnPAHB4jJh9] rename SessionManager.save() → messageSave()，修改 4 个源文件 + 1 个测试文件，共 6 处调用
+[2026-07-08T05:32:16.752Z] [session: ses_0bfca07a5ffe1Prkh5cQiqzcVG] SessionManager.MessageSaveBuilder.save(): 添加 sessionId/role/content 非空校验，为 null 时抛出 BusinessException(ErrorCode.PARAM_INVALID)
+[2026-07-08T05:40:25.875Z] [session: ses_0bfca07a5ffe1Prkh5cQiqzcVG] ChatService.chat(): 在 invoker.invokeStream() 调用前添加 log.info("sessionId={} messages: {}", sessionId, messages) 调试日志
+[2026-07-08T06:10:44.850Z] [session: ses_0bfca07a5ffe1Prkh5cQiqzcVG] ToolExecutionService.executeTool(): invoker 为 null 时先 poll 消费失败工具再计算 hasMore，避免前台死循环
+[2026-07-08T07:00:44.782Z] [session: ses_0bfca07a5ffe1Prkh5cQiqzcVG] ChatService.initHooks() 重命名为 refreshHooks()，方法开头添加 clear() 清空 hooks 集合使其可重复调用；同步更新 ChatServiceTest 测试用例

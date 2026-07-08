@@ -18,6 +18,11 @@
     <dependencies>
         <dependency>
             <groupId>com.ghost616</groupId>
+            <artifactId>agent-integration</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.ghost616</groupId>
             <artifactId>agent-base</artifactId>
             <version>${project.version}</version>
         </dependency>

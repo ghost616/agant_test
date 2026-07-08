@@ -22,16 +22,12 @@
       "description": "会话管理服务实现，包含会话创建（含工具绑定）、查询、删除、回滚等业务逻辑"
     },
     {
-      "path": "platform-app/src/main/java/com/ghost616/platform/service/model/invoker/DefaultModelInvokerDataProvider.java",
-      "description": "默认模型调用器数据提供者实现，根据平台类型（OpenAI/Anthropic/Azure/Ollama/DeepSeek/Custom）创建对应的 ModelInvoker 实例"
-    },
-    {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/invoker/SpawnSubAgentSystemTool.java",
       "description": "子智能体生成系统工具实现，支持启动子智能体执行任务并管理其多轮对话与工具调用，实现 agent-base 的 SystemTool 接口"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/config/AgentContextConfiguration.java",
-      "description": "Agent 上下文 Spring 配置类，声明 ToolManager、SessionManager、AgentContextManager、MessageSavePostHook、DefaultChatDataProvider、ChatService、ToolExecutionTracker、ToolExecutionService 的 @Bean。SystemToolManager 由 @Component 自动检测。ChatService 创建后调用 initHooks() 初始化钩子系统。"
+      "description": "Agent 上下文 Spring 配置类，声明 SystemToolProvider、HistoryQuerySystemTool、LoadSkillsSystemTool、UnloadSkillsSystemTool、MessageSavePostHook、DefaultChatDataProvider、ModelInvokerFactory、Build、SessionManager、AgentContextManager、ToolManager、ModelInvokerManager、ChatService、ToolExecutionService 的 @Bean。内部组件由 agent-integration 的 Build 类创建后暴露。ChatService 通过 Build 内部调用 initHooks() 初始化钩子系统。"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/repository/MessageMapper.java",
@@ -48,10 +44,6 @@
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/controller/ChatController.java",
       "description": "聊天控制器，提供 SSE 流式聊天和停止聊天接口。ChatRequest 和 ChatService 依赖自 agent-base 模块导入。"
-    },
-    {
-      "path": "platform-app/src/main/java/com/ghost616/platform/service/model/invoker/DefaultModelInvokerFactory.java",
-      "description": "默认模型调用器工厂实现，注入 RestClient.Builder 和 WebClient.Builder，根据 ModelConfigData.platformType() 创建对应平台（OPENAI/ANTHROPIC/AZURE/OLLAMA/DEEPSEEK/CUSTOM）的 ModelInvoker 实例"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultChatDataProvider.java",

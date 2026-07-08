@@ -1,0 +1,5 @@
+{
+  "lizhu_session_id": "ses_0bfc97bafffeWNzM6r5OhSpWcJ",
+  "content": "## 测试报告：ToolExecutionService.executeTool() invoker 为 null 时消费队列\n\n### 测试概览\n\n| 项目 | 结果 |\n|------|------|\n| 测试类型 | 单元测试 |\n| 通过 | 3 |\n| 失败 | 0 |\n| 执行时间 | 14.4s |\n\n### 测试用例详情\n\n| # | 测试用例 | 关键验证点 | 结果 |\n|---|---------|-----------|------|\n| 1 | invoker 为 null → 消费队列，hasMore=false | 调用 poll()，hasMore 基于 post-poll 状态 = false | ✅ 通过 |\n| 2 | invoker 为 null → 消费队列，hasMore=true | 调用 poll()，hasMore 基于 post-poll 状态 = true | ✅ 通过 |\n| 3 | invoker 为 null → poll 后无 pending → hasMore=false | 验证 post-poll hasMore 为 false | ✅ 通过 |\n\n### 结论\n\n所有测试通过，executeTool() 在 invoker 为 null 时正确调用 poll() 消费失败工具，且 hasMore 基于 poll 后的队列状态重新计算。\n",
+  "timestamp": "2026-07-08T06:11:31.518Z"
+}

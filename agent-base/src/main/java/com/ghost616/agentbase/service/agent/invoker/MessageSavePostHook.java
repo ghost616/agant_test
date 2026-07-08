@@ -73,10 +73,10 @@ public class MessageSavePostHook implements SystemPostHook {
                                 a.arguments.toString()))
                         .collect(Collectors.toList());
             }
-            log.info("sessionId={} 保存消息, content={}, reasoning={}, toolCalls数量={}",
+            log.debug("sessionId={} 保存消息, content={}, reasoning={}, toolCalls数量={}",
                     sessionId, content, reasoning,
                     toolCalls != null ? toolCalls.size() : 0);
-            sessionManager.save().sessionId(sessionId).role("assistant").content(content).reasoning(reasoning).toolCalls(toolCalls).save();
+            sessionManager.messageSave().sessionId(sessionId).role("assistant").content(content).reasoning(reasoning).toolCalls(toolCalls).save();
             if (toolCalls != null && !toolCalls.isEmpty()) {
                 toolCallQueueManager.enqueue(sessionId, toolCalls);
             }
@@ -109,7 +109,7 @@ public class MessageSavePostHook implements SystemPostHook {
         List<ToolCallDelta> toolCalls = chunk.getToolCalls();
         if (toolCalls != null) {
             for (ToolCallDelta tc : toolCalls) {
-                log.info("sessionId={} ToolCallDelta id={} name={} arguments={}",
+                log.debug("sessionId={} ToolCallDelta id={} name={} arguments={}",
                         sessionId, tc.getId(), tc.getName(), tc.getArguments());
                 String key;
                 if (tc.getIndex() != null) {

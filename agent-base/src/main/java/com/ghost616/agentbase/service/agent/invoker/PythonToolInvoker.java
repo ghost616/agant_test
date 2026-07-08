@@ -42,7 +42,7 @@ public class PythonToolInvoker implements ToolInvoker {
             throw new BusinessException(ErrorCode.TOOL_RUNTIME_NOT_FOUND,
                     "python 和 python3 运行时均不可用，请安装 Python 3.10+");
         }
-        log.info("Python运行时检测: python3={}, python={}, scriptDir={}",
+        log.debug("Python运行时检测: python3={}, python={}, scriptDir={}",
                 python3Available, pythonAvailable, scriptDir);
     }
 
@@ -190,7 +190,7 @@ public class PythonToolInvoker implements ToolInvoker {
     private void generateRunnerFile() {
         try {
             Files.writeString(runnerPath, RunnerTemplate.INSTANCE, StandardCharsets.UTF_8);
-            log.info("已生成桥接文件: {}", runnerPath);
+            log.debug("已生成桥接文件: {}", runnerPath);
         } catch (Exception e) {
             throw new BusinessException(ErrorCode.TOOL_INVOKE_ERROR,
                     "生成桥接文件失败: " + runnerPath + " - " + e.getMessage());

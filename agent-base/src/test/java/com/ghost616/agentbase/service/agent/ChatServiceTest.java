@@ -54,19 +54,19 @@ class ChatServiceTest {
     }
 
     @Test
-    void initHooks_shouldCallGetHooksOnce() {
+    void refreshHooks_shouldCallGetHooksOnce() {
         when(chatDataProvider.getHooks()).thenReturn(List.of());
-        chatService.initHooks();
+        chatService.refreshHooks();
         verify(chatDataProvider, times(1)).getHooks();
     }
 
     @Test
-    void initHooks_shouldClassifySystemPostHookToPostList() throws Exception {
+    void refreshHooks_shouldClassifySystemPostHookToPostList() throws Exception {
         SystemPostHook postHook = mock(SystemPostHook.class);
         when(postHook.getPhase()).thenReturn(HookPhase.BEFORE_MESSAGE_SEND);
         when(chatDataProvider.getHooks()).thenReturn(List.of(postHook));
 
-        chatService.initHooks();
+        chatService.refreshHooks();
 
         List<HookInvoker> postHooks = getPrivateField("systemPostHooks");
         assertEquals(1, postHooks.size());
@@ -77,12 +77,12 @@ class ChatServiceTest {
     }
 
     @Test
-    void initHooks_shouldClassifySystemHookToPhaseMap() throws Exception {
+    void refreshHooks_shouldClassifySystemHookToPhaseMap() throws Exception {
         SystemHook hook = mock(SystemHook.class);
         when(hook.getPhase()).thenReturn(HookPhase.SESSION_START);
         when(chatDataProvider.getHooks()).thenReturn(List.of(hook));
 
-        chatService.initHooks();
+        chatService.refreshHooks();
 
         Map<HookPhase, List<HookInvoker>> hooksMap = getPrivateField("systemHooks");
         assertEquals(1, hooksMap.size());
@@ -96,7 +96,7 @@ class ChatServiceTest {
     }
 
     @Test
-    void initHooks_shouldGroupSystemHooksByPhase() throws Exception {
+    void refreshHooks_shouldGroupSystemHooksByPhase() throws Exception {
         SystemHook hook1 = mock(SystemHook.class);
         when(hook1.getPhase()).thenReturn(HookPhase.SESSION_START);
         SystemHook hook2 = mock(SystemHook.class);
@@ -106,7 +106,7 @@ class ChatServiceTest {
 
         when(chatDataProvider.getHooks()).thenReturn(List.of(hook1, hook2, hook3));
 
-        chatService.initHooks();
+        chatService.refreshHooks();
 
         Map<HookPhase, List<HookInvoker>> hooksMap = getPrivateField("systemHooks");
         assertEquals(2, hooksMap.size());
@@ -115,7 +115,7 @@ class ChatServiceTest {
     }
 
     @Test
-    void initHooks_shouldHandleMixedSystemHookAndSystemPostHook() throws Exception {
+    void refreshHooks_shouldHandleMixedSystemHookAndSystemPostHook() throws Exception {
         SystemHook systemHook = mock(SystemHook.class);
         when(systemHook.getPhase()).thenReturn(HookPhase.SESSION_START);
         SystemPostHook postHook = mock(SystemPostHook.class);
@@ -125,7 +125,7 @@ class ChatServiceTest {
 
         when(chatDataProvider.getHooks()).thenReturn(List.of(systemHook, postHook, anotherSystemHook));
 
-        chatService.initHooks();
+        chatService.refreshHooks();
 
         Map<HookPhase, List<HookInvoker>> hooksMap = getPrivateField("systemHooks");
         assertEquals(2, hooksMap.size());
@@ -140,10 +140,10 @@ class ChatServiceTest {
     }
 
     @Test
-    void initHooks_shouldHandleEmptyHookList() throws Exception {
+    void refreshHooks_shouldHandleEmptyHookList() throws Exception {
         when(chatDataProvider.getHooks()).thenReturn(List.of());
 
-        chatService.initHooks();
+        chatService.refreshHooks();
 
         Map<HookPhase, List<HookInvoker>> hooksMap = getPrivateField("systemHooks");
         assertTrue(hooksMap.isEmpty());
@@ -153,19 +153,20 @@ class ChatServiceTest {
     }
 
     @Test
-    void initHooks_shouldAppendHooksToExistingState() throws Exception {
+    void refreshHooks_shouldReplaceExistingState() throws Exception {
         SystemHook hook1 = mock(SystemHook.class);
         when(hook1.getPhase()).thenReturn(HookPhase.SESSION_START);
         when(chatDataProvider.getHooks()).thenReturn(List.of(hook1));
-        chatService.initHooks();
+        chatService.refreshHooks();
 
         SystemHook hook2 = mock(SystemHook.class);
         when(hook2.getPhase()).thenReturn(HookPhase.SESSION_START);
         when(chatDataProvider.getHooks()).thenReturn(List.of(hook2));
-        chatService.initHooks();
+        chatService.refreshHooks();
 
         Map<HookPhase, List<HookInvoker>> hooksMap = getPrivateField("systemHooks");
-        assertEquals(2, hooksMap.get(HookPhase.SESSION_START).size());
+        assertEquals(1, hooksMap.get(HookPhase.SESSION_START).size());
+        assertSame(hook2, hooksMap.get(HookPhase.SESSION_START).get(0));
     }
 
     @SuppressWarnings("unchecked")

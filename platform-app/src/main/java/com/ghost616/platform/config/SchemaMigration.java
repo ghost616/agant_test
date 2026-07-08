@@ -34,7 +34,7 @@ public class SchemaMigration implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
-        log.info("开始执行数据库 Schema 迁移...");
+        log.debug("开始执行数据库 Schema 迁移...");
 
         List<Migration> migrations = List.of(
                 new Migration("tool_config", "auth_config", "TEXT", null),
@@ -47,17 +47,17 @@ public class SchemaMigration implements ApplicationRunner {
         for (Migration migration : migrations) {
             try {
                 if (columnExists(migration.tableName(), migration.columnName())) {
-                    log.info("迁移跳过: {}.{} 列已存在", migration.tableName(), migration.columnName());
+                    log.debug("迁移跳过: {}.{} 列已存在", migration.tableName(), migration.columnName());
                 } else {
                     jdbcTemplate.execute(migration.toAlterSql());
-                    log.info("迁移成功: {}.{} 列已添加", migration.tableName(), migration.columnName());
+                    log.debug("迁移成功: {}.{} 列已添加", migration.tableName(), migration.columnName());
                 }
             } catch (Exception e) {
                 log.error("迁移失败: {}.{} - {}", migration.tableName(), migration.columnName(), e.getMessage());
             }
         }
 
-        log.info("数据库 Schema 迁移完成");
+        log.debug("数据库 Schema 迁移完成");
     }
 
     private boolean columnExists(String tableName, String columnName) {

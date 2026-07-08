@@ -5,5 +5,14 @@
   "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ToolDataProvider.java": "88505eeabe0ff38b600561a53048f771",
   "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/ToolManager.java": "9555084e819949311820ade2747da21d",
   "platform-app/src/main/java/com/ghost616/platform/service/agent/ToolExecutionTracker.java": "43ea373ce45bbdf7773300b3ec721216",
-  "platform-app/src/main/java/com/ghost616/platform/service/model/invoker/ModelInvokerManager.java": "b16ed1bb41ac4eac926291f477a18950"
+  "platform-app/src/main/java/com/ghost616/platform/service/model/invoker/ModelInvokerManager.java": "b16ed1bb41ac4eac926291f477a18950",
+  "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ToolExecutionTracker.java": "b4a679734316bb3ee94151112a8373a7",
+  "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/PythonToolInvoker.java": "64242c09e5dedabed19dc391712e7710",
+  "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/TypeScriptToolInvoker.java": "4daa227dcffb43639c67e5868d38adf7",
+  "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/MessageSavePostHook.java": "9aee698d892b08746a4807d1809aa16a",
+  "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ChatService.java": "59d5dbf02c99fa899ee7fd4033ae9c2c",
+  "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/LoadSkillsSystemTool.java": "00b03d0e007cf275a850df6366e4672c",
+  "agent-base/src/main/java/com/ghost616/agentbase/service/agent/SessionManager.java": "5a6e97e8a768ff2cb20c5a894b5f6b25",
+  "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ToolExecutionService.java": "aba53fb8c62e697c1ac70f6ad9dc8daf",
+  "agent-base/src/test/java/com/ghost616/agentbase/service/agent/ToolExecutionServiceTest.java": "92ab370d31d25d47e5268bfb330e04b4"
 }

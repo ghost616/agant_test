@@ -26,11 +26,11 @@ public class SystemToolManager {
         for (SystemTool tool : tools.values()) {
             String toolName = tool.getToolName();
             if (toolName == null || toolName.isBlank()) {
-                log.warn("SystemTool {} 的 toolName 为空，跳过注册", tool.getClass().getName());
+                log.debug("SystemTool {} 的 toolName 为空，跳过注册", tool.getClass().getName());
                 continue;
             }
             systemTools.put(toolName, tool);
-            log.info("注册系统工具: {}", toolName);
+            log.debug("注册系统工具: {}", toolName);
         }
     }
 

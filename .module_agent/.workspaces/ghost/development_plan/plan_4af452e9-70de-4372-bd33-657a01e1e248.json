@@ -1,0 +1,10 @@
+{
+  "plan_id": "plan_4af452e9-70de-4372-bd33-657a01e1e248",
+  "module_name": "agent-integration",
+  "development_plan": "在 AgentAssembler.java 的 build() 方法中，移除 chatService.initHooks()（或重命名后的 refreshHooks()）调用。该调用将移至 AgentContextConfiguration 的 chatService Bean 方法中显式执行。",
+  "session_id": "ses_0bf7d433bffeAvhAGPWRDn60Uv",
+  "modified_files": [
+    "agent-integration/src/main/java/com/ghost616/agentinteg/AgentAssembler.java",
+    "platform-app/src/main/java/com/ghost616/platform/config/AgentContextConfiguration.java"
+  ]
+}

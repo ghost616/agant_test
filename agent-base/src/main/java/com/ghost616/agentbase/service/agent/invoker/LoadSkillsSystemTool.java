@@ -61,7 +61,7 @@ public class LoadSkillsSystemTool implements SystemTool {
             List<String> newlyLoaded = new ArrayList<>();
             for (String name : requestedNames) {
                 if (!availableNames.contains(name)) {
-                    log.warn("技能 '{}' 不存在于智能体配置中，跳过", name);
+                    log.debug("技能 '{}' 不存在于智能体配置中，跳过", name);
                     continue;
                 }
                 if (!loadedSet.contains(name)) {

@@ -1,0 +1,9 @@
+{
+  "plan_id": "plan_47fc50c5-10c3-4117-aa7b-631e7a03446f",
+  "module_name": "agent-base",
+  "development_plan": "在 ToolExecutionService.java 的 executeTool() 方法中，当 invoker 为 null 时（第79行分支），在返回 \"failed\" 结果前先调用 toolCallQueueManager.poll(sessionId) 消费掉当前失败的工具，使队列中的下一个工具能被正确获取，避免 hasMore 始终为 true 导致前台死循环调用。同时 hasMore 应基于 poll 后的队列状态重新计算。",
+  "session_id": "ses_0bfca07a5ffe1Prkh5cQiqzcVG",
+  "modified_files": [
+    "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ToolExecutionService.java"
+  ]
+}

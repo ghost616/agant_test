@@ -42,7 +42,7 @@ public class TypeScriptToolInvoker implements ToolInvoker {
             throw new BusinessException(ErrorCode.TOOL_RUNTIME_NOT_FOUND,
                     "bun 和 node 运行时均不可用，请安装 bun（https://bun.sh）或 node（https://nodejs.org）");
         }
-        log.info("脚本运行时检测: bun={}, node={}, scriptDir={}", bunAvailable, nodeAvailable, scriptDir);
+        log.debug("脚本运行时检测: bun={}, node={}, scriptDir={}", bunAvailable, nodeAvailable, scriptDir);
     }
 
     private static boolean isWindows() {
@@ -189,7 +189,7 @@ public class TypeScriptToolInvoker implements ToolInvoker {
     private void generateRunnerFile() {
         try {
             Files.writeString(runnerPath, RunnerTemplate.INSTANCE, StandardCharsets.UTF_8);
-            log.info("已生成桥接文件: {}", runnerPath);
+            log.debug("已生成桥接文件: {}", runnerPath);
         } catch (Exception e) {
             throw new BusinessException(ErrorCode.TOOL_INVOKE_ERROR,
                     "生成桥接文件失败: " + runnerPath + " - " + e.getMessage());

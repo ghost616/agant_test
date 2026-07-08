@@ -40,7 +40,7 @@ public class ToolExecutionTracker {
         completedResults.get(sessionId).add(new ToolResult(
                 current.currentToolId(), current.currentToolName(),
                 current.currentArguments(), result));
-        log.info("sessionId={} \u5de5\u5177\u6267\u884c\u5b8c\u6210, toolName={}, result={}", sessionId, current.currentToolName(), result);
+        log.debug("sessionId={} 工具执行完成, toolName={}, result={}", sessionId, current.currentToolName(), result);
     }
 
     public void setFailed(Long sessionId, String error) {

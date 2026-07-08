@@ -1,0 +1,10 @@
+{
+  "plan_id": "plan_aa809be7-589d-49c1-a7fe-8fa8a2a17089",
+  "module_name": "agent-integration",
+  "development_plan": "## 任务：重命名 Build.java → AgentAssembler.java\n\n### agent-integration 模块\n\n1. 将文件 `E:\\test_tool\\agent-integration\\src\\main\\java\\com\\ghost616\\agentinteg\\Build.java` 重命名为 `E:\\test_tool\\agent-integration\\src\\main\\java\\com\\ghost616\\agentinteg\\AgentAssembler.java`\n\n2. 在文件内容中将类名 `Build` 改为 `AgentAssembler`\n\n### platform-app 模块\n\n3. 修改文件 `E:\\test_tool\\platform-app\\src\\main\\java\\com\\ghost616\\platform\\config\\AgentContextConfiguration.java`：\n   - 将 import `com.ghost616.agentinteg.Build` 改为 `import com.ghost616.agentinteg.AgentAssembler;`\n   - 将所有 `Build` 引用改为 `AgentAssembler`（包括方法参数类型和构造调用）",
+  "session_id": "ses_0c079b844ffeRO5QxufKuKoLJ4",
+  "modified_files": [
+    "agent-integration/src/main/java/com/ghost616/agentinteg/AgentAssembler.java",
+    "platform-app/src/main/java/com/ghost616/platform/config/AgentContextConfiguration.java"
+  ]
+}

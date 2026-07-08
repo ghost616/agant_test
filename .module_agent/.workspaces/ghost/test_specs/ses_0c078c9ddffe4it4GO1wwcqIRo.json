@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_0c078c9ddffe4it4GO1wwcqIRo",
+  "content": "## 待测试功能\n\n### 涉及文件\n- `platform-app/src/main/java/com/ghost616/platform/config/AgentContextConfiguration.java`\n- `platform-app/src/test/java/com/ghost616/platform/config/AgentContextConfigurationTest.java`\n- `../agent-integration/src/main/java/com/ghost616/agentinteg/Build.java`\n\n### 测试功能\n1. **AgentContextConfiguration.defaultChatDataProvider()** — 传入 ModelConfigMapper、SessionMapper、ApplicationContext，应返回非 null 的 DefaultChatDataProvider 实例\n2. **AgentContextConfiguration.agentBuild()** — 传入 SystemToolProvider、ModelInvokerFactory、ChatDataProvider，应返回非 null 的 Build 实例\n3. **AgentContextConfiguration.chatService(Build)** — 通过 Build 创建 ChatService，应返回非 null 实例\n4. **AgentContextConfiguration.toolExecutionService(Build)** — 通过 Build 创建 ToolExecutionService，应返回非 null 实例\n5. **Build.build() 幂等性** — 多次调用 build() 应返回相同的 Result 实例\n6. **Build.sessionManager()/toolCallQueueManager()/agentContextManager()** — build() 后应能正确获取这些组件",
+  "timestamp": "2026-07-08T02:24:29.263Z"
+}

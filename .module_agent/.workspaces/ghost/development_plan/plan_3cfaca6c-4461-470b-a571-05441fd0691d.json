@@ -1,0 +1,33 @@
+{
+  "plan_id": "plan_3cfaca6c-4461-470b-a571-05441fd0691d",
+  "module_name": "",
+  "development_plan": "审查 platform-app 重构：删除已迁移 ModelInvoker、重写 AgentContextConfiguration 使用 Build 类、添加 agent-integration 依赖",
+  "session_id": "",
+  "modified_files": [
+    "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultMessageDataProvider.java",
+    "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultContextDataProvider.java",
+    "platform-app/src/main/java/com/ghost616/platform/controller/SessionController.java",
+    "platform-app/src/main/java/com/ghost616/platform/service/session/SessionService.java",
+    "platform-app/src/main/java/com/ghost616/platform/service/session/SessionServiceImpl.java",
+    "platform-app/src/main/java/com/ghost616/platform/service/agent/invoker/SpawnSubAgentSystemTool.java",
+    "platform-app/src/main/java/com/ghost616/platform/config/AgentContextConfiguration.java",
+    "platform-app/src/main/java/com/ghost616/platform/repository/MessageMapper.java",
+    "platform-app/src/main/java/com/ghost616/platform/service/agent/ChatService.java",
+    "platform-app/src/main/java/com/ghost616/platform/controller/ToolExecutionController.java",
+    "platform-app/src/main/java/com/ghost616/platform/controller/ChatController.java",
+    "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultChatDataProvider.java",
+    "platform-app/src/main/java/com/ghost616/platform/PlatformApplication.java",
+    "platform-app/src/main/resources/application.yml",
+    "platform-app/src/main/java/com/ghost616/platform/dto/ApiResponse.java",
+    "platform-app/src/main/java/com/ghost616/platform/dto/PageResult.java",
+    "platform-app/src/main/java/com/ghost616/platform/entity/BaseEntity.java",
+    "platform-app/src/main/java/com/ghost616/platform/config/GlobalExceptionHandler.java",
+    "platform-app/src/main/java/com/ghost616/platform/config/WebConfig.java",
+    "platform-app/src/main/java/com/ghost616/platform/config/MybatisPlusConfig.java",
+    "platform-app/src/main/java/com/ghost616/platform/config/MyMetaObjectHandler.java",
+    "platform-app/src/main/resources/schema.sql",
+    "platform-app/src/main/java/com/ghost616/platform/config/SchemaMigration.java",
+    "platform-app/pom.xml",
+    "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultToolDataProvider.java"
+  ]
+}

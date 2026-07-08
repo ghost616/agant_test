@@ -1,0 +1,5 @@
+## 变更历史
+[2026-07-08T02:21:42.543Z] [session: ses_0c079b844ffeRO5QxufKuKoLJ4] 初始化模块：创建 pom.xml，注册到根 pom；从 platform-app 迁移 7 个 ModelInvoker 实现到 com.ghost616.agentinteg.model.invoker 包；创建 Build.java 组装类
+[2026-07-08T06:56:06.409Z] [session: ses_0bf7d433bffeAvhAGPWRDn60Uv] 将 chatService.initHooks() 从 AgentAssembler.build() 中移除，移至 AgentContextConfiguration 的 chatService Bean 方法中显式调用，以解决 MessageSavePostHook 创建时的时序问题
+[2026-07-08T07:22:46.858Z] [session: ses_0bf7d433bffeAvhAGPWRDn60Uv] 在 AgentAssembler.build() 中引入 ChatDataProviderProxy，代理将 MessageSavePostHook 懒创建并注入到 ChatService；ChatService 使用代理而非原始 ChatDataProvider；暴露 messageSavePostHook() getter 并包含在 Result record 中
+[2026-07-08T07:32:41.678Z] [session: ses_0bf7d433bffeAvhAGPWRDn60Uv] 在 AgentAssembler.build() 中引入 SystemToolProviderProxy，代理确保 history_query/load_skills/unload_skills 系统工具始终可用；SystemToolManager 使用代理而非原始 SystemToolProvider

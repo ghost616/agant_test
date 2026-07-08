@@ -1,0 +1,10 @@
+{
+  "plan_id": "plan_7208d046-c795-4b06-9d91-d552d8ffbecf",
+  "module_name": "agent-integration",
+  "development_plan": "在 AgentAssembler.java 的 build() 方法中，移除第 76 行的 chatService.initHooks() 调用。initHooks() 将改为在 AgentContextConfiguration 的 chatService Bean 方法中显式调用，以解决 MessageSavePostHook 创建时序问题。",
+  "session_id": "ses_0bf7d433bffeAvhAGPWRDn60Uv",
+  "modified_files": [
+    "agent-integration/src/main/java/com/ghost616/agentinteg/AgentAssembler.java",
+    "platform-app/src/main/java/com/ghost616/platform/config/AgentContextConfiguration.java"
+  ]
+}

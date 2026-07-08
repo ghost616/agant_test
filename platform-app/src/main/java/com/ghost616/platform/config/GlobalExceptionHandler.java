@@ -28,7 +28,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BaseException.class)
     @ResponseStatus(HttpStatus.OK)
     public ApiResponse<Void> handleBaseException(BaseException ex) {
-        log.warn("业务异常: code={}, message={}", ex.getErrorCode().getCode(), ex.getMessage());
+        log.debug("业务异常: code={}, message={}", ex.getErrorCode().getCode(), ex.getMessage());
         return ApiResponse.fail(ex.getErrorCode(), ex.getDetail() != null ? ex.getDetail() : ex.getMessage());
     }
 
@@ -45,7 +45,7 @@ public class GlobalExceptionHandler {
             }
             sb.append(error.getField()).append(": ").append(error.getDefaultMessage());
         });
-        log.warn("参数校验失败: {}", sb);
+        log.debug("参数校验失败: {}", sb);
         return ApiResponse.fail(ErrorCode.PARAM_INVALID, sb.toString());
     }
 
