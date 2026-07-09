@@ -14,5 +14,6 @@
   "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/LoadSkillsSystemTool.java": "00b03d0e007cf275a850df6366e4672c",
   "agent-base/src/main/java/com/ghost616/agentbase/service/agent/SessionManager.java": "5a6e97e8a768ff2cb20c5a894b5f6b25",
   "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ToolExecutionService.java": "aba53fb8c62e697c1ac70f6ad9dc8daf",
-  "agent-base/src/test/java/com/ghost616/agentbase/service/agent/ToolExecutionServiceTest.java": "92ab370d31d25d47e5268bfb330e04b4"
+  "agent-base/src/test/java/com/ghost616/agentbase/service/agent/ToolExecutionServiceTest.java": "92ab370d31d25d47e5268bfb330e04b4",
+  "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/JavaToolInvoker.java": "85a386cb33fe87cde597623422bfc56a"
 }

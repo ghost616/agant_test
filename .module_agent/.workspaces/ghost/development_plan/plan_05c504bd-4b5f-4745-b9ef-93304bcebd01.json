@@ -1,0 +1,9 @@
+{
+  "plan_id": "plan_05c504bd-4b5f-4745-b9ef-93304bcebd01",
+  "module_name": "frontend-ui",
+  "development_plan": "修复 src/pages/sessions/AgentChat.tsx 中 executeToolLoop 的类型错误：\n在 pollToolStatus(sessionId, execResult.toolId) 调用前增加守卫判断 if (!execResult.toolId)，若 toolId 缺失则设置 hasMore = false 并 continue",
+  "session_id": "ses_0bb030d92ffeiyQi9sUH0x96EP",
+  "modified_files": [
+    "src/pages/sessions/AgentChat.tsx"
+  ]
+}

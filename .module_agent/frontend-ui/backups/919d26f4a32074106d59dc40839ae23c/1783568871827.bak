@@ -162,9 +162,9 @@ export async function executeTools(sessionId: string): Promise<ExecuteToolsResul
   return res.data.data;
 }
 
-export async function getToolStatus(sessionId: string, toolId: string): Promise<ToolStatusResult> {
+export async function getToolStatus(sessionId: string): Promise<ToolStatusResult> {
   const res = await api.get<ApiResponse<ToolStatusResult>>(
-    `/chat/${sessionId}/tool-status?toolId=${encodeURIComponent(toolId)}`,
+    `/chat/${sessionId}/tool-status`,
   );
   return res.data.data;
 }

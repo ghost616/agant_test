@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
 
@@ -30,8 +31,9 @@ public class ToolExecutionController {
     }
 
     @GetMapping("/{sessionId}/tool-status")
-    public ApiResponse<ToolExecutionService.ToolStatusResult> toolStatus(@PathVariable Long sessionId) {
-        ToolExecutionService.ToolStatusResult result = toolExecutionService.getToolStatus(sessionId);
+    public ApiResponse<ToolExecutionService.ToolStatusResult> toolStatus(@PathVariable Long sessionId,
+                                                                          @RequestParam String toolId) {
+        ToolExecutionService.ToolStatusResult result = toolExecutionService.getToolStatus(sessionId, toolId);
         return ApiResponse.success(result);
     }
 

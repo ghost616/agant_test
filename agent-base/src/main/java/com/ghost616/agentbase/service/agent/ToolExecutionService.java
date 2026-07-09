@@ -3,8 +3,6 @@ package com.ghost616.agentbase.service.agent;
 import com.ghost616.agentbase.dto.chat.ChatRequest;
 import com.ghost616.agentbase.util.JsonMapper;
 import com.ghost616.agentbase.dto.model.ChatChunk;
-import com.ghost616.agentbase.enums.ErrorCode;
-import com.ghost616.agentbase.exception.BusinessException;
 import com.ghost616.agentbase.service.agent.invoker.SystemToolManager;
 import com.ghost616.agentbase.service.agent.invoker.ToolCallQueueManager;
 import com.ghost616.agentbase.service.agent.invoker.ToolInvoker;
@@ -112,11 +110,11 @@ public class ToolExecutionService {
         CompletableFuture.supplyAsync(() -> {
             try {
                 String res = toolManager.execute(capturedInvoker, capturedContext, toolCallArguments);
-                toolExecutionTracker.setDone(sessionId, res);
+                toolExecutionTracker.setDone(sessionId, toolCallId, res);
                 return res;
             } catch (Exception e) {
                 log.error("sessionId={} 工具执行异常, toolName={}", sessionId, toolCallName, e);
-                toolExecutionTracker.setFailed(sessionId, e.getMessage());
+                toolExecutionTracker.setFailed(sessionId, toolCallId, e.getMessage());
                 return null;
             }
         });
@@ -124,8 +122,8 @@ public class ToolExecutionService {
         return new ToolExecutionResult("executing", toolCallId, toolCallName, toolCallArguments, hasMore, null);
     }
 
-    public ToolStatusResult getToolStatus(Long sessionId) {
-        ToolExecutionTracker.ToolExecutionStatus status = toolExecutionTracker.getCurrentExecution(sessionId);
+    public ToolStatusResult getToolStatus(Long sessionId, String toolId) {
+        ToolExecutionTracker.ToolExecutionStatus status = toolExecutionTracker.getCurrentExecution(sessionId, toolId);
         if (status == null) {
             return new ToolStatusResult("idle", null, null, null, false, null);
         }
@@ -134,10 +132,6 @@ public class ToolExecutionService {
     }
 
     public Flux<ServerSentEvent<ChatChunk>> continueAfterTools(Long sessionId) {
-        ToolExecutionTracker.ToolExecutionStatus status = toolExecutionTracker.getCurrentExecution(sessionId);
-        if (status != null && "executing".equals(status.status())) {
-            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "仍有工具正在执行中");
-        }
 
         AgentContextManager.AgentSessionContext sessionCtx = agentContextManager.get(sessionId);
         if (sessionCtx != null && sessionCtx.context().isStopped()) {

@@ -1,0 +1,7 @@
+{
+  "plan_id": "plan_532a8950-07c0-4271-86a7-ceef6c55f230",
+  "module_name": "platform-app",
+  "development_plan": "1. 修改 ToolExecutionController.java：\n   - toolStatus 接口新增必传参数 toolId：@RequestParam String toolId\n   - 调用 toolExecutionService.getToolStatus(sessionId, toolId)\n\n2. 修改 ToolExecutionControllerTest.java：所有 toolStatus 测试用例调用时传入 toolId 参数",
+  "session_id": "ses_0bb0ef1d7ffewvFkEcvrQURN7x",
+  "modified_files": []
+}

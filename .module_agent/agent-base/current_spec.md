@@ -8,6 +8,7 @@
 
 工具调用管理器，负责工具的注册、展开与调用。expandMcpTools：在构建 McpExpandedToolDTO 时，若 description 包含远程工具原始名称（remoteName），使用 String.replace() 替换为带配置名前缀的新名称（prefixedName = configName_remoteName）。
 expandMcpTools 已改为 public 权限，供 AgentContextManager 在技能加载时展开 MCP 工具。
+createInvoker 创建 JavaToolInvoker 时传入 toolConfig 参数，支持通过 ConfigurableToolInvoker 接口注入工具配置。
 ## HookInvoker / SystemHook / SystemPostHook
 
 从 platform-app 迁移而来。HookInvoker 为 HOOK 执行契约接口；SystemHook 扩展 HookInvoker 新增 getIndex() 执行顺序控制；SystemPostHook 为标记接口继承 SystemHook。
@@ -17,6 +18,7 @@ expandMcpTools 已改为 public 权限，供 AgentContextManager 在技能加载
 ## ToolExecutionTracker
 
 从 platform-app 迁移而来。非 Spring 组件（已去掉 @Component），保留 @Slf4j。通过 ConcurrentHashMap 维护会话级别的工具执行状态（setExecuting/setDone/setFailed）和执行结果记录，提供 clear/getCurrentExecution/getAndClearResults 方法。
+ConcurrentHashMap key 从 Long sessionId 改为 String(sessionId_toolId) 支持每个工具独立跟踪；setDone/setFailed/getCurrentExecution 追加 toolId 参数；clear/getAndClearResults 通过按 sessionId 前缀清理保持 session 级别语义。
 ## ModelConfigData
 
 ModelConfigData record（com.ghost616.agentbase.dto.model.ModelConfigData），包含字段：Long id, String apiKey, String baseUrl, String modelName, Double temperature, Integer maxTokens, String platformType。
@@ -46,9 +48,13 @@ AgentContextManager（非 @Component，通过 @Bean 注册）：注入 ContextDa
 - executeTool(Long sessionId)：从队列获取下一个工具调用，解析调用器并异步执行，返回 ToolExecutionResult record(status/toolId/toolName/arguments/hasMore/message)
 - getToolStatus(Long sessionId)：查询当前工具执行状态，返回 ToolStatusResult record(status/toolId/toolName/arguments/hasMore/result)
 - continueAfterTools(Long sessionId)：检查无工具在执行后，持久化工具结果、添加历史记录、清理队列和跟踪器，构造 TOOL_CONTINUE_MARKER 请求并调用 chatService.chat() 返回 Flux
+getToolStatus(Long sessionId, String toolId) toolId 为必传参数；continueAfterTools 已移除 "仍有工具正在执行中" 的阻塞检查。
 ## JsonMapper
 
 公用 JSON 工具类（com.ghost616.agentbase.util.JsonMapper），final 类私有构造器，提供 public static final ObjectMapper MAPPER 实例。供 ChatService/ToolExecutionService 等组件直接引用，替代构造器注入方式。
 ## SessionManager
 
 会话管理组件，提供 MessageSaveBuilder 链式构建消息保存、getMessages 历史消息查询和 rollbackToLastUserMessage 回退功能。MessageSaveBuilder.save() 方法在调用 dataProvider.saveMessage() 前对 sessionId/role/content 进行非空校验，任一为 null 时抛出 BusinessException(ErrorCode.PARAM_INVALID)。
+## ConfigurableToolInvoker
+
+ConfigurableToolInvoker 接口，继承 ToolInvoker，定义 setToolConfig(ToolConfigDTO) 方法。JavaToolInvoker 在加载工具实例后检测是否实现了该接口，若是则自动注入 ToolConfigDTO。

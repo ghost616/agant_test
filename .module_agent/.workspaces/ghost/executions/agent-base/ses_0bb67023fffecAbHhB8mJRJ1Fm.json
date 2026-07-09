@@ -1,0 +1,22 @@
+[
+  {
+    "plan_id": "plan_3f9cac4a-06ab-4160-8c3c-03e8a700bd6c",
+    "plan": "1. 在 agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/ 下新建接口文件 ConfigurableToolInvoker.java，继承 ToolInvoker，添加 void setToolConfig(ToolConfigDTO toolConfig) 方法\n\n2. 修改 JavaToolInvoker.java：\n   - 构造器新增 ToolConfigDTO 参数\n   - loadInstance() 中加载实例后判断是否 instanceof ConfigurableToolInvoker\n   - 若是则调用 setToolConfig(toolConfig) 注入配置\n\n3. 修改 ToolManager.java 的 createInvoker() 方法第 112-113 行，创建 JavaToolInvoker 时传入 toolConfig 参数",
+    "modified_files": [],
+    "summary": "力牧已启动",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_b9ddd0e3-06f0-41eb-99c5-b9c432e94e06",
+    "plan": "ToolExecutionTracker/Service key 重构与 getToolStatus 签名变更",
+    "modified_files": [
+      "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ToolExecutionTracker.java",
+      "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ToolExecutionService.java",
+      "agent-base/src/test/java/com/ghost616/agentbase/service/agent/ToolExecutionServiceTest.java",
+      "platform-app/src/main/java/com/ghost616/platform/controller/ToolExecutionController.java",
+      "platform-app/src/test/java/com/ghost616/platform/controller/ToolExecutionControllerTest.java"
+    ],
+    "summary": "1)ToolExecutionTracker: ConcurrentHashMap key Long->String(sessionId_toolId), setDone/setFailed/getCurrentExecution 追加 toolId 参数, clear/getAndClearResults 按前缀清理；2)ToolExecutionService: executeTool 中 setDone/setFailed 传入 toolCallId, getToolStatus 追加 toolId 参数, 移除 continueAfterTools 阻塞检查；3)ToolExecutionServiceTest: 适配签名变更, 删除已移除逻辑的测试；4)ToolExecutionController(platform-app): toolStatus 端点新增 @RequestParam toolId；5)ToolExecutionControllerTest: 适配 toolId 参数",
+    "errors": []
+  }
+]

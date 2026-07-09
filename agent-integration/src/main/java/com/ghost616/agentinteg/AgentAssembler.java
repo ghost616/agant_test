@@ -16,6 +16,7 @@ import com.ghost616.agentbase.service.agent.invoker.LoadSkillsSystemTool;
 import com.ghost616.agentbase.service.agent.invoker.MessageSavePostHook;
 import com.ghost616.agentbase.service.agent.invoker.UnloadSkillsSystemTool;
 import com.ghost616.agentbase.service.agent.invoker.SystemToolManager;
+import com.ghost616.agentbase.service.agent.invoker.SystemTool;
 import com.ghost616.agentbase.service.agent.invoker.SystemToolProvider;
 import com.ghost616.agentbase.service.agent.invoker.ToolCallQueueManager;
 import com.ghost616.agentbase.service.agent.invoker.ToolManager;

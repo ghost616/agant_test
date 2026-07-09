@@ -60,27 +60,27 @@ class ToolExecutionControllerTest {
     void toolStatus_返回状态结果() {
         ToolExecutionService.ToolStatusResult serviceResult =
                 new ToolExecutionService.ToolStatusResult("done", "tc-1", "testTool", "{}", false, "ok");
-        when(toolExecutionService.getToolStatus(sessionId)).thenReturn(serviceResult);
+        when(toolExecutionService.getToolStatus(sessionId, "tc-1")).thenReturn(serviceResult);
 
-        ApiResponse<ToolExecutionService.ToolStatusResult> response = controller.toolStatus(sessionId);
+        ApiResponse<ToolExecutionService.ToolStatusResult> response = controller.toolStatus(sessionId, "tc-1");
 
         assertTrue(response.isSuccess());
         assertEquals("done", response.getData().status());
         assertEquals("ok", response.getData().result());
-        verify(toolExecutionService).getToolStatus(sessionId);
+        verify(toolExecutionService).getToolStatus(sessionId, "tc-1");
     }
 
     @Test
     void toolStatus_返回idle状态() {
         ToolExecutionService.ToolStatusResult serviceResult =
                 new ToolExecutionService.ToolStatusResult("idle", null, null, null, false, null);
-        when(toolExecutionService.getToolStatus(sessionId)).thenReturn(serviceResult);
+        when(toolExecutionService.getToolStatus(sessionId, "tc-1")).thenReturn(serviceResult);
 
-        ApiResponse<ToolExecutionService.ToolStatusResult> response = controller.toolStatus(sessionId);
+        ApiResponse<ToolExecutionService.ToolStatusResult> response = controller.toolStatus(sessionId, "tc-1");
 
         assertTrue(response.isSuccess());
         assertEquals("idle", response.getData().status());
-        verify(toolExecutionService).getToolStatus(sessionId);
+        verify(toolExecutionService).getToolStatus(sessionId, "tc-1");
     }
 
     @Test

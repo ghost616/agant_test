@@ -1,9 +1,0 @@
-{
-  "plan_id": "plan_121334fb-65a6-4f6f-95ea-1b2d4080c2e5",
-  "module_name": "platform-app",
-  "development_plan": "在 AgentContextConfiguration.java 中：\n1. 移除 historyQuerySystemTool() Bean 方法\n2. 移除 loadSkillsSystemTool() Bean 方法\n3. 移除 unloadSkillsSystemTool() Bean 方法\n4. 移除对应的 import（HistoryQuerySystemTool, LoadSkillsSystemTool, UnloadSkillsSystemTool）\n这三个系统工具现由 AgentAssembler 的 SystemToolProvider 代理内部管理",
-  "session_id": "ses_0bf7d00cbffe5yADLXA4AdNjhq",
-  "modified_files": [
-    "platform-app/src/main/java/com/ghost616/platform/config/AgentContextConfiguration.java"
-  ]
-}

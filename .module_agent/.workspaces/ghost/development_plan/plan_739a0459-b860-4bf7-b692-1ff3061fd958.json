@@ -1,9 +1,0 @@
-{
-  "plan_id": "plan_739a0459-b860-4bf7-b692-1ff3061fd958",
-  "module_name": "agent-integration",
-  "development_plan": "在 AgentAssembler.build() 中：\n1. 构造 SystemToolProvider 代理，delegate discoverSystemTools() 到原始 systemToolProvider\n2. 代理的 discoverSystemTools() 方法：调用原始获取 Map，检查 history_query/load_skills/unload_skills 是否存在，缺失时 new 创建并 put 入 Map\n3. SystemToolManager 使用代理 SystemToolProvider 而非原始实例\n4. 三个系统工具均无构造依赖，直接 new HistoryQuerySystemTool() 等即可",
-  "session_id": "ses_0bf7d433bffeAvhAGPWRDn60Uv",
-  "modified_files": [
-    "agent-integration/src/main/java/com/ghost616/agentinteg/AgentAssembler.java"
-  ]
-}

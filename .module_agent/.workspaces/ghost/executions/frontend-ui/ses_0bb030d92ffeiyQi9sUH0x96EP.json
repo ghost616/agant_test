@@ -1,0 +1,21 @@
+[
+  {
+    "plan_id": "plan_2891c744-86f5-412b-9d00-581400f7d229",
+    "plan": "getToolStatus 增加 toolId 参数",
+    "modified_files": [
+      "src/services/session.ts",
+      "src/pages/sessions/AgentChat.tsx"
+    ],
+    "summary": "1. src/services/session.ts: getToolStatus 签名从 (sessionId) 改为 (sessionId, toolId)，URL 增加 toolId 查询参数 2. src/pages/sessions/AgentChat.tsx: pollToolStatus 增加 toolId 参数并传给 getToolStatus；executeToolLoop 调用 pollToolStatus 时传入 execResult.toolId。无需更新测试（无相关测试用例），无测试命令可运行。",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_05c504bd-4b5f-4745-b9ef-93304bcebd01",
+    "plan": "修复 executeToolLoop 中 toolId 可能为 undefined 的类型错误",
+    "modified_files": [
+      "src/pages/sessions/AgentChat.tsx"
+    ],
+    "summary": "在 pollToolStatus(sessionId, execResult.toolId) 调用前增加 if (!execResult.toolId) 守卫判断，toolId 缺失时设置 hasMore = false 并 continue，避免类型错误。",
+    "errors": []
+  }
+]

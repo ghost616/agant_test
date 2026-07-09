@@ -11,7 +11,7 @@
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/ToolManager.java",
-      "description": "工具调用管理器，注入 ToolConfigService，负责工具缓存和调用器路由"
+      "description": "工具调用管理器，注入 ToolConfigService，负责工具缓存和调用器路由，createInvoker 创建 JavaToolInvoker 时传入 toolConfig 参数"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/SessionManager.java",
@@ -79,7 +79,7 @@
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ToolExecutionTracker.java",
-      "description": "工具执行状态跟踪器，ConcurrentHashMap 管理会话级别工具执行状态"
+      "description": "工具执行状态跟踪器，ConcurrentHashMap 使用 String key(sessionId_toolId)，支持每个工具独立执行状态跟踪。提供 setExecuting/setDone(追加toolId)/setFailed(追加toolId)/getCurrentExecution(追加toolId)/clear/getAndClearResults 方法"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/dto/model/ModelConfigData.java",
@@ -107,7 +107,7 @@
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/JavaToolInvoker.java",
-      "description": "Java 类型工具的 ToolInvoker 实现"
+      "description": "Java 类型工具的 ToolInvoker 实现，构造器新增 ToolConfigDTO 参数，loadInstance 加载实例后检测是否实现 ConfigurableToolInvoker 并自动注入配置"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/LoadSkillsSystemTool.java",
@@ -243,11 +243,15 @@
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ToolExecutionService.java",
-      "description": "工具执行服务，提供 executeTool/getToolStatus/continueAfterTools 方法封装工具异步执行、状态查询和工具结果回传继续对话的完整业务逻辑，包含内部记录 ToolExecutionResult 和 ToolStatusResult"
+      "description": "工具执行服务，提供 executeTool/getToolStatus(追加toolId)/continueAfterTools(已移除阻塞检查) 方法封装工具异步执行、状态查询和工具结果回传继续对话的完整业务逻辑，包含内部记录 ToolExecutionResult 和 ToolStatusResult"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/util/JsonMapper.java",
       "description": "公用 JSON 工具类，提供静态 ObjectMapper MAPPER 实例，供各组件直接引用"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/ConfigurableToolInvoker.java",
+      "description": "可配置工具调用器接口，继承 ToolInvoker，定义 setToolConfig(ToolConfigDTO) 方法，供 JavaToolInvoker 在实例化后注入工具配置"
     }
   ]
 }

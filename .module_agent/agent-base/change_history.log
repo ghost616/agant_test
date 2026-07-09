@@ -23,3 +23,5 @@
 [2026-07-08T05:40:25.875Z] [session: ses_0bfca07a5ffe1Prkh5cQiqzcVG] ChatService.chat(): 在 invoker.invokeStream() 调用前添加 log.info("sessionId={} messages: {}", sessionId, messages) 调试日志
 [2026-07-08T06:10:44.850Z] [session: ses_0bfca07a5ffe1Prkh5cQiqzcVG] ToolExecutionService.executeTool(): invoker 为 null 时先 poll 消费失败工具再计算 hasMore，避免前台死循环
 [2026-07-08T07:00:44.782Z] [session: ses_0bfca07a5ffe1Prkh5cQiqzcVG] ChatService.initHooks() 重命名为 refreshHooks()，方法开头添加 clear() 清空 hooks 集合使其可重复调用；同步更新 ChatServiceTest 测试用例
+[2026-07-09T01:59:03.603Z] [session: ses_0bb67023fffecAbHhB8mJRJ1Fm] 创建 ConfigurableToolInvoker 接口，继承 ToolInvoker 新增 setToolConfig 方法；修改 JavaToolInvoker 构造器新增 ToolConfigDTO 参数，loadInstance 中检测 ConfigurableToolInvoker 并注入配置；修改 ToolManager.createInvoker 创建 JavaToolInvoker 时传入 toolConfig
+[2026-07-09T03:35:27.536Z] [session: ses_0bb67023fffecAbHhB8mJRJ1Fm] ToolExecutionTracker: ConcurrentHashMap key 改为 String(sessionId_toolId), setDone/setFailed/getCurrentExecution 追加 toolId 参数；ToolExecutionService: getToolStatus 追加 toolId 参数, 移除 continueAfterTools 中阻塞检查；下游 Controller/Test 适配

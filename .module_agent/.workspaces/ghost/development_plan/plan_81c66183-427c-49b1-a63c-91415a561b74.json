@@ -1,9 +1,0 @@
-{
-  "plan_id": "plan_81c66183-427c-49b1-a63c-91415a561b74",
-  "module_name": "agent-base",
-  "development_plan": "在 SessionManager.java 的 MessageSaveBuilder.save() 方法中添加参数非空校验：\n1. 校验 sessionId 是否为 null，若为 null 抛出 BusinessException(ErrorCode.PARAM_INVALID, \"sessionId 不能为空\")\n2. 校验 role 是否为 null，若为 null 抛出 BusinessException(ErrorCode.PARAM_INVALID, \"role 不能为空\")\n3. 校验 content 是否为 null，若为 null 抛出 BusinessException(ErrorCode.PARAM_INVALID, \"content 不能为空\")\n参数校验通过后再调用 dataProvider.saveMessage()",
-  "session_id": "ses_0bfca07a5ffe1Prkh5cQiqzcVG",
-  "modified_files": [
-    "agent-base/src/main/java/com/ghost616/agentbase/service/agent/SessionManager.java"
-  ]
-}

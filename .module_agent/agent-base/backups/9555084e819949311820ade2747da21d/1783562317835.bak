@@ -110,7 +110,7 @@ public class ToolManager {
     private ToolInvoker createInvoker(ToolConfigDTO toolConfig) {
         switch (toolConfig.getToolType()) {
             case JAVA:
-                return new JavaToolInvoker(toolConfig.getImplPath(), toolConfig);
+                return new JavaToolInvoker(toolConfig.getImplPath());
             case TYPESCRIPT:
                 return new TypeScriptToolInvoker(toolConfig.getImplPath());
             case PYTHON:

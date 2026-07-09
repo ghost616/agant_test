@@ -140,6 +140,9 @@
 - AgentChat 页面底部按钮区新增"回滚"按钮：先调用 rollbackSession 触发后端回退，成功后调用 loadHistory 刷新消息列表；loading/toolExecuting 时按钮禁用
 - stopChat(sessionId): 调用 POST /api/chat/${sessionId}/stop 通知后端停止 AI 回复
 - 点击停止按钮时先调用 stopChat 通知后端（fire-and-forget，忽略错误），再中止本地 AbortController 请求
+- getToolStatus API 签名改为 (sessionId, toolId)，URL 添加 toolId 查询参数
+- pollToolStatus 增加 toolId 参数并传递给 getToolStatus
+- executeToolLoop 调用 pollToolStatus 时传入 execResult.toolId
 ## 技能管理界面
 
 - 技能配置管理页面 `/skills`，支持技能列表展示、搜索筛选、新增/编辑/删除/启用禁用

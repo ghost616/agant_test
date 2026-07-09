@@ -1,6 +1,5 @@
 package com.ghost616.agentbase.service.agent.invoker;
 
-import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
 import com.ghost616.agentbase.service.agent.AgentExecutionContext;
 import lombok.extern.slf4j.Slf4j;
 
@@ -8,23 +7,17 @@ import lombok.extern.slf4j.Slf4j;
 public class JavaToolInvoker implements ToolInvoker {
 
     private final String implClassName;
-    private final ToolConfigDTO toolConfig;
     private final ToolInvoker delegate;
 
-    public JavaToolInvoker(String implClassName, ToolConfigDTO toolConfig) {
+    public JavaToolInvoker(String implClassName) {
         this.implClassName = implClassName;
-        this.toolConfig = toolConfig;
         this.delegate = loadInstance();
     }
 
     private ToolInvoker loadInstance() {
         try {
             Class<?> clazz = Class.forName(implClassName);
-            ToolInvoker instance = (ToolInvoker) clazz.getDeclaredConstructor().newInstance();
-            if (instance instanceof ConfigurableToolInvoker configurable) {
-                configurable.setToolConfig(toolConfig);
-            }
-            return instance;
+            return (ToolInvoker) clazz.getDeclaredConstructor().newInstance();
         } catch (Exception e) {
             log.error("加载工具实现类失败: {}", implClassName, e);
             throw new RuntimeException("加载工具实现类失败: " + implClassName, e);

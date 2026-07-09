@@ -147,12 +147,12 @@ function AgentChat(): JSX.Element {
     return () => handleAbort();
   }, [handleAbort]);
 
-  const pollToolStatus = useCallback(async (sid: string): Promise<boolean> => {
+  const pollToolStatus = useCallback(async (sid: string, toolId: string): Promise<boolean> => {
     let done = false;
     while (!done && !toolAbortRef.current) {
       await new Promise((resolve) => setTimeout(resolve, 1000));
       if (toolAbortRef.current) return false;
-      const status = await getToolStatus(sid);
+      const status = await getToolStatus(sid, toolId);
       if (status.status === 'done') {
         done = true;
         setMessages((msgs) => {
@@ -212,6 +212,10 @@ function AgentChat(): JSX.Element {
           continue;
         }
         hasMore = execResult.hasMore;
+        if (!execResult.toolId) {
+          hasMore = false;
+          continue;
+        }
         hadTools = true;
         setMessages((prev) => [
           ...prev,
@@ -220,7 +224,7 @@ function AgentChat(): JSX.Element {
             content: `**正在执行工具: ${execResult.toolName}**\n\n**参数:**\n\`\`\`json\n${execResult.arguments}\n\`\`\``,
           },
         ]);
-        const succeeded = await pollToolStatus(sessionId);
+        const succeeded = await pollToolStatus(sessionId, execResult.toolId);
         if (!succeeded) hasMore = false;
       }
       if (toolAbortRef.current) {

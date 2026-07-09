@@ -1,7 +1,5 @@
 package com.ghost616.agentbase.service.agent;
 
-import com.ghost616.agentbase.enums.ErrorCode;
-import com.ghost616.agentbase.exception.BusinessException;
 import com.ghost616.agentbase.dto.chat.ChatRequest;
 import com.ghost616.agentbase.dto.model.ChatChunk;
 import com.ghost616.agentbase.service.agent.invoker.SystemTool;
@@ -245,9 +243,9 @@ class ToolExecutionServiceTest {
 
     @Test
     void getToolStatus_无执行中状态时返回idle() {
-        when(toolExecutionTracker.getCurrentExecution(sessionId)).thenReturn(null);
+        when(toolExecutionTracker.getCurrentExecution(sessionId, "tid")).thenReturn(null);
 
-        ToolExecutionService.ToolStatusResult result = toolExecutionService.getToolStatus(sessionId);
+        ToolExecutionService.ToolStatusResult result = toolExecutionService.getToolStatus(sessionId, "tid");
 
         assertEquals("idle", result.status());
         assertNull(result.toolId());
@@ -258,9 +256,9 @@ class ToolExecutionServiceTest {
     void getToolStatus_有执行中状态时返回对应数据() {
         ToolExecutionTracker.ToolExecutionStatus status = new ToolExecutionTracker.ToolExecutionStatus(
                 "tid8", "runningTool", "{}", "executing", null, false);
-        when(toolExecutionTracker.getCurrentExecution(sessionId)).thenReturn(status);
+        when(toolExecutionTracker.getCurrentExecution(sessionId, "tid8")).thenReturn(status);
 
-        ToolExecutionService.ToolStatusResult result = toolExecutionService.getToolStatus(sessionId);
+        ToolExecutionService.ToolStatusResult result = toolExecutionService.getToolStatus(sessionId, "tid8");
 
         assertEquals("executing", result.status());
         assertEquals("tid8", result.toolId());
@@ -273,19 +271,7 @@ class ToolExecutionServiceTest {
     // ========== continueAfterTools ==========
 
     @Test
-    void continueAfterTools_工具正在执行时抛出BusinessException() {
-        ToolExecutionTracker.ToolExecutionStatus status = new ToolExecutionTracker.ToolExecutionStatus(
-                "tid9", "tool", "{}", "executing", null, false);
-        when(toolExecutionTracker.getCurrentExecution(sessionId)).thenReturn(status);
-
-        BusinessException ex = assertThrows(BusinessException.class,
-                () -> toolExecutionService.continueAfterTools(sessionId));
-        assertEquals(ErrorCode.SYSTEM_ERROR, ex.getErrorCode());
-    }
-
-    @Test
     void continueAfterTools_sessionStopped时清理并返回FluxEmpty() {
-        when(toolExecutionTracker.getCurrentExecution(sessionId)).thenReturn(null);
         AgentContextManager.AgentSessionContext sessionCtx = mock(AgentContextManager.AgentSessionContext.class);
         AgentExecutionContext context = mock(AgentExecutionContext.class);
         when(sessionCtx.context()).thenReturn(context);
@@ -301,7 +287,6 @@ class ToolExecutionServiceTest {
 
     @Test
     void continueAfterTools_正常流程() throws Exception {
-        when(toolExecutionTracker.getCurrentExecution(sessionId)).thenReturn(null);
         AgentContextManager.AgentSessionContext sessionCtx = mock(AgentContextManager.AgentSessionContext.class);
         AgentExecutionContext context = mock(AgentExecutionContext.class);
         when(sessionCtx.context()).thenReturn(context);
@@ -348,7 +333,6 @@ class ToolExecutionServiceTest {
 
     @Test
     void continueAfterTools_无结果时跳过持久化和历史记录() {
-        when(toolExecutionTracker.getCurrentExecution(sessionId)).thenReturn(null);
         AgentContextManager.AgentSessionContext sessionCtx = mock(AgentContextManager.AgentSessionContext.class);
         AgentExecutionContext context = mock(AgentExecutionContext.class);
         when(sessionCtx.context()).thenReturn(context);
