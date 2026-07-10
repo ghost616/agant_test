@@ -9,9 +9,7 @@ public interface ContextDataProvider {
 
     record AgentContextData(Long agentId, String systemPrompt, Long defaultModelId,
                             Integer recentMessageCount, List<SkillConfigDTO> skills,
-                            Map<String, String> sessionVariables,
-                            Long parentSessionId,
-                            List<AgentExecutionContext.ChildSession> childSessions) {
+                            Map<String, String> sessionVariables) {
     }
 
     AgentContextData loadAgentContext(Long sessionId);
@@ -19,7 +17,4 @@ public interface ContextDataProvider {
     void saveSessionVariable(Long sessionId, String key, String value);
 
     void deleteSessionVariable(Long sessionId, String key);
-
-    Long createChildSession(Long parentSessionId, String agentName, String description, Long modelId,
-                            List<Long> toolIds, List<Long> skillIds, String prompt);
 }

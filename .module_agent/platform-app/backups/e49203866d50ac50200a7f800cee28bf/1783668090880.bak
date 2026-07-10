@@ -34,7 +34,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import com.ghost616.agentbase.service.agent.AgentExecutionContext;
 import com.ghost616.agentbase.service.agent.ContextDataProvider;
 
 
@@ -84,8 +83,7 @@ public class DefaultContextDataProvider implements ContextDataProvider {
             Map<String, String> sessionVariables = loadSessionVariablesInternal(sessionId);
 
             return new AgentContextData(null, session.getSystemPrompt(), session.getModelId(),
-                    recentMessageCount, skills, sessionVariables,
-                    session.getParentSessionId(), null);
+                    recentMessageCount, skills, sessionVariables);
         }
 
         Long agentId = session.getAgentId();
@@ -97,15 +95,7 @@ public class DefaultContextDataProvider implements ContextDataProvider {
         List<SkillConfigDTO> skills = loadSkillsInternal(agentId);
         Map<String, String> sessionVariables = loadSessionVariablesInternal(sessionId);
 
-        List<AgentExecutionContext.ChildSession> childSessions = sessionMapper.selectList(
-                        new LambdaQueryWrapper<Session>()
-                                .eq(Session::getParentSessionId, sessionId))
-                .stream()
-                .map(s -> new AgentExecutionContext.ChildSession(s.getId(), s.getTitle(), s.getDescription(), s.getModelId()))
-                .toList();
-
-        return new AgentContextData(agentId, systemPrompt, defaultModelId, recentMessageCount, skills, sessionVariables,
-                null, childSessions);
+        return new AgentContextData(agentId, systemPrompt, defaultModelId, recentMessageCount, skills, sessionVariables);
     }
 
     private List<SkillConfigDTO> loadSkillsInternal(Long agentId) {

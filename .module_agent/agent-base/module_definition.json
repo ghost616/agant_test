@@ -39,7 +39,7 @@
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ContextDataProvider.java",
-      "description": "上下文数据提供者接口，定义 agent 配置、技能、会话变量等数据查询方法"
+      "description": "上下文数据提供者接口，定义 agent 配置、技能、会话变量等数据查询方法，以及子会话创建方法 createChildSession"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/model/invoker/ModelInvokerFactory.java",

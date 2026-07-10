@@ -7,6 +7,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -15,6 +16,8 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 @Getter
 public class AgentExecutionContext {
@@ -23,6 +26,7 @@ public class AgentExecutionContext {
     private final Long agentId;
     private final String systemPrompt;
     private Long modelId;
+    private final Long parentSessionId;
     private final Integer recentMessageCount;
     @Getter(AccessLevel.NONE)
     private final List<HistoryEntry> history;
@@ -35,6 +39,8 @@ public class AgentExecutionContext {
     private final Map<String, String> conversationVariables;
     private final List<SkillConfigDTO> skills;
     private final AtomicBoolean stopped = new AtomicBoolean(false);
+    @Getter(AccessLevel.NONE)
+    private final List<ChildSession> childSessions = new ArrayList<>();
 
     public AgentExecutionContext(Long sessionId, Long agentId, String systemPrompt, Long modelId,
                                   Integer recentMessageCount,
@@ -42,11 +48,13 @@ public class AgentExecutionContext {
                                  List<SkillConfigDTO> skills,
                                  AgentContextMutator mutator,
                                   Map<String, String> sessionVariables,
-                                  Map<String, String> conversationVariables) {
+                                  Map<String, String> conversationVariables,
+                                  Long parentSessionId, List<ChildSession> childSessions) {
         this.sessionId = sessionId;
         this.agentId = agentId;
         this.systemPrompt = systemPrompt;
         this.modelId = modelId;
+        this.parentSessionId = parentSessionId;
         this.recentMessageCount = recentMessageCount;
         this.history = history;
         this.tools = tools;
@@ -54,7 +62,30 @@ public class AgentExecutionContext {
         this.mutator = mutator;
         this.sessionVariables = sessionVariables;
         this.conversationVariables = conversationVariables;
+        if (childSessions != null) {
+            this.childSessions.addAll(childSessions);
+        }
         this.mutator.bind(this);
+    }
+
+    public List<ChildSession> getChildSessions() {
+        return Collections.unmodifiableList(childSessions);
+    }
+
+    public Long createChildSession(String agentName, String description, Long modelId,
+                                    List<Long> toolIds, List<Long> skillIds, String prompt) {
+        Long childSessionId = mutator.createChildSession(agentName, description, modelId, toolIds, skillIds, prompt);
+        if (childSessionId != null) {
+            childSessions.add(new ChildSession(childSessionId, agentName, description, modelId));
+        }
+        return childSessionId;
+    }
+
+    public void sendUserMessage(Long childSessionId, String content, Long modelId) {
+        mutator.sendUserMessage(childSessionId, content, modelId);
+    }
+
+    public record ChildSession(Long sessionId, String agentName, String description, Long modelId) {
     }
 
     public List<HistoryEntry> getHistory() {
@@ -62,36 +93,66 @@ public class AgentExecutionContext {
     }
 
     public void putSessionVariable(String key, String value) {
+        if (parentSessionId != null) {
+            mutator.putSessionVariable(key, value);
+            return;
+        }
         sessionVariables.put(key, value);
         mutator.putSessionVariable(key, value);
     }
 
     public void putConversationVariable(String key, String value) {
+        if (parentSessionId != null) {
+            mutator.putConversationVariable(key, value);
+            return;
+        }
         conversationVariables.put(key, value);
+        mutator.putConversationVariable(key, value);
     }
 
     public String getSessionVariable(String key) {
+        if (parentSessionId != null) {
+            return mutator.getSessionVariable(key);
+        }
         return sessionVariables.get(key);
     }
 
     public String getConversationVariable(String key) {
+        if (parentSessionId != null) {
+            return mutator.getConversationVariable(key);
+        }
         return conversationVariables.get(key);
     }
 
     public void removeSessionVariable(String key) {
+        if (parentSessionId != null) {
+            mutator.removeSessionVariable(key);
+            return;
+        }
         sessionVariables.remove(key);
         mutator.removeSessionVariable(key);
     }
 
     public void removeConversationVariable(String key) {
+        if (parentSessionId != null) {
+            mutator.removeConversationVariable(key);
+            return;
+        }
         conversationVariables.remove(key);
+        mutator.removeConversationVariable(key);
     }
 
     public Set<String> getSessionVariableKeys() {
+        if (parentSessionId != null) {
+            return mutator.getSessionVariableKeys();
+        }
         return sessionVariables.keySet();
     }
 
     public Set<String> getConversationVariableKeys() {
+        if (parentSessionId != null) {
+            return mutator.getConversationVariableKeys();
+        }
         return conversationVariables.keySet();
     }
 
@@ -107,6 +168,25 @@ public class AgentExecutionContext {
         private AgentExecutionContext context;
         BiConsumer<String, String> sessionVarPutCallback;
         Consumer<String> sessionVarRemoveCallback;
+        BiConsumer<String, String> conversationVarPutCallback;
+        Consumer<String> conversationVarRemoveCallback;
+        Function<String, String> getSessionVarCallback;
+        Function<String, String> getConversationVarCallback;
+        Supplier<Set<String>> getSessionVarKeysCallback;
+        Supplier<Set<String>> getConversationVarKeysCallback;
+        CreateChildSessionCallback createChildSessionCallback;
+        SendUserMessageCallback sendUserMessageCallback;
+
+        @FunctionalInterface
+        public interface CreateChildSessionCallback {
+            Long create(Long parentSessionId, String agentName, String description, Long modelId,
+                        List<Long> toolIds, List<Long> skillIds, String prompt);
+        }
+
+        @FunctionalInterface
+        public interface SendUserMessageCallback {
+            void send(Long childSessionId, String content, Long modelId);
+        }
 
         public void bind(AgentExecutionContext context) {
             this.context = context;
@@ -132,6 +212,46 @@ public class AgentExecutionContext {
             }
         }
 
+        public void putConversationVariable(String key, String value) {
+            if (conversationVarPutCallback != null) {
+                conversationVarPutCallback.accept(key, value);
+            }
+        }
+
+        public void removeConversationVariable(String key) {
+            if (conversationVarRemoveCallback != null) {
+                conversationVarRemoveCallback.accept(key);
+            }
+        }
+
+        public String getSessionVariable(String key) {
+            if (getSessionVarCallback != null) {
+                return getSessionVarCallback.apply(key);
+            }
+            return null;
+        }
+
+        public String getConversationVariable(String key) {
+            if (getConversationVarCallback != null) {
+                return getConversationVarCallback.apply(key);
+            }
+            return null;
+        }
+
+        public Set<String> getSessionVariableKeys() {
+            if (getSessionVarKeysCallback != null) {
+                return getSessionVarKeysCallback.get();
+            }
+            return Collections.emptySet();
+        }
+
+        public Set<String> getConversationVariableKeys() {
+            if (getConversationVarKeysCallback != null) {
+                return getConversationVarKeysCallback.get();
+            }
+            return Collections.emptySet();
+        }
+
         public void clearConversationVariables() {
             if (context != null) {
                 context.conversationVariables.clear();
@@ -144,6 +264,30 @@ public class AgentExecutionContext {
 
         public void resetStopped() {
             context.stopped.set(false);
+        }
+
+        public Long createChildSession(String agentName, String description, Long modelId,
+                                        List<Long> toolIds, List<Long> skillIds, String prompt) {
+            if (context.parentSessionId != null) {
+                return null;
+            }
+            if (agentName == null || agentName.isBlank()) {
+                return null;
+            }
+            if (modelId == null) {
+                modelId = context.modelId;
+            }
+            if (createChildSessionCallback != null) {
+                return createChildSessionCallback.create(context.sessionId, agentName, description, modelId,
+                        toolIds, skillIds, prompt);
+            }
+            return null;
+        }
+
+        public void sendUserMessage(Long childSessionId, String content, Long modelId) {
+            if (sendUserMessageCallback != null) {
+                sendUserMessageCallback.send(childSessionId, content, modelId);
+            }
         }
     }
 }

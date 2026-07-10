@@ -1,11 +1,11 @@
 {
   "agent-base": [
-    "ses_0bb67023fffecAbHhB8mJRJ1Fm"
+    "ses_0b5372548ffehR4Mb75cH913tL"
   ],
   "platform-app": [
-    "ses_0bb0ef1d7ffewvFkEcvrQURN7x"
+    "ses_0b5195d8dffeBXywznnn5PrluN"
   ],
-  "frontend-ui": [
-    "ses_0bb030d92ffeiyQi9sUH0x96EP"
+  "_checked": [
+    "ses_0b5372548ffehR4Mb75cH913tL"
   ]
 }

@@ -34,3 +34,9 @@ platform-app 模块包含以下功能：
 - 已移除 messageSavePostHook() @Bean（该 hook 现由 AgentAssembler 的 ChatDataProvider 代理内部管理）
 - 已移除 @DependsOn("messageSavePostHook") 注解及相关 import
 - 已移除 historyQuerySystemTool()、loadSkillsSystemTool()、unloadSkillsSystemTool() @Bean 及相关 import（这三个系统工具现由 AgentAssembler 的 SystemToolProvider 代理内部管理）
+- DefaultContextDataProvider 新增 createChildSession 空实现，返回 null
+- Session 实体新增 parentSessionId、isChild、description 字段（子会话支持）
+- 新增 SessionSkill 实体和 SessionSkillMapper（技能关联表）
+- DefaultContextDataProvider.createChildSession 实现：校验父会话/模型/工具/技能存在性，创建子会话并写入 SessionTool/SessionSkill 关联记录
+- DefaultContextDataProvider.loadAgentContext 子会话分支填充 parentSessionId=session.getParentSessionId()、childSessions=null
+- DefaultContextDataProvider.loadAgentContext 普通会话分支填充 parentSessionId=null、childSessions 从数据库查询 parentSessionId=当前会话ID 的子会话列表

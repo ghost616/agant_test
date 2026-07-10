@@ -1,0 +1,11 @@
+{
+  "plan_id": "plan_3e484f0b-4bf0-4278-8f94-dfd11ad75be2",
+  "module_name": "agent-base",
+  "development_plan": "1. 修改 ContextDataProvider.java：\n   - 定义记录：record AgentContextData(String systemPrompt, Long defaultModelId, Integer recentMessageCount, List<SkillConfigDTO> skills, Map<String,String> sessionVariables)\n   - 删除 getAgentId、getSystemPrompt、getDefaultModelId、getRecentMessageCount、loadSkills、loadSessionVariables 六个方法\n   - 新增方法：AgentContextData loadAgentContext(Long sessionId)\n\n2. 修改 AgentContextManager.java Builder.build()：\n   - 将原来分散调用 dataProvider.getAgentId(id)、getSystemPrompt(agentId)、getDefaultModelId(agentId)、getRecentMessageCount(agentId)、loadSkills(agentId)、loadSessionVariables(id) 替换为一次调用 dataProvider.loadAgentContext(id)\n   - 从返回的 AgentContextData 中取各字段值；getAgentId 同理不再需要（loadAgentContext 内部自行处理）\n\n3. 修改 AgentContextManagerTest.java：将原来的多个 stub 调用合并为 mock loadAgentContext",
+  "session_id": "ses_0bb67023fffecAbHhB8mJRJ1Fm",
+  "modified_files": [
+    "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ContextDataProvider.java",
+    "agent-base/src/main/java/com/ghost616/agentbase/service/agent/AgentContextManager.java",
+    "agent-base/src/test/java/com/ghost616/agentbase/service/agent/AgentContextManagerTest.java"
+  ]
+}

@@ -20,4 +20,12 @@ public class Session extends BaseEntity {
 
     @TableField("system_prompt")
     private String systemPrompt;
+
+    @TableField("parent_session_id")
+    private Long parentSessionId;
+
+    @TableField("is_child")
+    private Boolean isChild;
+
+    private String description;
 }

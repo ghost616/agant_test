@@ -39,6 +39,7 @@ public class SessionServiceImpl implements SessionService {
         if (agentId != null) {
             wrapper.eq(Session::getAgentId, agentId);
         }
+        wrapper.and(w -> w.isNull(Session::getIsChild).or().eq(Session::getIsChild, false));
         wrapper.orderByDesc(Session::getCreateTime);
 
         List<Session> entities = sessionMapper.selectList(wrapper);
@@ -52,6 +53,7 @@ public class SessionServiceImpl implements SessionService {
         entity.setAgentId(agentId);
         entity.setModelId(modelId);
         entity.setTitle(title);
+        entity.setIsChild(false);
         sessionMapper.insert(entity);
 
         LambdaQueryWrapper<AgentTool> toolWrapper = new LambdaQueryWrapper<>();

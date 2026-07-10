@@ -58,3 +58,6 @@ getToolStatus(Long sessionId, String toolId) toolId 为必传参数；continueAf
 ## ConfigurableToolInvoker
 
 ConfigurableToolInvoker 接口，继承 ToolInvoker，定义 setToolConfig(ToolConfigDTO) 方法。JavaToolInvoker 在加载工具实例后检测是否实现了该接口，若是则自动注入 ToolConfigDTO。
+## ContextDataProvider
+
+上下文数据提供者接口，定义 agent 配置、技能、会话变量等数据查询方法，以及子会话创建方法 createChildSession。

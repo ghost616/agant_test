@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_0b5372548ffehR4Mb75cH913tL",
+  "content": "## 待测试功能\n\n**AgentExecutionContext put/remove 变量方法子会话逻辑**\n\n修改 4 个方法：\n- `putSessionVariable`：子会话（parentSessionId != null）仅委托 mutator，不操作本地 sessionVariables\n- `putConversationVariable`：子会话仅委托 mutator，不操作本地 conversationVariables\n- `removeSessionVariable`：子会话仅委托 mutator，不操作本地 sessionVariables\n- `removeConversationVariable`：子会话仅委托 mutator，不操作本地 conversationVariables\n\n验证：\n- 子会话调用 put/remove 方法时，本地 Map 不受影响，仅通过 mutator 委托到父 context\n- 根会话调用 put/remove 方法时，本地 Map 更新 + mutator 持久化（原有行为不变）\n",
+  "timestamp": "2026-07-10T09:13:47.354Z"
+}

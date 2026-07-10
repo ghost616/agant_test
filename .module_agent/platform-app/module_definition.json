@@ -7,7 +7,7 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultContextDataProvider.java",
-      "description": "默认上下文数据提供者实现，负责加载智能体配置、技能配置、会话变量等上下文数据，实现 agent-base 的 ContextDataProvider 接口"
+      "description": "ContextDataProvider 接口的默认实现。使用 MyBatis-Plus Mapper 从数据库查询会话、智能体配置、变量、技能、工具等数据组装 AgentContextData。提供会话变量增删、子会话创建功能。loadAgentContext 根据 isChild 分支处理：子会话从父会话继承 recentMessageCount 并填充 parentSessionId；普通会话查询子会话列表填充 childSessions。"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/controller/SessionController.java",

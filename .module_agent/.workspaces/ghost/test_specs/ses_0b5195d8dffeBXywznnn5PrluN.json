@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_0b5195d8dffeBXywznnn5PrluN",
+  "content": "## 待测试功能\n\n### 功能 1：loadAgentContext 子会话分支\n\n**涉及文件**：\n- `platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultContextDataProvider.java`\n\n**测试点**：\n- 子会话（isChild=true）时，AgentContextData.parentSessionId = session.getParentSessionId()\n- 子会话时，AgentContextData.childSessions = null\n- 子会话时 AgentContextData.agentId = null\n- 子会话时 parentSessionId 为 null 时（孤儿子会话），recentMessageCount 为 null 且不查询 parentSession\n- 子会话时 parentSession 的 agentId 为 null 时，recentMessageCount 为 null\n- 子会话时正常从父会话 AgentConfig 继承 recentMessageCount\n\n### 功能 2：loadAgentContext 普通会话分支\n\n**测试点**：\n- 普通会话（isChild=false/null）时，AgentContextData.parentSessionId = null\n- 普通会话时，childSessions 包含所有 parentSessionId = sessionId 的记录\n- 普通会话时，无条件查询子会话列表（即使空列表也不为 null）\n- 普通会话时 ChildSession 对象正确映射 sessionId、agentName（title）、description、modelId\n- 普通会话的 agentId/systemPrompt/defaultModelId/recentMessageCount/skills/sessionVariables 正常填充\n\n### 功能 3：loadAgentContext session 不存在\n\n**测试点**：\n- sessionId 对应的记录不存在时返回 null",
+  "timestamp": "2026-07-10T07:22:04.510Z"
+}

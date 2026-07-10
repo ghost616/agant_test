@@ -30,14 +30,17 @@ CREATE TABLE IF NOT EXISTS tool_config (
 );
 
 CREATE TABLE IF NOT EXISTS session (
-    id            BIGINT PRIMARY KEY,
-    agent_id      BIGINT,
-    model_id      BIGINT,
-    title         VARCHAR(200),
-    system_prompt TEXT,
-    create_time   TIMESTAMP,
-    update_time   TIMESTAMP,
-    deleted       INTEGER DEFAULT 0
+    id               BIGINT PRIMARY KEY,
+    agent_id         BIGINT,
+    model_id         BIGINT,
+    title            VARCHAR(200),
+    system_prompt    TEXT,
+    parent_session_id BIGINT,
+    is_child         TINYINT(1) DEFAULT 0,
+    description      VARCHAR(500),
+    create_time      TIMESTAMP,
+    update_time      TIMESTAMP,
+    deleted          INTEGER DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS idx_session_agent_id ON session(agent_id);
 CREATE INDEX IF NOT EXISTS idx_session_model_id ON session(model_id);
@@ -134,3 +137,11 @@ CREATE TABLE IF NOT EXISTS session_variable (
 );
 CREATE INDEX IF NOT EXISTS idx_session_variable_session_id ON session_variable(session_id);
 CREATE INDEX IF NOT EXISTS idx_session_variable_key ON session_variable(session_id, variable_key);
+
+CREATE TABLE IF NOT EXISTS session_skill (
+    id         BIGINT PRIMARY KEY,
+    session_id BIGINT,
+    skill_id   BIGINT
+);
+CREATE INDEX IF NOT EXISTS idx_session_skill_session_id ON session_skill(session_id);
+CREATE INDEX IF NOT EXISTS idx_session_skill_skill_id ON session_skill(skill_id);

@@ -1,9 +1,0 @@
-[
-  {
-    "plan_id": "plan_532a8950-07c0-4271-86a7-ceef6c55f230",
-    "plan": "toolStatus 接口新增 toolId 参数",
-    "modified_files": [],
-    "summary": "开发计划中的变更已在当前代码中实现，无需修改：ToolExecutionController 的 toolStatus 已含 @RequestParam String toolId，测试用例已传入 toolId 参数。",
-    "errors": []
-  }
-]

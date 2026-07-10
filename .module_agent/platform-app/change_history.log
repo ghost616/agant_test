@@ -52,3 +52,6 @@
 [2026-07-08T06:56:30.065Z] [session: ses_0bf7d00cbffe5yADLXA4AdNjhq] chatService() @Bean 添加 @DependsOn("messageSavePostHook") 注解，确保 MessageSavePostHook 在 initHooks() 之前已创建
 [2026-07-08T07:23:01.736Z] [session: ses_0bf7d00cbffe5yADLXA4AdNjhq] 移除 messageSavePostHook() @Bean、@DependsOn("messageSavePostHook") 注解及 MessageSavePostHook import（该 hook 现由 AgentAssembler 的 ChatDataProvider 代理内部管理）
 [2026-07-08T07:32:53.429Z] [session: ses_0bf7d00cbffe5yADLXA4AdNjhq] 移除 historyQuerySystemTool()/loadSkillsSystemTool()/unloadSkillsSystemTool() 三个 @Bean 及对应 import（由 AgentAssembler 的 SystemToolProvider 代理内部管理）
+[2026-07-10T02:29:15.670Z] [session: ses_0b624c832ffeeB1C6skL2fq7mh] DefaultContextDataProvider 实现 createChildSession 方法（接口新增方法），方法体返回 null 作为空实现
+[2026-07-10T02:51:18.105Z] [session: ses_0b624c832ffeeB1C6skL2fq7mh] 实现子会话创建功能：Session 新增 parentSessionId/isChild/description 字段；schema.sql 新增列和 session_skill 表；新建 SessionSkill 实体和 Mapper；DefaultContextDataProvider 注入新依赖并实现含校验的 createChildSession 方法；新增 DefaultContextDataProviderTest
+[2026-07-10T07:21:55.382Z] [session: ses_0b5195d8dffeBXywznnn5PrluN] DefaultContextDataProvider.loadAgentContext 适配 AgentContextData 新增的 parentSessionId 和 childSessions 字段：子会话分支填充 session.getParentSessionId() 和 null；普通会话分支填充 null 和数据库查询的子会话 ChildSession 列表

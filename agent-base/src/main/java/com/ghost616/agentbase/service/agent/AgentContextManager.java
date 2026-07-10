@@ -52,79 +52,130 @@ public class AgentContextManager {
         }
 
         public AgentSessionContext build() {
-            return cache.computeIfAbsent(sessionId, id -> {
-                Long agentId = dataProvider.getAgentId(id);
-                if (agentId == null) {
-                    throw new BusinessException(ErrorCode.SESSION_NOT_FOUND);
-                }
+            AgentSessionContext cached = cache.get(sessionId);
+            if (cached != null) {
+                return cached;
+            }
+            AgentSessionContext created = doBuild();
+            AgentSessionContext raced = cache.putIfAbsent(sessionId, created);
+            return raced != null ? raced : created;
+        }
 
-                String systemPrompt = dataProvider.getSystemPrompt(agentId);
-                if (systemPrompt == null) {
-                    systemPrompt = "";
-                }
+        private AgentSessionContext doBuild() {
+            ContextDataProvider.AgentContextData ctxData = dataProvider.loadAgentContext(sessionId);
+            if (ctxData == null) {
+                throw new BusinessException(ErrorCode.SESSION_NOT_FOUND);
+            }
 
-                Long effectiveModelId = (modelIdOverride != null) ? modelIdOverride : dataProvider.getDefaultModelId(agentId);
+            Long agentId = ctxData.agentId();
+            String systemPrompt = ctxData.systemPrompt();
+            if (systemPrompt == null) {
+                systemPrompt = "";
+            }
 
-                List<ToolConfigDTO> tools = toolManager.getSessionTools(id).stream()
-                        .map(ToolManager.ToolSessionObject::toolConfig)
-                        .toList();
+            Long effectiveModelId = (modelIdOverride != null) ? modelIdOverride : ctxData.defaultModelId();
 
-                List<SkillConfigDTO> skills = dataProvider.loadSkills(agentId);
+            List<ToolConfigDTO> tools = toolManager.getSessionTools(sessionId).stream()
+                    .map(ToolManager.ToolSessionObject::toolConfig)
+                    .toList();
 
-                for (SkillConfigDTO skill : skills) {
-                    if (skill.getSkillTools() != null) {
-                        List<ToolConfigDTO> expandedTools = new ArrayList<>();
-                        for (ToolConfigDTO tool : skill.getSkillTools()) {
-                            if (tool.getToolType() == ToolType.MCP_HTTP && !(tool instanceof McpExpandedToolDTO)) {
-                                expandedTools.addAll(toolManager.expandMcpTools(tool));
-                            } else {
-                                expandedTools.add(tool);
-                            }
+            List<SkillConfigDTO> skills = ctxData.skills();
+
+            for (SkillConfigDTO skill : skills) {
+                if (skill.getSkillTools() != null) {
+                    List<ToolConfigDTO> expandedTools = new ArrayList<>();
+                    for (ToolConfigDTO tool : skill.getSkillTools()) {
+                        if (tool.getToolType() == ToolType.MCP_HTTP && !(tool instanceof McpExpandedToolDTO)) {
+                            expandedTools.addAll(toolManager.expandMcpTools(tool));
+                        } else {
+                            expandedTools.add(tool);
                         }
-                        skill.setSkillTools(expandedTools);
                     }
+                    skill.setSkillTools(expandedTools);
                 }
+            }
 
-                List<MessageDataProvider.MessageDTO> messages = sessionManager.getMessages(id);
-                List<AgentExecutionContext.HistoryEntry> history = new ArrayList<>();
-                for (MessageDataProvider.MessageDTO msg : messages) {
-                    List<ToolCall> toolCalls;
-                    if (msg.toolCalls() != null && !msg.toolCalls().isEmpty()) {
-                        toolCalls = msg.toolCalls().stream()
-                                .map(tc -> ToolCall.builder()
-                                        .id(tc.toolCallId())
-                                        .name(tc.toolCallName())
-                                        .arguments(tc.toolCallArguments())
-                                        .build())
-                                .toList();
-                    } else {
-                        toolCalls = Collections.emptyList();
-                    }
-                    history.add(new AgentExecutionContext.HistoryEntry(
-                            msg.role(), msg.content(), msg.reasoning(), msg.toolCallId(),
-                            msg.sequenceNum(), msg.createTime(), Collections.unmodifiableList(toolCalls)));
+            List<MessageDataProvider.MessageDTO> messages = sessionManager.getMessages(sessionId);
+            List<AgentExecutionContext.HistoryEntry> history = new ArrayList<>();
+            for (MessageDataProvider.MessageDTO msg : messages) {
+                List<ToolCall> toolCalls;
+                if (msg.toolCalls() != null && !msg.toolCalls().isEmpty()) {
+                    toolCalls = msg.toolCalls().stream()
+                            .map(tc -> ToolCall.builder()
+                                    .id(tc.toolCallId())
+                                    .name(tc.toolCallName())
+                                    .arguments(tc.toolCallArguments())
+                                    .build())
+                            .toList();
+                } else {
+                    toolCalls = Collections.emptyList();
                 }
+                history.add(new AgentExecutionContext.HistoryEntry(
+                        msg.role(), msg.content(), msg.reasoning(), msg.toolCallId(),
+                        msg.sequenceNum(), msg.createTime(), Collections.unmodifiableList(toolCalls)));
+            }
 
-                AgentExecutionContext.AgentContextMutator mutator = new AgentExecutionContext.AgentContextMutator();
+            AgentExecutionContext.AgentContextMutator mutator = new AgentExecutionContext.AgentContextMutator();
 
-                AgentExecutionContext context = new AgentExecutionContext(
-                        sessionId, agentId, systemPrompt, effectiveModelId,
-                        dataProvider.getRecentMessageCount(agentId),
-                        history, tools, skills, mutator,
-                        dataProvider.loadSessionVariables(id), new HashMap<>());
+            Long parentSessionId = ctxData.parentSessionId();
+            AgentSessionContext parentCtx = null;
+            if (parentSessionId != null) {
+                parentCtx = cache.get(parentSessionId);
+                if (parentCtx == null) {
+                    parentCtx = AgentContextManager.this.build(parentSessionId).build();
+                }
+            }
 
-                injectVariableCallbacks(mutator, sessionId);
+            AgentExecutionContext context = new AgentExecutionContext(
+                    sessionId, agentId, systemPrompt, effectiveModelId,
+                    ctxData.recentMessageCount(),
+                    history, tools, skills, mutator,
+                    ctxData.sessionVariables(), new HashMap<>(),
+                    parentSessionId, ctxData.childSessions());
 
-                return new AgentSessionContext(context, mutator, new AtomicBoolean(false));
-            });
+            injectVariableCallbacks(mutator, sessionId, parentSessionId, parentCtx);
+
+            return new AgentSessionContext(context, mutator, new AtomicBoolean(false));
         }
 
-        private void injectVariableCallbacks(AgentExecutionContext.AgentContextMutator mutator, Long sessionId) {
-            mutator.sessionVarPutCallback = (key, value) ->
-                    dataProvider.saveSessionVariable(sessionId, key, value);
-            mutator.sessionVarRemoveCallback = (key) ->
-                    dataProvider.deleteSessionVariable(sessionId, key);
+        private void injectVariableCallbacks(AgentExecutionContext.AgentContextMutator mutator,
+                                              Long sessionId, Long parentSessionId,
+                                              AgentSessionContext parentCtx) {
+            if (parentSessionId != null && parentCtx != null) {
+                AgentExecutionContext parentContext = parentCtx.context();
+                mutator.sessionVarPutCallback = parentContext::putSessionVariable;
+                mutator.sessionVarRemoveCallback = parentContext::removeSessionVariable;
+                mutator.conversationVarPutCallback = parentContext::putConversationVariable;
+                mutator.conversationVarRemoveCallback = parentContext::removeConversationVariable;
+                mutator.getSessionVarCallback = parentContext::getSessionVariable;
+                mutator.getConversationVarCallback = parentContext::getConversationVariable;
+                mutator.getSessionVarKeysCallback = parentContext::getSessionVariableKeys;
+                mutator.getConversationVarKeysCallback = parentContext::getConversationVariableKeys;
+            } else {
+                mutator.sessionVarPutCallback = (key, value) ->
+                        dataProvider.saveSessionVariable(sessionId, key, value);
+                mutator.sessionVarRemoveCallback = (key) ->
+                        dataProvider.deleteSessionVariable(sessionId, key);
+                mutator.conversationVarPutCallback = (key, value) ->
+                        dataProvider.saveSessionVariable(sessionId, key, value);
+                mutator.conversationVarRemoveCallback = (key) ->
+                        dataProvider.deleteSessionVariable(sessionId, key);
+            }
+            mutator.createChildSessionCallback = (psId, agentName, description, modelId,
+                                                   toolIds, skillIds, prompt) ->
+                    createChildSession(psId, agentName, description, modelId,
+                            toolIds, skillIds, prompt);
+            mutator.sendUserMessageCallback = (childSessionId, content, modelId) ->
+                    sendUserMessage(childSessionId, content, modelId);
         }
+    }
+
+    private Long createChildSession(Long parentSessionId, String agentName, String description, Long modelId,
+                                     List<Long> toolIds, List<Long> skillIds, String prompt) {
+        return dataProvider.createChildSession(parentSessionId, agentName, description, modelId, toolIds, skillIds, prompt);
+    }
+
+    private void sendUserMessage(Long childSessionId, String content, Long modelId) {
     }
 
     public AgentSessionContext get(Long sessionId) {

@@ -1,0 +1,55 @@
+[
+  {
+    "plan_id": "plan_f41b57c1-6c05-4d23-a826-a180c6b2749d",
+    "plan": "修改 AgentContextManager.java 中 AgentSessionContext build() 方法：移除 ctxData.agentId() == null 的空值校验条件",
+    "modified_files": [
+      "agent-base/src/main/java/com/ghost616/agentbase/service/agent/AgentContextManager.java"
+    ],
+    "summary": "已移除 AgentContextManager.Builder.build() 中 ctxData.agentId() == null 的空值校验条件，允许子会话（无 agentId）正常构建上下文",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_468a019d-4393-4f4a-9bd6-40585d942ae8",
+    "plan": "AgentContextData 新增字段、AgentContextMutator 新增 conversationVar 回调、AgentExecutionContext 会话变量方法调用 mutator、AgentContextManager 子会话变量回调委托",
+    "modified_files": [
+      "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ContextDataProvider.java",
+      "agent-base/src/main/java/com/ghost616/agentbase/service/agent/AgentExecutionContext.java",
+      "agent-base/src/main/java/com/ghost616/agentbase/service/agent/AgentContextManager.java",
+      "agent-base/src/test/java/com/ghost616/agentbase/service/agent/AgentContextManagerTest.java",
+      "platform-app/src/test/java/com/ghost616/platform/service/agent/AgentExecutionContextTest.java",
+      "platform-app/src/test/java/com/ghost616/platform/service/agent/ChatServiceTest.java",
+      "platform-app/src/test/java/com/ghost616/platform/service/agent/invoker/ContextSerializerTest.java",
+      "platform-app/src/test/java/com/ghost616/platform/service/agent/invoker/SpawnSubAgentSystemToolTest.java"
+    ],
+    "summary": "完成 4 项变更：(1) ContextDataProvider.AgentContextData record 新增 parentSessionId 和 childSessions 字段；(2) AgentContextMutator 新增 conversationVarPutCallback/conversationVarRemoveCallback 及对应方法；(3) AgentExecutionContext.putConversationVariable/removeConversationVariable 调用 mutator 回调；(4) AgentContextManager.build() 传入 parentSessionId 和 childSessions，子会话变量回调委托父 context 方法。修改 3 个源文件 + 5 个测试文件，新增 15 个测试用例，全部 33 用例通过。",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_399a2399-8b49-4c0a-acb6-3c93d92692c8",
+    "plan": "build() 改为 get+putIfAbsent+doBuild 模式，增加父会话自动构建逻辑",
+    "modified_files": [
+      "agent-base/src/main/java/com/ghost616/agentbase/service/agent/AgentContextManager.java"
+    ],
+    "summary": "AgentContextManager.Builder.build() 改为 cache.get+putIfAbsent+doBuild 模式避免 computeIfAbsent 重入问题；doBuild 中 parentSessionId!=null 且父未缓存时通过 AgentContextManager.this.build(parentSessionId).build() 主动构建父上下文，确保 injectVariableCallbacks 中子会话变量回调始终委托到已初始化的父 context。16/16 测试通过。",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_242e1626-3e9a-472f-8150-b8a0ba76703c",
+    "plan": "AgentContextMutator 新增 get/keys 回调，ExecutionContext 变量读取委托，injectVariableCallbacks 子会话分支",
+    "modified_files": [
+      "agent-base/src/main/java/com/ghost616/agentbase/service/agent/AgentExecutionContext.java",
+      "agent-base/src/main/java/com/ghost616/agentbase/service/agent/AgentContextManager.java"
+    ],
+    "summary": "AgentContextMutator 新增 getSessionVarCallback/getConversationVarCallback/getSessionVarKeysCallback/getConversationVarKeysCallback 及对应方法；AgentExecutionContext.getSessionVariable/getConversationVariable/getSessionVariableKeys/getConversationVariableKeys 在 parentSessionId!=null 时委托 mutator 回调；AgentContextManager.injectVariableCallbacks 子会话分支设置 get/keys 回调委托父 context。52/52 测试通过。",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_c8c27800-f456-4fe1-9d19-efa445612a11",
+    "plan": "AgentExecutionContext 4 个 put/remove 方法子会话仅委托 mutator",
+    "modified_files": [
+      "agent-base/src/main/java/com/ghost616/agentbase/service/agent/AgentExecutionContext.java"
+    ],
+    "summary": "AgentExecutionContext 中 putSessionVariable/removeSessionVariable/putConversationVariable/removeConversationVariable 增加 parentSessionId 判断：子会话仅通过 mutator 委托父 context，不操作本地 Map；正常会话保持本地 Map + mutator 原逻辑。56/56 测试通过。",
+    "errors": []
+  }
+]
