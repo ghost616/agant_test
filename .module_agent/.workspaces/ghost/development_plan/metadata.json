@@ -1,149 +1,128 @@
 [
   {
-    "plan_id": "plan_574b01f8-e264-4290-a6b5-2b9c51a1fdd7",
-    "plan_summary": "修复 ChatService initHooks/triggerHooks/parseExpandedIndices",
+    "plan_id": "plan_f38a1e82-bea6-493c-a829-86ca62624d12",
+    "plan_summary": "sendUserMessage 返回类型从 void 改为 Message",
     "code_reviewed": false,
     "plan_completed": false,
-    "test_passed": false
+    "test_passed": true
   },
   {
-    "plan_id": "plan_1c68322b-2880-4215-8eb9-b31f1849e0e4",
-    "plan_summary": "去掉 DefaultChatDataProvider 的 @Component 注解",
+    "plan_id": "plan_7fb2e230-e4ad-4245-8e52-c5b62bdb2c74",
+    "plan_summary": "重命名 createChildSession 参数 agentName→sessionName",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_531145b2-ce25-4767-9d30-8ce2f6bd8f14",
+    "plan_summary": "重命名参数并新增 system_test 系统工具",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_a20bde82-1aac-4053-8e15-3ae5155e4c5b",
+    "plan_summary": "修复 DefaultContextDataProviderTest 编译错误",
     "code_reviewed": false,
-    "plan_completed": false,
-    "test_passed": false
-  },
-  {
-    "plan_id": "plan_3f9cac4a-06ab-4160-8c3c-03e8a700bd6c",
-    "plan_summary": "新增 ConfigurableToolInvoker 子接口，JavaToolInvoker 加载实例时注入 ToolConfigDTO",
-    "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
   },
   {
-    "plan_id": "plan_b9ddd0e3-06f0-41eb-99c5-b9c432e94e06",
-    "plan_summary": "ToolExecutionTracker 改为 sessionId+toolId 复合键支持并行执行，toolStatus 接口 toolId 必传",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": true
-  },
-  {
-    "plan_id": "plan_532a8950-07c0-4271-86a7-ceef6c55f230",
-    "plan_summary": "ToolExecutionController toolStatus 接口 toolId 改为必传参数",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": true
-  },
-  {
-    "plan_id": "plan_2891c744-86f5-412b-9d00-581400f7d229",
-    "plan_summary": "前端 getToolStatus 和 pollToolStatus 增加 toolId 参数，适配后端 toolId 必传",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": true
-  },
-  {
-    "plan_id": "plan_3d87b92f-f74f-46c2-a4f4-6318a5507699",
-    "plan_summary": "AgentExecutionContext 添加 parentSessionId 和 childSessions 列表",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": true
-  },
-  {
-    "plan_id": "plan_da0cbbac-bfad-4eb8-add6-0da5708a697a",
-    "plan_summary": "AgentContextManager 构造 AgentExecutionContext 时传入 parentSessionId=null",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": true
-  },
-  {
-    "plan_id": "plan_7f5209db-ead9-4c5e-9f04-4025e50d5ca3",
-    "plan_summary": "AgentContextMutator 新增 createChildSession/sendUserMessage 方法，AgentContextManager 私有占位方法",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": true
-  },
-  {
-    "plan_id": "plan_3e484f0b-4bf0-4278-8f94-dfd11ad75be2",
-    "plan_summary": "ContextDataProvider 六方法合并为 loadAgentContext 返回 AgentContextData",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": true
-  },
-  {
-    "plan_id": "plan_58dd59d5-4d8c-489f-af5c-6bef09a9cf26",
-    "plan_summary": "DefaultContextDataProvider实现createChildSession空方法",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": true
-  },
-  {
-    "plan_id": "plan_8c773a35-79f3-4d14-abd0-77330f95dc0d",
-    "plan_summary": "Session新增parentSessionId/isChild/description属性，新增SessionSkill实体和关联表，DefaultContextDataProvider实现createChildSession完整逻辑",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": true
-  },
-  {
-    "plan_id": "plan_28d88f21-1b25-405a-bb10-9552982c52c7",
-    "plan_summary": "DefaultContextDataProvider校验失败替换为BusinessException",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": true
-  },
-  {
-    "plan_id": "plan_a1c96167-4470-4a18-9b4b-edc6faa3cccd",
-    "plan_summary": "SessionServiceImpl.listSessions过滤子会话",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": true
-  },
-  {
-    "plan_id": "plan_9bdb6116-b784-41a4-8069-771717a03a8a",
-    "plan_summary": "createSession设置isChild=false",
+    "plan_id": "plan_74cef7c7-1049-4c2e-868f-3b31f94f2eb3",
+    "plan_summary": "SystemTestSubSessionTool 添加 description 参数",
     "code_reviewed": false,
-    "plan_completed": false,
-    "test_passed": false
-  },
-  {
-    "plan_id": "plan_f41b57c1-6c05-4d23-a826-a180c6b2749d",
-    "plan_summary": "AgentContextManager build 方法移除 agentId 空值校验，支持无 agentId 的子会话",
-    "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
   },
   {
-    "plan_id": "plan_468a019d-4393-4f4a-9bd6-40585d942ae8",
-    "plan_summary": "子会话变量操作委托父 AgentExecutionContext：AgentContextData 新增 parentSessionId/childSessions，AgentContextMutator 新增对话变量回调，AgentContextManager 子会话变量回调委托父 context",
-    "code_reviewed": true,
+    "plan_id": "plan_72ec042b-f816-4441-9f78-214f5f84dac7",
+    "plan_summary": "AgentAssembler 添加缺失的 AgentMessageProxy import",
+    "code_reviewed": false,
     "plan_completed": true,
     "test_passed": true
   },
   {
-    "plan_id": "plan_744599c8-578c-4927-94a6-fae5837a1c0b",
-    "plan_summary": "DefaultContextDataProvider.loadAgentContext 适配 AgentContextData 新增的 parentSessionId 和 childSessions 字段",
-    "code_reviewed": true,
+    "plan_id": "plan_daa9eb5a-cbb6-4c88-81ce-02e507853012",
+    "plan_summary": "SystemTestSubSessionTool 改为普通 ToolInvoker",
+    "code_reviewed": false,
     "plan_completed": true,
     "test_passed": true
   },
   {
-    "plan_id": "plan_399a2399-8b49-4c0a-acb6-3c93d92692c8",
-    "plan_summary": "审查 AgentContextManager.build() 改为 get+putIfAbsent+doBuild 模式及父会话自动构建逻辑，避免 computeIfAbsent 重入问题",
-    "code_reviewed": true,
+    "plan_id": "plan_5e1de9ae-7da2-4bb6-8063-38fc495467db",
+    "plan_summary": "JsonEditor 添加自动折行",
+    "code_reviewed": false,
     "plan_completed": true,
-    "test_passed": false
+    "test_passed": true
   },
   {
-    "plan_id": "plan_242e1626-3e9a-472f-8150-b8a0ba76703c",
-    "plan_summary": "审查 AgentContextMutator 新增 get/keys 回调及 AgentExecutionContext 子会话变量 get/keys 通过 mutator 委托父 context",
-    "code_reviewed": true,
+    "plan_id": "plan_1fad4b0e-e5c9-45c0-8c27-ff24a68c3250",
+    "plan_summary": "SchemaMigration 添加 session 表缺失列",
+    "code_reviewed": false,
     "plan_completed": true,
-    "test_passed": false
+    "test_passed": true
   },
   {
-    "plan_id": "plan_c8c27800-f456-4fe1-9d19-efa445612a11",
-    "plan_summary": "审查 AgentExecutionContext put/remove 变量方法子会话不操作本地 Map 仅委托 mutator",
-    "code_reviewed": true,
+    "plan_id": "plan_81b50f3d-4287-44b7-9231-ba0d3ab57626",
+    "plan_summary": "移除过时 SystemTool 方法测试",
+    "code_reviewed": false,
     "plan_completed": true,
-    "test_passed": false
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_cba87da8-fbf0-4178-868a-68e8709a642c",
+    "plan_summary": "修复 SchemaMigration 列存在检测",
+    "code_reviewed": false,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_c6da6660-90d2-4d02-ba04-ae3e5e13f6f1",
+    "plan_summary": "SchemaMigration 添加 description 列",
+    "code_reviewed": false,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_bce615f3-7b84-469a-8574-03f7427ca8e1",
+    "plan_summary": "createChildSession 传递父会话 tools/skills",
+    "code_reviewed": false,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_dc02f570-7d04-4b59-804e-1f912fa16969",
+    "plan_summary": "toolIds/skillIds 空值保护",
+    "code_reviewed": false,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_5d44b208-e378-4fd4-bae2-6c34bad40e47",
+    "plan_summary": "expandMcpTools 补充原始工具 ID",
+    "code_reviewed": false,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_e65ee570-d13b-4c46-8fb6-3f5926980e34",
+    "plan_summary": "toolIds 流添加 distinct 去重",
+    "code_reviewed": false,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_4a309ec3-92a3-4956-9cca-085cc6c35a8b",
+    "plan_summary": "SystemTestSubSessionTool 改用静态 ObjectMapper",
+    "code_reviewed": false,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_b922354d-974a-4c37-8f1f-d26315f2fbc8",
+    "plan_summary": "getSkillToolIds 支持子会话",
+    "code_reviewed": false,
+    "plan_completed": true,
+    "test_passed": true
   }
 ]

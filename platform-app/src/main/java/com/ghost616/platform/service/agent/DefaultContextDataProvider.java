@@ -204,7 +204,7 @@ public class DefaultContextDataProvider implements ContextDataProvider {
     }
 
     @Override
-    public Long createChildSession(Long parentSessionId, String agentName, String description, Long modelId,
+    public Long createChildSession(Long parentSessionId, String sessionName, String description, Long modelId,
                                     List<Long> toolIds, List<Long> skillIds, String prompt) {
         Session parentSession = sessionMapper.selectById(parentSessionId);
         if (parentSession == null) {
@@ -237,7 +237,7 @@ public class DefaultContextDataProvider implements ContextDataProvider {
         }
 
         Session session = new Session();
-        session.setTitle(agentName);
+        session.setTitle(sessionName);
         session.setSystemPrompt(prompt);
         session.setDescription(description);
         session.setParentSessionId(parentSessionId);

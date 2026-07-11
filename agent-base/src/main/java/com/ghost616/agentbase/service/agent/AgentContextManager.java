@@ -1,5 +1,6 @@
 package com.ghost616.agentbase.service.agent;
 
+import com.ghost616.agentbase.dto.model.Message;
 import com.ghost616.agentbase.dto.model.ToolCall;
 import com.ghost616.agentbase.dto.skill.SkillConfigDTO;
 import com.ghost616.agentbase.dto.tool.McpExpandedToolDTO;
@@ -25,6 +26,7 @@ public class AgentContextManager {
     private final ContextDataProvider dataProvider;
     private final SessionManager sessionManager;
     private final ToolManager toolManager;
+    private AgentMessageProxy agentMessageProxy;
 
     private final ConcurrentHashMap<Long, AgentSessionContext> cache = new ConcurrentHashMap<>();
 
@@ -32,6 +34,10 @@ public class AgentContextManager {
         this.dataProvider = dataProvider;
         this.sessionManager = sessionManager;
         this.toolManager = toolManager;
+    }
+
+    public void setAgentMessageProxy(AgentMessageProxy agentMessageProxy) {
+        this.agentMessageProxy = agentMessageProxy;
     }
 
     public Builder build(Long sessionId) {
@@ -161,21 +167,26 @@ public class AgentContextManager {
                 mutator.conversationVarRemoveCallback = (key) ->
                         dataProvider.deleteSessionVariable(sessionId, key);
             }
-            mutator.createChildSessionCallback = (psId, agentName, description, modelId,
-                                                   toolIds, skillIds, prompt) ->
-                    createChildSession(psId, agentName, description, modelId,
+            mutator.createChildSessionCallback = (psId, sessionName, description, modelId,
+                                                    toolIds, skillIds, prompt) ->
+                    createChildSession(psId, sessionName, description, modelId,
                             toolIds, skillIds, prompt);
             mutator.sendUserMessageCallback = (childSessionId, content, modelId) ->
                     sendUserMessage(childSessionId, content, modelId);
+
         }
     }
 
-    private Long createChildSession(Long parentSessionId, String agentName, String description, Long modelId,
-                                     List<Long> toolIds, List<Long> skillIds, String prompt) {
-        return dataProvider.createChildSession(parentSessionId, agentName, description, modelId, toolIds, skillIds, prompt);
+    private Long createChildSession(Long parentSessionId, String sessionName, String description, Long modelId,
+                                      List<Long> toolIds, List<Long> skillIds, String prompt) {
+        return dataProvider.createChildSession(parentSessionId, sessionName, description, modelId, toolIds, skillIds, prompt);
     }
 
-    private void sendUserMessage(Long childSessionId, String content, Long modelId) {
+    private Message sendUserMessage(Long childSessionId, String content, Long modelId) {
+        if (agentMessageProxy != null) {
+            return agentMessageProxy.sendUserMessage(childSessionId, content, modelId);
+        }
+        return null;
     }
 
     public AgentSessionContext get(Long sessionId) {

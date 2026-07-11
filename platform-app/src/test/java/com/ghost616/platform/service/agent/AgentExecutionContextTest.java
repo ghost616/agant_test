@@ -20,6 +20,7 @@ import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.ghost616.agentbase.dto.model.Message;
 import com.ghost616.agentbase.dto.skill.SkillConfigDTO;
 import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
 import com.ghost616.agentbase.service.agent.AgentExecutionContext;
@@ -323,6 +324,83 @@ class AgentExecutionContextTest {
         void 反向_mutator_getConversationVariableKeys_回调为null返回空Set() {
             setGetKeysCallback(null);
             assertTrue(mutator.getConversationVariableKeys().isEmpty());
+        }
+    }
+
+    @Nested
+    class SendUserMessageTest {
+
+        private void setCallback(AgentExecutionContext.AgentContextMutator.SendUserMessageCallback cb) {
+            try {
+                Field f = AgentExecutionContext.AgentContextMutator.class.getDeclaredField("sendUserMessageCallback");
+                f.setAccessible(true);
+                f.set(mutator, cb);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        @Test
+        void 正向_mutator_sendUserMessage_调用回调返回Message() {
+            Message expected = Message.builder().role("user").content("hello").build();
+            setCallback(new AgentExecutionContext.AgentContextMutator.SendUserMessageCallback() {
+                @Override
+                public Message send(Long childSessionId, String content, Long modelId) {
+                    return expected;
+                }
+            });
+
+            Message result = mutator.sendUserMessage(1L, "hello", 100L);
+            assertNotNull(result);
+            assertEquals("user", result.getRole());
+            assertEquals("hello", result.getContent());
+        }
+
+        @Test
+        void 反向_mutator_sendUserMessage_回调为null返回null() {
+            assertNull(mutator.sendUserMessage(1L, "hello", 100L));
+        }
+
+        @Test
+        void 正向_context_sendUserMessage_透传调用mutator() {
+            Message expected = Message.builder().role("user").content("from context").build();
+            setCallback(new AgentExecutionContext.AgentContextMutator.SendUserMessageCallback() {
+                @Override
+                public Message send(Long childSessionId, String content, Long modelId) {
+                    return expected;
+                }
+            });
+
+            Message result = context.sendUserMessage(2L, "from context", 200L);
+            assertNotNull(result);
+            assertEquals("user", result.getRole());
+            assertEquals("from context", result.getContent());
+        }
+
+        @Test
+        void 反向_context_sendUserMessage_mutator回调为null返回null() {
+            assertNull(context.sendUserMessage(2L, "any", 200L));
+        }
+
+        @Test
+        void 正向_context_sendUserMessage_透传参数给mutator() {
+            AtomicReference<Long> capturedSessionId = new AtomicReference<>();
+            AtomicReference<String> capturedContent = new AtomicReference<>();
+            AtomicReference<Long> capturedModelId = new AtomicReference<>();
+            setCallback(new AgentExecutionContext.AgentContextMutator.SendUserMessageCallback() {
+                @Override
+                public Message send(Long childSessionId, String content, Long modelId) {
+                    capturedSessionId.set(childSessionId);
+                    capturedContent.set(content);
+                    capturedModelId.set(modelId);
+                    return Message.builder().role("user").content(content).build();
+                }
+            });
+
+            context.sendUserMessage(99L, "paramTest", 300L);
+            assertEquals(Long.valueOf(99L), capturedSessionId.get());
+            assertEquals("paramTest", capturedContent.get());
+            assertEquals(Long.valueOf(300L), capturedModelId.get());
         }
     }
 

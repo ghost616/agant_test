@@ -4,10 +4,12 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
 import com.ghost616.platform.entity.AgentSkill;
 import com.ghost616.platform.entity.Session;
+import com.ghost616.platform.entity.SessionSkill;
 import com.ghost616.platform.entity.SessionTool;
 import com.ghost616.platform.entity.SkillTool;
 import com.ghost616.platform.repository.AgentSkillMapper;
 import com.ghost616.platform.repository.SessionMapper;
+import com.ghost616.platform.repository.SessionSkillMapper;
 import com.ghost616.platform.repository.SessionToolMapper;
 import com.ghost616.platform.repository.SkillToolMapper;
 import com.ghost616.platform.service.tool.ToolConfigService;
@@ -28,6 +30,7 @@ public class DefaultToolDataProvider implements ToolDataProvider {
     private final SessionMapper sessionMapper;
     private final AgentSkillMapper agentSkillMapper;
     private final SkillToolMapper skillToolMapper;
+    private final SessionSkillMapper sessionSkillMapper;
     private final ToolConfigService toolConfigService;
 
     @Override
@@ -48,7 +51,31 @@ public class DefaultToolDataProvider implements ToolDataProvider {
     @Override
     public List<Long> getSkillToolIds(Long sessionId) {
         Session session = sessionMapper.selectById(sessionId);
-        if (session == null || session.getAgentId() == null) {
+        if (session == null) {
+            return List.of();
+        }
+
+        if (Boolean.TRUE.equals(session.getIsChild())) {
+            List<SessionSkill> sessionSkills = sessionSkillMapper.selectList(
+                    new LambdaQueryWrapper<SessionSkill>()
+                            .eq(SessionSkill::getSessionId, sessionId));
+            if (sessionSkills == null || sessionSkills.isEmpty()) {
+                return List.of();
+            }
+            List<Long> skillIds = sessionSkills.stream()
+                    .map(SessionSkill::getSkillId)
+                    .distinct()
+                    .toList();
+            List<SkillTool> skillTools = skillToolMapper.selectList(
+                    new LambdaQueryWrapper<SkillTool>()
+                            .in(SkillTool::getSkillId, skillIds));
+            return skillTools.stream()
+                    .map(SkillTool::getToolId)
+                    .distinct()
+                    .toList();
+        }
+
+        if (session.getAgentId() == null) {
             return List.of();
         }
 

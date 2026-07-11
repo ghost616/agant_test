@@ -149,6 +149,7 @@ public class ToolManager {
                         description = description.replace(remoteName, prefixedName);
                     }
                     expanded.add(McpExpandedToolDTO.builder()
+                            .id(mcpConfig.getId())
                             .name(prefixedName)
                             .toolType(ToolType.MCP_HTTP)
                             .description(description)

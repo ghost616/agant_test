@@ -1,5 +1,6 @@
 package com.ghost616.agentbase.service.agent;
 
+import com.ghost616.agentbase.dto.model.Message;
 import com.ghost616.agentbase.dto.model.ToolCall;
 import com.ghost616.agentbase.dto.skill.SkillConfigDTO;
 import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
@@ -72,20 +73,20 @@ public class AgentExecutionContext {
         return Collections.unmodifiableList(childSessions);
     }
 
-    public Long createChildSession(String agentName, String description, Long modelId,
-                                    List<Long> toolIds, List<Long> skillIds, String prompt) {
-        Long childSessionId = mutator.createChildSession(agentName, description, modelId, toolIds, skillIds, prompt);
+    public Long createChildSession(String sessionName, String description, Long modelId,
+                                     List<Long> toolIds, List<Long> skillIds, String prompt) {
+        Long childSessionId = mutator.createChildSession(sessionName, description, modelId, toolIds, skillIds, prompt);
         if (childSessionId != null) {
-            childSessions.add(new ChildSession(childSessionId, agentName, description, modelId));
+            childSessions.add(new ChildSession(childSessionId, sessionName, description, modelId));
         }
         return childSessionId;
     }
 
-    public void sendUserMessage(Long childSessionId, String content, Long modelId) {
-        mutator.sendUserMessage(childSessionId, content, modelId);
+    public Message sendUserMessage(Long childSessionId, String content, Long modelId) {
+        return mutator.sendUserMessage(childSessionId, content, modelId);
     }
 
-    public record ChildSession(Long sessionId, String agentName, String description, Long modelId) {
+    public record ChildSession(Long sessionId, String sessionName, String description, Long modelId) {
     }
 
     public List<HistoryEntry> getHistory() {
@@ -179,13 +180,13 @@ public class AgentExecutionContext {
 
         @FunctionalInterface
         public interface CreateChildSessionCallback {
-            Long create(Long parentSessionId, String agentName, String description, Long modelId,
+            Long create(Long parentSessionId, String sessionName, String description, Long modelId,
                         List<Long> toolIds, List<Long> skillIds, String prompt);
         }
 
         @FunctionalInterface
         public interface SendUserMessageCallback {
-            void send(Long childSessionId, String content, Long modelId);
+            Message send(Long childSessionId, String content, Long modelId);
         }
 
         public void bind(AgentExecutionContext context) {
@@ -266,28 +267,29 @@ public class AgentExecutionContext {
             context.stopped.set(false);
         }
 
-        public Long createChildSession(String agentName, String description, Long modelId,
-                                        List<Long> toolIds, List<Long> skillIds, String prompt) {
+        public Long createChildSession(String sessionName, String description, Long modelId,
+                                         List<Long> toolIds, List<Long> skillIds, String prompt) {
             if (context.parentSessionId != null) {
                 return null;
             }
-            if (agentName == null || agentName.isBlank()) {
+            if (sessionName == null || sessionName.isBlank()) {
                 return null;
             }
             if (modelId == null) {
                 modelId = context.modelId;
             }
             if (createChildSessionCallback != null) {
-                return createChildSessionCallback.create(context.sessionId, agentName, description, modelId,
+                return createChildSessionCallback.create(context.sessionId, sessionName, description, modelId,
                         toolIds, skillIds, prompt);
             }
             return null;
         }
 
-        public void sendUserMessage(Long childSessionId, String content, Long modelId) {
+        public Message sendUserMessage(Long childSessionId, String content, Long modelId) {
             if (sendUserMessageCallback != null) {
-                sendUserMessageCallback.send(childSessionId, content, modelId);
+                return sendUserMessageCallback.send(childSessionId, content, modelId);
             }
+            return null;
         }
     }
 }

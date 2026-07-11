@@ -100,6 +100,14 @@
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultToolDataProvider.java",
       "description": "默认工具数据提供者实现，实现 ToolDataProvider 接口，负责工具和技能工具查询"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/systemtest/SystemTestSubSessionTool.java",
+      "description": "系统测试工具实现，实现 SystemTool 接口。工具名 system_test，用于创建子会话并发送用户消息获取回复。注入 ObjectMapper 进行 JSON 解析，通过 AgentExecutionContext 的 createChildSession 和 sendUserMessage 方法操作子会话。"
+    },
+    {
+      "path": "platform-app/src/test/java/com/ghost616/platform/systemtest/SystemTestSubSessionToolTest.java",
+      "description": "SystemTestSubSessionTool 单元测试，覆盖 getToolName/getDescription/getParameterSchema/execute 正常路径、createChildSession返回null、JSON解析异常、运行时异常、空sessionName、超长message 等 9 个用例"
     }
   ]
 }

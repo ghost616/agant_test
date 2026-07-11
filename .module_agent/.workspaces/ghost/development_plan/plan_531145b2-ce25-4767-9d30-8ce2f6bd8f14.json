@@ -1,0 +1,11 @@
+{
+  "plan_id": "plan_531145b2-ce25-4767-9d30-8ce2f6bd8f14",
+  "module_name": "platform-app",
+  "development_plan": "在 platform-app 模块中完成两件事：\n\n1. DefaultContextDataProvider.createChildSession() 参数 agentName → sessionName：\n   - 文件: platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultContextDataProvider.java\n   - 将 createChildSession 方法的第二个参数名从 agentName 改为 sessionName，同时方法体内使用该参数的地方也同步修改\n\n2. 新增 SystemTestSubSessionTool 系统工具：\n   - 包路径: com.ghost616.platform.systemtest\n   - 文件: platform-app/src/main/java/com/ghost616/platform/systemtest/SystemTestSubSessionTool.java\n   - 实现 SystemTool 接口（@Component 标注），工具名 system_test\n   - 参数: sessionName（必填，子会话名称）、message（必填，用户消息）\n   - modelId 直接使用 ctx.getModelId()\n   - execute 方法逻辑：\n     a. 解析入参 JSON 获取 sessionName 和 message\n     b. ctx.createChildSession(sessionName, \"system test sub-session\", ctx.getModelId(), null, null, null) 创建子会话\n     c. ctx.sendUserMessage(childSessionId, message, ctx.getModelId()) 发送消息获取回复\n     d. 将返回的 Message 对象序列化为 JSON 返回（包含 role 和 content）\n   - 异常时返回 {\"error\": \"...\"}\n   - 参考 SpawnSubAgentSystemTool 的代码风格",
+  "session_id": "ses_0b170eeb7ffe464QPU0Ykq5z9I",
+  "modified_files": [
+    "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultContextDataProvider.java",
+    "platform-app/src/main/java/com/ghost616/platform/systemtest/SystemTestSubSessionTool.java",
+    "platform-app/src/test/java/com/ghost616/platform/systemtest/SystemTestSubSessionToolTest.java"
+  ]
+}

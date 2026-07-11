@@ -3,7 +3,7 @@
   "files": [
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/AgentExecutionContext.java",
-      "description": "AgentExecutionContext 构造器含 sessionId/agentId/systemPrompt/modelId/recentMessageCount/history/tools/skills/mutator/sessionVariables/conversationVariables，含变量 CRUD 方法和 AgentContextMutator 内部类"
+      "description": "AgentExecutionContext 构造器含 sessionId/agentId/systemPrompt/modelId/recentMessageCount/history/tools/skills/mutator/sessionVariables/conversationVariables，含变量 CRUD 方法和 AgentContextMutator 内部类；SendUserMessageCallback 接口 send 方法返回 Message；sendUserMessage 方法返回 Message 透传 mutator 返回值"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/ToolInvoker.java",
@@ -23,7 +23,7 @@
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/AgentContextManager.java",
-      "description": "AgentContextManager，管理会话上下文缓存 ConcurrentHashMap"
+      "description": "AgentContextManager，管理会话上下文缓存 ConcurrentHashMap；通过 setter 注入 AgentMessageProxy，sendUserMessage 方法委托给 proxy 或回退直接保存消息"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/SystemTool.java",
@@ -252,6 +252,10 @@
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/ConfigurableToolInvoker.java",
       "description": "可配置工具调用器接口，继承 ToolInvoker，定义 setToolConfig(ToolConfigDTO) 方法，供 JavaToolInvoker 在实例化后注入工具配置"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/AgentMessageProxy.java",
+      "description": "AgentMessageProxy 消息代理类，同步代理 sendUserMessage：调用 ChatService.chat() 收集 Flux，检测工具调用后循环执行工具并继续对话，返回最终 assistant Message"
     }
   ]
 }

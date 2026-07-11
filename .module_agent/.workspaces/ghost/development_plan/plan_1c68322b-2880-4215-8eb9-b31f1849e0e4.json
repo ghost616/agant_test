@@ -1,7 +1,0 @@
-{
-  "plan_id": "plan_1c68322b-2880-4215-8eb9-b31f1849e0e4",
-  "module_name": "platform-app",
-  "development_plan": "修改 DefaultChatDataProvider.java（platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultChatDataProvider.java）：\n- 删除 @Component 注解\n- 删除 org.springframework.stereotype.Component 的 import\n- 保留 @RequiredArgsConstructor（或改为显式构造函数）\n- 其他代码不变",
-  "session_id": "ses_0cad70a75ffeDaGo5VRYzv1w0L",
-  "modified_files": []
-}

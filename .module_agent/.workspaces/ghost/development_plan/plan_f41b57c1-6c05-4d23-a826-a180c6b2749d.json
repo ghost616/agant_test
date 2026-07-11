@@ -1,9 +1,0 @@
-{
-  "plan_id": "plan_f41b57c1-6c05-4d23-a826-a180c6b2749d",
-  "module_name": "agent-base",
-  "development_plan": "修改 AgentContextManager.java 中 AgentSessionContext build() 方法：移除 ctxData.agentId() == null 的空值校验条件，允许子会话（无 agentId）正常构建上下文。当前代码在 line 57-58 校验 agentId 为 null 时抛出 SESSION_NOT_FOUND 异常，改为仅校验 ctxData 是否为 null。",
-  "session_id": "ses_0b5372548ffehR4Mb75cH913tL",
-  "modified_files": [
-    "agent-base/src/main/java/com/ghost616/agentbase/service/agent/AgentContextManager.java"
-  ]
-}

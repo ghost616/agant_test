@@ -1,0 +1,9 @@
+{
+  "plan_id": "plan_cba87da8-fbf0-4178-868a-68e8709a642c",
+  "module_name": "platform-app",
+  "development_plan": "修改 platform-app/src/main/java/com/ghost616/platform/config/SchemaMigration.java：\n\n将 columnExists 方法改为直接尝试 ALTER TABLE，捕获 SQLiteException 判断列是否已存在。\n\n具体方案：\n- 移除 columnExists 方法\n- 在 run 方法的 for 循环中，直接 try-catch ALTER TABLE\n- 如果 SQLException 包含 \"duplicate column name\" 或类似消息，则跳过\n- 如果 SQLException 是其他错误，记录到 migration 失败日志\n- 成功则记录迁移成功日志\n\n同时将日志级别从 log.debug 改为 log.info，确保迁移结果可见。",
+  "session_id": "ses_0b170eeb7ffe464QPU0Ykq5z9I",
+  "modified_files": [
+    "platform-app/src/main/java/com/ghost616/platform/config/SchemaMigration.java"
+  ]
+}

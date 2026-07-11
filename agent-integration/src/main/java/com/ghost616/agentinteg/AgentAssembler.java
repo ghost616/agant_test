@@ -2,6 +2,7 @@ package com.ghost616.agentinteg;
 
 import com.ghost616.agentbase.dto.model.ModelConfigData;
 import com.ghost616.agentbase.service.agent.AgentContextManager;
+import com.ghost616.agentbase.service.agent.AgentMessageProxy;
 import com.ghost616.agentbase.service.agent.ChatDataProvider;
 import com.ghost616.agentbase.service.agent.ChatService;
 import com.ghost616.agentbase.service.agent.ContextDataProvider;
@@ -95,6 +96,9 @@ public class AgentAssembler {
         ToolExecutionService toolExecutionService = new ToolExecutionService(
                 toolCallQueueManager, toolManager, systemToolManager,
                 sessionManager, chatService, agentContextManager, toolExecutionTracker);
+
+        AgentMessageProxy agentMessageProxy = new AgentMessageProxy(chatService, toolExecutionService);
+        agentContextManager.setAgentMessageProxy(agentMessageProxy);
 
         cachedResult = new Result(chatService, toolExecutionService, chatDataProviderProxy.getMessageSavePostHook());
         built = true;

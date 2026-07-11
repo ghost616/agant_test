@@ -1,0 +1,268 @@
+package com.ghost616.platform.service.agent;
+
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.ghost616.agentbase.dto.skill.SkillConfigDTO;
+import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
+import com.ghost616.platform.entity.AgentConfig;
+import com.ghost616.platform.entity.AgentSkill;
+import com.ghost616.platform.entity.ModelConfig;
+import com.ghost616.platform.entity.Session;
+import com.ghost616.platform.entity.SessionSkill;
+import com.ghost616.platform.entity.SessionTool;
+import com.ghost616.platform.entity.SessionVariable;
+import com.ghost616.platform.entity.SkillConfig;
+import com.ghost616.platform.entity.SkillTool;
+import com.ghost616.platform.entity.ToolConfig;
+import com.ghost616.agentbase.enums.CommonStatus;
+import com.ghost616.agentbase.enums.ErrorCode;
+import com.ghost616.agentbase.exception.BusinessException;
+import com.ghost616.platform.repository.AgentConfigMapper;
+import com.ghost616.platform.repository.AgentSkillMapper;
+import com.ghost616.platform.repository.ModelConfigMapper;
+import com.ghost616.platform.repository.SessionMapper;
+import com.ghost616.platform.repository.SessionSkillMapper;
+import com.ghost616.platform.repository.SessionToolMapper;
+import com.ghost616.platform.repository.SessionVariableMapper;
+import com.ghost616.platform.repository.SkillConfigMapper;
+import com.ghost616.platform.repository.SkillToolMapper;
+import com.ghost616.platform.repository.ToolConfigMapper;
+import com.ghost616.platform.service.tool.ToolConfigService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import com.ghost616.agentbase.service.agent.AgentExecutionContext;
+import com.ghost616.agentbase.service.agent.ContextDataProvider;
+
+
+@Component
+@RequiredArgsConstructor
+public class DefaultContextDataProvider implements ContextDataProvider {
+
+    private final SessionMapper sessionMapper;
+    private final AgentConfigMapper agentConfigMapper;
+    private final SessionVariableMapper sessionVariableMapper;
+    private final AgentSkillMapper agentSkillMapper;
+    private final SkillConfigMapper skillConfigMapper;
+    private final SkillToolMapper skillToolMapper;
+    private final ToolConfigService toolConfigService;
+    private final SessionSkillMapper sessionSkillMapper;
+    private final ModelConfigMapper modelConfigMapper;
+    private final ToolConfigMapper toolConfigMapper;
+    private final SessionToolMapper sessionToolMapper;
+
+    @Override
+    public AgentContextData loadAgentContext(Long sessionId) {
+        Session session = sessionMapper.selectById(sessionId);
+        if (session == null) {
+            return null;
+        }
+
+        if (Boolean.TRUE.equals(session.getIsChild())) {
+            Long parentSessionId = session.getParentSessionId();
+            Integer recentMessageCount = null;
+            if (parentSessionId != null) {
+                Session parentSession = sessionMapper.selectById(parentSessionId);
+                if (parentSession != null && parentSession.getAgentId() != null) {
+                    AgentConfig agentConfig = agentConfigMapper.selectById(parentSession.getAgentId());
+                    recentMessageCount = agentConfig != null ? agentConfig.getRecentMessageCount() : null;
+                }
+            }
+
+            List<Long> skillIds = sessionSkillMapper.selectList(
+                            new LambdaQueryWrapper<SessionSkill>()
+                                    .eq(SessionSkill::getSessionId, sessionId))
+                    .stream()
+                    .map(SessionSkill::getSkillId)
+                    .distinct()
+                    .toList();
+
+            List<SkillConfigDTO> skills = skillIds.isEmpty() ? List.of() : loadSkillConfigDTOs(skillIds);
+            Map<String, String> sessionVariables = loadSessionVariablesInternal(sessionId);
+
+            return new AgentContextData(null, session.getSystemPrompt(), session.getModelId(),
+                    recentMessageCount, skills, sessionVariables,
+                    session.getParentSessionId(), null);
+        }
+
+        Long agentId = session.getAgentId();
+        AgentConfig agentConfig = agentConfigMapper.selectById(agentId);
+        String systemPrompt = agentConfig != null ? agentConfig.getSystemPrompt() : null;
+        Long defaultModelId = agentConfig != null ? agentConfig.getModelId() : null;
+        Integer recentMessageCount = agentConfig != null ? agentConfig.getRecentMessageCount() : null;
+
+        List<SkillConfigDTO> skills = loadSkillsInternal(agentId);
+        Map<String, String> sessionVariables = loadSessionVariablesInternal(sessionId);
+
+        List<AgentExecutionContext.ChildSession> childSessions = sessionMapper.selectList(
+                        new LambdaQueryWrapper<Session>()
+                                .eq(Session::getParentSessionId, sessionId))
+                .stream()
+                .map(s -> new AgentExecutionContext.ChildSession(s.getId(), s.getTitle(), s.getDescription(), s.getModelId()))
+                .toList();
+
+        return new AgentContextData(agentId, systemPrompt, defaultModelId, recentMessageCount, skills, sessionVariables,
+                null, childSessions);
+    }
+
+    private List<SkillConfigDTO> loadSkillsInternal(Long agentId) {
+        if (agentId == null) {
+            return List.of();
+        }
+
+        List<Long> skillIds = agentSkillMapper.selectList(
+                        new LambdaQueryWrapper<AgentSkill>()
+                                .eq(AgentSkill::getAgentId, agentId))
+                .stream()
+                .map(AgentSkill::getSkillId)
+                .distinct()
+                .toList();
+
+        if (skillIds.isEmpty()) {
+            return List.of();
+        }
+
+        return loadSkillConfigDTOs(skillIds);
+    }
+
+    private List<SkillConfigDTO> loadSkillConfigDTOs(List<Long> skillIds) {
+        List<SkillConfig> skillConfigs = skillConfigMapper.selectBatchIds(skillIds);
+        if (skillConfigs == null || skillConfigs.isEmpty()) {
+            return List.of();
+        }
+
+        List<SkillConfigDTO> result = new ArrayList<>();
+        for (SkillConfig sc : skillConfigs) {
+            if (sc.getStatus() == null || sc.getStatus() != CommonStatus.ENABLED) {
+                continue;
+            }
+
+            List<SkillTool> skillTools = skillToolMapper.selectList(
+                    new LambdaQueryWrapper<SkillTool>()
+                            .eq(SkillTool::getSkillId, sc.getId()));
+            List<Long> toolIds = skillTools.stream()
+                    .map(SkillTool::getToolId)
+                    .toList();
+
+            List<ToolConfigDTO> toolDTOs = new ArrayList<>();
+            for (Long toolId : toolIds) {
+                ToolConfigDTO dto = toolConfigService.getById(toolId);
+                toolDTOs.add(dto);
+            }
+
+            result.add(SkillConfigDTO.builder()
+                    .id(sc.getId())
+                    .name(sc.getName())
+                    .description(sc.getDescription())
+                    .prompt(sc.getPrompt())
+                    .skillTools(toolDTOs)
+                    .build());
+        }
+
+        return result;
+    }
+
+    private Map<String, String> loadSessionVariablesInternal(Long sessionId) {
+        List<SessionVariable> variables = sessionVariableMapper.selectList(
+                new LambdaQueryWrapper<SessionVariable>()
+                        .eq(SessionVariable::getSessionId, sessionId));
+        Map<String, String> result = new HashMap<>();
+        for (SessionVariable sv : variables) {
+            result.put(sv.getVariableKey(), sv.getVariableValue());
+        }
+        return result;
+    }
+
+    @Override
+    public void saveSessionVariable(Long sessionId, String key, String value) {
+        List<SessionVariable> existing = sessionVariableMapper.selectList(
+                new LambdaQueryWrapper<SessionVariable>()
+                        .eq(SessionVariable::getSessionId, sessionId)
+                        .eq(SessionVariable::getVariableKey, key));
+        if (existing != null && !existing.isEmpty()) {
+            SessionVariable sv = existing.get(0);
+            sv.setVariableValue(value);
+            sessionVariableMapper.updateById(sv);
+        } else {
+            SessionVariable sv = new SessionVariable();
+            sv.setSessionId(sessionId);
+            sv.setVariableKey(key);
+            sv.setVariableValue(value);
+            sessionVariableMapper.insert(sv);
+        }
+    }
+
+    @Override
+    public void deleteSessionVariable(Long sessionId, String key) {
+        sessionVariableMapper.delete(
+                new LambdaQueryWrapper<SessionVariable>()
+                        .eq(SessionVariable::getSessionId, sessionId)
+                        .eq(SessionVariable::getVariableKey, key));
+    }
+
+    @Override
+    public Long createChildSession(Long parentSessionId, String agentName, String description, Long modelId,
+                                    List<Long> toolIds, List<Long> skillIds, String prompt) {
+        Session parentSession = sessionMapper.selectById(parentSessionId);
+        if (parentSession == null) {
+            throw new BusinessException(ErrorCode.SESSION_NOT_FOUND);
+        }
+
+        if (modelId != null) {
+            ModelConfig modelConfig = modelConfigMapper.selectById(modelId);
+            if (modelConfig == null) {
+                throw new BusinessException(ErrorCode.MODEL_NOT_FOUND);
+            }
+        }
+
+        if (toolIds != null) {
+            for (Long toolId : toolIds) {
+                ToolConfig toolConfig = toolConfigMapper.selectById(toolId);
+                if (toolConfig == null) {
+                    throw new BusinessException(ErrorCode.TOOL_NOT_FOUND);
+                }
+            }
+        }
+
+        if (skillIds != null) {
+            for (Long skillId : skillIds) {
+                SkillConfig skillConfig = skillConfigMapper.selectById(skillId);
+                if (skillConfig == null) {
+                    throw new BusinessException(ErrorCode.SKILL_NOT_FOUND);
+                }
+            }
+        }
+
+        Session session = new Session();
+        session.setTitle(agentName);
+        session.setSystemPrompt(prompt);
+        session.setDescription(description);
+        session.setParentSessionId(parentSessionId);
+        session.setIsChild(true);
+        session.setModelId(modelId);
+        sessionMapper.insert(session);
+
+        if (toolIds != null) {
+            for (Long toolId : toolIds) {
+                SessionTool st = new SessionTool();
+                st.setSessionId(session.getId());
+                st.setToolId(toolId);
+                sessionToolMapper.insert(st);
+            }
+        }
+
+        if (skillIds != null) {
+            for (Long skillId : skillIds) {
+                SessionSkill ss = new SessionSkill();
+                ss.setSessionId(session.getId());
+                ss.setSkillId(skillId);
+                sessionSkillMapper.insert(ss);
+            }
+        }
+
+        return session.getId();
+    }
+}

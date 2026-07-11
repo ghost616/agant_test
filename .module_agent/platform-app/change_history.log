@@ -55,3 +55,6 @@
 [2026-07-10T02:29:15.670Z] [session: ses_0b624c832ffeeB1C6skL2fq7mh] DefaultContextDataProvider 实现 createChildSession 方法（接口新增方法），方法体返回 null 作为空实现
 [2026-07-10T02:51:18.105Z] [session: ses_0b624c832ffeeB1C6skL2fq7mh] 实现子会话创建功能：Session 新增 parentSessionId/isChild/description 字段；schema.sql 新增列和 session_skill 表；新建 SessionSkill 实体和 Mapper；DefaultContextDataProvider 注入新依赖并实现含校验的 createChildSession 方法；新增 DefaultContextDataProviderTest
 [2026-07-10T07:21:55.382Z] [session: ses_0b5195d8dffeBXywznnn5PrluN] DefaultContextDataProvider.loadAgentContext 适配 AgentContextData 新增的 parentSessionId 和 childSessions 字段：子会话分支填充 session.getParentSessionId() 和 null；普通会话分支填充 null 和数据库查询的子会话 ChildSession 列表
+[2026-07-11T00:24:45.988Z] [session: ses_0b170eeb7ffe464QPU0Ykq5z9I] DefaultContextDataProvider.createChildSession 参数名 agentName→sessionName；新建 SystemTestSubSessionTool 系统工具（system_test），创建子会话并发送消息
+[2026-07-11T00:27:54.490Z] [session: ses_0b170eeb7ffe464QPU0Ykq5z9I] 离朱测试 SystemTestSubSessionTool 9/9 全部通过
+[2026-07-11T00:33:58.912Z] [session: ses_0b170eeb7ffe464QPU0Ykq5z9I] 修复 DefaultContextDataProviderTest 编译错误：ChildSession.agentName()→sessionName()

@@ -1,0 +1,23 @@
+[
+  {
+    "plan_id": "plan_7fb2e230-e4ad-4245-8e52-c5b62bdb2c74",
+    "plan": "将 createChildSession 方法的参数 agentName 重命名为 sessionName",
+    "modified_files": [
+      "src/main/java/com/ghost616/agentbase/service/agent/ContextDataProvider.java",
+      "src/main/java/com/ghost616/agentbase/service/agent/AgentExecutionContext.java",
+      "src/main/java/com/ghost616/agentbase/service/agent/AgentContextManager.java",
+      "src/test/java/com/ghost616/agentbase/service/agent/AgentContextManagerTest.java"
+    ],
+    "summary": "已完成 agent-base 模块中 createChildSession 方法参数 agentName→sessionName 重命名，涉及 4 个文件：ContextDataProvider.java（接口方法参数 agentName→sessionName）、AgentExecutionContext.java（createChildSession 方法参数、mutator.createChildSession 调用、ChildSession record 字段 agentName→sessionName、CreateChildSessionCallback.create 接口参数）、AgentContextManager.java（lambda 参数 agentName→sessionName、私有 createChildSession 方法参数）、AgentContextManagerTest.java（agentName()→sessionName() 访问器）。无需额外测试——已有 AgentContextManagerTest 覆盖 ChildSession 字段访问器，测试已同步更新。",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_5d44b208-e378-4fd4-bae2-6c34bad40e47",
+    "plan": "在 expandMcpTools 的 McpExpandedToolDTO.builder() 链中添加 .id(mcpConfig.getId())",
+    "modified_files": [
+      "src/main/java/com/ghost616/agentbase/service/agent/invoker/ToolManager.java"
+    ],
+    "summary": "已完成 ToolManager.java expandMcpTools 方法中 McpExpandedToolDTO.builder() 链添加 .id(mcpConfig.getId())。该改动仅为 builder 链增加一个字段赋值，不改变行为逻辑，无需额外测试。",
+    "errors": []
+  }
+]

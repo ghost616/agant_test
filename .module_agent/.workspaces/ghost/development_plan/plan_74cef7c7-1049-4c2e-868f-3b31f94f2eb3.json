@@ -1,0 +1,9 @@
+{
+  "plan_id": "plan_74cef7c7-1049-4c2e-868f-3b31f94f2eb3",
+  "module_name": "platform-app",
+  "development_plan": "修改 platform-app/src/main/java/com/ghost616/platform/systemtest/SystemTestSubSessionTool.java：\n1. getParameterSchema() 中新增 description 参数（type: string，可选）\n2. execute() 方法中从入参 JSON 读取 description（若为空则默认 \"system test sub-session\"）\n3. 将 description 传给 ctx.createChildSession(sessionName, description, ctx.getModelId(), ...)",
+  "session_id": "ses_0b170eeb7ffe464QPU0Ykq5z9I",
+  "modified_files": [
+    "platform-app/src/main/java/com/ghost616/platform/systemtest/SystemTestSubSessionTool.java"
+  ]
+}

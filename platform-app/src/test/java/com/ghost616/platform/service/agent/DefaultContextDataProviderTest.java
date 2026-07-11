@@ -317,11 +317,11 @@ class DefaultContextDataProviderTest {
         assertNotNull(result.childSessions());
         assertEquals(2, result.childSessions().size());
         assertEquals(Long.valueOf(71L), result.childSessions().get(0).sessionId());
-        assertEquals("child1", result.childSessions().get(0).agentName());
+        assertEquals("child1", result.childSessions().get(0).sessionName());
         assertEquals("desc1", result.childSessions().get(0).description());
         assertEquals(Long.valueOf(200L), result.childSessions().get(0).modelId());
         assertEquals(Long.valueOf(72L), result.childSessions().get(1).sessionId());
-        assertEquals("child2", result.childSessions().get(1).agentName());
+        assertEquals("child2", result.childSessions().get(1).sessionName());
     }
 
     @Test

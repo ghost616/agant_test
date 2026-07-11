@@ -75,6 +75,7 @@ function JsonEditor({ value, onChange }: JsonEditorProps): JSX.Element {
           keymap.of(historyKeymap),
           indentOnInput(),
           bracketMatching(),
+          EditorView.lineWrapping,
           json(),
           theme,
           EditorView.updateListener.of((update) => {

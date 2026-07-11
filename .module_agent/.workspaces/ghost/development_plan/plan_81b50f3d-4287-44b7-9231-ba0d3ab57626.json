@@ -1,0 +1,9 @@
+{
+  "plan_id": "plan_81b50f3d-4287-44b7-9231-ba0d3ab57626",
+  "module_name": "platform-app",
+  "development_plan": "修改 platform-app/src/test/java/com/ghost616/platform/systemtest/SystemTestSubSessionToolTest.java：\n移除第 34-54 行中对 getToolName()、getDescription()、getParameterSchema() 的三个测试方法（这些方法已因 SystemTestSubSessionTool 从 SystemTool 改为 ToolInvoker 而被删除）。\n\n保留 execute() 相关的测试用例（命令行号 56 起）。",
+  "session_id": "ses_0b170eeb7ffe464QPU0Ykq5z9I",
+  "modified_files": [
+    "platform-app/src/test/java/com/ghost616/platform/systemtest/SystemTestSubSessionToolTest.java"
+  ]
+}

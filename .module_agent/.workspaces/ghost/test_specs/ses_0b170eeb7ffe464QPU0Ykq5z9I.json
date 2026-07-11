@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_0b170eeb7ffe464QPU0Ykq5z9I",
+  "content": "## 待测试功能\n\n### 1. SystemTestSubSessionTool 系统工具\n- 文件: `platform-app/src/main/java/com/ghost616/platform/systemtest/SystemTestSubSessionTool.java`\n- 功能: 实现 SystemTool 接口，工具名 system_test\n  - getToolName() 返回 \"system_test\"\n  - getDescription() 返回非空描述\n  - getParameterSchema() 返回 JSON Schema（包含 sessionName 和 message 必填参数）\n  - execute 方法:\n    - 正常路径：解析 sessionName 和 message，调用 ctx.createChildSession() 创建子会话，调用 ctx.sendUserMessage() 发送消息，返回序列化的 {role, content} JSON\n    - ctx.createChildSession 返回 null 时：返回 {\"error\":\"createChildSession returned null\"}\n    - JSON 解析异常时：返回 {\"error\":\"...\"}\n    - 其他异常时：返回 {\"error\":\"...\"}\n",
+  "timestamp": "2026-07-11T00:24:52.416Z"
+}

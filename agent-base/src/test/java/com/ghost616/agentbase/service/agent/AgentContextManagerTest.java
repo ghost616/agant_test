@@ -1,5 +1,6 @@
 package com.ghost616.agentbase.service.agent;
 
+import com.ghost616.agentbase.dto.model.Message;
 import com.ghost616.agentbase.dto.skill.SkillConfigDTO;
 import com.ghost616.agentbase.dto.tool.McpExpandedToolDTO;
 import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
@@ -265,6 +266,87 @@ class AgentContextManagerTest {
     }
 
     @Nested
+    class SendUserMessageTest {
+
+        private final Long childSessionId = 2L;
+        private final String testContent = "Hello from test";
+        private final Long modelId = 200L;
+
+        @BeforeEach
+        void setUp() {
+            when(dataProvider.loadAgentContext(sessionId)).thenReturn(
+                    new ContextDataProvider.AgentContextData(agentId, "test prompt", modelId, 10, List.of(), new HashMap<>(), null, null));
+            when(sessionManager.getMessages(sessionId)).thenReturn(List.of());
+            when(toolManager.getSessionTools(sessionId)).thenReturn(List.of());
+        }
+
+        @Test
+        void 正向_sendUserMessage返回role为user() {
+            SessionManager.MessageSaveBuilder mockBuilder = mock(SessionManager.MessageSaveBuilder.class);
+            when(mockBuilder.sessionId(any())).thenReturn(mockBuilder);
+            when(mockBuilder.role(any())).thenReturn(mockBuilder);
+            when(mockBuilder.content(any())).thenReturn(mockBuilder);
+            when(mockBuilder.save()).thenReturn(1L);
+            when(sessionManager.messageSave()).thenReturn(mockBuilder);
+
+            AgentExecutionContext context = agentContextManager.build(sessionId).build().context();
+            Message msg = context.sendUserMessage(childSessionId, testContent, modelId);
+
+            assertEquals("user", msg.getRole());
+        }
+
+        @Test
+        void 正向_sendUserMessage返回content与传入一致() {
+            SessionManager.MessageSaveBuilder mockBuilder = mock(SessionManager.MessageSaveBuilder.class);
+            when(mockBuilder.sessionId(any())).thenReturn(mockBuilder);
+            when(mockBuilder.role(any())).thenReturn(mockBuilder);
+            when(mockBuilder.content(any())).thenReturn(mockBuilder);
+            when(mockBuilder.save()).thenReturn(1L);
+            when(sessionManager.messageSave()).thenReturn(mockBuilder);
+
+            AgentExecutionContext context = agentContextManager.build(sessionId).build().context();
+            Message msg = context.sendUserMessage(childSessionId, testContent, modelId);
+
+            assertEquals(testContent, msg.getContent());
+        }
+
+        @Test
+        void 正向_sendUserMessage调用sessionManager_messageSave持久化消息() {
+            SessionManager.MessageSaveBuilder mockBuilder = mock(SessionManager.MessageSaveBuilder.class);
+            when(mockBuilder.sessionId(any())).thenReturn(mockBuilder);
+            when(mockBuilder.role(any())).thenReturn(mockBuilder);
+            when(mockBuilder.content(any())).thenReturn(mockBuilder);
+            when(mockBuilder.save()).thenReturn(1L);
+            when(sessionManager.messageSave()).thenReturn(mockBuilder);
+
+            AgentExecutionContext context = agentContextManager.build(sessionId).build().context();
+            context.sendUserMessage(childSessionId, testContent, modelId);
+
+            verify(mockBuilder).sessionId(childSessionId);
+            verify(mockBuilder).role("user");
+            verify(mockBuilder).content(testContent);
+            verify(mockBuilder).save();
+        }
+
+        @Test
+        void 正向_无parentSessionId的会话sendUserMessage正常执行() {
+            SessionManager.MessageSaveBuilder mockBuilder = mock(SessionManager.MessageSaveBuilder.class);
+            when(mockBuilder.sessionId(any())).thenReturn(mockBuilder);
+            when(mockBuilder.role(any())).thenReturn(mockBuilder);
+            when(mockBuilder.content(any())).thenReturn(mockBuilder);
+            when(mockBuilder.save()).thenReturn(1L);
+            when(sessionManager.messageSave()).thenReturn(mockBuilder);
+
+            AgentExecutionContext context = agentContextManager.build(sessionId).build().context();
+            Message msg = context.sendUserMessage(childSessionId, testContent, modelId);
+
+            assertNotNull(msg);
+            assertEquals("user", msg.getRole());
+            assertEquals(testContent, msg.getContent());
+        }
+    }
+
+    @Nested
     class ParentChildSessionTest {
 
         private final Long parentSessionId = 1L;
@@ -310,7 +392,7 @@ class AgentContextManagerTest {
 
             assertEquals(1, parentContext.getChildSessions().size());
             assertEquals(Long.valueOf(10L), parentContext.getChildSessions().get(0).sessionId());
-            assertEquals("sub-agent", parentContext.getChildSessions().get(0).agentName());
+            assertEquals("sub-agent", parentContext.getChildSessions().get(0).sessionName());
         }
 
         @Test

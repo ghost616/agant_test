@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_0b49493bcffecgetRrEKGANR7X",
+  "content": "## 待测试功能\n\n### 涉及文件\n- `agent-base/src/main/java/com/ghost616/agentbase/service/agent/AgentExecutionContext.java`\n- `agent-base/src/main/java/com/ghost616/agentbase/service/agent/AgentContextManager.java`\n\n### 可测试功能\n1. `AgentContextManager.sendUserMessage(childSessionId, content, modelId)` 返回 Message 对象\n   - 返回的 Message role 为 \"user\"\n   - 返回的 Message content 与传入 content 一致\n   - 调用 sessionManager.messageSave() 持久化消息\n2. `AgentExecutionContext.sendUserMessage()` 透传调用 mutator.sendUserMessage() 并返回 Message\n3. `AgentContextMutator.sendUserMessage()` 透传调用 callback.send() 并返回 Message\n4. `SendUserMessageCallback.send()` 函数式接口返回 Message\n",
+  "timestamp": "2026-07-10T09:47:34.497Z"
+}

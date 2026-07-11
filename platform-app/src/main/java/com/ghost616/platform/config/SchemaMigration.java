@@ -7,8 +7,8 @@ import org.springframework.core.annotation.Order;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
+import java.sql.SQLException;
 import java.util.List;
-import java.util.Map;
 
 @Slf4j
 @Component
@@ -34,36 +34,33 @@ public class SchemaMigration implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
-        log.debug("开始执行数据库 Schema 迁移...");
+        log.info("开始执行数据库 Schema 迁移...");
 
         List<Migration> migrations = List.of(
                 new Migration("tool_config", "auth_config", "TEXT", null),
                 new Migration("session_variable", "update_time", "TIMESTAMP", null),
                 new Migration("session_variable", "deleted", "INTEGER", "0"),
                 new Migration("agent_config", "recent_message_count", "INTEGER", "10"),
-                new Migration("message", "tool_result", "TEXT", null)
+                new Migration("message", "tool_result", "TEXT", null),
+                new Migration("session", "parent_session_id", "BIGINT", null),
+                new Migration("session", "is_child", "TINYINT(1)", "0"),
+                new Migration("session", "description", "VARCHAR(500)", null)
         );
 
         for (Migration migration : migrations) {
             try {
-                if (columnExists(migration.tableName(), migration.columnName())) {
-                    log.debug("迁移跳过: {}.{} 列已存在", migration.tableName(), migration.columnName());
-                } else {
-                    jdbcTemplate.execute(migration.toAlterSql());
-                    log.debug("迁移成功: {}.{} 列已添加", migration.tableName(), migration.columnName());
-                }
+                jdbcTemplate.execute(migration.toAlterSql());
+                log.info("迁移成功: {}.{} 列已添加", migration.tableName(), migration.columnName());
             } catch (Exception e) {
-                log.error("迁移失败: {}.{} - {}", migration.tableName(), migration.columnName(), e.getMessage());
+                String msg = e.getMessage();
+                if (e instanceof SQLException && msg != null && msg.contains("duplicate column name")) {
+                    log.info("迁移跳过: {}.{} 列已存在", migration.tableName(), migration.columnName());
+                } else {
+                    log.error("迁移失败: {}.{} - {}", migration.tableName(), migration.columnName(), msg);
+                }
             }
         }
 
-        log.debug("数据库 Schema 迁移完成");
-    }
-
-    private boolean columnExists(String tableName, String columnName) {
-        List<Map<String, Object>> rows = jdbcTemplate.queryForList(
-                "PRAGMA table_info(\"" + tableName + "\")"
-        );
-        return rows.stream().anyMatch(row -> columnName.equals(row.get("name")));
+        log.info("数据库 Schema 迁移完成");
     }
 }

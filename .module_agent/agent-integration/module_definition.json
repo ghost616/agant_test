@@ -30,8 +30,8 @@
       "description": "默认 ModelInvokerFactory 实现，根据平台类型（OPENAI/ANTHROPIC/AZURE/OLLAMA/DEEPSEEK/CUSTOM）创建对应的 Invoker 实例"
     },
     {
-      "path": "agent-integration/src/main/java/com/ghost616/agentinteg/Build.java",
-      "description": "Agent 组件组装类，接收 DataProvider 和 ModelInvokerFactory 等依赖，build() 方法组装完整的 ChatService 和 ToolExecutionService 实例"
+      "path": "agent-integration/src/main/java/com/ghost616/agentinteg/AgentAssembler.java",
+      "description": "AgentAssembler 组件组装工厂类，接收 DataProvider/ModelInvokerFactory 等依赖，build() 方法组装完整的 ChatService/ToolExecutionService/AgentMessageProxy 实例"
     }
   ]
 }

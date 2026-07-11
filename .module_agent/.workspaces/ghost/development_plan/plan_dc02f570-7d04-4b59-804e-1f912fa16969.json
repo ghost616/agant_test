@@ -1,0 +1,9 @@
+{
+  "plan_id": "plan_dc02f570-7d04-4b59-804e-1f912fa16969",
+  "module_name": "platform-app",
+  "development_plan": "修改 platform-app/src/main/java/com/ghost616/platform/systemtest/SystemTestSubSessionTool.java：\n\n将第 32-33 行：\n  List<Long> toolIds = ctx.getTools().stream().map(ToolConfigDTO::getId).toList();\n  List<Long> skillIds = ctx.getSkills().stream().map(SkillConfigDTO::getId).toList();\n\n改为带空值保护的版本：\n  List<Long> toolIds = ctx.getTools() != null && !ctx.getTools().isEmpty()\n          ? ctx.getTools().stream().map(ToolConfigDTO::getId).toList() : null;\n  List<Long> skillIds = ctx.getSkills() != null && !ctx.getSkills().isEmpty()\n          ? ctx.getSkills().stream().map(SkillConfigDTO::getId).toList() : null;\n\n防止 tools 或 skills 列表为 null 时抛出 NPE。",
+  "session_id": "ses_0b170eeb7ffe464QPU0Ykq5z9I",
+  "modified_files": [
+    "platform-app/src/main/java/com/ghost616/platform/systemtest/SystemTestSubSessionTool.java"
+  ]
+}

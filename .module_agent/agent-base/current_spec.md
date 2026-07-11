@@ -42,6 +42,8 @@ refreshHooks() 可重复调用，每次调用前清空 systemHooks/systemPostHoo
 ## AgentContextManager
 
 AgentContextManager（非 @Component，通过 @Bean 注册）：注入 ContextDataProvider/SessionManager/ToolManager，管理会话上下文缓存 ConcurrentHashMap；提供 build(sessionId) 实例方法返回 Builder 内部类（支持 modelIdOverride 链式调用），Builder.build() 通过 cache.computeIfAbsent 使用 dataProvider 查询 agent/session 数据、toolManager 加载工具、sessionManager 获取历史消息，并在加载 skills 后遍历每条 SkillConfigDTO 的 skillTools，对 MCP_HTTP 类型工具调用 toolManager.expandMcpTools() 展开为 McpExpandedToolDTO 列表替换原始 DTO；保留 get/remove/addHistoryEntry 方法。
+sendUserMessage 方法签名改为 Message 返回类型，透传给 AgentContextMutator 回调；方法体实现消息持久化（通过 sessionManager.messageSave()）并返回 Message 对象。
+sendUserMessage 方法签名改为 Message 返回类型，通过 setter 注入 AgentMessageProxy 并委托给 proxy.sendUserMessage()；proxy 为 null 时回退为旧的直接保存 + 返回简单 Message。
 ## ToolExecutionService
 
 工具执行服务，非 Spring 组件。通过构造函数注入 ToolCallQueueManager/ToolManager/SystemToolManager/SessionManager/ChatService/AgentContextManager/ToolExecutionTracker/ObjectMapper。提供三个核心方法：
@@ -61,3 +63,7 @@ ConfigurableToolInvoker 接口，继承 ToolInvoker，定义 setToolConfig(ToolC
 ## ContextDataProvider
 
 上下文数据提供者接口，定义 agent 配置、技能、会话变量等数据查询方法，以及子会话创建方法 createChildSession。
+- createChildSession 方法参数 agentName 重命名为 sessionName
+## AgentMessageProxy
+
+AgentMessageProxy 消息代理类，注入 ChatService 和 ToolExecutionService。sendUserMessage(childSessionId, content, modelId) 同步代理：创建 ChatRequest 调用 chatService.chat() 收集 Flux<ServerSentEvent<ChatChunk>> 拼装 Message；检测 hasToolCalls 后循环调用 ToolExecutionService.executeTool() 等待完成 + continueAfterTools() 直到无工具调用，返回最终 assistant Message。

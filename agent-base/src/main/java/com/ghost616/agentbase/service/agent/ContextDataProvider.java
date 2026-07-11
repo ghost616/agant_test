@@ -20,6 +20,6 @@ public interface ContextDataProvider {
 
     void deleteSessionVariable(Long sessionId, String key);
 
-    Long createChildSession(Long parentSessionId, String agentName, String description, Long modelId,
+    Long createChildSession(Long parentSessionId, String sessionName, String description, Long modelId,
                             List<Long> toolIds, List<Long> skillIds, String prompt);
 }
