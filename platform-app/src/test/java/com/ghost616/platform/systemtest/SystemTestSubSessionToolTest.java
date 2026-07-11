@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghost616.agentbase.dto.model.Message;
 import com.ghost616.agentbase.service.agent.AgentExecutionContext;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -28,7 +29,7 @@ class SystemTestSubSessionToolTest {
 
     @BeforeEach
     void setUp() {
-        tool = new SystemTestSubSessionTool(objectMapper);
+        tool = new SystemTestSubSessionTool();
     }
 
     // === 正向：正常执行 ===

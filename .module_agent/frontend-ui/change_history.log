@@ -44,3 +44,4 @@
 [2026-07-02T01:49:15.496Z] [session: ses_0df7c5485ffeO4ui1cvRaxOioP] feat: 停止按钮增加后端停止通知 — session.ts 新增 stopChat API，AgentChat.tsx 的 handleAbort 先调用 stopChat 通知后端再中止前端请求
 [2026-07-09T03:48:07.970Z] [session: ses_0bb030d92ffeiyQi9sUH0x96EP] 修改 getToolStatus 签名(sessionId, toolId)及 URL，增加 toolId 查询参数；pollToolStatus 增加 toolId 参数；executeToolLoop 传入 execResult.toolId
 [2026-07-11T00:57:59.624Z] [session: ses_0b151d99bffecVSABO5Wb7j8UA] JsonEditor: extensions 数组中添加 EditorView.lineWrapping 实现长 JSON 自动折行
+[2026-07-11T03:38:53.740Z] [session: ses_0b0bfdbfbffe1Fmk3lPrspFTll] AgentChat 页面实现主会话/子会话列表 Tab 切换：Session 类型新增 parentSessionId/isChild 字段；session 服务新增 listChildSessions 方法；AgentChat 页面顶部添加 Tabs（主会话/子会话列表），子会话列表以 Table 展示，点击「查看会话」只读查看消息列表，无输入框和模型选择器控件

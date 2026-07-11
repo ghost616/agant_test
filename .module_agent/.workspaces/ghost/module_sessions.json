@@ -1,14 +1,1 @@
-{
-  "agent-base": [
-    "ses_0b1713afeffe2BlrZKewxrRm2D"
-  ],
-  "platform-app": [
-    "ses_0b170eeb7ffe464QPU0Ykq5z9I"
-  ],
-  "agent-integration": [
-    "ses_0b15a7e86ffejnlkRjotwuTQTl"
-  ],
-  "frontend-ui": [
-    "ses_0b151d99bffecVSABO5Wb7j8UA"
-  ]
-}
+{}

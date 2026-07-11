@@ -1,9 +1,0 @@
-{
-  "plan_id": "plan_5d44b208-e378-4fd4-bae2-6c34bad40e47",
-  "module_name": "agent-base",
-  "development_plan": "修改 agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/ToolManager.java：\n在 expandMcpTools 方法的 McpExpandedToolDTO.builder() 链中添加 .id(mcpConfig.getId())，使展开的 MCP 工具携带原始工具配置的 ID。",
-  "session_id": "ses_0b1713afeffe2BlrZKewxrRm2D",
-  "modified_files": [
-    "src/main/java/com/ghost616/agentbase/service/agent/invoker/ToolManager.java"
-  ]
-}

@@ -1,9 +1,0 @@
-{
-  "plan_id": "plan_c6da6660-90d2-4d02-ba04-ae3e5e13f6f1",
-  "module_name": "platform-app",
-  "development_plan": "修改 platform-app/src/main/java/com/ghost616/platform/config/SchemaMigration.java：\n在 migrations 列表的 session 迁移条目中新增 description 列的迁移：\nnew Migration(\"session\", \"description\", \"VARCHAR(500)\", null)\n\n该列在 Session 实体中映射但数据库中不存在。",
-  "session_id": "ses_0b170eeb7ffe464QPU0Ykq5z9I",
-  "modified_files": [
-    "platform-app/src/main/java/com/ghost616/platform/config/SchemaMigration.java"
-  ]
-}

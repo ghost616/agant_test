@@ -22,11 +22,6 @@ export async function deleteSession(id: string): Promise<void> {
   await api.delete(`/sessions/${id}`);
 }
 
-export async function listChildSessions(parentId: string): Promise<Session[]> {
-  const res = await api.get<ApiResponse<Session[]>>(`/sessions/${parentId}/children`);
-  return res.data.data;
-}
-
 export async function getSessionMessages(sessionId: string): Promise<SessionMessage[]> {
   const res = await api.get<ApiResponse<SessionMessage[]>>(`/sessions/${sessionId}/messages`);
   return res.data.data;

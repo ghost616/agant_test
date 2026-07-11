@@ -58,3 +58,4 @@
 [2026-07-11T00:24:45.988Z] [session: ses_0b170eeb7ffe464QPU0Ykq5z9I] DefaultContextDataProvider.createChildSession 参数名 agentName→sessionName；新建 SystemTestSubSessionTool 系统工具（system_test），创建子会话并发送消息
 [2026-07-11T00:27:54.490Z] [session: ses_0b170eeb7ffe464QPU0Ykq5z9I] 离朱测试 SystemTestSubSessionTool 9/9 全部通过
 [2026-07-11T00:33:58.912Z] [session: ses_0b170eeb7ffe464QPU0Ykq5z9I] 修复 DefaultContextDataProviderTest 编译错误：ChildSession.agentName()→sessionName()
+[2026-07-11T03:37:06.089Z] [session: ses_0b0c06e9dffeC2bn40dA8IS3OE] SessionDTO 新增 parentSessionId/isChild/description 字段；SessionService 新增 listChildSessions 方法；SessionServiceImpl 实现 listChildSessions 查询子会话列表；SessionController 新增 GET /api/sessions/{id}/children 端点

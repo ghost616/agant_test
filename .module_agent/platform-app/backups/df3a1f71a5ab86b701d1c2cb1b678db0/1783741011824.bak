@@ -23,10 +23,6 @@ public class SessionDTO {
     private Long modelId;
     private String title;
     private String systemPrompt;
-    @JsonSerialize(using = ToStringSerializer.class)
-    private Long parentSessionId;
-    private Boolean isChild;
-    private String description;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
 }

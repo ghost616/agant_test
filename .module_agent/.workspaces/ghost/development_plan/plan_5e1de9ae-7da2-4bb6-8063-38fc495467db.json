@@ -1,9 +1,0 @@
-{
-  "plan_id": "plan_5e1de9ae-7da2-4bb6-8063-38fc495467db",
-  "module_name": "frontend-ui",
-  "development_plan": "在 src/components/JsonEditor.tsx 的 EditorState.create() 的 extensions 数组中添加 EditorView.lineWrapping 扩展，使 Schema 输入框中的长 JSON 文本可以自动折行显示。\n\n修改位置：第 68 行 extensions 数组内，添加 EditorView.lineWrapping（与其他扩展如 history()、bracketMatching() 等同级）。EditorView 类已在文件头部导入，无需额外 import。",
-  "session_id": "ses_0b151d99bffecVSABO5Wb7j8UA",
-  "modified_files": [
-    "src/components/JsonEditor.tsx"
-  ]
-}

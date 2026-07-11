@@ -1,9 +1,0 @@
-{
-  "plan_id": "plan_daa9eb5a-cbb6-4c88-81ce-02e507853012",
-  "module_name": "platform-app",
-  "development_plan": "修改 platform-app/src/main/java/com/ghost616/platform/systemtest/SystemTestSubSessionTool.java：\n1. implements SystemTool 改为 implements ToolInvoker\n2. 移除 @Component 注解\n3. 移除 getToolName()、getDescription()、getParameterSchema() 三个方法\n4. execute() 方法保持不变\n5. import 中移除 SystemTool，确保 ToolInvoker 已导入\n\n注意：之后需通过工具注册界面手动注册该工具（JAVA 类型，类路径 com.ghost616.platform.systemtest.SystemTestSubSessionTool）",
-  "session_id": "ses_0b170eeb7ffe464QPU0Ykq5z9I",
-  "modified_files": [
-    "platform-app/src/main/java/com/ghost616/platform/systemtest/SystemTestSubSessionTool.java"
-  ]
-}

@@ -143,6 +143,14 @@
 - getToolStatus API 签名改为 (sessionId, toolId)，URL 添加 toolId 查询参数
 - pollToolStatus 增加 toolId 参数并传递给 getToolStatus
 - executeToolLoop 调用 pollToolStatus 时传入 execResult.toolId
+
+- Session 类型新增 parentSessionId（string?）、isChild（boolean?）字段
+- session 服务新增 listChildSessions(parentId) 方法，调用 GET /api/sessions/{id}/children
+- AgentChat 页面顶部添加 Tabs 组件，包含「主会话」和「子会话列表」两个 Tab
+- 「子会话列表」Tab：首次进入时调用 listChildSessions 加载子会话，以 Table 展示（标题、描述、创建时间），每条显示「查看会话」按钮
+- 点击「查看会话」：加载该子会话历史消息，只读展示消息列表，底部显示「返回子会话列表」按钮，不显示输入框/模型选择器/思考模式开关
+- 子会话列表为空时显示空状态提示「暂无子会话」
+
 ## 技能管理界面
 
 - 技能配置管理页面 `/skills`，支持技能列表展示、搜索筛选、新增/编辑/删除/启用禁用

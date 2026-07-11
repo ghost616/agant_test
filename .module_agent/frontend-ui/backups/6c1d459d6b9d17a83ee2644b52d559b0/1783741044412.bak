@@ -4,8 +4,6 @@ export interface Session {
   modelId: string;
   title: string;
   systemPrompt?: string;
-  parentSessionId?: string;
-  isChild?: boolean;
   createTime: string;
   updateTime: string;
 }

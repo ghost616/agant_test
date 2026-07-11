@@ -11,15 +11,15 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/controller/SessionController.java",
-      "description": "会话管理 REST 控制器，提供会话的 CRUD、消息查询、回滚等 HTTP API 端点"
+      "description": "会话管理 REST 控制器，提供会话的 CRUD、消息查询、回滚、子会话列表查询等 HTTP API 端点"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/session/SessionService.java",
-      "description": "会话管理服务接口，定义会话 CRUD、消息查询、回滚等业务方法"
+      "description": "会话管理服务接口，定义会话 CRUD、消息查询、回滚、查询子会话列表等业务方法"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/session/SessionServiceImpl.java",
-      "description": "会话管理服务实现，包含会话创建（含工具绑定）、查询、删除、回滚等业务逻辑"
+      "description": "会话管理服务实现，包含会话创建（含工具绑定）、查询、删除、回滚、子会话列表查询等业务逻辑"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/invoker/SpawnSubAgentSystemTool.java",

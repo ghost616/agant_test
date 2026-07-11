@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_0b0bfdbfbffe1Fmk3lPrspFTll",
+  "content": "## 待测试功能\n\n### 1. Session 类型字段变更\n- 涉及文件：src/types/session.ts\n- 验证：Session 接口应包含 parentSessionId?: string 和 isChild?: boolean 字段\n\n### 2. listChildSessions API 封装\n- 涉及文件：src/services/session.ts\n- 验证：应导出 listChildSessions 函数；应调用 GET /api/sessions/{id}/children\n\n### 3. AgentChat 页面 Tab 切换\n- 涉及文件：src/pages/sessions/AgentChat.tsx\n- 验证：\n  - 页面顶部应展示「主会话」和「子会话列表」两个 Tab\n  - 「主会话」Tab 应保留完整的聊天界面（消息列表 + 输入框 + 发送/停止/回滚按钮 + 模型选择器 + 思考模式开关）\n  - 切换到「子会话列表」Tab 时应加载子会话列表\n  - 子会话列表为空时应显示「暂无子会话」空状态提示\n\n### 4. 子会话只读查看\n- 涉及文件：src/pages/sessions/AgentChat.tsx\n- 验证：\n  - 子会话列表应包含「查看会话」按钮\n  - 点击「查看会话」应加载该子会话的历史消息\n  - 子会话查看模式下应显示「返回子会话列表」按钮\n  - 子会话查看模式下不应显示消息输入框、模型选择器、思考模式开关\n",
+  "timestamp": "2026-07-11T03:39:21.278Z"
+}

@@ -20,6 +20,4 @@ public interface SessionService {
     List<MessageDataProvider.MessageDTO> getMessages(Long sessionId);
 
     int rollback(Long sessionId);
-
-    List<SessionDTO> listChildSessions(Long parentId);
 }

@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_0b0c06e9dffeC2bn40dA8IS3OE",
+  "content": "## 待测试功能\n\n### 涉及文件\n- `platform-app/src/main/java/com/ghost616/platform/dto/session/SessionDTO.java` — 新增 parentSessionId、isChild、description 字段\n- `platform-app/src/main/java/com/ghost616/platform/service/session/SessionService.java` — 新增 listChildSessions 接口方法\n- `platform-app/src/main/java/com/ghost616/platform/service/session/SessionServiceImpl.java` — 实现 listChildSessions，更新 toDTO 映射新字段\n- `platform-app/src/main/java/com/ghost616/platform/controller/SessionController.java` — 新增 GET /api/sessions/{id}/children 端点\n\n### 可测试功能\n1. SessionDTO 新字段正确序列化/反序列化\n2. SessionServiceImpl.listChildSessions 根据 parentId 查询子会话并返回 SessionDTO 列表\n3. SessionController GET /api/sessions/{id}/children 端点正确返回子会话列表\n4. toDTO 方法正确映射 parentSessionId、isChild、description 字段",
+  "timestamp": "2026-07-11T03:37:10.780Z"
+}

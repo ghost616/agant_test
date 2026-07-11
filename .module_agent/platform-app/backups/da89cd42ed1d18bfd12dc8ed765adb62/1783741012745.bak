@@ -119,17 +119,6 @@ public class SessionServiceImpl implements SessionService {
         return sessionManager.getMessages(sessionId);
     }
 
-    @Override
-    public List<SessionDTO> listChildSessions(Long parentId) {
-        LambdaQueryWrapper<Session> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(Session::getParentSessionId, parentId);
-        wrapper.eq(Session::getIsChild, true);
-        wrapper.orderByDesc(Session::getCreateTime);
-
-        List<Session> entities = sessionMapper.selectList(wrapper);
-        return entities.stream().map(this::toDTO).toList();
-    }
-
     private SessionDTO toDTO(Session entity) {
         return SessionDTO.builder()
                 .id(entity.getId())
@@ -137,9 +126,6 @@ public class SessionServiceImpl implements SessionService {
                 .modelId(entity.getModelId())
                 .title(entity.getTitle())
                 .systemPrompt(entity.getSystemPrompt())
-                .parentSessionId(entity.getParentSessionId())
-                .isChild(entity.getIsChild())
-                .description(entity.getDescription())
                 .createTime(entity.getCreateTime())
                 .updateTime(entity.getUpdateTime())
                 .build();

@@ -1,9 +1,0 @@
-{
-  "plan_id": "plan_b922354d-974a-4c37-8f1f-d26315f2fbc8",
-  "module_name": "platform-app",
-  "development_plan": "修改 platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultToolDataProvider.java 的 getSkillToolIds 方法：\n\n增加子会话分支判断：\n- 先查询 Session 获取 isChild 字段\n- 若 isChild=true：通过 SessionSkillMapper 查询该 sessionId 的技能ID列表 → SkillToolMapper 查询对应工具ID列表 → 返回\n- 若 isChild=false（或 null）：保持原有逻辑 agentId → AgentSkill → SkillTool\n\n需要新增 import：com.ghost616.platform.entity.SessionSkill、com.ghost616.platform.repository.SessionSkillMapper",
-  "session_id": "ses_0b170eeb7ffe464QPU0Ykq5z9I",
-  "modified_files": [
-    "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultToolDataProvider.java"
-  ]
-}

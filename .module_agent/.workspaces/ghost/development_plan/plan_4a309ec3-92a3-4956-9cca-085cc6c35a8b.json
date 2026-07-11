@@ -1,9 +1,0 @@
-{
-  "plan_id": "plan_4a309ec3-92a3-4956-9cca-085cc6c35a8b",
-  "module_name": "platform-app",
-  "development_plan": "修改 platform-app/src/main/java/com/ghost616/platform/systemtest/SystemTestSubSessionTool.java：\n\n1. 移除 @RequiredArgsConstructor 和 @Slf4j 之外的构造注入\n2. 将 private final ObjectMapper objectMapper 改为 private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()\n3. 将 execute 方法中的 objectMapper 引用替换为 OBJECT_MAPPER\n4. 参照同包的 SystemInfoTool 风格\n\n目的是提供无参构造方法，使 JavaToolInvoker 能够通过 Class.getDeclaredConstructor() 成功实例化。",
-  "session_id": "ses_0b170eeb7ffe464QPU0Ykq5z9I",
-  "modified_files": [
-    "platform-app/src/main/java/com/ghost616/platform/systemtest/SystemTestSubSessionTool.java"
-  ]
-}

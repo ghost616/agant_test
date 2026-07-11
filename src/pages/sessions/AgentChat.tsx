@@ -2,12 +2,13 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Button, Input, message, Select, Spin, Switch, Typography } from 'antd';
+import { Button, Input, message, Select, Spin, Switch, Table, Tabs, Typography } from 'antd';
 import {
   UserOutlined,
   RobotOutlined,
   ToolOutlined,
   InfoCircleOutlined,
+  ArrowLeftOutlined,
 } from '@ant-design/icons';
 import {
   agentChatStream,
@@ -16,11 +17,12 @@ import {
   getSession,
   getSessionMessages,
   getToolStatus,
+  listChildSessions,
   rollbackSession,
   stopChat,
 } from '../../services/session';
 import { listModels } from '../../services/model';
-import type { SessionMessage } from '../../types/session';
+import type { Session, SessionMessage } from '../../types/session';
 import type { ModelConfig } from '../../types/model';
 
 type MessageRole = 'user' | 'assistant' | 'tool' | 'system';
@@ -85,6 +87,15 @@ function AgentChat(): JSX.Element {
 
   const MAX_TOOL_LOOPS = 10;
 
+  const [activeTab, setActiveTab] = useState<string>('main');
+  const [childSessions, setChildSessions] = useState<Session[]>([]);
+  const [childSessionsLoading, setChildSessionsLoading] = useState(false);
+  const [viewingChildId, setViewingChildId] = useState<string | null>(null);
+  const [viewingChildMessages, setViewingChildMessages] = useState<ChatMessage[]>([]);
+  const [viewingChildLoading, setViewingChildLoading] = useState(false);
+  const childListLoadedRef = useRef(false);
+  const childMessagesCalledRef = useRef<string | null>(null);
+
   useEffect(() => {
     if (containerRef.current) {
       containerRef.current.scrollTop = containerRef.current.scrollHeight;
@@ -126,6 +137,49 @@ function AgentChat(): JSX.Element {
       setHistoryLoading(false);
     }
   }, [sessionId]);
+
+  const loadChildSessions = useCallback(async (): Promise<void> => {
+    setChildSessionsLoading(true);
+    try {
+      const list = await listChildSessions(sessionId);
+      setChildSessions(list);
+    } catch {
+      message.error('加载子会话列表失败');
+    } finally {
+      setChildSessionsLoading(false);
+    }
+  }, [sessionId]);
+
+  const loadChildMessages = useCallback(async (childId: string): Promise<void> => {
+    setViewingChildLoading(true);
+    try {
+      const historyMessages = await getSessionMessages(childId);
+      const mapped: ChatMessage[] = historyMessages.map((msg: SessionMessage) => {
+        let content = msg.content;
+        if (msg.role === 'tool' && msg.toolResult) {
+          try {
+            const tr = JSON.parse(msg.toolResult);
+            content = `**工具: ${tr.toolName}**\n\n**参数:**\n\`\`\`json\n${tr.arguments}\n\`\`\`\n\n**执行结果:**\n${tr.result}`;
+          } catch {
+            // keep original content
+          }
+        }
+        return {
+          role: (['user', 'assistant', 'tool', 'system'].includes(msg.role)
+            ? msg.role
+            : 'assistant') as MessageRole,
+          content,
+          reasoning: msg.reasoning || undefined,
+          toolResult: msg.toolResult || undefined,
+        };
+      });
+      setViewingChildMessages(mapped);
+    } catch {
+      message.error('加载子会话消息失败');
+    } finally {
+      setViewingChildLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (!sessionId || calledRef.current) return;
@@ -427,16 +481,8 @@ function AgentChat(): JSX.Element {
     );
   };
 
-  if (!id) {
-    return (
-      <div style={{ textAlign: 'center', paddingTop: 100 }}>
-        <Typography.Text type="secondary">无效的会话</Typography.Text>
-      </div>
-    );
-  }
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 180px)' }}>
+  const renderMainChat = (): JSX.Element => (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <style>{`
         .agent-chat-markdown pre {
           background: #2d2d2d;
@@ -632,6 +678,176 @@ function AgentChat(): JSX.Element {
           </Button>
         </div>
       </div>
+    </div>
+  );
+
+  const renderChildSessionView = (): JSX.Element => {
+    const childSession = childSessions.find((s) => s.id === viewingChildId);
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+        <Button
+          icon={<ArrowLeftOutlined />}
+          style={{ marginBottom: 12, alignSelf: 'flex-start' }}
+          onClick={() => setViewingChildId(null)}
+        >
+          返回子会话列表
+        </Button>
+        {childSession && (
+          <Typography.Title level={5} style={{ color: '#e0e0e0', marginBottom: 12 }}>
+            {childSession.title || '未命名会话'}
+          </Typography.Title>
+        )}
+        <div
+          style={{
+            flex: 1,
+            background: '#1e1e1e',
+            borderRadius: 8,
+            padding: 16,
+            overflowY: 'auto',
+            minHeight: 200,
+          }}
+        >
+          {viewingChildLoading && (
+            <div style={{ textAlign: 'center', padding: 40 }}>
+              <Spin tip="加载消息..." />
+            </div>
+          )}
+          {!viewingChildLoading && viewingChildMessages.length === 0 && (
+            <Typography.Text style={{ color: '#6a6a6a', fontSize: 14 }}>
+              暂无消息
+            </Typography.Text>
+          )}
+          {!viewingChildLoading && viewingChildMessages.map((msg, idx) => renderMessage(msg, idx))}
+        </div>
+      </div>
+    );
+  };
+
+  const childSessionColumns = [
+    {
+      title: '标题',
+      dataIndex: 'title',
+      key: 'title',
+      render: (text: string) => text || '未命名会话',
+    },
+    {
+      title: '描述',
+      dataIndex: 'description',
+      key: 'description',
+      render: (text: string) => text || '-',
+    },
+    {
+      title: '创建时间',
+      dataIndex: 'createTime',
+      key: 'createTime',
+      width: 180,
+    },
+    {
+      title: '操作',
+      key: 'action',
+      width: 120,
+      render: (_: unknown, record: Session) => (
+        <Button
+          type="link"
+          onClick={() => {
+            setViewingChildId(record.id);
+            childMessagesCalledRef.current = null;
+          }}
+        >
+          查看会话
+        </Button>
+      ),
+    },
+  ];
+
+  const renderChildSessionList = (): JSX.Element => (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      {childSessionsLoading && (
+        <div style={{ textAlign: 'center', padding: 40 }}>
+          <Spin tip="加载子会话列表..." />
+        </div>
+      )}
+      {!childSessionsLoading && childSessions.length === 0 && (
+        <div style={{ textAlign: 'center', padding: 40 }}>
+          <Typography.Text style={{ color: '#6a6a6a', fontSize: 14 }}>
+            暂无子会话
+          </Typography.Text>
+        </div>
+      )}
+      {!childSessionsLoading && childSessions.length > 0 && (
+        <Table
+          dataSource={childSessions}
+          columns={childSessionColumns}
+          rowKey="id"
+          pagination={false}
+          style={{ background: 'transparent' }}
+        />
+      )}
+    </div>
+  );
+
+  const renderChildTab = (): JSX.Element => {
+    if (viewingChildId) {
+      return renderChildSessionView();
+    }
+    return renderChildSessionList();
+  };
+
+  if (!id) {
+    return (
+      <div style={{ textAlign: 'center', paddingTop: 100 }}>
+        <Typography.Text type="secondary">无效的会话</Typography.Text>
+      </div>
+    );
+  }
+
+  const handleTabChange = (key: string): void => {
+    setActiveTab(key);
+    if (key === 'children' && !childListLoadedRef.current) {
+      childListLoadedRef.current = true;
+      loadChildSessions();
+    }
+  };
+
+  useEffect(() => {
+    if (viewingChildId && childMessagesCalledRef.current !== viewingChildId) {
+      childMessagesCalledRef.current = viewingChildId;
+      loadChildMessages(viewingChildId);
+    }
+  }, [viewingChildId, loadChildMessages]);
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 180px)' }}>
+      <style>{`
+        .agent-chat-tabs {
+          display: flex;
+          flex-direction: column;
+          height: 100%;
+        }
+        .agent-chat-tabs .ant-tabs-nav {
+          margin-bottom: 0;
+        }
+        .agent-chat-tabs .ant-tabs-content-holder {
+          flex: 1;
+          overflow: hidden;
+        }
+        .agent-chat-tabs .ant-tabs-content {
+          height: 100%;
+        }
+        .agent-chat-tabs .ant-tabs-tabpane {
+          height: 100%;
+        }
+      `}</style>
+      <Tabs
+        className="agent-chat-tabs"
+        activeKey={activeTab}
+        onChange={handleTabChange}
+        style={{ display: 'flex', flexDirection: 'column', height: '100%' }}
+        items={[
+          { key: 'main', label: '主会话', children: renderMainChat() },
+          { key: 'children', label: '子会话列表', children: renderChildTab() },
+        ]}
+      />
     </div>
   );
 }

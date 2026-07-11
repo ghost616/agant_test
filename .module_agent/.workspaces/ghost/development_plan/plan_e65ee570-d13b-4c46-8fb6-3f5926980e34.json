@@ -1,9 +1,0 @@
-{
-  "plan_id": "plan_e65ee570-d13b-4c46-8fb6-3f5926980e34",
-  "module_name": "platform-app",
-  "development_plan": "修改 platform-app/src/main/java/com/ghost616/platform/systemtest/SystemTestSubSessionTool.java：\n在 toolIds 的 stream 管道中（.map() 之后、.toList() 之前）添加 .distinct()，对工具 ID 去重。",
-  "session_id": "ses_0b170eeb7ffe464QPU0Ykq5z9I",
-  "modified_files": [
-    "platform-app/src/main/java/com/ghost616/platform/systemtest/SystemTestSubSessionTool.java"
-  ]
-}
