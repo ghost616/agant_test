@@ -21,5 +21,7 @@
   "platform-app/src/main/java/com/ghost616/platform/service/model/ModelConfigServiceImpl.java": "f7957856b566de657d597b1fd738d0fd",
   "platform-app/src/test/java/com/ghost616/platform/service/agent/invoker/SpawnSubAgentSystemToolTest.java": "82d3faf9a58bd715049048624a6c55e4",
   "platform-app/src/test/java/com/ghost616/platform/config/AgentContextConfigurationTest.java": "f5c1f7d685e9dc9b0260dd87c8c8e808",
-  "platform-app/src/main/java/com/ghost616/platform/dto/session/SessionDTO.java": "df3a1f71a5ab86b701d1c2cb1b678db0"
+  "platform-app/src/main/java/com/ghost616/platform/dto/session/SessionDTO.java": "df3a1f71a5ab86b701d1c2cb1b678db0",
+  "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultSubSessionCallback.java": "5a3aae8da8aac003295e1e08550040b0",
+  "platform-app/src/test/java/com/ghost616/platform/service/agent/DefaultSubSessionCallbackTest.java": "741092aa9dc17775cd7151ae720878ce"
 }

@@ -1,4 +1,4 @@
-import { test, expect, Page } from '@playwright/test';
+import { test, expect, Page, Route } from '@playwright/test';
 
 const MOCK_SESSION = {
   id: 'session-1',
@@ -141,3 +141,5 @@ test.describe('AgentChat Tab 切换与子会话只读查看', () => {
     await expect(page.locator('.ant-switch')).not.toBeVisible();
   });
 });
+
+

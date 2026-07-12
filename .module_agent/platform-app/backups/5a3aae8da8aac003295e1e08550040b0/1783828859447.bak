@@ -1,0 +1,14 @@
+package com.ghost616.platform.service.agent;
+
+import com.ghost616.agentbase.dto.model.Message;
+import com.ghost616.agentbase.service.agent.invoker.SubSessionCallback;
+import org.springframework.stereotype.Component;
+
+@Component
+public class DefaultSubSessionCallback implements SubSessionCallback {
+
+    @Override
+    public Message execute(Long sessionId, String userMessage) {
+        return null;
+    }
+}

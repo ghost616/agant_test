@@ -5,5 +5,40 @@
     "code_reviewed": false,
     "plan_completed": false,
     "test_passed": true
+  },
+  {
+    "plan_id": "plan_7f8b0ada-7a56-480b-9b1d-d890428e780b",
+    "plan_summary": "子会话列表添加刷新按钮",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_86df6349-5c36-4f28-9e42-0a95451d1162",
+    "plan_summary": "创建ToolStatusResultDTO并改造Controller",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_6193eb6d-6b71-4075-a2e5-ba76ff1024fd",
+    "plan_summary": "前端适配ToolStatusResultDTO的新字段",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_9f459808-7139-4f2b-9455-1b758e918329",
+    "plan_summary": "修复AgentChat测试用例",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_0272d607-73cc-431d-abc6-9df8c7462c41",
+    "plan_summary": "移除executeTools中_sys_callback_sub_session检测",
+    "code_reviewed": false,
+    "plan_completed": false,
+    "test_passed": false
   }
 ]

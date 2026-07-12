@@ -45,3 +45,15 @@ platform-app 模块包含以下功能：
 - SessionDTO 新增 parentSessionId/isChild/description 字段，toDTO 方法映射新字段
 - 新增 SessionService.listChildSessions 方法：根据父会话ID查询所有子会话
 - SessionController 新增 GET /api/sessions/{id}/children 端点
+- 新增 DefaultSubSessionCallback（实现 SubSessionCallback，@Component），execute 方法返回 null
+- 新增 SubSessionCallbackSystemTool（实现 SystemTool），包装 SubSessionCallback，工具名 sub_session_callback
+- AgentContextConfiguration.systemToolProvider 注入 DefaultSubSessionCallback，在 tools Map 中添加 SubSessionCallbackSystemTool
+6. DefaultSubSessionCallback 核心逻辑实现：
+   - 注入 ContextDataProvider 依赖，通过子会话 ID 获取父会话 ID
+   - SubSessionData 内部类（childSessionId、userMessage、CompletableFuture<Message>）
+   - ConcurrentHashMap<Long, SubSessionData> 以 parentSessionId 为键管理子会话数据
+   - execute 方法：通过 loadAgentContext 获取 parentSessionId，创建 CompletableFuture 阻塞等待，完成后清理 map 条目
+   - getSubSessionData(Long parentSessionId) 公共方法：通过父会话 ID 获取数据对象
+- 已删除 SpawnSubAgentSystemTool（子智能体生成系统工具），因其功能由 agent-engine 模块的智能体编排能力替代
+6. 新增 ToolStatusResultDTO 数据传输对象，封装工具执行结果的全部字段（status/toolId/toolName/arguments/hasMore/result/message）+ needsSubSessionFlow 布尔字段
+7. ToolExecutionController 中 executeTools 和 toolStatus 两个接口的返回类型统一改为 ApiResponse<ToolStatusResultDTO>，并在检测到工具名为 _sys_callback_sub_session 时通过 DefaultSubSessionCallback.getSubSessionData 判断是否有待处理的子会话数据，设置 needsSubSessionFlow=true

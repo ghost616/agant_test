@@ -49,7 +49,7 @@
                     <testExcludes>
                         <testExclude>**/systemtest/**</testExclude>
                         <testExclude>**/controller/ChatControllerTest.java</testExclude>
-                        <testExclude>**/controller/ToolExecutionControllerTest.java</testExclude>
+
                         <testExclude>**/service/agent/**</testExclude>
                         <testExclude>**/config/**</testExclude>
                         <testExclude>**/session/SessionRollbackTest.java</testExclude>

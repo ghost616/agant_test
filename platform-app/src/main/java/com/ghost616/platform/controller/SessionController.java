@@ -3,6 +3,7 @@ package com.ghost616.platform.controller;
 import com.ghost616.platform.dto.ApiResponse;
 import com.ghost616.platform.dto.session.CreateSessionRequest;
 import com.ghost616.platform.dto.session.SessionDTO;
+import com.ghost616.platform.dto.session.SubSessionDataDTO;
 import com.ghost616.platform.service.session.SessionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -17,7 +18,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+import com.ghost616.agentbase.dto.model.Message;
+import com.ghost616.agentbase.dto.model.ToolCall;
+import com.ghost616.agentbase.enums.ErrorCode;
 import com.ghost616.agentbase.service.agent.MessageDataProvider;
+import com.ghost616.platform.service.agent.DefaultSubSessionCallback;
 
 
 @RestController
@@ -26,6 +31,7 @@ import com.ghost616.agentbase.service.agent.MessageDataProvider;
 public class SessionController {
 
     private final SessionService sessionService;
+    private final DefaultSubSessionCallback subSessionCallback;
 
     @GetMapping
     public ApiResponse<List<SessionDTO>> listSessions(@RequestParam(required = false) Long agentId) {
@@ -62,6 +68,60 @@ public class SessionController {
     public ApiResponse<List<SessionDTO>> listChildSessions(@PathVariable Long id) {
         List<SessionDTO> result = sessionService.listChildSessions(id);
         return ApiResponse.success(result);
+    }
+
+    @GetMapping("/{id}/sub-session-data")
+    public ApiResponse<SubSessionDataDTO> getSubSessionData(@PathVariable Long id) {
+        DefaultSubSessionCallback.SubSessionData data = subSessionCallback.getSubSessionData(id);
+        if (data == null) {
+            return ApiResponse.success(null);
+        }
+        SubSessionDataDTO result = SubSessionDataDTO.builder()
+                .childSessionId(data.getChildSessionId())
+                .userMessage(data.getUserMessage())
+                .build();
+        return ApiResponse.success(result);
+    }
+
+    @PostMapping("/{id}/complete-sub-session")
+    public ApiResponse<Void> completeSubSession(@PathVariable Long id) {
+        DefaultSubSessionCallback.SubSessionData data = subSessionCallback.getSubSessionData(id);
+        if (data == null) {
+            return ApiResponse.fail(ErrorCode.SUB_SESSION_DATA_NOT_FOUND);
+        }
+        List<MessageDataProvider.MessageDTO> messages = sessionService.getMessages(data.getChildSessionId());
+        if (messages == null || messages.isEmpty()) {
+            return ApiResponse.fail(ErrorCode.CHILD_SESSION_NO_MESSAGES);
+        }
+        MessageDataProvider.MessageDTO lastAssistantMsg = null;
+        for (int i = messages.size() - 1; i >= 0; i--) {
+            if ("assistant".equals(messages.get(i).role())) {
+                lastAssistantMsg = messages.get(i);
+                break;
+            }
+        }
+        if (lastAssistantMsg == null) {
+            return ApiResponse.fail(ErrorCode.CHILD_SESSION_NO_MESSAGES);
+        }
+        List<ToolCall> toolCalls = null;
+        if (lastAssistantMsg.toolCalls() != null && !lastAssistantMsg.toolCalls().isEmpty()) {
+            toolCalls = lastAssistantMsg.toolCalls().stream()
+                    .map(tc -> ToolCall.builder()
+                            .id(tc.toolCallId())
+                            .name(tc.toolCallName())
+                            .arguments(tc.toolCallArguments())
+                            .build())
+                    .toList();
+        }
+        Message message = Message.builder()
+                .role(lastAssistantMsg.role())
+                .content(lastAssistantMsg.content())
+                .reasoning(lastAssistantMsg.reasoning())
+                .toolCallId(lastAssistantMsg.toolCallId())
+                .toolCalls(toolCalls)
+                .build();
+        data.getMessageResult().complete(message);
+        return ApiResponse.success(null);
     }
 
     @DeleteMapping("/{id}")

@@ -150,7 +150,14 @@
 - 「子会话列表」Tab：首次进入时调用 listChildSessions 加载子会话，以 Table 展示（标题、描述、创建时间），每条显示「查看会话」按钮
 - 点击「查看会话」：加载该子会话历史消息，只读展示消息列表，底部显示「返回子会话列表」按钮，不显示输入框/模型选择器/思考模式开关
 - 子会话列表为空时显示空状态提示「暂无子会话」
-
+- 新增子会话回调工具 `_sys_callback_sub_session` 支持：前端在 executeToolLoop 中检测该工具名，驱动独立子会话流程
+- session.ts 新增 SubSessionData 类型、getSubSessionData API（GET /sessions/{id}/sub-session-data）、completeSubSession API（POST /sessions/{id}/complete-sub-session）
+- AgentChat.tsx 在工具执行循环中识别 `_sys_callback_sub_session`，通过 Modal 打开独立子会话对话展示框（独立状态/流式渲染/工具执行循环），完成后调用 completeSubSession 解除后端阻塞并继续主会话
+- 子会话列表区域新增刷新按钮（ReloadOutlined），点击后调用 loadChildSessions 刷新子会话数据，加载中显示 loading 状态
+- ExecuteToolsResult 和 ToolStatusResult 接口新增 needsSubSessionFlow 可选字段
+- pollToolStatus 中检测 status.needsSubSessionFlow 时调用 handleSubSessionFlow 启动子会话流程后继续轮询
+- executeToolLoop 移除 _sys_callback_sub_session 硬编码检测，所有工具统一走显示工具消息 + pollToolStatus 流程
+- handleSubSessionFlow 在子会话完成后继续调用 pollToolStatus 正确轮询工具结果
 ## 技能管理界面
 
 - 技能配置管理页面 `/skills`，支持技能列表展示、搜索筛选、新增/编辑/删除/启用禁用

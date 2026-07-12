@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_0abd88b63ffeINByXNRMs8D2Bs",
+  "content": "## 可测试功能\n\n### 1. DefaultSubSessionCallback\n- 文件: `platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultSubSessionCallback.java`\n- 功能: @Component 注解扫描，实现 SubSessionCallback 接口，execute 方法返回 null\n\n### 2. SubSessionCallbackSystemTool\n- 文件: `platform-app/src/main/java/com/ghost616/platform/service/agent/invoker/SubSessionCallbackSystemTool.java`\n- 功能: 实现 SystemTool 接口，返回正确的工具名/描述/参数 schema，execute 方法正确解析参数并调用 callback\n\n### 3. AgentContextConfiguration\n- 文件: `platform-app/src/main/java/com/ghost616/platform/config/AgentContextConfiguration.java`\n- 功能: systemToolProvider 方法注入 DefaultSubSessionCallback 并正确创建 SubSessionCallbackSystemTool 注册到 tools Map\n",
+  "timestamp": "2026-07-12T02:29:53.640Z"
+}

@@ -2,8 +2,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Button, Input, message, Select, Spin, Switch, Table, Tabs, Typography } from 'antd';
+import { Button, Input, message, Modal, Select, Spin, Switch, Table, Tabs, Typography } from 'antd';
 import {
+  ReloadOutlined,
   UserOutlined,
   RobotOutlined,
   ToolOutlined,
@@ -12,10 +13,12 @@ import {
 } from '@ant-design/icons';
 import {
   agentChatStream,
+  completeSubSession,
   continueChatStream,
   executeTools,
   getSession,
   getSessionMessages,
+  getSubSessionData,
   getToolStatus,
   listChildSessions,
   rollbackSession,
@@ -83,9 +86,22 @@ function AgentChat(): JSX.Element {
   const hasResponseRef = useRef(false);
   const calledRef = useRef(false);
   const executeToolLoopRef = useRef<() => Promise<void>>();
+  const handleSubSessionFlowRef = useRef<(toolId: string) => Promise<void>>();
   const toolLoopCount = useRef(0);
 
   const MAX_TOOL_LOOPS = 10;
+
+  const [subSessionModalVisible, setSubSessionModalVisible] = useState(false);
+  const [subSessionId, setSubSessionId] = useState<string | null>(null);
+  const [subMessages, setSubMessages] = useState<ChatMessage[]>([]);
+  const [subCurrentResponse, setSubCurrentResponse] = useState('');
+  const [subCurrentReasoning, setSubCurrentReasoning] = useState('');
+  const [subLoading, setSubLoading] = useState(false);
+  const [subToolExecuting, setSubToolExecuting] = useState(false);
+  const subAbortRef = useRef<AbortController | null>(null);
+  const subToolAbortRef = useRef(false);
+  const subToolLoopCount = useRef(0);
+  const subContainerRef = useRef<HTMLDivElement>(null);
 
   const [activeTab, setActiveTab] = useState<string>('main');
   const [childSessions, setChildSessions] = useState<Session[]>([]);
@@ -101,6 +117,12 @@ function AgentChat(): JSX.Element {
       containerRef.current.scrollTop = containerRef.current.scrollHeight;
     }
   }, [messages, currentResponse, currentReasoning]);
+
+  useEffect(() => {
+    if (subContainerRef.current) {
+      subContainerRef.current.scrollTop = subContainerRef.current.scrollHeight;
+    }
+  }, [subMessages, subCurrentResponse, subCurrentReasoning]);
 
   const loadHistory = useCallback(async (): Promise<void> => {
     try {
@@ -191,9 +213,14 @@ function AgentChat(): JSX.Element {
   const handleAbort = useCallback(() => {
     stopChat(sessionId).catch(() => {});
     toolAbortRef.current = true;
+    subToolAbortRef.current = true;
     if (abortRef.current) {
       abortRef.current.abort();
       abortRef.current = null;
+    }
+    if (subAbortRef.current) {
+      subAbortRef.current.abort();
+      subAbortRef.current = null;
     }
   }, [sessionId]);
 
@@ -222,6 +249,10 @@ function AgentChat(): JSX.Element {
         });
         return true;
       }
+      if (status.needsSubSessionFlow) {
+        await handleSubSessionFlowRef.current!(toolId);
+        continue;
+      }
       if (status.status === 'idle') {
         continue;
       }
@@ -243,6 +274,208 @@ function AgentChat(): JSX.Element {
     }
     return false;
   }, []);
+
+  const handleSubSessionFlow = useCallback(async (toolId: string): Promise<void> => {
+    try {
+      const data = await getSubSessionData(sessionId);
+      if (!data) {
+        message.error('获取子会话数据失败');
+        return;
+      }
+      const childId = data.childSessionId;
+      setSubSessionId(childId);
+      setSubMessages([{ role: 'user', content: data.userMessage }]);
+      setSubCurrentResponse('');
+      setSubCurrentReasoning('');
+      subToolAbortRef.current = false;
+      subToolLoopCount.current = 0;
+      setSubSessionModalVisible(true);
+
+      const runSubChat = async (): Promise<void> => {
+        const sendMessage = (content: string): Promise<boolean> =>
+          new Promise((resolve) => {
+            setSubLoading(true);
+            setSubCurrentResponse('');
+            setSubCurrentReasoning('');
+            subAbortRef.current = agentChatStream(
+              { sessionId: childId, content },
+              {
+                onDelta: (text) => setSubCurrentResponse((prev) => prev + text),
+                onReasoning: (text) => setSubCurrentReasoning((prev) => prev + text),
+                onDone: (hasToolCalls) => {
+                  setSubCurrentResponse((prev) => {
+                    setSubCurrentReasoning((reasoning) => {
+                      if ((prev && prev.trim()) || (reasoning && reasoning.trim())) {
+                        setSubMessages((msgs) => [
+                          ...msgs,
+                          { role: 'assistant', content: prev, reasoning: reasoning || undefined },
+                        ]);
+                      }
+                      return '';
+                    });
+                    return '';
+                  });
+                  setSubLoading(false);
+                  resolve(hasToolCalls);
+                },
+                onError: (err) => {
+                  message.error(err.message || '子会话请求失败');
+                  setSubLoading(false);
+                  resolve(false);
+                },
+              },
+            );
+          });
+
+        const continueChat = (): Promise<boolean> =>
+          new Promise((resolve) => {
+            setSubLoading(true);
+            setSubCurrentResponse('');
+            setSubCurrentReasoning('');
+            subAbortRef.current = continueChatStream(childId, {
+              onDelta: (text) => setSubCurrentResponse((prev) => prev + text),
+              onReasoning: (text) => setSubCurrentReasoning((prev) => prev + text),
+              onDone: (hasToolCalls) => {
+                setSubCurrentResponse((prev) => {
+                  setSubCurrentReasoning((reasoning) => {
+                    if ((prev && prev.trim()) || (reasoning && reasoning.trim())) {
+                      setSubMessages((msgs) => [
+                        ...msgs,
+                        { role: 'assistant', content: prev, reasoning: reasoning || undefined },
+                      ]);
+                    }
+                    return '';
+                  });
+                  return '';
+                });
+                setSubLoading(false);
+                resolve(hasToolCalls);
+              },
+              onError: (err) => {
+                message.error(err.message || '子会话请求失败');
+                setSubLoading(false);
+                resolve(false);
+              },
+            });
+          });
+
+        const pollSubToolStatus = async (sid: string, tid: string): Promise<boolean> =>
+          new Promise<boolean>((resolve) => {
+            let done = false;
+            const poll = async (): Promise<void> => {
+              while (!done && !subToolAbortRef.current) {
+                await new Promise((r) => setTimeout(r, 1000));
+                if (subToolAbortRef.current) { resolve(false); return; }
+                try {
+                  const status = await getToolStatus(sid, tid);
+                  if (status.status === 'done') {
+                    done = true;
+                    setSubMessages((msgs) => {
+                      const updated = [...msgs];
+                      const lastIdx = updated.length - 1;
+                      if (lastIdx >= 0 && updated[lastIdx].role === 'tool') {
+                        updated[lastIdx] = {
+                          role: 'tool',
+                          content: `**工具: ${status.toolName}**\n\n**参数:**\n\`\`\`json\n${status.arguments}\n\`\`\`\n\n**执行结果:**\n${status.result || '无返回结果'}`,
+                        };
+                      }
+                      return updated;
+                    });
+                    resolve(true);
+                    return;
+                  }
+                  if (status.status === 'idle') continue;
+                  if (status.status === 'failed' || status.status === 'error') {
+                    done = true;
+                    setSubMessages((msgs) => {
+                      const updated = [...msgs];
+                      const lastIdx = updated.length - 1;
+                      if (lastIdx >= 0 && updated[lastIdx].role === 'tool') {
+                        updated[lastIdx] = {
+                          role: 'tool',
+                          content: `**工具: ${status.toolName}**\n\n**参数:**\n\`\`\`json\n${status.arguments}\n\`\`\`\n\n**执行失败:** ${status.result || '未知错误'}`,
+                        };
+                      }
+                      return updated;
+                    });
+                    resolve(false);
+                    return;
+                  }
+                } catch {
+                  done = true;
+                  resolve(false);
+                  return;
+                }
+              }
+              resolve(false);
+            };
+            poll();
+          });
+
+        const runTools = async (): Promise<boolean> => {
+          subToolLoopCount.current += 1;
+          if (subToolLoopCount.current > MAX_TOOL_LOOPS) {
+            message.warning('子会话工具调用循环次数已达上限');
+            return false;
+          }
+          setSubToolExecuting(true);
+          subToolAbortRef.current = false;
+          try {
+            let hasMore = true;
+            while (hasMore && !subToolAbortRef.current) {
+              const execResult = await executeTools(childId);
+              if (subToolAbortRef.current) break;
+              if (execResult.status === 'empty') {
+                hasMore = false;
+                continue;
+              }
+              hasMore = execResult.hasMore;
+              if (!execResult.toolId) {
+                hasMore = false;
+                continue;
+              }
+              setSubMessages((prev) => [
+                ...prev,
+                {
+                  role: 'tool',
+                  content: `**正在执行工具: ${execResult.toolName}**\n\n**参数:**\n\`\`\`json\n${execResult.arguments}\n\`\`\``,
+                },
+              ]);
+              const succeeded = await pollSubToolStatus(childId, execResult.toolId);
+              if (!succeeded) hasMore = false;
+            }
+            return !subToolAbortRef.current;
+          } catch {
+            message.error('子会话工具执行失败');
+            return false;
+          } finally {
+            setSubToolExecuting(false);
+          }
+        };
+
+        let hasToolCalls = await sendMessage(data.userMessage);
+        while (hasToolCalls && !subToolAbortRef.current) {
+          const ok = await runTools();
+          if (!ok) break;
+          hasToolCalls = await continueChat();
+        }
+      };
+
+      await runSubChat();
+      await completeSubSession(sessionId);
+      const succeeded = await pollToolStatus(sessionId, toolId);
+      if (!succeeded) {
+        setToolExecuting(false);
+        setLoading(false);
+        abortRef.current = null;
+      }
+    } catch {
+      message.error('子会话流程执行失败');
+      setToolExecuting(false);
+      setLoading(false);
+      abortRef.current = null;
+    }
+  }, [sessionId, pollToolStatus]);
 
   const executeToolLoop = useCallback(async () => {
     toolLoopCount.current += 1;
@@ -348,7 +581,91 @@ function AgentChat(): JSX.Element {
     }
   }, [sessionId, pollToolStatus]);
 
+  handleSubSessionFlowRef.current = handleSubSessionFlow;
+
   executeToolLoopRef.current = executeToolLoop;
+
+  const renderSubSessionModal = (): JSX.Element => (
+    <Modal
+      title="子会话对话"
+      open={subSessionModalVisible}
+      onCancel={() => {
+        subToolAbortRef.current = true;
+        if (subAbortRef.current) {
+          subAbortRef.current.abort();
+          subAbortRef.current = null;
+        }
+        setSubSessionModalVisible(false);
+      }}
+      width={800}
+      footer={null}
+      destroyOnClose
+    >
+      <div
+        ref={subContainerRef}
+        style={{
+          background: '#1e1e1e',
+          borderRadius: 8,
+          padding: 16,
+          overflowY: 'auto',
+          maxHeight: '60vh',
+          minHeight: 200,
+        }}
+      >
+        {subMessages.map((msg, idx) => renderMessage(msg, idx))}
+
+        {subToolExecuting && (
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'flex-start',
+              marginBottom: 16,
+            }}
+          >
+            <div style={{ maxWidth: '75%' }}>
+              {renderRoleHeader('assistant')}
+              <div style={{ marginTop: 8 }}>
+                <Spin size="small" />
+                <Typography.Text style={{ color: '#aaa', fontSize: 12, marginLeft: 8 }}>
+                  正在执行工具调用...
+                </Typography.Text>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {subLoading && !subToolExecuting && (
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'flex-start',
+              marginBottom: 16,
+            }}
+          >
+            <div style={{ maxWidth: '75%' }}>
+              {renderRoleHeader('assistant')}
+              {subCurrentReasoning && renderReasoning(subCurrentReasoning)}
+              {subCurrentResponse ? (
+                <div style={BUBBLE_STYLES.assistant} className="agent-chat-markdown">
+                  <div style={{ color: '#d4d4d4', fontSize: 14, lineHeight: 1.8 }}>
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {subCurrentResponse}
+                    </ReactMarkdown>
+                  </div>
+                </div>
+              ) : (
+                !subCurrentReasoning && (
+                  <div style={{ marginTop: 8 }}>
+                    <Spin size="small" />
+                  </div>
+                )
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </Modal>
+  );
 
   const handleSend = useCallback(() => {
     if (!inputValue.trim() || loading) return;
@@ -762,6 +1079,15 @@ function AgentChat(): JSX.Element {
 
   const renderChildSessionList = (): JSX.Element => (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+        <Button
+          icon={<ReloadOutlined />}
+          loading={childSessionsLoading}
+          onClick={() => loadChildSessions()}
+        >
+          刷新
+        </Button>
+      </div>
       {childSessionsLoading && (
         <div style={{ textAlign: 'center', padding: 40 }}>
           <Spin tip="加载子会话列表..." />
@@ -818,6 +1144,7 @@ function AgentChat(): JSX.Element {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 180px)' }}>
+      {renderSubSessionModal()}
       <style>{`
         .agent-chat-tabs {
           display: flex;

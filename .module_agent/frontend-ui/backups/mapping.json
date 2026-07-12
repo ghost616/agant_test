@@ -13,5 +13,6 @@
   "src/types/common.ts": "db430131f40fdf06063529c1d141d000",
   "src/App.tsx": "46ef2374da6211486f3a408db68b2bcb",
   "src\\services\\session.ts": "fd2948219b1e1d6629abbbd83254968c",
-  "src\\pages\\sessions\\AgentChat.tsx": "9b0b606a6488660373e2a41a6413a711"
+  "src\\pages\\sessions\\AgentChat.tsx": "9b0b606a6488660373e2a41a6413a711",
+  "src/pages/sessions/__tests__/AgentChat.test.tsx": "f41dd6d73d05bac96fe74043926f944f"
 }

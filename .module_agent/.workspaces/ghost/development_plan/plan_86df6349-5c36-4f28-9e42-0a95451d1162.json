@@ -1,0 +1,13 @@
+{
+  "plan_id": "plan_86df6349-5c36-4f28-9e42-0a95451d1162",
+  "module_name": "platform-app",
+  "development_plan": "在 platform-app 模块中：\n1. 新建 DTO 类 ToolStatusResultDTO，封装 ToolStatusResult 的全部字段（status/toolId/toolName/arguments/hasMore/result/message）+ needsSubSessionFlow 布尔字段\n2. 修改 ToolExecutionController：\n   - executeTools 和 toolStatus 两个接口的返回类型改为 ApiResponse<ToolStatusResultDTO>\n   - 在 toolStatus 方法中：获取 ToolStatusResult 后检测 toolName 是否为 \"_sys_callback_sub_session\"，若是则注入 DefaultSubSessionCallback 调用 getSubSessionData(sessionId)，有数据时构建 ToolStatusResultDTO 并设置 needsSubSessionFlow=true\n   - executeTools 方法同理转换 ToolExecutionResult → ToolStatusResultDTO\n3. DTO 放在 platform-app/src/main/java/com/ghost616/platform/dto/ 目录\n\n参考规范：\n- Java 17，Spring Boot 3，Lombok\n- 包名 com.ghost616.platform\n- 类名大驼峰，构造器注入 @RequiredArgsConstructor\n- 缩进 4 空格，行宽 120",
+  "session_id": "ses_0aa9ec769ffeTj7XRtLBdrc2so",
+  "modified_files": [
+    "platform-app/src/main/java/com/ghost616/platform/dto/ToolStatusResultDTO.java",
+    "platform-app/src/main/java/com/ghost616/platform/controller/ToolExecutionController.java",
+    "platform-app/src/test/java/com/ghost616/platform/controller/ToolExecutionControllerTest.java",
+    "platform-app/src/test/java/com/ghost616/platform/dto/ToolStatusResultDTOTest.java",
+    "platform-app/pom.xml"
+  ]
+}

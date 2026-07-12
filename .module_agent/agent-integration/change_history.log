@@ -4,3 +4,4 @@
 [2026-07-08T07:22:46.858Z] [session: ses_0bf7d433bffeAvhAGPWRDn60Uv] 在 AgentAssembler.build() 中引入 ChatDataProviderProxy，代理将 MessageSavePostHook 懒创建并注入到 ChatService；ChatService 使用代理而非原始 ChatDataProvider；暴露 messageSavePostHook() getter 并包含在 Result record 中
 [2026-07-08T07:32:41.678Z] [session: ses_0bf7d433bffeAvhAGPWRDn60Uv] 在 AgentAssembler.build() 中引入 SystemToolProviderProxy，代理确保 history_query/load_skills/unload_skills 系统工具始终可用；SystemToolManager 使用代理而非原始 SystemToolProvider
 [2026-07-11T00:48:34.539Z] [session: ses_0b15a7e86ffejnlkRjotwuTQTl] 修复 AgentAssembler.java 编译错误：添加缺失的 import com.ghost616.agentbase.service.agent.AgentMessageProxy，解决第 99 行 new AgentMessageProxy(...) 编译失败
+[2026-07-12T02:30:02.713Z] [session: ses_0abd8d7d9ffeqO4GXG3uAHsdqZ] 新增 SubSessionCallbackSystemTool 系统工具实现（工具名 callback_sub_session），支持按名称匹配工具/技能、创建子会话并通过 SubSessionCallback 回调执行用户消息

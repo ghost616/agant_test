@@ -9,15 +9,19 @@ import com.ghost616.agentbase.service.agent.ToolExecutionService;
 import com.ghost616.agentbase.service.agent.invoker.SystemToolProvider;
 import com.ghost616.agentbase.service.model.invoker.ModelInvokerFactory;
 import com.ghost616.agentinteg.AgentAssembler;
+import com.ghost616.agentbase.service.agent.invoker.SystemTool;
 import com.ghost616.platform.repository.ModelConfigMapper;
 import com.ghost616.platform.repository.SessionMapper;
 import com.ghost616.platform.service.agent.DefaultChatDataProvider;
+import com.ghost616.platform.service.agent.DefaultSubSessionCallback;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationContext;
+
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -39,6 +43,9 @@ class AgentContextConfigurationTest {
 
     @Mock
     private ApplicationContext applicationContext;
+
+    @Mock
+    private DefaultSubSessionCallback defaultSubSessionCallback;
 
     @Test
     void defaultChatDataProvider_正确创建实例() {
@@ -81,5 +88,60 @@ class AgentContextConfigurationTest {
         ToolExecutionService toolExecutionService = config.toolExecutionService(agentAssembler);
 
         assertNotNull(toolExecutionService);
+    }
+
+    @Test
+    void systemToolProvider返回的工具Map包含sub_session_callback() {
+        when(applicationContext.getBeansOfType(SystemTool.class)).thenReturn(Map.of());
+
+        var provider = config.systemToolProvider(applicationContext, defaultSubSessionCallback);
+        Map<String, SystemTool> tools = provider.discoverSystemTools();
+
+        assertTrue(tools.containsKey("sub_session_callback"));
+        assertNotNull(tools.get("sub_session_callback"));
+    }
+
+    @Test
+    void systemToolProvider包含ApplicationContext中注册的SystemTool() {
+        SystemTool mockTool = mock(SystemTool.class);
+        when(mockTool.getToolName()).thenReturn("my_custom_tool");
+        when(applicationContext.getBeansOfType(SystemTool.class))
+                .thenReturn(Map.of("myCustomTool", mockTool));
+
+        var provider = config.systemToolProvider(applicationContext, defaultSubSessionCallback);
+        Map<String, SystemTool> tools = provider.discoverSystemTools();
+
+        assertTrue(tools.containsKey("my_custom_tool"));
+        assertTrue(tools.containsKey("sub_session_callback"));
+        assertEquals(2, tools.size());
+    }
+
+    @Test
+    void systemToolProvider过滤掉toolName为null的SystemTool() {
+        SystemTool nullNameTool = mock(SystemTool.class);
+        when(nullNameTool.getToolName()).thenReturn(null);
+        when(applicationContext.getBeansOfType(SystemTool.class))
+                .thenReturn(Map.of("nullNameTool", nullNameTool));
+
+        var provider = config.systemToolProvider(applicationContext, defaultSubSessionCallback);
+        Map<String, SystemTool> tools = provider.discoverSystemTools();
+
+        assertFalse(tools.containsKey(null));
+        assertTrue(tools.containsKey("sub_session_callback"));
+        assertEquals(1, tools.size());
+    }
+
+    @Test
+    void systemToolProvider过滤掉toolName为空字符串的SystemTool() {
+        SystemTool blankNameTool = mock(SystemTool.class);
+        when(blankNameTool.getToolName()).thenReturn("");
+        when(applicationContext.getBeansOfType(SystemTool.class))
+                .thenReturn(Map.of("blankNameTool", blankNameTool));
+
+        var provider = config.systemToolProvider(applicationContext, defaultSubSessionCallback);
+        Map<String, SystemTool> tools = provider.discoverSystemTools();
+
+        assertTrue(tools.containsKey("sub_session_callback"));
+        assertEquals(1, tools.size());
     }
 }

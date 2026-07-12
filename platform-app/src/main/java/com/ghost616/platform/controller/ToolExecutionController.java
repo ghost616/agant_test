@@ -3,6 +3,8 @@ package com.ghost616.platform.controller;
 import com.ghost616.agentbase.dto.model.ChatChunk;
 import com.ghost616.agentbase.service.agent.ToolExecutionService;
 import com.ghost616.platform.dto.ApiResponse;
+import com.ghost616.platform.dto.ToolStatusResultDTO;
+import com.ghost616.platform.service.agent.DefaultSubSessionCallback;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
@@ -23,18 +25,31 @@ import reactor.core.publisher.Flux;
 public class ToolExecutionController {
 
     private final ToolExecutionService toolExecutionService;
+    private final DefaultSubSessionCallback defaultSubSessionCallback;
 
     @PostMapping("/{sessionId}/execute-tools")
-    public ApiResponse<ToolExecutionService.ToolExecutionResult> executeTools(@PathVariable Long sessionId) {
+    public ApiResponse<ToolStatusResultDTO> executeTools(@PathVariable Long sessionId) {
         ToolExecutionService.ToolExecutionResult result = toolExecutionService.executeTool(sessionId);
-        return ApiResponse.success(result);
+        ToolStatusResultDTO dto = new ToolStatusResultDTO(
+                result.status(), result.toolId(), result.toolName(), result.arguments(),
+                result.hasMore(), null, result.message(), false);
+        return ApiResponse.success(dto);
     }
 
     @GetMapping("/{sessionId}/tool-status")
-    public ApiResponse<ToolExecutionService.ToolStatusResult> toolStatus(@PathVariable Long sessionId,
-                                                                          @RequestParam String toolId) {
+    public ApiResponse<ToolStatusResultDTO> toolStatus(@PathVariable Long sessionId,
+                                                        @RequestParam String toolId) {
         ToolExecutionService.ToolStatusResult result = toolExecutionService.getToolStatus(sessionId, toolId);
-        return ApiResponse.success(result);
+        ToolStatusResultDTO dto = new ToolStatusResultDTO(
+                result.status(), result.toolId(), result.toolName(), result.arguments(),
+                result.hasMore(), result.result(), null, false);
+        if ("_sys_callback_sub_session".equals(result.toolName())) {
+            DefaultSubSessionCallback.SubSessionData subData = defaultSubSessionCallback.getSubSessionData(sessionId);
+            if (subData != null) {
+                dto.setNeedsSubSessionFlow(true);
+            }
+        }
+        return ApiResponse.success(dto);
     }
 
     @PostMapping(value = "/{sessionId}/continue", produces = MediaType.TEXT_EVENT_STREAM_VALUE)

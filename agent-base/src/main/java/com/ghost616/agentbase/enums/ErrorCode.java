@@ -32,7 +32,9 @@ public enum ErrorCode {
     SKILL_ALREADY_EXISTS("SKILL-CONFIG-002", "SKILL 名称已存在"),
 
     SESSION_NOT_FOUND("SESSION-001", "会话不存在"),
-    SESSION_NO_USER_MESSAGE("SESSION-003", "会话中无用户消息");
+    SESSION_NO_USER_MESSAGE("SESSION-003", "会话中无用户消息"),
+    SUB_SESSION_DATA_NOT_FOUND("SESSION-004", "子会话数据不存在"),
+    CHILD_SESSION_NO_MESSAGES("SESSION-005", "子会话无消息");
 
     private final String code;
     private final String message;

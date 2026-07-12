@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_0abd8d7d9ffeqO4GXG3uAHsdqZ",
+  "content": "## 待测试功能\n\n### 1. SubSessionCallbackSystemTool 系统工具\n- 文件: `agent-integration/src/main/java/com/ghost616/agentinteg/tool/SubSessionCallbackSystemTool.java`\n- 功能: 实现 SystemTool 接口，工具名 callback_sub_session\n  - getToolName() 返回 \"callback_sub_session\"\n  - getDescription() 返回非空描述\n  - getParameterSchema() 返回 JSON Schema（包含 sessionName 和 userMessage 必填参数）\n  - execute 方法:\n    - 正常路径：解析 sessionName/description/toolNames/skillNames/userMessage，按 toolNames 从 ctx.getTools() 匹配获取 toolIds，按 skillNames 从 ctx.getSkills() 匹配获取 skillIds，调用 ctx.createChildSession()，调用 callback.execute()，返回 message.getContent()\n    - toolNames/skillNames 为 null/空时，对应 ids 传 null\n    - JSON 解析异常时返回包含错误信息的 JSON\n    - 其他异常时返回包含错误信息的 JSON",
+  "timestamp": "2026-07-12T02:30:07.127Z"
+}

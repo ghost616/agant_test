@@ -1,0 +1,30 @@
+[
+  {
+    "plan_id": "plan_7f8b0ada-7a56-480b-9b1d-d890428e780b",
+    "plan": "子会话列表添加刷新按钮",
+    "modified_files": [
+      "src/pages/sessions/AgentChat.tsx"
+    ],
+    "summary": "在 AgentChat.tsx 中导入 ReloadOutlined 图标，在 renderChildSessionList 顶部添加刷新按钮，点击调用 loadChildSessions，加载中显示 loading 状态",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_6193eb6d-6b71-4075-a2e5-ba76ff1024fd",
+    "plan": "子会话流程重构：needsSubSessionFlow 字段替代硬编码工具名检测",
+    "modified_files": [
+      "src/services/session.ts",
+      "src/pages/sessions/AgentChat.tsx"
+    ],
+    "summary": "session.ts 中 ExecuteToolsResult 和 ToolStatusResult 新增 needsSubSessionFlow 可选字段；AgentChat.tsx 中 pollToolStatus 检测 status.needsSubSessionFlow 时调用 handleSubSessionFlow 后继续轮询，executeToolLoop 移除 _sys_callback_sub_session 硬编码检测，所有工具统一走显示工具消息 + pollToolStatus 流程",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_9f459808-7139-4f2b-9455-1b758e918329",
+    "plan": "修复子会话流程测试用例",
+    "modified_files": [
+      "src/pages/sessions/__tests__/AgentChat.test.tsx"
+    ],
+    "summary": "更新 AgentChat.test.tsx 中第38行的测试用例：移除 _sys_callback_sub_session 字符串断言，改为验证 pollToolStatus 函数块中检测 status.needsSubSessionFlow 并调用 handleSubSessionFlowRef.current!(toolId) 启动子会话流程的新逻辑。运行全部 16 个测试用例通过。",
+    "errors": []
+  }
+]

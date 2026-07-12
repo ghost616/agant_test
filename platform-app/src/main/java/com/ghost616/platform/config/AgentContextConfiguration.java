@@ -18,6 +18,8 @@ import com.ghost616.agentinteg.model.invoker.DefaultModelInvokerFactory;
 import com.ghost616.platform.repository.ModelConfigMapper;
 import com.ghost616.platform.repository.SessionMapper;
 import com.ghost616.platform.service.agent.DefaultChatDataProvider;
+import com.ghost616.platform.service.agent.DefaultSubSessionCallback;
+import com.ghost616.agentinteg.tool.SubSessionCallbackSystemTool;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -37,7 +39,8 @@ public class AgentContextConfiguration {
     private final ToolDataProvider toolDataProvider;
 
     @Bean
-    public SystemToolProvider systemToolProvider(ApplicationContext applicationContext) {
+    public SystemToolProvider systemToolProvider(ApplicationContext applicationContext,
+                                                  DefaultSubSessionCallback defaultSubSessionCallback) {
         return () -> {
             Map<String, SystemTool> beans = applicationContext.getBeansOfType(SystemTool.class);
             Map<String, SystemTool> tools = new HashMap<>();
@@ -47,6 +50,7 @@ public class AgentContextConfiguration {
                     tools.put(toolName, tool);
                 }
             }
+            tools.put("callback_sub_session", new SubSessionCallbackSystemTool(defaultSubSessionCallback));
             return tools;
         };
     }

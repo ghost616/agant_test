@@ -67,3 +67,9 @@ ConfigurableToolInvoker 接口，继承 ToolInvoker，定义 setToolConfig(ToolC
 ## AgentMessageProxy
 
 AgentMessageProxy 消息代理类，注入 ChatService 和 ToolExecutionService。sendUserMessage(childSessionId, content, modelId) 同步代理：创建 ChatRequest 调用 chatService.chat() 收集 Flux<ServerSentEvent<ChatChunk>> 拼装 Message；检测 hasToolCalls 后循环调用 ToolExecutionService.executeTool() 等待完成 + continueAfterTools() 直到无工具调用，返回最终 assistant Message。
+## SubSessionCallback
+
+SubSessionCallback 函数式接口（com.ghost616.agentbase.service.agent.invoker），使用 @FunctionalInterface 注解，定义 execute(Long sessionId, String userMessage) 方法返回 Message，作为子会话消息处理的回调契约。
+## ErrorCode
+
+ErrorCode 枚举，包含系统、模型、工具、智能体、SKILL、会话等模块统一的错误码定义。已定义的系统错误码：SYSTEM_ERROR/PARAM_INVALID/NOT_FOUND/UNAUTHORIZED/DUPLICATE_KEY；模型错误码：MODEL_INVOKE_ERROR/MODEL_VERIFY_ERROR/MODEL_UNSUPPORTED/MODEL_NOT_FOUND/MODEL_ALREADY_EXISTS；工具错误码：TOOL_NOT_FOUND/TOOL_ALREADY_EXISTS/TOOL_SCHEMA_INVALID/TOOL_INVOKE_ERROR/TOOL_RUNTIME_NOT_FOUND/TOOL_EXECUTE_TIMEOUT/TOOL_EXECUTE_ERROR；智能体错误码：AGENT_NOT_FOUND/AGENT_ALREADY_EXISTS；SKILL 错误码：SKILL_NOT_FOUND/SKILL_ALREADY_EXISTS；会话错误码：SESSION_NOT_FOUND/SESSION_NO_USER_MESSAGE/SUB_SESSION_DATA_NOT_FOUND/CHILD_SESSION_NO_MESSAGES。

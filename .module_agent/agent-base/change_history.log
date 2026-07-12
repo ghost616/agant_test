@@ -38,3 +38,5 @@
 [2026-07-10T10:18:17.172Z] [session: ses_0b49493bcffecgetRrEKGANR7X] 新建 AgentMessageProxy 类，注入 ChatService/ToolExecutionService，实现同步 sendUserMessage（chat + 工具循环）；AgentContextManager 通过 setter 注入 AgentMessageProxy，sendUserMessage 委托给 proxy
 [2026-07-11T00:24:34.910Z] [session: ses_0b1713afeffe2BlrZKewxrRm2D] createChildSession 方法参数 agentName 统一重命名为 sessionName，涉及 ContextDataProvider、AgentExecutionContext（含 AgentContextMutator/CreateChildSessionCallback/ChildSession）、AgentContextManager 及对应测试文件
 [2026-07-11T02:18:56.544Z] [session: ses_0b1713afeffe2BlrZKewxrRm2D] ToolManager.expandMcpTools: McpExpandedToolDTO.builder() 链添加 .id(mcpConfig.getId())，使展开的 MCP 工具携带原始工具配置 ID
+[2026-07-12T02:27:40.259Z] [session: ses_0abd954c1ffeNHEZ9E0h216wEl] 创建 SubSessionCallback 函数式接口，在 invoker 包下新增 @FunctionalInterface 定义 execute(Long, String) -> Message 回调方法
+[2026-07-12T05:01:38.332Z] [session: ses_0ab4c80a9ffeXtaYlzIj3tK7s5] ErrorCode 枚举新增 SUB_SESSION_DATA_NOT_FOUND("SESSION-004", "子会话数据不存在") 和 CHILD_SESSION_NO_MESSAGES("SESSION-005", "子会话无消息")

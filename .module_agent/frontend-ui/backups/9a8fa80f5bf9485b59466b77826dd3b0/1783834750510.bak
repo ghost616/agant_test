@@ -2,12 +2,13 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Button, Input, message, Select, Spin, Switch, Typography } from 'antd';
+import { Button, Input, message, Select, Spin, Switch, Table, Tabs, Typography } from 'antd';
 import {
   UserOutlined,
   RobotOutlined,
   ToolOutlined,
   InfoCircleOutlined,
+  ArrowLeftOutlined,
 } from '@ant-design/icons';
 import {
   agentChatStream,
@@ -16,9 +17,12 @@ import {
   getSession,
   getSessionMessages,
   getToolStatus,
+  listChildSessions,
+  rollbackSession,
+  stopChat,
 } from '../../services/session';
 import { listModels } from '../../services/model';
-import type { SessionMessage } from '../../types/session';
+import type { Session, SessionMessage } from '../../types/session';
 import type { ModelConfig } from '../../types/model';
 
 type MessageRole = 'user' | 'assistant' | 'tool' | 'system';
@@ -27,6 +31,7 @@ interface ChatMessage {
   role: MessageRole;
   content: string;
   reasoning?: string;
+  toolResult?: string;
 }
 
 const ROLE_CONFIG: Record<MessageRole, { label: string; icon: JSX.Element; color: string }> = {
@@ -78,6 +83,18 @@ function AgentChat(): JSX.Element {
   const hasResponseRef = useRef(false);
   const calledRef = useRef(false);
   const executeToolLoopRef = useRef<() => Promise<void>>();
+  const toolLoopCount = useRef(0);
+
+  const MAX_TOOL_LOOPS = 10;
+
+  const [activeTab, setActiveTab] = useState<string>('main');
+  const [childSessions, setChildSessions] = useState<Session[]>([]);
+  const [childSessionsLoading, setChildSessionsLoading] = useState(false);
+  const [viewingChildId, setViewingChildId] = useState<string | null>(null);
+  const [viewingChildMessages, setViewingChildMessages] = useState<ChatMessage[]>([]);
+  const [viewingChildLoading, setViewingChildLoading] = useState(false);
+  const childListLoadedRef = useRef(false);
+  const childMessagesCalledRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (containerRef.current) {
@@ -85,56 +102,112 @@ function AgentChat(): JSX.Element {
     }
   }, [messages, currentResponse, currentReasoning]);
 
+  const loadHistory = useCallback(async (): Promise<void> => {
+    try {
+      const [session, models, historyMessages] = await Promise.all([
+        getSession(sessionId),
+        listModels({ status: 'ENABLED' }),
+        getSessionMessages(sessionId),
+      ]);
+      setModelList(models);
+      setModelId(session.modelId);
+      const mapped: ChatMessage[] = historyMessages.map((msg: SessionMessage) => {
+        let content = msg.content;
+        if (msg.role === 'tool' && msg.toolResult) {
+          try {
+            const tr = JSON.parse(msg.toolResult);
+            content = `**工具: ${tr.toolName}**\n\n**参数:**\n\`\`\`json\n${tr.arguments}\n\`\`\`\n\n**执行结果:**\n${tr.result}`;
+          } catch {
+            // keep original content
+          }
+        }
+        return {
+          role: (['user', 'assistant', 'tool', 'system'].includes(msg.role)
+            ? msg.role
+            : 'assistant') as MessageRole,
+          content,
+          reasoning: msg.reasoning || undefined,
+          toolResult: msg.toolResult || undefined,
+        };
+      });
+      setMessages(mapped);
+    } catch {
+      message.error('加载历史消息失败');
+    } finally {
+      setHistoryLoading(false);
+    }
+  }, [sessionId]);
+
+  const loadChildSessions = useCallback(async (): Promise<void> => {
+    setChildSessionsLoading(true);
+    try {
+      const list = await listChildSessions(sessionId);
+      setChildSessions(list);
+    } catch {
+      message.error('加载子会话列表失败');
+    } finally {
+      setChildSessionsLoading(false);
+    }
+  }, [sessionId]);
+
+  const loadChildMessages = useCallback(async (childId: string): Promise<void> => {
+    setViewingChildLoading(true);
+    try {
+      const historyMessages = await getSessionMessages(childId);
+      const mapped: ChatMessage[] = historyMessages.map((msg: SessionMessage) => {
+        let content = msg.content;
+        if (msg.role === 'tool' && msg.toolResult) {
+          try {
+            const tr = JSON.parse(msg.toolResult);
+            content = `**工具: ${tr.toolName}**\n\n**参数:**\n\`\`\`json\n${tr.arguments}\n\`\`\`\n\n**执行结果:**\n${tr.result}`;
+          } catch {
+            // keep original content
+          }
+        }
+        return {
+          role: (['user', 'assistant', 'tool', 'system'].includes(msg.role)
+            ? msg.role
+            : 'assistant') as MessageRole,
+          content,
+          reasoning: msg.reasoning || undefined,
+          toolResult: msg.toolResult || undefined,
+        };
+      });
+      setViewingChildMessages(mapped);
+    } catch {
+      message.error('加载子会话消息失败');
+    } finally {
+      setViewingChildLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (!sessionId || calledRef.current) return;
     calledRef.current = true;
 
-    const loadHistory = async (): Promise<void> => {
-      try {
-        const [session, models, historyMessages] = await Promise.all([
-          getSession(sessionId),
-          listModels({ status: 'ENABLED' }),
-          getSessionMessages(sessionId),
-        ]);
-        setModelList(models);
-        setModelId(session.modelId);
-        const mapped: ChatMessage[] = historyMessages.map((msg: SessionMessage) => ({
-          role: (['user', 'assistant', 'tool', 'system'].includes(msg.role)
-            ? msg.role
-            : 'assistant') as MessageRole,
-          content: msg.content,
-          reasoning: msg.reasoning || undefined,
-        }));
-        setMessages(mapped);
-      } catch {
-        message.error('加载历史消息失败');
-      } finally {
-        setHistoryLoading(false);
-      }
-    };
-
     loadHistory();
-  }, [sessionId]);
+  }, [sessionId, loadHistory]);
 
   const handleAbort = useCallback(() => {
+    stopChat(sessionId).catch(() => {});
     toolAbortRef.current = true;
     if (abortRef.current) {
       abortRef.current.abort();
       abortRef.current = null;
     }
-  }, []);
+  }, [sessionId]);
 
   useEffect(() => {
     return () => handleAbort();
   }, [handleAbort]);
 
-  const pollToolStatus = useCallback(async (sid: string): Promise<boolean> => {
+  const pollToolStatus = useCallback(async (sid: string, toolId: string): Promise<boolean> => {
     let done = false;
     while (!done && !toolAbortRef.current) {
       await new Promise((resolve) => setTimeout(resolve, 1000));
       if (toolAbortRef.current) return false;
-      const status = await getToolStatus(sid);
-      if (status.status === 'completed' || status.status === 'done') {
+      const status = await getToolStatus(sid, toolId);
+      if (status.status === 'done') {
         done = true;
         setMessages((msgs) => {
           const updated = [...msgs];
@@ -142,12 +215,15 @@ function AgentChat(): JSX.Element {
           if (lastIdx >= 0 && updated[lastIdx].role === 'tool') {
             updated[lastIdx] = {
               role: 'tool',
-              content: `**工具: ${status.toolName}**\n\n**执行结果:**\n${status.result || '无返回结果'}`,
+              content: `**工具: ${status.toolName}**\n\n**参数:**\n\`\`\`json\n${status.arguments}\n\`\`\`\n\n**执行结果:**\n${status.result || '无返回结果'}`,
             };
           }
           return updated;
         });
         return true;
+      }
+      if (status.status === 'idle') {
+        continue;
       }
       if (status.status === 'failed' || status.status === 'error') {
         done = true;
@@ -157,7 +233,7 @@ function AgentChat(): JSX.Element {
           if (lastIdx >= 0 && updated[lastIdx].role === 'tool') {
             updated[lastIdx] = {
               role: 'tool',
-              content: `**工具: ${status.toolName}**\n\n**执行失败:** ${status.result || '未知错误'}`,
+              content: `**工具: ${status.toolName}**\n\n**参数:**\n\`\`\`json\n${status.arguments}\n\`\`\`\n\n**执行失败:** ${status.result || '未知错误'}`,
             };
           }
           return updated;
@@ -169,25 +245,49 @@ function AgentChat(): JSX.Element {
   }, []);
 
   const executeToolLoop = useCallback(async () => {
+    toolLoopCount.current += 1;
+    if (toolLoopCount.current > MAX_TOOL_LOOPS) {
+      message.warning('工具调用循环次数已达上限');
+      setToolExecuting(false);
+      setLoading(false);
+      abortRef.current = null;
+      return;
+    }
     setToolExecuting(true);
     toolAbortRef.current = false;
     try {
       let hasMore = true;
+      let hadTools = false;
       while (hasMore && !toolAbortRef.current) {
         const execResult = await executeTools(sessionId);
         if (toolAbortRef.current) break;
+        if (execResult.status === 'empty') {
+          hasMore = false;
+          continue;
+        }
         hasMore = execResult.hasMore;
+        if (!execResult.toolId) {
+          hasMore = false;
+          continue;
+        }
+        hadTools = true;
         setMessages((prev) => [
           ...prev,
           {
             role: 'tool',
-            content: `**正在执行工具: ${execResult.toolName}**`,
+            content: `**正在执行工具: ${execResult.toolName}**\n\n**参数:**\n\`\`\`json\n${execResult.arguments}\n\`\`\``,
           },
         ]);
-        const succeeded = await pollToolStatus(sessionId);
+        const succeeded = await pollToolStatus(sessionId, execResult.toolId);
         if (!succeeded) hasMore = false;
       }
       if (toolAbortRef.current) {
+        setToolExecuting(false);
+        setLoading(false);
+        abortRef.current = null;
+        return;
+      }
+      if (!hadTools) {
         setToolExecuting(false);
         setLoading(false);
         abortRef.current = null;
@@ -211,14 +311,16 @@ function AgentChat(): JSX.Element {
           onDone: (hasMoreTools) => {
             setCurrentResponse((prev) => {
               setCurrentReasoning((reasoning) => {
-                setMessages((msgs) => [
-                  ...msgs,
-                  {
-                    role: 'assistant',
-                    content: prev,
-                    reasoning: reasoning || undefined,
-                  },
-                ]);
+                if ((prev && prev.trim()) || (reasoning && reasoning.trim())) {
+                  setMessages((msgs) => [
+                    ...msgs,
+                    {
+                      role: 'assistant',
+                      content: prev,
+                      reasoning: reasoning || undefined,
+                    },
+                  ]);
+                }
                 return '';
               });
               return '';
@@ -226,6 +328,7 @@ function AgentChat(): JSX.Element {
             if (hasMoreTools) {
               executeToolLoopRef.current?.();
             } else {
+              toolLoopCount.current = 0;
               setLoading(false);
               abortRef.current = null;
             }
@@ -274,12 +377,16 @@ function AgentChat(): JSX.Element {
         onDone: (hasToolCalls: boolean) => {
           setCurrentResponse((prev) => {
             setCurrentReasoning((reasoning) => {
-              const assistantMsg: ChatMessage = {
-                role: 'assistant',
-                content: prev,
-                reasoning: reasoning || undefined,
-              };
-              setMessages((msgs) => [...msgs, assistantMsg]);
+              if ((prev && prev.trim()) || (reasoning && reasoning.trim())) {
+                setMessages((msgs) => [
+                  ...msgs,
+                  {
+                    role: 'assistant',
+                    content: prev,
+                    reasoning: reasoning || undefined,
+                  },
+                ]);
+              }
               return '';
             });
             return '';
@@ -290,6 +397,7 @@ function AgentChat(): JSX.Element {
           if (hasToolCalls) {
             executeToolLoopRef.current?.();
           } else {
+            toolLoopCount.current = 0;
             setLoading(false);
             abortRef.current = null;
           }
@@ -361,26 +469,20 @@ function AgentChat(): JSX.Element {
         <div style={{ maxWidth: '75%' }}>
           {renderRoleHeader(msg.role)}
           {msg.reasoning && renderReasoning(msg.reasoning)}
-          <div style={BUBBLE_STYLES[msg.role]} className="agent-chat-markdown">
-            <div style={{ color: '#d4d4d4', fontSize: 14, lineHeight: 1.8 }}>
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+          {msg.content.trim() && (
+            <div style={BUBBLE_STYLES[msg.role]} className="agent-chat-markdown">
+              <div style={{ color: '#d4d4d4', fontSize: 14, lineHeight: 1.8 }}>
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     );
   };
 
-  if (!id) {
-    return (
-      <div style={{ textAlign: 'center', paddingTop: 100 }}>
-        <Typography.Text type="secondary">无效的会话</Typography.Text>
-      </div>
-    );
-  }
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 180px)' }}>
+  const renderMainChat = (): JSX.Element => (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <style>{`
         .agent-chat-markdown pre {
           background: #2d2d2d;
@@ -561,8 +663,191 @@ function AgentChat(): JSX.Element {
               停止
             </Button>
           )}
+          <Button
+            disabled={loading || toolExecuting}
+            onClick={async () => {
+              try {
+                await rollbackSession(sessionId);
+                await loadHistory();
+              } catch {
+                message.error('回滚失败');
+              }
+            }}
+          >
+            回滚
+          </Button>
         </div>
       </div>
+    </div>
+  );
+
+  const renderChildSessionView = (): JSX.Element => {
+    const childSession = childSessions.find((s) => s.id === viewingChildId);
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+        <Button
+          icon={<ArrowLeftOutlined />}
+          style={{ marginBottom: 12, alignSelf: 'flex-start' }}
+          onClick={() => setViewingChildId(null)}
+        >
+          返回子会话列表
+        </Button>
+        {childSession && (
+          <Typography.Title level={5} style={{ color: '#e0e0e0', marginBottom: 12 }}>
+            {childSession.title || '未命名会话'}
+          </Typography.Title>
+        )}
+        <div
+          style={{
+            flex: 1,
+            background: '#1e1e1e',
+            borderRadius: 8,
+            padding: 16,
+            overflowY: 'auto',
+            minHeight: 200,
+          }}
+        >
+          {viewingChildLoading && (
+            <div style={{ textAlign: 'center', padding: 40 }}>
+              <Spin tip="加载消息..." />
+            </div>
+          )}
+          {!viewingChildLoading && viewingChildMessages.length === 0 && (
+            <Typography.Text style={{ color: '#6a6a6a', fontSize: 14 }}>
+              暂无消息
+            </Typography.Text>
+          )}
+          {!viewingChildLoading && viewingChildMessages.map((msg, idx) => renderMessage(msg, idx))}
+        </div>
+      </div>
+    );
+  };
+
+  const childSessionColumns = [
+    {
+      title: '标题',
+      dataIndex: 'title',
+      key: 'title',
+      render: (text: string) => text || '未命名会话',
+    },
+    {
+      title: '描述',
+      dataIndex: 'description',
+      key: 'description',
+      render: (text: string) => text || '-',
+    },
+    {
+      title: '创建时间',
+      dataIndex: 'createTime',
+      key: 'createTime',
+      width: 180,
+    },
+    {
+      title: '操作',
+      key: 'action',
+      width: 120,
+      render: (_: unknown, record: Session) => (
+        <Button
+          type="link"
+          onClick={() => {
+            setViewingChildId(record.id);
+            childMessagesCalledRef.current = null;
+          }}
+        >
+          查看会话
+        </Button>
+      ),
+    },
+  ];
+
+  const renderChildSessionList = (): JSX.Element => (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      {childSessionsLoading && (
+        <div style={{ textAlign: 'center', padding: 40 }}>
+          <Spin tip="加载子会话列表..." />
+        </div>
+      )}
+      {!childSessionsLoading && childSessions.length === 0 && (
+        <div style={{ textAlign: 'center', padding: 40 }}>
+          <Typography.Text style={{ color: '#6a6a6a', fontSize: 14 }}>
+            暂无子会话
+          </Typography.Text>
+        </div>
+      )}
+      {!childSessionsLoading && childSessions.length > 0 && (
+        <Table
+          dataSource={childSessions}
+          columns={childSessionColumns}
+          rowKey="id"
+          pagination={false}
+          style={{ background: 'transparent' }}
+        />
+      )}
+    </div>
+  );
+
+  const renderChildTab = (): JSX.Element => {
+    if (viewingChildId) {
+      return renderChildSessionView();
+    }
+    return renderChildSessionList();
+  };
+
+  if (!id) {
+    return (
+      <div style={{ textAlign: 'center', paddingTop: 100 }}>
+        <Typography.Text type="secondary">无效的会话</Typography.Text>
+      </div>
+    );
+  }
+
+  const handleTabChange = (key: string): void => {
+    setActiveTab(key);
+    if (key === 'children' && !childListLoadedRef.current) {
+      childListLoadedRef.current = true;
+      loadChildSessions();
+    }
+  };
+
+  useEffect(() => {
+    if (viewingChildId && childMessagesCalledRef.current !== viewingChildId) {
+      childMessagesCalledRef.current = viewingChildId;
+      loadChildMessages(viewingChildId);
+    }
+  }, [viewingChildId, loadChildMessages]);
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 180px)' }}>
+      <style>{`
+        .agent-chat-tabs {
+          display: flex;
+          flex-direction: column;
+          height: 100%;
+        }
+        .agent-chat-tabs .ant-tabs-nav {
+          margin-bottom: 0;
+        }
+        .agent-chat-tabs .ant-tabs-content-holder {
+          flex: 1;
+          overflow: hidden;
+        }
+        .agent-chat-tabs .ant-tabs-content {
+          height: 100%;
+        }
+        .agent-chat-tabs .ant-tabs-tabpane {
+          height: 100%;
+        }
+      `}</style>
+      <Tabs
+        className="agent-chat-tabs"
+        activeKey={activeTab}
+        onChange={handleTabChange}
+        style={{ display: 'flex', flexDirection: 'column', height: '100%' }}
+        items={[
+          { key: 'main', label: '主会话', children: renderMainChat() },
+          { key: 'children', label: '子会话列表', children: renderChildTab() },
+        ]}
+      />
     </div>
   );
 }

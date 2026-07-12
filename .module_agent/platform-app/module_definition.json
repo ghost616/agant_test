@@ -22,10 +22,6 @@
       "description": "会话管理服务实现，包含会话创建（含工具绑定）、查询、删除、回滚、子会话列表查询等业务逻辑"
     },
     {
-      "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/invoker/SpawnSubAgentSystemTool.java",
-      "description": "子智能体生成系统工具实现，支持启动子智能体执行任务并管理其多轮对话与工具调用，实现 agent-base 的 SystemTool 接口"
-    },
-    {
       "path": "platform-app/src/main/java/com/ghost616/platform/config/AgentContextConfiguration.java",
       "description": "Agent 上下文 Spring 配置类，声明 SystemToolProvider、HistoryQuerySystemTool、LoadSkillsSystemTool、UnloadSkillsSystemTool、MessageSavePostHook、DefaultChatDataProvider、ModelInvokerFactory、Build、SessionManager、AgentContextManager、ToolManager、ModelInvokerManager、ChatService、ToolExecutionService 的 @Bean。内部组件由 agent-integration 的 Build 类创建后暴露。ChatService 通过 Build 内部调用 initHooks() 初始化钩子系统。"
     },
@@ -39,7 +35,7 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/controller/ToolExecutionController.java",
-      "description": "工具执行控制器，提供工具执行、状态轮询、继续对话等 HTTP 接口，业务逻辑委托给 agent-base 的 ToolExecutionService"
+      "description": "工具执行控制器，提供工具执行、状态轮询、继续对话等 HTTP 接口，业务逻辑委托给 agent-base 的 ToolExecutionService；注入 DefaultSubSessionCallback 用于检测 _sys_callback_sub_session 子会话回调流程；executeTools 和 toolStatus 接口返回 ToolStatusResultDTO 统一响应体"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/controller/ChatController.java",
@@ -108,6 +104,18 @@
     {
       "path": "platform-app/src/test/java/com/ghost616/platform/systemtest/SystemTestSubSessionToolTest.java",
       "description": "SystemTestSubSessionTool 单元测试，覆盖 getToolName/getDescription/getParameterSchema/execute 正常路径、createChildSession返回null、JSON解析异常、运行时异常、空sessionName、超长message 等 9 个用例"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultSubSessionCallback.java",
+      "description": "SubSessionCallback 默认实现。注入 ContextDataProvider 通过子会话 ID 获取父会话 ID；维护 ConcurrentHashMap 以 parentSessionId 为键管理 SubSessionData（含 childSessionId、userMessage、CompletableFuture<Message>）；execute 方法阻塞等待子会话消息结果，完成后自动清理；提供 getSubSessionData 公共方法供外部组件通过父会话 ID 获取数据并完成 future。"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/dto/ToolStatusResultDTO.java",
+      "description": "工具执行结果数据传输对象，封装 status/toolId/toolName/arguments/hasMore/result/message/needsSubSessionFlow 字段，用于 executeTools 和 toolStatus 接口的统一响应"
+    },
+    {
+      "path": "platform-app/src/test/java/com/ghost616/platform/dto/ToolStatusResultDTOTest.java",
+      "description": "ToolStatusResultDTO 单元测试，覆盖无参/全参构造器、getter/setter、默认值、空值、equals/hashCode/toString 等 8 个用例"
     }
   ]
 }

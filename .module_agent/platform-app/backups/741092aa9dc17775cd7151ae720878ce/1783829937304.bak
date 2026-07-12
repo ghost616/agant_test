@@ -1,0 +1,210 @@
+package com.ghost616.platform.service.agent;
+
+import com.ghost616.agentbase.dto.model.Message;
+import com.ghost616.agentbase.service.agent.ContextDataProvider;
+import com.ghost616.agentbase.service.agent.ContextDataProvider.AgentContextData;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+class DefaultSubSessionCallbackTest {
+
+    @Mock
+    private ContextDataProvider contextDataProvider;
+
+    private DefaultSubSessionCallback callback;
+
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
+
+    @BeforeEach
+    void setUp() {
+        callback = new DefaultSubSessionCallback(contextDataProvider);
+    }
+
+    @Test
+    void executeShouldBlockAndReturnResult() throws Exception {
+        Long sessionId = 100L;
+        Long parentSessionId = 10L;
+        String userMessage = "test message";
+        Message expectedMessage = Message.builder().role("assistant").content("response").build();
+
+        AgentContextData context = mock(AgentContextData.class);
+        when(context.parentSessionId()).thenReturn(parentSessionId);
+        when(contextDataProvider.loadAgentContext(sessionId)).thenReturn(context);
+
+        CompletableFuture<Message> futureResult = CompletableFuture.supplyAsync(
+                () -> callback.execute(sessionId, userMessage), executor);
+
+        DefaultSubSessionCallback.SubSessionData data = waitForMapEntry(parentSessionId);
+        assertNotNull(data);
+        assertEquals(sessionId, data.getChildSessionId());
+        assertEquals(userMessage, data.getUserMessage());
+
+        data.getMessageResult().complete(expectedMessage);
+
+        Message actual = futureResult.get(3, TimeUnit.SECONDS);
+        assertEquals(expectedMessage, actual);
+    }
+
+    @Test
+    void executeWithNullParentSessionId() throws Exception {
+        Long sessionId = 200L;
+        String userMessage = "no parent";
+
+        AgentContextData context = mock(AgentContextData.class);
+        when(context.parentSessionId()).thenReturn(null);
+        when(contextDataProvider.loadAgentContext(sessionId)).thenReturn(context);
+
+        CompletableFuture<Message> futureResult = CompletableFuture.supplyAsync(
+                () -> callback.execute(sessionId, userMessage), executor);
+
+        DefaultSubSessionCallback.SubSessionData data = waitForMapEntry(null);
+        assertNotNull(data);
+        assertEquals(sessionId, data.getChildSessionId());
+
+        data.getMessageResult().complete(Message.builder().role("assistant").content("ok").build());
+        Message actual = futureResult.get(3, TimeUnit.SECONDS);
+        assertEquals("ok", actual.getContent());
+    }
+
+    @Test
+    void executeWhenContextIsNull() throws Exception {
+        Long sessionId = 300L;
+        when(contextDataProvider.loadAgentContext(sessionId)).thenReturn(null);
+
+        CompletableFuture<Message> futureResult = CompletableFuture.supplyAsync(
+                () -> callback.execute(sessionId, "msg"), executor);
+
+        DefaultSubSessionCallback.SubSessionData data = waitForMapEntry(null);
+        assertNotNull(data);
+
+        data.getMessageResult().complete(Message.builder().role("assistant").content("done").build());
+        Message actual = futureResult.get(3, TimeUnit.SECONDS);
+        assertEquals("done", actual.getContent());
+    }
+
+    @Test
+    void executeShouldRemoveEntryAfterCompletion() throws Exception {
+        Long sessionId = 400L;
+        Long parentSessionId = 40L;
+
+        AgentContextData context = mock(AgentContextData.class);
+        when(context.parentSessionId()).thenReturn(parentSessionId);
+        when(contextDataProvider.loadAgentContext(sessionId)).thenReturn(context);
+
+        CompletableFuture<Message> futureResult = CompletableFuture.supplyAsync(
+                () -> callback.execute(sessionId, "cleanup test"), executor);
+
+        DefaultSubSessionCallback.SubSessionData data = waitForMapEntry(parentSessionId);
+        assertNotNull(data);
+
+        data.getMessageResult().complete(Message.builder().role("assistant").content("done").build());
+        futureResult.get(3, TimeUnit.SECONDS);
+
+        assertNull(callback.getSubSessionData(parentSessionId));
+    }
+
+    @Test
+    void getSubSessionDataShouldReturnNullWhenNoData() {
+        assertNull(callback.getSubSessionData(999L));
+    }
+
+    @Test
+    void getSubSessionDataShouldReturnCorrectData() throws Exception {
+        Long sessionId = 600L;
+        Long parentSessionId = 60L;
+        String userMessage = "data test";
+        Message expectedMessage = Message.builder().role("user").content("hello").build();
+
+        AgentContextData context = mock(AgentContextData.class);
+        when(context.parentSessionId()).thenReturn(parentSessionId);
+        when(contextDataProvider.loadAgentContext(sessionId)).thenReturn(context);
+
+        CompletableFuture<Message> futureResult = CompletableFuture.supplyAsync(
+                () -> callback.execute(sessionId, userMessage), executor);
+
+        DefaultSubSessionCallback.SubSessionData data = waitForMapEntry(parentSessionId);
+        assertNotNull(data);
+        assertEquals(sessionId, data.getChildSessionId());
+        assertEquals(userMessage, data.getUserMessage());
+        assertFalse(data.getMessageResult().isDone());
+
+        data.getMessageResult().complete(expectedMessage);
+        Message actual = futureResult.get(3, TimeUnit.SECONDS);
+        assertEquals(expectedMessage, actual);
+    }
+
+    @Test
+    void executeShouldThrowOnInterruption() {
+        Long sessionId = 700L;
+        Long parentSessionId = 70L;
+
+        AgentContextData context = mock(AgentContextData.class);
+        when(context.parentSessionId()).thenReturn(parentSessionId);
+        when(contextDataProvider.loadAgentContext(sessionId)).thenReturn(context);
+
+        Thread testThread = new Thread(() -> {
+            try {
+                callback.execute(sessionId, "interrupt test");
+                fail("Should have thrown exception");
+            } catch (RuntimeException e) {
+                assertTrue(e.getMessage().contains("interrupted"));
+            }
+        });
+        testThread.start();
+
+        DefaultSubSessionCallback.SubSessionData data = waitForMapEntry(parentSessionId);
+        assertNotNull(data);
+
+        testThread.interrupt();
+        try {
+            testThread.join(3000);
+        } catch (InterruptedException e) {
+            fail("Test thread join interrupted");
+        }
+    }
+
+    SubSessionDataTestHelper createSubSessionData(Long childSessionId, String userMessage) {
+        CompletableFuture<Message> future = new CompletableFuture<>();
+        DefaultSubSessionCallback.SubSessionData data =
+                new DefaultSubSessionCallback.SubSessionData(childSessionId, userMessage, future);
+        return new SubSessionDataTestHelper(data, future);
+    }
+
+    static class SubSessionDataTestHelper {
+        final DefaultSubSessionCallback.SubSessionData data;
+        final CompletableFuture<Message> future;
+
+        SubSessionDataTestHelper(DefaultSubSessionCallback.SubSessionData data, CompletableFuture<Message> future) {
+            this.data = data;
+            this.future = future;
+        }
+    }
+
+    private DefaultSubSessionCallback.SubSessionData waitForMapEntry(Long key) {
+        for (int i = 0; i < 50; i++) {
+            DefaultSubSessionCallback.SubSessionData data = callback.getSubSessionData(key);
+            if (data != null) {
+                return data;
+            }
+            try {
+                Thread.sleep(50);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return null;
+            }
+        }
+        return null;
+    }
+}

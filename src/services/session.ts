@@ -141,6 +141,7 @@ export interface ExecuteToolsResult {
   toolName?: string;
   arguments?: string;
   hasMore: boolean;
+  needsSubSessionFlow?: boolean;
 }
 
 export interface ToolStatusResult {
@@ -150,6 +151,23 @@ export interface ToolStatusResult {
   arguments: string;
   result?: string;
   hasMore?: boolean;
+  needsSubSessionFlow?: boolean;
+}
+
+export interface SubSessionData {
+  childSessionId: string;
+  userMessage: string;
+}
+
+export async function getSubSessionData(sessionId: string): Promise<SubSessionData | null> {
+  const res = await api.get<ApiResponse<SubSessionData | null>>(
+    `/sessions/${sessionId}/sub-session-data`,
+  );
+  return res.data.data;
+}
+
+export async function completeSubSession(sessionId: string): Promise<void> {
+  await api.post(`/sessions/${sessionId}/complete-sub-session`);
 }
 
 export async function stopChat(sessionId: string): Promise<void> {

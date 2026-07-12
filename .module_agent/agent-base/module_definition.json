@@ -199,7 +199,7 @@
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/enums/ErrorCode.java",
-      "description": "错误码枚举"
+      "description": "错误码枚举，包含系统、模型、工具、智能体、SKILL、会话等模块统一的错误码定义。已定义的系统错误码：SYSTEM_ERROR/PARAM_INVALID/NOT_FOUND/UNAUTHORIZED/DUPLICATE_KEY；模型错误码：MODEL_INVOKE_ERROR/MODEL_VERIFY_ERROR/MODEL_UNSUPPORTED/MODEL_NOT_FOUND/MODEL_ALREADY_EXISTS；工具错误码：TOOL_NOT_FOUND/TOOL_ALREADY_EXISTS/TOOL_SCHEMA_INVALID/TOOL_INVOKE_ERROR/TOOL_RUNTIME_NOT_FOUND/TOOL_EXECUTE_TIMEOUT/TOOL_EXECUTE_ERROR；智能体错误码：AGENT_NOT_FOUND/AGENT_ALREADY_EXISTS；SKILL 错误码：SKILL_NOT_FOUND/SKILL_ALREADY_EXISTS；会话错误码：SESSION_NOT_FOUND/SESSION_NO_USER_MESSAGE/SUB_SESSION_DATA_NOT_FOUND/CHILD_SESSION_NO_MESSAGES"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/enums/HookPhase.java",
@@ -256,6 +256,10 @@
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/AgentMessageProxy.java",
       "description": "AgentMessageProxy 消息代理类，同步代理 sendUserMessage：调用 ChatService.chat() 收集 Flux，检测工具调用后循环执行工具并继续对话，返回最终 assistant Message"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/SubSessionCallback.java",
+      "description": "子会话回调函数式接口，使用 @FunctionalInterface 注解，定义 execute(Long sessionId, String userMessage) 方法返回 Message，供子会话消息处理的回调契约"
     }
   ]
 }

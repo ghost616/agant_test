@@ -1,0 +1,35 @@
+package com.ghost616.platform.service.agent;
+
+import com.ghost616.agentbase.dto.model.Message;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+class DefaultSubSessionCallbackTest {
+
+    private final DefaultSubSessionCallback callback = new DefaultSubSessionCallback();
+
+    @Test
+    void execute返回null() {
+        Message result = callback.execute(1L, "test message");
+        assertNull(result);
+    }
+
+    @Test
+    void executeWithNullSessionId返回null() {
+        Message result = callback.execute(null, "test");
+        assertNull(result);
+    }
+
+    @Test
+    void executeWithNullMessage返回null() {
+        Message result = callback.execute(1L, null);
+        assertNull(result);
+    }
+
+    @Test
+    void executeWithAllNull返回null() {
+        Message result = callback.execute(null, null);
+        assertNull(result);
+    }
+}

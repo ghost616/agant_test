@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_0ab2b0167ffe0ondx8w0dHkT6D",
+  "content": "## 待测试功能\n\n### 1. session.ts 新增 API 函数\n\n**文件**: `src/services/session.ts`\n\n**功能**:\n- `getSubSessionData(sessionId)`：GET /sessions/{id}/sub-session-data，返回 SubSessionData | null\n- `completeSubSession(sessionId)`：POST /sessions/{id}/complete-sub-session\n\n### 2. AgentChat.tsx 子会话回调工具流程\n\n**文件**: `src/pages/sessions/AgentChat.tsx`\n\n**功能**:\n- `handleSubSessionFlow` 函数：获取子会话数据 → 打开 Modal → 驱动子会话对话（含内部工具循环 pollSubToolStatus）→ completeSubSession → pollToolStatus 主会话工具\n- `executeToolLoop` 中检测 `_sys_callback_sub_session` 并跳转子会话流程\n- `handleAbort` 同步中止子会话（subToolAbortRef + subAbortRef）\n- 子会话 Modal 展示流式内容、推理内容、工具执行气泡\n",
+  "timestamp": "2026-07-12T05:41:02.396Z"
+}
