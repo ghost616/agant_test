@@ -61,5 +61,12 @@
     "code_reviewed": false,
     "plan_completed": false,
     "test_passed": false
+  },
+  {
+    "plan_id": "plan_a13a30b1-9904-4c41-8e7c-66eb08667312",
+    "plan_summary": "README 两处更新：删除项目结构中 SQLite 数据库文件行；功能模块新增「子会话执行」条目",
+    "code_reviewed": false,
+    "plan_completed": false,
+    "test_passed": false
   }
 ]
