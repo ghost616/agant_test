@@ -18,6 +18,7 @@ AI 智能体调试与管理平台，基于 opencode + DeepSeek 及 module_agent 
 - **HOOK 管理** — HookInvoker 接口与 SystemHook 接口已定义，覆盖 SESSION_START/END、BEFORE/AFTER MESSAGE、BEFORE/AFTER TOOL_CALL 六个生命周期阶段，HOOK 管理功能后续实现
 - **智能体配置** — 智能体名称、系统提示词、关联模型与工具的配置管理，支持最近消息数量控制与技能关联
 - **智能体执行引擎** — 会话式智能体执行，支持工具调用与推理链，支持会话/对话变量、历史消息折叠、技能注入、推理内容透传
+- **子会话执行** — 智能体在对话中可通过系统工具 `callback_sub_session` 创建子会话并异步执行指定的用户消息，支持为子会话分配工具与技能列表；子会话与父会话共享会话变量/对话变量（子会话的变量读写委托给父会话）；提供子会话列表查询和完成回调 API，前端可展示子会话执行情况
 
 ## 快速启动
 
@@ -103,7 +104,6 @@ build.bat
 │   ├── src/main/resources/
 │   │   ├── application.yml              # 应用配置（SQLite、MyBatis-Plus）
 │   │   └── schema.sql                   # DDL 初始化脚本
-│   └── data/                            # SQLite 数据库文件
 │
 └── src/                                 # 前端源码
     ├── main.tsx                         # React 入口
