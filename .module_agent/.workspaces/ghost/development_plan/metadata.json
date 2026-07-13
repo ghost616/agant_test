@@ -49,13 +49,6 @@
     "test_passed": true
   },
   {
-    "plan_id": "plan_107a5cc0-5248-4d9e-8028-c384a6c87fe6",
-    "plan_summary": "AgentMessageProxy 移除 MAX_TOOL_ROUNDS 轮次上限，仅保留工具+参数组合5次检测",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": true
-  },
-  {
     "plan_id": "plan_2503bab8-d416-45fc-a38f-87634e68287f",
     "plan_summary": "AgentChat 移除 MAX_TOOL_LOOPS 轮次上限，仅保留工具+参数组合5次检测",
     "code_reviewed": true,
@@ -63,10 +56,10 @@
     "test_passed": true
   },
   {
-    "plan_id": "plan_b9dbf03d-df4d-4ba1-9686-dbe880aeb657",
-    "plan_summary": "删除 AgentChat.tsx 中 subToolLoopCount 和 toolLoopCount 残留引用",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": true
+    "plan_id": "plan_5204e5f8-4ff7-438a-8507-793b5cb4c73b",
+    "plan_summary": "更新 README.md 以反映多模块架构（agent-base/agent-integration/platform-app），修正项目结构、调用器位置、启动命令、系统工具说明",
+    "code_reviewed": false,
+    "plan_completed": false,
+    "test_passed": false
   }
 ]
