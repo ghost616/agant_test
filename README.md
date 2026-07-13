@@ -33,10 +33,13 @@ dev.bat
 ### 分别启动
 
 ```bash
-# 1. 启动后端
-mvn spring-boot:run
+# 1. 编译安装依赖模块
+mvn install -DskipTests
 
-# 2. 启动前端
+# 2. 启动后端
+mvn spring-boot:run -f platform-app/pom.xml
+
+# 3. 启动前端
 npm install
 npm run dev
 ```
@@ -54,35 +57,53 @@ build.bat
 ## 项目结构
 
 ```
-├── pom.xml                              # Maven 构建配置
+├── pom.xml                              # 父 POM（packaging=pom，聚合 3 个子模块）
 ├── package.json                         # 前端依赖配置
 ├── vite.config.ts                       # Vite 构建配置（/api 代理）
 ├── tsconfig.json                        # TypeScript 配置
 ├── dev.bat                              # 开发模式一键启动
 ├── build.bat                            # 一键编译打包
 │
-├── src/main/java/com/ghost616/platform/
-│   ├── PlatformApplication.java         # Spring Boot 启动类
-│   ├── config/                          # 配置（CORS、MyBatis-Plus、全局异常处理）
-│   ├── controller/                      # REST 控制器
-│   ├── service/                         # 业务服务层
-│   │   ├── agent/                       # 智能体执行
-│   │   ├── agent/invoker/               # 工具调用器
-│   │   └── skill/                       # 技能配置服务
-│   ├── repository/                      # 数据访问层（Mapper）
-│   ├── entity/                          # 数据库实体
-│   ├── dto/                             # 数据传输对象
-│   │   ├── chat/                        # 聊天相关 DTO
-│   │   └── skill/                       # 技能相关 DTO
-│   ├── enums/                           # 枚举（ErrorCode、PlatformType、ToolType 等）
-│   ├── exception/                       # 异常定义（BaseException、BusinessException）
-│   ├── event/                           # Spring 事件（ToolChangedEvent）
-│   ├── systemtest/                      # 系统测试
-│   └── util/                            # 工具类
+├── agent-base/                          # 核心抽象层（Maven 子模块）
+│   ├── pom.xml
+│   └── src/main/java/com/ghost616/agentbase/
+│       ├── service/agent/               # 上下文管理、会话管理、消息代理
+│       │   └── invoker/                 # 工具调用器 & HOOK 契约
+│       ├── service/model/invoker/       # 模型调用器抽象接口
+│       ├── dto/                         # 传输对象（model/skill/tool/chat）
+│       ├── enums/                       # 枚举（ErrorCode、HookPhase、ToolType 等）
+│       ├── exception/                   # 异常定义（BaseException、BusinessException）
+│       ├── event/                       # 事件定义（ToolChangedEvent）
+│       └── util/                        # 工具类（JsonMapper）
 │
-├── src/main/resources/
-│   ├── application.yml                  # 应用配置（SQLite、MyBatis-Plus）
-│   └── schema.sql                       # DDL 初始化脚本
+├── agent-integration/                   # 模型集成实现层（Maven 子模块）
+│   ├── pom.xml
+│   └── src/main/java/com/ghost616/agentinteg/
+│       ├── model/invoker/               # 6 大平台 ModelInvoker 实现
+│       ├── AgentAssembler.java          # Build 组装类
+│       └── tool/                        # 集成层系统工具
+│
+├── platform-app/                        # 应用层（Maven 子模块，可执行 JAR）
+│   ├── pom.xml
+│   └── src/main/java/com/ghost616/platform/
+│       ├── PlatformApplication.java     # Spring Boot 启动类
+│       ├── config/                      # 配置（CORS、MyBatis-Plus、异常处理等）
+│       ├── controller/                  # REST 控制器
+│       ├── service/                     # 业务服务实现
+│       │   ├── agent/                   # 智能体服务实现
+│       │   ├── model/                   # 模型配置服务
+│       │   ├── session/                 # 会话服务
+│       │   ├── tool/                    # 工具配置服务
+│       │   └── skill/                   # 技能配置服务
+│       ├── repository/                  # 数据访问层（Mapper）
+│       ├── entity/                      # 数据库实体
+│       ├── dto/                         # 应用层 DTO
+│       ├── enums/                       # 平台枚举（PlatformType）
+│       └── systemtest/                  # 系统测试
+│   ├── src/main/resources/
+│   │   ├── application.yml              # 应用配置（SQLite、MyBatis-Plus）
+│   │   └── schema.sql                   # DDL 初始化脚本
+│   └── data/                            # SQLite 数据库文件
 │
 └── src/                                 # 前端源码
     ├── main.tsx                         # React 入口
@@ -107,13 +128,13 @@ build.bat
 
 2. **消息组装** — 将用户消息保存入库，按**消息分组**机制拼装消息列表：以 user 消息为分界点进行分组，若消息组总数超出 `recentMessageCount` 限制则折叠早期消息组（仅保留 user 消息并插入一条占位 assistant 消息）；展开机制通过 `_sys_history_query` 系统工具设置 `_sys_his_msgs_index` 对话变量标记展开索引，下轮折叠时跳过该组。最终拼装为：系统提示词 + 历史消息 + 工具调用记录 + 推理内容
 
-3. **技能注入** — 系统提示词后追加当前会话已加载的可用技能列表说明，将每个已加载技能的提示词注入消息上下文，关联工具按名称去重合并到工具定义列表中
+3. **技能注入** — 系统提示词后追加当前会话已加载的可用技能列表说明，将每个已加载技能的提示词注入消息上下文，关联工具按名称去重合并到工具定义列表中；通过 `_sys_load_skills`（LoadSkillsSystemTool）和 `_sys_unload_skills`（UnloadSkillsSystemTool）系统工具可在对话中动态加载/卸载技能
 
 4. **HOOK 触发** — 在会话启动时、每条消息发送前、消息接收完成后，自动扫描并执行已注册的 HOOK 处理器，系统级 HOOK 在每个阶段后额外按优先级执行
 
-5. **模型调用** — 根据智能体配置的平台类型匹配对应的调用适配器，以流式方式请求 LLM，实时解析流式回复（含 **reasoning 推理内容**）
+5. **模型调用** — 根据智能体配置的平台类型匹配 agent-integration 模块中对应的 ModelInvoker 实现（OpenAI/Ollama/Anthropic/Azure/DeepSeek/Custom），以流式方式请求 LLM，实时解析流式回复（含 **reasoning 推理内容**）
 
-6. **工具调度** — 若模型回复中包含工具调用指令（可能在推理/思考过程中决定调用工具），后端先将工具调用数据缓存至队列，前端再逐条拉取异步提交执行任务，后端从会话工具列表中查找对应工具实例执行，执行完成后将结果写回消息历史和上下文，继续下一轮模型调用
+6. **工具调度** — 若模型回复中包含工具调用指令（可能在推理/思考过程中决定调用工具），后端先将工具调用数据缓存至队列，前端再逐条拉取异步提交执行任务，后端从会话工具列表中查找对应工具实例，通过 agent-base 模块中的工具调用器（JavaToolInvoker/TypeScriptToolInvoker/PythonToolInvoker/McpHttpToolInvoker）执行，执行完成后将结果写回消息历史和上下文，继续下一轮模型调用
 
 7. **变量管理** — **会话变量**跨轮持久化至 `session_variable` 表，**对话变量**单轮有效、自动清除；工具执行期间通过 VariableProxy 代理对象提供统一的读写接口
 
