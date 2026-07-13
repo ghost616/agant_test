@@ -28,17 +28,45 @@
     "test_passed": true
   },
   {
-    "plan_id": "plan_9f459808-7139-4f2b-9455-1b758e918329",
-    "plan_summary": "修复AgentChat测试用例",
+    "plan_id": "plan_6b66bb1e-bcdf-42aa-ad47-92624c101eb0",
+    "plan_summary": "子会话弹窗自动关闭：handleSubSessionFlow 中 completeSubSession 后增加 setSubSessionModalVisible(false)",
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
   },
   {
-    "plan_id": "plan_0272d607-73cc-431d-abc6-9df8c7462c41",
-    "plan_summary": "移除executeTools中_sys_callback_sub_session检测",
-    "code_reviewed": false,
-    "plan_completed": false,
-    "test_passed": false
+    "plan_id": "plan_ebc0ce73-a360-4d47-be01-be4f92c02a7c",
+    "plan_summary": "AgentMessageProxy 循环检测：按(toolName,arguments)组合计数，同一组合5次判定为循环",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_531a1314-62fe-4c8d-989d-14da020147f8",
+    "plan_summary": "AgentChat 循环检测：按(toolName,arguments)组合计数，同一组合5次判定为循环",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_107a5cc0-5248-4d9e-8028-c384a6c87fe6",
+    "plan_summary": "AgentMessageProxy 移除 MAX_TOOL_ROUNDS 轮次上限，仅保留工具+参数组合5次检测",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_2503bab8-d416-45fc-a38f-87634e68287f",
+    "plan_summary": "AgentChat 移除 MAX_TOOL_LOOPS 轮次上限，仅保留工具+参数组合5次检测",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_b9dbf03d-df4d-4ba1-9686-dbe880aeb657",
+    "plan_summary": "删除 AgentChat.tsx 中 subToolLoopCount 和 toolLoopCount 残留引用",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
   }
 ]

@@ -1,7 +1,0 @@
-{
-  "plan_id": "plan_0272d607-73cc-431d-abc6-9df8c7462c41",
-  "module_name": "platform-app",
-  "development_plan": "在 ToolExecutionController.java 的 executeTools 方法中，移除 toolName 为 \"_sys_callback_sub_session\" 时的 DefaultSubSessionCallback.getSubSessionData 检测和 needsSubSessionFlow 赋值逻辑。仅保留将 ToolExecutionResult 转换为 ToolStatusResultDTO 的普通映射。toolStatus 方法保持不变。",
-  "session_id": "ses_0aa9ec769ffeTj7XRtLBdrc2so",
-  "modified_files": []
-}

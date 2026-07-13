@@ -1,0 +1,20 @@
+[
+  {
+    "plan_id": "plan_ebc0ce73-a360-4d47-be01-be4f92c02a7c",
+    "plan": "AgentMessageProxy 工具调用防重复振荡保护",
+    "modified_files": [
+      "agent-base/src/main/java/com/ghost616/agentbase/service/agent/AgentMessageProxy.java"
+    ],
+    "summary": "AgentMessageProxy 工具调用防重复振荡保护：processChat 创建 Map<String, Integer> toolCallCounts，processToolCalls 新增 Map 参数，在 while 循环中按 toolName:arguments 累加计数（Map.merge），同一组合 >= 5 时 warn 日志并返回空 assistant Message 终止；保留 MAX_TOOL_ROUNDS=10 作为递归轮次额外保障。测试 7/7 全部通过，覆盖振荡保护边界（count>=5）和 MAX_TOOL_ROUNDS 极限（round>10）路径。",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_107a5cc0-5248-4d9e-8028-c384a6c87fe6",
+    "plan": "AgentMessageProxy 移除 MAX_TOOL_ROUNDS 轮次上限",
+    "modified_files": [
+      "agent-base/src/main/java/com/ghost616/agentbase/service/agent/AgentMessageProxy.java"
+    ],
+    "summary": "AgentMessageProxy: 移除 MAX_TOOL_ROUNDS 轮次上限机制，processToolCalls 方法签名去掉 int round 参数；仅保留 toolName:arguments 组合计数保护（>=5 次终止）",
+    "errors": []
+  }
+]

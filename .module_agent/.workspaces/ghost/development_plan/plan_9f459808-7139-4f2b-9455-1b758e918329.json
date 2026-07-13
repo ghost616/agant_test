@@ -1,9 +1,0 @@
-{
-  "plan_id": "plan_9f459808-7139-4f2b-9455-1b758e918329",
-  "module_name": "frontend-ui",
-  "development_plan": "修复 src/pages/sessions/__tests__/AgentChat.test.tsx 中的测试用例：\n1. 将第38行附近断言 `_sys_callback_sub_session` 字符串检测的测试用例更新为验证新的 needsSubSessionFlow 驱动流程\n2. 新断言应验证：pollToolStatus 中检测到 status.needsSubSessionFlow 为 true 时，调用 handleSubSessionFlowRef.current 启动子会话流程\n3. 确保所有测试通过\n\n参考规范：\n- TypeScript + React，测试框架 Vitest + React Testing Library\n- 缩进 2 空格，行宽 100，单引号字符串\n- 类型明确，禁止 any",
-  "session_id": "ses_0aac62889ffeSOoUBBFmhVUhix",
-  "modified_files": [
-    "src/pages/sessions/__tests__/AgentChat.test.tsx"
-  ]
-}

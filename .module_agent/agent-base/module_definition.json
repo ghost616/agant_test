@@ -255,7 +255,7 @@
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/AgentMessageProxy.java",
-      "description": "AgentMessageProxy 消息代理类，同步代理 sendUserMessage：调用 ChatService.chat() 收集 Flux，检测工具调用后循环执行工具并继续对话，返回最终 assistant Message"
+      "description": "AgentMessageProxy 消息代理类，同步代理 sendUserMessage：调用 ChatService.chat() 收集 Flux，检测工具调用后循环执行工具并继续对话，返回最终 assistant Message。内置 toolName:arguments 组合调用计数保护，同一组合达到 5 次时终止并返回空消息。"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/SubSessionCallback.java",

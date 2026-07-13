@@ -1,11 +1,8 @@
 {
   "frontend-ui": [
-    "ses_0aac62889ffeSOoUBBFmhVUhix"
+    "ses_0a5fcb131ffetqVw60URgycf8G"
   ],
-  "platform-app": [
-    "ses_0aa9ec769ffeTj7XRtLBdrc2so"
-  ],
-  "_checked": [
-    "ses_0aa9ec769ffeTj7XRtLBdrc2so"
+  "agent-base": [
+    "ses_0a5e4f483ffeneFGpRoKxHfXt5"
   ]
 }

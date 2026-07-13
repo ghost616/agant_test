@@ -19,5 +19,6 @@
   "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ContextDataProvider.java": "9087571997195e0d51f3e206e6e899c8",
   "agent-base/src/main/java/com/ghost616/agentbase/service/agent/AgentExecutionContext.java": "0e1896b696f4888d4e8ddd06c169db68",
   "agent-base/src/test/java/com/ghost616/agentbase/service/agent/AgentContextManagerTest.java": "a57d7ff96e60777fa857faf7fe9ab4f6",
-  "agent-base/src/main/java/com/ghost616/agentbase/enums/ErrorCode.java": "9aa842faaabb347224af909697c236dd"
+  "agent-base/src/main/java/com/ghost616/agentbase/enums/ErrorCode.java": "9aa842faaabb347224af909697c236dd",
+  "agent-base/src/main/java/com/ghost616/agentbase/service/agent/AgentMessageProxy.java": "67c0f17d5a31f800924e018bd90a2baf"
 }

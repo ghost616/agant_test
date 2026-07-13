@@ -49,3 +49,7 @@
 [2026-07-12T07:28:31.858Z] [session: ses_0aac62889ffeSOoUBBFmhVUhix] 子会话列表区域添加刷新按钮，导入 ReloadOutlined 图标，点击后调用 loadChildSessions 重新获取子会话数据，加载中显示 loading 状态
 [2026-07-12T08:12:49.474Z] [session: ses_0aac62889ffeSOoUBBFmhVUhix] ExecuteToolsResult 和 ToolStatusResult 新增 needsSubSessionFlow 字段；pollToolStatus 检测 needsSubSessionFlow 时调用 handleSubSessionFlow；executeToolLoop 移除 _sys_callback_sub_session 硬编码检测，所有工具统一流程
 [2026-07-12T08:31:50.493Z] [session: ses_0aac62889ffeSOoUBBFmhVUhix] 修复 AgentChat.test.tsx 测试用例：将 _sys_callback_sub_session 硬编码检测测试更新为验证 pollToolStatus 中 status.needsSubSessionFlow 驱动子会话流程的新断言
+[2026-07-13T05:46:42.994Z] [session: ses_0a5fcb131ffetqVw60URgycf8G] AgentChat.tsx: handleSubSessionFlow 中 completeSubSession 后增加 setSubSessionModalVisible(false)，子会话完成后自动关闭弹窗
+[2026-07-13T06:13:25.840Z] [session: ses_0a5fcb131ffetqVw60URgycf8G] AgentChat.tsx: 新增 toolCallCounts useRef，executeToolLoop 和 runTools 中按 "toolName:arguments" 累加计数，同一组合达5次终止并提示；onDone 正常结束时清空计数；保留 MAX_TOOL_LOOPS 作为额外保障
+[2026-07-13T06:22:36.120Z] [session: ses_0a5fcb131ffetqVw60URgycf8G] AgentChat.tsx: 移除 toolLoopCount/subToolLoopCount/MAX_TOOL_LOOPS，由 toolCallCounts 单一机制替代，保留 toolCallCounts.current.clear() 清理
+[2026-07-13T06:32:30.319Z] [session: ses_0a5fcb131ffetqVw60URgycf8G] AgentChat.tsx: 删除 handleSubSessionFlow 中残留的 subToolLoopCount.current = 0 和 handleSend onDone 中残留的 toolLoopCount.current = 0
