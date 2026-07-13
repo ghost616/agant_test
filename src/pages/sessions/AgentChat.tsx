@@ -87,9 +87,7 @@ function AgentChat(): JSX.Element {
   const calledRef = useRef(false);
   const executeToolLoopRef = useRef<() => Promise<void>>();
   const handleSubSessionFlowRef = useRef<(toolId: string) => Promise<void>>();
-  const toolLoopCount = useRef(0);
-
-  const MAX_TOOL_LOOPS = 10;
+  const toolCallCounts = useRef<Map<string, number>>(new Map());
 
   const [subSessionModalVisible, setSubSessionModalVisible] = useState(false);
   const [subSessionId, setSubSessionId] = useState<string | null>(null);
@@ -100,7 +98,6 @@ function AgentChat(): JSX.Element {
   const [subToolExecuting, setSubToolExecuting] = useState(false);
   const subAbortRef = useRef<AbortController | null>(null);
   const subToolAbortRef = useRef(false);
-  const subToolLoopCount = useRef(0);
   const subContainerRef = useRef<HTMLDivElement>(null);
 
   const [activeTab, setActiveTab] = useState<string>('main');
@@ -288,7 +285,6 @@ function AgentChat(): JSX.Element {
       setSubCurrentResponse('');
       setSubCurrentReasoning('');
       subToolAbortRef.current = false;
-      subToolLoopCount.current = 0;
       setSubSessionModalVisible(true);
 
       const runSubChat = async (): Promise<void> => {
@@ -413,11 +409,6 @@ function AgentChat(): JSX.Element {
           });
 
         const runTools = async (): Promise<boolean> => {
-          subToolLoopCount.current += 1;
-          if (subToolLoopCount.current > MAX_TOOL_LOOPS) {
-            message.warning('子会话工具调用循环次数已达上限');
-            return false;
-          }
           setSubToolExecuting(true);
           subToolAbortRef.current = false;
           try {
@@ -431,6 +422,14 @@ function AgentChat(): JSX.Element {
               }
               hasMore = execResult.hasMore;
               if (!execResult.toolId) {
+                hasMore = false;
+                continue;
+              }
+              const key = `${execResult.toolName}:${execResult.arguments}`;
+              const count = (toolCallCounts.current.get(key) || 0) + 1;
+              toolCallCounts.current.set(key, count);
+              if (count >= 5) {
+                message.warning(`子会话工具 ${execResult.toolName} 同一参数调用已达 ${count} 次，已终止`);
                 hasMore = false;
                 continue;
               }
@@ -463,6 +462,7 @@ function AgentChat(): JSX.Element {
 
       await runSubChat();
       await completeSubSession(sessionId);
+      setSubSessionModalVisible(false);
       const succeeded = await pollToolStatus(sessionId, toolId);
       if (!succeeded) {
         setToolExecuting(false);
@@ -478,14 +478,6 @@ function AgentChat(): JSX.Element {
   }, [sessionId, pollToolStatus]);
 
   const executeToolLoop = useCallback(async () => {
-    toolLoopCount.current += 1;
-    if (toolLoopCount.current > MAX_TOOL_LOOPS) {
-      message.warning('工具调用循环次数已达上限');
-      setToolExecuting(false);
-      setLoading(false);
-      abortRef.current = null;
-      return;
-    }
     setToolExecuting(true);
     toolAbortRef.current = false;
     try {
@@ -504,6 +496,14 @@ function AgentChat(): JSX.Element {
           continue;
         }
         hadTools = true;
+        const key = `${execResult.toolName}:${execResult.arguments}`;
+        const count = (toolCallCounts.current.get(key) || 0) + 1;
+        toolCallCounts.current.set(key, count);
+        if (count >= 5) {
+          message.warning(`工具 ${execResult.toolName} 同一参数调用已达 ${count} 次，已终止`);
+          hasMore = false;
+          continue;
+        }
         setMessages((prev) => [
           ...prev,
           {
@@ -561,7 +561,7 @@ function AgentChat(): JSX.Element {
             if (hasMoreTools) {
               executeToolLoopRef.current?.();
             } else {
-              toolLoopCount.current = 0;
+              toolCallCounts.current.clear();
               setLoading(false);
               abortRef.current = null;
             }
@@ -714,7 +714,6 @@ function AgentChat(): JSX.Element {
           if (hasToolCalls) {
             executeToolLoopRef.current?.();
           } else {
-            toolLoopCount.current = 0;
             setLoading(false);
             abortRef.current = null;
           }

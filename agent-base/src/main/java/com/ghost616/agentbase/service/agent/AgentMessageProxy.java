@@ -8,15 +8,15 @@ import org.springframework.http.codec.ServerSentEvent;
 import reactor.core.publisher.Flux;
 import reactor.core.scheduler.Schedulers;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 public class AgentMessageProxy {
 
     private static final long TOOL_WAIT_TIMEOUT_MS = 60_000;
     private static final long TOOL_POLL_INTERVAL_MS = 200;
-    private static final int MAX_TOOL_ROUNDS = 10;
-
     private final ChatService chatService;
     private final ToolExecutionService toolExecutionService;
 
@@ -42,7 +42,8 @@ public class AgentMessageProxy {
         CollectedResult result = collectContent(events);
 
         if (result.hasToolCalls()) {
-            return processToolCalls(request.getSessionId(), 1);
+            Map<String, Integer> toolCallCounts = new HashMap<>();
+            return processToolCalls(request.getSessionId(), toolCallCounts);
         }
 
         return Message.builder()
@@ -51,15 +52,7 @@ public class AgentMessageProxy {
                 .build();
     }
 
-    private Message processToolCalls(Long sessionId, int round) {
-        if (round > MAX_TOOL_ROUNDS) {
-            log.warn("sessionId={} 工具调用达到最大轮次上限{}，终止", sessionId, MAX_TOOL_ROUNDS);
-            return Message.builder()
-                    .role("assistant")
-                    .content("")
-                    .build();
-        }
-
+    private Message processToolCalls(Long sessionId, Map<String, Integer> toolCallCounts) {
         while (true) {
             ToolExecutionService.ToolExecutionResult execResult = toolExecutionService.executeTool(sessionId);
             String status = execResult.status();
@@ -71,6 +64,17 @@ public class AgentMessageProxy {
             } else {
                 log.warn("sessionId={} 工具执行返回非预期状态: {} toolId={}", sessionId, status, execResult.toolId());
             }
+
+            String toolKey = execResult.toolName() + ":" + execResult.arguments();
+            int count = toolCallCounts.merge(toolKey, 1, Integer::sum);
+            if (count >= 5) {
+                log.warn("sessionId={} 工具 {} 同一参数组合调用次数达到 {}，超过阈值 5，终止", sessionId, toolKey, count);
+                return Message.builder()
+                        .role("assistant")
+                        .content("")
+                        .build();
+            }
+
             if (!execResult.hasMore()) {
                 break;
             }
@@ -83,7 +87,7 @@ public class AgentMessageProxy {
         CollectedResult contResult = collectContent(contEvents);
 
         if (contResult.hasToolCalls()) {
-            return processToolCalls(sessionId, round + 1);
+            return processToolCalls(sessionId, toolCallCounts);
         }
 
         return Message.builder()
