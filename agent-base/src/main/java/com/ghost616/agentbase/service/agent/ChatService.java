@@ -35,6 +35,8 @@ import com.ghost616.agentbase.enums.ErrorCode;
 import com.ghost616.agentbase.enums.HookPhase;
 import com.ghost616.agentbase.enums.SessionAuthType;
 import com.ghost616.agentbase.exception.BusinessException;
+import com.ghost616.agentbase.service.agent.invoker.HistoryQuerySystemTool;
+import com.ghost616.agentbase.service.agent.invoker.LoadSkillsSystemTool;
 import com.ghost616.agentbase.service.agent.invoker.SystemToolManager;
 import com.ghost616.agentbase.dto.model.ModelConfigData;
 import com.ghost616.agentbase.service.model.invoker.ModelInvoker;
@@ -157,54 +159,62 @@ public class ChatService {
                 .content(context.getSystemPrompt() != null ? context.getSystemPrompt() : "")
                 .build());
 
+        List<ToolDefinition> toolDefinitions = systemToolManager.getToolDefinitions();
         List<SkillConfigDTO> skills = context.getSkills();
-        List<SkillConfigDTO> availableSkills = new ArrayList<>();
-        if (skills != null) {
-            for (SkillConfigDTO skill : skills) {
+        boolean hasLoadSkillsTool = toolDefinitions.stream()
+                .anyMatch(def -> LoadSkillsSystemTool.FULL_TOOL_NAME.equals(def.getName()));
+
+        if (hasLoadSkillsTool) {
+            List<SkillConfigDTO> availableSkills = new ArrayList<>();
+            if (skills != null) {
+                for (SkillConfigDTO skill : skills) {
+                    if (context.isMainSession() && skill.getSessionAuth() == SessionAuthType.CHILD) {
+                        continue;
+                    }
+                    availableSkills.add(skill);
+                }
+            }
+            if (!availableSkills.isEmpty()) {
+                StringBuilder sb = new StringBuilder();
+                sb.append("以下是可用的技能（SKILL）列表（技能本身不是工具，需先加载再使用其关联的工具）：\n");
+                for (SkillConfigDTO skill : availableSkills) {
+                    sb.append("- ").append(skill.getName());
+                    if (skill.getDescription() != null && !skill.getDescription().isEmpty()) {
+                        sb.append(": ").append(skill.getDescription());
+                    }
+                    sb.append("\n");
+                }
+                sb.append("\n请使用 ").append(LoadSkillsSystemTool.FULL_TOOL_NAME).append(" 系统工具加载所需技能。加载后，该技能的关联工具将变为可用，届时再调用具体工具。禁止直接以技能名称作为工具调用。");
+                messages.add(Message.builder()
+                        .role("system")
+                        .content(sb.toString())
+                        .build());
+            }
+        }
+
+        List<SkillConfigDTO> filteredLoadedSkills = new ArrayList<>();
+        if (hasLoadSkillsTool) {
+            List<SkillConfigDTO> loadedSkills = parseLoadedSkills(context, skills);
+            for (SkillConfigDTO skill : loadedSkills) {
                 if (context.isMainSession() && skill.getSessionAuth() == SessionAuthType.CHILD) {
                     continue;
                 }
-                availableSkills.add(skill);
+                filteredLoadedSkills.add(skill);
             }
-        }
-        if (!availableSkills.isEmpty()) {
-            StringBuilder sb = new StringBuilder();
-            sb.append("以下是可用的技能（SKILL）列表（技能本身不是工具，需先加载再使用其关联的工具）：\n");
-            for (SkillConfigDTO skill : availableSkills) {
-                sb.append("- ").append(skill.getName());
-                if (skill.getDescription() != null && !skill.getDescription().isEmpty()) {
-                    sb.append(": ").append(skill.getDescription());
+            if (!filteredLoadedSkills.isEmpty()) {
+                StringBuilder sb = new StringBuilder();
+                sb.append("以下技能已加载，请按照其提示词指导执行任务：\n\n");
+                for (SkillConfigDTO skill : filteredLoadedSkills) {
+                    sb.append("## ").append(skill.getName()).append("\n");
+                    if (skill.getPrompt() != null && !skill.getPrompt().isEmpty()) {
+                        sb.append(skill.getPrompt()).append("\n\n");
+                    }
                 }
-                sb.append("\n");
+                messages.add(Message.builder()
+                        .role("system")
+                        .content(sb.toString())
+                        .build());
             }
-            sb.append("\n请使用 _sys_load_skills 系统工具加载所需技能。加载后，该技能的关联工具将变为可用，届时再调用具体工具。禁止直接以技能名称作为工具调用。");
-            messages.add(Message.builder()
-                    .role("system")
-                    .content(sb.toString())
-                    .build());
-        }
-
-        List<SkillConfigDTO> loadedSkills = parseLoadedSkills(context, skills);
-        List<SkillConfigDTO> filteredLoadedSkills = new ArrayList<>();
-        for (SkillConfigDTO skill : loadedSkills) {
-            if (context.isMainSession() && skill.getSessionAuth() == SessionAuthType.CHILD) {
-                continue;
-            }
-            filteredLoadedSkills.add(skill);
-        }
-        if (!filteredLoadedSkills.isEmpty()) {
-            StringBuilder sb = new StringBuilder();
-            sb.append("以下技能已加载，请按照其提示词指导执行任务：\n\n");
-            for (SkillConfigDTO skill : filteredLoadedSkills) {
-                sb.append("## ").append(skill.getName()).append("\n");
-                if (skill.getPrompt() != null && !skill.getPrompt().isEmpty()) {
-                    sb.append(skill.getPrompt()).append("\n\n");
-                }
-            }
-            messages.add(Message.builder()
-                    .role("system")
-                    .content(sb.toString())
-                    .build());
         }
 
         if (context.isMainSession()) {
@@ -285,7 +295,7 @@ public class ChatService {
             ToolDefinition def = invoker.toToolDefinition(t);
             toolMap.put(def.getName(), def);
         }
-        for (ToolDefinition def : systemToolManager.getToolDefinitions()) {
+        for (ToolDefinition def : toolDefinitions) {
             toolMap.put(def.getName(), def);
         }
         for (SkillConfigDTO skill : filteredLoadedSkills) {
@@ -309,8 +319,6 @@ public class ChatService {
                         .build();
 
         AtomicBoolean hasToolCalls = new AtomicBoolean(false);
-
-        log.info("sessionId={} messages: {}", sessionId, messages);
 
         Flux<ChatChunk> stream = invoker.invokeStream(chatRequest);
 
@@ -340,7 +348,7 @@ public class ChatService {
     }
 
     private List<SkillConfigDTO> parseLoadedSkills(AgentExecutionContext context, List<SkillConfigDTO> skills) {
-        String json = context.getSessionVariable("_sys_loading_SKILLS");
+        String json = context.getSessionVariable(LoadSkillsSystemTool.SESSION_KEY);
         if (json == null || json.isBlank()) {
             return List.of();
         }
@@ -373,7 +381,7 @@ public class ChatService {
         }
 
         Set<Integer> expandedIndices = parseExpandedIndices(
-                context.getConversationVariable("_sys_his_msgs_index"));
+                context.getConversationVariable(HistoryQuerySystemTool.VAR_NAME));
 
         List<List<Message>> groups = new ArrayList<>();
         int i = 1;

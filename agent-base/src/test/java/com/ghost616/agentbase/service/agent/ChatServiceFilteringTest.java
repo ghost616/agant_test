@@ -3,6 +3,7 @@ package com.ghost616.agentbase.service.agent;
 import com.ghost616.agentbase.core.AgentComponentRegistry;
 import com.ghost616.agentbase.dto.chat.ChatRequest;
 import com.ghost616.agentbase.dto.model.ModelConfigData;
+import com.ghost616.agentbase.dto.model.ToolDefinition;
 import com.ghost616.agentbase.dto.skill.SkillConfigDTO;
 import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
 import com.ghost616.agentbase.enums.SessionAuthType;
@@ -92,6 +93,8 @@ class ChatServiceFilteringTest {
         lenient().when(modelInvoker.invokeStream(any())).thenReturn(Flux.empty());
         lenient().when(modelInvoker.toToolDefinition(any())).thenReturn(
                 com.ghost616.agentbase.dto.model.ToolDefinition.builder().name("test_tool").build());
+        lenient().when(systemToolManager.getToolDefinitions()).thenReturn(
+                List.of(ToolDefinition.builder().name("_sys_load_skills").build()));
     }
 
     private com.ghost616.agentbase.dto.model.ChatRequest executeChat(Long sessionId, TestHarness harness) {

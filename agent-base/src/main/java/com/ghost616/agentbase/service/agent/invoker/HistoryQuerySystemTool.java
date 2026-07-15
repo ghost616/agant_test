@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 public class HistoryQuerySystemTool implements SystemTool {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
+    public static final String VAR_NAME = "_sys_his_msgs_index";
 
     @Override
     public String getToolName() {
@@ -33,7 +34,7 @@ public class HistoryQuerySystemTool implements SystemTool {
                 return "{\"error\":\"缺少 indices 参数\"}";
             }
             String jsonStr = indicesNode.toString();
-            ctx.putConversationVariable("_sys_his_msgs_index", jsonStr);
+            ctx.putConversationVariable(VAR_NAME, jsonStr);
             return "{\"status\":\"ok\",\"indices\":" + jsonStr + "}";
         } catch (Exception e) {
             log.error("history_query 执行失败", e);

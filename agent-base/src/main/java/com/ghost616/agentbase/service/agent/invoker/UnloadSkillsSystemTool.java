@@ -15,7 +15,7 @@ import java.util.Set;
 public class UnloadSkillsSystemTool implements SystemTool {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
-    private static final String SESSION_KEY = "_sys_loading_SKILLS";
+    public static final String SESSION_KEY = "_sys_loading_SKILLS";
 
     @Override
     public String getToolName() {

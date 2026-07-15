@@ -16,7 +16,8 @@ import java.util.Set;
 public class LoadSkillsSystemTool implements SystemTool {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
-    private static final String SESSION_KEY = "_sys_loading_SKILLS";
+    public static final String SESSION_KEY = "_sys_loading_SKILLS";
+    public static final String FULL_TOOL_NAME = "_sys_load_skills";
 
     @Override
     public String getToolName() {
