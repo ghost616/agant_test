@@ -32,6 +32,7 @@ ChatService 聊天服务，非 Spring 组件。通过构造函数注入 AgentCon
 refreshHooks() 可重复调用，每次调用前清空 systemHooks/systemPostHooks/regularPhaseHooks 再重新加载，替代原有的 initHooks()（仅能调用一次）
 - 构建系统消息时，可用技能列表与已加载技能提示词均在主会话中过滤掉 `sessionAuth == SessionAuthType.CHILD` 的技能
 - 子会话能力提示将工具与技能合并为单一 system message，格式为"子会话可使用以下工具：\n...\n子会话可使用以下技能：\n..."
+- 技能系统消息保护：在构建可用技能列表和已加载技能提示的 system 消息前，通过 systemToolManager.getToolDefinitions() 检查 _sys_load_skills 工具定义是否存在。若不存在，跳过所有技能相关 system 消息的构建（含 parseLoadedSkills 调用），filteredLoadedSkills 保持空列表。
 ## ChatDataProvider
 
 聊天数据提供者接口（com.ghost616.agentbase.service.agent.ChatDataProvider），定义三个方法：getModelConfig(Long modelId) 按 ID 获取 ModelConfigData、updateSessionModelId(Long sessionId, Long modelId) 更新会话的模型 ID、getHooks() 获取所有已注册的 HookInvoker。用于解耦 ChatService 与具体数据访问层。

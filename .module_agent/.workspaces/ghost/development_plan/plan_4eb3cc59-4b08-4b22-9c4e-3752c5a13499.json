@@ -1,9 +1,0 @@
-{
-  "plan_id": "plan_4eb3cc59-4b08-4b22-9c4e-3752c5a13499",
-  "module_name": "agent-base",
-  "development_plan": "\n## 任务：ChatService 技能工具注册修复\n\nBug：第 291 行遍历 loadedSkills 时未过滤 CHILD 技能，导致技能提示词虽被过滤但其关联工具仍可能添加到主会话。\n\n### 修改文件\nagent-base/src/main/java/com/ghost616/agentbase/service/agent/ChatService.java\n\n### 修改内容\n第 291 行将 `for (SkillConfigDTO skill : loadedSkills)` 改为 `for (SkillConfigDTO skill : filteredLoadedSkills)`\n",
-  "session_id": "ses_09b881070ffejtA31WAzgeAd4r",
-  "modified_files": [
-    "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ChatService.java"
-  ]
-}

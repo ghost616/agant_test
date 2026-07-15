@@ -95,7 +95,7 @@
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ChatService.java",
-      "description": "聊天服务核心类，负责构建消息列表、管理会话上下文、过滤工具/技能、调用模型 invoker 并返回 SSE 流。包含系统消息构建（可用技能列表、已加载技能提示词、子会话能力提示合并）、会话历史折叠、loadedSkills 解析、hook 触发等功能。"
+      "description": "聊天服务核心类，负责构建消息列表、管理会话上下文、过滤工具/技能、调用模型 invoker 并返回 SSE 流。包含系统消息构建（可用技能列表、已加载技能提示词、子会话能力提示合并）、会话历史折叠、loadedSkills 解析、hook 触发等功能。构建技能相关 system 消息前通过 systemToolManager 检测 _sys_load_skills（常量 LOAD_SKILLS_TOOL_NAME）是否存在，不存在时跳过所有技能相关消息；getToolDefinitions() 结果复用局部变量避免重复调用。"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/ContextSerializer.java",

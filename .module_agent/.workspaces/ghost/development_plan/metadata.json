@@ -1,43 +1,36 @@
 [
   {
-    "plan_id": "plan_f38a1e82-bea6-493c-a829-86ca62624d12",
-    "plan_summary": "sendUserMessage 返回类型从 void 改为 Message",
-    "code_reviewed": false,
-    "plan_completed": false,
-    "test_passed": true
-  },
-  {
-    "plan_id": "plan_5204e5f8-4ff7-438a-8507-793b5cb4c73b",
-    "plan_summary": "更新 README.md 以反映多模块架构（agent-base/agent-integration/platform-app），修正项目结构、调用器位置、启动命令、系统工具说明",
-    "code_reviewed": false,
-    "plan_completed": false,
-    "test_passed": false
-  },
-  {
-    "plan_id": "plan_33a76333-ad50-479e-9bed-70da555738b1",
-    "plan_summary": "Agent 工具/技能关联 sessionAuth 配置后端代码审查",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": false
-  },
-  {
-    "plan_id": "plan_f3cafb02-ab47-4a0b-8bb3-8bde4f2d0c20",
-    "plan_summary": "Agent 表单中工具/技能选择支持配置每个关联的 sessionAuth，类型定义和页面同步更新",
+    "plan_id": "plan_7d06ae9a-450c-4c96-a53f-d43f5a4f039c",
+    "plan_summary": "ChatService skill 功能容错：检查 _sys_load_skills 是否存在，不存在则跳过技能提示构建",
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
   },
   {
-    "plan_id": "plan_37c6050c-c1fb-4290-b175-b96399f09d2a",
-    "plan_summary": "修复 createSession 时未从 AgentTool 复制 sessionAuth 到 SessionTool 的 Bug",
-    "code_reviewed": false,
+    "plan_id": "plan_710226f9-82a9-4bd8-8ddf-0d9588da1420",
+    "plan_summary": "审查建议修改：提取 _sys_load_skills 常量化，复用 getToolDefinitions() 结果",
+    "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
   },
   {
-    "plan_id": "plan_4eb3cc59-4b08-4b22-9c4e-3752c5a13499",
-    "plan_summary": "修复 ChatService 技能工具循环遍历未过滤的 loadedSkills，改为 filteredLoadedSkills",
-    "code_reviewed": false,
+    "plan_id": "plan_10c35739-53e3-441d-96c8-7c2c43d9cfb4",
+    "plan_summary": "将技能常量移到LoadSkillsSystemTool：FULL_TOOL_NAME新增，SESSION_KEY改为public",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_94d3d735-9aa0-43f5-ae4a-cdbb5d4efc1a",
+    "plan_summary": "工具类常量统一：FULL_TOOL_NAME/SESSION_KEY/VAR_NAME移至各自工具类，ChatService引用",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_e908e614-a821-4daf-b2ab-a098d058a08a",
+    "plan_summary": "工具常量统一 + 移除无用日志",
+    "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
   }

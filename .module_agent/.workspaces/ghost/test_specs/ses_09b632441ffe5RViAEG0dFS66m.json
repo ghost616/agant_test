@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_09b632441ffe5RViAEG0dFS66m",
+  "content": "## 待测试功能\n\n### 1. `_sys_load_skills` 存在时的技能消息构建\n- **涉及文件**: `agent-base/src/main/java/com/ghost616/agentbase/service/agent/ChatService.java`\n- **测试点**: 当 `systemToolManager.getToolDefinitions()` 返回的列表包含 name 为 `\"_sys_load_skills\"` 的 ToolDefinition 时，ChatService.chat() 方法应正常构建可用技能列表 system 消息和已加载技能提示 system 消息（保持现有逻辑不变）\n\n### 2. `_sys_load_skills` 不存在时的技能消息跳过\n- **涉及文件**: `agent-base/src/main/java/com/ghost616/agentbase/service/agent/ChatService.java`\n- **测试点**: 当 `systemToolManager.getToolDefinitions()` 返回的列表不包含 `\"_sys_load_skills\"` 时，ChatService.chat() 方法应：\n  - 跳过可用技能列表 system 消息的构建\n  - 跳过 parseLoadedSkills 调用\n  - 跳过已加载技能提示 system 消息的构建\n  - filteredLoadedSkills 保持空列表（后续工具注册循环不处理技能工具）\n\n### 3. systemToolManager.getToolDefinitions() 返回空列表\n- **涉及文件**: `agent-base/src/main/java/com/ghost616/agentbase/service/agent/ChatService.java`\n- **测试点**: 当返回空列表时，行为与 _sys_load_skills 不存在时一致\n",
+  "timestamp": "2026-07-15T07:13:19.839Z"
+}

@@ -49,3 +49,6 @@
 [2026-07-14T06:59:26.286Z] [session: ses_0a0a605e3ffeuRipcd9uHX26fJ] [2026-07-14] [session: ses_0a0a605e3ffeuRipcd9uHX26fJ] ToolManager.getSessionTools: 启用 SessionToolInfo.sessionAuth 控制会话工具授权。父会话 MCP 工具 -> PARENT（ALL 时额外 CHILD 副本），非 MCP -> info.sessionAuth；子会话全部 -> PARENT。新增 copyToolConfig 避免污染缓存。mvn compile 通过。
 [2026-07-14T07:22:35.926Z] [session: ses_0a0a605e3ffeuRipcd9uHX26fJ] [2026-07-14] [session: ses_0a0a605e3ffeuRipcd9uHX26fJ] 修正 getSessionTools 父会话 CHILD 副本逻辑：从"每展开工具各一份"改为"基于原始未展开配置仅一份"；对应更新两个测试用例的断言。94 测试通过。
 [2026-07-15T06:30:34.208Z] [session: ses_09b881070ffejtA31WAzgeAd4r] ChatService: 修复第 291 行注册技能工具时遍历 loadedSkills（未过滤 CHILD）改为遍历 filteredLoadedSkills，使 CHILD 技能的工具不再误注册到主会话 toolMap 中
+[2026-07-15T07:13:06.435Z] [session: ses_09b632441ffe5RViAEG0dFS66m] ChatService: 在构建技能 system 消息前检查 systemToolManager 中是否注册了 _sys_load_skills 工具，若不存在则跳过可用技能列表消息、已加载技能提示消息及 parseLoadedSkills 调用，避免提示 LLM 使用不存在的系统工具。
+[2026-07-15T07:31:13.687Z] [session: ses_09b632441ffe5RViAEG0dFS66m] ChatService: 落实皋陶审查建议，将 "_sys_load_skills" 提取为类级常量 LOAD_SKILLS_TOOL_NAME，复用 systemToolManager.getToolDefinitions() 结果到局部变量 toolDefinitions 避免重复调用。
+[2026-07-15T07:39:36.439Z] [session: ses_09b632441ffe5RViAEG0dFS66m] LoadSkillsSystemTool: SESSION_KEY 改为 public，新增 FULL_TOOL_NAME 常量。ChatService: 3 处硬编码改为引用 LoadSkillsSystemTool 常量。

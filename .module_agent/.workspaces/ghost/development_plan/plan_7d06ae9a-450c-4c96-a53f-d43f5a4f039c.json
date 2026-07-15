@@ -1,0 +1,11 @@
+{
+  "plan_id": "plan_7d06ae9a-450c-4c96-a53f-d43f5a4f039c",
+  "module_name": "agent-base",
+  "development_plan": "## 需求\nChatService 的技能功能依赖 LoadSkillsSystemTool。当不通过 AgentAssembler 构建 ChatService 时，可能未将 LoadSkillsSystemTool 注册到 SystemToolManager，导致 ChatService 提示 LLM 使用的 _sys_load_skills 工具实际不存在。\n\n## 修改内容\n修改 agent-base/src/main/java/com/ghost616/agentbase/service/agent/ChatService.java：\n\n1. 在构建技能列表 system 消息之前，通过 systemToolManager 检查 _sys_load_skills 工具定义是否存在（从 getToolDefinitions() 返回列表中查找 name 为 \"_sys_load_skills\" 的 ToolDefinition）\n2. 若 _sys_load_skills 不存在 → 跳过技能列表提示消息和已加载技能提示消息的构建，不输出任何技能相关信息\n3. 若 _sys_load_skills 存在 → 保持现有逻辑不变\n4. parseLoadedSkills 调用也应受此条件控制",
+  "session_id": "ses_09b632441ffe5RViAEG0dFS66m",
+  "modified_files": [
+    "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ChatService.java",
+    "agent-base/src/test/java/com/ghost616/agentbase/service/agent/ChatServiceFilteringTest.java",
+    "agent-base/src/test/java/com/ghost616/agentbase/service/agent/ChatServiceNoLoadSkillsTest.java"
+  ]
+}
