@@ -13,6 +13,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.ghost616.agentbase.core.AgentComponentRegistry;
 import com.ghost616.agentbase.util.JsonMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.codec.ServerSentEvent;
@@ -32,6 +33,7 @@ import com.ghost616.agentbase.dto.skill.SkillConfigDTO;
 import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
 import com.ghost616.agentbase.enums.ErrorCode;
 import com.ghost616.agentbase.enums.HookPhase;
+import com.ghost616.agentbase.enums.SessionAuthType;
 import com.ghost616.agentbase.exception.BusinessException;
 import com.ghost616.agentbase.service.agent.invoker.SystemToolManager;
 import com.ghost616.agentbase.dto.model.ModelConfigData;
@@ -42,29 +44,39 @@ public class ChatService {
 
     public static final String TOOL_CONTINUE_MARKER = "[tool_continue]";
 
-    private final AgentContextManager agentContextManager;
-    private final SessionManager sessionManager;
-    private final ModelInvokerManager modelInvokerManager;
-    private final SystemToolManager systemToolManager;
-    private final ChatDataProvider chatDataProvider;
+    private final AgentComponentRegistry registry;
+    private AgentContextManager agentContextManager;
+    private SessionManager sessionManager;
+    private ModelInvokerManager modelInvokerManager;
+    private SystemToolManager systemToolManager;
+    private ChatDataProvider chatDataProvider;
 
     private final Map<HookPhase, List<HookInvoker>> systemHooks = new HashMap<>();
     private final List<HookInvoker> systemPostHooks = new ArrayList<>();
     private final Map<HookPhase, List<HookInvoker>> regularPhaseHooks = new HashMap<>();
+    private volatile boolean initialized;
 
-    public ChatService(AgentContextManager agentContextManager,
-                       SessionManager sessionManager,
-                       ModelInvokerManager modelInvokerManager,
-                       SystemToolManager systemToolManager,
-                       ChatDataProvider chatDataProvider) {
-        this.agentContextManager = agentContextManager;
-        this.sessionManager = sessionManager;
-        this.modelInvokerManager = modelInvokerManager;
-        this.systemToolManager = systemToolManager;
-        this.chatDataProvider = chatDataProvider;
+    public ChatService(AgentComponentRegistry registry) {
+        this.registry = registry;
+    }
+
+    private void ensureInitialized() {
+        if (!initialized) {
+            synchronized (this) {
+                if (!initialized) {
+                    agentContextManager = registry.getAgentContextManager();
+                    sessionManager = registry.getSessionManager();
+                    modelInvokerManager = registry.getModelInvokerManager();
+                    systemToolManager = registry.getSystemToolManager();
+                    chatDataProvider = registry.getChatDataProvider();
+                    initialized = true;
+                }
+            }
+        }
     }
 
     public void refreshHooks() {
+        ensureInitialized();
         systemHooks.clear();
         systemPostHooks.clear();
         regularPhaseHooks.clear();
@@ -101,6 +113,7 @@ public class ChatService {
     }
 
     public Flux<ServerSentEvent<ChatChunk>> chat(ChatRequest request) {
+        ensureInitialized();
         Long sessionId = request.getSessionId();
         String content = request.getContent();
         Long modelId = request.getModelId();
@@ -145,10 +158,19 @@ public class ChatService {
                 .build());
 
         List<SkillConfigDTO> skills = context.getSkills();
-        if (skills != null && !skills.isEmpty()) {
+        List<SkillConfigDTO> availableSkills = new ArrayList<>();
+        if (skills != null) {
+            for (SkillConfigDTO skill : skills) {
+                if (context.isMainSession() && skill.getSessionAuth() == SessionAuthType.CHILD) {
+                    continue;
+                }
+                availableSkills.add(skill);
+            }
+        }
+        if (!availableSkills.isEmpty()) {
             StringBuilder sb = new StringBuilder();
             sb.append("以下是可用的技能（SKILL）列表（技能本身不是工具，需先加载再使用其关联的工具）：\n");
-            for (SkillConfigDTO skill : skills) {
+            for (SkillConfigDTO skill : availableSkills) {
                 sb.append("- ").append(skill.getName());
                 if (skill.getDescription() != null && !skill.getDescription().isEmpty()) {
                     sb.append(": ").append(skill.getDescription());
@@ -163,10 +185,17 @@ public class ChatService {
         }
 
         List<SkillConfigDTO> loadedSkills = parseLoadedSkills(context, skills);
-        if (!loadedSkills.isEmpty()) {
+        List<SkillConfigDTO> filteredLoadedSkills = new ArrayList<>();
+        for (SkillConfigDTO skill : loadedSkills) {
+            if (context.isMainSession() && skill.getSessionAuth() == SessionAuthType.CHILD) {
+                continue;
+            }
+            filteredLoadedSkills.add(skill);
+        }
+        if (!filteredLoadedSkills.isEmpty()) {
             StringBuilder sb = new StringBuilder();
             sb.append("以下技能已加载，请按照其提示词指导执行任务：\n\n");
-            for (SkillConfigDTO skill : loadedSkills) {
+            for (SkillConfigDTO skill : filteredLoadedSkills) {
                 sb.append("## ").append(skill.getName()).append("\n");
                 if (skill.getPrompt() != null && !skill.getPrompt().isEmpty()) {
                     sb.append(skill.getPrompt()).append("\n\n");
@@ -176,6 +205,55 @@ public class ChatService {
                     .role("system")
                     .content(sb.toString())
                     .build());
+        }
+
+        if (context.isMainSession()) {
+            List<ToolConfigDTO> childAvailableTools = new ArrayList<>();
+            for (ToolConfigDTO t : context.getTools()) {
+                SessionAuthType auth = t.getSessionAuth();
+                if (auth == null || auth == SessionAuthType.ALL || auth == SessionAuthType.CHILD) {
+                    childAvailableTools.add(t);
+                }
+            }
+            List<SkillConfigDTO> childAvailableSkills = new ArrayList<>();
+            if (skills != null) {
+                for (SkillConfigDTO s : skills) {
+                    SessionAuthType auth = s.getSessionAuth();
+                    if (auth == null || auth == SessionAuthType.ALL || auth == SessionAuthType.CHILD) {
+                        childAvailableSkills.add(s);
+                    }
+                }
+            }
+            if (!childAvailableTools.isEmpty() || !childAvailableSkills.isEmpty()) {
+                StringBuilder sb = new StringBuilder();
+                if (!childAvailableTools.isEmpty()) {
+                    sb.append("子会话可使用以下工具：\n");
+                    for (ToolConfigDTO t : childAvailableTools) {
+                        sb.append("- ").append(t.getName());
+                        if (t.getDescription() != null && !t.getDescription().isEmpty()) {
+                            sb.append(": ").append(t.getDescription());
+                        }
+                        sb.append("\n");
+                    }
+                }
+                if (!childAvailableSkills.isEmpty()) {
+                    if (!childAvailableTools.isEmpty()) {
+                        sb.append("\n");
+                    }
+                    sb.append("子会话可使用以下技能：\n");
+                    for (SkillConfigDTO s : childAvailableSkills) {
+                        sb.append("- ").append(s.getName());
+                        if (s.getDescription() != null && !s.getDescription().isEmpty()) {
+                            sb.append(": ").append(s.getDescription());
+                        }
+                        sb.append("\n");
+                    }
+                }
+                messages.add(Message.builder()
+                        .role("system")
+                        .content(sb.toString())
+                        .build());
+            }
         }
 
         for (AgentExecutionContext.HistoryEntry entry : context.getHistory()) {
@@ -201,15 +279,21 @@ public class ChatService {
 
         Map<String, ToolDefinition> toolMap = new LinkedHashMap<>();
         for (ToolConfigDTO t : context.getTools()) {
+            if (context.isMainSession() && SessionAuthType.CHILD == t.getSessionAuth()) {
+                continue;
+            }
             ToolDefinition def = invoker.toToolDefinition(t);
             toolMap.put(def.getName(), def);
         }
         for (ToolDefinition def : systemToolManager.getToolDefinitions()) {
             toolMap.put(def.getName(), def);
         }
-        for (SkillConfigDTO skill : loadedSkills) {
+        for (SkillConfigDTO skill : filteredLoadedSkills) {
             if (skill.getSkillTools() != null) {
                 for (ToolConfigDTO st : skill.getSkillTools()) {
+                    if (context.isMainSession() && SessionAuthType.CHILD == st.getSessionAuth()) {
+                        continue;
+                    }
                     ToolDefinition def = invoker.toToolDefinition(st);
                     toolMap.put(def.getName(), def);
                 }

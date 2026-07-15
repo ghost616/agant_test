@@ -65,6 +65,7 @@ public class SessionServiceImpl implements SessionService {
                 SessionTool sessionTool = new SessionTool();
                 sessionTool.setSessionId(sessionId);
                 sessionTool.setToolId(agentTool.getToolId());
+                sessionTool.setSessionAuth(agentTool.getSessionAuth());
                 sessionToolMapper.insert(sessionTool);
             }
         }

@@ -7,6 +7,9 @@ import lombok.NoArgsConstructor;
 
 import java.util.List;
 
+import com.ghost616.platform.dto.agent.AgentToolItem;
+import com.ghost616.platform.dto.agent.AgentSkillItem;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -23,7 +26,7 @@ public class AgentUpdateRequest {
 
     private Integer recentMessageCount;
 
-    private List<Long> toolIds;
+    private List<AgentToolItem> tools;
 
-    private List<Long> skillIds;
+    private List<AgentSkillItem> skills;
 }

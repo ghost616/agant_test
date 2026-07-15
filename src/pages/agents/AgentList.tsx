@@ -15,7 +15,7 @@ import {
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import type { CommonStatus } from '../../types/common';
-import type { AgentConfig, AgentFormData } from '../../types/agent';
+import type { AgentConfig, AgentFormData, SessionAuthType } from '../../types/agent';
 import type { ModelConfig } from '../../types/model';
 import type { ToolConfig } from '../../types/tool';
 import {
@@ -40,6 +40,91 @@ const STATUS_OPTIONS = Object.entries(STATUS_LABELS).map(([value, label]) => ({
   label,
 }));
 
+const SESSION_AUTH_LABELS: Record<SessionAuthType, string> = {
+  ALL: '所有会话',
+  PARENT: '父会话',
+  CHILD: '子会话',
+};
+
+const SESSION_AUTH_COLORS: Record<SessionAuthType, string> = {
+  ALL: 'blue',
+  PARENT: 'green',
+  CHILD: 'orange',
+};
+
+const SESSION_AUTH_OPTIONS = Object.entries(SESSION_AUTH_LABELS).map(([value, label]) => ({
+  value,
+  label,
+}));
+
+function SessionAuthSelect({
+  value = [],
+  onChange,
+  options,
+  placeholder,
+  idField,
+}: {
+  value?: ({ [key: string]: string } & { sessionAuth: SessionAuthType })[];
+  onChange?: (value: ({ [key: string]: string } & { sessionAuth: SessionAuthType })[]) => void;
+  options: { value: string; label: string }[];
+  placeholder?: string;
+  idField: 'toolId' | 'skillId';
+}): JSX.Element {
+  const valueMap: Record<string, SessionAuthType> = {};
+  value.forEach((v) => { valueMap[v[idField]] = v.sessionAuth; });
+  const selectedIds = Object.keys(valueMap);
+
+  const handleSelectChange = (ids: string[]): void => {
+    const newValue = ids.map((id) => ({
+      [idField]: id,
+      sessionAuth: valueMap[id] || ('ALL' as SessionAuthType),
+    }));
+    onChange?.(newValue);
+  };
+
+  const handleAuthChange = (id: string, sessionAuth: SessionAuthType): void => {
+    const newValue = value.map((v) =>
+      v[idField] === id ? { ...v, sessionAuth } : v,
+    );
+    onChange?.(newValue);
+  };
+
+  return (
+    <div>
+      <Select
+        mode="multiple"
+        value={selectedIds}
+        onChange={handleSelectChange}
+        placeholder={placeholder}
+        allowClear
+        showSearch
+        optionFilterProp="label"
+        options={options}
+        style={{ width: '100%' }}
+      />
+      {selectedIds.length > 0 && (
+        <div style={{ marginTop: 8 }}>
+          {selectedIds.map((id) => {
+            const opt = options.find((o) => o.value === id);
+            return (
+              <div key={id} style={{ display: 'flex', alignItems: 'center', marginBottom: 4, gap: 8 }}>
+                <Tag>{opt?.label || id}</Tag>
+                <Select
+                  value={valueMap[id]}
+                  onChange={(v) => handleAuthChange(id, v as SessionAuthType)}
+                  size="small"
+                  style={{ width: 130 }}
+                  options={SESSION_AUTH_OPTIONS}
+                />
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function AgentList(): JSX.Element {
   const [dataSource, setDataSource] = useState<AgentConfig[]>([]);
   const [loading, setLoading] = useState(false);
@@ -55,6 +140,8 @@ function AgentList(): JSX.Element {
   const [toolList, setToolList] = useState<ToolConfig[]>([]);
   const [skillList, setSkillList] = useState<SkillConfig[]>([]);
   const [modelMap, setModelMap] = useState<Record<string, string>>({});
+  const [toolMap, setToolMap] = useState<Record<string, string>>({});
+  const [skillMap, setSkillMap] = useState<Record<string, string>>({});
 
   const fetchList = useCallback(async () => {
     setLoading(true);
@@ -81,11 +168,21 @@ function AgentList(): JSX.Element {
       setModelList(models);
       setToolList(tools);
       setSkillList(skills);
-      const map: Record<string, string> = {};
+      const modelMapData: Record<string, string> = {};
       models.forEach((m) => {
-        map[m.id] = m.name;
+        modelMapData[m.id] = m.name;
       });
-      setModelMap(map);
+      setModelMap(modelMapData);
+      const toolMapData: Record<string, string> = {};
+      tools.forEach((t) => {
+        toolMapData[t.id] = t.name;
+      });
+      setToolMap(toolMapData);
+      const skillMapData: Record<string, string> = {};
+      skills.forEach((s) => {
+        skillMapData[s.id] = s.name;
+      });
+      setSkillMap(skillMapData);
     } catch {
       message.error('获取模型/工具/技能列表失败');
     }
@@ -121,8 +218,8 @@ function AgentList(): JSX.Element {
       description: editingAgent.description,
       systemPrompt: editingAgent.systemPrompt,
       modelId: editingAgent.modelId,
-      toolIds: editingAgent.toolIds,
-      skillIds: editingAgent.skillIds,
+      tools: editingAgent.tools,
+      skills: editingAgent.skills,
       recentMessageCount: editingAgent.recentMessageCount,
     });
   }, [editingAgent, modalVisible, form]);
@@ -196,6 +293,40 @@ function AgentList(): JSX.Element {
       width: 140,
       render: (value: string | undefined) =>
         value ? modelMap[value] || '-' : '-',
+    },
+    {
+      title: '挂载工具',
+      dataIndex: 'tools',
+      width: 200,
+      render: (value: { toolId: string; sessionAuth: SessionAuthType }[] | undefined) => {
+        if (!value || value.length === 0) return '-';
+        return (
+          <Space size={[0, 4]} wrap>
+            {value.map((item) => (
+              <Tag key={item.toolId} color={SESSION_AUTH_COLORS[item.sessionAuth]}>
+                {toolMap[item.toolId] || item.toolId}: {SESSION_AUTH_LABELS[item.sessionAuth]}
+              </Tag>
+            ))}
+          </Space>
+        );
+      },
+    },
+    {
+      title: '挂载技能',
+      dataIndex: 'skills',
+      width: 200,
+      render: (value: { skillId: string; sessionAuth: SessionAuthType }[] | undefined) => {
+        if (!value || value.length === 0) return '-';
+        return (
+          <Space size={[0, 4]} wrap>
+            {value.map((item) => (
+              <Tag key={item.skillId} color={SESSION_AUTH_COLORS[item.sessionAuth]}>
+                {skillMap[item.skillId] || item.skillId}: {SESSION_AUTH_LABELS[item.sessionAuth]}
+              </Tag>
+            ))}
+          </Space>
+        );
+      },
     },
     {
       title: '最近消息',
@@ -275,7 +406,7 @@ function AgentList(): JSX.Element {
         dataSource={dataSource}
         loading={loading}
         pagination={false}
-        scroll={{ x: 1000 }}
+        scroll={{ x: 1400 }}
       />
 
       <Modal
@@ -313,26 +444,20 @@ function AgentList(): JSX.Element {
               }))}
             />
           </Form.Item>
-          <Form.Item name="toolIds" label="挂载工具">
-            <Select
-              mode="multiple"
+          <Form.Item name="tools" label="挂载工具">
+            <SessionAuthSelect
+              idField="toolId"
               placeholder="请选择挂载工具"
-              allowClear
-              showSearch
-              optionFilterProp="label"
               options={toolList.map((t) => ({
                 value: t.id,
                 label: t.name,
               }))}
             />
           </Form.Item>
-          <Form.Item name="skillIds" label="挂载技能">
-            <Select
-              mode="multiple"
+          <Form.Item name="skills" label="挂载技能">
+            <SessionAuthSelect
+              idField="skillId"
               placeholder="请选择挂载技能"
-              allowClear
-              showSearch
-              optionFilterProp="label"
               options={skillList.map((s) => ({
                 value: s.id,
                 label: s.name,

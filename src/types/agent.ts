@@ -1,5 +1,7 @@
 import type { CommonStatus } from './common';
 
+export type SessionAuthType = 'ALL' | 'PARENT' | 'CHILD';
+
 export interface AgentConfig {
   id: string;
   name: string;
@@ -7,8 +9,8 @@ export interface AgentConfig {
   systemPrompt?: string;
   modelId?: string;
   status: CommonStatus;
-  toolIds: string[];
-  skillIds: string[];
+  tools: { toolId: string; sessionAuth: SessionAuthType }[];
+  skills: { skillId: string; sessionAuth: SessionAuthType }[];
   recentMessageCount?: number;
   createTime: string;
   updateTime: string;
@@ -19,8 +21,8 @@ export interface AgentFormData {
   description?: string;
   systemPrompt?: string;
   modelId?: string;
-  toolIds?: string[];
-  skillIds?: string[];
+  tools?: { toolId: string; sessionAuth: SessionAuthType }[];
+  skills?: { skillId: string; sessionAuth: SessionAuthType }[];
   recentMessageCount?: number;
 }
 

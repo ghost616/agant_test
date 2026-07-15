@@ -2,8 +2,14 @@ package com.ghost616.platform.service.agent;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
+import com.ghost616.agentbase.enums.CommonStatus;
+import com.ghost616.agentbase.enums.ErrorCode;
+import com.ghost616.agentbase.enums.SessionAuthType;
+import com.ghost616.agentbase.exception.BusinessException;
 import com.ghost616.platform.dto.agent.AgentConfigDTO;
 import com.ghost616.platform.dto.agent.AgentCreateRequest;
+import com.ghost616.platform.dto.agent.AgentSkillItem;
+import com.ghost616.platform.dto.agent.AgentToolItem;
 import com.ghost616.platform.dto.agent.AgentUpdateRequest;
 import com.ghost616.platform.entity.AgentConfig;
 import com.ghost616.platform.entity.AgentSkill;
@@ -17,10 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-
-import com.ghost616.agentbase.enums.CommonStatus;
-import com.ghost616.agentbase.enums.ErrorCode;
-import com.ghost616.agentbase.exception.BusinessException;
+import java.util.Optional;
 
 
 @Service
@@ -61,8 +64,8 @@ public class AgentConfigServiceImpl implements AgentConfigService {
     public AgentConfigDTO create(AgentCreateRequest request) {
         checkNameDuplicate(request.getName(), null);
 
-        if (request.getSkillIds() != null && !request.getSkillIds().isEmpty()) {
-            validateSkillIds(request.getSkillIds());
+        if (request.getSkills() != null && !request.getSkills().isEmpty()) {
+            validateSkillIds(request.getSkills());
         }
 
         AgentConfig entity = new AgentConfig();
@@ -75,20 +78,22 @@ public class AgentConfigServiceImpl implements AgentConfigService {
 
         agentConfigMapper.insert(entity);
 
-        if (request.getToolIds() != null && !request.getToolIds().isEmpty()) {
-            for (Long toolId : request.getToolIds()) {
+        if (request.getTools() != null && !request.getTools().isEmpty()) {
+            for (AgentToolItem item : request.getTools()) {
                 AgentTool agentTool = new AgentTool();
                 agentTool.setAgentId(entity.getId());
-                agentTool.setToolId(toolId);
+                agentTool.setToolId(item.toolId());
+                agentTool.setSessionAuth(Optional.ofNullable(item.sessionAuth()).orElse(SessionAuthType.ALL));
                 agentToolMapper.insert(agentTool);
             }
         }
 
-        if (request.getSkillIds() != null && !request.getSkillIds().isEmpty()) {
-            for (Long skillId : request.getSkillIds()) {
+        if (request.getSkills() != null && !request.getSkills().isEmpty()) {
+            for (AgentSkillItem item : request.getSkills()) {
                 AgentSkill agentSkill = new AgentSkill();
                 agentSkill.setAgentId(entity.getId());
-                agentSkill.setSkillId(skillId);
+                agentSkill.setSkillId(item.skillId());
+                agentSkill.setSessionAuth(Optional.ofNullable(item.sessionAuth()).orElse(SessionAuthType.ALL));
                 agentSkillMapper.insert(agentSkill);
             }
         }
@@ -123,33 +128,35 @@ public class AgentConfigServiceImpl implements AgentConfigService {
 
         agentConfigMapper.updateById(entity);
 
-        if (request.getToolIds() != null) {
+        if (request.getTools() != null) {
             LambdaQueryWrapper<AgentTool> deleteWrapper = new LambdaQueryWrapper<>();
             deleteWrapper.eq(AgentTool::getAgentId, id);
             agentToolMapper.delete(deleteWrapper);
 
-            if (!request.getToolIds().isEmpty()) {
-                for (Long toolId : request.getToolIds()) {
+            if (!request.getTools().isEmpty()) {
+                for (AgentToolItem item : request.getTools()) {
                     AgentTool agentTool = new AgentTool();
                     agentTool.setAgentId(id);
-                    agentTool.setToolId(toolId);
+                    agentTool.setToolId(item.toolId());
+                    agentTool.setSessionAuth(Optional.ofNullable(item.sessionAuth()).orElse(SessionAuthType.ALL));
                     agentToolMapper.insert(agentTool);
                 }
             }
         }
 
-        if (request.getSkillIds() != null) {
-            validateSkillIds(request.getSkillIds());
+        if (request.getSkills() != null) {
+            validateSkillIds(request.getSkills());
 
             LambdaQueryWrapper<AgentSkill> skillDeleteWrapper = new LambdaQueryWrapper<>();
             skillDeleteWrapper.eq(AgentSkill::getAgentId, id);
             agentSkillMapper.delete(skillDeleteWrapper);
 
-            if (!request.getSkillIds().isEmpty()) {
-                for (Long skillId : request.getSkillIds()) {
+            if (!request.getSkills().isEmpty()) {
+                for (AgentSkillItem item : request.getSkills()) {
                     AgentSkill agentSkill = new AgentSkill();
                     agentSkill.setAgentId(id);
-                    agentSkill.setSkillId(skillId);
+                    agentSkill.setSkillId(item.skillId());
+                    agentSkill.setSessionAuth(Optional.ofNullable(item.sessionAuth()).orElse(SessionAuthType.ALL));
                     agentSkillMapper.insert(agentSkill);
                 }
             }
@@ -203,15 +210,15 @@ public class AgentConfigServiceImpl implements AgentConfigService {
         LambdaQueryWrapper<AgentTool> toolWrapper = new LambdaQueryWrapper<>();
         toolWrapper.eq(AgentTool::getAgentId, entity.getId());
         List<AgentTool> agentTools = agentToolMapper.selectList(toolWrapper);
-        List<Long> toolIds = agentTools.stream()
-                .map(AgentTool::getToolId)
+        List<AgentToolItem> tools = agentTools.stream()
+                .map(t -> new AgentToolItem(t.getToolId(), t.getSessionAuth()))
                 .toList();
 
         LambdaQueryWrapper<AgentSkill> skillWrapper = new LambdaQueryWrapper<>();
         skillWrapper.eq(AgentSkill::getAgentId, entity.getId());
         List<AgentSkill> agentSkills = agentSkillMapper.selectList(skillWrapper);
-        List<Long> skillIds = agentSkills.stream()
-                .map(AgentSkill::getSkillId)
+        List<AgentSkillItem> skills = agentSkills.stream()
+                .map(s -> new AgentSkillItem(s.getSkillId(), s.getSessionAuth()))
                 .toList();
 
         return AgentConfigDTO.builder()
@@ -222,17 +229,18 @@ public class AgentConfigServiceImpl implements AgentConfigService {
                 .modelId(entity.getModelId())
                 .status(entity.getStatus())
                 .recentMessageCount(entity.getRecentMessageCount())
-                .toolIds(toolIds)
-                .skillIds(skillIds)
+                .tools(tools)
+                .skills(skills)
                 .createTime(entity.getCreateTime())
                 .updateTime(entity.getUpdateTime())
                 .build();
     }
 
-    private void validateSkillIds(List<Long> skillIds) {
-        if (skillIds == null || skillIds.isEmpty()) {
+    private void validateSkillIds(List<AgentSkillItem> skills) {
+        if (skills == null || skills.isEmpty()) {
             return;
         }
+        List<Long> skillIds = skills.stream().map(AgentSkillItem::skillId).toList();
         int count = skillConfigMapper.selectBatchIds(skillIds).size();
         if (count != skillIds.size()) {
             throw new BusinessException(ErrorCode.PARAM_INVALID, "部分关联技能不存在");

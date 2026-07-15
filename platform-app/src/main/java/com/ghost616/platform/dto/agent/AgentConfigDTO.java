@@ -11,6 +11,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import com.ghost616.agentbase.enums.CommonStatus;
+import com.ghost616.platform.dto.agent.AgentToolItem;
+import com.ghost616.platform.dto.agent.AgentSkillItem;
 
 
 @Data
@@ -28,10 +30,8 @@ public class AgentConfigDTO {
     private Long modelId;
     private CommonStatus status;
     private Integer recentMessageCount;
-    @JsonSerialize(contentUsing = ToStringSerializer.class)
-    private List<Long> toolIds;
-    @JsonSerialize(contentUsing = ToStringSerializer.class)
-    private List<Long> skillIds;
+    private List<AgentToolItem> tools;
+    private List<AgentSkillItem> skills;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
 }
