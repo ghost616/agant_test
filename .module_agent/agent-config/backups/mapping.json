@@ -3,5 +3,9 @@
   "src/main/java/com/ghost616/platform/dto/agent/AgentConfigDTO.java": "e34c401e0561967421ffc803c4e108ad",
   "src/main/java/com/ghost616/platform/dto/agent/AgentCreateRequest.java": "724f506880fc24af5f12254c7e685e7f",
   "src/main/java/com/ghost616/platform/dto/agent/AgentUpdateRequest.java": "5df55f9014306135e55232cc6e696844",
-  "src/main/java/com/ghost616/platform/service/agent/AgentConfigServiceImpl.java": "fb48cbccd82f76d9e12e89e8b97ed940"
+  "src/main/java/com/ghost616/platform/service/agent/AgentConfigServiceImpl.java": "fb48cbccd82f76d9e12e89e8b97ed940",
+  "platform-app/src/main/java/com/ghost616/platform/dto/agent/AgentCreateRequest.java": "fbbee5d25462c43d484ce9b9f70702e6",
+  "platform-app/src/main/java/com/ghost616/platform/dto/agent/AgentUpdateRequest.java": "bb5368e694d5c3995046001395f06f1a",
+  "platform-app/src/main/java/com/ghost616/platform/dto/agent/AgentConfigDTO.java": "83da0a30331dcae67bae1cf8d005a852",
+  "platform-app/src/main/java/com/ghost616/platform/service/agent/AgentConfigServiceImpl.java": "8658a6abf3451c470b98ee4e10a8ee7b"
 }

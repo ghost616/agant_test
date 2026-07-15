@@ -7,55 +7,6 @@
     "test_passed": true
   },
   {
-    "plan_id": "plan_7f8b0ada-7a56-480b-9b1d-d890428e780b",
-    "plan_summary": "子会话列表添加刷新按钮",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": true
-  },
-  {
-    "plan_id": "plan_86df6349-5c36-4f28-9e42-0a95451d1162",
-    "plan_summary": "创建ToolStatusResultDTO并改造Controller",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": true
-  },
-  {
-    "plan_id": "plan_6193eb6d-6b71-4075-a2e5-ba76ff1024fd",
-    "plan_summary": "前端适配ToolStatusResultDTO的新字段",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": true
-  },
-  {
-    "plan_id": "plan_6b66bb1e-bcdf-42aa-ad47-92624c101eb0",
-    "plan_summary": "子会话弹窗自动关闭：handleSubSessionFlow 中 completeSubSession 后增加 setSubSessionModalVisible(false)",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": true
-  },
-  {
-    "plan_id": "plan_ebc0ce73-a360-4d47-be01-be4f92c02a7c",
-    "plan_summary": "AgentMessageProxy 循环检测：按(toolName,arguments)组合计数，同一组合5次判定为循环",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": true
-  },
-  {
-    "plan_id": "plan_531a1314-62fe-4c8d-989d-14da020147f8",
-    "plan_summary": "AgentChat 循环检测：按(toolName,arguments)组合计数，同一组合5次判定为循环",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": true
-  },
-  {
-    "plan_id": "plan_2503bab8-d416-45fc-a38f-87634e68287f",
-    "plan_summary": "AgentChat 移除 MAX_TOOL_LOOPS 轮次上限，仅保留工具+参数组合5次检测",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": true
-  },
-  {
     "plan_id": "plan_5204e5f8-4ff7-438a-8507-793b5cb4c73b",
     "plan_summary": "更新 README.md 以反映多模块架构（agent-base/agent-integration/platform-app），修正项目结构、调用器位置、启动命令、系统工具说明",
     "code_reviewed": false,
@@ -63,10 +14,31 @@
     "test_passed": false
   },
   {
-    "plan_id": "plan_a13a30b1-9904-4c41-8e7c-66eb08667312",
-    "plan_summary": "README 两处更新：删除项目结构中 SQLite 数据库文件行；功能模块新增「子会话执行」条目",
-    "code_reviewed": false,
-    "plan_completed": false,
+    "plan_id": "plan_33a76333-ad50-479e-9bed-70da555738b1",
+    "plan_summary": "Agent 工具/技能关联 sessionAuth 配置后端代码审查",
+    "code_reviewed": true,
+    "plan_completed": true,
     "test_passed": false
+  },
+  {
+    "plan_id": "plan_f3cafb02-ab47-4a0b-8bb3-8bde4f2d0c20",
+    "plan_summary": "Agent 表单中工具/技能选择支持配置每个关联的 sessionAuth，类型定义和页面同步更新",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_37c6050c-c1fb-4290-b175-b96399f09d2a",
+    "plan_summary": "修复 createSession 时未从 AgentTool 复制 sessionAuth 到 SessionTool 的 Bug",
+    "code_reviewed": false,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_4eb3cc59-4b08-4b22-9c4e-3752c5a13499",
+    "plan_summary": "修复 ChatService 技能工具循环遍历未过滤的 loadedSkills，改为 filteredLoadedSkills",
+    "code_reviewed": false,
+    "plan_completed": true,
+    "test_passed": true
   }
 ]

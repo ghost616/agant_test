@@ -1,9 +1,0 @@
-{
-  "plan_id": "plan_7f8b0ada-7a56-480b-9b1d-d890428e780b",
-  "module_name": "frontend-ui",
-  "development_plan": "在子会话列表区域添加刷新按钮，点击后重新加载最新子会话数据。\n\n具体变更：\n1. 在 src/pages/sessions/AgentChat.tsx 中导入 ReloadOutlined 图标\n2. 在 renderChildSessionList 函数中的子会话列表顶部区域添加刷新按钮，点击调用 loadChildSessions 重新获取子会话数据\n3. 刷新按钮应在加载中时显示 loading 状态\n\n参考规范：\n- TypeScript + React 项目，使用 Ant Design 组件库\n- 缩进 2 空格，行宽 100 字符\n- 字符串用单引号，JSX 属性用双引号\n- 组件单一职责，函数不超过 40 行\n- 类型明确，禁止 any",
-  "session_id": "ses_0aac62889ffeSOoUBBFmhVUhix",
-  "modified_files": [
-    "src/pages/sessions/AgentChat.tsx"
-  ]
-}

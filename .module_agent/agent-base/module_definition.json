@@ -95,7 +95,7 @@
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ChatService.java",
-      "description": "聊天服务核心实现，处理用户消息、技能加载、历史折叠、LLM 流式调用、钩子触发等完整对话流程"
+      "description": "聊天服务核心类，负责构建消息列表、管理会话上下文、过滤工具/技能、调用模型 invoker 并返回 SSE 流。包含系统消息构建（可用技能列表、已加载技能提示词、子会话能力提示合并）、会话历史折叠、loadedSkills 解析、hook 触发等功能。"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/ContextSerializer.java",
@@ -183,11 +183,11 @@
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/dto/skill/SkillConfigDTO.java",
-      "description": "技能配置响应 DTO"
+      "description": "技能配置响应 DTO，包含 id/name/description/prompt/status/sessionAuth/toolIds/skillTools/createTime/updateTime 字段"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/dto/tool/ToolConfigDTO.java",
-      "description": "工具配置 DTO"
+      "description": "工具配置 DTO，包含 id/name/toolType/description/parameterSchema/returnSchema/implPath/authConfig/status/sessionAuth/createTime/updateTime 字段"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/dto/tool/McpExpandedToolDTO.java",
@@ -260,6 +260,10 @@
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/SubSessionCallback.java",
       "description": "子会话回调函数式接口，使用 @FunctionalInterface 注解，定义 execute(Long sessionId, String userMessage) 方法返回 Message，供子会话消息处理的回调契约"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/enums/SessionAuthType.java",
+      "description": "会话授权类型枚举，定义 ALL/PARENT/CHILD 三种授权范围，使用 Integer code 字段标注 @EnumValue"
     }
   ]
 }

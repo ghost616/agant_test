@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_0a0fef74affe01qD5mqzOrbYkS",
+  "content": "## 待测试功能\n\n1. DefaultToolDataProvider.getSessionToolIds 返回类型改为 List<SessionToolInfo>，读取 SessionTool 的 toolId 和 sessionAuth（null 时默认 ALL），构建 SessionToolInfo 返回\n\n### 涉及文件\n- platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultToolDataProvider.java",
+  "timestamp": "2026-07-14T05:52:32.475Z"
+}

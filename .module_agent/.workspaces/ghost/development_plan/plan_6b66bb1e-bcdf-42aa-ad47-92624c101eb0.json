@@ -1,9 +1,0 @@
-{
-  "plan_id": "plan_6b66bb1e-bcdf-42aa-ad47-92624c101eb0",
-  "module_name": "frontend-ui",
-  "development_plan": "在 frontend-ui 模块中修改 src/pages/sessions/AgentChat.tsx 文件：\n在 handleSubSessionFlow 函数中，第 465 行 `await completeSubSession(sessionId);` 之后增加一行 `setSubSessionModalVisible(false);`，使子会话对话完成后自动关闭弹窗。",
-  "session_id": "ses_0a5fcb131ffetqVw60URgycf8G",
-  "modified_files": [
-    "src/pages/sessions/AgentChat.tsx"
-  ]
-}

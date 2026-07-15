@@ -1,8 +1,14 @@
 {
-  "framework": [
-    "ses_0a544f4c2ffevTz0rRR0HfrNeH"
+  "agent-config": [
+    "ses_09c1c268fffeXZByOkJgPpkBGj"
   ],
-  "_checked": [
-    "ses_0a544f4c2ffevTz0rRR0HfrNeH"
+  "frontend-ui": [
+    "ses_09c18a579ffeZ5US39R1Dxj3Hk"
+  ],
+  "platform-app": [
+    "ses_09c02c14fffe7JKzTLVztP65DL"
+  ],
+  "agent-base": [
+    "ses_09b881070ffejtA31WAzgeAd4r"
   ]
 }

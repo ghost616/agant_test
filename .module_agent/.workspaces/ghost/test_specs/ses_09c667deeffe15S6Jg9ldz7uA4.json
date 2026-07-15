@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_09c667deeffe15S6Jg9ldz7uA4",
+  "content": "## 本次变更涉及的可测试功能\n\n### 1. SchemaMigration NULL 回填逻辑（需要单元测试）\n- **文件**: `platform-app/src/main/java/com/ghost616/platform/config/SchemaMigration.java`\n- **回填 SQL**: 迁移循环后对 session_tool/agent_tool/agent_skill/session_skill 四张表执行 `UPDATE \"<table>\" SET \"session_auth\" = 0 WHERE \"session_auth\" IS NULL`\n- **幂等性**: 多次执行效果相同（已回填的行 WHERE IS NULL 不再匹配）\n- **异常处理**: jdbcTemplate.update 抛出异常时捕获并记录 warn 日志，不中断应用启动\n- **回填数量日志**: updated > 0 时记录 info 日志\n\n### 2. schema.sql 建表定义变更（无需单元测试，建表语句在应用启动时由 MyBatis-Plus DDL 执行，不影响运行时代码逻辑）\n",
+  "timestamp": "2026-07-15T02:30:49.872Z"
+}

@@ -1,0 +1,176 @@
+package com.ghost616.agentinteg;
+
+import com.ghost616.agentbase.dto.model.ModelConfigData;
+import com.ghost616.agentbase.service.agent.AgentContextManager;
+import com.ghost616.agentbase.service.agent.AgentMessageProxy;
+import com.ghost616.agentbase.service.agent.ChatDataProvider;
+import com.ghost616.agentbase.service.agent.ChatService;
+import com.ghost616.agentbase.service.agent.ContextDataProvider;
+import com.ghost616.agentbase.service.agent.MessageDataProvider;
+import com.ghost616.agentbase.service.agent.SessionManager;
+import com.ghost616.agentbase.service.agent.ToolDataProvider;
+import com.ghost616.agentbase.service.agent.ToolExecutionService;
+import com.ghost616.agentbase.service.agent.ToolExecutionTracker;
+import com.ghost616.agentbase.service.agent.invoker.HistoryQuerySystemTool;
+import com.ghost616.agentbase.service.agent.invoker.HookInvoker;
+import com.ghost616.agentbase.service.agent.invoker.LoadSkillsSystemTool;
+import com.ghost616.agentbase.service.agent.invoker.MessageSavePostHook;
+import com.ghost616.agentbase.service.agent.invoker.UnloadSkillsSystemTool;
+import com.ghost616.agentbase.service.agent.invoker.SystemToolManager;
+import com.ghost616.agentbase.service.agent.invoker.SystemTool;
+import com.ghost616.agentbase.service.agent.invoker.SystemToolProvider;
+import com.ghost616.agentbase.service.agent.invoker.ToolCallQueueManager;
+import com.ghost616.agentbase.service.agent.invoker.ToolManager;
+import com.ghost616.agentbase.service.model.invoker.ModelInvokerFactory;
+import com.ghost616.agentbase.service.model.invoker.ModelInvokerManager;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+public class AgentAssembler {
+
+    private final ContextDataProvider contextDataProvider;
+    private final MessageDataProvider messageDataProvider;
+    private final ToolDataProvider toolDataProvider;
+    private final SystemToolProvider systemToolProvider;
+    private final ModelInvokerFactory modelInvokerFactory;
+    private final ChatDataProvider chatDataProvider;
+
+    private ToolManager toolManager;
+    private ToolCallQueueManager toolCallQueueManager;
+    private SystemToolManager systemToolManager;
+    private SessionManager sessionManager;
+    private AgentContextManager agentContextManager;
+    private ModelInvokerManager modelInvokerManager;
+    private ToolExecutionTracker toolExecutionTracker;
+    private ChatDataProviderProxy chatDataProviderProxy;
+    private Result cachedResult;
+    private boolean built = false;
+
+    public AgentAssembler(ContextDataProvider contextDataProvider,
+                 MessageDataProvider messageDataProvider,
+                 ToolDataProvider toolDataProvider,
+                 SystemToolProvider systemToolProvider,
+                 ModelInvokerFactory modelInvokerFactory,
+                 ChatDataProvider chatDataProvider) {
+        this.contextDataProvider = contextDataProvider;
+        this.messageDataProvider = messageDataProvider;
+        this.toolDataProvider = toolDataProvider;
+        this.systemToolProvider = systemToolProvider;
+        this.modelInvokerFactory = modelInvokerFactory;
+        this.chatDataProvider = chatDataProvider;
+    }
+
+    public ToolManager toolManager() { return toolManager; }
+    public ToolCallQueueManager toolCallQueueManager() { return toolCallQueueManager; }
+    public SystemToolManager systemToolManager() { return systemToolManager; }
+    public SessionManager sessionManager() { return sessionManager; }
+    public AgentContextManager agentContextManager() { return agentContextManager; }
+    public ModelInvokerManager modelInvokerManager() { return modelInvokerManager; }
+    public ToolExecutionTracker toolExecutionTracker() { return toolExecutionTracker; }
+    public MessageSavePostHook messageSavePostHook() { return chatDataProviderProxy != null ? chatDataProviderProxy.getMessageSavePostHook() : null; }
+
+    public Result build() {
+        if (built) {
+            return cachedResult;
+        }
+        toolManager = new ToolManager(toolDataProvider);
+        toolCallQueueManager = new ToolCallQueueManager();
+        SystemToolProvider systemToolProviderProxy = new SystemToolProviderProxy(systemToolProvider);
+        systemToolManager = new SystemToolManager(systemToolProviderProxy);
+        sessionManager = new SessionManager(messageDataProvider);
+        agentContextManager = new AgentContextManager(
+                contextDataProvider, sessionManager, toolManager);
+        modelInvokerManager = new ModelInvokerManager(modelInvokerFactory);
+        toolExecutionTracker = new ToolExecutionTracker();
+
+        chatDataProviderProxy = new ChatDataProviderProxy(chatDataProvider,
+                sessionManager, agentContextManager, toolCallQueueManager);
+
+        ChatService chatService = new ChatService(
+                agentContextManager, sessionManager, modelInvokerManager,
+                systemToolManager, chatDataProviderProxy);
+
+        ToolExecutionService toolExecutionService = new ToolExecutionService(
+                toolCallQueueManager, toolManager, systemToolManager,
+                sessionManager, chatService, agentContextManager, toolExecutionTracker);
+
+        AgentMessageProxy agentMessageProxy = new AgentMessageProxy(chatService, toolExecutionService);
+        agentContextManager.setAgentMessageProxy(agentMessageProxy);
+
+        cachedResult = new Result(chatService, toolExecutionService, chatDataProviderProxy.getMessageSavePostHook());
+        built = true;
+        return cachedResult;
+    }
+
+    public record Result(ChatService chatService, ToolExecutionService toolExecutionService, MessageSavePostHook messageSavePostHook) {}
+
+    private static class SystemToolProviderProxy implements SystemToolProvider {
+        private final SystemToolProvider delegate;
+
+        SystemToolProviderProxy(SystemToolProvider delegate) {
+            this.delegate = delegate;
+        }
+
+        public Map<String, SystemTool> discoverSystemTools() {
+            Map<String, SystemTool> tools = delegate.discoverSystemTools();
+            Map<String, SystemTool> result = (tools != null) ? new HashMap<>(tools) : new HashMap<>();
+            result.putIfAbsent("history_query", new HistoryQuerySystemTool());
+            result.putIfAbsent("load_skills", new LoadSkillsSystemTool());
+            result.putIfAbsent("unload_skills", new UnloadSkillsSystemTool());
+            return result;
+        }
+    }
+
+    private static class ChatDataProviderProxy implements ChatDataProvider {
+        private final ChatDataProvider delegate;
+        private final SessionManager sessionManager;
+        private final AgentContextManager agentContextManager;
+        private final ToolCallQueueManager toolCallQueueManager;
+        private volatile MessageSavePostHook messageSavePostHook;
+
+        ChatDataProviderProxy(ChatDataProvider delegate, SessionManager sessionManager,
+                              AgentContextManager agentContextManager, ToolCallQueueManager toolCallQueueManager) {
+            this.delegate = delegate;
+            this.sessionManager = sessionManager;
+            this.agentContextManager = agentContextManager;
+            this.toolCallQueueManager = toolCallQueueManager;
+        }
+
+        public ModelConfigData getModelConfig(Long modelId) {
+            return delegate.getModelConfig(modelId);
+        }
+
+        public void updateSessionModelId(Long sessionId, Long modelId) {
+            delegate.updateSessionModelId(sessionId, modelId);
+        }
+
+        public List<HookInvoker> getHooks() {
+            List<HookInvoker> hooks = delegate.getHooks();
+            boolean hasMessageSavePostHook = hooks.stream().anyMatch(h -> h instanceof MessageSavePostHook);
+            if (!hasMessageSavePostHook) {
+                MessageSavePostHook hook = getOrCreateMessageSavePostHook();
+                hooks = new ArrayList<>(hooks);
+                hooks.add(hook);
+            }
+            return hooks;
+        }
+
+        MessageSavePostHook getMessageSavePostHook() {
+            return getOrCreateMessageSavePostHook();
+        }
+
+        private MessageSavePostHook getOrCreateMessageSavePostHook() {
+            if (messageSavePostHook == null) {
+                synchronized (this) {
+                    if (messageSavePostHook == null) {
+                        messageSavePostHook = new MessageSavePostHook(sessionManager, agentContextManager, toolCallQueueManager);
+                    }
+                }
+            }
+            return messageSavePostHook;
+        }
+    }
+}

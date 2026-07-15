@@ -1,0 +1,10 @@
+{
+  "plan_id": "plan_f3cafb02-ab47-4a0b-8bb3-8bde4f2d0c20",
+  "module_name": "frontend-ui",
+  "development_plan": "\n## 任务：Agent 表单中工具/技能选择支持 sessionAuth 配置\n\n后端 API 已变更：toolIds/skillIds 由 `List<Long>` 改为 `List<{toolId/skillId: number, sessionAuth: string}>`。前端需同步更新。\n\n### 1. 修改 src/types/agent.ts\n- AgentConfig 和 AgentFormData 中的 toolIds 字段改为 tools: {toolId: string, sessionAuth: string}[]\n- AgentConfig 和 AgentFormData 中的 skillIds 字段改为 skills: {skillId: string, sessionAuth: string}[]\n- SessionAuthType 可选值：ALL(所有会话) / PARENT(父会话) / CHILD(子会话)\n\n### 2. 修改 src/pages/agents/AgentList.tsx\n- 表单中工具选择区域：每个已选工具显示 sessionAuth 下拉选择（默认 ALL）\n- 表单中技能选择区域：每个已选技能显示 sessionAuth 下拉选择（默认 ALL）\n- 编辑回填：setFieldsValue 时写入新的 tools/skills 结构\n- 表格：toolIds/skillIds 列改为显示 tools/skills（含 sessionAuth 标记）\n- 表格列中显示 sessionAuth 信息（可用 Tag 颜色区分）\n",
+  "session_id": "ses_09c18a579ffeZ5US39R1Dxj3Hk",
+  "modified_files": [
+    "src/types/agent.ts",
+    "src/pages/agents/AgentList.tsx"
+  ]
+}

@@ -31,7 +31,7 @@
     },
     {
       "path": "agent-integration/src/main/java/com/ghost616/agentinteg/AgentAssembler.java",
-      "description": "AgentAssembler 组件组装工厂类，接收 DataProvider/ModelInvokerFactory 等依赖，build() 方法组装完整的 ChatService/ToolExecutionService/AgentMessageProxy 实例"
+      "description": "AgentAssembler 组件组装工厂类，接收 DataProvider/ModelInvokerFactory 等依赖，build() 方法通过 AgentComponentRegistry 统一装配 ChatService/ToolExecutionService/AgentMessageProxy 实例；registry 不对外暴露"
     },
     {
       "path": "src/main/java/com/ghost616/agentinteg/tool/SubSessionCallbackSystemTool.java",

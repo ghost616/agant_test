@@ -1,0 +1,9 @@
+[
+  {
+    "plan_id": "plan_37c6050c-c1fb-4290-b175-b96399f09d2a",
+    "plan": "\n## 任务：SessionServiceImpl.createSession 复制 sessionAuth\n\nBug：创建会话时，SessionServiceImpl.createSession() 中从 AgentTool 创建 SessionTool 记录时，只设置了 sessionId 和 toolId，未复制 sessionAuth 字段。导致会话工具的授权类型丢失为数据库默认值。\n\n### 修改文件\nplatform-app/src/main/java/com/ghost616/platform/service/session/SessionServiceImpl.java\n\n### 修改内容\n在 createSession 方法的第 66-67 行之间，添加一行：\nsessionTool.setSessionAuth(agentTool.getSessionAuth());\n",
+    "modified_files": [],
+    "summary": "力牧已启动",
+    "errors": []
+  }
+]

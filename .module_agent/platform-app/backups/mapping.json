@@ -23,5 +23,14 @@
   "platform-app/src/test/java/com/ghost616/platform/config/AgentContextConfigurationTest.java": "f5c1f7d685e9dc9b0260dd87c8c8e808",
   "platform-app/src/main/java/com/ghost616/platform/dto/session/SessionDTO.java": "df3a1f71a5ab86b701d1c2cb1b678db0",
   "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultSubSessionCallback.java": "5a3aae8da8aac003295e1e08550040b0",
-  "platform-app/src/test/java/com/ghost616/platform/service/agent/DefaultSubSessionCallbackTest.java": "741092aa9dc17775cd7151ae720878ce"
+  "platform-app/src/test/java/com/ghost616/platform/service/agent/DefaultSubSessionCallbackTest.java": "741092aa9dc17775cd7151ae720878ce",
+  "platform-app/src/main/java/com/ghost616/platform/entity/SessionSkill.java": "769b2ee5cd4ebb9a6cb9b62ef8ad1b0d",
+  "platform-app/src/main/java/com/ghost616/platform/entity/AgentSkill.java": "39a976ad734548d2fbaccd604400571d",
+  "platform-app/src/main/java/com/ghost616/platform/entity/SessionTool.java": "531564a64d495a6632e225147de2eaeb",
+  "platform-app/src/main/java/com/ghost616/platform/entity/AgentTool.java": "3d98a80b30a0637d27526004e5d19f8f",
+  "platform-app/src/main/java/com/ghost616/platform/entity/SkillConfig.java": "717e0464e71575f7ee737ed4f321b919",
+  "platform-app/src/main/resources/schema.sql": "df1b3748452b006a442caa1fe7ff282c",
+  "platform-app/src/main/java/com/ghost616/platform/service/skill/SkillConfigServiceImpl.java": "24e0131720ab468c8a2e0ab7859c1807",
+  "platform-app/src/test/java/com/ghost616/platform/service/agent/DefaultContextDataProviderTest.java": "78b088cf078c1024c1a28a321930038a",
+  "platform-app/src/main/java/com/ghost616/platform/config/SchemaMigration.java": "0bd39f7d32b67543dcb2abc0b99161e9"
 }

@@ -29,3 +29,6 @@
 - **DTO**: AgentConfigDTO、AgentCreateRequest、AgentUpdateRequest 均新增 skillIds 字段
 - **Service**: create() 新增 skillIds 批量插入 + 校验；update() 新增 skillIds 先删后插 + 校验；delete() 新增 agent_skill 清理；toDTO() 新增 skillIds 填充；新增 validateSkillIds() 校验方法
 - **事务与校验**: create/update/delete 均添加 @Transactional 注解；create 中 validateSkillIds 在数据库写入之前调用
+- **DTO**: AgentConfigDTO、AgentCreateRequest、AgentUpdateRequest 均将原 toolIds/skillIds（Long 列表）改为 tools（List<AgentToolItem>）/ skills（List<AgentSkillItem>），支持携带 sessionAuth 配置
+- **DTO**: 新增 AgentToolItem（toolId + sessionAuth）和 AgentSkillItem（skillId + sessionAuth）record
+- **Service**: create() 和 update() 写入 AgentTool/AgentSkill 时设置 sessionAuth（默认 ALL）；toDTO() 查询关联表时读取 sessionAuth 并映射到 AgentToolItem/AgentSkillItem；validateSkillIds() 适配新的 skills 字段

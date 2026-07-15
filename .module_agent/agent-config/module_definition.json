@@ -27,15 +27,15 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/dto/agent/AgentConfigDTO.java",
-      "description": "智能体配置数据传输对象，含 toolIds 和 skillIds 列表"
+      "description": "智能体配置数据传输对象，含 tools（List<AgentToolItem>）和 skills（List<AgentSkillItem>）列表"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/dto/agent/AgentCreateRequest.java",
-      "description": "创建智能体请求 DTO，name 必填"
+      "description": "创建智能体请求 DTO，name 必填，含 tools（List<AgentToolItem>）和 skills（List<AgentSkillItem>）列表"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/dto/agent/AgentUpdateRequest.java",
-      "description": "更新智能体请求 DTO"
+      "description": "更新智能体请求 DTO，含 tools（List<AgentToolItem>）和 skills（List<AgentSkillItem>）列表"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/AgentConfigService.java",
@@ -48,6 +48,14 @@
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/controller/AgentConfigController.java",
       "description": "智能体配置 REST 控制器，路径 /api/agents"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/dto/agent/AgentToolItem.java",
+      "description": "智能体-工具关联数据传输 record，含 toolId 和 sessionAuth 字段"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/dto/agent/AgentSkillItem.java",
+      "description": "智能体-技能关联数据传输 record，含 skillId 和 sessionAuth 字段"
     }
   ]
 }

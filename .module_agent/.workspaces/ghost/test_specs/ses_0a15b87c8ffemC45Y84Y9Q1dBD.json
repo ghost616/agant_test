@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_0a15b87c8ffemC45Y84Y9Q1dBD",
+  "content": "## 待测试功能\n\n### 1. 可用技能列表过滤（约第160-179行）\n- 主会话时，skills 中 sessionAuth == CHILD 的技能不应出现在系统消息中\n- 主会话时，skills 中 sessionAuth 为 null/ALL/PARENT 的技能应正常显示\n- 非主会话时，不过滤任何技能\n\n### 2. 已加载技能提示词过滤（约第181-198行）\n- 主会话时，loadedSkills 中 sessionAuth == CHILD 的技能应被跳过\n- 主会话时，loadedSkills 中其他技能应正常显示提示词\n- 非主会话时，不过滤\n\n### 3. 子会话能力提示合并（约第200-247行）\n- 仅有子会话工具时：只生成\"子会话可使用以下工具：\\n...\"消息\n- 仅有子会话技能时：只生成\"子会话可使用以下技能：\\n...\"消息\n- 同时存在工具和技能时：合并为单一消息，先工具后技能，中间有空行分隔\n- 工具和技能均为空时：不生成任何系统消息\n- 子会话技能取 skills 中 sessionAuth 为 null/ALL/CHILD 的\n\n### 涉及的代码文件\n- agent-base/src/main/java/com/ghost616/agentbase/service/agent/ChatService.java",
+  "timestamp": "2026-07-14T03:21:56.701Z"
+}

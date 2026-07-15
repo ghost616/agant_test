@@ -1,0 +1,9 @@
+[
+  {
+    "plan_id": "plan_33a76333-ad50-479e-9bed-70da555738b1",
+    "plan": "\n## 任务：Agent CRUD 接口支持工具和技能的 sessionAuth 配置\n\n当前 agent_tool 和 agent_skill 表已有 session_auth 字段，AgentTool/AgentSkill 实体也已有 sessionAuth 字段，但 API 的 DTO 和 Service 层未处理该字段。需要修改 API 使其支持。\n\n### 1. 新增请求/响应 DTO（内嵌类或独立文件）\n在 dto/agent 目录下新增两个内嵌 record/class：\n- AgentToolItem { Long toolId; SessionAuthType sessionAuth; }\n- AgentSkillItem { Long skillId; SessionAuthType sessionAuth; }\n\n### 2. 修改 AgentCreateRequest.java\n- 将 `List<Long> toolIds` 改为 `List<AgentToolItem> tools`\n- 将 `List<Long> skillIds` 改为 `List<AgentSkillItem> skills`\n\n### 3. 修改 AgentUpdateRequest.java\n- 同上\n\n### 4. 修改 AgentConfigDTO.java\n- 将 `List<Long> toolIds` 改为 `List<AgentToolItem> tools`\n- 将 `List<Long> skillIds` 改为 `List<AgentSkillItem> skills`\n\n### 5. 修改 AgentConfigServiceImpl.java\n- create 方法：创建 AgentTool 时写入 sessionAuth（默认 ALL 若未传）\n- create 方法：创建 AgentSkill 时写入 sessionAuth（默认 ALL 若未传）\n- update 方法：同上\n- toDTO 方法：查询 agent_tool 和 agent_skill 时同时读取 sessionAuth\n- validateSkillIds 方法：适配新的 skills 字段\n",
+    "modified_files": [],
+    "summary": "力牧已启动",
+    "errors": []
+  }
+]

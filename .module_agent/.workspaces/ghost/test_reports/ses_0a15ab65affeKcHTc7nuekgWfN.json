@@ -1,0 +1,5 @@
+{
+  "lizhu_session_id": "ses_0a15ab65affeKcHTc7nuekgWfN",
+  "content": "# 离朱测试报告\n\n## 测试结果\n\n| 模块 | 用例数 | 结果 |\n|------|--------|------|\n| agent-base | 84 | ✅ |\n| agent-integration | 22 | ✅ |\n| platform-app | 29 | ✅ |\n| **总计** | **135** | **✅ BUILD SUCCESS** |\n\n## 功能验证\n\n### DefaultToolDataProvider.getSessionToolIds\n\n**代码状态**: `DefaultToolDataProvider.java:39-49`\n- 返回类型改为 `List<SessionToolInfo>` ✅\n- 读取 `SessionTool.toolId` 和 `SessionTool.sessionAuth` ✅\n- sessionAuth 为 null 时默认 `SessionAuthType.ALL` ✅\n- 构建 `ToolDataProvider.SessionToolInfo` record 返回 ✅\n\n**测试文件**: `platform-app/src/test/java/.../service/agent/DefaultToolDataProviderTest.java`\n- 3 个测试用例覆盖：\n  - `shouldReturnSessionToolInfoList`: 正常返回含 toolId 和 sessionAuth 的列表\n  - `nullAuth_shouldDefaultToAll`: sessionAuth 为 null 时默认 ALL\n  - `emptyTools_shouldReturnEmptyList`: 无关联工具时返回空列表\n\n**注意**: `platform-app/pom.xml` 第53行配置了 `<testExclude>**/service/agent/**</testExclude>`，该目录下所有测试（含本文件及 `DefaultContextDataProviderTest`、`ChatServiceTest` 等）被排除编译。测试代码已就位，需调整 pom.xml 后方可纳入自动化运行。\n",
+  "timestamp": "2026-07-14T05:57:09.978Z"
+}

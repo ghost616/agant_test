@@ -86,6 +86,10 @@
 - 编辑回填时同步设置 recentMessageCount 字段
 - Table columns 新增"最近消息"列（dataIndex=recentMessageCount，width 100），值为空时显示 '-'
 - 新增/编辑 Modal 新增 skills 多选：通过 Promise.all 并行加载模型/工具/技能列表，新增 skillList state 存储技能数据，fetchModelsAndTools 改名为 fetchRefData 同步加载三种引用数据，表单中添加 skillIds (Select multiple) 字段实现技能多选，编辑回填时同步设置 skillIds
+- AgentConfig/AgentFormData 中 toolIds/skillIds 改为 tools/skills（数组，每项含 id + sessionAuth 字段）
+- SessionAuthType：ALL（所有会话）/ PARENT（父会话）/ CHILD（子会话）
+- 表单工具/技能选择使用 SessionAuthSelect 组件：多选 + 每项可配置 sessionAuth 下拉（默认 ALL）
+- 表格列中 tools/skills 显示为 Tag 标签，颜色区分 sessionAuth 类型（blue/green/orange）
 ## 会话管理界面
 
 - 会话列表页面 `/sessions`，支持会话列表展示、新建会话、删除会话、继续会话

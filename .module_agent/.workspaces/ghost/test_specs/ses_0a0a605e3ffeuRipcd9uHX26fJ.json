@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_0a0a605e3ffeuRipcd9uHX26fJ",
+  "content": "## 待测试功能\n\n### ToolManager.getSessionTools — sessionAuth 设置规则\n\n**涉及文件：**\n- `agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/ToolManager.java`\n\n**测试场景：**\n\n1. **父会话，非 MCP 工具**：sessionAuth 使用 SessionToolInfo.sessionAuth 的值（ALL/PARENT/CHILD）\n2. **父会话，MCP 工具**：sessionAuth 设为 PARENT\n3. **父会话，MCP 工具 + SessionToolInfo.sessionAuth == ALL**：产生两份副本，PARENT + CHILD\n4. **子会话**：所有工具（MCP/非MCP）sessionAuth 均为 PARENT\n5. **copyToolConfig 不修改原对象**：验证 toolCache 中共享的 ToolConfigDTO sessionAuth 未被修改\n6. **expandChildMcpTools 展开后设置 PARENT**：子会话中 CHILD 类型 MCP 工具被展开后，展开结果工具 sessionAuth 为 PARENT",
+  "timestamp": "2026-07-14T07:00:26.212Z"
+}

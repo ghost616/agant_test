@@ -6,6 +6,7 @@
 - **AgentAssembler**：Agent 组件组装类，build() 方法不再调用 chatService.initHooks()，hooks 初始化移至 AgentContextConfiguration 的 chatService Bean 中显式执行，以解决 MessageSavePostHook 创建时的 Bean 时序依赖问题
 - **AgentAssembler**：build() 方法构造 ChatDataProviderProxy 代理，将 MessageSavePostHook 通过代理注入到 ChatService；暴露 messageSavePostHook() getter 并在 Result record 中包含该实例
 - **AgentAssembler**：build() 方法构造 SystemToolProviderProxy 代理，确保 history_query/load_skills/unload_skills 三个系统工具始终可用；SystemToolManager 使用代理而非原始 SystemToolProvider
+- **AgentAssembler**：build() 方法内部使用 AgentComponentRegistry 统一装配所有 Provider/Manager/Tracker，registry 不对外暴露；对外 getter 方法签名不变
 ## 模块职责
 提供多平台模型调用器的实现（ModelInvoker）和 Agent 组件的组装能力。
 

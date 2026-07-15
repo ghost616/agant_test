@@ -57,3 +57,9 @@ platform-app 模块包含以下功能：
 - 已删除 SpawnSubAgentSystemTool（子智能体生成系统工具），因其功能由 agent-engine 模块的智能体编排能力替代
 6. 新增 ToolStatusResultDTO 数据传输对象，封装工具执行结果的全部字段（status/toolId/toolName/arguments/hasMore/result/message）+ needsSubSessionFlow 布尔字段
 7. ToolExecutionController 中 executeTools 和 toolStatus 两个接口的返回类型统一改为 ApiResponse<ToolStatusResultDTO>，并在检测到工具名为 _sys_callback_sub_session 时通过 DefaultSubSessionCallback.getSubSessionData 判断是否有待处理的子会话数据，设置 needsSubSessionFlow=true
+- 实体 SessionSkill/AgentSkill/SessionTool/AgentTool 新增 sessionAuth(SessionAuthType) 字段，记录授权范围
+- schema.sql 中 session_tool/agent_tool/session_skill/agent_skill/skill_config 表新增 session_auth VARCHAR(32) 列
+- SkillConfig 实体新增 sessionAuth 字段
+- SkillConfigServiceImpl.toDTO 映射 sessionAuth 字段
+- DefaultContextDataProvider.createChildSession 创建 SessionTool 和 SessionSkill 时设置 sessionAuth 值（SessionTool 从 ToolConfigDTO.sessionAuth 获取，SessionSkill 从 SkillConfig.sessionAuth 获取）
+- 数据库 Schema 修复：session_tool/agent_tool/agent_skill/session_skill 四张表的 session_auth 列默认值设为 0，SchemaMigration 迁移默认值改为 "0" 并追加幂等 NULL 回填逻辑，解决 SQLite getObject(Integer.class) 遇 NULL 抛 Bad value 异常问题

@@ -7,7 +7,7 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultContextDataProvider.java",
-      "description": "ContextDataProvider 接口的默认实现。使用 MyBatis-Plus Mapper 从数据库查询会话、智能体配置、变量、技能、工具等数据组装 AgentContextData。提供会话变量增删、子会话创建功能。loadAgentContext 根据 isChild 分支处理：子会话从父会话继承 recentMessageCount 并填充 parentSessionId；普通会话查询子会话列表填充 childSessions。"
+      "description": "ContextDataProvider 接口的默认实现。使用 MyBatis-Plus Mapper 从数据库查询会话、智能体配置、变量、技能、工具等数据组装 AgentContextData。提供会话变量增删、子会话创建功能。loadAgentContext 根据 isChild 分支处理：子会话从父会话继承 recentMessageCount 并填充 parentSessionId；普通会话查询子会话列表填充 childSessions。createChildSession 创建子会话时校验父会话/模型/工具/技能存在性，创建子会话并写入 SessionTool/SessionSkill 关联记录（含 sessionAuth 授权类型）。"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/controller/SessionController.java",
@@ -83,11 +83,11 @@
     },
     {
       "path": "platform-app/src/main/resources/schema.sql",
-      "description": "数据库初始化脚本，包含所有建表语句和迁移语句"
+      "description": "数据库初始化脚本，包含所有建表语句（model_config/tool_config/session/message/message_tool_call/session_tool/agent_config/agent_tool/agent_skill/skill_config/skill_tool/session_variable/session_skill），关联表含 session_auth 列（默认值 0）。"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/config/SchemaMigration.java",
-      "description": "数据库 Schema 迁移组件，ApplicationRunner 启动时执行 PRAGMA 检测+ALTER TABLE"
+      "description": "数据库 Schema 迁移组件，ApplicationRunner 启动时执行 PRAGMA 检测+ALTER TABLE ADD COLUMN；session_auth 迁移默认值设为 0；迁移循环后对 session_tool/agent_tool/agent_skill/session_skill 四张表执行幂等 NULL 回填（UPDATE ... SET session_auth=0 WHERE IS NULL），回填失败不中断启动。"
     },
     {
       "path": "platform-app/pom.xml",
