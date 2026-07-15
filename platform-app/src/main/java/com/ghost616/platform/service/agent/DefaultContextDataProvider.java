@@ -15,6 +15,7 @@ import com.ghost616.platform.entity.SkillTool;
 import com.ghost616.platform.entity.ToolConfig;
 import com.ghost616.agentbase.enums.CommonStatus;
 import com.ghost616.agentbase.enums.ErrorCode;
+import com.ghost616.agentbase.enums.SessionAuthType;
 import com.ghost616.agentbase.exception.BusinessException;
 import com.ghost616.platform.repository.AgentConfigMapper;
 import com.ghost616.platform.repository.AgentSkillMapper;
@@ -72,15 +73,18 @@ public class DefaultContextDataProvider implements ContextDataProvider {
                 }
             }
 
-            List<Long> skillIds = sessionSkillMapper.selectList(
-                            new LambdaQueryWrapper<SessionSkill>()
-                                    .eq(SessionSkill::getSessionId, sessionId))
-                    .stream()
+            List<SessionSkill> sessionSkills = sessionSkillMapper.selectList(
+                    new LambdaQueryWrapper<SessionSkill>()
+                            .eq(SessionSkill::getSessionId, sessionId));
+            Map<Long, SessionAuthType> skillAuthMap = new HashMap<>();
+            List<Long> skillIds = sessionSkills.stream()
+                    .peek(ss -> skillAuthMap.put(ss.getSkillId(),
+                            ss.getSessionAuth() != null ? ss.getSessionAuth() : SessionAuthType.ALL))
                     .map(SessionSkill::getSkillId)
                     .distinct()
                     .toList();
 
-            List<SkillConfigDTO> skills = skillIds.isEmpty() ? List.of() : loadSkillConfigDTOs(skillIds);
+            List<SkillConfigDTO> skills = skillIds.isEmpty() ? List.of() : loadSkillConfigDTOs(skillIds, skillAuthMap);
             Map<String, String> sessionVariables = loadSessionVariablesInternal(sessionId);
 
             return new AgentContextData(null, session.getSystemPrompt(), session.getModelId(),
@@ -113,10 +117,13 @@ public class DefaultContextDataProvider implements ContextDataProvider {
             return List.of();
         }
 
-        List<Long> skillIds = agentSkillMapper.selectList(
-                        new LambdaQueryWrapper<AgentSkill>()
-                                .eq(AgentSkill::getAgentId, agentId))
-                .stream()
+        List<AgentSkill> agentSkills = agentSkillMapper.selectList(
+                new LambdaQueryWrapper<AgentSkill>()
+                        .eq(AgentSkill::getAgentId, agentId));
+        Map<Long, SessionAuthType> skillAuthMap = new HashMap<>();
+        List<Long> skillIds = agentSkills.stream()
+                .peek(as -> skillAuthMap.put(as.getSkillId(),
+                        as.getSessionAuth() != null ? as.getSessionAuth() : SessionAuthType.ALL))
                 .map(AgentSkill::getSkillId)
                 .distinct()
                 .toList();
@@ -125,10 +132,10 @@ public class DefaultContextDataProvider implements ContextDataProvider {
             return List.of();
         }
 
-        return loadSkillConfigDTOs(skillIds);
+        return loadSkillConfigDTOs(skillIds, skillAuthMap);
     }
 
-    private List<SkillConfigDTO> loadSkillConfigDTOs(List<Long> skillIds) {
+    private List<SkillConfigDTO> loadSkillConfigDTOs(List<Long> skillIds, Map<Long, SessionAuthType> skillAuthMap) {
         List<SkillConfig> skillConfigs = skillConfigMapper.selectBatchIds(skillIds);
         if (skillConfigs == null || skillConfigs.isEmpty()) {
             return List.of();
@@ -158,6 +165,7 @@ public class DefaultContextDataProvider implements ContextDataProvider {
                     .name(sc.getName())
                     .description(sc.getDescription())
                     .prompt(sc.getPrompt())
+                    .sessionAuth(skillAuthMap.getOrDefault(sc.getId(), SessionAuthType.ALL))
                     .skillTools(toolDTOs)
                     .build());
         }
@@ -250,6 +258,7 @@ public class DefaultContextDataProvider implements ContextDataProvider {
                 SessionTool st = new SessionTool();
                 st.setSessionId(session.getId());
                 st.setToolId(toolId);
+                st.setSessionAuth(SessionAuthType.ALL);
                 sessionToolMapper.insert(st);
             }
         }
@@ -259,6 +268,7 @@ public class DefaultContextDataProvider implements ContextDataProvider {
                 SessionSkill ss = new SessionSkill();
                 ss.setSessionId(session.getId());
                 ss.setSkillId(skillId);
+                ss.setSessionAuth(SessionAuthType.ALL);
                 sessionSkillMapper.insert(ss);
             }
         }

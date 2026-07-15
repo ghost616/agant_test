@@ -1,5 +1,6 @@
 package com.ghost616.agentbase.service.agent;
 
+import com.ghost616.agentbase.core.AgentComponentRegistry;
 import com.ghost616.agentbase.dto.chat.ChatRequest;
 import com.ghost616.agentbase.dto.model.ChatChunk;
 import com.ghost616.agentbase.service.agent.invoker.SystemTool;
@@ -42,16 +43,21 @@ class ToolExecutionServiceTest {
     @Mock
     private ToolExecutionTracker toolExecutionTracker;
 
+    private AgentComponentRegistry registry;
     private ToolExecutionService toolExecutionService;
 
     private final Long sessionId = 1L;
 
     @BeforeEach
     void setUp() {
-        toolExecutionService = new ToolExecutionService(
-                toolCallQueueManager, toolManager, systemToolManager,
-                sessionManager, chatService, agentContextManager,
-                toolExecutionTracker);
+        registry = new AgentComponentRegistry();
+        registry.setToolCallQueueManager(toolCallQueueManager);
+        registry.setToolManager(toolManager);
+        registry.setSystemToolManager(systemToolManager);
+        registry.setSessionManager(sessionManager);
+        registry.setAgentContextManager(agentContextManager);
+        registry.setToolExecutionTracker(toolExecutionTracker);
+        toolExecutionService = new ToolExecutionService(registry, chatService);
     }
 
     // ========== executeTool ==========

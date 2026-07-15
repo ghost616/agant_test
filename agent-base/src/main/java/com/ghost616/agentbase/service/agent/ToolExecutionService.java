@@ -1,5 +1,6 @@
 package com.ghost616.agentbase.service.agent;
 
+import com.ghost616.agentbase.core.AgentComponentRegistry;
 import com.ghost616.agentbase.dto.chat.ChatRequest;
 import com.ghost616.agentbase.util.JsonMapper;
 import com.ghost616.agentbase.dto.model.ChatChunk;
@@ -21,28 +22,35 @@ import java.util.concurrent.CompletableFuture;
 @Slf4j
 public class ToolExecutionService {
 
-    private final ToolCallQueueManager toolCallQueueManager;
-    private final ToolManager toolManager;
-    private final SystemToolManager systemToolManager;
-    private final SessionManager sessionManager;
+    private final AgentComponentRegistry registry;
     private final ChatService chatService;
-    private final AgentContextManager agentContextManager;
-    private final ToolExecutionTracker toolExecutionTracker;
+    private ToolCallQueueManager toolCallQueueManager;
+    private ToolManager toolManager;
+    private SystemToolManager systemToolManager;
+    private SessionManager sessionManager;
+    private AgentContextManager agentContextManager;
+    private ToolExecutionTracker toolExecutionTracker;
+    private volatile boolean initialized;
 
-    public ToolExecutionService(ToolCallQueueManager toolCallQueueManager,
-                                ToolManager toolManager,
-                                SystemToolManager systemToolManager,
-                                SessionManager sessionManager,
-                                ChatService chatService,
-                                AgentContextManager agentContextManager,
-                                ToolExecutionTracker toolExecutionTracker) {
-        this.toolCallQueueManager = toolCallQueueManager;
-        this.toolManager = toolManager;
-        this.systemToolManager = systemToolManager;
-        this.sessionManager = sessionManager;
+    public ToolExecutionService(AgentComponentRegistry registry, ChatService chatService) {
+        this.registry = registry;
         this.chatService = chatService;
-        this.agentContextManager = agentContextManager;
-        this.toolExecutionTracker = toolExecutionTracker;
+    }
+
+    private void ensureInitialized() {
+        if (!initialized) {
+            synchronized (this) {
+                if (!initialized) {
+                    toolCallQueueManager = registry.getToolCallQueueManager();
+                    toolManager = registry.getToolManager();
+                    systemToolManager = registry.getSystemToolManager();
+                    sessionManager = registry.getSessionManager();
+                    agentContextManager = registry.getAgentContextManager();
+                    toolExecutionTracker = registry.getToolExecutionTracker();
+                    initialized = true;
+                }
+            }
+        }
     }
 
     public record ToolExecutionResult(String status, String toolId, String toolName,
@@ -54,6 +62,7 @@ public class ToolExecutionService {
     }
 
     public ToolExecutionResult executeTool(Long sessionId) {
+        ensureInitialized();
         MessageDataProvider.ToolCallData peekData = toolCallQueueManager.peek(sessionId);
         if (peekData == null) {
             return new ToolExecutionResult("empty", null, null, null, false, null);
@@ -123,6 +132,7 @@ public class ToolExecutionService {
     }
 
     public ToolStatusResult getToolStatus(Long sessionId, String toolId) {
+        ensureInitialized();
         ToolExecutionTracker.ToolExecutionStatus status = toolExecutionTracker.getCurrentExecution(sessionId, toolId);
         if (status == null) {
             return new ToolStatusResult("idle", null, null, null, false, null);
@@ -132,6 +142,7 @@ public class ToolExecutionService {
     }
 
     public Flux<ServerSentEvent<ChatChunk>> continueAfterTools(Long sessionId) {
+        ensureInitialized();
 
         AgentContextManager.AgentSessionContext sessionCtx = agentContextManager.get(sessionId);
         if (sessionCtx != null && sessionCtx.context().isStopped()) {

@@ -157,6 +157,15 @@ public class AgentExecutionContext {
         return conversationVariables.keySet();
     }
 
+    /**
+     * 判断当前会话是否为主会话。
+     *
+     * @return 若 parentSessionId 为 null 则返回 true（主会话），否则返回 false（子会话）
+     */
+    public boolean isMainSession() {
+        return parentSessionId == null;
+    }
+
     public boolean isStopped() {
         return stopped.get();
     }

@@ -1,12 +1,16 @@
 package com.ghost616.agentbase.service.agent.invoker;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghost616.agentbase.core.AgentComponentRegistry;
 import com.ghost616.agentbase.dto.tool.McpExpandedToolDTO;
 import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
+import com.ghost616.agentbase.enums.SessionAuthType;
 import com.ghost616.agentbase.enums.ToolType;
 import com.ghost616.agentbase.event.ToolChangedEvent;
+import com.ghost616.agentbase.service.agent.AgentContextManager;
 import com.ghost616.agentbase.service.agent.AgentExecutionContext;
 import com.ghost616.agentbase.service.agent.ToolDataProvider;
+import com.ghost616.agentbase.service.agent.ToolDataProvider.SessionToolInfo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
 
@@ -18,18 +22,39 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 public class ToolManager {
 
-    private final ToolDataProvider dataProvider;
+    private final AgentComponentRegistry registry;
+    private ToolDataProvider dataProvider;
+    private AgentContextManager agentContextManager;
 
     private final ConcurrentHashMap<Long, List<ToolSessionObject>> sessionToolCache = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<Long, ToolSessionObject> toolCache = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<Long, List<Long>> sessionSkillToolIdsCache = new ConcurrentHashMap<>();
+    private volatile boolean initialized;
 
-    public ToolManager(ToolDataProvider dataProvider) {
-        this.dataProvider = dataProvider;
+    public ToolManager(AgentComponentRegistry registry) {
+        this.registry = registry;
+    }
+
+    private void ensureInitialized() {
+        if (!initialized) {
+            synchronized (this) {
+                if (!initialized) {
+                    dataProvider = registry.getToolDataProvider();
+                    agentContextManager = registry.getAgentContextManager();
+                    initialized = true;
+                }
+            }
+        }
+    }
+
+    private boolean isSubSession(Long sessionId) {
+        AgentContextManager.AgentSessionContext ctx = agentContextManager.get(sessionId);
+        return ctx != null && !ctx.context().isMainSession();
     }
 
     public ToolInvoker getInvoker(Long sessionId, String toolName) {
-        List<ToolSessionObject> sessionTools = getSessionTools(sessionId);
+        ensureInitialized();
+        List<ToolSessionObject> sessionTools = getSessionTools(sessionId, isSubSession(sessionId));
         ToolInvoker invoker = sessionTools.stream()
                 .filter(tso -> tso.toolConfig().getName().equals(toolName))
                 .map(ToolSessionObject::invoker)
@@ -42,20 +67,61 @@ public class ToolManager {
     }
 
     public List<ToolSessionObject> getSessionTools(Long sessionId) {
+        return getSessionTools(sessionId, false);
+    }
+
+    public List<ToolSessionObject> getSessionTools(Long sessionId, boolean expandChildMcp) {
+        ensureInitialized();
         return sessionToolCache.computeIfAbsent(sessionId, id -> {
-            List<Long> toolIds = dataProvider.getSessionToolIds(id);
+            List<SessionToolInfo> sessionToolInfos = dataProvider.getSessionToolIds(id);
 
             List<ToolSessionObject> result = new ArrayList<>();
-            for (Long toolId : toolIds) {
+            for (SessionToolInfo info : sessionToolInfos) {
+                Long toolId = info.toolId();
                 ToolSessionObject tso = toolCache.computeIfAbsent(toolId,
                         tid -> buildToolSessionObject(dataProvider.getToolById(tid)));
-                result.addAll(expandToolSession(tso));
+                boolean isOriginalMcp = tso.toolConfig().getToolType() == ToolType.MCP_HTTP;
+                List<ToolSessionObject> expanded = expandToolSession(tso);
+                for (ToolSessionObject etso : expanded) {
+                    if (!expandChildMcp) {
+                        if (isOriginalMcp) {
+                            ToolConfigDTO parentCopy = copyToolConfig(etso.toolConfig());
+                            parentCopy.setSessionAuth(SessionAuthType.PARENT);
+                            result.add(new ToolSessionObject(parentCopy, etso.invoker(),
+                                    etso.mcpOriginalConfig(), List.of(), List.of()));
+                        } else {
+                            ToolConfigDTO copy = copyToolConfig(etso.toolConfig());
+                            copy.setSessionAuth(info.sessionAuth());
+                            result.add(new ToolSessionObject(copy, etso.invoker(),
+                                    etso.mcpOriginalConfig(), List.of(), List.of()));
+                        }
+                    } else {
+                        result.add(etso);
+                    }
+                }
+                if (!expandChildMcp && isOriginalMcp && info.sessionAuth() == SessionAuthType.ALL) {
+                    ToolConfigDTO childCopy = copyToolConfig(tso.toolConfig());
+                    childCopy.setSessionAuth(SessionAuthType.CHILD);
+                    result.add(new ToolSessionObject(childCopy, null, childCopy, List.of(), List.of()));
+                }
+            }
+            if (expandChildMcp) {
+                result = expandChildMcpTools(result);
+                List<ToolSessionObject> processed = new ArrayList<>();
+                for (ToolSessionObject tso : result) {
+                    ToolConfigDTO copy = copyToolConfig(tso.toolConfig());
+                    copy.setSessionAuth(SessionAuthType.PARENT);
+                    processed.add(new ToolSessionObject(copy, tso.invoker(),
+                            tso.mcpOriginalConfig(), List.of(), List.of()));
+                }
+                result = processed;
             }
             return result;
         });
     }
 
     private ToolInvoker resolveSkillToolByName(Long sessionId, String toolName) {
+        ensureInitialized();
         List<Long> toolIds = sessionSkillToolIdsCache.computeIfAbsent(sessionId,
                 dataProvider::getSkillToolIds);
 
@@ -83,6 +149,9 @@ public class ToolManager {
 
     private ToolSessionObject buildToolSessionObject(ToolConfigDTO dto) {
         if (dto.getToolType() == ToolType.MCP_HTTP) {
+            if (dto.getSessionAuth() == SessionAuthType.CHILD) {
+                return new ToolSessionObject(dto, null, dto, List.of(), List.of());
+            }
             List<McpExpandedToolDTO> expandedTools = expandMcpTools(dto);
             List<ToolInvoker> expandedInvokers = expandedTools.stream()
                     .map(this::createInvoker)
@@ -105,6 +174,25 @@ public class ToolManager {
                     List.of(), List.of()));
         }
         return flattened;
+    }
+
+    private List<ToolSessionObject> expandChildMcpTools(List<ToolSessionObject> tools) {
+        List<ToolSessionObject> expanded = new ArrayList<>();
+        for (ToolSessionObject tso : tools) {
+            if (tso.mcpExpandedTools().isEmpty()
+                    && tso.toolConfig().getToolType() == ToolType.MCP_HTTP
+                    && tso.toolConfig().getSessionAuth() == SessionAuthType.CHILD) {
+                ToolConfigDTO originalConfig = tso.mcpOriginalConfig();
+                List<McpExpandedToolDTO> expandedMcps = expandMcpTools(originalConfig);
+                for (McpExpandedToolDTO et : expandedMcps) {
+                    ToolInvoker invoker = createInvoker(et);
+                    expanded.add(new ToolSessionObject(et, invoker, originalConfig, List.of(), List.of()));
+                }
+            } else {
+                expanded.add(tso);
+            }
+        }
+        return expanded;
     }
 
     private ToolInvoker createInvoker(ToolConfigDTO toolConfig) {
@@ -156,6 +244,7 @@ public class ToolManager {
                             .parameterSchema(mapper.writeValueAsString(tool.get("inputSchema")))
                             .implPath(mcpConfig.getImplPath())
                             .authConfig(mcpConfig.getAuthConfig())
+                            .sessionAuth(mcpConfig.getSessionAuth())
                             .remoteToolName(remoteName)
                             .build());
                 } catch (Exception e) {
@@ -186,6 +275,40 @@ public class ToolManager {
     @EventListener
     public void onToolChanged(ToolChangedEvent event) {
         clearToolCache(event.getToolId());
+    }
+
+    private ToolConfigDTO copyToolConfig(ToolConfigDTO original) {
+        if (original instanceof McpExpandedToolDTO mcp) {
+            return McpExpandedToolDTO.builder()
+                    .id(mcp.getId())
+                    .name(mcp.getName())
+                    .toolType(mcp.getToolType())
+                    .description(mcp.getDescription())
+                    .parameterSchema(mcp.getParameterSchema())
+                    .returnSchema(mcp.getReturnSchema())
+                    .implPath(mcp.getImplPath())
+                    .authConfig(mcp.getAuthConfig())
+                    .status(mcp.getStatus())
+                    .sessionAuth(mcp.getSessionAuth())
+                    .createTime(mcp.getCreateTime())
+                    .updateTime(mcp.getUpdateTime())
+                    .remoteToolName(mcp.getRemoteToolName())
+                    .build();
+        }
+        return ToolConfigDTO.builder()
+                .id(original.getId())
+                .name(original.getName())
+                .toolType(original.getToolType())
+                .description(original.getDescription())
+                .parameterSchema(original.getParameterSchema())
+                .returnSchema(original.getReturnSchema())
+                .implPath(original.getImplPath())
+                .authConfig(original.getAuthConfig())
+                .status(original.getStatus())
+                .sessionAuth(original.getSessionAuth())
+                .createTime(original.getCreateTime())
+                .updateTime(original.getUpdateTime())
+                .build();
     }
 
     public record ToolSessionObject(ToolConfigDTO toolConfig, ToolInvoker invoker,

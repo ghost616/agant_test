@@ -1,19 +1,34 @@
 package com.ghost616.agentbase.service.model.invoker;
 
+import com.ghost616.agentbase.core.AgentComponentRegistry;
 import com.ghost616.agentbase.dto.model.ModelConfigData;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ModelInvokerManager {
 
-    private final ModelInvokerFactory invokerFactory;
+    private final AgentComponentRegistry registry;
+    private ModelInvokerFactory invokerFactory;
     private final Map<Long, ModelInvoker> cache = new ConcurrentHashMap<>();
+    private volatile boolean initialized;
 
-    public ModelInvokerManager(ModelInvokerFactory invokerFactory) {
-        this.invokerFactory = invokerFactory;
+    public ModelInvokerManager(AgentComponentRegistry registry) {
+        this.registry = registry;
+    }
+
+    private void ensureInitialized() {
+        if (!initialized) {
+            synchronized (this) {
+                if (!initialized) {
+                    invokerFactory = registry.getModelInvokerFactory();
+                    initialized = true;
+                }
+            }
+        }
     }
 
     public ModelInvoker getInvoker(ModelConfigData config) {
+        ensureInitialized();
         return cache.computeIfAbsent(config.id(), id -> invokerFactory.createInvoker(config));
     }
 

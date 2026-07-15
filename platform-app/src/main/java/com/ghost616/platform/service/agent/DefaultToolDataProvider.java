@@ -2,6 +2,7 @@ package com.ghost616.platform.service.agent;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
+import com.ghost616.agentbase.enums.SessionAuthType;
 import com.ghost616.platform.entity.AgentSkill;
 import com.ghost616.platform.entity.Session;
 import com.ghost616.platform.entity.SessionSkill;
@@ -14,6 +15,7 @@ import com.ghost616.platform.repository.SessionToolMapper;
 import com.ghost616.platform.repository.SkillToolMapper;
 import com.ghost616.platform.service.tool.ToolConfigService;
 import com.ghost616.agentbase.service.agent.ToolDataProvider;
+import com.ghost616.agentbase.service.agent.ToolDataProvider.SessionToolInfo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -34,12 +36,15 @@ public class DefaultToolDataProvider implements ToolDataProvider {
     private final ToolConfigService toolConfigService;
 
     @Override
-    public List<Long> getSessionToolIds(Long sessionId) {
+    public List<SessionToolInfo> getSessionToolIds(Long sessionId) {
         LambdaQueryWrapper<SessionTool> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(SessionTool::getSessionId, sessionId);
         List<SessionTool> sessionTools = sessionToolMapper.selectList(wrapper);
         return sessionTools.stream()
-                .map(SessionTool::getToolId)
+                .map(st -> {
+                    SessionAuthType auth = st.getSessionAuth();
+                    return new SessionToolInfo(st.getToolId(), auth != null ? auth : SessionAuthType.ALL);
+                })
                 .toList();
     }
 

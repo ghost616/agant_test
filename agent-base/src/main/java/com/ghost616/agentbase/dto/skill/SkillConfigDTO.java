@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
 import com.ghost616.agentbase.enums.CommonStatus;
+import com.ghost616.agentbase.enums.SessionAuthType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -28,6 +29,8 @@ public class SkillConfigDTO {
     private String prompt;
 
     private CommonStatus status;
+
+    private SessionAuthType sessionAuth;
 
     @JsonSerialize(contentUsing = ToStringSerializer.class)
     private List<Long> toolIds;

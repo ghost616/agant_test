@@ -1,5 +1,6 @@
 package com.ghost616.platform.service.agent;
 
+import com.ghost616.agentbase.enums.SessionAuthType;
 import com.ghost616.agentbase.service.agent.AgentExecutionContext;
 import com.ghost616.agentbase.service.agent.ContextDataProvider.AgentContextData;
 import com.ghost616.platform.entity.AgentConfig;
@@ -100,15 +101,19 @@ class DefaultContextDataProviderTest {
         List<SessionTool> stList = sessionToolCaptor.getAllValues();
         assertEquals(100L, stList.get(0).getToolId());
         assertEquals(999L, stList.get(0).getSessionId());
+        assertEquals(SessionAuthType.ALL, stList.get(0).getSessionAuth());
         assertEquals(101L, stList.get(1).getToolId());
         assertEquals(999L, stList.get(1).getSessionId());
+        assertEquals(SessionAuthType.ALL, stList.get(1).getSessionAuth());
 
         verify(sessionSkillMapper, times(2)).insert(sessionSkillCaptor.capture());
         List<SessionSkill> ssList = sessionSkillCaptor.getAllValues();
         assertEquals(200L, ssList.get(0).getSkillId());
         assertEquals(999L, ssList.get(0).getSessionId());
+        assertEquals(SessionAuthType.ALL, ssList.get(0).getSessionAuth());
         assertEquals(201L, ssList.get(1).getSkillId());
         assertEquals(999L, ssList.get(1).getSessionId());
+        assertEquals(SessionAuthType.ALL, ssList.get(1).getSessionAuth());
     }
 
     @Test

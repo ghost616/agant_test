@@ -44,7 +44,11 @@ public class SchemaMigration implements ApplicationRunner {
                 new Migration("message", "tool_result", "TEXT", null),
                 new Migration("session", "parent_session_id", "BIGINT", null),
                 new Migration("session", "is_child", "TINYINT(1)", "0"),
-                new Migration("session", "description", "VARCHAR(500)", null)
+                new Migration("session", "description", "VARCHAR(500)", null),
+                new Migration("session_tool", "session_auth", "INT", "0"),
+                new Migration("agent_tool", "session_auth", "INT", "0"),
+                new Migration("agent_skill", "session_auth", "INT", "0"),
+                new Migration("session_skill", "session_auth", "INT", "0")
         );
 
         for (Migration migration : migrations) {
@@ -58,6 +62,20 @@ public class SchemaMigration implements ApplicationRunner {
                 } else {
                     log.error("迁移失败: {}.{} - {}", migration.tableName(), migration.columnName(), msg);
                 }
+            }
+        }
+
+        List<String> nullBackfillTables = List.of(
+                "session_tool", "agent_tool", "agent_skill", "session_skill"
+        );
+        for (String table : nullBackfillTables) {
+            try {
+                int updated = jdbcTemplate.update("UPDATE \"" + table + "\" SET \"session_auth\" = 0 WHERE \"session_auth\" IS NULL");
+                if (updated > 0) {
+                    log.info("回填成功: {}.session_auth 已将 {} 行 NULL 更新为 0", table, updated);
+                }
+            } catch (Exception e) {
+                log.warn("回填跳过: {}.session_auth 回填失败 - {}", table, e.getMessage());
             }
         }
 

@@ -1,5 +1,6 @@
 package com.ghost616.agentbase.service.agent;
 
+import com.ghost616.agentbase.core.AgentComponentRegistry;
 import com.ghost616.agentbase.enums.ErrorCode;
 import com.ghost616.agentbase.exception.BusinessException;
 import org.junit.jupiter.api.BeforeEach;
@@ -17,11 +18,14 @@ class SessionManagerTest {
     @Mock
     private MessageDataProvider dataProvider;
 
+    private AgentComponentRegistry registry;
     private SessionManager sessionManager;
 
     @BeforeEach
     void setUp() {
-        sessionManager = new SessionManager(dataProvider);
+        registry = new AgentComponentRegistry();
+        registry.setMessageDataProvider(dataProvider);
+        sessionManager = new SessionManager(registry);
     }
 
     @Test

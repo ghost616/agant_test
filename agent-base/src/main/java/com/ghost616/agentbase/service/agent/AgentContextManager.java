@@ -1,11 +1,13 @@
 package com.ghost616.agentbase.service.agent;
 
+import com.ghost616.agentbase.core.AgentComponentRegistry;
 import com.ghost616.agentbase.dto.model.Message;
 import com.ghost616.agentbase.dto.model.ToolCall;
 import com.ghost616.agentbase.dto.skill.SkillConfigDTO;
 import com.ghost616.agentbase.dto.tool.McpExpandedToolDTO;
 import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
 import com.ghost616.agentbase.enums.ErrorCode;
+import com.ghost616.agentbase.enums.SessionAuthType;
 import com.ghost616.agentbase.enums.ToolType;
 import com.ghost616.agentbase.exception.BusinessException;
 import com.ghost616.agentbase.service.agent.invoker.ToolManager;
@@ -23,17 +25,30 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Slf4j
 public class AgentContextManager {
 
-    private final ContextDataProvider dataProvider;
-    private final SessionManager sessionManager;
-    private final ToolManager toolManager;
+    private final AgentComponentRegistry registry;
+    private ContextDataProvider dataProvider;
+    private SessionManager sessionManager;
+    private ToolManager toolManager;
     private AgentMessageProxy agentMessageProxy;
 
     private final ConcurrentHashMap<Long, AgentSessionContext> cache = new ConcurrentHashMap<>();
+    private volatile boolean initialized;
 
-    public AgentContextManager(ContextDataProvider dataProvider, SessionManager sessionManager, ToolManager toolManager) {
-        this.dataProvider = dataProvider;
-        this.sessionManager = sessionManager;
-        this.toolManager = toolManager;
+    public AgentContextManager(AgentComponentRegistry registry) {
+        this.registry = registry;
+    }
+
+    private void ensureInitialized() {
+        if (!initialized) {
+            synchronized (this) {
+                if (!initialized) {
+                    dataProvider = registry.getContextDataProvider();
+                    sessionManager = registry.getSessionManager();
+                    toolManager = registry.getToolManager();
+                    initialized = true;
+                }
+            }
+        }
     }
 
     public void setAgentMessageProxy(AgentMessageProxy agentMessageProxy) {
@@ -41,6 +56,7 @@ public class AgentContextManager {
     }
 
     public Builder build(Long sessionId) {
+        ensureInitialized();
         return new Builder(sessionId);
     }
 
@@ -81,7 +97,8 @@ public class AgentContextManager {
 
             Long effectiveModelId = (modelIdOverride != null) ? modelIdOverride : ctxData.defaultModelId();
 
-            List<ToolConfigDTO> tools = toolManager.getSessionTools(sessionId).stream()
+            boolean isSubSession = ctxData.parentSessionId() != null;
+            List<ToolConfigDTO> tools = toolManager.getSessionTools(sessionId, isSubSession).stream()
                     .map(ToolManager.ToolSessionObject::toolConfig)
                     .toList();
 
@@ -92,8 +109,18 @@ public class AgentContextManager {
                     List<ToolConfigDTO> expandedTools = new ArrayList<>();
                     for (ToolConfigDTO tool : skill.getSkillTools()) {
                         if (tool.getToolType() == ToolType.MCP_HTTP && !(tool instanceof McpExpandedToolDTO)) {
-                            expandedTools.addAll(toolManager.expandMcpTools(tool));
+                            if (!isSubSession && tool.getSessionAuth() == SessionAuthType.CHILD) {
+                                tool.setSessionAuth(SessionAuthType.PARENT);
+                                expandedTools.add(tool);
+                            } else {
+                                List<? extends ToolConfigDTO> mcpTools = toolManager.expandMcpTools(tool);
+                                for (ToolConfigDTO mcpTool : mcpTools) {
+                                    mcpTool.setSessionAuth(SessionAuthType.PARENT);
+                                }
+                                expandedTools.addAll(mcpTools);
+                            }
                         } else {
+                            tool.setSessionAuth(SessionAuthType.PARENT);
                             expandedTools.add(tool);
                         }
                     }
@@ -190,10 +217,12 @@ public class AgentContextManager {
     }
 
     public AgentSessionContext get(Long sessionId) {
+        ensureInitialized();
         return cache.get(sessionId);
     }
 
     public void addHistoryEntry(Long sessionId, AgentExecutionContext.HistoryEntry entry) {
+        ensureInitialized();
         AgentSessionContext ctx = cache.get(sessionId);
         if (ctx != null) {
             ctx.mutator().addHistoryEntry(entry);

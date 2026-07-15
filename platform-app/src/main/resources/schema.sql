@@ -69,9 +69,10 @@ CREATE INDEX IF NOT EXISTS idx_message_tool_call_message_id ON message_tool_call
 CREATE INDEX IF NOT EXISTS idx_message_tool_call_tool_call_id ON message_tool_call(tool_call_id);
 
 CREATE TABLE IF NOT EXISTS session_tool (
-    id         BIGINT PRIMARY KEY,
-    session_id BIGINT,
-    tool_id    BIGINT
+    id           BIGINT PRIMARY KEY,
+    session_id   BIGINT,
+    tool_id      BIGINT,
+    session_auth INT DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS idx_session_tool_session_id ON session_tool(session_id);
 CREATE INDEX IF NOT EXISTS idx_session_tool_tool_id ON session_tool(tool_id);
@@ -92,17 +93,19 @@ CREATE TABLE IF NOT EXISTS agent_config (
 CREATE INDEX IF NOT EXISTS idx_agent_config_model_id ON agent_config(model_id);
 
 CREATE TABLE IF NOT EXISTS agent_tool (
-    id       BIGINT PRIMARY KEY,
-    agent_id BIGINT NOT NULL,
-    tool_id  BIGINT NOT NULL
+    id           BIGINT PRIMARY KEY,
+    agent_id     BIGINT NOT NULL,
+    tool_id      BIGINT NOT NULL,
+    session_auth INT DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS idx_agent_tool_agent_id ON agent_tool(agent_id);
 CREATE INDEX IF NOT EXISTS idx_agent_tool_tool_id ON agent_tool(tool_id);
 
 CREATE TABLE IF NOT EXISTS agent_skill (
-    id       BIGINT PRIMARY KEY,
-    agent_id BIGINT NOT NULL,
-    skill_id  BIGINT NOT NULL
+    id           BIGINT PRIMARY KEY,
+    agent_id     BIGINT NOT NULL,
+    skill_id     BIGINT NOT NULL,
+    session_auth INT DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS idx_agent_skill_agent_id ON agent_skill(agent_id);
 CREATE INDEX IF NOT EXISTS idx_agent_skill_skill_id ON agent_skill(skill_id);
@@ -139,9 +142,10 @@ CREATE INDEX IF NOT EXISTS idx_session_variable_session_id ON session_variable(s
 CREATE INDEX IF NOT EXISTS idx_session_variable_key ON session_variable(session_id, variable_key);
 
 CREATE TABLE IF NOT EXISTS session_skill (
-    id         BIGINT PRIMARY KEY,
-    session_id BIGINT,
-    skill_id   BIGINT
+    id           BIGINT PRIMARY KEY,
+    session_id   BIGINT,
+    skill_id     BIGINT,
+    session_auth INT DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS idx_session_skill_session_id ON session_skill(session_id);
 CREATE INDEX IF NOT EXISTS idx_session_skill_skill_id ON session_skill(skill_id);

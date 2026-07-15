@@ -3,6 +3,7 @@ package com.ghost616.agentbase.dto.tool;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import com.ghost616.agentbase.enums.CommonStatus;
+import com.ghost616.agentbase.enums.SessionAuthType;
 import com.ghost616.agentbase.enums.ToolType;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -27,6 +28,7 @@ public class ToolConfigDTO {
     private String implPath;
     private String authConfig;
     private CommonStatus status;
+    private SessionAuthType sessionAuth;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
 }

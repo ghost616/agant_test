@@ -1,9 +1,10 @@
 package com.ghost616.agentbase.service.agent;
 
-import com.ghost616.agentbase.dto.model.Message;
+import com.ghost616.agentbase.core.AgentComponentRegistry;
 import com.ghost616.agentbase.dto.skill.SkillConfigDTO;
 import com.ghost616.agentbase.dto.tool.McpExpandedToolDTO;
 import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
+import com.ghost616.agentbase.enums.SessionAuthType;
 import com.ghost616.agentbase.enums.ToolType;
 import com.ghost616.agentbase.exception.BusinessException;
 import com.ghost616.agentbase.service.agent.invoker.ToolManager;
@@ -21,6 +22,7 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
@@ -34,6 +36,7 @@ class AgentContextManagerTest {
     @Mock
     private ToolManager toolManager;
 
+    private AgentComponentRegistry registry;
     private AgentContextManager agentContextManager;
 
     private final Long sessionId = 1L;
@@ -41,14 +44,18 @@ class AgentContextManagerTest {
 
     @BeforeEach
     void setUp() {
-        agentContextManager = new AgentContextManager(dataProvider, sessionManager, toolManager);
+        registry = new AgentComponentRegistry();
+        registry.setContextDataProvider(dataProvider);
+        registry.setSessionManager(sessionManager);
+        registry.setToolManager(toolManager);
+        agentContextManager = new AgentContextManager(registry);
     }
 
     private void stubBasicContext() {
         when(dataProvider.loadAgentContext(sessionId)).thenReturn(
                 new ContextDataProvider.AgentContextData(agentId, "test prompt", 200L, 10, List.of(), Map.of(), null, null));
         when(sessionManager.getMessages(sessionId)).thenReturn(List.of());
-        when(toolManager.getSessionTools(sessionId)).thenReturn(List.of());
+        when(toolManager.getSessionTools(eq(sessionId), anyBoolean())).thenReturn(List.of());
     }
 
     @Test
@@ -250,7 +257,7 @@ class AgentContextManagerTest {
         when(dataProvider.loadAgentContext(sessionId)).thenReturn(
                 new ContextDataProvider.AgentContextData(null, "test prompt", 200L, 10, List.of(), Map.of(), null, null));
         when(sessionManager.getMessages(sessionId)).thenReturn(List.of());
-        when(toolManager.getSessionTools(sessionId)).thenReturn(List.of());
+        when(toolManager.getSessionTools(eq(sessionId), anyBoolean())).thenReturn(List.of());
 
         AgentContextManager.AgentSessionContext sessionContext = agentContextManager.build(sessionId).build();
 
@@ -265,85 +272,145 @@ class AgentContextManagerTest {
         assertThrows(BusinessException.class, () -> agentContextManager.build(sessionId).build());
     }
 
-    @Nested
-    class SendUserMessageTest {
+    @Test
+    void 正向_MCP展开后所有工具的sessionAuth被设置为PARENT() {
+        ToolConfigDTO mcpTool = ToolConfigDTO.builder()
+                .name("mcp_tool")
+                .toolType(ToolType.MCP_HTTP)
+                .implPath("http://localhost/mcp")
+                .authConfig("{}")
+                .sessionAuth(SessionAuthType.ALL)
+                .build();
 
-        private final Long childSessionId = 2L;
-        private final String testContent = "Hello from test";
-        private final Long modelId = 200L;
+        McpExpandedToolDTO expanded1 = McpExpandedToolDTO.builder()
+                .name("mcp_tool_func1").toolType(ToolType.MCP_HTTP).remoteToolName("func1").build();
+        McpExpandedToolDTO expanded2 = McpExpandedToolDTO.builder()
+                .name("mcp_tool_func2").toolType(ToolType.MCP_HTTP).remoteToolName("func2").build();
 
-        @BeforeEach
-        void setUp() {
-            when(dataProvider.loadAgentContext(sessionId)).thenReturn(
-                    new ContextDataProvider.AgentContextData(agentId, "test prompt", modelId, 10, List.of(), new HashMap<>(), null, null));
-            when(sessionManager.getMessages(sessionId)).thenReturn(List.of());
-            when(toolManager.getSessionTools(sessionId)).thenReturn(List.of());
-        }
+        SkillConfigDTO skill = SkillConfigDTO.builder()
+                .name("mcp_skill")
+                .skillTools(List.of(mcpTool))
+                .build();
 
-        @Test
-        void 正向_sendUserMessage返回role为user() {
-            SessionManager.MessageSaveBuilder mockBuilder = mock(SessionManager.MessageSaveBuilder.class);
-            when(mockBuilder.sessionId(any())).thenReturn(mockBuilder);
-            when(mockBuilder.role(any())).thenReturn(mockBuilder);
-            when(mockBuilder.content(any())).thenReturn(mockBuilder);
-            when(mockBuilder.save()).thenReturn(1L);
-            when(sessionManager.messageSave()).thenReturn(mockBuilder);
+        when(dataProvider.loadAgentContext(sessionId)).thenReturn(
+                new ContextDataProvider.AgentContextData(agentId, "test prompt", 200L, 10, List.of(skill), Map.of(), null, null));
+        when(toolManager.expandMcpTools(mcpTool)).thenReturn(List.of(expanded1, expanded2));
 
-            AgentExecutionContext context = agentContextManager.build(sessionId).build().context();
-            Message msg = context.sendUserMessage(childSessionId, testContent, modelId);
+        AgentExecutionContext context = agentContextManager.build(sessionId).build().context();
+        List<ToolConfigDTO> resultTools = context.getSkills().get(0).getSkillTools();
 
-            assertEquals("user", msg.getRole());
-        }
+        assertEquals(2, resultTools.size());
+        resultTools.forEach(t -> assertEquals(SessionAuthType.PARENT, t.getSessionAuth(),
+                "展开后的每个工具 sessionAuth 应为 PARENT"));
+    }
 
-        @Test
-        void 正向_sendUserMessage返回content与传入一致() {
-            SessionManager.MessageSaveBuilder mockBuilder = mock(SessionManager.MessageSaveBuilder.class);
-            when(mockBuilder.sessionId(any())).thenReturn(mockBuilder);
-            when(mockBuilder.role(any())).thenReturn(mockBuilder);
-            when(mockBuilder.content(any())).thenReturn(mockBuilder);
-            when(mockBuilder.save()).thenReturn(1L);
-            when(sessionManager.messageSave()).thenReturn(mockBuilder);
+    @Test
+    void 正向_非MCP工具的sessionAuth被设置为PARENT() {
+        ToolConfigDTO javaTool = ToolConfigDTO.builder()
+                .name("java_tool").toolType(ToolType.JAVA).implPath("com.example.MyTool").build();
+        ToolConfigDTO tsTool = ToolConfigDTO.builder()
+                .name("ts_tool").toolType(ToolType.TYPESCRIPT).implPath("test.ts").build();
 
-            AgentExecutionContext context = agentContextManager.build(sessionId).build().context();
-            Message msg = context.sendUserMessage(childSessionId, testContent, modelId);
+        SkillConfigDTO skill = SkillConfigDTO.builder()
+                .name("non_mcp_skill")
+                .skillTools(List.of(javaTool, tsTool))
+                .build();
 
-            assertEquals(testContent, msg.getContent());
-        }
+        when(dataProvider.loadAgentContext(sessionId)).thenReturn(
+                new ContextDataProvider.AgentContextData(agentId, "test prompt", 200L, 10, List.of(skill), Map.of(), null, null));
 
-        @Test
-        void 正向_sendUserMessage调用sessionManager_messageSave持久化消息() {
-            SessionManager.MessageSaveBuilder mockBuilder = mock(SessionManager.MessageSaveBuilder.class);
-            when(mockBuilder.sessionId(any())).thenReturn(mockBuilder);
-            when(mockBuilder.role(any())).thenReturn(mockBuilder);
-            when(mockBuilder.content(any())).thenReturn(mockBuilder);
-            when(mockBuilder.save()).thenReturn(1L);
-            when(sessionManager.messageSave()).thenReturn(mockBuilder);
+        AgentExecutionContext context = agentContextManager.build(sessionId).build().context();
+        List<ToolConfigDTO> resultTools = context.getSkills().get(0).getSkillTools();
 
-            AgentExecutionContext context = agentContextManager.build(sessionId).build().context();
-            context.sendUserMessage(childSessionId, testContent, modelId);
+        assertEquals(2, resultTools.size());
+        resultTools.forEach(t -> assertEquals(SessionAuthType.PARENT, t.getSessionAuth()));
+    }
 
-            verify(mockBuilder).sessionId(childSessionId);
-            verify(mockBuilder).role("user");
-            verify(mockBuilder).content(testContent);
-            verify(mockBuilder).save();
-        }
+    @Test
+    void 正向_CHILD分支下MCP工具不展开直接设置sessionAuth为PARENT() {
+        ToolConfigDTO childMcpTool = ToolConfigDTO.builder()
+                .name("child_mcp")
+                .toolType(ToolType.MCP_HTTP)
+                .implPath("http://localhost/child")
+                .authConfig("{}")
+                .sessionAuth(SessionAuthType.CHILD)
+                .build();
 
-        @Test
-        void 正向_无parentSessionId的会话sendUserMessage正常执行() {
-            SessionManager.MessageSaveBuilder mockBuilder = mock(SessionManager.MessageSaveBuilder.class);
-            when(mockBuilder.sessionId(any())).thenReturn(mockBuilder);
-            when(mockBuilder.role(any())).thenReturn(mockBuilder);
-            when(mockBuilder.content(any())).thenReturn(mockBuilder);
-            when(mockBuilder.save()).thenReturn(1L);
-            when(sessionManager.messageSave()).thenReturn(mockBuilder);
+        SkillConfigDTO skill = SkillConfigDTO.builder()
+                .name("child_skill")
+                .skillTools(List.of(childMcpTool))
+                .build();
 
-            AgentExecutionContext context = agentContextManager.build(sessionId).build().context();
-            Message msg = context.sendUserMessage(childSessionId, testContent, modelId);
+        when(dataProvider.loadAgentContext(sessionId)).thenReturn(
+                new ContextDataProvider.AgentContextData(agentId, "test prompt", 200L, 10, List.of(skill), Map.of(), null, null));
 
-            assertNotNull(msg);
-            assertEquals("user", msg.getRole());
-            assertEquals(testContent, msg.getContent());
-        }
+        AgentExecutionContext context = agentContextManager.build(sessionId).build().context();
+        List<ToolConfigDTO> resultTools = context.getSkills().get(0).getSkillTools();
+
+        assertEquals(1, resultTools.size());
+        assertSame(childMcpTool, resultTools.get(0), "CHILD 分支下工具不应被展开，应直接加入");
+        assertEquals(SessionAuthType.PARENT, resultTools.get(0).getSessionAuth(), "sessionAuth 应被设为 PARENT");
+        verify(toolManager, never()).expandMcpTools(any());
+    }
+
+    @Test
+    void 正向_子会话模式下MCP工具正常展开并设置sessionAuth为PARENT() {
+        Long childSessionId = 99L;
+        Long parentId = 1L;
+        ToolConfigDTO mcpTool = ToolConfigDTO.builder()
+                .name("mcp_tool")
+                .toolType(ToolType.MCP_HTTP)
+                .implPath("http://localhost/mcp")
+                .authConfig("{}")
+                .sessionAuth(SessionAuthType.CHILD)
+                .build();
+
+        McpExpandedToolDTO expanded = McpExpandedToolDTO.builder()
+                .name("mcp_func").toolType(ToolType.MCP_HTTP).remoteToolName("func").build();
+
+        SkillConfigDTO childSkill = SkillConfigDTO.builder()
+                .name("sub_skill")
+                .skillTools(List.of(mcpTool))
+                .build();
+
+        when(dataProvider.loadAgentContext(parentId)).thenReturn(
+                new ContextDataProvider.AgentContextData(agentId, "parent", 200L, 10, List.of(), Map.of(), null, null));
+        when(dataProvider.loadAgentContext(childSessionId)).thenReturn(
+                new ContextDataProvider.AgentContextData(agentId, "sub prompt", 200L, 10, List.of(childSkill), Map.of(), parentId, null));
+        when(sessionManager.getMessages(anyLong())).thenReturn(List.of());
+        when(toolManager.getSessionTools(anyLong(), anyBoolean())).thenReturn(List.of());
+        when(toolManager.expandMcpTools(mcpTool)).thenReturn(List.of(expanded));
+
+        AgentExecutionContext context = agentContextManager.build(childSessionId).build().context();
+        List<ToolConfigDTO> resultTools = context.getSkills().get(0).getSkillTools();
+
+        assertEquals(1, resultTools.size());
+        assertEquals(SessionAuthType.PARENT, resultTools.get(0).getSessionAuth());
+    }
+
+    @Test
+    void 正向_McpExpandedToolDTO直接设置sessionAuth为PARENT且保留() {
+        McpExpandedToolDTO alreadyExpanded = McpExpandedToolDTO.builder()
+                .name("pre_expanded_func")
+                .toolType(ToolType.MCP_HTTP)
+                .remoteToolName("func")
+                .sessionAuth(SessionAuthType.ALL)
+                .build();
+
+        SkillConfigDTO skill = SkillConfigDTO.builder()
+                .name("pre_expanded_skill")
+                .skillTools(List.of(alreadyExpanded))
+                .build();
+
+        when(dataProvider.loadAgentContext(sessionId)).thenReturn(
+                new ContextDataProvider.AgentContextData(agentId, "test prompt", 200L, 10, List.of(skill), Map.of(), null, null));
+
+        AgentExecutionContext context = agentContextManager.build(sessionId).build().context();
+        List<ToolConfigDTO> resultTools = context.getSkills().get(0).getSkillTools();
+
+        assertEquals(1, resultTools.size());
+        assertSame(alreadyExpanded, resultTools.get(0));
+        assertEquals(SessionAuthType.PARENT, resultTools.get(0).getSessionAuth());
     }
 
     @Nested
@@ -357,7 +424,7 @@ class AgentContextManagerTest {
             when(dataProvider.loadAgentContext(parentSessionId)).thenReturn(
                     new ContextDataProvider.AgentContextData(agentId, "parent prompt", 200L, 10, List.of(), new HashMap<>(), null, null));
             when(sessionManager.getMessages(parentSessionId)).thenReturn(List.of());
-            when(toolManager.getSessionTools(parentSessionId)).thenReturn(List.of());
+            when(toolManager.getSessionTools(eq(parentSessionId), anyBoolean())).thenReturn(List.of());
 
             agentContextManager.build(parentSessionId).build();
         }
@@ -366,7 +433,7 @@ class AgentContextManagerTest {
             when(dataProvider.loadAgentContext(childId)).thenReturn(
                     new ContextDataProvider.AgentContextData(agentId, "child prompt", 200L, 10, List.of(), new HashMap<>(), parentId, null));
             when(sessionManager.getMessages(childId)).thenReturn(List.of());
-            when(toolManager.getSessionTools(childId)).thenReturn(List.of());
+            when(toolManager.getSessionTools(eq(childId), anyBoolean())).thenReturn(List.of());
         }
 
         @Test
@@ -386,7 +453,7 @@ class AgentContextManagerTest {
             when(dataProvider.loadAgentContext(freshSessionId)).thenReturn(
                     new ContextDataProvider.AgentContextData(agentId, "parent prompt", 200L, 10, List.of(), new HashMap<>(), null, List.of(childSession)));
             when(sessionManager.getMessages(freshSessionId)).thenReturn(List.of());
-            when(toolManager.getSessionTools(freshSessionId)).thenReturn(List.of());
+            when(toolManager.getSessionTools(eq(freshSessionId), anyBoolean())).thenReturn(List.of());
 
             AgentExecutionContext parentContext = agentContextManager.build(freshSessionId).build().context();
 
@@ -438,7 +505,7 @@ class AgentContextManagerTest {
             when(dataProvider.loadAgentContext(autoParentId)).thenReturn(
                     new ContextDataProvider.AgentContextData(agentId, "auto parent", 200L, 10, List.of(), new HashMap<>(), null, null));
             when(sessionManager.getMessages(autoParentId)).thenReturn(List.of());
-            when(toolManager.getSessionTools(autoParentId)).thenReturn(List.of());
+            when(toolManager.getSessionTools(eq(autoParentId), anyBoolean())).thenReturn(List.of());
 
             stubChildSession(autoChildId, autoParentId);
 

@@ -2,18 +2,33 @@ package com.ghost616.agentbase.service.agent;
 
 import java.util.List;
 
+import com.ghost616.agentbase.core.AgentComponentRegistry;
 import com.ghost616.agentbase.enums.ErrorCode;
 import com.ghost616.agentbase.exception.BusinessException;
 
 public class SessionManager {
 
-    private final MessageDataProvider dataProvider;
+    private final AgentComponentRegistry registry;
+    private MessageDataProvider dataProvider;
+    private volatile boolean initialized;
 
-    public SessionManager(MessageDataProvider dataProvider) {
-        this.dataProvider = dataProvider;
+    public SessionManager(AgentComponentRegistry registry) {
+        this.registry = registry;
+    }
+
+    private void ensureInitialized() {
+        if (!initialized) {
+            synchronized (this) {
+                if (!initialized) {
+                    dataProvider = registry.getMessageDataProvider();
+                    initialized = true;
+                }
+            }
+        }
     }
 
     public MessageSaveBuilder messageSave() {
+        ensureInitialized();
         return new MessageSaveBuilder();
     }
 
@@ -80,10 +95,12 @@ public class SessionManager {
     }
 
     public List<MessageDataProvider.MessageDTO> getMessages(Long sessionId) {
+        ensureInitialized();
         return dataProvider.getMessages(sessionId);
     }
 
     public int rollbackToLastUserMessage(Long sessionId) {
+        ensureInitialized();
         return dataProvider.rollbackToLastUserMessage(sessionId);
     }
 }

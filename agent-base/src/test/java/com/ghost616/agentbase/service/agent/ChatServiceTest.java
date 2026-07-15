@@ -1,5 +1,6 @@
 package com.ghost616.agentbase.service.agent;
 
+import com.ghost616.agentbase.core.AgentComponentRegistry;
 import com.ghost616.agentbase.dto.model.ChatChunk;
 import com.ghost616.agentbase.enums.HookPhase;
 import com.ghost616.agentbase.service.agent.invoker.HookInvoker;
@@ -35,17 +36,18 @@ class ChatServiceTest {
     @Mock
     private ChatDataProvider chatDataProvider;
 
+    private AgentComponentRegistry registry;
     private ChatService chatService;
 
     @BeforeEach
     void setUp() {
-        chatService = new ChatService(
-                agentContextManager,
-                sessionManager,
-                modelInvokerManager,
-                systemToolManager,
-                chatDataProvider
-        );
+        registry = new AgentComponentRegistry();
+        registry.setAgentContextManager(agentContextManager);
+        registry.setSessionManager(sessionManager);
+        registry.setModelInvokerManager(modelInvokerManager);
+        registry.setSystemToolManager(systemToolManager);
+        registry.setChatDataProvider(chatDataProvider);
+        chatService = new ChatService(registry);
     }
 
     @Test

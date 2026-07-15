@@ -1,6 +1,8 @@
 package com.ghost616.agentbase.service.agent.invoker;
 
+import com.ghost616.agentbase.core.AgentComponentRegistry;
 import com.ghost616.agentbase.dto.model.ToolDefinition;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -30,13 +32,22 @@ class SystemToolManagerTest {
     @Mock
     private SystemTool nullNameTool;
 
+    private AgentComponentRegistry registry;
+
+    @BeforeEach
+    void setUp() {
+        registry = new AgentComponentRegistry();
+    }
+
     @Test
     void constructor调用provider_discoverSystemTools并注册工具() {
         when(toolA.getToolName()).thenReturn("tool_a");
         when(toolB.getToolName()).thenReturn("tool_b");
         when(provider.discoverSystemTools()).thenReturn(Map.of("tool_a", toolA, "tool_b", toolB));
+        registry.setSystemToolProvider(provider);
 
-        SystemToolManager manager = new SystemToolManager(provider);
+        SystemToolManager manager = new SystemToolManager(registry);
+        manager.getToolDefinitions(); // trigger ensureInitialized
 
         verify(provider, times(1)).discoverSystemTools();
         assertSame(toolA, manager.getSystemTool("tool_a"));
@@ -48,8 +59,9 @@ class SystemToolManagerTest {
         when(toolA.getToolName()).thenReturn("tool_a");
         when(blankNameTool.getToolName()).thenReturn("  ");
         when(provider.discoverSystemTools()).thenReturn(Map.of("tool_a", toolA, "blank", blankNameTool));
+        registry.setSystemToolProvider(provider);
 
-        SystemToolManager manager = new SystemToolManager(provider);
+        SystemToolManager manager = new SystemToolManager(registry);
 
         assertNotNull(manager.getSystemTool("tool_a"));
         assertNull(manager.getSystemTool("blank"));
@@ -60,8 +72,9 @@ class SystemToolManagerTest {
         when(toolA.getToolName()).thenReturn("tool_a");
         when(nullNameTool.getToolName()).thenReturn(null);
         when(provider.discoverSystemTools()).thenReturn(Map.of("tool_a", toolA, "null_tool", nullNameTool));
+        registry.setSystemToolProvider(provider);
 
-        SystemToolManager manager = new SystemToolManager(provider);
+        SystemToolManager manager = new SystemToolManager(registry);
 
         assertNotNull(manager.getSystemTool("tool_a"));
         assertNull(manager.getSystemTool("null_tool"));
@@ -71,8 +84,9 @@ class SystemToolManagerTest {
     void getSystemTool返回已注册的工具() {
         when(toolA.getToolName()).thenReturn("tool_a");
         when(provider.discoverSystemTools()).thenReturn(Map.of("tool_a", toolA));
+        registry.setSystemToolProvider(provider);
 
-        SystemToolManager manager = new SystemToolManager(provider);
+        SystemToolManager manager = new SystemToolManager(registry);
 
         assertSame(toolA, manager.getSystemTool("tool_a"));
     }
@@ -81,8 +95,9 @@ class SystemToolManagerTest {
     void getSystemTool不存在的工具返回null() {
         when(toolA.getToolName()).thenReturn("tool_a");
         when(provider.discoverSystemTools()).thenReturn(Map.of("tool_a", toolA));
+        registry.setSystemToolProvider(provider);
 
-        SystemToolManager manager = new SystemToolManager(provider);
+        SystemToolManager manager = new SystemToolManager(registry);
 
         assertNull(manager.getSystemTool("nonexistent"));
     }
@@ -96,8 +111,9 @@ class SystemToolManagerTest {
         when(toolB.getDescription()).thenReturn("Tool B");
         when(toolB.getParameterSchema()).thenReturn("{\"type\":\"object\"}");
         when(provider.discoverSystemTools()).thenReturn(Map.of("tool_a", toolA, "tool_b", toolB));
+        registry.setSystemToolProvider(provider);
 
-        SystemToolManager manager = new SystemToolManager(provider);
+        SystemToolManager manager = new SystemToolManager(registry);
 
         List<ToolDefinition> defs = manager.getToolDefinitions();
 
@@ -116,8 +132,9 @@ class SystemToolManagerTest {
         when(provider.discoverSystemTools()).thenReturn(Map.of(
                 "tool_a", toolA, "blank", blankNameTool, "null_tool", nullNameTool
         ));
+        registry.setSystemToolProvider(provider);
 
-        SystemToolManager manager = new SystemToolManager(provider);
+        SystemToolManager manager = new SystemToolManager(registry);
 
         List<ToolDefinition> defs = manager.getToolDefinitions();
         assertEquals(1, defs.size());
@@ -127,8 +144,9 @@ class SystemToolManagerTest {
     @Test
     void provider返回空Map时无工具注册() {
         when(provider.discoverSystemTools()).thenReturn(Map.of());
+        registry.setSystemToolProvider(provider);
 
-        SystemToolManager manager = new SystemToolManager(provider);
+        SystemToolManager manager = new SystemToolManager(registry);
 
         assertNull(manager.getSystemTool("anything"));
         assertTrue(manager.getToolDefinitions().isEmpty());

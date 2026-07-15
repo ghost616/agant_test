@@ -1,5 +1,6 @@
 package com.ghost616.agentinteg;
 
+import com.ghost616.agentbase.core.AgentComponentRegistry;
 import com.ghost616.agentbase.dto.model.ModelConfigData;
 import com.ghost616.agentbase.service.agent.AgentContextManager;
 import com.ghost616.agentbase.service.agent.AgentMessageProxy;
@@ -38,13 +39,7 @@ public class AgentAssembler {
     private final ModelInvokerFactory modelInvokerFactory;
     private final ChatDataProvider chatDataProvider;
 
-    private ToolManager toolManager;
-    private ToolCallQueueManager toolCallQueueManager;
-    private SystemToolManager systemToolManager;
-    private SessionManager sessionManager;
-    private AgentContextManager agentContextManager;
-    private ModelInvokerManager modelInvokerManager;
-    private ToolExecutionTracker toolExecutionTracker;
+    private AgentComponentRegistry registry;
     private ChatDataProviderProxy chatDataProviderProxy;
     private Result cachedResult;
     private boolean built = false;
@@ -63,42 +58,45 @@ public class AgentAssembler {
         this.chatDataProvider = chatDataProvider;
     }
 
-    public ToolManager toolManager() { return toolManager; }
-    public ToolCallQueueManager toolCallQueueManager() { return toolCallQueueManager; }
-    public SystemToolManager systemToolManager() { return systemToolManager; }
-    public SessionManager sessionManager() { return sessionManager; }
-    public AgentContextManager agentContextManager() { return agentContextManager; }
-    public ModelInvokerManager modelInvokerManager() { return modelInvokerManager; }
-    public ToolExecutionTracker toolExecutionTracker() { return toolExecutionTracker; }
+    public ToolManager toolManager() { return registry != null ? registry.getToolManager() : null; }
+    public ToolCallQueueManager toolCallQueueManager() { return registry != null ? registry.getToolCallQueueManager() : null; }
+    public SystemToolManager systemToolManager() { return registry != null ? registry.getSystemToolManager() : null; }
+    public SessionManager sessionManager() { return registry != null ? registry.getSessionManager() : null; }
+    public AgentContextManager agentContextManager() { return registry != null ? registry.getAgentContextManager() : null; }
+    public ModelInvokerManager modelInvokerManager() { return registry != null ? registry.getModelInvokerManager() : null; }
+    public ToolExecutionTracker toolExecutionTracker() { return registry != null ? registry.getToolExecutionTracker() : null; }
     public MessageSavePostHook messageSavePostHook() { return chatDataProviderProxy != null ? chatDataProviderProxy.getMessageSavePostHook() : null; }
 
     public Result build() {
         if (built) {
             return cachedResult;
         }
-        toolManager = new ToolManager(toolDataProvider);
-        toolCallQueueManager = new ToolCallQueueManager();
+        registry = new AgentComponentRegistry();
+        registry.setContextDataProvider(contextDataProvider);
+        registry.setMessageDataProvider(messageDataProvider);
+        registry.setToolDataProvider(toolDataProvider);
+        registry.setModelInvokerFactory(modelInvokerFactory);
+
         SystemToolProvider systemToolProviderProxy = new SystemToolProviderProxy(systemToolProvider);
-        systemToolManager = new SystemToolManager(systemToolProviderProxy);
-        sessionManager = new SessionManager(messageDataProvider);
-        agentContextManager = new AgentContextManager(
-                contextDataProvider, sessionManager, toolManager);
-        modelInvokerManager = new ModelInvokerManager(modelInvokerFactory);
-        toolExecutionTracker = new ToolExecutionTracker();
+        registry.setSystemToolProvider(systemToolProviderProxy);
 
-        chatDataProviderProxy = new ChatDataProviderProxy(chatDataProvider,
-                sessionManager, agentContextManager, toolCallQueueManager);
+        registry.setToolManager(new ToolManager(registry));
+        registry.setToolCallQueueManager(new ToolCallQueueManager());
+        registry.setSystemToolManager(new SystemToolManager(registry));
+        registry.setSessionManager(new SessionManager(registry));
+        registry.setAgentContextManager(new AgentContextManager(registry));
+        registry.setModelInvokerManager(new ModelInvokerManager(registry));
+        registry.setToolExecutionTracker(new ToolExecutionTracker());
 
-        ChatService chatService = new ChatService(
-                agentContextManager, sessionManager, modelInvokerManager,
-                systemToolManager, chatDataProviderProxy);
+        chatDataProviderProxy = new ChatDataProviderProxy(chatDataProvider, registry);
+        registry.setChatDataProvider(chatDataProviderProxy);
 
-        ToolExecutionService toolExecutionService = new ToolExecutionService(
-                toolCallQueueManager, toolManager, systemToolManager,
-                sessionManager, chatService, agentContextManager, toolExecutionTracker);
+        ChatService chatService = new ChatService(registry);
+
+        ToolExecutionService toolExecutionService = new ToolExecutionService(registry, chatService);
 
         AgentMessageProxy agentMessageProxy = new AgentMessageProxy(chatService, toolExecutionService);
-        agentContextManager.setAgentMessageProxy(agentMessageProxy);
+        registry.getAgentContextManager().setAgentMessageProxy(agentMessageProxy);
 
         cachedResult = new Result(chatService, toolExecutionService, chatDataProviderProxy.getMessageSavePostHook());
         built = true;
@@ -126,17 +124,12 @@ public class AgentAssembler {
 
     private static class ChatDataProviderProxy implements ChatDataProvider {
         private final ChatDataProvider delegate;
-        private final SessionManager sessionManager;
-        private final AgentContextManager agentContextManager;
-        private final ToolCallQueueManager toolCallQueueManager;
+        private final AgentComponentRegistry registry;
         private volatile MessageSavePostHook messageSavePostHook;
 
-        ChatDataProviderProxy(ChatDataProvider delegate, SessionManager sessionManager,
-                              AgentContextManager agentContextManager, ToolCallQueueManager toolCallQueueManager) {
+        ChatDataProviderProxy(ChatDataProvider delegate, AgentComponentRegistry registry) {
             this.delegate = delegate;
-            this.sessionManager = sessionManager;
-            this.agentContextManager = agentContextManager;
-            this.toolCallQueueManager = toolCallQueueManager;
+            this.registry = registry;
         }
 
         public ModelConfigData getModelConfig(Long modelId) {
@@ -166,7 +159,8 @@ public class AgentAssembler {
             if (messageSavePostHook == null) {
                 synchronized (this) {
                     if (messageSavePostHook == null) {
-                        messageSavePostHook = new MessageSavePostHook(sessionManager, agentContextManager, toolCallQueueManager);
+                        messageSavePostHook = new MessageSavePostHook(
+                                registry.getSessionManager(), registry.getAgentContextManager(), registry.getToolCallQueueManager());
                     }
                 }
             }

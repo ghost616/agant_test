@@ -1,5 +1,6 @@
 package com.ghost616.agentbase.service.agent.invoker;
 
+import com.ghost616.agentbase.core.AgentComponentRegistry;
 import com.ghost616.agentbase.dto.model.ToolDefinition;
 import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
 import lombok.extern.slf4j.Slf4j;
@@ -12,13 +13,26 @@ import java.util.Map;
 @Slf4j
 public class SystemToolManager {
 
-    private final SystemToolProvider provider;
+    private final AgentComponentRegistry registry;
+    private SystemToolProvider provider;
 
     private final Map<String, SystemTool> systemTools = new HashMap<>();
+    private volatile boolean initialized;
 
-    public SystemToolManager(SystemToolProvider provider) {
-        this.provider = provider;
-        initSystemTools();
+    public SystemToolManager(AgentComponentRegistry registry) {
+        this.registry = registry;
+    }
+
+    private void ensureInitialized() {
+        if (!initialized) {
+            synchronized (this) {
+                if (!initialized) {
+                    provider = registry.getSystemToolProvider();
+                    initSystemTools();
+                    initialized = true;
+                }
+            }
+        }
     }
 
     private void initSystemTools() {
@@ -35,10 +49,12 @@ public class SystemToolManager {
     }
 
     public SystemTool getSystemTool(String name) {
+        ensureInitialized();
         return systemTools.get(name);
     }
 
     public List<ToolDefinition> getToolDefinitions() {
+        ensureInitialized();
         List<ToolDefinition> definitions = new ArrayList<>();
         for (Map.Entry<String, SystemTool> entry : systemTools.entrySet()) {
             SystemTool tool = entry.getValue();
