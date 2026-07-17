@@ -5,5 +5,26 @@
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
+  },
+  {
+    "plan_id": "plan_1cef03ea-b27d-4949-a46d-d3d03f74de8e",
+    "plan_summary": "AgentExecutionContext 添加工程目录属性，AgentContextManager 注入，TypeScript/PythonToolInvoker 支持相对路径",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_f740ac96-10e1-466c-abac-325c6f6a7144",
+    "plan_summary": "修复 resolvePath() projectDir 空值 NPE 问题",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_ed5669ff-0c01-4fbd-b20d-1568d460d0d9",
+    "plan_summary": "修复 _input.json 并发覆盖：用 sessionId 子目录隔离",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
   }
 ]

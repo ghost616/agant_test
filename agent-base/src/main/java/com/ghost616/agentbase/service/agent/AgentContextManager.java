@@ -164,7 +164,7 @@ public class AgentContextManager {
                     ctxData.recentMessageCount(),
                     history, tools, skills, mutator,
                     ctxData.sessionVariables(), new HashMap<>(),
-                    parentSessionId, ctxData.childSessions());
+                    parentSessionId, System.getProperty("user.dir"), ctxData.childSessions());
 
             injectVariableCallbacks(mutator, sessionId, parentSessionId, parentCtx);
 

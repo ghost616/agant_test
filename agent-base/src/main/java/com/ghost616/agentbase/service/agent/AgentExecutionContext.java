@@ -39,6 +39,7 @@ public class AgentExecutionContext {
     @Getter(AccessLevel.NONE)
     private final Map<String, String> conversationVariables;
     private final List<SkillConfigDTO> skills;
+    private final String projectDir;
     private final AtomicBoolean stopped = new AtomicBoolean(false);
     @Getter(AccessLevel.NONE)
     private final List<ChildSession> childSessions = new ArrayList<>();
@@ -50,7 +51,7 @@ public class AgentExecutionContext {
                                  AgentContextMutator mutator,
                                   Map<String, String> sessionVariables,
                                   Map<String, String> conversationVariables,
-                                  Long parentSessionId, List<ChildSession> childSessions) {
+                                  Long parentSessionId, String projectDir, List<ChildSession> childSessions) {
         this.sessionId = sessionId;
         this.agentId = agentId;
         this.systemPrompt = systemPrompt;
@@ -63,6 +64,7 @@ public class AgentExecutionContext {
         this.mutator = mutator;
         this.sessionVariables = sessionVariables;
         this.conversationVariables = conversationVariables;
+        this.projectDir = projectDir;
         if (childSessions != null) {
             this.childSessions.addAll(childSessions);
         }

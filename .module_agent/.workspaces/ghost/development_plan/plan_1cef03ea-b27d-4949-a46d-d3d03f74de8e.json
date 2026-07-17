@@ -1,0 +1,13 @@
+{
+  "plan_id": "plan_1cef03ea-b27d-4949-a46d-d3d03f74de8e",
+  "module_name": "agent-base",
+  "development_plan": "1. AgentExecutionContext.java：新增 projectDir 字段（String 类型），添加到构造器和所有字段列表中，Lombok @Getter 自动生成 getProjectDir()\n2. AgentContextManager.java：在 doBuild() 方法的 AgentExecutionContext 构造器调用中，传入 System.getProperty(\"user.dir\") 作为 projectDir 参数\n3. ContextSerializer.java：在 serializeToJson() 中，contextNode.put(\"projectDir\", ctx.getProjectDir())，位于 stopped 之后\n4. PythonToolInvoker.java：构造器不再调用 toAbsolutePath() 和目录校验，只存储原始 implPath 字符串 + 运行时检测；execute() 中通过 resolvePath(ctx) 私有方法根据 ctx.getProjectDir() 解析相对路径后执行目录校验\n5. TypeScriptToolInvoker.java：同 PythonToolInvoker 的改造方案",
+  "session_id": "ses_090e472e9ffeITEYDLwHdfJfBg",
+  "modified_files": [
+    "agent-base/src/main/java/com/ghost616/agentbase/service/agent/AgentExecutionContext.java",
+    "agent-base/src/main/java/com/ghost616/agentbase/service/agent/AgentContextManager.java",
+    "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/ContextSerializer.java",
+    "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/PythonToolInvoker.java",
+    "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/TypeScriptToolInvoker.java"
+  ]
+}

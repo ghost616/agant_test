@@ -24,26 +24,20 @@ public class PythonToolInvoker implements ToolInvoker {
     private static final String RUNNER_FILE_NAME = "_runner.py";
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
-    private final Path scriptDir;
-    private final Path runnerPath;
+    private final String implPath;
     private final boolean python3Available;
     private final boolean pythonAvailable;
 
     public PythonToolInvoker(String scriptPath) {
-        this.scriptDir = Path.of(scriptPath).toAbsolutePath();
-        if (!Files.isDirectory(this.scriptDir)) {
-            throw new BusinessException(ErrorCode.TOOL_INVOKE_ERROR,
-                    "脚本路径不是目录: " + scriptPath);
-        }
-        this.runnerPath = this.scriptDir.resolve(RUNNER_FILE_NAME);
+        this.implPath = scriptPath;
         this.python3Available = isCommandAvailable("python3");
         this.pythonAvailable = isCommandAvailable("python");
         if (!python3Available && !pythonAvailable) {
             throw new BusinessException(ErrorCode.TOOL_RUNTIME_NOT_FOUND,
                     "python 和 python3 运行时均不可用，请安装 Python 3.10+");
         }
-        log.debug("Python运行时检测: python3={}, python={}, scriptDir={}",
-                python3Available, pythonAvailable, scriptDir);
+        log.debug("Python运行时检测: python3={}, python={}, implPath={}",
+                python3Available, pythonAvailable, implPath);
     }
 
     private static boolean isWindows() {
@@ -71,10 +65,12 @@ public class PythonToolInvoker implements ToolInvoker {
 
     @Override
     public String execute(AgentExecutionContext ctx, String arguments) {
+        Path scriptDir = resolvePath(ctx);
+        Path runnerPath = scriptDir.resolve(RUNNER_FILE_NAME);
         if (!Files.exists(runnerPath)) {
             synchronized (this) {
                 if (!Files.exists(runnerPath)) {
-                    generateRunnerFile();
+                    generateRunnerFile(runnerPath);
                 }
             }
         }
@@ -84,8 +80,10 @@ public class PythonToolInvoker implements ToolInvoker {
         List<String> command = new ArrayList<>(resolveRuntime());
         command.add(runnerPath.toString());
 
-        Path inputFile = scriptDir.resolve("_input.json");
+        Path sessionDir = scriptDir.resolve(ctx.getSessionId().toString());
+        Path inputFile = sessionDir.resolve("_input.json");
         try {
+            Files.createDirectories(sessionDir);
             Files.writeString(inputFile, jsonParams, StandardCharsets.UTF_8);
             command.add(inputFile.toString());
 
@@ -129,6 +127,7 @@ public class PythonToolInvoker implements ToolInvoker {
         } finally {
             try {
                 Files.deleteIfExists(inputFile);
+                Files.deleteIfExists(sessionDir);
             } catch (Exception ignored) {
             }
         }
@@ -187,7 +186,24 @@ public class PythonToolInvoker implements ToolInvoker {
                 "python 和 python3 运行时均不可用");
     }
 
-    private void generateRunnerFile() {
+    private Path resolvePath(AgentExecutionContext ctx) {
+        Path path = Path.of(implPath);
+        if (!path.isAbsolute()) {
+            String projectDir = ctx.getProjectDir();
+            if (projectDir == null || projectDir.isBlank()) {
+                throw new BusinessException(ErrorCode.TOOL_INVOKE_ERROR,
+                        "未设置工程目录，无法解析相对路径: " + implPath);
+            }
+            path = Path.of(projectDir, implPath).normalize();
+        }
+        if (!Files.isDirectory(path)) {
+            throw new BusinessException(ErrorCode.TOOL_INVOKE_ERROR,
+                    "脚本路径不是目录: " + implPath + " (resolved: " + path + ")");
+        }
+        return path;
+    }
+
+    private void generateRunnerFile(Path runnerPath) {
         try {
             Files.writeString(runnerPath, RunnerTemplate.INSTANCE, StandardCharsets.UTF_8);
             log.debug("已生成桥接文件: {}", runnerPath);

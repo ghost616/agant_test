@@ -28,6 +28,7 @@ public final class ContextSerializer {
             contextNode.put("modelId", ctx.getModelId() != null ? ctx.getModelId().toString() : null);
             contextNode.put("recentMessageCount", ctx.getRecentMessageCount());
             contextNode.put("stopped", ctx.isStopped());
+            contextNode.put("projectDir", ctx.getProjectDir());
 
             ArrayNode historyArray = MAPPER.createArrayNode();
             for (AgentExecutionContext.HistoryEntry entry : ctx.getHistory()) {

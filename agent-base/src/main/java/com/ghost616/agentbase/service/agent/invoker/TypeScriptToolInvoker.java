@@ -24,25 +24,19 @@ public class TypeScriptToolInvoker implements ToolInvoker {
     private static final String RUNNER_FILE_NAME = "_runner.ts";
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
-    private final Path scriptDir;
-    private final Path runnerPath;
+    private final String implPath;
     private final boolean bunAvailable;
     private final boolean nodeAvailable;
 
     public TypeScriptToolInvoker(String scriptPath) {
-        this.scriptDir = Path.of(scriptPath).toAbsolutePath();
-        if (!Files.isDirectory(this.scriptDir)) {
-            throw new BusinessException(ErrorCode.TOOL_INVOKE_ERROR,
-                    "脚本路径不是目录: " + scriptPath);
-        }
-        this.runnerPath = this.scriptDir.resolve(RUNNER_FILE_NAME);
+        this.implPath = scriptPath;
         this.bunAvailable = isCommandAvailable("bun");
         this.nodeAvailable = isCommandAvailable("node");
         if (!bunAvailable && !nodeAvailable) {
             throw new BusinessException(ErrorCode.TOOL_RUNTIME_NOT_FOUND,
                     "bun 和 node 运行时均不可用，请安装 bun（https://bun.sh）或 node（https://nodejs.org）");
         }
-        log.debug("脚本运行时检测: bun={}, node={}, scriptDir={}", bunAvailable, nodeAvailable, scriptDir);
+        log.debug("脚本运行时检测: bun={}, node={}, implPath={}", bunAvailable, nodeAvailable, implPath);
     }
 
     private static boolean isWindows() {
@@ -70,21 +64,25 @@ public class TypeScriptToolInvoker implements ToolInvoker {
 
     @Override
     public String execute(AgentExecutionContext ctx, String arguments) {
+        Path scriptDir = resolvePath(ctx);
+        Path runnerPath = scriptDir.resolve(RUNNER_FILE_NAME);
         if (!Files.exists(runnerPath)) {
             synchronized (this) {
                 if (!Files.exists(runnerPath)) {
-                    generateRunnerFile();
+                    generateRunnerFile(runnerPath);
                 }
             }
         }
         log.debug("scriptDir={} arguments={}", scriptDir, arguments);
         String jsonParams = ContextSerializer.serializeToJson(ctx, arguments);
-        
+
         List<String> command = new ArrayList<>(resolveRuntime());
         command.add(runnerPath.toString());
 
-        Path inputFile = scriptDir.resolve("_input.json");
+        Path sessionDir = scriptDir.resolve(ctx.getSessionId().toString());
+        Path inputFile = sessionDir.resolve("_input.json");
         try {
+            Files.createDirectories(sessionDir);
             Files.writeString(inputFile, jsonParams, StandardCharsets.UTF_8);
             command.add(inputFile.toString());
 
@@ -128,6 +126,7 @@ public class TypeScriptToolInvoker implements ToolInvoker {
         } finally {
             try {
                 Files.deleteIfExists(inputFile);
+                Files.deleteIfExists(sessionDir);
             } catch (Exception ignored) {
             }
         }
@@ -186,7 +185,24 @@ public class TypeScriptToolInvoker implements ToolInvoker {
                 "bun 和 node 运行时均不可用");
     }
 
-    private void generateRunnerFile() {
+    private Path resolvePath(AgentExecutionContext ctx) {
+        Path path = Path.of(implPath);
+        if (!path.isAbsolute()) {
+            String projectDir = ctx.getProjectDir();
+            if (projectDir == null || projectDir.isBlank()) {
+                throw new BusinessException(ErrorCode.TOOL_INVOKE_ERROR,
+                        "未设置工程目录，无法解析相对路径: " + implPath);
+            }
+            path = Path.of(projectDir, implPath).normalize();
+        }
+        if (!Files.isDirectory(path)) {
+            throw new BusinessException(ErrorCode.TOOL_INVOKE_ERROR,
+                    "脚本路径不是目录: " + implPath + " (resolved: " + path + ")");
+        }
+        return path;
+    }
+
+    private void generateRunnerFile(Path runnerPath) {
         try {
             Files.writeString(runnerPath, RunnerTemplate.INSTANCE, StandardCharsets.UTF_8);
             log.debug("已生成桥接文件: {}", runnerPath);
