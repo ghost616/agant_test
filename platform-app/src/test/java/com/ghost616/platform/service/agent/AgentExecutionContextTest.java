@@ -345,12 +345,12 @@ class AgentExecutionContextTest {
             Message expected = Message.builder().role("user").content("hello").build();
             setCallback(new AgentExecutionContext.AgentContextMutator.SendUserMessageCallback() {
                 @Override
-                public Message send(Long childSessionId, String content, Long modelId) {
+                public Message send(Long childSessionId, String content, Long modelId, Boolean thinking) {
                     return expected;
                 }
             });
 
-            Message result = mutator.sendUserMessage(1L, "hello", 100L);
+            Message result = mutator.sendUserMessage(1L, "hello", 100L, null);
             assertNotNull(result);
             assertEquals("user", result.getRole());
             assertEquals("hello", result.getContent());
@@ -358,7 +358,7 @@ class AgentExecutionContextTest {
 
         @Test
         void 反向_mutator_sendUserMessage_回调为null返回null() {
-            assertNull(mutator.sendUserMessage(1L, "hello", 100L));
+            assertNull(mutator.sendUserMessage(1L, "hello", 100L, null));
         }
 
         @Test
@@ -366,12 +366,12 @@ class AgentExecutionContextTest {
             Message expected = Message.builder().role("user").content("from context").build();
             setCallback(new AgentExecutionContext.AgentContextMutator.SendUserMessageCallback() {
                 @Override
-                public Message send(Long childSessionId, String content, Long modelId) {
+                public Message send(Long childSessionId, String content, Long modelId, Boolean thinking) {
                     return expected;
                 }
             });
 
-            Message result = context.sendUserMessage(2L, "from context", 200L);
+            Message result = context.sendUserMessage(2L, "from context", 200L, null);
             assertNotNull(result);
             assertEquals("user", result.getRole());
             assertEquals("from context", result.getContent());
@@ -379,7 +379,7 @@ class AgentExecutionContextTest {
 
         @Test
         void 反向_context_sendUserMessage_mutator回调为null返回null() {
-            assertNull(context.sendUserMessage(2L, "any", 200L));
+            assertNull(context.sendUserMessage(2L, "any", 200L, null));
         }
 
         @Test
@@ -387,20 +387,23 @@ class AgentExecutionContextTest {
             AtomicReference<Long> capturedSessionId = new AtomicReference<>();
             AtomicReference<String> capturedContent = new AtomicReference<>();
             AtomicReference<Long> capturedModelId = new AtomicReference<>();
+            AtomicReference<Boolean> capturedThinking = new AtomicReference<>();
             setCallback(new AgentExecutionContext.AgentContextMutator.SendUserMessageCallback() {
                 @Override
-                public Message send(Long childSessionId, String content, Long modelId) {
+                public Message send(Long childSessionId, String content, Long modelId, Boolean thinking) {
                     capturedSessionId.set(childSessionId);
                     capturedContent.set(content);
                     capturedModelId.set(modelId);
+                    capturedThinking.set(thinking);
                     return Message.builder().role("user").content(content).build();
                 }
             });
 
-            context.sendUserMessage(99L, "paramTest", 300L);
+            context.sendUserMessage(99L, "paramTest", 300L, true);
             assertEquals(Long.valueOf(99L), capturedSessionId.get());
             assertEquals("paramTest", capturedContent.get());
             assertEquals(Long.valueOf(300L), capturedModelId.get());
+            assertEquals(true, capturedThinking.get());
         }
     }
 

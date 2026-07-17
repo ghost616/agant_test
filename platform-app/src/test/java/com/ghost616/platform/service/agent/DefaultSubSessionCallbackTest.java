@@ -44,17 +44,40 @@ class DefaultSubSessionCallbackTest {
         when(sessionMapper.selectById(sessionId)).thenReturn(session);
 
         CompletableFuture<Message> futureResult = CompletableFuture.supplyAsync(
-                () -> callback.execute(sessionId, userMessage), executor);
+                () -> callback.execute(sessionId, userMessage, null), executor);
 
         DefaultSubSessionCallback.SubSessionData data = waitForMapEntry(parentSessionId);
         assertNotNull(data);
         assertEquals(sessionId, data.getChildSessionId());
         assertEquals(userMessage, data.getUserMessage());
+        assertNull(data.getThinking());
 
         data.getMessageResult().complete(expectedMessage);
 
         Message actual = futureResult.get(3, TimeUnit.SECONDS);
         assertEquals(expectedMessage, actual);
+    }
+
+    @Test
+    void executeWithThinkingTrueShouldStoreThinking() throws Exception {
+        Long sessionId = 800L;
+        Long parentSessionId = 80L;
+        String userMessage = "thinking test";
+
+        Session session = mock(Session.class);
+        when(session.getParentSessionId()).thenReturn(parentSessionId);
+        when(sessionMapper.selectById(sessionId)).thenReturn(session);
+
+        CompletableFuture<Message> futureResult = CompletableFuture.supplyAsync(
+                () -> callback.execute(sessionId, userMessage, true), executor);
+
+        DefaultSubSessionCallback.SubSessionData data = waitForMapEntry(parentSessionId);
+        assertNotNull(data);
+        assertEquals(sessionId, data.getChildSessionId());
+        assertEquals(true, data.getThinking());
+
+        data.getMessageResult().complete(Message.builder().role("assistant").content("thinking done").build());
+        futureResult.get(3, TimeUnit.SECONDS);
     }
 
     @Test
@@ -65,7 +88,7 @@ class DefaultSubSessionCallbackTest {
         when(session.getParentSessionId()).thenReturn(null);
         when(sessionMapper.selectById(sessionId)).thenReturn(session);
 
-        Message result = callback.execute(sessionId, "no parent");
+        Message result = callback.execute(sessionId, "no parent", null);
         assertNull(result);
     }
 
@@ -74,7 +97,7 @@ class DefaultSubSessionCallbackTest {
         Long sessionId = 300L;
         when(sessionMapper.selectById(sessionId)).thenReturn(null);
 
-        Message result = callback.execute(sessionId, "not found");
+        Message result = callback.execute(sessionId, "not found", null);
         assertNull(result);
     }
 
@@ -88,7 +111,7 @@ class DefaultSubSessionCallbackTest {
         when(sessionMapper.selectById(sessionId)).thenReturn(session);
 
         CompletableFuture<Message> futureResult = CompletableFuture.supplyAsync(
-                () -> callback.execute(sessionId, "cleanup test"), executor);
+                () -> callback.execute(sessionId, "cleanup test", null), executor);
 
         DefaultSubSessionCallback.SubSessionData data = waitForMapEntry(parentSessionId);
         assertNotNull(data);
@@ -116,12 +139,13 @@ class DefaultSubSessionCallbackTest {
         when(sessionMapper.selectById(sessionId)).thenReturn(session);
 
         CompletableFuture<Message> futureResult = CompletableFuture.supplyAsync(
-                () -> callback.execute(sessionId, userMessage), executor);
+                () -> callback.execute(sessionId, userMessage, null), executor);
 
         DefaultSubSessionCallback.SubSessionData data = waitForMapEntry(parentSessionId);
         assertNotNull(data);
         assertEquals(sessionId, data.getChildSessionId());
         assertEquals(userMessage, data.getUserMessage());
+        assertNull(data.getThinking());
         assertFalse(data.getMessageResult().isDone());
 
         data.getMessageResult().complete(expectedMessage);
@@ -140,7 +164,7 @@ class DefaultSubSessionCallbackTest {
 
         Thread testThread = new Thread(() -> {
             try {
-                callback.execute(sessionId, "interrupt test");
+                callback.execute(sessionId, "interrupt test", null);
                 fail("Should have thrown exception");
             } catch (RuntimeException e) {
                 assertTrue(e.getMessage().contains("interrupted"));

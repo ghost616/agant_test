@@ -1,4 +1,6 @@
 {
   "agent-integration/src/main/java/com/ghost616/agentinteg/AgentAssembler.java": "9f0d2aa39e07bd70cef6418056e2df71",
-  "platform-app/src/main/java/com/ghost616/platform/config/AgentContextConfiguration.java": "f2678f44409cc76125b40dd8d0a9f984"
+  "platform-app/src/main/java/com/ghost616/platform/config/AgentContextConfiguration.java": "f2678f44409cc76125b40dd8d0a9f984",
+  "agent-integration/src/main/java/com/ghost616/agentinteg/tool/SubSessionCallbackSystemTool.java": "30bf3b82f125bdad6ef32c338bd77cfb",
+  "agent-integration/src/test/java/com/ghost616/agentinteg/tool/SubSessionCallbackSystemToolTest.java": "16aba26ec593a86b56cec7a594244bd5"
 }

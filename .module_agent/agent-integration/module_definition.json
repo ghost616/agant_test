@@ -35,7 +35,7 @@
     },
     {
       "path": "src/main/java/com/ghost616/agentinteg/tool/SubSessionCallbackSystemTool.java",
-      "description": "SystemTool 系统工具实现，工具名 callback_sub_session。构造函数注入 SubSessionCallback 回调，execute() 解析 JSON 参数后按 toolNames/skillNames 从上下文匹配获取 toolIds/skillIds，调用 createChildSession 创建子会话，通过回调执行用户消息并返回消息内容。"
+      "description": "SystemTool 系统工具实现，工具名 callback_sub_session。构造函数注入 SubSessionCallback 回调，execute() 解析 JSON 参数后按 toolNames/skillNames 从上下文匹配获取 toolIds/skillIds，调用 createChildSession 创建子会话，通过注入的 callback.execute() 执行用户消息并返回消息内容。支持 thinking 参数传递给回调。"
     }
   ]
 }

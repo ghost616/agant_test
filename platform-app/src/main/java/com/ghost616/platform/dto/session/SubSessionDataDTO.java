@@ -17,4 +17,6 @@ public class SubSessionDataDTO {
     private Long childSessionId;
 
     private String userMessage;
+
+    private Boolean thinking;
 }

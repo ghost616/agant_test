@@ -38,6 +38,7 @@ CREATE TABLE IF NOT EXISTS session (
     parent_session_id BIGINT,
     is_child         TINYINT(1) DEFAULT 0,
     description      VARCHAR(500),
+    thinking         TINYINT(1),
     create_time      TIMESTAMP,
     update_time      TIMESTAMP,
     deleted          INTEGER DEFAULT 0

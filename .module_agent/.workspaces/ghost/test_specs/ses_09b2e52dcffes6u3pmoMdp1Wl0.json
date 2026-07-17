@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_09b2e52dcffes6u3pmoMdp1Wl0",
+  "content": "## SubSessionCallbackSystemTool 新增 thinking 参数\n\n### 变更文件\n1. `agent-integration/src/main/java/com/ghost616/agentinteg/tool/SubSessionCallbackSystemTool.java`\n2. `agent-integration/src/test/java/com/ghost616/agentinteg/tool/SubSessionCallbackSystemToolTest.java`\n\n### 变更功能说明\n1. SubSessionCallbackSystemTool.execute() 方法从工具参数 JSON 中解析 thinking 字段（boolean，可选，默认 null）\n2. execute() 将 thinking 传递给 ctx.createChildSession() 的第 7 个参数\n3. 参数 schema 新增 thinking 字段描述\n4. 所有 createChildSession 的 mock stub 和 verify 调用已适配 7 参数签名",
+  "timestamp": "2026-07-15T08:12:28.182Z"
+}

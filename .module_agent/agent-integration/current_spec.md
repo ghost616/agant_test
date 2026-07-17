@@ -7,6 +7,8 @@
 - **AgentAssembler**：build() 方法构造 ChatDataProviderProxy 代理，将 MessageSavePostHook 通过代理注入到 ChatService；暴露 messageSavePostHook() getter 并在 Result record 中包含该实例
 - **AgentAssembler**：build() 方法构造 SystemToolProviderProxy 代理，确保 history_query/load_skills/unload_skills 三个系统工具始终可用；SystemToolManager 使用代理而非原始 SystemToolProvider
 - **AgentAssembler**：build() 方法内部使用 AgentComponentRegistry 统一装配所有 Provider/Manager/Tracker，registry 不对外暴露；对外 getter 方法签名不变
+- **SubSessionCallbackSystemTool**：参数 schema 新增 thinking（boolean，可选）；execute() 解析工具参数 JSON 中的 thinking 字段（默认 null）并传递给 createChildSession 方法
+- **SubSessionCallbackSystemTool**：execute() 方法改为通过构造函数注入的 SubSessionCallback 回调发送子会话消息，而非直接调用 ctx.sendUserMessage()；thinking 参数通过回调的第三个参数传递
 ## 模块职责
 提供多平台模型调用器的实现（ModelInvoker）和 Agent 组件的组装能力。
 

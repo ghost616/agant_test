@@ -11,7 +11,7 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/controller/SessionController.java",
-      "description": "会话管理 REST 控制器，提供会话的 CRUD、消息查询、回滚、子会话列表查询等 HTTP API 端点"
+      "description": "会话管理 REST 控制器，提供会话的 CRUD、消息查询、回滚、子会话列表查询、子会话数据获取（映射 thinking 字段）、子会话完成等 HTTP API 端点"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/session/SessionService.java",
@@ -83,11 +83,11 @@
     },
     {
       "path": "platform-app/src/main/resources/schema.sql",
-      "description": "数据库初始化脚本，包含所有建表语句（model_config/tool_config/session/message/message_tool_call/session_tool/agent_config/agent_tool/agent_skill/skill_config/skill_tool/session_variable/session_skill），关联表含 session_auth 列（默认值 0）。"
+      "description": "数据库初始化脚本，包含所有建表语句（model_config/tool_config/session/message/message_tool_call/session_tool/agent_config/agent_tool/agent_skill/skill_config/skill_tool/session_variable/session_skill），关联表含 session_auth 列（默认值 0）。session 表含 thinking TINYINT(1) 列。"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/config/SchemaMigration.java",
-      "description": "数据库 Schema 迁移组件，ApplicationRunner 启动时执行 PRAGMA 检测+ALTER TABLE ADD COLUMN；session_auth 迁移默认值设为 0；迁移循环后对 session_tool/agent_tool/agent_skill/session_skill 四张表执行幂等 NULL 回填（UPDATE ... SET session_auth=0 WHERE IS NULL），回填失败不中断启动。"
+      "description": "数据库 Schema 迁移组件，ApplicationRunner 启动时执行 PRAGMA 检测+ALTER TABLE ADD COLUMN；session_auth 迁移默认值设为 0；迁移循环后对 session_tool/agent_tool/agent_skill/session_skill 四张表执行幂等 NULL 回填（UPDATE ... SET session_auth=0 WHERE IS NULL），回填失败不中断启动。新增 session.thinking 列的 ALTER TABLE 迁移。"
     },
     {
       "path": "platform-app/pom.xml",
@@ -99,7 +99,7 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/systemtest/SystemTestSubSessionTool.java",
-      "description": "系统测试工具实现，实现 SystemTool 接口。工具名 system_test，用于创建子会话并发送用户消息获取回复。注入 ObjectMapper 进行 JSON 解析，通过 AgentExecutionContext 的 createChildSession 和 sendUserMessage 方法操作子会话。"
+      "description": "系统测试工具实现，实现 SystemTool 接口。工具名 system_test，用于创建子会话并发送用户消息获取回复。注入 ObjectMapper 进行 JSON 解析，通过 AgentExecutionContext 的 createChildSession 和 sendUserMessage 方法操作子会话。支持从 JSON 参数中读取 thinking 字段传入 sendUserMessage。"
     },
     {
       "path": "platform-app/src/test/java/com/ghost616/platform/systemtest/SystemTestSubSessionToolTest.java",
@@ -107,7 +107,7 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultSubSessionCallback.java",
-      "description": "SubSessionCallback 默认实现。注入 ContextDataProvider 通过子会话 ID 获取父会话 ID；维护 ConcurrentHashMap 以 parentSessionId 为键管理 SubSessionData（含 childSessionId、userMessage、CompletableFuture<Message>）；execute 方法阻塞等待子会话消息结果，完成后自动清理；提供 getSubSessionData 公共方法供外部组件通过父会话 ID 获取数据并完成 future。"
+      "description": "SubSessionCallback 默认实现。注入 SessionMapper 通过子会话 ID 获取父会话 ID；维护 ConcurrentHashMap 以 parentSessionId 为键管理 SubSessionData（含 childSessionId、userMessage、thinking、CompletableFuture<Message>）；execute 方法阻塞等待子会话消息结果，完成后自动清理；提供 getSubSessionData 公共方法供外部组件通过父会话 ID 获取数据并完成 future。"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/dto/ToolStatusResultDTO.java",
@@ -116,6 +116,14 @@
     {
       "path": "platform-app/src/test/java/com/ghost616/platform/dto/ToolStatusResultDTOTest.java",
       "description": "ToolStatusResultDTO 单元测试，覆盖无参/全参构造器、getter/setter、默认值、空值、equals/hashCode/toString 等 8 个用例"
+    },
+    {
+      "path": "platform-app/src/test/java/com/ghost616/platform/dto/session/SubSessionDataDTOTest.java",
+      "description": "SubSessionDataDTO 单元测试，覆盖 builder 设置 thinking、序列化/反序列化、无参/全参构造器、equals/hashCode 等 15 个用例"
+    },
+    {
+      "path": "platform-app/src/test/java/com/ghost616/platform/controller/SessionControllerTest.java",
+      "description": "SessionController 单元测试，覆盖 getSubSessionData 端点的 thinking 字段映射（true/false/null）及数据不存在场景，共 4 个用例"
     }
   ]
 }

@@ -52,3 +52,4 @@
 [2026-07-15T07:13:06.435Z] [session: ses_09b632441ffe5RViAEG0dFS66m] ChatService: 在构建技能 system 消息前检查 systemToolManager 中是否注册了 _sys_load_skills 工具，若不存在则跳过可用技能列表消息、已加载技能提示消息及 parseLoadedSkills 调用，避免提示 LLM 使用不存在的系统工具。
 [2026-07-15T07:31:13.687Z] [session: ses_09b632441ffe5RViAEG0dFS66m] ChatService: 落实皋陶审查建议，将 "_sys_load_skills" 提取为类级常量 LOAD_SKILLS_TOOL_NAME，复用 systemToolManager.getToolDefinitions() 结果到局部变量 toolDefinitions 避免重复调用。
 [2026-07-15T07:39:36.439Z] [session: ses_09b632441ffe5RViAEG0dFS66m] LoadSkillsSystemTool: SESSION_KEY 改为 public，新增 FULL_TOOL_NAME 常量。ChatService: 3 处硬编码改为引用 LoadSkillsSystemTool 常量。
+[2026-07-16T06:01:31.563Z] [session: ses_0967c4e03ffe41Kjt3zpDxe35o] [2026-07-16] SubSessionCallback.execute 方法新增第三个参数 Boolean thinking，补充 Javadoc @param thinking 说明；保持 @FunctionalInterface 注解

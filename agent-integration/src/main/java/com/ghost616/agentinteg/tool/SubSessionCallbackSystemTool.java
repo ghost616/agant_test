@@ -44,6 +44,7 @@ public class SubSessionCallbackSystemTool implements SystemTool {
                     "description": { "type": "string", "description": "子会话描述" },
                     "toolNames": { "type": "array", "items": { "type": "string" }, "description": "要分配给子会话的工具名称列表" },
                     "skillNames": { "type": "array", "items": { "type": "string" }, "description": "要分配给子会话的技能名称列表" },
+                    "thinking": { "type": "boolean", "description": "是否启用思考模式" },
                     "userMessage": { "type": "string", "description": "发送给子会话的用户消息" }
                   },
                   "required": ["sessionName", "userMessage"]
@@ -59,12 +60,15 @@ public class SubSessionCallbackSystemTool implements SystemTool {
             String description = root.has("description") && !root.get("description").isNull()
                     ? root.get("description").asText() : null;
 
+            Boolean thinking = root.has("thinking") && !root.get("thinking").isNull()
+                    ? root.get("thinking").asBoolean() : null;
+
             List<Long> toolIds = resolveToolIds(ctx, root.get("toolNames"));
             List<Long> skillIds = resolveSkillIds(ctx, root.get("skillNames"));
 
             Long childSessionId = ctx.createChildSession(sessionName, description, ctx.getModelId(), toolIds, skillIds, null);
 
-            Message message = callback.execute(childSessionId, userMessage);
+            Message message = callback.execute(childSessionId, userMessage, thinking);
 
             return message.getContent();
         } catch (Exception e) {

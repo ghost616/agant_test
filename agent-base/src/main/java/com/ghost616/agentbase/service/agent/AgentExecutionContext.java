@@ -82,8 +82,8 @@ public class AgentExecutionContext {
         return childSessionId;
     }
 
-    public Message sendUserMessage(Long childSessionId, String content, Long modelId) {
-        return mutator.sendUserMessage(childSessionId, content, modelId);
+    public Message sendUserMessage(Long childSessionId, String content, Long modelId, Boolean thinking) {
+        return mutator.sendUserMessage(childSessionId, content, modelId, thinking);
     }
 
     public record ChildSession(Long sessionId, String sessionName, String description, Long modelId) {
@@ -195,7 +195,7 @@ public class AgentExecutionContext {
 
         @FunctionalInterface
         public interface SendUserMessageCallback {
-            Message send(Long childSessionId, String content, Long modelId);
+            Message send(Long childSessionId, String content, Long modelId, Boolean thinking);
         }
 
         public void bind(AgentExecutionContext context) {
@@ -294,9 +294,9 @@ public class AgentExecutionContext {
             return null;
         }
 
-        public Message sendUserMessage(Long childSessionId, String content, Long modelId) {
+        public Message sendUserMessage(Long childSessionId, String content, Long modelId, Boolean thinking) {
             if (sendUserMessageCallback != null) {
-                return sendUserMessageCallback.send(childSessionId, content, modelId);
+                return sendUserMessageCallback.send(childSessionId, content, modelId, thinking);
             }
             return null;
         }

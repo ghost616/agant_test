@@ -294,7 +294,7 @@ function AgentChat(): JSX.Element {
             setSubCurrentResponse('');
             setSubCurrentReasoning('');
             subAbortRef.current = agentChatStream(
-              { sessionId: childId, content },
+              { sessionId: childId, content, thinking: data.thinking },
               {
                 onDelta: (text) => setSubCurrentResponse((prev) => prev + text),
                 onReasoning: (text) => setSubCurrentReasoning((prev) => prev + text),

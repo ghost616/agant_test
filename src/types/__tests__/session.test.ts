@@ -23,3 +23,14 @@ describe('Session 类型字段', () => {
     }
   });
 });
+
+describe('SubSessionData 类型 (在 services/session.ts 中)', () => {
+  it('SubSessionData 接口应包含 thinking?: boolean 字段', () => {
+    const source = readFileSync(resolve(__dirname, '../../services/session.ts'), 'utf-8');
+    const match = source.match(/export interface SubSessionData \{[\s\S]*?^\}/m);
+    expect(match).not.toBeNull();
+    if (match) {
+      expect(match[0]).toContain('thinking?: boolean');
+    }
+  });
+});

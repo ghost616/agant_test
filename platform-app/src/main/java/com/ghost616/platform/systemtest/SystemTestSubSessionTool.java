@@ -37,7 +37,9 @@ public class SystemTestSubSessionTool implements ToolInvoker {
                 return "{\"error\":\"createChildSession returned null\"}";
             }
 
-            Message reply = ctx.sendUserMessage(childSessionId, message, modelId);
+            Boolean thinking = root.has("thinking") && !root.get("thinking").isNull()
+                    ? root.get("thinking").asBoolean() : null;
+            Message reply = ctx.sendUserMessage(childSessionId, message, modelId, thinking);
 
             return OBJECT_MAPPER.writeValueAsString(Map.of(
                     "role", reply.getRole(),

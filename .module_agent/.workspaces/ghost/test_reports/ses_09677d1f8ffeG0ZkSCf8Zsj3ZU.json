@@ -1,0 +1,5 @@
+{
+  "lizhu_session_id": "ses_09677d1f8ffeG0ZkSCf8Zsj3ZU",
+  "content": "# 测试报告\n\n## 测试概览\n\n| 项目 | 数值 |\n|------|------|\n| 测试模块 | agent-integration |\n| 测试类 | `SubSessionCallbackSystemToolTest` |\n| 总测试数 | 16 |\n| 通过 | 16 |\n| 失败 | 0 |\n| 耗时 | 4.909s |\n\n## 测试验证点\n\n1. **callback.execute 替代 ctx.sendUserMessage** — `execute()` 中调用 `callback.execute(childSessionId, userMessage, thinking)` 发送子会话消息 ✓\n2. **thinking 参数传递** — 覆盖 `thinking=true` / `false` / `null` 三种场景 ✓\n3. **JSON 解析异常处理** — 返回错误 JSON ✓\n4. **回调抛异常处理** — 返回包含错误信息的 JSON ✓\n5. **toolNames/skillNames 匹配** — 正确解析和过滤 ✓\n6. **空数组处理** — toolNames/skillNames 为空数组时传 null ✓\n\n## 测试命令\n\n```\nmvn -pl agent-integration -am test -Dtest=SubSessionCallbackSystemToolTest\n```\n\n## 结论\n\n**BUILD SUCCESS** — 所有 16 个测试用例全部通过，功能正常。\n",
+  "timestamp": "2026-07-16T07:00:00.776Z"
+}

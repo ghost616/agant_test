@@ -35,6 +35,16 @@ describe('AgentChat 子会话相关 (静态验证)', () => {
     expect(source).toContain("if (!data) {");
   });
 
+  it('handleSubSessionFlow 应将 data.thinking 传递给 agentChatStream', () => {
+    const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
+    const handleSubBlock = source.match(/const handleSubSessionFlow[\s\S]*?}, \[sessionId, pollToolStatus\]\);/);
+    expect(handleSubBlock).not.toBeNull();
+    if (handleSubBlock) {
+      expect(handleSubBlock[0]).toContain('thinking: data.thinking');
+      expect(handleSubBlock[0]).toContain('{ sessionId: childId, content, thinking: data.thinking }');
+    }
+  });
+
   it('pollToolStatus 应检测 status.needsSubSessionFlow 并调用 handleSubSessionFlow 启动子会话', () => {
     const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
     const pollBlock = source.match(/const pollToolStatus[\s\S]*?}, \[\]\);/);

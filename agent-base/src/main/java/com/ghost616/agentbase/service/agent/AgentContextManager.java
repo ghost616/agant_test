@@ -198,8 +198,8 @@ public class AgentContextManager {
                                                     toolIds, skillIds, prompt) ->
                     createChildSession(psId, sessionName, description, modelId,
                             toolIds, skillIds, prompt);
-            mutator.sendUserMessageCallback = (childSessionId, content, modelId) ->
-                    sendUserMessage(childSessionId, content, modelId);
+            mutator.sendUserMessageCallback = (childSessionId, content, modelId, thinking) ->
+                    sendUserMessage(childSessionId, content, modelId, thinking);
 
         }
     }
@@ -209,9 +209,9 @@ public class AgentContextManager {
         return dataProvider.createChildSession(parentSessionId, sessionName, description, modelId, toolIds, skillIds, prompt);
     }
 
-    private Message sendUserMessage(Long childSessionId, String content, Long modelId) {
+    private Message sendUserMessage(Long childSessionId, String content, Long modelId, Boolean thinking) {
         if (agentMessageProxy != null) {
-            return agentMessageProxy.sendUserMessage(childSessionId, content, modelId);
+            return agentMessageProxy.sendUserMessage(childSessionId, content, modelId, thinking);
         }
         return null;
     }

@@ -79,6 +79,7 @@ public class SessionController {
         SubSessionDataDTO result = SubSessionDataDTO.builder()
                 .childSessionId(data.getChildSessionId())
                 .userMessage(data.getUserMessage())
+                .thinking(data.getThinking())
                 .build();
         return ApiResponse.success(result);
     }

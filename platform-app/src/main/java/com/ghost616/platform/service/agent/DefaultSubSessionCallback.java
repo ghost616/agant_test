@@ -20,7 +20,7 @@ public class DefaultSubSessionCallback implements SubSessionCallback {
     private final ConcurrentHashMap<Long, SubSessionData> subSessionDataMap = new ConcurrentHashMap<>();
 
     @Override
-    public Message execute(Long sessionId, String userMessage) {
+    public Message execute(Long sessionId, String userMessage, Boolean thinking) {
         Session session = sessionMapper.selectById(sessionId);
         if (session == null || session.getParentSessionId() == null) {
             return null;
@@ -28,7 +28,7 @@ public class DefaultSubSessionCallback implements SubSessionCallback {
         Long parentSessionId = session.getParentSessionId();
 
         CompletableFuture<Message> messageResult = new CompletableFuture<>();
-        SubSessionData data = new SubSessionData(sessionId, userMessage, messageResult);
+        SubSessionData data = new SubSessionData(sessionId, userMessage, thinking, messageResult);
         subSessionDataMap.put(parentSessionId, data);
 
         try {
@@ -50,11 +50,13 @@ public class DefaultSubSessionCallback implements SubSessionCallback {
     public static class SubSessionData {
         private final Long childSessionId;
         private final String userMessage;
+        private final Boolean thinking;
         private final CompletableFuture<Message> messageResult;
 
-        public SubSessionData(Long childSessionId, String userMessage, CompletableFuture<Message> messageResult) {
+        public SubSessionData(Long childSessionId, String userMessage, Boolean thinking, CompletableFuture<Message> messageResult) {
             this.childSessionId = childSessionId;
             this.userMessage = userMessage;
+            this.thinking = thinking;
             this.messageResult = messageResult;
         }
 
@@ -64,6 +66,10 @@ public class DefaultSubSessionCallback implements SubSessionCallback {
 
         public String getUserMessage() {
             return userMessage;
+        }
+
+        public Boolean getThinking() {
+            return thinking;
         }
 
         public CompletableFuture<Message> getMessageResult() {

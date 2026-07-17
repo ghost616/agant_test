@@ -6,3 +6,5 @@
 [2026-07-11T00:48:34.539Z] [session: ses_0b15a7e86ffejnlkRjotwuTQTl] 修复 AgentAssembler.java 编译错误：添加缺失的 import com.ghost616.agentbase.service.agent.AgentMessageProxy，解决第 99 行 new AgentMessageProxy(...) 编译失败
 [2026-07-12T02:30:02.713Z] [session: ses_0abd8d7d9ffeqO4GXG3uAHsdqZ] 新增 SubSessionCallbackSystemTool 系统工具实现（工具名 callback_sub_session），支持按名称匹配工具/技能、创建子会话并通过 SubSessionCallback 回调执行用户消息
 [2026-07-14T02:51:58.484Z] [session: ses_0a178b433ffeilmyKqgPrrpUT0] [2026-07-14T02:52:00.000Z] [session: ses_0a178b433ffeilmyKqgPrrpUT0] 重构 AgentAssembler：新增 AgentComponentRegistry 字段，build() 改用 registry 装配所有 Provider/Manager/Tracker；getter 改为从 registry 返回；ChatDataProviderProxy 改为以 registry 获取 Manager；registry 不对外暴露
+[2026-07-15T08:12:08.438Z] [session: ses_09b2e52dcffes6u3pmoMdp1Wl0] SubSessionCallbackSystemTool: 参数 schema 新增 thinking 字段，execute() 解析 thinking 参数并传递给 createChildSession；更新测试用例适配新增参数
+[2026-07-16T06:59:19.523Z] [session: ses_096485815ffexl721rZTdPOHID] SubSessionCallbackSystemTool: execute() 恢复通过注入的 SubSessionCallback 回调发送子会话消息（callback.execute），而非直接调用 ctx.sendUserMessage；thinking 参数通过回调传递；测试文件适配为 mock/verify callback.execute 并覆盖 thinking=true/false/null 三种场景

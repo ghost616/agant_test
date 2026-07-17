@@ -63,3 +63,14 @@ platform-app 模块包含以下功能：
 - SkillConfigServiceImpl.toDTO 映射 sessionAuth 字段
 - DefaultContextDataProvider.createChildSession 创建 SessionTool 和 SessionSkill 时设置 sessionAuth 值（SessionTool 从 ToolConfigDTO.sessionAuth 获取，SessionSkill 从 SkillConfig.sessionAuth 获取）
 - 数据库 Schema 修复：session_tool/agent_tool/agent_skill/session_skill 四张表的 session_auth 列默认值设为 0，SchemaMigration 迁移默认值改为 "0" 并追加幂等 NULL 回填逻辑，解决 SQLite getObject(Integer.class) 遇 NULL 抛 Bad value 异常问题
+- Session 实体新增 thinking (Boolean) 字段，标识子会话是否启用思考模式
+- DefaultContextDataProvider.createChildSession 新增 Boolean thinking 参数，创建 Session 时设置 thinking 字段
+- SystemTestSubSessionTool 从 JSON 参数中读取 thinking，传递给 createChildSession
+- SystemTestSubSessionTool 从 JSON 参数中读取 thinking 字段传递给 sendUserMessage（不再传给 createChildSession）
+- Session 表新增 thinking TINYINT(1) 列，SchemaMigration 增量迁移支持
+- SchemaMigration 新增 session.thinking 列的 ALTER TABLE 迁移
+- DefaultSubSessionCallback.execute 方法新增第三个参数 Boolean thinking，与 SubSessionCallback 接口签名一致（透传接收）
+- DefaultSubSessionCallback.SubSessionData 内部类新增 thinking(Boolean) 字段、构造参数及 getter；execute 方法创建 SubSessionData 时传递 thinking 参数
+- SubSessionDataDTO 新增 thinking 字段，SessionController.getSubSessionData() 映射 thinking 到 DTO
+- 新增 SubSessionDataDTOTest（15 用例覆盖 thinking 序列化/反序列化/构造器/equals/hashCode）
+- 新增 SessionControllerTest（4 用例覆盖 getSubSessionData 端点 thinking 映射）

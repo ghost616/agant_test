@@ -157,6 +157,7 @@ export interface ToolStatusResult {
 export interface SubSessionData {
   childSessionId: string;
   userMessage: string;
+  thinking?: boolean;
 }
 
 export async function getSubSessionData(sessionId: string): Promise<SubSessionData | null> {

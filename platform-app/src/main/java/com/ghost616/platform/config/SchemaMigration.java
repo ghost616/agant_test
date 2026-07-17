@@ -45,6 +45,7 @@ public class SchemaMigration implements ApplicationRunner {
                 new Migration("session", "parent_session_id", "BIGINT", null),
                 new Migration("session", "is_child", "TINYINT(1)", "0"),
                 new Migration("session", "description", "VARCHAR(500)", null),
+                new Migration("session", "thinking", "TINYINT(1)", null),
                 new Migration("session_tool", "session_auth", "INT", "0"),
                 new Migration("agent_tool", "session_auth", "INT", "0"),
                 new Migration("agent_skill", "session_auth", "INT", "0"),

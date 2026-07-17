@@ -32,5 +32,9 @@
   "platform-app/src/main/resources/schema.sql": "df1b3748452b006a442caa1fe7ff282c",
   "platform-app/src/main/java/com/ghost616/platform/service/skill/SkillConfigServiceImpl.java": "24e0131720ab468c8a2e0ab7859c1807",
   "platform-app/src/test/java/com/ghost616/platform/service/agent/DefaultContextDataProviderTest.java": "78b088cf078c1024c1a28a321930038a",
-  "platform-app/src/main/java/com/ghost616/platform/config/SchemaMigration.java": "0bd39f7d32b67543dcb2abc0b99161e9"
+  "platform-app/src/main/java/com/ghost616/platform/config/SchemaMigration.java": "0bd39f7d32b67543dcb2abc0b99161e9",
+  "platform-app/src/main/java/com/ghost616/platform/entity/Session.java": "50e13ede416dd9f94f5ea8c8a5476a02",
+  "platform-app/src/main/java/com/ghost616/platform/systemtest/SystemTestSubSessionTool.java": "f09c85e40d68555b4d952ae9be6a1446",
+  "platform-app/src/test/java/com/ghost616/platform/systemtest/SystemTestSubSessionToolTest.java": "e496ddc6906a233f56c66a6b9116929f",
+  "platform-app/src/main/java/com/ghost616/platform/dto/session/SubSessionDataDTO.java": "e974db12013911c1ca25fc69c60a9b91"
 }

@@ -112,6 +112,30 @@ describe('getSubSessionData', () => {
     expect(mockGet).toHaveBeenCalledWith('/sessions/session-b/sub-session-data');
   });
 
+  it('应返回包含 thinking 字段的 SubSessionData（thinking=true）', async () => {
+    const fakeData = { childSessionId: 'child-1', userMessage: '子会话请求', thinking: true };
+    mockGet.mockResolvedValueOnce({ data: { data: fakeData } });
+    const result = await getSubSessionData('session-123');
+    expect(result).toEqual(fakeData);
+    expect(result!.thinking).toBe(true);
+  });
+
+  it('应返回包含 thinking 字段的 SubSessionData（thinking=false）', async () => {
+    const fakeData = { childSessionId: 'child-2', userMessage: '子会话请求2', thinking: false };
+    mockGet.mockResolvedValueOnce({ data: { data: fakeData } });
+    const result = await getSubSessionData('session-456');
+    expect(result).toEqual(fakeData);
+    expect(result!.thinking).toBe(false);
+  });
+
+  it('应返回不含 thinking 字段的 SubSessionData（thinking 可选）', async () => {
+    const fakeData = { childSessionId: 'child-3', userMessage: '子会话请求3' };
+    mockGet.mockResolvedValueOnce({ data: { data: fakeData } });
+    const result = await getSubSessionData('session-789');
+    expect(result).toEqual(fakeData);
+    expect(result!.thinking).toBeUndefined();
+  });
+
   it('应在 API 失败时抛出错误', async () => {
     const testError = new Error('Network Error');
     mockGet.mockRejectedValueOnce(testError);

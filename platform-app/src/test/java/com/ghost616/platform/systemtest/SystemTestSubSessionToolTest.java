@@ -40,7 +40,7 @@ class SystemTestSubSessionToolTest {
                 .thenReturn(100L);
 
         Message reply = Message.builder().role("assistant").content("Hello from child").build();
-        when(ctx.sendUserMessage(eq(100L), eq("Hi"), eq(1L))).thenReturn(reply);
+        when(ctx.sendUserMessage(eq(100L), eq("Hi"), eq(1L), isNull())).thenReturn(reply);
 
         String result = tool.execute(ctx, "{\"sessionName\":\"test-session\",\"message\":\"Hi\"}");
 
@@ -88,7 +88,7 @@ class SystemTestSubSessionToolTest {
                 .thenReturn(200L);
 
         Message reply = Message.builder().role("user").content("ok").build();
-        when(ctx.sendUserMessage(eq(200L), eq("msg"), eq(1L))).thenReturn(reply);
+        when(ctx.sendUserMessage(eq(200L), eq("msg"), eq(1L), isNull())).thenReturn(reply);
 
         String result = tool.execute(ctx, "{\"sessionName\":\"\",\"message\":\"msg\"}");
 
@@ -105,7 +105,7 @@ class SystemTestSubSessionToolTest {
                 .thenReturn(300L);
 
         Message reply = Message.builder().role("assistant").content(longMsg).build();
-        when(ctx.sendUserMessage(eq(300L), eq(longMsg), eq(1L))).thenReturn(reply);
+        when(ctx.sendUserMessage(eq(300L), eq(longMsg), eq(1L), isNull())).thenReturn(reply);
 
         String result = tool.execute(ctx, "{\"sessionName\":\"long\",\"message\":\"" + longMsg + "\"}");
 

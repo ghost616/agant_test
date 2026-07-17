@@ -25,11 +25,12 @@ public class AgentMessageProxy {
         this.toolExecutionService = toolExecutionService;
     }
 
-    public Message sendUserMessage(Long childSessionId, String content, Long modelId) {
+    public Message sendUserMessage(Long childSessionId, String content, Long modelId, Boolean thinking) {
         ChatRequest request = ChatRequest.builder()
                 .sessionId(childSessionId)
                 .content(content)
                 .modelId(modelId)
+                .thinking(thinking)
                 .build();
         return processChat(request);
     }

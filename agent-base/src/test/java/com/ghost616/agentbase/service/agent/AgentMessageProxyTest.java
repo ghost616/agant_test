@@ -39,7 +39,7 @@ class AgentMessageProxyTest {
                 .build();
         when(chatService.chat(any())).thenReturn(Flux.just(event));
 
-        Message result = proxy.sendUserMessage(sessionId, "Hi", modelId);
+        Message result = proxy.sendUserMessage(sessionId, "Hi", modelId, null);
 
         assertEquals("assistant", result.getRole());
         assertEquals("Hello back", result.getContent());
@@ -63,7 +63,7 @@ class AgentMessageProxyTest {
                 "done", "tid1", "myTool", "{}", false, null);
         when(toolExecutionService.getToolStatus(any(), any())).thenReturn(statusResult);
 
-        Message result = proxy.sendUserMessage(sessionId, "Hi", modelId);
+        Message result = proxy.sendUserMessage(sessionId, "Hi", modelId, null);
 
         assertEquals("assistant", result.getRole());
         assertEquals("Result text", result.getContent());
@@ -84,7 +84,7 @@ class AgentMessageProxyTest {
                 "done", "tid1", "repeatedTool", "{\"x\":1}", false, null);
         when(toolExecutionService.getToolStatus(any(), any())).thenReturn(statusResult);
 
-        Message result = proxy.sendUserMessage(sessionId, "Hi", modelId);
+        Message result = proxy.sendUserMessage(sessionId, "Hi", modelId, null);
 
         assertEquals("assistant", result.getRole());
         assertEquals("", result.getContent());
@@ -109,7 +109,7 @@ class AgentMessageProxyTest {
                 "done", "tid1", "safeTool", "{}", false, null);
         when(toolExecutionService.getToolStatus(any(), any())).thenReturn(statusResult);
 
-        Message result = proxy.sendUserMessage(sessionId, "Hi", modelId);
+        Message result = proxy.sendUserMessage(sessionId, "Hi", modelId, null);
 
         assertEquals("assistant", result.getRole());
         assertEquals("OK", result.getContent());
@@ -130,7 +130,7 @@ class AgentMessageProxyTest {
                 "empty", null, null, null, false, null);
         when(toolExecutionService.executeTool(any())).thenReturn(emptyResult);
 
-        Message result = proxy.sendUserMessage(sessionId, "Hi", modelId);
+        Message result = proxy.sendUserMessage(sessionId, "Hi", modelId, null);
 
         assertEquals("assistant", result.getRole());
         assertEquals("Done", result.getContent());
@@ -141,7 +141,7 @@ class AgentMessageProxyTest {
     void sendUserMessage_events为null时返回空消息() {
         when(chatService.chat(any())).thenReturn(Flux.empty());
 
-        Message result = proxy.sendUserMessage(sessionId, "Hi", modelId);
+        Message result = proxy.sendUserMessage(sessionId, "Hi", modelId, null);
 
         assertEquals("assistant", result.getRole());
         assertEquals("", result.getContent());

@@ -122,6 +122,7 @@ class DefaultContextDataProviderTest {
 
         assertThrows(BusinessException.class,
                 () -> provider.createChildSession(1L, "a", null, null, null, null, null));
+                
     }
 
     @Test
@@ -131,6 +132,7 @@ class DefaultContextDataProviderTest {
 
         assertThrows(BusinessException.class,
                 () -> provider.createChildSession(1L, "a", null, 10L, null, null, null));
+                
     }
 
     @Test

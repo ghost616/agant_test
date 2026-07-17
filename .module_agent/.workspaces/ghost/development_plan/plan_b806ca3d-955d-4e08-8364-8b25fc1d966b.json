@@ -1,0 +1,26 @@
+{
+  "plan_id": "plan_b806ca3d-955d-4e08-8364-8b25fc1d966b",
+  "module_name": "",
+  "development_plan": "SubSessionData 接口新增 thinking 字段、AgentChat 传递 thinking、测试用例更新",
+  "session_id": "",
+  "modified_files": [
+    "src/services/model.ts",
+    "src/pages/models/ModelList.tsx",
+    "src/pages/models/ModelTest.tsx",
+    "src/types/tool.ts",
+    "src/services/tool.ts",
+    "src/pages/tools/ToolList.tsx",
+    "src/types/agent.ts",
+    "src/services/agent.ts",
+    "src/pages/agents/AgentList.tsx",
+    "src/types/session.ts",
+    "src/services/session.ts",
+    "src/pages/sessions/SessionList.tsx",
+    "src/pages/sessions/AgentChat.tsx",
+    "src/components/JsonEditor.tsx",
+    "src/types/skill.ts",
+    "src/services/skill.ts",
+    "src/pages/skills/SkillList.tsx",
+    "src/pages/sessions/__tests__/AgentChat.test.tsx"
+  ]
+}

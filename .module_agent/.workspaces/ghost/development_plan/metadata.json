@@ -1,37 +1,16 @@
 [
   {
-    "plan_id": "plan_7d06ae9a-450c-4c96-a53f-d43f5a4f039c",
-    "plan_summary": "ChatService skill 功能容错：检查 _sys_load_skills 是否存在，不存在则跳过技能提示构建",
+    "plan_id": "plan_67f0fd9d-2e1a-4acb-afb6-6bd38f1eee32",
+    "plan_summary": "SubSessionData 内部类及 DTO 新增 thinking 字段、SessionController 映射、测试用例更新",
     "code_reviewed": true,
     "plan_completed": true,
-    "test_passed": true
+    "test_passed": false
   },
   {
-    "plan_id": "plan_710226f9-82a9-4bd8-8ddf-0d9588da1420",
-    "plan_summary": "审查建议修改：提取 _sys_load_skills 常量化，复用 getToolDefinitions() 结果",
+    "plan_id": "plan_b806ca3d-955d-4e08-8364-8b25fc1d966b",
+    "plan_summary": "SubSessionData 接口新增 thinking 字段、AgentChat 传递 thinking、测试用例更新",
     "code_reviewed": true,
     "plan_completed": true,
-    "test_passed": true
-  },
-  {
-    "plan_id": "plan_10c35739-53e3-441d-96c8-7c2c43d9cfb4",
-    "plan_summary": "将技能常量移到LoadSkillsSystemTool：FULL_TOOL_NAME新增，SESSION_KEY改为public",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": true
-  },
-  {
-    "plan_id": "plan_94d3d735-9aa0-43f5-ae4a-cdbb5d4efc1a",
-    "plan_summary": "工具类常量统一：FULL_TOOL_NAME/SESSION_KEY/VAR_NAME移至各自工具类，ChatService引用",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": true
-  },
-  {
-    "plan_id": "plan_e908e614-a821-4daf-b2ab-a098d058a08a",
-    "plan_summary": "工具常量统一 + 移除无用日志",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": true
+    "test_passed": false
   }
 ]

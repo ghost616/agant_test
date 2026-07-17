@@ -1,9 +1,0 @@
-{
-  "plan_id": "plan_e908e614-a821-4daf-b2ab-a098d058a08a",
-  "module_name": "agent-base",
-  "development_plan": "## 修改内容\n1. **LoadSkillsSystemTool.java**：SESSION_KEY private→public；新增 `public static final String FULL_TOOL_NAME = \"_sys_load_skills\"`\n\n2. **UnloadSkillsSystemTool.java**：SESSION_KEY private→public\n\n3. **HistoryQuerySystemTool.java**：新增 `public static final String VAR_NAME = \"_sys_his_msgs_index\"`，execute()中使用常量替换硬编码字符串\n\n4. **ChatService.java**：\n   - 移除本地 `LOAD_SKILLS_TOOL_NAME` 常量\n   - hadLoadSkillsTool 检测：`LoadSkillsSystemTool.FULL_TOOL_NAME`\n   - 提示文案：`LoadSkillsSystemTool.FULL_TOOL_NAME`\n   - parseLoadedSkills：`LoadSkillsSystemTool.SESSION_KEY`\n   - foldMessageGroups：`HistoryQuerySystemTool.VAR_NAME`\n   - 移除 `log.info(\"sessionId={} messages: {}\", sessionId, messages);`",
-  "session_id": "ses_09b632441ffe5RViAEG0dFS66m",
-  "modified_files": [
-    "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ChatService.java"
-  ]
-}

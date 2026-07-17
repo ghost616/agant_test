@@ -259,7 +259,7 @@
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/SubSessionCallback.java",
-      "description": "子会话回调函数式接口，使用 @FunctionalInterface 注解，定义 execute(Long sessionId, String userMessage) 方法返回 Message，供子会话消息处理的回调契约"
+      "description": "子会话回调函数式接口，使用 @FunctionalInterface 注解，定义 execute(Long sessionId, String userMessage, Boolean thinking) 方法返回 Message，供子会话消息处理的回调契约"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/enums/SessionAuthType.java",
