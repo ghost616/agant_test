@@ -26,5 +26,12 @@
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
+  },
+  {
+    "plan_id": "plan_573fbe28-d34c-42de-b686-34801a3cf856",
+    "plan_summary": "_runner.py/_runner.ts 补充 projectDir 字段",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
   }
 ]

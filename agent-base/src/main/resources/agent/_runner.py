@@ -106,6 +106,7 @@ class AgentExecutionContext:
         self.session_variables = data.get("sessionVariables") or {}
         self.conversation_variables = data.get("conversationVariables") or {}
         self.stopped = data.get("stopped", False)
+        self.project_dir = data.get("projectDir")
 
 
 class ExecuteInput:

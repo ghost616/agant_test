@@ -38,5 +38,15 @@
     ],
     "summary": "修复 _input.json 并发覆盖：将输入文件路径从 scriptDir/_input.json 改为 scriptDir/{sessionId}/_input.json，finally 中依次删除 _input.json 和 sessionDir。行为不变，无需测试。",
     "errors": []
+  },
+  {
+    "plan_id": "plan_573fbe28-d34c-42de-b686-34801a3cf856",
+    "plan": "在 _runner.py 和 _runner.ts 的 AgentExecutionContext 中补充 projectDir 字段",
+    "modified_files": [
+      "agent-base/src/main/resources/agent/_runner.py",
+      "agent-base/src/main/resources/agent/_runner.ts"
+    ],
+    "summary": "_runner.py 新增 self.project_dir，_runner.ts AgentExecutionContext interface 新增 projectDir?: string。仅字段声明变更，无需测试。",
+    "errors": []
   }
 ]

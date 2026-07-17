@@ -43,6 +43,7 @@ export interface AgentExecutionContext {
     sessionVariables?: Record<string, string>;
     conversationVariables?: Record<string, string>;
     stopped?: boolean;
+    projectDir?: string;
 }
 
 export interface ExecuteInput {
