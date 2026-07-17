@@ -264,6 +264,14 @@
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/enums/SessionAuthType.java",
       "description": "会话授权类型枚举，定义 ALL/PARENT/CHILD 三种授权范围，使用 Integer code 字段标注 @EnumValue"
+    },
+    {
+      "path": "agent-base/src/main/resources/agent/_runner.py",
+      "description": "Python 工具运行桥接脚本，作为 PythonToolInvoker 的自动生成 bridge 文件。定义了 ToolCall、HistoryEntry、ToolInfo、SkillInfo、VariableProxy、AgentExecutionContext、ExecuteInput 等数据类，通过 CLI 参数接收输入文件路径，解析 JSON 输入上下文后动态导入 index 模块并调用 execute(context, arguments)，执行后输出 result、sessionVariables 和 conversationVariables 的变更结果。"
+    },
+    {
+      "path": "agent-base/src/main/resources/agent/_runner.ts",
+      "description": "TypeScript 工具运行桥接脚本，作为 TypeScriptToolInvoker 的自动生成 bridge 文件。定义了 ToolCall、HistoryEntry、ToolInfo、SkillInfo、AgentExecutionContext、ExecuteInput、VariableChanges 等接口和 createVariableProxy 代理工厂函数，通过 CLI 参数读取输入 JSON 文件，动态导入 index 模块并调用 execute(context, arguments)，输出 result 和变量变更结果。"
     }
   ]
 }

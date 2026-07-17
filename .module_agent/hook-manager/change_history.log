@@ -1,7 +1,0 @@
-## 变更历史
-[2026-06-12T06:39:29.536Z] [session: ses_145721658ffefmyGglWy5pB5v3] 创建 HookInvoker 接口（src/main/java/com/ghost616/platform/service/hook/HookInvoker.java），定义 getPhase() 和 execute() 两个方法，参照 ToolInvoker 代码风格。
-[2026-06-12T06:44:04.849Z] [session: ses_145721658ffefmyGglWy5pB5v3] 将 HookInvoker.execute() 返回类型从 String 改为 void，移除 @return Javadoc 标签。
-[2026-06-12T06:45:03.445Z] [session: ses_1456c8c88ffeZD6xDnUUV9nsqJ] 确认 HookInvoker.execute 方法已为 void 返回类型，Javadoc 无 @return 标签，文件无需变更
-[2026-06-15T03:55:38.380Z] [session: ses_136949f7affeBjsIBIB8p8CRzu] 修正 HookInvoker.java 中 ChatChunk 的 import 路径：从 com.ghost616.platform.dto.chat.ChatChunk 改为 com.ghost616.platform.dto.model.ChatChunk。
-[2026-06-16T02:19:31.434Z] [session: ses_131c65e2affeaWntrh35JmS0cy] 创建 SystemHook 接口（src/main/java/com/ghost616/platform/service/hook/SystemHook.java），继承 HookInvoker，新增 getIndex() 方法（default 返回 0），用于系统 HOOK 执行顺序控制。
-[2026-07-06T00:43:01.413Z] [session: ] 移出文件定义到 [agent-base]: src/main/java/com/ghost616/platform/service/hook/HookInvoker.java, src/main/java/com/ghost616/platform/service/hook/SystemHook.java

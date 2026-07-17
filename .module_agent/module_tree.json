@@ -13,10 +13,6 @@
       "description": "工具注册与管理模块"
     },
     {
-      "name": "hook-manager",
-      "description": "[已合并至 agent-base] HOOK 注册与管理模块 — 原负责 HOOK CRUD 和状态管理，核心接口和实现已并入 agent-base"
-    },
-    {
       "name": "agent-config",
       "description": "智能体配置模块"
     },

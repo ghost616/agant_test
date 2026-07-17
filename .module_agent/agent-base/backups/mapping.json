@@ -24,5 +24,7 @@
   "agent-base/src/main/java/com/ghost616/agentbase/dto/tool/ToolConfigDTO.java": "e2b99ab67baead716373f3333db760ae",
   "agent-base/src/main/java/com/ghost616/agentbase/dto/skill/SkillConfigDTO.java": "acd9eb3798fab93eef651d1db2b327a3",
   "agent-base/src/test/java/com/ghost616/agentbase/service/agent/invoker/ToolManagerTest.java": "3b76072742fa9584bf59e278f2a687e0",
-  "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/SubSessionCallback.java": "365b5810b6ba75e21f59f7a1a43da5cc"
+  "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/SubSessionCallback.java": "365b5810b6ba75e21f59f7a1a43da5cc",
+  "platform-app/src/main/resources/agent/_runner.py": "2e9cf1d1d42a2310aba5d16cd55cc319",
+  "platform-app/src/main/resources/agent/_runner.ts": "0c83b8982ff7cd40592a66d5ec51b733"
 }

@@ -1,16 +1,9 @@
 [
   {
-    "plan_id": "plan_67f0fd9d-2e1a-4acb-afb6-6bd38f1eee32",
-    "plan_summary": "SubSessionData 内部类及 DTO 新增 thinking 字段、SessionController 映射、测试用例更新",
+    "plan_id": "plan_b40dbab5-e2d4-4848-bbfd-9b41a1117311",
+    "plan_summary": "将 _runner.py 和 _runner.ts 从 platform-app 移动到 agent-base 资源目录",
     "code_reviewed": true,
     "plan_completed": true,
-    "test_passed": false
-  },
-  {
-    "plan_id": "plan_b806ca3d-955d-4e08-8364-8b25fc1d966b",
-    "plan_summary": "SubSessionData 接口新增 thinking 字段、AgentChat 传递 thinking、测试用例更新",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": false
+    "test_passed": true
   }
 ]

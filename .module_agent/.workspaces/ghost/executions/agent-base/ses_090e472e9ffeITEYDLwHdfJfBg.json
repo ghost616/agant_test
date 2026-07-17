@@ -1,0 +1,9 @@
+[
+  {
+    "plan_id": "plan_b40dbab5-e2d4-4848-bbfd-9b41a1117311",
+    "plan": "将 _runner.py 和 _runner.ts 从 platform-app 的资源目录移动到 agent-base 的资源目录。\n\n具体任务：\n1. 确保 agent-base/src/main/resources/agent/ 目录存在（不存在则创建）\n2. 将 platform-app/src/main/resources/agent/_runner.py 复制到 agent-base/src/main/resources/agent/_runner.py\n3. 将 platform-app/src/main/resources/agent/_runner.ts 复制到 agent-base/src/main/resources/agent/_runner.ts\n4. 删除 platform-app/src/main/resources/agent/_runner.py 和 platform-app/src/main/resources/agent/_runner.ts 原文件\n5. 验证 agent-base 的资源文件中包含这两个文件",
+    "modified_files": [],
+    "summary": "力牧已启动",
+    "errors": []
+  }
+]

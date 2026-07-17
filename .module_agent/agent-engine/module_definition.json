@@ -114,20 +114,12 @@
       "description": "上下文序列化器，序列化 AgentExecutionContext 至 JSON"
     },
     {
-      "path": "platform-app/src/main/resources/agent/_runner.ts",
-      "description": "TypeScript 桥接模板"
-    },
-    {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/invoker/LoadSkillsSystemTool.java",
       "description": "load_skills 系统工具，按名称加载技能"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/invoker/UnloadSkillsSystemTool.java",
       "description": "unload_skills 系统工具，卸载技能"
-    },
-    {
-      "path": "platform-app/src/main/resources/agent/_runner.py",
-      "description": "Python 桥接模板，从 _input.json 读取上下文，动态导入 index.py 并调用 execute()"
     }
   ]
 }

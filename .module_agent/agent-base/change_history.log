@@ -53,3 +53,5 @@
 [2026-07-15T07:31:13.687Z] [session: ses_09b632441ffe5RViAEG0dFS66m] ChatService: 落实皋陶审查建议，将 "_sys_load_skills" 提取为类级常量 LOAD_SKILLS_TOOL_NAME，复用 systemToolManager.getToolDefinitions() 结果到局部变量 toolDefinitions 避免重复调用。
 [2026-07-15T07:39:36.439Z] [session: ses_09b632441ffe5RViAEG0dFS66m] LoadSkillsSystemTool: SESSION_KEY 改为 public，新增 FULL_TOOL_NAME 常量。ChatService: 3 处硬编码改为引用 LoadSkillsSystemTool 常量。
 [2026-07-16T06:01:31.563Z] [session: ses_0967c4e03ffe41Kjt3zpDxe35o] [2026-07-16] SubSessionCallback.execute 方法新增第三个参数 Boolean thinking，补充 Javadoc @param thinking 说明；保持 @FunctionalInterface 注解
+[2026-07-17T08:02:05.560Z] [session: ses_090f01c09ffeoBAvU6teh2re7z] 从 [agent-engine] 移入文件定义: platform-app/src/main/resources/agent/_runner.ts, platform-app/src/main/resources/agent/_runner.py
+[2026-07-17T08:05:52.991Z] [session: ses_090e472e9ffeITEYDLwHdfJfBg] 2026-07-17: 将 _runner.py 和 _runner.ts 从 platform-app/src/main/resources/agent/ 迁移到 agent-base/src/main/resources/agent/。两个文件为 PythonToolInvoker 和 TypeScriptToolInvoker 所需的桥接运行脚本，已删除原 platform-app 下的文件并更新模块定义。
