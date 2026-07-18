@@ -96,7 +96,7 @@ class SchemaMigrationTest {
         when(jdbcTemplate.update(anyString())).thenReturn(0);
 
         assertDoesNotThrow(() -> createMigration().run(applicationArguments));
-        verify(jdbcTemplate, times(12)).execute(anyString());
+        verify(jdbcTemplate, times(15)).execute(anyString());
     }
 
     @Test
@@ -106,7 +106,7 @@ class SchemaMigrationTest {
         when(jdbcTemplate.update(anyString())).thenReturn(0);
 
         assertDoesNotThrow(() -> createMigration().run(applicationArguments));
-        verify(jdbcTemplate, times(12)).execute(anyString());
+        verify(jdbcTemplate, times(15)).execute(anyString());
     }
 
     @Test
@@ -116,7 +116,7 @@ class SchemaMigrationTest {
         when(jdbcTemplate.update(anyString())).thenReturn(0);
 
         assertDoesNotThrow(() -> createMigration().run(applicationArguments));
-        verify(jdbcTemplate, times(12)).execute(anyString());
+        verify(jdbcTemplate, times(15)).execute(anyString());
     }
 
     @Test
@@ -126,7 +126,7 @@ class SchemaMigrationTest {
 
         createMigration().run(applicationArguments);
 
-        verify(jdbcTemplate, times(12)).execute(sqlCaptor.capture());
+        verify(jdbcTemplate, times(15)).execute(sqlCaptor.capture());
         List<String> sqls = sqlCaptor.getAllValues();
 
         assertTrue(sqls.stream().anyMatch(s -> s.contains("DEFAULT 0")));
@@ -140,9 +140,33 @@ class SchemaMigrationTest {
 
         createMigration().run(applicationArguments);
 
-        verify(jdbcTemplate, times(12)).execute(sqlCaptor.capture());
+        verify(jdbcTemplate, times(15)).execute(sqlCaptor.capture());
         long defaultCount = sqlCaptor.getAllValues().stream()
                 .filter(s -> s.contains("DEFAULT")).count();
-        assertTrue(defaultCount > 0 && defaultCount < 12);
+        assertTrue(defaultCount > 0 && defaultCount < 15);
+    }
+
+    @Test
+    void migration_包含total_token_used列() {
+        doNothing().when(jdbcTemplate).execute(anyString());
+        when(jdbcTemplate.update(anyString())).thenReturn(0);
+
+        createMigration().run(applicationArguments);
+
+        verify(jdbcTemplate, times(15)).execute(sqlCaptor.capture());
+        assertTrue(sqlCaptor.getAllValues().stream()
+                .anyMatch(s -> s.contains("total_token_used") && s.contains("BIGINT")));
+    }
+
+    @Test
+    void migration_包含token_usage列() {
+        doNothing().when(jdbcTemplate).execute(anyString());
+        when(jdbcTemplate.update(anyString())).thenReturn(0);
+
+        createMigration().run(applicationArguments);
+
+        verify(jdbcTemplate, times(15)).execute(sqlCaptor.capture());
+        assertTrue(sqlCaptor.getAllValues().stream()
+                .anyMatch(s -> s.contains("token_usage") && s.contains("TEXT")));
     }
 }

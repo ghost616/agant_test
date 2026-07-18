@@ -39,6 +39,7 @@ CREATE TABLE IF NOT EXISTS session (
     is_child         TINYINT(1) DEFAULT 0,
     description      VARCHAR(500),
     thinking         TINYINT(1),
+    total_token_used BIGINT,
     create_time      TIMESTAMP,
     update_time      TIMESTAMP,
     deleted          INTEGER DEFAULT 0
@@ -54,6 +55,7 @@ CREATE TABLE IF NOT EXISTS message (
     reasoning    MEDIUMTEXT,
     sequence_num INT,
     tool_call_id VARCHAR(100),
+    token_usage  TEXT,
     create_time  TIMESTAMP
 );
 CREATE INDEX IF NOT EXISTS idx_message_session_id ON message(session_id);

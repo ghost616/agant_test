@@ -9,6 +9,7 @@ import com.ghost616.platform.entity.Message;
 import com.ghost616.platform.entity.MessageToolCall;
 import com.ghost616.platform.repository.MessageMapper;
 import com.ghost616.platform.repository.MessageToolCallMapper;
+import com.ghost616.platform.repository.SessionMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -35,6 +36,9 @@ class DefaultMessageDataProviderTest {
     @Mock
     private MessageToolCallMapper messageToolCallMapper;
 
+    @Mock
+    private SessionMapper sessionMapper;
+
     @Captor
     private ArgumentCaptor<Message> messageCaptor;
 
@@ -45,7 +49,7 @@ class DefaultMessageDataProviderTest {
 
     @BeforeEach
     void setUp() {
-        provider = new DefaultMessageDataProvider(messageMapper, messageToolCallMapper);
+        provider = new DefaultMessageDataProvider(messageMapper, messageToolCallMapper, sessionMapper);
     }
 
     @Test
@@ -56,6 +60,7 @@ class DefaultMessageDataProviderTest {
             msg.setId(100L);
             return 1;
         });
+        when(sessionMapper.addTotalTokenUsed(anyLong(), anyLong())).thenReturn(1);
 
         UsageInfo usage = UsageInfo.builder().promptTokens(10).completionTokens(20).totalTokens(30).build();
         Long result = provider.saveMessage(1L, "user", "hello", null, null, null, null, usage);
@@ -67,7 +72,10 @@ class DefaultMessageDataProviderTest {
         assertEquals("user", saved.getRole());
         assertEquals("hello", saved.getContent());
         assertEquals(1, saved.getSequenceNum());
+        assertNotNull(saved.getTokenUsage());
+        assertTrue(saved.getTokenUsage().contains("\"totalTokens\":30"));
         verify(messageToolCallMapper, never()).insert(any(MessageToolCall.class));
+        verify(sessionMapper).addTotalTokenUsed(1L, 30L);
     }
 
     @Test
@@ -91,6 +99,7 @@ class DefaultMessageDataProviderTest {
         assertEquals("response", messageCaptor.getValue().getContent());
         assertEquals("thinking...", messageCaptor.getValue().getReasoning());
         assertEquals("call-1", messageCaptor.getValue().getToolCallId());
+        assertNull(messageCaptor.getValue().getTokenUsage());
 
         verify(messageToolCallMapper, times(2)).insert(toolCallCaptor.capture());
         List<MessageToolCall> capturedToolCalls = toolCallCaptor.getAllValues();
@@ -99,6 +108,7 @@ class DefaultMessageDataProviderTest {
         assertEquals("{}", capturedToolCalls.get(0).getToolCallArguments());
         assertEquals("tc2", capturedToolCalls.get(1).getToolCallId());
         assertEquals("func2", capturedToolCalls.get(1).getToolCallName());
+        verify(sessionMapper, never()).addTotalTokenUsed(anyLong(), anyLong());
     }
 
     @Test
@@ -209,15 +219,19 @@ class DefaultMessageDataProviderTest {
 
         Message msg1 = new Message();
         msg1.setId(5L);
+        msg1.setTokenUsage("{\"totalTokens\":20}");
         Message msg2 = new Message();
         msg2.setId(6L);
+        msg2.setTokenUsage("{\"promptTokens\":5,\"completionTokens\":10,\"totalTokens\":15}");
         when(messageMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Arrays.asList(msg1, msg2));
         when(messageToolCallMapper.deleteByMessageIds(anyList())).thenReturn(2);
         when(messageMapper.deleteBySessionIdAndGeSequenceNum(10L, 3)).thenReturn(2);
+        when(sessionMapper.addTotalTokenUsed(anyLong(), anyLong())).thenReturn(1);
 
         int deleted = provider.rollbackToLastUserMessage(10L);
 
         assertEquals(2, deleted);
+        verify(sessionMapper).addTotalTokenUsed(10L, -35L);
         verify(messageToolCallMapper).deleteByMessageIds(Arrays.asList(5L, 6L));
         verify(messageMapper).deleteBySessionIdAndGeSequenceNum(10L, 3);
     }
@@ -228,5 +242,259 @@ class DefaultMessageDataProviderTest {
 
         assertThrows(BusinessException.class, () -> provider.rollbackToLastUserMessage(1L));
         verify(messageMapper, never()).deleteBySessionIdAndGeSequenceNum(any(), any());
+        verify(sessionMapper, never()).addTotalTokenUsed(anyLong(), anyLong());
+    }
+
+    @Test
+    void rollbackToLastUserMessage_无tokenUsage_不扣减() {
+        Message userMsg = new Message();
+        userMsg.setId(5L);
+        userMsg.setSequenceNum(3);
+        when(messageMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(userMsg);
+
+        Message msg = new Message();
+        msg.setId(5L);
+        msg.setTokenUsage(null);
+        when(messageMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Collections.singletonList(msg));
+        when(messageToolCallMapper.deleteByMessageIds(anyList())).thenReturn(1);
+        when(messageMapper.deleteBySessionIdAndGeSequenceNum(10L, 3)).thenReturn(1);
+
+        int deleted = provider.rollbackToLastUserMessage(10L);
+
+        assertEquals(1, deleted);
+        verify(sessionMapper, never()).addTotalTokenUsed(anyLong(), anyLong());
+    }
+
+    @Test
+    void rollbackToLastUserMessage_tokenUsage解析异常_跳过该消息() {
+        Message userMsg = new Message();
+        userMsg.setId(5L);
+        userMsg.setSequenceNum(3);
+        when(messageMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(userMsg);
+
+        Message msg1 = new Message();
+        msg1.setId(5L);
+        msg1.setTokenUsage("{invalid");
+        Message msg2 = new Message();
+        msg2.setId(6L);
+        msg2.setTokenUsage("{\"totalTokens\":10}");
+        when(messageMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Arrays.asList(msg1, msg2));
+        when(messageToolCallMapper.deleteByMessageIds(anyList())).thenReturn(2);
+        when(messageMapper.deleteBySessionIdAndGeSequenceNum(10L, 3)).thenReturn(2);
+        when(sessionMapper.addTotalTokenUsed(anyLong(), anyLong())).thenReturn(1);
+
+        int deleted = provider.rollbackToLastUserMessage(10L);
+
+        assertEquals(2, deleted);
+        verify(sessionMapper).addTotalTokenUsed(10L, -10L);
+    }
+
+    @Test
+    void saveMessage_usage不为null_序列化tokenUsage并原子累加() {
+        when(messageMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(null);
+        when(messageMapper.insert(any(Message.class))).thenAnswer(invocation -> {
+            Message msg = invocation.getArgument(0);
+            msg.setId(500L);
+            return 1;
+        });
+        when(sessionMapper.addTotalTokenUsed(anyLong(), anyLong())).thenReturn(1);
+
+        UsageInfo usage = UsageInfo.builder().promptTokens(5).completionTokens(15).totalTokens(20).build();
+        provider.saveMessage(1L, "assistant", "reply", null, null, null, null, usage);
+
+        verify(messageMapper).insert(messageCaptor.capture());
+        Message saved = messageCaptor.getValue();
+        assertNotNull(saved.getTokenUsage());
+        assertTrue(saved.getTokenUsage().contains("\"promptTokens\":5"));
+        assertTrue(saved.getTokenUsage().contains("\"completionTokens\":15"));
+        assertTrue(saved.getTokenUsage().contains("\"totalTokens\":20"));
+        verify(sessionMapper).addTotalTokenUsed(1L, 20L);
+    }
+
+    @Test
+    void saveMessage_usage为null_不序列化tokenUsage不累加() {
+        when(messageMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(null);
+        when(messageMapper.insert(any(Message.class))).thenAnswer(invocation -> {
+            Message msg = invocation.getArgument(0);
+            msg.setId(600L);
+            return 1;
+        });
+
+        provider.saveMessage(1L, "user", "no usage", null, null, null, null, null);
+
+        verify(messageMapper).insert(messageCaptor.capture());
+        assertNull(messageCaptor.getValue().getTokenUsage());
+        verify(sessionMapper, never()).addTotalTokenUsed(anyLong(), anyLong());
+    }
+
+    @Test
+    void saveMessage_totalTokens为null_使用prompt加completion降级计算() {
+        when(messageMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(null);
+        when(messageMapper.insert(any(Message.class))).thenAnswer(invocation -> {
+            Message msg = invocation.getArgument(0);
+            msg.setId(700L);
+            return 1;
+        });
+        when(sessionMapper.addTotalTokenUsed(anyLong(), anyLong())).thenReturn(1);
+
+        UsageInfo usage = UsageInfo.builder().promptTokens(8).completionTokens(12).totalTokens(null).build();
+        provider.saveMessage(1L, "assistant", "fallback", null, null, null, null, usage);
+
+        verify(messageMapper).insert(messageCaptor.capture());
+        assertNotNull(messageCaptor.getValue().getTokenUsage());
+        verify(sessionMapper).addTotalTokenUsed(1L, 20L);
+    }
+
+    @Test
+    void saveMessage_promptCompletion均为null_不累加() {
+        when(messageMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(null);
+        when(messageMapper.insert(any(Message.class))).thenAnswer(invocation -> {
+            Message msg = invocation.getArgument(0);
+            msg.setId(800L);
+            return 1;
+        });
+
+        UsageInfo usage = UsageInfo.builder().promptTokens(null).completionTokens(null).totalTokens(null).build();
+        provider.saveMessage(1L, "assistant", "zero", null, null, null, null, usage);
+
+        verify(messageMapper).insert(messageCaptor.capture());
+        assertNotNull(messageCaptor.getValue().getTokenUsage());
+        verify(sessionMapper, never()).addTotalTokenUsed(anyLong(), anyLong());
+    }
+
+    @Test
+    void saveMessage_totalTokens为0_不累加() {
+        when(messageMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(null);
+        when(messageMapper.insert(any(Message.class))).thenAnswer(invocation -> {
+            Message msg = invocation.getArgument(0);
+            msg.setId(900L);
+            return 1;
+        });
+
+        UsageInfo usage = UsageInfo.builder().promptTokens(0).completionTokens(0).totalTokens(0).build();
+        provider.saveMessage(1L, "assistant", "zero tokens", null, null, null, null, usage);
+
+        verify(messageMapper).insert(messageCaptor.capture());
+        assertNotNull(messageCaptor.getValue().getTokenUsage());
+        verify(sessionMapper, never()).addTotalTokenUsed(anyLong(), anyLong());
+    }
+
+    @Test
+    void getMessages_tokenUsage存在_反序列化为UsageInfo() {
+        Message msg = new Message();
+        msg.setId(1L);
+        msg.setSessionId(10L);
+        msg.setRole("assistant");
+        msg.setContent("with usage");
+        msg.setSequenceNum(1);
+        msg.setCreateTime(LocalDateTime.now());
+        msg.setTokenUsage("{\"promptTokens\":8,\"completionTokens\":12,\"totalTokens\":20}");
+        when(messageMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Collections.singletonList(msg));
+        when(messageToolCallMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Collections.emptyList());
+
+        List<MessageDTO> result = provider.getMessages(10L);
+
+        assertEquals(1, result.size());
+        MessageDTO dto = result.get(0);
+        assertNotNull(dto.usage());
+        assertEquals(8, dto.usage().getPromptTokens());
+        assertEquals(12, dto.usage().getCompletionTokens());
+        assertEquals(20, dto.usage().getTotalTokens());
+    }
+
+    @Test
+    void getMessages_tokenUsage为null_返回nullusage() {
+        Message msg = new Message();
+        msg.setId(2L);
+        msg.setSessionId(10L);
+        msg.setRole("user");
+        msg.setContent("no usage");
+        msg.setSequenceNum(1);
+        msg.setCreateTime(LocalDateTime.now());
+        msg.setTokenUsage(null);
+        when(messageMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Collections.singletonList(msg));
+        when(messageToolCallMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Collections.emptyList());
+
+        List<MessageDTO> result = provider.getMessages(10L);
+
+        assertEquals(1, result.size());
+        assertNull(result.get(0).usage());
+    }
+
+    @Test
+    void getMessages_tokenUsage为空字符串_返回nullusage() {
+        Message msg = new Message();
+        msg.setId(3L);
+        msg.setSessionId(10L);
+        msg.setRole("user");
+        msg.setContent("empty");
+        msg.setSequenceNum(1);
+        msg.setCreateTime(LocalDateTime.now());
+        msg.setTokenUsage("");
+        when(messageMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Collections.singletonList(msg));
+        when(messageToolCallMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Collections.emptyList());
+
+        List<MessageDTO> result = provider.getMessages(10L);
+
+        assertEquals(1, result.size());
+        assertNull(result.get(0).usage());
+    }
+
+    @Test
+    void getMessages_tokenUsage无效JSON_返回nullusage不抛异常() {
+        Message msg = new Message();
+        msg.setId(4L);
+        msg.setSessionId(10L);
+        msg.setRole("user");
+        msg.setContent("bad json");
+        msg.setSequenceNum(1);
+        msg.setCreateTime(LocalDateTime.now());
+        msg.setTokenUsage("{invalid");
+        when(messageMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Collections.singletonList(msg));
+        when(messageToolCallMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Collections.emptyList());
+
+        List<MessageDTO> result = provider.getMessages(10L);
+
+        assertEquals(1, result.size());
+        assertNull(result.get(0).usage());
+    }
+
+    @Test
+    void rollbackToLastUserMessage_totalTokens为null_使用prompt加completion降级扣减() {
+        Message userMsg = new Message();
+        userMsg.setId(5L);
+        userMsg.setSequenceNum(3);
+        when(messageMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(userMsg);
+
+        Message msg = new Message();
+        msg.setId(5L);
+        msg.setTokenUsage("{\"promptTokens\":7,\"completionTokens\":13,\"totalTokens\":null}");
+        when(messageMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Collections.singletonList(msg));
+        when(messageToolCallMapper.deleteByMessageIds(anyList())).thenReturn(1);
+        when(messageMapper.deleteBySessionIdAndGeSequenceNum(10L, 3)).thenReturn(1);
+        when(sessionMapper.addTotalTokenUsed(anyLong(), anyLong())).thenReturn(1);
+
+        provider.rollbackToLastUserMessage(10L);
+
+        verify(sessionMapper).addTotalTokenUsed(10L, -20L);
+    }
+
+    @Test
+    void rollbackToLastUserMessage_tokenUsage为空字符串_跳过该消息() {
+        Message userMsg = new Message();
+        userMsg.setId(5L);
+        userMsg.setSequenceNum(3);
+        when(messageMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(userMsg);
+
+        Message msg = new Message();
+        msg.setId(5L);
+        msg.setTokenUsage("");
+        when(messageMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Collections.singletonList(msg));
+        when(messageToolCallMapper.deleteByMessageIds(anyList())).thenReturn(1);
+        when(messageMapper.deleteBySessionIdAndGeSequenceNum(10L, 3)).thenReturn(1);
+
+        provider.rollbackToLastUserMessage(10L);
+
+        verify(sessionMapper, never()).addTotalTokenUsed(anyLong(), anyLong());
     }
 }

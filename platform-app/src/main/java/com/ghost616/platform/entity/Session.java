@@ -28,4 +28,7 @@ public class Session extends BaseEntity {
     private Boolean isChild;
 
     private String description;
+
+    @TableField("total_token_used")
+    private Long totalTokenUsed;
 }

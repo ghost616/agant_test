@@ -37,6 +37,9 @@ public class Message {
     @TableField("tool_result")
     private String toolResult;
 
+    @TableField("token_usage")
+    private String tokenUsage;
+
     @TableField(value = "create_time", fill = FieldFill.INSERT)
     private LocalDateTime createTime;
 }
