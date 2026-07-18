@@ -1059,6 +1059,13 @@ function AgentChat(): JSX.Element {
       width: 180,
     },
     {
+      title: 'Token 消耗',
+      dataIndex: 'totalTokenUsed',
+      key: 'totalTokenUsed',
+      width: 120,
+      render: (value: string) => value != null ? Number(value).toLocaleString() : '-',
+    },
+    {
       title: '操作',
       key: 'action',
       width: 120,

@@ -8,6 +8,7 @@ export interface Session {
   isChild?: boolean;
   createTime: string;
   updateTime: string;
+  totalTokenUsed?: string;
 }
 
 export interface CreateSessionParams {

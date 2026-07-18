@@ -29,4 +29,6 @@ public class SessionDTO {
     private String description;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
+    @JsonSerialize(using = ToStringSerializer.class)
+    private Long totalTokenUsed;
 }

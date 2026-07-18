@@ -145,6 +145,7 @@ class SessionServiceImplTest {
         entity.setParentSessionId(50L);
         entity.setIsChild(true);
         entity.setDescription("test-description");
+        entity.setTotalTokenUsed(888L);
         LocalDateTime now = LocalDateTime.now();
         entity.setCreateTime(now);
         entity.setUpdateTime(now);
@@ -163,6 +164,7 @@ class SessionServiceImplTest {
         assertEquals(50L, dto.getParentSessionId());
         assertTrue(dto.getIsChild());
         assertEquals("test-description", dto.getDescription());
+        assertEquals(888L, dto.getTotalTokenUsed());
         assertEquals(now, dto.getCreateTime());
         assertEquals(now, dto.getUpdateTime());
     }
@@ -203,5 +205,52 @@ class SessionServiceImplTest {
         sessionService.listChildSessions(null);
 
         verify(sessionMapper).selectList(any());
+    }
+
+    @Test
+    void toDTO_totalTokenUsed为null_不报错() {
+        Session entity = new Session();
+        entity.setId(1L);
+        entity.setIsChild(false);
+        entity.setTitle("no-tokens");
+
+        when(sessionMapper.selectList(any())).thenReturn(List.of(entity));
+
+        List<SessionDTO> result = sessionService.listChildSessions(99L);
+
+        assertEquals(1, result.size());
+        assertNull(result.get(0).getTotalTokenUsed());
+    }
+
+    @Test
+    void toDTO_totalTokenUsed有值_映射正确() {
+        Session entity = new Session();
+        entity.setId(1L);
+        entity.setIsChild(false);
+        entity.setTitle("with-tokens");
+        entity.setTotalTokenUsed(12345L);
+
+        when(sessionMapper.selectList(any())).thenReturn(List.of(entity));
+
+        List<SessionDTO> result = sessionService.listChildSessions(99L);
+
+        assertEquals(1, result.size());
+        assertEquals(12345L, result.get(0).getTotalTokenUsed());
+    }
+
+    @Test
+    void toDTO_totalTokenUsed为0_映射正确() {
+        Session entity = new Session();
+        entity.setId(1L);
+        entity.setIsChild(false);
+        entity.setTitle("zero-tokens");
+        entity.setTotalTokenUsed(0L);
+
+        when(sessionMapper.selectList(any())).thenReturn(List.of(entity));
+
+        List<SessionDTO> result = sessionService.listChildSessions(99L);
+
+        assertEquals(1, result.size());
+        assertEquals(0L, result.get(0).getTotalTokenUsed());
     }
 }

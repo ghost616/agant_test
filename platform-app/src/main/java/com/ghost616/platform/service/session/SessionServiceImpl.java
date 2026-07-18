@@ -143,6 +143,7 @@ public class SessionServiceImpl implements SessionService {
                 .description(entity.getDescription())
                 .createTime(entity.getCreateTime())
                 .updateTime(entity.getUpdateTime())
+                .totalTokenUsed(entity.getTotalTokenUsed())
                 .build();
     }
 }

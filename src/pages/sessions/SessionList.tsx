@@ -132,6 +132,12 @@ function SessionList(): JSX.Element {
       width: 180,
     },
     {
+      title: 'Token 消耗',
+      dataIndex: 'totalTokenUsed',
+      width: 120,
+      render: (value: string) => value != null ? Number(value).toLocaleString() : '-',
+    },
+    {
       title: '操作',
       key: 'actions',
       width: 180,
@@ -171,7 +177,7 @@ function SessionList(): JSX.Element {
         dataSource={dataSource}
         loading={loading}
         pagination={false}
-        scroll={{ x: 840 }}
+        scroll={{ x: 960 }}
       />
 
       <Modal
