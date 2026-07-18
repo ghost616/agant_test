@@ -2,6 +2,7 @@ package com.ghost616.agentbase.service.agent;
 
 import com.ghost616.agentbase.dto.model.Message;
 import com.ghost616.agentbase.dto.model.ToolCall;
+import com.ghost616.agentbase.dto.model.UsageInfo;
 import com.ghost616.agentbase.dto.skill.SkillConfigDTO;
 import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
 import lombok.AccessLevel;
@@ -173,7 +174,8 @@ public class AgentExecutionContext {
     }
 
     public record HistoryEntry(String role, String content, String reasoning, String toolCallId,
-                               int sequenceNum, LocalDateTime createTime, List<ToolCall> toolCalls) {
+                               int sequenceNum, LocalDateTime createTime, List<ToolCall> toolCalls,
+                               UsageInfo usage) {
     }
 
     public static class AgentContextMutator {

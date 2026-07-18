@@ -280,6 +280,15 @@ public class OllamaInvoker implements ModelInvoker {
                 JsonNode doneReasonNode = root.get("done_reason");
                 builder.finishReason(doneReasonNode != null && !doneReasonNode.isNull()
                         ? doneReasonNode.asText() : "stop");
+                JsonNode evalCount = root.get("eval_count");
+                JsonNode promptEvalCount = root.get("prompt_eval_count");
+                if (evalCount != null || promptEvalCount != null) {
+                    builder.usage(UsageInfo.builder()
+                            .promptTokens(promptEvalCount != null ? promptEvalCount.asInt() : null)
+                            .completionTokens(evalCount != null ? evalCount.asInt() : null)
+                            .totalTokens(null)
+                            .build());
+                }
             }
             return builder.build();
         } catch (Exception e) {

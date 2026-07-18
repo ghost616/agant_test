@@ -60,7 +60,7 @@ class SessionManagerTest {
 
     @Test
     void save_参数均非null时正常调用dataProvider() {
-        when(dataProvider.saveMessage(1L, "user", "hello", null, null, null, null))
+        when(dataProvider.saveMessage(1L, "user", "hello", null, null, null, null, null))
                 .thenReturn(100L);
 
         Long result = sessionManager.messageSave()
@@ -70,7 +70,7 @@ class SessionManagerTest {
                 .save();
 
         assertEquals(100L, result);
-        verify(dataProvider).saveMessage(1L, "user", "hello", null, null, null, null);
+        verify(dataProvider).saveMessage(1L, "user", "hello", null, null, null, null, null);
     }
 
     @Test
@@ -78,7 +78,7 @@ class SessionManagerTest {
         var toolCalls = java.util.List.of(
                 new MessageDataProvider.ToolCallData("tc1", "getWeather", "{}"));
         when(dataProvider.saveMessage(1L, "assistant", "response", "thinking...",
-                "tc1", "result_ok", toolCalls)).thenReturn(200L);
+                "tc1", "result_ok", toolCalls, null)).thenReturn(200L);
 
         Long result = sessionManager.messageSave()
                 .sessionId(1L)
@@ -92,6 +92,6 @@ class SessionManagerTest {
 
         assertEquals(200L, result);
         verify(dataProvider).saveMessage(1L, "assistant", "response", "thinking...",
-                "tc1", "result_ok", toolCalls);
+                "tc1", "result_ok", toolCalls, null);
     }
 }

@@ -7,6 +7,7 @@ import com.ghost616.agentbase.enums.ErrorCode;
 import com.ghost616.agentbase.exception.BusinessException;
 import com.ghost616.platform.repository.MessageMapper;
 import com.ghost616.platform.repository.MessageToolCallMapper;
+import com.ghost616.agentbase.dto.model.UsageInfo;
 import com.ghost616.agentbase.service.agent.MessageDataProvider;
 import com.ghost616.agentbase.service.agent.MessageDataProvider.ToolCallData;
 import com.ghost616.agentbase.service.agent.MessageDataProvider.MessageDTO;
@@ -29,7 +30,8 @@ public class DefaultMessageDataProvider implements MessageDataProvider {
 
     @Override
     public Long saveMessage(Long sessionId, String role, String content, String reasoning,
-                             String toolCallId, String toolResult, List<ToolCallData> toolCalls) {
+                             String toolCallId, String toolResult, List<ToolCallData> toolCalls,
+                             UsageInfo usage) {
         Message message = new Message();
         message.setSessionId(sessionId);
         message.setRole(role);
@@ -83,7 +85,7 @@ public class DefaultMessageDataProvider implements MessageDataProvider {
             result.add(new MessageDTO(
                     msg.getId(), msg.getSessionId(), msg.getRole(), msg.getContent(),
                     msg.getReasoning(), msg.getToolCallId(), msg.getSequenceNum(),
-                    msg.getCreateTime(), msg.getToolResult(), toolCallDataList));
+                    msg.getCreateTime(), msg.getToolResult(), toolCallDataList, null));
         }
 
         return result;

@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import com.ghost616.agentbase.dto.model.ChatChunk;
 import com.ghost616.agentbase.dto.model.ToolCall;
 import com.ghost616.agentbase.dto.model.ToolCallDelta;
+import com.ghost616.agentbase.dto.model.UsageInfo;
 import com.ghost616.agentbase.enums.HookPhase;
 import com.ghost616.agentbase.service.agent.AgentContextManager;
 import com.ghost616.agentbase.service.agent.AgentExecutionContext;
@@ -73,10 +74,11 @@ public class MessageSavePostHook implements SystemPostHook {
                                 a.arguments.toString()))
                         .collect(Collectors.toList());
             }
+            UsageInfo usage = chunk.getUsage();
             log.debug("sessionId={} 保存消息, content={}, reasoning={}, toolCalls数量={}",
                     sessionId, content, reasoning,
                     toolCalls != null ? toolCalls.size() : 0);
-            sessionManager.messageSave().sessionId(sessionId).role("assistant").content(content).reasoning(reasoning).toolCalls(toolCalls).save();
+            sessionManager.messageSave().sessionId(sessionId).role("assistant").content(content).reasoning(reasoning).toolCalls(toolCalls).usage(usage).save();
             if (toolCalls != null && !toolCalls.isEmpty()) {
                 toolCallQueueManager.enqueue(sessionId, toolCalls);
             }
@@ -95,7 +97,8 @@ public class MessageSavePostHook implements SystemPostHook {
                             "assistant", content, reasoning, null,
                             ctx.getHistory().size() + 1,
                             LocalDateTime.now(),
-                            historyToolCalls != null ? Collections.unmodifiableList(historyToolCalls) : Collections.emptyList()));
+                            historyToolCalls != null ? Collections.unmodifiableList(historyToolCalls) : Collections.emptyList(),
+                            usage));
             return;
         }
 

@@ -171,7 +171,8 @@ public class ToolExecutionService {
             for (ToolExecutionTracker.ToolResult r : results) {
                 AgentExecutionContext.HistoryEntry entry = new AgentExecutionContext.HistoryEntry(
                         "tool", r.result(), null, r.toolId(),
-                        0, LocalDateTime.now(), Collections.emptyList());
+                        0, LocalDateTime.now(), Collections.emptyList(),
+                        null);
                 agentContextManager.addHistoryEntry(sessionId, entry);
             }
         }

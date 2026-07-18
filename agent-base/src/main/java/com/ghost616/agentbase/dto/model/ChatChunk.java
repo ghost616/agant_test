@@ -24,4 +24,6 @@ public class ChatChunk {
     private Boolean hasToolCalls;
 
     private Integer index;
+
+    private UsageInfo usage;
 }

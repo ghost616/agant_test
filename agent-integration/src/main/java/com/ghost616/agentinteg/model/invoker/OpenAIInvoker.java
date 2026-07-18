@@ -370,6 +370,17 @@ public class OpenAIInvoker implements ModelInvoker {
                 if (finishNode != null && !finishNode.isNull()) {
                     builder.finishReason(finishNode.asText());
                 }
+                JsonNode usageNode = root.get("usage");
+                if (usageNode != null) {
+                    builder.usage(UsageInfo.builder()
+                            .promptTokens(usageNode.get("prompt_tokens") != null
+                                    ? usageNode.get("prompt_tokens").asInt() : null)
+                            .completionTokens(usageNode.get("completion_tokens") != null
+                                    ? usageNode.get("completion_tokens").asInt() : null)
+                            .totalTokens(usageNode.get("total_tokens") != null
+                                    ? usageNode.get("total_tokens").asInt() : null)
+                            .build());
+                }
                 return builder.build();
             }
             return new ChatChunk();

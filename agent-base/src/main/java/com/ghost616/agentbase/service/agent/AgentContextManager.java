@@ -3,6 +3,7 @@ package com.ghost616.agentbase.service.agent;
 import com.ghost616.agentbase.core.AgentComponentRegistry;
 import com.ghost616.agentbase.dto.model.Message;
 import com.ghost616.agentbase.dto.model.ToolCall;
+import com.ghost616.agentbase.dto.model.UsageInfo;
 import com.ghost616.agentbase.dto.skill.SkillConfigDTO;
 import com.ghost616.agentbase.dto.tool.McpExpandedToolDTO;
 import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
@@ -145,7 +146,8 @@ public class AgentContextManager {
                 }
                 history.add(new AgentExecutionContext.HistoryEntry(
                         msg.role(), msg.content(), msg.reasoning(), msg.toolCallId(),
-                        msg.sequenceNum(), msg.createTime(), Collections.unmodifiableList(toolCalls)));
+                        msg.sequenceNum(), msg.createTime(), Collections.unmodifiableList(toolCalls),
+                        msg.usage()));
             }
 
             AgentExecutionContext.AgentContextMutator mutator = new AgentExecutionContext.AgentContextMutator();

@@ -94,6 +94,7 @@ public class AnthropicInvoker implements ModelInvoker {
             Map<String, Object> requestBody = buildRequestBody(request, true);
             Map<Integer, AnthropicBlockState> blockStates = new ConcurrentHashMap<>();
             String[] stopReason = new String[]{null};
+            UsageInfo[] usageHolder = new UsageInfo[]{null};
             AtomicBoolean hasContent = new AtomicBoolean(false);
             String url = baseUrl + "/messages";
             return webClientBuilder.baseUrl("").build()
@@ -114,7 +115,7 @@ public class AnthropicInvoker implements ModelInvoker {
                     .filter(line -> !line.isEmpty())
                     .map(this::parseSSELine)
                     .filter(event -> event != null)
-                    .flatMap(event -> handleStreamEvent(event, blockStates, stopReason))
+                    .flatMap(event -> handleStreamEvent(event, blockStates, stopReason, usageHolder))
                     .doOnNext(chunk -> {
                         if (chunk.getDelta() != null && !chunk.getDelta().isEmpty()) {
                             hasContent.set(true);
@@ -124,8 +125,12 @@ public class AnthropicInvoker implements ModelInvoker {
                         if (!hasContent.get()) {
                             log.debug("Anthropic model {} stream produced no content", modelName);
                         }
-                        return Mono.just(ChatChunk.builder().finishReason(stopReason[0] != null
-                                ? stopReason[0] : "end_turn").build());
+                        ChatChunk.ChatChunkBuilder stopBuilder = ChatChunk.builder()
+                                .finishReason(stopReason[0] != null ? stopReason[0] : "end_turn");
+                        if (usageHolder[0] != null) {
+                            stopBuilder.usage(usageHolder[0]);
+                        }
+                        return Mono.just(stopBuilder.build());
                     }))
                     .onErrorResume(this::handleStreamError);
         } catch (BusinessException e) {
@@ -373,7 +378,7 @@ public class AnthropicInvoker implements ModelInvoker {
     }
 
     private Flux<ChatChunk> handleStreamEvent(SSERecord event,
-            Map<Integer, AnthropicBlockState> blockStates, String[] stopReason) {
+            Map<Integer, AnthropicBlockState> blockStates, String[] stopReason, UsageInfo[] usageHolder) {
         if (event.data == null) {
             return Flux.empty();
         }
@@ -420,6 +425,16 @@ public class AnthropicInvoker implements ModelInvoker {
                     if (stopReasonNode != null) {
                         stopReason[0] = stopReasonNode.asText();
                     }
+                }
+                JsonNode usageNode = event.data.get("usage");
+                if (usageNode != null) {
+                    usageHolder[0] = UsageInfo.builder()
+                            .promptTokens(usageNode.get("input_tokens") != null
+                                    ? usageNode.get("input_tokens").asInt() : null)
+                            .completionTokens(usageNode.get("output_tokens") != null
+                                    ? usageNode.get("output_tokens").asInt() : null)
+                            .totalTokens(null)
+                            .build();
                 }
                 return Flux.empty();
             }
