@@ -47,7 +47,7 @@
     },
     {
       "path": "README.md",
-      "description": "项目说明文档，含技术栈、功能模块、快速启动指南、项目结构"
+      "description": "项目说明文档，含技术栈、功能模块、快速启动指南、项目结构、智能体执行流程（8 阶段）、四种工具实现方式对照表"
     },
     {
       "path": ".vscode/settings.json",

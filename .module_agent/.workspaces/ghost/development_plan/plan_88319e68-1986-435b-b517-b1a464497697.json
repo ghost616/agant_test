@@ -1,9 +1,0 @@
-{
-  "plan_id": "plan_88319e68-1986-435b-b517-b1a464497697",
-  "module_name": "agent-integration",
-  "development_plan": "修复 agent-integration/src/test/java/com/ghost616/agentinteg/AgentAssemblerTest.java：\n1. 新增 @Mock MessageSender messageSender 字段\n2. 新增 import com.ghost616.agentbase.sendmessage.MessageSender\n3. setUp() 中 AgentAssembler 构造函数调用传入 messageSender 作为第 7 个参数",
-  "session_id": "ses_08218931bffeHoAWG2xACQPBDl",
-  "modified_files": [
-    "agent-integration/src/test/java/com/ghost616/agentinteg/AgentAssemblerTest.java"
-  ]
-}

@@ -1,9 +1,0 @@
-{
-  "plan_id": "plan_331b613e-0ce1-4e7a-8d01-bec498225a3a",
-  "module_name": "agent-integration",
-  "development_plan": "修改 agent-integration/src/main/java/com/ghost616/agentinteg/AgentAssembler.java：\n1. 构造函数新增 MessageSender 参数（可为 null）\n2. build() 中调用 registry.setMessageSender(messageSender)\n3. 导入 com.ghost616.agentbase.sendmessage.MessageSender",
-  "session_id": "ses_08218931bffeHoAWG2xACQPBDl",
-  "modified_files": [
-    "agent-integration/src/main/java/com/ghost616/agentinteg/AgentAssembler.java"
-  ]
-}

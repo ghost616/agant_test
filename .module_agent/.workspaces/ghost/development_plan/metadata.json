@@ -1,99 +1,36 @@
 [
   {
-    "plan_id": "plan_61991941-5a63-4d68-bb15-b464249222b9",
-    "plan_summary": "新增 MessageDefinition 和 MessageSender 接口到 sendmessage 包",
-    "code_reviewed": true,
+    "plan_id": "plan_e87d49a4-bdce-4b0f-8860-b99b726f06f2",
+    "plan_summary": "ToolExecutionProvider.updateExecution参数改为ToolExecutionStatus",
+    "code_reviewed": false,
     "plan_completed": true,
     "test_passed": true
   },
   {
-    "plan_id": "plan_b974a752-6569-4beb-9ad5-e01ec370eb8b",
-    "plan_summary": "新增 SessionMessage 抽象类实现 MessageDefinition",
-    "code_reviewed": true,
+    "plan_id": "plan_8b4b7658-7b91-4446-9e92-ba1e2c60d481",
+    "plan_summary": "DefaultToolExecutionProvider.updateExecution实现同步更新",
+    "code_reviewed": false,
+    "plan_completed": false,
+    "test_passed": false
+  },
+  {
+    "plan_id": "plan_31413a45-bb48-43e1-bf42-83b74dd6874a",
+    "plan_summary": "合并 agent-base current_spec.md：新增 ToolCallQueueManager/ToolExecutionProvider/AgentComponentRegistry 章节，更新 ToolExecutionTracker/ToolExecutionService/ChatService 构造函数描述，反映 AgentComponentRegistry 架构变更。",
+    "code_reviewed": false,
     "plan_completed": true,
     "test_passed": true
   },
   {
-    "plan_id": "plan_02dd25d8-56ae-4535-9e93-95f182e1f857",
-    "plan_summary": "AgentComponentRegistry 添加 MessageSender 字段和 getter（不校验null）",
-    "code_reviewed": true,
+    "plan_id": "plan_6c859b85-32b4-40db-bd87-9a732dbdb46f",
+    "plan_summary": "补充 agent-base spec 中 sendmessage 消息通信框架文档，新增 MessageSender/MessageDefinition/SessionMessage/4种消息类型等章节，补充 AgentContextMutator 消息发送和 AgentContextManager 消息处理描述。",
+    "code_reviewed": false,
     "plan_completed": true,
     "test_passed": true
   },
   {
-    "plan_id": "plan_331b613e-0ce1-4e7a-8d01-bec498225a3a",
-    "plan_summary": "AgentAssembler 构造注入 MessageSender（可为null）",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": true
-  },
-  {
-    "plan_id": "plan_88319e68-1986-435b-b517-b1a464497697",
-    "plan_summary": "修复 AgentAssemblerTest 遗漏的 MessageSender 参数",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": true
-  },
-  {
-    "plan_id": "plan_b7f6032e-c53b-4690-a8da-9bafb9477d61",
-    "plan_summary": "addHistoryEntry 触发 MessageSender 发送 HistoryMessage",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": true
-  },
-  {
-    "plan_id": "plan_a13d45c1-3111-4db9-955a-bf5c6020fe22",
-    "plan_summary": "mutator 所有方法触发 MessageSender 发送",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": true
-  },
-  {
-    "plan_id": "plan_11bbd166-2281-44f4-83a3-53f35050ff07",
-    "plan_summary": "UserMessageEvent 重命名为 ChildMessageEvent，新增 result 字段，sessionId 改用 childSessionId",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": true
-  },
-  {
-    "plan_id": "plan_83377cf1-5014-4c47-be8c-c9a5500e98f6",
-    "plan_summary": "ChildSessionMessage 重命名为 ChildCreateSession，补充 toolIds/skillIds/prompt",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": true
-  },
-  {
-    "plan_id": "plan_33d25719-934a-4a58-b7e2-22606497f417",
-    "plan_summary": "ChildCreateSession 重构为 ChildSession + parentSessionId",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": true
-  },
-  {
-    "plan_id": "plan_c9f16850-10dd-4bea-bc5c-c856c33cf88a",
-    "plan_summary": "ChildCreateSession 构造函数设置 setSessionId(parentSessionId)",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": true
-  },
-  {
-    "plan_id": "plan_5ea0713c-5edd-4c72-b593-a1d77a301100",
-    "plan_summary": "AgentContextManager 新增三个消息处理方法",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": true
-  },
-  {
-    "plan_id": "plan_f4238f02-77c2-48be-9aad-9b0c7b2feac5",
-    "plan_summary": "AgentContextConfiguration agentAssembler 构造传入 MessageSender",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": true
-  },
-  {
-    "plan_id": "plan_5f178e28-78ce-4817-b253-b2acc4aec043",
-    "plan_summary": "handleXxx 方法改为直接使用消息数据更新缓存",
-    "code_reviewed": true,
+    "plan_id": "plan_345413e2-60e2-475f-b6f2-13e939211e1b",
+    "plan_summary": "README 框架层面更新：工具管理补充 MCP 双认证、HOOK 改写为 Spring 自动加载、执行引擎追加 sendmessage 框架、新增 SessionAuthType 和 AgentComponentRegistry 条目、变量管理补充 SSE 广播。",
+    "code_reviewed": false,
     "plan_completed": true,
     "test_passed": true
   }

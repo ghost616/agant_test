@@ -82,3 +82,6 @@
 - getLatestChildSessions：查询 Session 表 parentSessionId 等于 sessionId 的记录，映射为 ChildSession 列表
 [2026-07-20T03:40:07.628Z] [session: ses_082816734ffeEJvvROnrZ2Cd4P] DefaultContextDataProvider.getLatestConversationVariables 改为返回 Map.of()，不再查询数据库，后续从 Redis 缓存获取
 [2026-07-20T05:42:44.857Z] [session: ses_081f3f7b2ffeFmQwZC3To3xaXo] AgentContextConfiguration.agentAssembler() 构造函数新增第 7 个参数 null（MessageSender），添加 import
+[2026-07-20T06:35:31.033Z] [session: ses_081c42a68ffenefQojJ9savXxr] [2026-07-20] 创建 DefaultToolExecutionProvider，实现 ToolExecutionProvider 接口，组合 ToolCallQueueManager 和 ToolExecutionTracker 的数据容器与操作逻辑，提供统一的工具调用队列管理及执行状态追踪能力
+[2026-07-20T06:53:39.396Z] [session: ses_081c42a68ffenefQojJ9savXxr] [2026-07-20] DefaultToolExecutionProvider.updateExecution 方法签名从 (Long, String, String, String, String, String, boolean) 改为 (Long, String, ToolExecutionStatus)，实现从 status 对象读取字段替代独立参数
+[2026-07-20T07:03:05.702Z] [session: ses_081c42a68ffenefQojJ9savXxr] [2026-07-20] DefaultToolExecutionProvider.updateExecution 方法签名从 (Long, String, ToolExecutionStatus) 简化为 (Long, ToolExecutionStatus)，toolId 改从 status.currentToolId() 取值

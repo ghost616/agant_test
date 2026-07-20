@@ -79,7 +79,7 @@
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ToolExecutionTracker.java",
-      "description": "工具执行状态跟踪器，ConcurrentHashMap 使用 String key(sessionId_toolId)，支持每个工具独立执行状态跟踪。提供 setExecuting/setDone(追加toolId)/setFailed(追加toolId)/getCurrentExecution(追加toolId)/clear/getAndClearResults 方法"
+      "description": "工具执行状态跟踪器，通过 AgentComponentRegistry 获取 ToolExecutionProvider 委派所有执行追踪操作。ToolExecutionStatus 和 ToolResult 内部 record 定义保持不变"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/dto/model/ModelConfigData.java",
@@ -131,7 +131,7 @@
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/ToolCallQueueManager.java",
-      "description": "工具调用队列管理器，ConcurrentHashMap 管理会话级别工具调用队列"
+      "description": "工具调用队列管理器，通过 AgentComponentRegistry 获取 ToolExecutionProvider 委派所有队列操作"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/TypeScriptToolInvoker.java",
@@ -304,6 +304,10 @@
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/sendmessage/ChildCreateSession.java",
       "description": "子会话创建消息类，继承 SessionMessage，包含 parentSessionId 和 ChildSession 属性，getMessageName() 返回 CHILD_SESSION"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ToolExecutionProvider.java",
+      "description": "工具调用队列和执行追踪的统一契约接口，定义 enqueue/poll/peek/hasPending/clearQueue/updateExecution/clearTracking/getCurrentExecution/getAndClearResults 方法"
     }
   ]
 }

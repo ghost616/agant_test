@@ -1,9 +1,0 @@
-{
-  "plan_id": "plan_b974a752-6569-4beb-9ad5-e01ec370eb8b",
-  "module_name": "agent-base",
-  "development_plan": "在 agent-base 模块新增 SessionMessage 抽象类：\n- 路径：agent-base/src/main/java/com/ghost616/agentbase/sendmessage/SessionMessage.java\n- 实现 MessageDefinition 接口\n- 属性：Long sessionId（提供 getter/setter）\n- 不实现 getMessageName()，交由子类实现\n- 使用 Lombok 注解\n- 更新模块定义",
-  "session_id": "ses_08221b3fcffexC14zh4zQgHz3u",
-  "modified_files": [
-    "agent-base/src/main/java/com/ghost616/agentbase/sendmessage/SessionMessage.java"
-  ]
-}

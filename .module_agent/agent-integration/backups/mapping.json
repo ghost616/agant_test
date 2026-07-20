@@ -6,5 +6,6 @@
   "agent-base/src/main/java/com/ghost616/agentbase/dto/model/ChatChunk.java": "a725febf305bca4f7072526b14dfcb44",
   "agent-integration/src/main/java/com/ghost616/agentinteg/model/invoker/OpenAIInvoker.java": "417bbf33de11ddc0402d9a1d4ac908a5",
   "agent-integration/src/main/java/com/ghost616/agentinteg/model/invoker/AnthropicInvoker.java": "8c7adadfbba8ffc531110337bcb71a3b",
-  "agent-integration/src/main/java/com/ghost616/agentinteg/model/invoker/OllamaInvoker.java": "1dc7b9784c70b5be3d30bee3c09243d0"
+  "agent-integration/src/main/java/com/ghost616/agentinteg/model/invoker/OllamaInvoker.java": "1dc7b9784c70b5be3d30bee3c09243d0",
+  "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ToolExecutionTracker.java": "b4a679734316bb3ee94151112a8373a7"
 }

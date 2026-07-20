@@ -29,5 +29,8 @@
   "platform-app/src/main/resources/agent/_runner.ts": "0c83b8982ff7cd40592a66d5ec51b733",
   "agent-base/src/main/java/com/ghost616/agentbase/dto/model/ChatChunk.java": "a725febf305bca4f7072526b14dfcb44",
   "agent-base/src/main/java/com/ghost616/agentbase/service/agent/MessageDataProvider.java": "df97c0bf638397653db17dd0fe2ede65",
-  "agent-base/src/test/java/com/ghost616/agentbase/service/agent/SessionManagerTest.java": "90f40f09c1cb8af9210e31e4f91dcb7b"
+  "agent-base/src/test/java/com/ghost616/agentbase/service/agent/SessionManagerTest.java": "90f40f09c1cb8af9210e31e4f91dcb7b",
+  "agent-base/src/main/java/com/ghost616/agentbase/core/AgentComponentRegistry.java": "918e4cf5c42693221999ceba31ad3a75",
+  "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ToolExecutionProvider.java": "4b63aca8d6f97c6b27c4be3c11d0b2a2",
+  ".module_agent/agent-base/current_spec.md": "ef74045377e95cd8c4c129c14edddfc7"
 }

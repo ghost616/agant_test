@@ -1,0 +1,5 @@
+{
+  "lizhu_session_id": "ses_081c30018ffeASQBvBgkvVuSw7",
+  "content": "# 测试报告\n\n## 测试概览\n\n| 测试类型 | 结果 | 耗时 |\n|---------|------|------|\n| 编译测试 | ✅ 通过 | 6.6s |\n| ToolExecutionServiceTest | ✅ 通过 | 11s |\n| DefaultToolExecutionProviderTest | ✅ 通过 | 9s |\n\n---\n\n## 编译测试\n\n- **命令**: `mvn compile -q`\n- **结果**: ✅ 通过（exit code 0）\n\n## 单元测试\n\n### ToolExecutionServiceTest（agent-base）\n\n| 指标 | 值 |\n|------|----|\n| Tests run | **15** |\n| Failures | **0** |\n| Errors | **0** |\n\n### DefaultToolExecutionProviderTest（platform-app）\n\n| 指标 | 值 |\n|------|----|\n| Tests run | **28** |\n| Failures | **0** |\n| Errors | **0** |\n\n## 总结\n\n所有测试通过，`updateExecution` 方法签名简化后无回归问题。\n",
+  "timestamp": "2026-07-20T07:03:28.196Z"
+}

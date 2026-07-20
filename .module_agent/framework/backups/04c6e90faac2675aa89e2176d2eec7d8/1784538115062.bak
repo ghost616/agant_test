@@ -13,14 +13,12 @@ AI 智能体调试与管理平台，基于 opencode + DeepSeek 及 module_agent 
 ## 功能模块
 
 - **LLM 模型管理** — 模型配置的增删改查，支持 OpenAI / Anthropic / Azure / Ollama / DeepSeek / 自定义平台；各平台模型调用器均已实现，当前仅 DeepSeek 已完成连通性验证及全流程测试
-- **工具注册与管理** — 工具元数据注册，支持 Java / TypeScript / Python / MCP HTTP 四种工具类型。MCP HTTP 支持 Bearer Token 与 API Key 两种认证方式
+- **工具注册与管理** — 工具元数据注册，支持 Java / TypeScript / Python / MCP HTTP 四种工具类型
 - **SKILL 技能管理** — 技能配置的 CRUD，关联工具列表；智能体执行引擎按名称加载技能，自动注入提示词和关联工具
-- **HOOK 管理** — 提供 HookInvoker 与 SystemHook 接口，覆盖六个生命周期阶段（SESSION_START/END、BEFORE/AFTER MESSAGE、BEFORE/AFTER TOOL_CALL）。用户实现接口并放入工程即可被 Spring 自动发现加载，MessageSavePostHook 已内置运行，无需管理界面
+- **HOOK 管理** — HookInvoker 接口与 SystemHook 接口已定义，覆盖 SESSION_START/END、BEFORE/AFTER MESSAGE、BEFORE/AFTER TOOL_CALL 六个生命周期阶段，HOOK 管理功能后续实现
 - **智能体配置** — 智能体名称、系统提示词、关联模型与工具的配置管理，支持最近消息数量控制与技能关联
-- **智能体执行引擎** — 会话式智能体执行，支持工具调用与推理链，支持会话/对话变量、历史消息折叠、技能注入、推理内容透传。内置 sendmessage 跨会话消息通信框架，支持历史同步、变量广播、子会话事件等 5 种消息类型
+- **智能体执行引擎** — 会话式智能体执行，支持工具调用与推理链，支持会话/对话变量、历史消息折叠、技能注入、推理内容透传
 - **子会话执行** — 智能体在对话中可通过系统工具 `callback_sub_session` 创建子会话并异步执行指定的用户消息，支持为子会话分配工具与技能列表；子会话与父会话共享会话变量/对话变量（子会话的变量读写委托给父会话）；提供子会话列表查询和完成回调 API，前端可展示子会话执行情况
-- **三域会话授权** — 工具和技能支持 ALL/PARENT/CHILD 三级会话作用域配置，控制跨会话可见性与可用性
-- **组件注册表** — AgentComponentRegistry 集中管理 Provider、Manager、Invoker 等核心组件，支持延迟初始化和生命周期控制
 
 ## 快速启动
 
@@ -138,7 +136,7 @@ build.bat
 
 6. **工具调度** — 若模型回复中包含工具调用指令（可能在推理/思考过程中决定调用工具），后端先将工具调用数据缓存至队列，前端再逐条拉取异步提交执行任务，后端从会话工具列表中查找对应工具实例，通过 agent-base 模块中的工具调用器（JavaToolInvoker/TypeScriptToolInvoker/PythonToolInvoker/McpHttpToolInvoker）执行，执行完成后将结果写回消息历史和上下文，继续下一轮模型调用
 
-7. **变量管理** — **会话变量**跨轮持久化至 `session_variable` 表，**对话变量**单轮有效、自动清除；工具执行期间通过 VariableProxy 代理对象提供统一的读写接口。变量变更通过 sendmessage 实时 SSE 推送至前端（PUT/REMOVE 语义）
+7. **变量管理** — **会话变量**跨轮持久化至 `session_variable` 表，**对话变量**单轮有效、自动清除；工具执行期间通过 VariableProxy 代理对象提供统一的读写接口
 
 8. **流式推送** — 整个对话过程通过 SSE 将增量内容、推理过程、工具调用指令、变量变更、完成状态实时推送到前端
 

@@ -124,6 +124,10 @@
     {
       "path": "platform-app/src/test/java/com/ghost616/platform/controller/SessionControllerTest.java",
       "description": "SessionController 单元测试，覆盖 getSubSessionData 端点的 thinking 字段映射（true/false/null）及数据不存在场景，共 4 个用例"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultToolExecutionProvider.java",
+      "description": "ToolExecutionProvider 的默认实现，持有三个 ConcurrentHashMap（toolCallQueues/currentExecutions/completedResults）作为数据容器，提供工具调用队列管理和工具执行状态追踪能力。内部使用 sessionId+toolId 复合键维护执行状态和结果记录。"
     }
   ]
 }

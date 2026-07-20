@@ -1,0 +1,47 @@
+package com.ghost616.agentbase.service.agent;
+
+import java.util.List;
+
+import com.ghost616.agentbase.core.AgentComponentRegistry;
+
+public class ToolExecutionTracker {
+
+    private final ToolExecutionProvider provider;
+
+    public ToolExecutionTracker(AgentComponentRegistry registry) {
+        this.provider = registry.getToolExecutionProvider();
+    }
+
+    public record ToolExecutionStatus(String currentToolId, String currentToolName,
+                                       String currentArguments, String status,
+                                       String result, boolean hasMore) {
+    }
+
+    public record ToolResult(String toolId, String toolName, String arguments, String result) {
+    }
+
+    public void setExecuting(Long sessionId, String toolId, String toolName,
+                              String arguments, boolean hasMore) {
+        provider.updateExecution(sessionId, toolId, toolName, arguments, "executing", null, hasMore);
+    }
+
+    public void setDone(Long sessionId, String toolId, String result) {
+        provider.updateExecution(sessionId, toolId, null, null, "done", result, false);
+    }
+
+    public void setFailed(Long sessionId, String toolId, String error) {
+        provider.updateExecution(sessionId, toolId, null, null, "failed", error, false);
+    }
+
+    public void clear(Long sessionId) {
+        provider.clearTracking(sessionId);
+    }
+
+    public ToolExecutionStatus getCurrentExecution(Long sessionId, String toolId) {
+        return provider.getCurrentExecution(sessionId, toolId);
+    }
+
+    public List<ToolResult> getAndClearResults(Long sessionId) {
+        return provider.getAndClearResults(sessionId);
+    }
+}

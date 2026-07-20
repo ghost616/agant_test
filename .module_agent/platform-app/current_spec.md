@@ -78,3 +78,7 @@ platform-app 模块包含以下功能：
 - DefaultContextDataProvider 实现 ContextDataProvider 新增 4 个方法：getLatestMessages（委托 MessageDataProvider）、getLatestSessionVariables（复用 loadSessionVariablesInternal）、getLatestConversationVariables（复用 loadSessionVariablesInternal）、getLatestChildSessions（查询 Session 表 parentSessionId）
 - DefaultContextDataProvider.getLatestConversationVariables 改为返回 Map.of()，后续从 Redis 缓存获取
 - AgentContextConfiguration.agentAssembler() 构造函数第 7 个参数传入 null（MessageSender），添加 import com.ghost616.agentbase.sendmessage.MessageSender
+5. 新增 DefaultToolExecutionProvider（实现 ToolExecutionProvider 接口）：
+   - 持有三个 ConcurrentHashMap 数据容器（toolCallQueues/currentExecutions/completedResults）
+   - 实现工具调用队列操作：enqueue/poll/peek/hasPending/clearQueue
+   - 实现工具执行状态追踪：updateExecution/clearTracking/getCurrentExecution/getAndClearResults
