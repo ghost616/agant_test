@@ -74,3 +74,11 @@
 [2026-07-16T06:05:53.149Z] [session: ses_09678766cffe40M6d0P0QTXgrY] [2026-07-16] DefaultSubSessionCallback.execute 方法适配 SubSessionCallback 接口新增的 Boolean thinking 参数，execute 签名改为 (Long sessionId, String userMessage, Boolean thinking)；测试文件所有 execute 调用追加第三个参数 null
 [2026-07-17T02:32:17.442Z] [session: ses_092168f1affeDp4RuoG90rKSUd] [2026-07-17] DefaultSubSessionCallback.SubSessionData 内部类新增 thinking(Boolean) 字段、构造参数及 getter；execute 方法创建 SubSessionData 时传递 thinking 参数；SubSessionDataDTO 新增 thinking 字段；SessionController.getSubSessionData() 映射 thinking 到 DTO；DefaultSubSessionCallbackTest 新增 executeWithThinkingTrueShouldStoreThinking 测试及现有用例中添加 thinking 断言
 [2026-07-17T02:35:38.899Z] [session: ses_092168f1affeDp4RuoG90rKSUd] [2026-07-17] 离朱测试：新增 SubSessionDataDTOTest(15) 和 SessionControllerTest(4)，所有 28 项测试（含 1 编译测试）全部通过
+[2026-07-18T05:44:55.651Z] [session: ses_08c3eb146ffecFYPom5WDBT7w3] DefaultMessageDataProvider 签名适配：saveMessage 新增 UsageInfo usage 参数（8参），getMessages 中 MessageDTO 构造补传 null 作为 usage
+[2026-07-20T03:08:56.741Z] [session: ses_082816734ffeEJvvROnrZ2Cd4P] DefaultContextDataProvider 实现 ContextDataProvider 新增 4 个方法：
+- getLatestMessages：注入 MessageDataProvider，委托 getMessages(sessionId) 获取消息列表
+- getLatestSessionVariables：复用 loadSessionVariablesInternal 查询 session_variable 表
+- getLatestConversationVariables：复用 loadSessionVariablesInternal（会话变量与对话变量共用 SessionVariable 表）
+- getLatestChildSessions：查询 Session 表 parentSessionId 等于 sessionId 的记录，映射为 ChildSession 列表
+[2026-07-20T03:40:07.628Z] [session: ses_082816734ffeEJvvROnrZ2Cd4P] DefaultContextDataProvider.getLatestConversationVariables 改为返回 Map.of()，不再查询数据库，后续从 Redis 缓存获取
+[2026-07-20T05:42:44.857Z] [session: ses_081f3f7b2ffeFmQwZC3To3xaXo] AgentContextConfiguration.agentAssembler() 构造函数新增第 7 个参数 null（MessageSender），添加 import

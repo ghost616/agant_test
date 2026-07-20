@@ -8,6 +8,7 @@ import com.ghost616.platform.entity.ModelConfig;
 import com.ghost616.platform.entity.Session;
 import com.ghost616.platform.entity.SessionSkill;
 import com.ghost616.platform.entity.SessionTool;
+import com.ghost616.platform.entity.SessionVariable;
 import com.ghost616.platform.entity.SkillConfig;
 import com.ghost616.platform.entity.ToolConfig;
 import com.ghost616.platform.repository.AgentConfigMapper;
@@ -21,6 +22,7 @@ import com.ghost616.platform.repository.SkillConfigMapper;
 import com.ghost616.platform.repository.SkillToolMapper;
 import com.ghost616.platform.repository.ToolConfigMapper;
 import com.ghost616.agentbase.exception.BusinessException;
+import com.ghost616.agentbase.service.agent.MessageDataProvider;
 import com.ghost616.platform.service.tool.ToolConfigService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -50,6 +52,7 @@ class DefaultContextDataProviderTest {
     @Mock private ModelConfigMapper modelConfigMapper;
     @Mock private ToolConfigMapper toolConfigMapper;
     @Mock private SessionToolMapper sessionToolMapper;
+    @Mock private MessageDataProvider messageDataProvider;
 
     @Captor private ArgumentCaptor<Session> sessionCaptor;
     @Captor private ArgumentCaptor<SessionTool> sessionToolCaptor;
@@ -62,7 +65,8 @@ class DefaultContextDataProviderTest {
         provider = new DefaultContextDataProvider(sessionMapper, agentConfigMapper,
                 sessionVariableMapper, agentSkillMapper, skillConfigMapper,
                 skillToolMapper, toolConfigService, sessionSkillMapper,
-                modelConfigMapper, toolConfigMapper, sessionToolMapper);
+                modelConfigMapper, toolConfigMapper, sessionToolMapper,
+                messageDataProvider);
     }
 
     @Test
@@ -374,5 +378,117 @@ class DefaultContextDataProviderTest {
         assertEquals(Long.valueOf(300L), result.defaultModelId());
         assertEquals(Integer.valueOf(15), result.recentMessageCount());
         assertNotNull(result.sessionVariables());
+    }
+
+    @Test
+    void getLatestMessages_委托调用MessageDataProvider并返回结果() {
+        Long sessionId = 100L;
+        MessageDataProvider.MessageDTO msg1 = new MessageDataProvider.MessageDTO(
+                1L, 100L, "user", "hello", null, null, 1, null, null, null, null);
+        MessageDataProvider.MessageDTO msg2 = new MessageDataProvider.MessageDTO(
+                2L, 100L, "assistant", "world", null, null, 2, null, null, null, null);
+        when(messageDataProvider.getMessages(sessionId)).thenReturn(List.of(msg1, msg2));
+
+        List<MessageDataProvider.MessageDTO> result = provider.getLatestMessages(sessionId);
+
+        assertNotNull(result);
+        assertEquals(2, result.size());
+        assertEquals("hello", result.get(0).content());
+        assertEquals("assistant", result.get(1).role());
+        verify(messageDataProvider).getMessages(sessionId);
+    }
+
+    @Test
+    void getLatestMessages_返回空列表() {
+        when(messageDataProvider.getMessages(200L)).thenReturn(List.of());
+
+        List<MessageDataProvider.MessageDTO> result = provider.getLatestMessages(200L);
+
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+        verify(messageDataProvider).getMessages(200L);
+    }
+
+    @Test
+    void getLatestSessionVariables_查询sessionVariable并返回Map() {
+        Long sessionId = 10L;
+        SessionVariable sv1 = new SessionVariable();
+        sv1.setVariableKey("key1");
+        sv1.setVariableValue("val1");
+        SessionVariable sv2 = new SessionVariable();
+        sv2.setVariableKey("key2");
+        sv2.setVariableValue("val2");
+        when(sessionVariableMapper.selectList(any())).thenReturn(List.of(sv1, sv2));
+
+        Map<String, String> result = provider.getLatestSessionVariables(sessionId);
+
+        assertEquals(2, result.size());
+        assertEquals("val1", result.get("key1"));
+        assertEquals("val2", result.get("key2"));
+    }
+
+    @Test
+    void getLatestSessionVariables_无变量时返回空Map() {
+        when(sessionVariableMapper.selectList(any())).thenReturn(List.of());
+
+        Map<String, String> result = provider.getLatestSessionVariables(20L);
+
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void getLatestConversationVariables_返回空Map() {
+        Map<String, String> result = provider.getLatestConversationVariables(30L);
+
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void getLatestChildSessions_查询子会话并映射为ChildSession列表() {
+        Long sessionId = 50L;
+        Session child1 = new Session();
+        child1.setId(51L);
+        child1.setTitle("child-a");
+        child1.setDescription("desc-a");
+        child1.setModelId(300L);
+        Session child2 = new Session();
+        child2.setId(52L);
+        child2.setTitle("child-b");
+        child2.setDescription("desc-b");
+        child2.setModelId(301L);
+        when(sessionMapper.selectList(any())).thenReturn(List.of(child1, child2));
+
+        List<AgentExecutionContext.ChildSession> result = provider.getLatestChildSessions(sessionId);
+
+        assertNotNull(result);
+        assertEquals(2, result.size());
+        assertEquals(Long.valueOf(51L), result.get(0).sessionId());
+        assertEquals("child-a", result.get(0).sessionName());
+        assertEquals("desc-a", result.get(0).description());
+        assertEquals(Long.valueOf(300L), result.get(0).modelId());
+        assertEquals(Long.valueOf(52L), result.get(1).sessionId());
+        assertEquals("child-b", result.get(1).sessionName());
+    }
+
+    @Test
+    void getLatestChildSessions_无子会话时返回空列表() {
+        when(sessionMapper.selectList(any())).thenReturn(List.of());
+
+        List<AgentExecutionContext.ChildSession> result = provider.getLatestChildSessions(60L);
+
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void getLatestChildSessions_selectList返回null时返回空列表() {
+        when(sessionMapper.selectList(any())).thenReturn(null);
+
+        List<AgentExecutionContext.ChildSession> result = provider.getLatestChildSessions(70L);
+
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
     }
 }

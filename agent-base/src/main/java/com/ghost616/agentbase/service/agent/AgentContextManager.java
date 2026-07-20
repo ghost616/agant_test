@@ -11,6 +11,9 @@ import com.ghost616.agentbase.enums.ErrorCode;
 import com.ghost616.agentbase.enums.SessionAuthType;
 import com.ghost616.agentbase.enums.ToolType;
 import com.ghost616.agentbase.exception.BusinessException;
+import com.ghost616.agentbase.sendmessage.ChildCreateSession;
+import com.ghost616.agentbase.sendmessage.HistoryMessage;
+import com.ghost616.agentbase.sendmessage.VariableMessage;
 import com.ghost616.agentbase.service.agent.invoker.ToolManager;
 
 import lombok.extern.slf4j.Slf4j;
@@ -130,25 +133,7 @@ public class AgentContextManager {
             }
 
             List<MessageDataProvider.MessageDTO> messages = sessionManager.getMessages(sessionId);
-            List<AgentExecutionContext.HistoryEntry> history = new ArrayList<>();
-            for (MessageDataProvider.MessageDTO msg : messages) {
-                List<ToolCall> toolCalls;
-                if (msg.toolCalls() != null && !msg.toolCalls().isEmpty()) {
-                    toolCalls = msg.toolCalls().stream()
-                            .map(tc -> ToolCall.builder()
-                                    .id(tc.toolCallId())
-                                    .name(tc.toolCallName())
-                                    .arguments(tc.toolCallArguments())
-                                    .build())
-                            .toList();
-                } else {
-                    toolCalls = Collections.emptyList();
-                }
-                history.add(new AgentExecutionContext.HistoryEntry(
-                        msg.role(), msg.content(), msg.reasoning(), msg.toolCallId(),
-                        msg.sequenceNum(), msg.createTime(), Collections.unmodifiableList(toolCalls),
-                        msg.usage()));
-            }
+            List<AgentExecutionContext.HistoryEntry> history = convertMessagesToHistory(messages);
 
             AgentExecutionContext.AgentContextMutator mutator = new AgentExecutionContext.AgentContextMutator();
 
@@ -165,10 +150,11 @@ public class AgentContextManager {
                     sessionId, agentId, systemPrompt, effectiveModelId,
                     ctxData.recentMessageCount(),
                     history, tools, skills, mutator,
-                    ctxData.sessionVariables(), new HashMap<>(),
+                    new HashMap<>(ctxData.sessionVariables()), new HashMap<>(),
                     parentSessionId, System.getProperty("user.dir"), ctxData.childSessions());
 
             injectVariableCallbacks(mutator, sessionId, parentSessionId, parentCtx);
+            mutator.setMessageSender(registry.getMessageSender());
 
             return new AgentSessionContext(context, mutator, new AtomicBoolean(false));
         }
@@ -233,6 +219,123 @@ public class AgentContextManager {
 
     public void remove(Long sessionId) {
         cache.remove(sessionId);
+    }
+
+    private List<AgentExecutionContext.HistoryEntry> convertMessagesToHistory(List<MessageDataProvider.MessageDTO> messages) {
+        List<AgentExecutionContext.HistoryEntry> history = new ArrayList<>();
+        for (MessageDataProvider.MessageDTO msg : messages) {
+            List<ToolCall> toolCalls;
+            if (msg.toolCalls() != null && !msg.toolCalls().isEmpty()) {
+                toolCalls = msg.toolCalls().stream()
+                        .map(tc -> ToolCall.builder()
+                                .id(tc.toolCallId())
+                                .name(tc.toolCallName())
+                                .arguments(tc.toolCallArguments())
+                                .build())
+                        .toList();
+            } else {
+                toolCalls = Collections.emptyList();
+            }
+            history.add(new AgentExecutionContext.HistoryEntry(
+                    msg.role(), msg.content(), msg.reasoning(), msg.toolCallId(),
+                    msg.sequenceNum(), msg.createTime(), Collections.unmodifiableList(toolCalls),
+                    msg.usage()));
+        }
+        return history;
+    }
+
+    public void refreshHistory(Long sessionId) {
+        ensureInitialized();
+        AgentSessionContext ctx = cache.get(sessionId);
+        if (ctx == null) {
+            return;
+        }
+        List<MessageDataProvider.MessageDTO> messages = dataProvider.getLatestMessages(sessionId);
+        List<AgentExecutionContext.HistoryEntry> history = convertMessagesToHistory(messages);
+        ctx.mutator().refreshHistory(history);
+    }
+
+    public void refreshSessionVariables(Long sessionId) {
+        ensureInitialized();
+        AgentSessionContext ctx = cache.get(sessionId);
+        if (ctx == null) {
+            return;
+        }
+        Map<String, String> vars = dataProvider.getLatestSessionVariables(sessionId);
+        ctx.mutator().refreshSessionVariables(vars);
+    }
+
+    public void refreshConversationVariables(Long sessionId) {
+        ensureInitialized();
+        AgentSessionContext ctx = cache.get(sessionId);
+        if (ctx == null) {
+            return;
+        }
+        Map<String, String> vars = dataProvider.getLatestConversationVariables(sessionId);
+        ctx.mutator().refreshConversationVariables(vars);
+    }
+
+    public void refreshChildSessions(Long sessionId) {
+        ensureInitialized();
+        AgentSessionContext ctx = cache.get(sessionId);
+        if (ctx == null) {
+            return;
+        }
+        List<AgentExecutionContext.ChildSession> children = dataProvider.getLatestChildSessions(sessionId);
+        ctx.mutator().refreshChildSessions(children);
+    }
+
+    public void handleChildCreateSession(ChildCreateSession message) {
+        ensureInitialized();
+        Long parentSessionId = message.getParentSessionId();
+        AgentSessionContext ctx = cache.get(parentSessionId);
+        if (ctx != null) {
+            List<AgentExecutionContext.ChildSession> current = ctx.context().getChildSessions();
+            List<AgentExecutionContext.ChildSession> updated = new ArrayList<>(current);
+            updated.add(message.getChildSession());
+            ctx.mutator().refreshChildSessions(updated);
+        }
+    }
+
+    public void handleHistoryMessage(HistoryMessage message) {
+        ensureInitialized();
+        AgentSessionContext ctx = cache.get(message.getSessionId());
+        if (ctx != null) {
+            List<AgentExecutionContext.HistoryEntry> current = ctx.context().getHistory();
+            List<AgentExecutionContext.HistoryEntry> updated = new ArrayList<>(current);
+            updated.add(message.getHistoryEntry());
+            ctx.mutator().refreshHistory(updated);
+        }
+    }
+
+    public void handleVariableMessage(VariableMessage message) {
+        ensureInitialized();
+        AgentSessionContext ctx = cache.get(message.getSessionId());
+        if (ctx != null) {
+            if ("SESSION".equals(message.getScope())) {
+                Map<String, String> current = new HashMap<>();
+                for (String key : ctx.context().getSessionVariableKeys()) {
+                    current.put(key, ctx.context().getSessionVariable(key));
+                }
+                if ("PUT".equals(message.getOperation())) {
+                    current.put(message.getKey(), message.getValue());
+                } else {
+                    current.remove(message.getKey());
+                }
+                ctx.mutator().refreshSessionVariables(current);
+            } else {
+                Map<String, String> current = new HashMap<>();
+                for (String key : ctx.context().getConversationVariableKeys()) {
+                    current.put(key, ctx.context().getConversationVariable(key));
+                }
+                if ("PUT".equals(message.getOperation())) {
+                    current.put(message.getKey(), message.getValue());
+                } else {
+                    current.remove(message.getKey());
+                }
+                ctx.mutator().refreshConversationVariables(current);
+            }
+        }
     }
 
     public record AgentSessionContext(AgentExecutionContext context,

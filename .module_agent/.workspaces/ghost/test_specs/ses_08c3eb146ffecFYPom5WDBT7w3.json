@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_08c3eb146ffecFYPom5WDBT7w3",
+  "content": "## 待测试功能说明\n\n### 功能\n1. SessionDTO 新增 totalTokenUsed 字段，使用 @JsonSerialize(using = ToStringSerializer.class)\n2. SessionServiceImpl.toDTO() 映射 totalTokenUsed\n\n### 涉及文件\n- platform-app/src/main/java/com/ghost616/platform/dto/session/SessionDTO.java\n- platform-app/src/main/java/com/ghost616/platform/service/session/SessionServiceImpl.java",
+  "timestamp": "2026-07-18T07:11:31.821Z"
+}

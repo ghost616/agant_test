@@ -3,7 +3,7 @@
   "files": [
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/AgentExecutionContext.java",
-      "description": "AgentExecutionContext 构造器含 sessionId/agentId/systemPrompt/modelId/recentMessageCount/history/tools/skills/mutator/sessionVariables/conversationVariables，含变量 CRUD 方法和 AgentContextMutator 内部类；SendUserMessageCallback 接口 send 方法返回 Message；sendUserMessage 方法返回 Message 透传 mutator 返回值"
+      "description": "Agent 执行上下文。内部 AgentContextMutator 各方法在变更后通过 messageSender.send() 发送 HistoryMessage/VariableMessage/ChildCreateSession/ChildMessageEvent 等事件消息"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/ToolInvoker.java",
@@ -15,7 +15,7 @@
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/SessionManager.java",
-      "description": "会话管理组件，提供消息保存、历史消息查询和回退功能"
+      "description": "会话管理组件，提供消息保存（MessageSaveBuilder 支持 usage 链式方法）、历史消息查询和回退功能"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/AgentContextBuilder.java",
@@ -23,7 +23,7 @@
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/AgentContextManager.java",
-      "description": "AgentContextManager，管理会话上下文缓存 ConcurrentHashMap；通过 setter 注入 AgentMessageProxy，sendUserMessage 方法委托给 proxy 或回退直接保存消息"
+      "description": "Agent 上下文管理器。新增 handleChildCreateSession/handleHistoryMessage/handleVariableMessage 事件处理方法，接收 sendmessage 模块消息并刷新对应缓存"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/SystemTool.java",
@@ -51,7 +51,7 @@
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/MessageDataProvider.java",
-      "description": "消息数据提供者接口，定义 saveMessage/getMessages/rollbackToLastUserMessage 及 MessageDTO 等 record"
+      "description": "消息数据提供者接口，定义 saveMessage（含 UsageInfo usage 参数）/getMessages/rollbackToLastUserMessage 及 MessageDTO（含 UsageInfo usage 字段）/ToolCallData 等 record"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ToolDataProvider.java",
@@ -75,7 +75,7 @@
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/MessageSavePostHook.java",
-      "description": "消息保存后置 HOOK 实现，在 AFTER_MESSAGE_RECEIVE 阶段处理流式消息持久化"
+      "description": "消息保存后置 HOOK 实现，在 AFTER_MESSAGE_RECEIVE 阶段处理流式消息持久化，从 chunk 获取 UsageInfo 透传到消息保存和历史记录"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ToolExecutionTracker.java",
@@ -151,7 +151,7 @@
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/dto/model/ChatChunk.java",
-      "description": "流式对话片段 DTO"
+      "description": "流式对话片段 DTO，含 delta/reasoning/toolCalls/finishReason/hasToolCalls/index/usage 字段"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/dto/model/ChatRequest.java",
@@ -272,6 +272,38 @@
     {
       "path": "agent-base/src/main/resources/agent/_runner.ts",
       "description": "TypeScript 工具运行桥接脚本，作为 TypeScriptToolInvoker 的自动生成 bridge 文件。定义了 ToolCall、HistoryEntry、ToolInfo、SkillInfo、AgentExecutionContext、ExecuteInput、VariableChanges 等接口和 createVariableProxy 代理工厂函数，通过 CLI 参数读取输入 JSON 文件，动态导入 index 模块并调用 execute(context, arguments)，输出 result 和变量变更结果。"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/sendmessage/MessageDefinition.java",
+      "description": "消息定义接口，定义 getMessageName() 方法返回消息名称，作为消息发送模块的消息契约"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/sendmessage/MessageSender.java",
+      "description": "消息发送器接口，定义 send(MessageDefinition) 方法发送消息，依赖 MessageDefinition 作为消息载体"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/sendmessage/SessionMessage.java",
+      "description": "消息抽象基类，实现 MessageDefinition 接口，提供 sessionId 属性的 getter/setter，getMessageName() 交由子类实现"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/sendmessage/MessageName.java",
+      "description": "消息名称常量类，定义 HISTORY_MESSAGE、SESSION_VARIABLE、CONVERSATION_VARIABLE、CHILD_SESSION、CHILD_MESSAGE"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/sendmessage/HistoryMessage.java",
+      "description": "历史消息类，继承 SessionMessage，包含 HistoryEntry 属性，getMessageName() 返回 HISTORY_MESSAGE"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/sendmessage/VariableMessage.java",
+      "description": "变量变更消息类，继承 SessionMessage，包含 scope(SESSION/CONVERSATION)、key、value、operation(PUT/REMOVE) 属性，getMessageName() 根据 scope 返回对应常量"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/sendmessage/ChildMessageEvent.java",
+      "description": "子会话消息事件类，继承 SessionMessage，包含 childSessionId、content、modelId、thinking、result 属性，getMessageName() 返回 CHILD_MESSAGE"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/sendmessage/ChildCreateSession.java",
+      "description": "子会话创建消息类，继承 SessionMessage，包含 parentSessionId 和 ChildSession 属性，getMessageName() 返回 CHILD_SESSION"
     }
   ]
 }

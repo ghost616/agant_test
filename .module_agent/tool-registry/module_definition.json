@@ -2,16 +2,8 @@
   "module_name": "tool-registry",
   "files": [
     {
-      "path": "src/main/resources/agent/_runner.py",
-      "description": "Python 桥接模板，从 _input.json 读取上下文，动态导入 index.py 并调用 execute()。AgentExecutionContext 解析 sessionId/agentId/systemPrompt/modelId/recentMessageCount/history/tools/sessionVariables/conversationVariables"
-    },
-    {
       "path": "tools/math-calc/index.py",
       "description": "数学计算测试 Python 工具，安全求值（禁用 __builtins__），支持 math 模块所有函数"
-    },
-    {
-      "path": "platform-app/src/main/java/com/ghost616/platform/enums/ToolType.java",
-      "description": "工具类型枚举：JAVA/TYPESCRIPT/PYTHON"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/entity/ToolConfig.java",
@@ -36,18 +28,6 @@
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/controller/ToolConfigController.java",
       "description": "工具配置 REST 控制器"
-    },
-    {
-      "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/invoker/PythonToolInvoker.java",
-      "description": "Python 工具执行器，实现 ToolInvoker 接口"
-    },
-    {
-      "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/invoker/McpHttpToolInvoker.java",
-      "description": "MCP HTTP 远程工具调用器"
-    },
-    {
-      "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/invoker/McpAuthConfigParser.java",
-      "description": "MCP 认证配置解析工具类"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/tool/ToolConfigServiceImpl.java",

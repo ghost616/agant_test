@@ -15,6 +15,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -411,6 +412,99 @@ class AgentContextManagerTest {
         assertEquals(1, resultTools.size());
         assertSame(alreadyExpanded, resultTools.get(0));
         assertEquals(SessionAuthType.PARENT, resultTools.get(0).getSessionAuth());
+    }
+
+    @Nested
+    class RefreshMethodTest {
+
+        @BeforeEach
+        void setUp() {
+            stubBasicContext();
+            agentContextManager.build(sessionId).build();
+        }
+
+        @Test
+        void 正向_refreshHistory后历史为最新数据() {
+            var msg1 = new MessageDataProvider.MessageDTO(1L, sessionId, "user", "hello", null, null, 0,
+                    LocalDateTime.now(), null, null, null);
+            var msg2 = new MessageDataProvider.MessageDTO(2L, sessionId, "assistant", "hi", null, null, 1,
+                    LocalDateTime.now(), null, null, null);
+            when(dataProvider.getLatestMessages(sessionId)).thenReturn(List.of(msg1, msg2));
+
+            agentContextManager.refreshHistory(sessionId);
+
+            AgentExecutionContext context = agentContextManager.get(sessionId).context();
+            assertEquals(2, context.getHistory().size());
+            assertEquals("hello", context.getHistory().get(0).content());
+            assertEquals("hi", context.getHistory().get(1).content());
+        }
+
+        @Test
+        void 正向_refreshSessionVariables后变量为最新数据() {
+            Map<String, String> newVars = Map.of("k1", "v1", "k2", "v2");
+            when(dataProvider.getLatestSessionVariables(sessionId)).thenReturn(newVars);
+
+            agentContextManager.refreshSessionVariables(sessionId);
+
+            AgentExecutionContext context = agentContextManager.get(sessionId).context();
+            assertEquals("v1", context.getSessionVariable("k1"));
+            assertEquals("v2", context.getSessionVariable("k2"));
+        }
+
+        @Test
+        void 正向_refreshConversationVariables后变量为最新数据() {
+            Map<String, String> newVars = Map.of("ck1", "cv1");
+            when(dataProvider.getLatestConversationVariables(sessionId)).thenReturn(newVars);
+
+            agentContextManager.refreshConversationVariables(sessionId);
+
+            AgentExecutionContext context = agentContextManager.get(sessionId).context();
+            assertEquals("cv1", context.getConversationVariable("ck1"));
+        }
+
+        @Test
+        void 正向_refreshChildSessions后子会话为最新数据() {
+            var child = new AgentExecutionContext.ChildSession(10L, "child", "desc", 300L);
+            when(dataProvider.getLatestChildSessions(sessionId)).thenReturn(List.of(child));
+
+            agentContextManager.refreshChildSessions(sessionId);
+
+            AgentExecutionContext context = agentContextManager.get(sessionId).context();
+            assertEquals(1, context.getChildSessions().size());
+            assertEquals(Long.valueOf(10L), context.getChildSessions().get(0).sessionId());
+        }
+
+        @Test
+        void 边界_缓存中无上下文时刷新方法不抛异常() {
+            Long nonExistentSession = 999L;
+
+            assertDoesNotThrow(() -> agentContextManager.refreshHistory(nonExistentSession));
+            assertDoesNotThrow(() -> agentContextManager.refreshSessionVariables(nonExistentSession));
+            assertDoesNotThrow(() -> agentContextManager.refreshConversationVariables(nonExistentSession));
+            assertDoesNotThrow(() -> agentContextManager.refreshChildSessions(nonExistentSession));
+        }
+
+        @Test
+        void 正向_refreshHistory后getHistory返回新数据而非旧数据() {
+            agentContextManager.remove(sessionId);
+
+            var oldMsg = new MessageDataProvider.MessageDTO(1L, sessionId, "user", "old", null, null, 0,
+                    LocalDateTime.now(), null, null, null);
+            when(sessionManager.getMessages(sessionId)).thenReturn(List.of(oldMsg));
+
+            AgentContextManager.AgentSessionContext ctx = agentContextManager.build(sessionId).build();
+            assertEquals(1, ctx.context().getHistory().size());
+            assertEquals("old", ctx.context().getHistory().get(0).content());
+
+            var newMsg = new MessageDataProvider.MessageDTO(2L, sessionId, "user", "new", null, null, 1,
+                    LocalDateTime.now(), null, null, null);
+            when(dataProvider.getLatestMessages(sessionId)).thenReturn(List.of(newMsg));
+
+            agentContextManager.refreshHistory(sessionId);
+
+            assertEquals(1, ctx.context().getHistory().size());
+            assertEquals("new", ctx.context().getHistory().get(0).content());
+        }
     }
 
     @Nested

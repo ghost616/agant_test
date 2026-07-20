@@ -1,0 +1,12 @@
+{
+  "plan_id": "plan_b7f6032e-c53b-4690-a8da-9bafb9477d61",
+  "module_name": "agent-base",
+  "development_plan": "在 agent-base 模块实现 addHistoryEntry 触发消息发送：\n\n1. 新增 MessageName 常量类：agent-base/src/main/java/com/ghost616/agentbase/sendmessage/MessageName.java\n   - 定义 public static final String HISTORY_MESSAGE = \"HISTORY_MESSAGE\" 等常量\n\n2. 新增 HistoryMessage 类：agent-base/src/main/java/com/ghost616/agentbase/sendmessage/HistoryMessage.java\n   - 继承 SessionMessage，新增 AgentExecutionContext.HistoryEntry historyEntry 属性\n   - getMessageName() 返回 MessageName.HISTORY_MESSAGE\n\n3. 修改 AgentExecutionContext.AgentContextMutator：\n   - 新增 MessageSender messageSender 字段\n   - addHistoryEntry() 中在 context.history.add(entry) 之后，若 messageSender != null，创建 new HistoryMessage(context.sessionId, entry) 并调用 messageSender.send()\n   - 新增 setMessageSender(MessageSender) 方法\n\n4. 修改 AgentContextManager：\n   - build() 构建上下文时，将 registry.getMessageSender() 通过 mutator 设置进去\n\n5. 更新模块定义",
+  "session_id": "ses_08221b3fcffexC14zh4zQgHz3u",
+  "modified_files": [
+    "agent-base/src/main/java/com/ghost616/agentbase/sendmessage/MessageName.java",
+    "agent-base/src/main/java/com/ghost616/agentbase/sendmessage/HistoryMessage.java",
+    "agent-base/src/main/java/com/ghost616/agentbase/service/agent/AgentExecutionContext.java",
+    "agent-base/src/main/java/com/ghost616/agentbase/service/agent/AgentContextManager.java"
+  ]
+}

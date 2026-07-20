@@ -74,3 +74,7 @@ platform-app 模块包含以下功能：
 - SubSessionDataDTO 新增 thinking 字段，SessionController.getSubSessionData() 映射 thinking 到 DTO
 - 新增 SubSessionDataDTOTest（15 用例覆盖 thinking 序列化/反序列化/构造器/equals/hashCode）
 - 新增 SessionControllerTest（4 用例覆盖 getSubSessionData 端点 thinking 映射）
+- DefaultMessageDataProvider.saveMessage 方法签名新增 UsageInfo usage 参数，满足 MessageDataProvider 接口契约；方法体内忽略 usage 不持久化
+- DefaultContextDataProvider 实现 ContextDataProvider 新增 4 个方法：getLatestMessages（委托 MessageDataProvider）、getLatestSessionVariables（复用 loadSessionVariablesInternal）、getLatestConversationVariables（复用 loadSessionVariablesInternal）、getLatestChildSessions（查询 Session 表 parentSessionId）
+- DefaultContextDataProvider.getLatestConversationVariables 改为返回 Map.of()，后续从 Redis 缓存获取
+- AgentContextConfiguration.agentAssembler() 构造函数第 7 个参数传入 null（MessageSender），添加 import com.ghost616.agentbase.sendmessage.MessageSender

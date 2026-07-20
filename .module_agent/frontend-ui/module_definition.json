@@ -39,7 +39,7 @@
     },
     {
       "path": "src/types/session.ts",
-      "description": "会话类型定义，含 Session（含 parentSessionId、isChild 字段）、CreateSessionParams、SessionMessage（含 toolResult 替代 toolName，存储工具执行结果 JSON）、ToolCallData 接口"
+      "description": "会话相关 TypeScript 类型定义：Session、CreateSessionParams、ToolCallData、SessionMessage、SubSessionData 接口，Session 包含 totalTokenUsed 可选字段"
     },
     {
       "path": "src/services/session.ts",

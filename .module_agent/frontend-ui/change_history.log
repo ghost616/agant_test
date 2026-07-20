@@ -54,3 +54,4 @@
 [2026-07-13T06:22:36.120Z] [session: ses_0a5fcb131ffetqVw60URgycf8G] AgentChat.tsx: 移除 toolLoopCount/subToolLoopCount/MAX_TOOL_LOOPS，由 toolCallCounts 单一机制替代，保留 toolCallCounts.current.clear() 清理
 [2026-07-13T06:32:30.319Z] [session: ses_0a5fcb131ffetqVw60URgycf8G] AgentChat.tsx: 删除 handleSubSessionFlow 中残留的 subToolLoopCount.current = 0 和 handleSend onDone 中残留的 toolLoopCount.current = 0
 [2026-07-15T03:54:25.273Z] [session: ses_09c18a579ffeZ5US39R1Dxj3Hk] feat: Agent 表单工具/技能选择支持 sessionAuth 配置（type: agent.ts 新增 SessionAuthType；AgentConfig/AgentFormData 中 toolIds→tools、skillIds→skills；AgentList.tsx 新增 SessionAuthSelect 组件，表单每项可配置 sessionAuth 下拉，表格列显示 sessionAuth Tag）
+[2026-07-18T07:18:06.621Z] [session: ses_08be969d9ffegt2UZsFpXSPvR8] Session 接口新增 totalTokenUsed 可选字段；SessionList 表格新增 Token 消耗列，scroll.x 调整为 960

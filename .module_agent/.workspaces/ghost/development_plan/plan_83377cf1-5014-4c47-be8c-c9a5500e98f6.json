@@ -1,0 +1,10 @@
+{
+  "plan_id": "plan_83377cf1-5014-4c47-be8c-c9a5500e98f6",
+  "module_name": "agent-base",
+  "development_plan": "修改 agent-base 模块：\n\n1. 将 agent-base/src/main/java/com/ghost616/agentbase/sendmessage/ChildSessionMessage.java 重命名为 ChildCreateSession.java\n   - 类名改为 ChildCreateSession\n   - 新增属性：List<Long> toolIds, List<Long> skillIds, String prompt\n\n2. 更新 AgentExecutionContext.AgentContextMutator.createChildSession() 中的引用和 import\n\n3. 更新模块定义（移除 ChildSessionMessage，添加 ChildCreateSession）",
+  "session_id": "ses_08221b3fcffexC14zh4zQgHz3u",
+  "modified_files": [
+    "agent-base/src/main/java/com/ghost616/agentbase/sendmessage/ChildCreateSession.java",
+    "agent-base/src/main/java/com/ghost616/agentbase/service/agent/AgentExecutionContext.java"
+  ]
+}

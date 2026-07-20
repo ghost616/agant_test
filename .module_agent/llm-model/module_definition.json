@@ -48,46 +48,6 @@
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/config/RestClientConfig.java",
       "description": "HTTP 客户端配置（RestClient/WebClient Builder 超时设置）"
-    },
-    {
-      "path": "platform-app/src/main/java/com/ghost616/platform/service/model/invoker/ModelInvoker.java",
-      "description": "统一模型调用接口"
-    },
-    {
-      "path": "platform-app/src/main/java/com/ghost616/platform/service/model/invoker/ModelInvokerManager.java",
-      "description": "模型调用器工厂管理器，负责 Invoker 缓存复用"
-    },
-    {
-      "path": "platform-app/src/main/java/com/ghost616/platform/service/model/invoker/OpenAIInvoker.java",
-      "description": "OpenAI 平台模型调用器"
-    },
-    {
-      "path": "platform-app/src/main/java/com/ghost616/platform/service/model/invoker/AnthropicInvoker.java",
-      "description": "Anthropic 平台模型调用器"
-    },
-    {
-      "path": "platform-app/src/main/java/com/ghost616/platform/service/model/invoker/AzureInvoker.java",
-      "description": "Azure OpenAI 平台模型调用器"
-    },
-    {
-      "path": "platform-app/src/main/java/com/ghost616/platform/service/model/invoker/OllamaInvoker.java",
-      "description": "Ollama 平台模型调用器"
-    },
-    {
-      "path": "platform-app/src/main/java/com/ghost616/platform/service/model/invoker/DeepSeekInvoker.java",
-      "description": "DeepSeek 平台模型调用器（继承 OpenAIInvoker）"
-    },
-    {
-      "path": "platform-app/src/main/java/com/ghost616/platform/service/model/invoker/CustomInvoker.java",
-      "description": "自定义平台模型调用器（通用 OpenAI 兼容端点）"
-    },
-    {
-      "path": "platform-app/src/main/java/com/ghost616/platform/service/model/invoker/DefaultModelInvokerDataProvider.java",
-      "description": "默认模型调用器数据提供者实现"
-    },
-    {
-      "path": "platform-app/src/main/java/com/ghost616/platform/config/ModelInvokerConfiguration.java",
-      "description": "模型调用器管理器配置（@Configuration）"
     }
   ]
 }

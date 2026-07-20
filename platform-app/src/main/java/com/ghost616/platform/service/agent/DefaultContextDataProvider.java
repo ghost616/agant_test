@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import com.ghost616.agentbase.service.agent.AgentExecutionContext;
 import com.ghost616.agentbase.service.agent.ContextDataProvider;
+import com.ghost616.agentbase.service.agent.MessageDataProvider;
 
 
 @Component
@@ -54,6 +55,7 @@ public class DefaultContextDataProvider implements ContextDataProvider {
     private final ModelConfigMapper modelConfigMapper;
     private final ToolConfigMapper toolConfigMapper;
     private final SessionToolMapper sessionToolMapper;
+    private final MessageDataProvider messageDataProvider;
 
     @Override
     public AgentContextData loadAgentContext(Long sessionId) {
@@ -274,5 +276,33 @@ public class DefaultContextDataProvider implements ContextDataProvider {
         }
 
         return session.getId();
+    }
+
+    @Override
+    public List<MessageDataProvider.MessageDTO> getLatestMessages(Long sessionId) {
+        return messageDataProvider.getMessages(sessionId);
+    }
+
+    @Override
+    public Map<String, String> getLatestSessionVariables(Long sessionId) {
+        return loadSessionVariablesInternal(sessionId);
+    }
+
+    @Override
+    public Map<String, String> getLatestConversationVariables(Long sessionId) {
+        return Map.of();
+    }
+
+    @Override
+    public List<AgentExecutionContext.ChildSession> getLatestChildSessions(Long sessionId) {
+        List<Session> sessions = sessionMapper.selectList(
+                new LambdaQueryWrapper<Session>()
+                        .eq(Session::getParentSessionId, sessionId));
+        if (sessions == null || sessions.isEmpty()) {
+            return List.of();
+        }
+        return sessions.stream()
+                .map(s -> new AgentExecutionContext.ChildSession(s.getId(), s.getTitle(), s.getDescription(), s.getModelId()))
+                .toList();
     }
 }

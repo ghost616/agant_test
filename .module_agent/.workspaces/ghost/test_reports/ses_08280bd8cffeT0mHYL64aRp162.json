@@ -1,0 +1,5 @@
+{
+  "lizhu_session_id": "ses_08280bd8cffeT0mHYL64aRp162",
+  "content": "# 测试报告\n\n## 执行结果\n\n| 项目 | 结果 |\n|------|------|\n| **编译测试** `mvn compile`（agent-base） | ✅ 通过 |\n| **编译测试** `mvn compile`（platform-app） | ✅ 通过 |\n| **单元测试** `DefaultContextDataProviderTest`（全量） | ✅ **全部通过** |\n\n## 修复内容\n\n`DefaultContextDataProvider.java:292` — `getLatestConversationVariables` 原返回 `Map.of()`（硬编码空 Map），导致 2 个测试失败：\n\n1. `getLatestConversationVariables_查询sessionVariable并返回Map` — 期望返回 1 个变量，实际返回空 Map\n2. `getLatestConversationVariables_无变量时返回空Map` — 由于方法未调用 mock 导致 `UnnecessaryStubbingException`\n\n**修复**：改为调用 `loadSessionVariablesInternal(sessionId)`，与 `getLatestSessionVariables` 共用相同逻辑。\n",
+  "timestamp": "2026-07-20T03:43:01.212Z"
+}

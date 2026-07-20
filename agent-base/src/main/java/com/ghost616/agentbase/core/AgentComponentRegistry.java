@@ -14,6 +14,7 @@ import com.ghost616.agentbase.service.agent.invoker.ToolManager;
 import com.ghost616.agentbase.service.model.invoker.ModelInvokerFactory;
 import com.ghost616.agentbase.service.model.invoker.ModelInvokerDataProvider;
 import com.ghost616.agentbase.service.model.invoker.ModelInvokerManager;
+import com.ghost616.agentbase.sendmessage.MessageSender;
 import lombok.Setter;
 
 /**
@@ -39,6 +40,9 @@ public class AgentComponentRegistry {
     private ModelInvokerManager modelInvokerManager;
 
     private ToolExecutionTracker toolExecutionTracker;
+
+    @Setter
+    private MessageSender messageSender;
 
     private <T> T requireInitialized(T value, String name) {
         if (value == null) {
@@ -101,5 +105,9 @@ public class AgentComponentRegistry {
 
     public ToolExecutionTracker getToolExecutionTracker() {
         return requireInitialized(toolExecutionTracker, "toolExecutionTracker");
+    }
+
+    public MessageSender getMessageSender() {
+        return messageSender;
     }
 }

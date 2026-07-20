@@ -1,35 +1,98 @@
 [
   {
-    "plan_id": "plan_b40dbab5-e2d4-4848-bbfd-9b41a1117311",
-    "plan_summary": "将 _runner.py 和 _runner.ts 从 platform-app 移动到 agent-base 资源目录",
+    "plan_id": "plan_61991941-5a63-4d68-bb15-b464249222b9",
+    "plan_summary": "新增 MessageDefinition 和 MessageSender 接口到 sendmessage 包",
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
   },
   {
-    "plan_id": "plan_1cef03ea-b27d-4949-a46d-d3d03f74de8e",
-    "plan_summary": "AgentExecutionContext 添加工程目录属性，AgentContextManager 注入，TypeScript/PythonToolInvoker 支持相对路径",
+    "plan_id": "plan_b974a752-6569-4beb-9ad5-e01ec370eb8b",
+    "plan_summary": "新增 SessionMessage 抽象类实现 MessageDefinition",
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
   },
   {
-    "plan_id": "plan_f740ac96-10e1-466c-abac-325c6f6a7144",
-    "plan_summary": "修复 resolvePath() projectDir 空值 NPE 问题",
+    "plan_id": "plan_02dd25d8-56ae-4535-9e93-95f182e1f857",
+    "plan_summary": "AgentComponentRegistry 添加 MessageSender 字段和 getter（不校验null）",
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
   },
   {
-    "plan_id": "plan_ed5669ff-0c01-4fbd-b20d-1568d460d0d9",
-    "plan_summary": "修复 _input.json 并发覆盖：用 sessionId 子目录隔离",
+    "plan_id": "plan_331b613e-0ce1-4e7a-8d01-bec498225a3a",
+    "plan_summary": "AgentAssembler 构造注入 MessageSender（可为null）",
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
   },
   {
-    "plan_id": "plan_573fbe28-d34c-42de-b686-34801a3cf856",
-    "plan_summary": "_runner.py/_runner.ts 补充 projectDir 字段",
+    "plan_id": "plan_88319e68-1986-435b-b517-b1a464497697",
+    "plan_summary": "修复 AgentAssemblerTest 遗漏的 MessageSender 参数",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_b7f6032e-c53b-4690-a8da-9bafb9477d61",
+    "plan_summary": "addHistoryEntry 触发 MessageSender 发送 HistoryMessage",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_a13d45c1-3111-4db9-955a-bf5c6020fe22",
+    "plan_summary": "mutator 所有方法触发 MessageSender 发送",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_11bbd166-2281-44f4-83a3-53f35050ff07",
+    "plan_summary": "UserMessageEvent 重命名为 ChildMessageEvent，新增 result 字段，sessionId 改用 childSessionId",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_83377cf1-5014-4c47-be8c-c9a5500e98f6",
+    "plan_summary": "ChildSessionMessage 重命名为 ChildCreateSession，补充 toolIds/skillIds/prompt",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_33d25719-934a-4a58-b7e2-22606497f417",
+    "plan_summary": "ChildCreateSession 重构为 ChildSession + parentSessionId",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_c9f16850-10dd-4bea-bc5c-c856c33cf88a",
+    "plan_summary": "ChildCreateSession 构造函数设置 setSessionId(parentSessionId)",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_5ea0713c-5edd-4c72-b593-a1d77a301100",
+    "plan_summary": "AgentContextManager 新增三个消息处理方法",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_f4238f02-77c2-48be-9aad-9b0c7b2feac5",
+    "plan_summary": "AgentContextConfiguration agentAssembler 构造传入 MessageSender",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_5f178e28-78ce-4817-b253-b2acc4aec043",
+    "plan_summary": "handleXxx 方法改为直接使用消息数据更新缓存",
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true

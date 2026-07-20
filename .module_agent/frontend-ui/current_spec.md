@@ -163,6 +163,8 @@
 - executeToolLoop 移除 _sys_callback_sub_session 硬编码检测，所有工具统一走显示工具消息 + pollToolStatus 流程
 - handleSubSessionFlow 在子会话完成后继续调用 pollToolStatus 正确轮询工具结果
 - handleSubSessionFlow 中 completeSubSession 后自动调用 setSubSessionModalVisible(false)，子会话完成时弹窗自动关闭
+- Session 接口新增 totalTokenUsed?: number 字段，跟踪 Token 消耗
+- 会话列表表格新增「Token 消耗」列，使用 toLocaleString() 格式化数字，空值显示 '-'
 ## 技能管理界面
 
 - 技能配置管理页面 `/skills`，支持技能列表展示、搜索筛选、新增/编辑/删除/启用禁用

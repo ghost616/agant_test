@@ -1,0 +1,5 @@
+{
+  "lizhu_session_id": "ses_082213cd2ffec3T3cPYCKqTBz5",
+  "content": "# 测试报告\n\n## 测试概览\n\n| 测试类型 | 结果 |\n|---------|------|\n| 编译测试 | ✅ 通过 |\n\n**总计：1 项测试，1 项通过，0 项失败**\n\n---\n\n## 编译测试详情\n\n### 测试目标\n验证 `AgentContextManager` 三个 handle 方法改为直接操作缓存后编译通过。\n\n### 文件\n- `AgentContextManager.java`\n\n### 执行命令\n```\n.maven\\apache-maven-3.9.16\\bin\\mvn.cmd compile -pl agent-base -am -q\n```\n\n### 结果\n- **状态**：✅ 通过\n- **退出码**：0\n- **耗时**：22624 ms\n\n### 结论\n编译通过，无错误。",
+  "timestamp": "2026-07-20T05:46:15.461Z"
+}

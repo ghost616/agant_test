@@ -6,10 +6,6 @@
       "description": "TypeScript 文件读取测试工具，用于测试 TypeScriptToolInvoker 的 bun/node 运行时桥接，AgentExecutionContext 含 sessionId/agentId/systemPrompt/modelId/recentMessageCount/history/tools，导出 execute(ctx, args) 函数"
     },
     {
-      "path": "tools/file-reader/_runner.ts",
-      "description": "文件读取工具桥接文件，同步模板 Proxy 变量追踪 + 结构化 JSON 输出"
-    },
-    {
       "path": "tools/session-var-write-py/index.py",
       "description": "Session 变量写入工具 (Python)，接收 {key,value}，写入 context.session_variables[key]=value，返回 {\"status\":\"ok\"}"
     },
@@ -40,10 +36,6 @@
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/entity/SessionTool.java",
       "description": "会话工具关联实体，@TableName(\"session_tool\")"
-    },
-    {
-      "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/invoker/JavaToolInvoker.java",
-      "description": "Java 类型工具的 ToolInvoker 实现，通过全限定类名加载实现类"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/systemtest/SystemInfoTool.java",
@@ -90,36 +82,12 @@
       "description": "对话 REST 控制器，SSE 流式端点"
     },
     {
-      "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/invoker/SystemPostHook.java",
-      "description": "系统后置 HOOK 标记接口"
-    },
-    {
-      "path": "platform-app/src/main/java/com/ghost616/platform/systemtest/MessageSavePostHook.java",
-      "description": "消息保存后置HOOK，缓存流式块并持久化，入队工具调用"
-    },
-    {
-      "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/invoker/ToolCallQueueManager.java",
-      "description": "工具调用队列管理器，ConcurrentHashMap 管理会话队列"
-    },
-    {
       "path": "platform-app/src/main/java/com/ghost616/platform/entity/SessionVariable.java",
       "description": "会话变量实体，@TableName(\"session_variable\")"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/repository/SessionVariableMapper.java",
       "description": "SessionVariable 实体的 MyBatis-Plus Mapper 接口"
-    },
-    {
-      "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/invoker/ContextSerializer.java",
-      "description": "上下文序列化器，序列化 AgentExecutionContext 至 JSON"
-    },
-    {
-      "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/invoker/LoadSkillsSystemTool.java",
-      "description": "load_skills 系统工具，按名称加载技能"
-    },
-    {
-      "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/invoker/UnloadSkillsSystemTool.java",
-      "description": "unload_skills 系统工具，卸载技能"
     }
   ]
 }

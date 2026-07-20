@@ -5,6 +5,11 @@ import com.ghost616.agentbase.dto.model.ToolCall;
 import com.ghost616.agentbase.dto.model.UsageInfo;
 import com.ghost616.agentbase.dto.skill.SkillConfigDTO;
 import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
+import com.ghost616.agentbase.sendmessage.ChildCreateSession;
+import com.ghost616.agentbase.sendmessage.HistoryMessage;
+import com.ghost616.agentbase.sendmessage.MessageSender;
+import com.ghost616.agentbase.sendmessage.ChildMessageEvent;
+import com.ghost616.agentbase.sendmessage.VariableMessage;
 import lombok.AccessLevel;
 import lombok.Getter;
 
@@ -190,6 +195,7 @@ public class AgentExecutionContext {
         Supplier<Set<String>> getConversationVarKeysCallback;
         CreateChildSessionCallback createChildSessionCallback;
         SendUserMessageCallback sendUserMessageCallback;
+        private MessageSender messageSender;
 
         @FunctionalInterface
         public interface CreateChildSessionCallback {
@@ -212,11 +218,17 @@ public class AgentExecutionContext {
 
         public void addHistoryEntry(HistoryEntry entry) {
             context.history.add(entry);
+            if (messageSender != null) {
+                messageSender.send(new HistoryMessage(context.sessionId, entry));
+            }
         }
 
         public void putSessionVariable(String key, String value) {
             if (sessionVarPutCallback != null) {
                 sessionVarPutCallback.accept(key, value);
+            }
+            if (messageSender != null) {
+                messageSender.send(new VariableMessage(context.sessionId, "SESSION", key, value, "PUT"));
             }
         }
 
@@ -224,17 +236,26 @@ public class AgentExecutionContext {
             if (sessionVarRemoveCallback != null) {
                 sessionVarRemoveCallback.accept(key);
             }
+            if (messageSender != null) {
+                messageSender.send(new VariableMessage(context.sessionId, "SESSION", key, null, "REMOVE"));
+            }
         }
 
         public void putConversationVariable(String key, String value) {
             if (conversationVarPutCallback != null) {
                 conversationVarPutCallback.accept(key, value);
             }
+            if (messageSender != null) {
+                messageSender.send(new VariableMessage(context.sessionId, "CONVERSATION", key, value, "PUT"));
+            }
         }
 
         public void removeConversationVariable(String key) {
             if (conversationVarRemoveCallback != null) {
                 conversationVarRemoveCallback.accept(key);
+            }
+            if (messageSender != null) {
+                messageSender.send(new VariableMessage(context.sessionId, "CONVERSATION", key, null, "REMOVE"));
             }
         }
 
@@ -266,6 +287,32 @@ public class AgentExecutionContext {
             return Collections.emptySet();
         }
 
+        public void refreshHistory(List<HistoryEntry> history) {
+            context.history.clear();
+            context.history.addAll(history);
+        }
+
+        public void refreshSessionVariables(Map<String, String> vars) {
+            context.sessionVariables.clear();
+            if (vars != null) {
+                context.sessionVariables.putAll(vars);
+            }
+        }
+
+        public void refreshConversationVariables(Map<String, String> vars) {
+            context.conversationVariables.clear();
+            if (vars != null) {
+                context.conversationVariables.putAll(vars);
+            }
+        }
+
+        public void refreshChildSessions(List<ChildSession> children) {
+            context.childSessions.clear();
+            if (children != null) {
+                context.childSessions.addAll(children);
+            }
+        }
+
         public void clearConversationVariables() {
             if (context != null) {
                 context.conversationVariables.clear();
@@ -281,7 +328,7 @@ public class AgentExecutionContext {
         }
 
         public Long createChildSession(String sessionName, String description, Long modelId,
-                                         List<Long> toolIds, List<Long> skillIds, String prompt) {
+                                          List<Long> toolIds, List<Long> skillIds, String prompt) {
             if (context.parentSessionId != null) {
                 return null;
             }
@@ -291,18 +338,31 @@ public class AgentExecutionContext {
             if (modelId == null) {
                 modelId = context.modelId;
             }
+            Long childSessionId = null;
             if (createChildSessionCallback != null) {
-                return createChildSessionCallback.create(context.sessionId, sessionName, description, modelId,
+                childSessionId = createChildSessionCallback.create(context.sessionId, sessionName, description, modelId,
                         toolIds, skillIds, prompt);
             }
-            return null;
+            if (childSessionId != null && messageSender != null) {
+                messageSender.send(new ChildCreateSession(context.sessionId,
+                        new ChildSession(childSessionId, sessionName, description, modelId)));
+            }
+            return childSessionId;
         }
 
         public Message sendUserMessage(Long childSessionId, String content, Long modelId, Boolean thinking) {
+            Message result = null;
             if (sendUserMessageCallback != null) {
-                return sendUserMessageCallback.send(childSessionId, content, modelId, thinking);
+                result = sendUserMessageCallback.send(childSessionId, content, modelId, thinking);
             }
-            return null;
+            if (messageSender != null) {
+                messageSender.send(new ChildMessageEvent(childSessionId, childSessionId, content, modelId, thinking, result));
+            }
+            return result;
+        }
+
+        public void setMessageSender(MessageSender messageSender) {
+            this.messageSender = messageSender;
         }
     }
 }

@@ -82,7 +82,7 @@ class ChatServiceFilteringTest {
                     new ArrayList<>(), tools != null ? new ArrayList<>(tools) : new ArrayList<>(),
                     skills != null ? new ArrayList<>(skills) : null, mutator,
                     sessionVariables != null ? sessionVariables : new HashMap<>(),
-                    new HashMap<>(), parentSessionId, new ArrayList<>());
+                    new HashMap<>(), parentSessionId, "", null);
         }
     }
 

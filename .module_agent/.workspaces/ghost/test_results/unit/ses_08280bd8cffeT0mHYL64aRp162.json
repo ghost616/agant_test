@@ -1,0 +1,22 @@
+[
+  {
+    "session_id": "ses_08280bd8cffeT0mHYL64aRp162",
+    "action": "unit",
+    "command": "mvn test -f platform-app/pom.xml -Dtest=\"com.ghost616.platform.service.agent.DefaultContextDataProviderTest\" -q",
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": "WARNING: A Java agent has been loaded dynamically (D:\\java tools\\maven repository\\net\\bytebuddy\\byte-buddy-agent\\1.14.13\\byte-buddy-agent-1.14.13.jar)\r\nWARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning\r\nWARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information\r\nWARNING: Dynamic loading of agents will be disallowed by default in a future release\r\nJava HotSpot(TM) 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended\r\n",
+    "duration_ms": 23394,
+    "timestamp": "2026-07-20T03:44:02.623Z"
+  },
+  {
+    "session_id": "ses_08280bd8cffeT0mHYL64aRp162",
+    "action": "unit",
+    "command": "mvn test -f platform-app/pom.xml -Dtest=\"com.ghost616.platform.service.agent.DefaultContextDataProviderTest\" -q",
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": "WARNING: A Java agent has been loaded dynamically (D:\\java tools\\maven repository\\net\\bytebuddy\\byte-buddy-agent\\1.14.13\\byte-buddy-agent-1.14.13.jar)\r\nWARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning\r\nWARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information\r\nWARNING: Dynamic loading of agents will be disallowed by default in a future release\r\nJava HotSpot(TM) 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended\r\n",
+    "duration_ms": 21995,
+    "timestamp": "2026-07-20T03:44:41.719Z"
+  }
+]

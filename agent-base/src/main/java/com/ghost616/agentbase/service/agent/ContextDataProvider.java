@@ -22,4 +22,12 @@ public interface ContextDataProvider {
 
     Long createChildSession(Long parentSessionId, String sessionName, String description, Long modelId,
                             List<Long> toolIds, List<Long> skillIds, String prompt);
+
+    List<MessageDataProvider.MessageDTO> getLatestMessages(Long sessionId);
+
+    Map<String, String> getLatestSessionVariables(Long sessionId);
+
+    Map<String, String> getLatestConversationVariables(Long sessionId);
+
+    List<AgentExecutionContext.ChildSession> getLatestChildSessions(Long sessionId);
 }

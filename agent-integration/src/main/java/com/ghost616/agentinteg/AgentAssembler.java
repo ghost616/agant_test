@@ -22,6 +22,7 @@ import com.ghost616.agentbase.service.agent.invoker.SystemTool;
 import com.ghost616.agentbase.service.agent.invoker.SystemToolProvider;
 import com.ghost616.agentbase.service.agent.invoker.ToolCallQueueManager;
 import com.ghost616.agentbase.service.agent.invoker.ToolManager;
+import com.ghost616.agentbase.sendmessage.MessageSender;
 import com.ghost616.agentbase.service.model.invoker.ModelInvokerFactory;
 import com.ghost616.agentbase.service.model.invoker.ModelInvokerManager;
 
@@ -38,6 +39,7 @@ public class AgentAssembler {
     private final SystemToolProvider systemToolProvider;
     private final ModelInvokerFactory modelInvokerFactory;
     private final ChatDataProvider chatDataProvider;
+    private final MessageSender messageSender;
 
     private AgentComponentRegistry registry;
     private ChatDataProviderProxy chatDataProviderProxy;
@@ -49,13 +51,15 @@ public class AgentAssembler {
                  ToolDataProvider toolDataProvider,
                  SystemToolProvider systemToolProvider,
                  ModelInvokerFactory modelInvokerFactory,
-                 ChatDataProvider chatDataProvider) {
+                 ChatDataProvider chatDataProvider,
+                 MessageSender messageSender) {
         this.contextDataProvider = contextDataProvider;
         this.messageDataProvider = messageDataProvider;
         this.toolDataProvider = toolDataProvider;
         this.systemToolProvider = systemToolProvider;
         this.modelInvokerFactory = modelInvokerFactory;
         this.chatDataProvider = chatDataProvider;
+        this.messageSender = messageSender;
     }
 
     public ToolManager toolManager() { return registry != null ? registry.getToolManager() : null; }
@@ -76,6 +80,7 @@ public class AgentAssembler {
         registry.setMessageDataProvider(messageDataProvider);
         registry.setToolDataProvider(toolDataProvider);
         registry.setModelInvokerFactory(modelInvokerFactory);
+        registry.setMessageSender(messageSender);
 
         SystemToolProvider systemToolProviderProxy = new SystemToolProviderProxy(systemToolProvider);
         registry.setSystemToolProvider(systemToolProviderProxy);

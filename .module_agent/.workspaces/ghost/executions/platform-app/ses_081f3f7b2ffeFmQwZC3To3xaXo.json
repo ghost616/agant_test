@@ -1,0 +1,11 @@
+[
+  {
+    "plan_id": "plan_f4238f02-77c2-48be-9aad-9b0c7b2feac5",
+    "plan": "添加 MessageSender import 设 null 参",
+    "modified_files": [
+      "platform-app/src/main/java/com/ghost616/platform/config/AgentContextConfiguration.java"
+    ],
+    "summary": "AgentContextConfiguration.java: 添加 import MessageSender，agentAssembler() 构造函数第 7 个参数传入 null",
+    "errors": []
+  }
+]
