@@ -1,51 +1,38 @@
 package com.ghost616.agentbase.service.agent.invoker;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
 
+import com.ghost616.agentbase.core.AgentComponentRegistry;
 import com.ghost616.agentbase.service.agent.MessageDataProvider;
+import com.ghost616.agentbase.service.agent.ToolExecutionProvider;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class ToolCallQueueManager {
 
-    private final ConcurrentHashMap<Long, Deque<MessageDataProvider.ToolCallData>> toolCallQueues = new ConcurrentHashMap<>();
+    private final ToolExecutionProvider provider;
+
+    public ToolCallQueueManager(AgentComponentRegistry registry) {
+        this.provider = registry.getToolExecutionProvider();
+    }
 
     public void enqueue(Long sessionId, List<MessageDataProvider.ToolCallData> toolCalls) {
-        if (toolCalls == null || toolCalls.isEmpty()) {
-            return;
-        }
-        Deque<MessageDataProvider.ToolCallData> queue = toolCallQueues.computeIfAbsent(sessionId,
-                k -> new ArrayDeque<>());
-        queue.addAll(toolCalls);
-        log.debug("sessionId={} 已入队 {} 个工具调用", sessionId, toolCalls.size());
+        provider.enqueue(sessionId, toolCalls);
     }
 
     public MessageDataProvider.ToolCallData poll(Long sessionId) {
-        Deque<MessageDataProvider.ToolCallData> queue = toolCallQueues.get(sessionId);
-        if (queue == null || queue.isEmpty()) {
-            return null;
-        }
-        return queue.pollFirst();
+        return provider.poll(sessionId);
     }
 
     public MessageDataProvider.ToolCallData peek(Long sessionId) {
-        Deque<MessageDataProvider.ToolCallData> queue = toolCallQueues.get(sessionId);
-        if (queue == null || queue.isEmpty()) {
-            return null;
-        }
-        return queue.peekFirst();
+        return provider.peek(sessionId);
     }
 
     public boolean hasPending(Long sessionId) {
-        Deque<MessageDataProvider.ToolCallData> queue = toolCallQueues.get(sessionId);
-        return queue != null && !queue.isEmpty();
+        return provider.hasPending(sessionId);
     }
 
     public void clear(Long sessionId) {
-        toolCallQueues.remove(sessionId);
-        log.debug("sessionId={} 已清理工具调用队列", sessionId);
+        provider.clearQueue(sessionId);
     }
 }

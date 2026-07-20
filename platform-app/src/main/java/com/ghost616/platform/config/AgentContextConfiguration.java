@@ -13,12 +13,14 @@ import com.ghost616.agentbase.service.agent.invoker.SystemToolProvider;
 import com.ghost616.agentbase.service.agent.invoker.ToolManager;
 import com.ghost616.agentbase.service.model.invoker.ModelInvokerFactory;
 import com.ghost616.agentbase.service.model.invoker.ModelInvokerManager;
+import com.ghost616.agentbase.service.agent.ToolExecutionProvider;
 import com.ghost616.agentbase.sendmessage.MessageSender;
 import com.ghost616.agentinteg.AgentAssembler;
 import com.ghost616.agentinteg.model.invoker.DefaultModelInvokerFactory;
 import com.ghost616.platform.repository.ModelConfigMapper;
 import com.ghost616.platform.repository.SessionMapper;
 import com.ghost616.platform.service.agent.DefaultChatDataProvider;
+import com.ghost616.platform.service.agent.DefaultToolExecutionProvider;
 import com.ghost616.platform.service.agent.DefaultSubSessionCallback;
 import com.ghost616.agentinteg.tool.SubSessionCallbackSystemTool;
 import lombok.RequiredArgsConstructor;
@@ -72,11 +74,17 @@ public class AgentContextConfiguration {
     }
 
     @Bean
+    public DefaultToolExecutionProvider toolExecutionProvider() {
+        return new DefaultToolExecutionProvider();
+    }
+
+    @Bean
     public AgentAssembler agentAssembler(SystemToolProvider systemToolProvider,
                             ModelInvokerFactory modelInvokerFactory,
-                            ChatDataProvider chatDataProvider) {
+                            ChatDataProvider chatDataProvider,
+                            ToolExecutionProvider toolExecutionProvider) {
         return new AgentAssembler(contextDataProvider, messageDataProvider, toolDataProvider,
-                systemToolProvider, modelInvokerFactory, chatDataProvider, null);
+                systemToolProvider, modelInvokerFactory, chatDataProvider, null, toolExecutionProvider);
     }
 
     @Bean

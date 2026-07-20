@@ -10,6 +10,7 @@ import com.ghost616.agentbase.service.agent.ContextDataProvider;
 import com.ghost616.agentbase.service.agent.MessageDataProvider;
 import com.ghost616.agentbase.service.agent.SessionManager;
 import com.ghost616.agentbase.service.agent.ToolDataProvider;
+import com.ghost616.agentbase.service.agent.ToolExecutionProvider;
 import com.ghost616.agentbase.service.agent.ToolExecutionService;
 import com.ghost616.agentbase.service.agent.ToolExecutionTracker;
 import com.ghost616.agentbase.service.agent.invoker.HistoryQuerySystemTool;
@@ -40,6 +41,7 @@ public class AgentAssembler {
     private final ModelInvokerFactory modelInvokerFactory;
     private final ChatDataProvider chatDataProvider;
     private final MessageSender messageSender;
+    private final ToolExecutionProvider toolExecutionProvider;
 
     private AgentComponentRegistry registry;
     private ChatDataProviderProxy chatDataProviderProxy;
@@ -52,7 +54,8 @@ public class AgentAssembler {
                  SystemToolProvider systemToolProvider,
                  ModelInvokerFactory modelInvokerFactory,
                  ChatDataProvider chatDataProvider,
-                 MessageSender messageSender) {
+                 MessageSender messageSender,
+                 ToolExecutionProvider toolExecutionProvider) {
         this.contextDataProvider = contextDataProvider;
         this.messageDataProvider = messageDataProvider;
         this.toolDataProvider = toolDataProvider;
@@ -60,6 +63,7 @@ public class AgentAssembler {
         this.modelInvokerFactory = modelInvokerFactory;
         this.chatDataProvider = chatDataProvider;
         this.messageSender = messageSender;
+        this.toolExecutionProvider = toolExecutionProvider;
     }
 
     public ToolManager toolManager() { return registry != null ? registry.getToolManager() : null; }
@@ -81,17 +85,18 @@ public class AgentAssembler {
         registry.setToolDataProvider(toolDataProvider);
         registry.setModelInvokerFactory(modelInvokerFactory);
         registry.setMessageSender(messageSender);
+        registry.setToolExecutionProvider(toolExecutionProvider);
 
         SystemToolProvider systemToolProviderProxy = new SystemToolProviderProxy(systemToolProvider);
         registry.setSystemToolProvider(systemToolProviderProxy);
 
         registry.setToolManager(new ToolManager(registry));
-        registry.setToolCallQueueManager(new ToolCallQueueManager());
+        registry.setToolCallQueueManager(new ToolCallQueueManager(registry));
         registry.setSystemToolManager(new SystemToolManager(registry));
         registry.setSessionManager(new SessionManager(registry));
         registry.setAgentContextManager(new AgentContextManager(registry));
         registry.setModelInvokerManager(new ModelInvokerManager(registry));
-        registry.setToolExecutionTracker(new ToolExecutionTracker());
+        registry.setToolExecutionTracker(new ToolExecutionTracker(registry));
 
         chatDataProviderProxy = new ChatDataProviderProxy(chatDataProvider, registry);
         registry.setChatDataProvider(chatDataProviderProxy);
