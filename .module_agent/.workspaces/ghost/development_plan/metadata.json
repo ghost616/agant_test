@@ -2,7 +2,7 @@
   {
     "plan_id": "plan_e87d49a4-bdce-4b0f-8860-b99b726f06f2",
     "plan_summary": "ToolExecutionProvider.updateExecution参数改为ToolExecutionStatus",
-    "code_reviewed": false,
+    "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
   },
@@ -16,21 +16,63 @@
   {
     "plan_id": "plan_31413a45-bb48-43e1-bf42-83b74dd6874a",
     "plan_summary": "合并 agent-base current_spec.md：新增 ToolCallQueueManager/ToolExecutionProvider/AgentComponentRegistry 章节，更新 ToolExecutionTracker/ToolExecutionService/ChatService 构造函数描述，反映 AgentComponentRegistry 架构变更。",
-    "code_reviewed": false,
+    "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
   },
   {
-    "plan_id": "plan_6c859b85-32b4-40db-bd87-9a732dbdb46f",
-    "plan_summary": "补充 agent-base spec 中 sendmessage 消息通信框架文档，新增 MessageSender/MessageDefinition/SessionMessage/4种消息类型等章节，补充 AgentContextMutator 消息发送和 AgentContextManager 消息处理描述。",
-    "code_reviewed": false,
+    "plan_id": "plan_7ba7b327-2123-4024-b123-ee148e1670e5",
+    "plan_summary": "新增 KimiInvoker 和 VolcEngineInvoker，更新工厂",
+    "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
   },
   {
-    "plan_id": "plan_345413e2-60e2-475f-b6f2-13e939211e1b",
-    "plan_summary": "README 框架层面更新：工具管理补充 MCP 双认证、HOOK 改写为 Spring 自动加载、执行引擎追加 sendmessage 框架、新增 SessionAuthType 和 AgentComponentRegistry 条目、变量管理补充 SSE 广播。",
-    "code_reviewed": false,
+    "plan_id": "plan_4a4acf47-0bd3-4384-8f9f-7bda505ba8de",
+    "plan_summary": "PlatformType 枚举增加 KIMI、VOLCENGINE",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_57d67289-dc65-4710-80f0-cf4fb3695179",
+    "plan_summary": "前端 PlatformType 增加 KIMI、VOLCENGINE",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_4f405d03-7cfe-4358-97c2-43c0ad0c22d9",
+    "plan_summary": "修复 AgentAssemblerTest 缺少 ToolExecutionProvider 导致的编译错误",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_b5a21088-9ced-4b96-8926-387184ea3bf6",
+    "plan_summary": "KimiInvoker 覆写 buildRequestBody 按模型名处理思考模式参数",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_7cdac785-0b8f-4cf6-b905-3292dccc3f42",
+    "plan_summary": "将 PlatformType 枚举从 platform-app 移动到 agent-integration",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_b0a1a8e7-f2f4-4e35-a463-f2b00582e259",
+    "plan_summary": "更新 platform-app 所有 PlatformType 导入路径",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_2ead14ed-8d88-494f-945c-a3622d4e1f71",
+    "plan_summary": "创建5个模型枚举，PlatformType 改用枚举获取模型名，KimiInvoker 使用枚举匹配",
+    "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
   }

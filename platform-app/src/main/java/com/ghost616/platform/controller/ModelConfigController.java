@@ -6,7 +6,7 @@ import com.ghost616.platform.dto.model.ModelCreateRequest;
 import com.ghost616.platform.dto.model.ModelUpdateRequest;
 import com.ghost616.platform.dto.model.PlatformConfigResponse;
 import com.ghost616.platform.entity.ModelConfig;
-import com.ghost616.platform.enums.PlatformType;
+import com.ghost616.agentinteg.model.PlatformType;
 import com.ghost616.platform.repository.ModelConfigMapper;
 import com.ghost616.platform.service.model.ModelConfigService;
 import com.ghost616.agentbase.dto.model.ModelConfigData;

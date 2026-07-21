@@ -2,7 +2,7 @@ package com.ghost616.platform.entity;
 
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
-import com.ghost616.platform.enums.PlatformType;
+import com.ghost616.agentinteg.model.PlatformType;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 

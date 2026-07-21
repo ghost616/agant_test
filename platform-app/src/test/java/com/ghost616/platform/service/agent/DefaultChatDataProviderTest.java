@@ -4,7 +4,7 @@ import com.ghost616.agentbase.dto.model.ModelConfigData;
 import com.ghost616.agentbase.service.agent.invoker.HookInvoker;
 import com.ghost616.platform.entity.ModelConfig;
 import com.ghost616.platform.entity.Session;
-import com.ghost616.platform.enums.PlatformType;
+import com.ghost616.agentinteg.model.PlatformType;
 import com.ghost616.platform.repository.ModelConfigMapper;
 import com.ghost616.platform.repository.SessionMapper;
 import org.junit.jupiter.api.BeforeEach;

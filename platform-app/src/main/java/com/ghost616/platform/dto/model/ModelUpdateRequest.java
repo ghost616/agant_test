@@ -1,6 +1,6 @@
 package com.ghost616.platform.dto.model;
 
-import com.ghost616.platform.enums.PlatformType;
+import com.ghost616.agentinteg.model.PlatformType;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Positive;

@@ -24,4 +24,4 @@ export type HookPhase =
   | 'BEFORE_TOOL_CALL'
   | 'AFTER_TOOL_CALL';
 
-export type PlatformType = 'OPENAI' | 'ANTHROPIC' | 'AZURE' | 'OLLAMA' | 'DEEPSEEK' | 'KIMI' | 'VOLCENGINE' | 'CUSTOM';
+export type PlatformType = 'OPENAI' | 'ANTHROPIC' | 'AZURE' | 'OLLAMA' | 'DEEPSEEK' | 'CUSTOM';

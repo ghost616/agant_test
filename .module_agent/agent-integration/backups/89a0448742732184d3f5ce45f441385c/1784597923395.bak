@@ -24,10 +24,6 @@ public class DefaultModelInvokerFactory implements ModelInvokerFactory {
                     config.temperature(), config.maxTokens(), restClientBuilder, webClientBuilder);
             case "OLLAMA" -> new OllamaInvoker(config.apiKey(), config.baseUrl(), config.modelName(),
                     config.temperature(), config.maxTokens(), restClientBuilder, webClientBuilder);
-            case "KIMI" -> new KimiInvoker(config.apiKey(), config.baseUrl(), config.modelName(),
-                    config.temperature(), config.maxTokens(), restClientBuilder, webClientBuilder);
-            case "VOLCENGINE" -> new VolcEngineInvoker(config.apiKey(), config.baseUrl(), config.modelName(),
-                    config.temperature(), config.maxTokens(), restClientBuilder, webClientBuilder);
             case "DEEPSEEK" -> new DeepSeekInvoker(config.apiKey(), config.baseUrl(), config.modelName(),
                     config.temperature(), config.maxTokens(), restClientBuilder, webClientBuilder);
             case "CUSTOM" -> new CustomInvoker(config.apiKey(), config.baseUrl(), config.modelName(),

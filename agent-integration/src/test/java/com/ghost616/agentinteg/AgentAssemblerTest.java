@@ -5,6 +5,7 @@ import com.ghost616.agentbase.service.agent.ChatDataProvider;
 import com.ghost616.agentbase.service.agent.ContextDataProvider;
 import com.ghost616.agentbase.service.agent.MessageDataProvider;
 import com.ghost616.agentbase.service.agent.ToolDataProvider;
+import com.ghost616.agentbase.service.agent.ToolExecutionProvider;
 import com.ghost616.agentbase.service.agent.invoker.SystemToolProvider;
 import com.ghost616.agentbase.service.model.invoker.ModelInvokerFactory;
 
@@ -40,12 +41,15 @@ class AgentAssemblerTest {
     @Mock
     private MessageSender messageSender;
 
+    @Mock
+    private ToolExecutionProvider toolExecutionProvider;
+
     private AgentAssembler agentAssembler;
 
     @BeforeEach
     void setUp() {
         agentAssembler = new AgentAssembler(contextDataProvider, messageDataProvider, toolDataProvider,
-                systemToolProvider, modelInvokerFactory, chatDataProvider, messageSender);
+                systemToolProvider, modelInvokerFactory, chatDataProvider, messageSender, toolExecutionProvider);
     }
 
     @Test

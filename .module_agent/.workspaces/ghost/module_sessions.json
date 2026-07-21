@@ -1,8 +1,11 @@
 {
-  "agent-base": [
-    "ses_081645defffer3Quu0cfcR2rCI"
+  "agent-integration": [
+    "ses_07dacf62effex4yl60rWPkUv6F"
   ],
-  "framework": [
-    "ses_0813d6edaffez6ARCMyY6X4Np1"
+  "platform-app": [
+    "ses_07dabecc1ffedZ9uJo0xRyBZm8"
+  ],
+  "frontend-ui": [
+    "ses_07da41425ffeybiHuz493h1Bto"
   ]
 }

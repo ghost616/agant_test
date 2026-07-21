@@ -7,7 +7,7 @@
     },
     {
       "path": "src/pages/models/ModelList.tsx",
-      "description": "模型管理列表页面：baseUrl 显示/禁用逻辑统一由 needsManualInput 决定，去掉 editingModel 条件；Table pagination={false} 全量展示"
+      "description": "模型列表页面组件，包含模型列表展示、搜索筛选、状态切换、编辑删除等操作。定义 PLATFORM_TYPE_LABELS 映射表。离朱在 2026-07-21 新增 KIMI'Kimi' 和 VOLCENGINE'火山引擎' 映射。"
     },
     {
       "path": "src/pages/models/ModelTest.tsx",
@@ -72,6 +72,10 @@
     {
       "path": "src/pages/sessions/__tests__/AgentChat.test.tsx",
       "description": "AgentChat 组件静态测试：通过读取源文件验证子会话相关函数/状态/UI 的正确性，包括 handleSubSessionFlow、completeSubSession、pollToolStatus 的 needsSubSessionFlow 检测、handleAbort、renderSubSessionModal 等"
+    },
+    {
+      "path": "src/types/common.ts",
+      "description": "公共类型定义文件，包含 ApiResponse、PageResult、CommonStatus、ToolType、HookPhase、PlatformType 等共享类型"
     }
   ]
 }

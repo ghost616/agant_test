@@ -1,0 +1,25 @@
+[
+  {
+    "plan_id": "plan_4a4acf47-0bd3-4384-8f9f-7bda505ba8de",
+    "plan": "修改 PlatformType 枚举：\n1. 增加 KIMI(\"KIMI\", \"Kimi 月之暗面\", \"https://api.moonshot.cn/v1\", List.of(\"kimi-k2.7-code\", \"kimi-k2.6\", \"kimi-k2.5\", \"kimi-k3\"))\n2. 增加 VOLCENGINE(\"VOLCENGINE\", \"火山引擎\", \"https://ark.cn-beijing.volces.com/api/v3\", List.of(\"doubao-seed-evolving\", \"doubao-seed-2-1-turbo-260628\", \"doubao-seed-2-1-pro-260628\"))",
+    "modified_files": [],
+    "summary": "力牧已启动",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_b0a1a8e7-f2f4-4e35-a463-f2b00582e259",
+    "plan": "PlatformType 导入路径更新（com.ghost616.platform.enums -> com.ghost616.agentinteg.model）",
+    "modified_files": [
+      "src/main/java/com/ghost616/platform/entity/ModelConfig.java",
+      "src/main/java/com/ghost616/platform/dto/model/ModelConfigDTO.java",
+      "src/main/java/com/ghost616/platform/dto/model/ModelCreateRequest.java",
+      "src/main/java/com/ghost616/platform/dto/model/ModelUpdateRequest.java",
+      "src/main/java/com/ghost616/platform/service/model/ModelConfigService.java",
+      "src/main/java/com/ghost616/platform/service/model/ModelConfigServiceImpl.java",
+      "src/main/java/com/ghost616/platform/controller/ModelConfigController.java",
+      "src/test/java/com/ghost616/platform/service/agent/DefaultChatDataProviderTest.java"
+    ],
+    "summary": "完成 8 个文件的 PlatformType import 路径更新，包括 ModelConfig.java、ModelConfigDTO.java、ModelCreateRequest.java、ModelUpdateRequest.java、ModelConfigService.java、ModelConfigServiceImpl.java、ModelConfigController.java、DefaultChatDataProviderTest.java。主代码和测试代码编译均通过。",
+    "errors": []
+  }
+]

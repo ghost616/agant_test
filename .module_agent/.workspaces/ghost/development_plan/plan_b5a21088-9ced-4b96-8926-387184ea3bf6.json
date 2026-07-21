@@ -1,0 +1,9 @@
+{
+  "plan_id": "plan_b5a21088-9ced-4b96-8926-387184ea3bf6",
+  "module_name": "agent-integration",
+  "development_plan": "KimiInvoker 覆写 buildRequestBody 实现思考模式差异化处理：\n1. 调用 super.buildRequestBody() 获取基础请求体\n2. 获取有效模型名（request.getModel() 或 modelName）\n3. 若模型名以 kimi-k2.7-code 开头：移除 body 中的 thinking 参数\n4. 若模型名以 kimi-k3 开头：移除 thinking 参数；若 request.getThinking() 为 true，添加顶层 reasoning_effort 字段，值为 \"max\"",
+  "session_id": "ses_07dacf62effex4yl60rWPkUv6F",
+  "modified_files": [
+    "agent-integration/src/main/java/com/ghost616/agentinteg/model/invoker/KimiInvoker.java"
+  ]
+}

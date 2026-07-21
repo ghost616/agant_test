@@ -1,9 +1,0 @@
-[
-  {
-    "plan_id": "plan_345413e2-60e2-475f-b6f2-13e939211e1b",
-    "plan": "更新项目根目录 README.md（属于 framework 模块），仅修改框架/架构层面的描述，不涉及实现细节。共 5 处更新：\n\n1. **工具管理行（\"功能模块\"节）** — 原文\"支持 Java / TypeScript / Python / MCP HTTP 四种工具类型\"，末尾追加：\"MCP HTTP 支持 Bearer Token 与 API Key 两种认证方式\"。\n\n2. **HOOK 管理行（\"功能模块\"节）** — 原文\"HOOK 管理 — HookInvoker 接口与 SystemHook 接口已定义，覆盖 SESSION_START/END、BEFORE/AFTER MESSAGE、BEFORE/AFTER TOOL_CALL 六个生命周期阶段，HOOK 管理功能后续实现\" 替换为：\"HOOK 管理 — 提供 HookInvoker 与 SystemHook 接口，覆盖六个生命周期阶段（SESSION_START/END、BEFORE/AFTER MESSAGE、BEFORE/AFTER TOOL_CALL）。用户实现接口并放入工程即可被 Spring 自动发现加载，MessageSavePostHook 已内置运行，无需管理界面\"。\n\n3. **智能体执行引擎行（\"功能模块\"节）** — 原文\"支持会话/对话变量、历史消息折叠、技能注入、推理内容透传\"，末尾追加：\"内置 sendmessage 跨会话消息通信框架，支持历史同步、变量广播、子会话事件等 5 种消息类型\"。\n\n4. **新增行（\"功能模块\"节，在子会话执行之后）** — 新增一行：\"三域会话授权 — 工具和技能支持 ALL/PARENT/CHILD 三级会话作用域配置，控制跨会话可见性与可用性\"\n\n5. **新增行（\"功能模块\"节，在三域会话授权之后）** — 新增一行：\"组件注册表 — AgentComponentRegistry 集中管理 Provider、Manager、Invoker 等核心组件，支持延迟初始化和生命周期控制\"\n\n6. **变量管理段（\"智能体执行流程\"节第 139 行附近）** — 原文\"提供统一的读写接口\" 末尾追加：\"变量变更通过 sendmessage 实时 SSE 推送至前端（PUT/REMOVE 语义）\"\n\n所有修改插入到 README 现有结构对应位置，保持原有格式和 Markdown 风格。不修改快速启动、项目结构、智能体执行流程其他段落、四种工具实现方式表格。",
-    "modified_files": [],
-    "summary": "力牧已启动",
-    "errors": []
-  }
-]

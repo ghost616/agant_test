@@ -1,0 +1,10 @@
+{
+  "plan_id": "plan_57d67289-dc65-4710-80f0-cf4fb3695179",
+  "module_name": "frontend-ui",
+  "development_plan": "修改前端 PlatformType 类型定义：\n1. 修改 src/types/common.ts，PlatformType 联合类型增加 'KIMI' 和 'VOLCENGINE'",
+  "session_id": "ses_07da41425ffeybiHuz493h1Bto",
+  "modified_files": [
+    "src/types/common.ts",
+    "src/pages/models/ModelList.tsx"
+  ]
+}

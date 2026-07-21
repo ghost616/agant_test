@@ -82,3 +82,4 @@ platform-app 模块包含以下功能：
    - 持有三个 ConcurrentHashMap 数据容器（toolCallQueues/currentExecutions/completedResults）
    - 实现工具调用队列操作：enqueue/poll/peek/hasPending/clearQueue
    - 实现工具执行状态追踪：updateExecution/clearTracking/getCurrentExecution/getAndClearResults
+- PlatformType 枚举新增 KIMI（Kimi 月之暗面，https://api.moonshot.cn/v1，模型：kimi-k2.7-code/kimi-k2.6/kimi-k2.5/kimi-k3）和 VOLCENGINE（火山引擎，https://ark.cn-beijing.volces.com/api/v3，模型：doubao-seed-evolving/doubao-seed-2-1-turbo-260628/doubao-seed-2-1-pro-260628）

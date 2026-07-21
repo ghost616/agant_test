@@ -3,7 +3,7 @@ package com.ghost616.platform.service.model;
 import com.ghost616.platform.dto.model.ModelConfigDTO;
 import com.ghost616.platform.dto.model.ModelCreateRequest;
 import com.ghost616.platform.dto.model.ModelUpdateRequest;
-import com.ghost616.platform.enums.PlatformType;
+import com.ghost616.agentinteg.model.PlatformType;
 
 import java.util.List;
 

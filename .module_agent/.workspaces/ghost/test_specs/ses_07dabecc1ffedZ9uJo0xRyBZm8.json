@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_07dabecc1ffedZ9uJo0xRyBZm8",
+  "content": "## 待测试功能\n\n### 涉及文件（8 个）\n1. src/main/java/com/ghost616/platform/entity/ModelConfig.java\n2. src/main/java/com/ghost616/platform/dto/model/ModelConfigDTO.java\n3. src/main/java/com/ghost616/platform/dto/model/ModelCreateRequest.java\n4. src/main/java/com/ghost616/platform/dto/model/ModelUpdateRequest.java\n5. src/main/java/com/ghost616/platform/service/model/ModelConfigService.java\n6. src/main/java/com/ghost616/platform/service/model/ModelConfigServiceImpl.java\n7. src/main/java/com/ghost616/platform/controller/ModelConfigController.java\n8. src/test/java/com/ghost616/platform/service/agent/DefaultChatDataProviderTest.java\n\n### 变更内容\n将上述 8 个文件中 `import com.ghost616.platform.enums.PlatformType` 改为 `import com.ghost616.agentinteg.model.PlatformType`\n\n### 需要的测试\n- 编译测试：验证项目编译无误，新的 import 路径正确",
+  "timestamp": "2026-07-21T02:35:25.073Z"
+}

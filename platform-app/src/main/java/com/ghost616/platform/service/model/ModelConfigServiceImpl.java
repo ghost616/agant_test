@@ -5,7 +5,7 @@ import com.ghost616.platform.dto.model.ModelConfigDTO;
 import com.ghost616.platform.dto.model.ModelCreateRequest;
 import com.ghost616.platform.dto.model.ModelUpdateRequest;
 import com.ghost616.platform.entity.ModelConfig;
-import com.ghost616.platform.enums.PlatformType;
+import com.ghost616.agentinteg.model.PlatformType;
 import com.ghost616.platform.repository.ModelConfigMapper;
 import com.ghost616.agentbase.service.model.invoker.ModelInvokerManager;
 import lombok.RequiredArgsConstructor;

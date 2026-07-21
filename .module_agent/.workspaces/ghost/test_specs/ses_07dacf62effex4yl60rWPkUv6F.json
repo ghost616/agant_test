@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_07dacf62effex4yl60rWPkUv6F",
+  "content": "## 待测试功能\n\n### 涉及文件\n- 5 个新模型枚举：OpenAIModel.java, AnthropicModel.java, DeepSeekModel.java, KimiModel.java, VolcEngineModel.java\n- 修改：PlatformType.java（移除 defaultModelNames 字段，getDefaultModelNames 改为 switch 引用模型枚举）\n- 修改：KimiInvoker.java（字符串匹配改为 KimiModel 枚举常量）\n\n### 需要验证\n1. **编译测试**：Maven 编译通过\n",
+  "timestamp": "2026-07-21T02:49:19.476Z"
+}

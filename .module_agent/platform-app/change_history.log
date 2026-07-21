@@ -85,3 +85,6 @@
 [2026-07-20T06:35:31.033Z] [session: ses_081c42a68ffenefQojJ9savXxr] [2026-07-20] 创建 DefaultToolExecutionProvider，实现 ToolExecutionProvider 接口，组合 ToolCallQueueManager 和 ToolExecutionTracker 的数据容器与操作逻辑，提供统一的工具调用队列管理及执行状态追踪能力
 [2026-07-20T06:53:39.396Z] [session: ses_081c42a68ffenefQojJ9savXxr] [2026-07-20] DefaultToolExecutionProvider.updateExecution 方法签名从 (Long, String, String, String, String, String, boolean) 改为 (Long, String, ToolExecutionStatus)，实现从 status 对象读取字段替代独立参数
 [2026-07-20T07:03:05.702Z] [session: ses_081c42a68ffenefQojJ9savXxr] [2026-07-20] DefaultToolExecutionProvider.updateExecution 方法签名从 (Long, String, ToolExecutionStatus) 简化为 (Long, ToolExecutionStatus)，toolId 改从 status.currentToolId() 取值
+[2026-07-21T01:39:57.787Z] [session: ses_07dabecc1ffedZ9uJo0xRyBZm8] PlatformType 枚举新增 KIMI（月之暗面）和 VOLCENGINE（火山引擎）两个平台，包含默认 API 地址和对应模型列表
+[2026-07-21T02:33:33.338Z] [session: ses_08114cd94ffeBHHPmR4M6E7aNz] 移出文件定义到 [agent-integration]: 
+[2026-07-21T02:36:21.855Z] [session: ses_07dabecc1ffedZ9uJo0xRyBZm8] 8 个文件 PlatformType import 路径从 com.ghost616.platform.enums 更新为 com.ghost616.agentinteg.model，编译测试通过

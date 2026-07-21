@@ -1,6 +1,6 @@
 package com.ghost616.platform.dto.model;
 
-import com.ghost616.platform.enums.PlatformType;
+import com.ghost616.agentinteg.model.PlatformType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;

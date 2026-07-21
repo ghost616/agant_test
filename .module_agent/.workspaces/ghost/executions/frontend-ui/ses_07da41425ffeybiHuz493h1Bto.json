@@ -1,0 +1,12 @@
+[
+  {
+    "plan_id": "plan_57d67289-dc65-4710-80f0-cf4fb3695179",
+    "plan": "修改 PlatformType 联合类型，增加 KIMI 和 VOLCENGINE",
+    "modified_files": [
+      "src/types/common.ts",
+      "src/pages/models/ModelList.tsx"
+    ],
+    "summary": "1. 在 src/types/common.ts 的 PlatformType 联合类型中新增 'KIMI' 和 'VOLCENGINE'。2. 离朱检测到 ModelList.tsx 中 PLATFORM_TYPE_LABELS 映射缺少新类型，自动修复并添加对应中文标签。3. 类型检查（tsc --noEmit）通过。",
+    "errors": []
+  }
+]

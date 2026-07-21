@@ -1,0 +1,5 @@
+{
+  "lizhu_session_id": "ses_07dab7905ffe9aIE9arc00VWds",
+  "content": "## 测试报告\n\n### 测试概览\n\n| 测试类型 | 结果 |\n|---------|------|\n| 编译测试 | ✅ 通过 |\n\n| 统计项 | 数值 |\n|-------|------|\n| 测试总数 | 1 |\n| 通过 | 1 |\n| 失败 | 0 |\n| 通过率 | 100% |\n\n---\n\n### 详细结果\n\n#### 编译测试 — ✅ 通过\n\n- **命令**: `mvn compile -pl platform-app -am -q`\n- **退出码**: 0\n- **耗时**: 10s\n- **stdout**: 无\n- **stderr**: 无\n\n##### 测试说明\n\n验证 `PlatformType.java` 枚举新增 `KIMI` 和 `VOLCENGINE` 两个常量后，项目编译是否正常。\n\n- `KIMI(\"KIMI\", \"Kimi 月之暗面\", \"https://api.moonshot.cn/v1\", List.of(\"kimi-k2.7-code\", \"kimi-k2.6\", \"kimi-k2.5\", \"kimi-k3\"))`\n- `VOLCENGINE(\"VOLCENGINE\", \"火山引擎\", \"https://ark.cn-beijing.volces.com/api/v3\", List.of(\"doubao-seed-evolving\", \"doubao-seed-2-1-turbo-260628\", \"doubao-seed-2-1-pro-260628\"))`\n\n---\n\n### 结论\n\n编译通过，新增枚举值未破坏现有代码，项目构建一切正常。\n",
+  "timestamp": "2026-07-21T01:40:35.565Z"
+}
