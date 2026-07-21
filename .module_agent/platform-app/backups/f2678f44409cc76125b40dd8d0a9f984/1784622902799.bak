@@ -113,9 +113,7 @@ public class AgentContextConfiguration {
 
     @Bean
     public ChatService chatService(AgentAssembler agentAssembler) {
-        ChatService chatService = agentAssembler.build().chatService();
-        agentAssembler.refreshHooks();
-        return chatService;
+        return agentAssembler.build().chatService();
     }
 
     @Bean

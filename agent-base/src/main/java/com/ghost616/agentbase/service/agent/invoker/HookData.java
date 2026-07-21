@@ -7,4 +7,5 @@ import lombok.Data;
 public class HookData {
 
     private final ChatChunk chatChunk;
+    private ToolHookContext toolContext;
 }

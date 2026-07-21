@@ -8,6 +8,7 @@ import com.ghost616.agentbase.service.agent.SessionManager;
 import com.ghost616.agentbase.service.agent.ToolDataProvider;
 import com.ghost616.agentbase.service.agent.ToolExecutionProvider;
 import com.ghost616.agentbase.service.agent.ToolExecutionTracker;
+import com.ghost616.agentbase.service.agent.invoker.HookManager;
 import com.ghost616.agentbase.service.agent.invoker.SystemToolManager;
 import com.ghost616.agentbase.service.agent.invoker.SystemToolProvider;
 import com.ghost616.agentbase.service.agent.invoker.ToolCallQueueManager;
@@ -41,6 +42,8 @@ public class AgentComponentRegistry {
     private ModelInvokerManager modelInvokerManager;
 
     private ToolExecutionTracker toolExecutionTracker;
+
+    private HookManager hookManager;
 
     @Setter
     private ToolExecutionProvider toolExecutionProvider;
@@ -109,6 +112,10 @@ public class AgentComponentRegistry {
 
     public ToolExecutionTracker getToolExecutionTracker() {
         return requireInitialized(toolExecutionTracker, "toolExecutionTracker");
+    }
+
+    public HookManager getHookManager() {
+        return requireInitialized(hookManager, "hookManager");
     }
 
     public ToolExecutionProvider getToolExecutionProvider() {

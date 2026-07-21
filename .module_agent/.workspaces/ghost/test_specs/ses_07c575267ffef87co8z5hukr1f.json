@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_07c575267ffef87co8z5hukr1f",
+  "content": "## 待测试功能\n\n### 1. ChatService.setHookManager(HookManager)\n- 文件：agent-base/src/main/java/com/ghost616/agentbase/service/agent/ChatService.java\n- 验证 setHookManager 后，refreshHooks() 委托给注入的 HookManager 实例\n\n### 2. ToolExecutionService.setHookManager(HookManager)\n- 文件：agent-base/src/main/java/com/ghost616/agentbase/service/agent/ToolExecutionService.java\n- 验证 setHookManager 后，triggerHooks/executePostHooks 委托给注入的 HookManager 实例\n\n### 3. AgentAssembler.build() 集成行为\n- 文件：agent-integration/src/main/java/com/ghost616/agentinteg/AgentAssembler.java\n- 验证 build() 后，ChatService 和 ToolExecutionService 使用相同的 HookManager 实例\n- 验证 build() 后，hookManager.refreshHooks() 已被调用\n",
+  "timestamp": "2026-07-21T07:53:14.228Z"
+}

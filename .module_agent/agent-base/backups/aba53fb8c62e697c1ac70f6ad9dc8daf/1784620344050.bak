@@ -34,7 +34,7 @@ public class ToolExecutionService {
     private SessionManager sessionManager;
     private AgentContextManager agentContextManager;
     private ToolExecutionTracker toolExecutionTracker;
-    private HookManager hookManager;
+    private final HookManager hookManager = new HookManager();
     private volatile boolean initialized;
 
     public ToolExecutionService(AgentComponentRegistry registry, ChatService chatService) {
@@ -52,7 +52,6 @@ public class ToolExecutionService {
                     sessionManager = registry.getSessionManager();
                     agentContextManager = registry.getAgentContextManager();
                     toolExecutionTracker = registry.getToolExecutionTracker();
-                    hookManager = registry.getHookManager();
                     initialized = true;
                 }
             }

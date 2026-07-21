@@ -1,0 +1,20 @@
+[
+  {
+    "plan_id": "plan_1b89f1e9-f4a7-4132-a2fc-f59278b092f2",
+    "plan": "移除 AgentContextConfiguration 中 chatService Bean 的 refreshHooks() 调用",
+    "modified_files": [
+      "platform-app/src/main/java/com/ghost616/platform/config/AgentContextConfiguration.java"
+    ],
+    "summary": "已移除 AgentContextConfiguration.chatService Bean 中的 refreshHooks() 调用",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_9a037f43-10a6-42e4-a5ef-5cc48bb9ce16",
+    "plan": "chatService Bean 中 refreshHooks 调用方切换",
+    "modified_files": [
+      "platform-app/src/main/java/com/ghost616/platform/config/AgentContextConfiguration.java"
+    ],
+    "summary": "chatService() Bean 方法中已将 chatService.refreshHooks() 改为 agentAssembler.refreshHooks()，AgentAssembler.refreshHooks() 内部调用 hookManager.refreshHooks(chatDataProvider.getHooks())，功能等价",
+    "errors": []
+  }
+]

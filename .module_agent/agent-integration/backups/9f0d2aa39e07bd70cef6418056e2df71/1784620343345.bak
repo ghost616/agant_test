@@ -15,7 +15,6 @@ import com.ghost616.agentbase.service.agent.ToolExecutionService;
 import com.ghost616.agentbase.service.agent.ToolExecutionTracker;
 import com.ghost616.agentbase.service.agent.invoker.HistoryQuerySystemTool;
 import com.ghost616.agentbase.service.agent.invoker.HookInvoker;
-import com.ghost616.agentbase.service.agent.invoker.HookManager;
 import com.ghost616.agentbase.service.agent.invoker.LoadSkillsSystemTool;
 import com.ghost616.agentbase.service.agent.invoker.MessageSavePostHook;
 import com.ghost616.agentbase.service.agent.invoker.UnloadSkillsSystemTool;
@@ -49,7 +48,6 @@ public class AgentAssembler {
     private AgentComponentRegistry registry;
     private ChatDataProviderProxy chatDataProviderProxy;
     private Result cachedResult;
-    private HookManager hookManager;
     private boolean built = false;
 
     public AgentAssembler(ContextDataProvider contextDataProvider,
@@ -78,12 +76,6 @@ public class AgentAssembler {
     public ModelInvokerManager modelInvokerManager() { return registry != null ? registry.getModelInvokerManager() : null; }
     public ToolExecutionTracker toolExecutionTracker() { return registry != null ? registry.getToolExecutionTracker() : null; }
     public MessageSavePostHook messageSavePostHook() { return chatDataProviderProxy != null ? chatDataProviderProxy.getMessageSavePostHook() : null; }
-
-    public void refreshHooks() {
-        if (hookManager != null && chatDataProviderProxy != null) {
-            hookManager.refreshHooks(chatDataProviderProxy.getHooks());
-        }
-    }
 
     public Result build() {
         if (built) {
@@ -114,9 +106,6 @@ public class AgentAssembler {
         ChatService chatService = new ChatService(registry);
 
         ToolExecutionService toolExecutionService = new ToolExecutionService(registry, chatService);
-
-        this.hookManager = new HookManager();
-        registry.setHookManager(this.hookManager);
 
         AgentMessageProxy agentMessageProxy = new AgentMessageProxy(chatService, toolExecutionService);
         registry.getAgentContextManager().setAgentMessageProxy(agentMessageProxy);

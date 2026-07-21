@@ -4,6 +4,7 @@ import com.ghost616.agentbase.core.AgentComponentRegistry;
 import com.ghost616.agentbase.dto.model.ChatChunk;
 import com.ghost616.agentbase.enums.HookPhase;
 import com.ghost616.agentbase.service.agent.invoker.HookInvoker;
+import com.ghost616.agentbase.service.agent.invoker.HookManager;
 import com.ghost616.agentbase.service.agent.invoker.SystemHook;
 import com.ghost616.agentbase.service.agent.invoker.SystemPostHook;
 import com.ghost616.agentbase.service.agent.invoker.SystemToolManager;
@@ -42,6 +43,7 @@ class ChatServiceTest {
     @BeforeEach
     void setUp() {
         registry = new AgentComponentRegistry();
+        registry.setHookManager(new HookManager());
         registry.setAgentContextManager(agentContextManager);
         registry.setSessionManager(sessionManager);
         registry.setModelInvokerManager(modelInvokerManager);
@@ -70,11 +72,11 @@ class ChatServiceTest {
 
         chatService.refreshHooks();
 
-        List<HookInvoker> postHooks = getPrivateField("systemPostHooks");
+        List<HookInvoker> postHooks = getHookManagerField("systemPostHooks");
         assertEquals(1, postHooks.size());
         assertSame(postHook, postHooks.get(0));
 
-        Map<HookPhase, List<HookInvoker>> hooksMap = getPrivateField("systemHooks");
+        Map<HookPhase, List<HookInvoker>> hooksMap = getHookManagerField("systemHooks");
         assertTrue(hooksMap.isEmpty());
     }
 
@@ -86,14 +88,14 @@ class ChatServiceTest {
 
         chatService.refreshHooks();
 
-        Map<HookPhase, List<HookInvoker>> hooksMap = getPrivateField("systemHooks");
+        Map<HookPhase, List<HookInvoker>> hooksMap = getHookManagerField("systemHooks");
         assertEquals(1, hooksMap.size());
         List<HookInvoker> hooks = hooksMap.get(HookPhase.SESSION_START);
         assertNotNull(hooks);
         assertEquals(1, hooks.size());
         assertSame(hook, hooks.get(0));
 
-        List<HookInvoker> postHooks = getPrivateField("systemPostHooks");
+        List<HookInvoker> postHooks = getHookManagerField("systemPostHooks");
         assertTrue(postHooks.isEmpty());
     }
 
@@ -110,7 +112,7 @@ class ChatServiceTest {
 
         chatService.refreshHooks();
 
-        Map<HookPhase, List<HookInvoker>> hooksMap = getPrivateField("systemHooks");
+        Map<HookPhase, List<HookInvoker>> hooksMap = getHookManagerField("systemHooks");
         assertEquals(2, hooksMap.size());
         assertEquals(2, hooksMap.get(HookPhase.SESSION_START).size());
         assertEquals(1, hooksMap.get(HookPhase.BEFORE_MESSAGE_SEND).size());
@@ -129,14 +131,14 @@ class ChatServiceTest {
 
         chatService.refreshHooks();
 
-        Map<HookPhase, List<HookInvoker>> hooksMap = getPrivateField("systemHooks");
+        Map<HookPhase, List<HookInvoker>> hooksMap = getHookManagerField("systemHooks");
         assertEquals(2, hooksMap.size());
         assertEquals(1, hooksMap.get(HookPhase.SESSION_START).size());
         assertSame(systemHook, hooksMap.get(HookPhase.SESSION_START).get(0));
         assertEquals(1, hooksMap.get(HookPhase.AFTER_MESSAGE_RECEIVE).size());
         assertSame(anotherSystemHook, hooksMap.get(HookPhase.AFTER_MESSAGE_RECEIVE).get(0));
 
-        List<HookInvoker> postHooks = getPrivateField("systemPostHooks");
+        List<HookInvoker> postHooks = getHookManagerField("systemPostHooks");
         assertEquals(1, postHooks.size());
         assertSame(postHook, postHooks.get(0));
     }
@@ -147,11 +149,23 @@ class ChatServiceTest {
 
         chatService.refreshHooks();
 
-        Map<HookPhase, List<HookInvoker>> hooksMap = getPrivateField("systemHooks");
+        Map<HookPhase, List<HookInvoker>> hooksMap = getHookManagerField("systemHooks");
         assertTrue(hooksMap.isEmpty());
 
-        List<HookInvoker> postHooks = getPrivateField("systemPostHooks");
+        List<HookInvoker> postHooks = getHookManagerField("systemPostHooks");
         assertTrue(postHooks.isEmpty());
+    }
+
+    @Test
+    void hookManager_shouldDelegateRefreshHooks() {
+        HookManager mockHookManager = mock(HookManager.class);
+        registry.setHookManager(mockHookManager);
+        List<HookInvoker> hooks = List.of(mock(HookInvoker.class));
+        when(chatDataProvider.getHooks()).thenReturn(hooks);
+
+        chatService.refreshHooks();
+
+        verify(mockHookManager).refreshHooks(hooks);
     }
 
     @Test
@@ -166,7 +180,7 @@ class ChatServiceTest {
         when(chatDataProvider.getHooks()).thenReturn(List.of(hook2));
         chatService.refreshHooks();
 
-        Map<HookPhase, List<HookInvoker>> hooksMap = getPrivateField("systemHooks");
+        Map<HookPhase, List<HookInvoker>> hooksMap = getHookManagerField("systemHooks");
         assertEquals(1, hooksMap.get(HookPhase.SESSION_START).size());
         assertSame(hook2, hooksMap.get(HookPhase.SESSION_START).get(0));
     }
@@ -176,5 +190,15 @@ class ChatServiceTest {
         Field field = ChatService.class.getDeclaredField(fieldName);
         field.setAccessible(true);
         return (T) field.get(chatService);
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> T getHookManagerField(String fieldName) throws Exception {
+        Field hookManagerField = ChatService.class.getDeclaredField("hookManager");
+        hookManagerField.setAccessible(true);
+        HookManager hookManager = (HookManager) hookManagerField.get(chatService);
+        Field field = HookManager.class.getDeclaredField(fieldName);
+        field.setAccessible(true);
+        return (T) field.get(hookManager);
     }
 }

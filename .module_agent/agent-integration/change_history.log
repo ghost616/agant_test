@@ -13,3 +13,5 @@
 [2026-07-21T01:38:57.542Z] [session: ses_07dacf62effex4yl60rWPkUv6F] [2026-07-21] 新增 KimiInvoker（继承 OpenAIInvoker）和 VolcEngineInvoker（继承 OpenAIInvoker）；DefaultModelInvokerFactory 增加 KIMI 和 VOLCENGINE 的 switch 分支
 [2026-07-21T02:33:33.364Z] [session: ses_08114cd94ffeBHHPmR4M6E7aNz] 从 [platform-app] 移入文件定义: 
 [2026-07-21T06:10:15.860Z] [session: ses_07cb48b0fffe5QONGYtdwiuLWd] [2026-07-21] AgentAssembler.java: SystemToolProviderProxy.discoverSystemTools() 新增 session_variable 和 conversation_variable 两个系统工具注册；添加对应 import 语句
+[2026-07-21T07:53:01.233Z] [session: ses_07c575267ffef87co8z5hukr1f] AgentAssembler.build(): 创建共享 HookManager 实例，通过 setter 注入 ChatService 和 ToolExecutionService，统一调用 hookManager.refreshHooks()
+[2026-07-21T08:30:57.783Z] [session: ses_07c575267ffef87co8z5hukr1f] AgentAssembler: hookManager 改为私有字段，新增 refreshHooks() 公开方法，build() 中不再直接调用 refreshHooks

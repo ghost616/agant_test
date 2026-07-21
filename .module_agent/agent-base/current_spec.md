@@ -18,7 +18,9 @@ ToolExecutionProvider 接口（com.ghost616.agentbase.service.agent.ToolExecutio
 AgentComponentRegistry（com.ghost616.agentbase.core.AgentComponentRegistry），中央组件注册表，非 Spring 组件。持有所有 Provider/Manager 组件的 @Setter 注入字段，包含 contextDataProvider/messageDataProvider/toolDataProvider/chatDataProvider/modelInvokerDataProvider/systemToolProvider/modelInvokerFactory/toolManager/toolCallQueueManager/systemToolManager/sessionManager/agentContextManager/modelInvokerManager/toolExecutionTracker/toolExecutionProvider/messageSender。每个 getter 方法通过 requireInitialized 守卫确保组件已初始化后返回，messageSender 可为 null。
 ## HookInvoker / SystemHook / SystemPostHook
 
-从 platform-app 迁移而来。HookInvoker 为 HOOK 执行契约接口；SystemHook 扩展 HookInvoker 新增 getIndex() 执行顺序控制；SystemPostHook 为标记接口继承 SystemHook。
+
+## HookManager
+HookManager 抽取自 ChatService/ToolExecutionService 的公共 HOOK 管理基础设施。内部维护 systemHooks / systemPostHooks / regularPhaseHooks 三个集合，提供 refreshHooks(List<HookInvoker>) 按类型分类、triggerHooks(HookPhase, AgentExecutionContext, HookData) 触发阶段钩子、executePostHooks(AgentExecutionContext, HookData) 触发后置钩子三个方法。ChatService 和 ToolExecutionService 各自持有 private final HookManager hookManager 实例并委托调用。
 
 ## HookData
 HookData 数据载体类，包裹 Hook 执行时的上下文数据。当前包含 ChatChunk chatChunk 字段，后续可扩展 toolCallId、toolName 等字段。
@@ -45,6 +47,7 @@ ModelInvokerFactory 接口（com.ghost616.agentbase.service.model.invoker.ModelI
 ## ChatService
 
 ChatService 聊天服务，非 Spring 组件。构造函数改为接收 AgentComponentRegistry，通过 registry 延迟获取 AgentContextManager/SessionManager/ModelInvokerManager/SystemToolManager/ChatDataProvider。chat(ChatRequest) 方法构建消息上下文与工具列表，调用 ModelInvoker 流式推理，通过 HOOK 机制在 SESSION_START/BEFORE_MESSAGE_SEND/AFTER_MESSAGE_RECEIVE 阶段拦截处理。内部包含 parseLoadedSkills 解析已加载技能、foldMessageGroups 按 recentMessageCount 折叠历史消息。refreshHooks() 可重复调用，每次调用前清空 systemHooks/systemPostHooks/regularPhaseHooks 再重新加载。
+新增 setHookManager(HookManager) setter 方法，支持外部注入共享 HookManager 实例替换默认创建的单例。
 ## ChatDataProvider
 
 聊天数据提供者接口（com.ghost616.agentbase.service.agent.ChatDataProvider），定义三个方法：getModelConfig(Long modelId) 按 ID 获取 ModelConfigData、updateSessionModelId(Long sessionId, Long modelId) 更新会话的模型 ID、getHooks() 获取所有已注册的 HookInvoker。用于解耦 ChatService 与具体数据访问层。
@@ -77,6 +80,16 @@ injectVariableCallbacks() 方法在子会话上下文中，将 sessionVarPutCall
 ## ToolExecutionService
 
 工具执行服务，非 Spring 组件。构造函数改为接收 (AgentComponentRegistry, ChatService)，通过 registry 延迟获取 ToolCallQueueManager/ToolManager/SystemToolManager/SessionManager/AgentContextManager/ToolExecutionTracker。提供三个核心方法：executeTool(Long sessionId) 从队列获取下一个工具调用，解析调用器并异步执行；getToolStatus(Long sessionId) 查询当前工具执行状态；continueAfterTools(Long sessionId) 检查无工具在执行后，持久化工具结果、添加历史记录、清理队列和跟踪器，构造 TOOL_CONTINUE_MARKER 请求并调用 chatService.chat()。getToolStatus(Long sessionId, String toolId) toolId 为必传参数。
+新增 setHookManager(HookManager) setter 方法，支持外部注入共享 HookManager 实例替换默认创建的单例。
+## ToolHookContext
+ToolHookContext 数据载体（@Data @AllArgsConstructor @NoArgsConstructor），包含 toolCallId / toolName / arguments / result 四个字段，用于在 BEFORE_TOOL_CALL 和 AFTER_TOOL_CALL 阶段向 HOOK 传递工具执行上下文。
+
+## HookData
+新增 ToolHookContext toolContext 字段，可为 null。聊天阶段（chat 调用）为 null，工具调用阶段携带工具执行上下文。
+
+## ToolExecutionService HOOK 基础设施
+新增与 ChatService 相同的 HOOK 基础设施：systemHooks / systemPostHooks / regularPhaseHooks 三个集合、refreshHooks / triggerHooks / executePostHooks 三个方法。executeTool 中在 CompletableFuture.supplyAsync 前触发 BEFORE_TOOL_CALL，在 setDone 后触发 AFTER_TOOL_CALL，均通过 HookData(toolContext) 传递工具上下文。
+
 ## JsonMapper
 
 公用 JSON 工具类（com.ghost616.agentbase.util.JsonMapper），final 类私有构造器，提供 public static final ObjectMapper MAPPER 实例。供 ChatService/ToolExecutionService 等组件直接引用，替代构造器注入方式。

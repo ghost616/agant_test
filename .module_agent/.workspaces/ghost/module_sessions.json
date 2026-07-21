@@ -1,5 +1,11 @@
 {
   "agent-base": [
     "ses_07c7a47b5ffeNz987s2cklBl7M"
+  ],
+  "agent-integration": [
+    "ses_07c575267ffef87co8z5hukr1f"
+  ],
+  "platform-app": [
+    "ses_07c570208ffeWLahcyfZZZrbNJ"
   ]
 }

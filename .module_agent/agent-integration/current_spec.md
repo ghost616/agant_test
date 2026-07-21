@@ -11,6 +11,8 @@
 - **SubSessionCallbackSystemTool**：execute() 方法改为通过构造函数注入的 SubSessionCallback 回调发送子会话消息，而非直接调用 ctx.sendUserMessage()；thinking 参数通过回调的第三个参数传递
 - **AgentAssembler**：构造函数新增 MessageSender 参数（可为 null），build() 中调用 registry.setMessageSender(messageSender) 传入 MessageSender 实例
 - **AgentAssembler**：build() 方法构造 SystemToolProviderProxy 代理，确保 history_query/load_skills/unload_skills/session_variable/conversation_variable 五个系统工具始终可用；SystemToolManager 使用代理而非原始 SystemToolProvider
+- **AgentAssembler**：build() 方法中创建共享 HookManager 实例，通过 setter 注入 ChatService 和 ToolExecutionService，并统一调用 hookManager.refreshHooks(chatDataProvider.getHooks())，将 hooks 初始化从 AgentContextConfiguration 移至 build() 中统一管理
+- **AgentAssembler**：新增私有字段 hookManager 及公开方法 refreshHooks()，将刷新操作从 build() 中解耦，支持事后调用刷新
 ## 模块职责
 提供多平台模型调用器的实现（ModelInvoker）和 Agent 组件的组装能力。
 

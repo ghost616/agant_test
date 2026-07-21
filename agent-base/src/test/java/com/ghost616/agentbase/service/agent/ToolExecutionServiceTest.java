@@ -3,6 +3,9 @@ package com.ghost616.agentbase.service.agent;
 import com.ghost616.agentbase.core.AgentComponentRegistry;
 import com.ghost616.agentbase.dto.chat.ChatRequest;
 import com.ghost616.agentbase.dto.model.ChatChunk;
+import com.ghost616.agentbase.enums.HookPhase;
+import com.ghost616.agentbase.service.agent.invoker.HookData;
+import com.ghost616.agentbase.service.agent.invoker.HookManager;
 import com.ghost616.agentbase.service.agent.invoker.SystemTool;
 import com.ghost616.agentbase.service.agent.invoker.SystemToolManager;
 import com.ghost616.agentbase.service.agent.invoker.ToolCallQueueManager;
@@ -51,6 +54,7 @@ class ToolExecutionServiceTest {
     @BeforeEach
     void setUp() {
         registry = new AgentComponentRegistry();
+        registry.setHookManager(new HookManager());
         registry.setToolCallQueueManager(toolCallQueueManager);
         registry.setToolManager(toolManager);
         registry.setSystemToolManager(systemToolManager);
@@ -58,6 +62,31 @@ class ToolExecutionServiceTest {
         registry.setAgentContextManager(agentContextManager);
         registry.setToolExecutionTracker(toolExecutionTracker);
         toolExecutionService = new ToolExecutionService(registry, chatService);
+    }
+
+    @Test
+    void hookManager_shouldDelegateTriggerHooksInExecuteTool() {
+        HookManager mockHookManager = mock(HookManager.class);
+        registry.setHookManager(mockHookManager);
+
+        MessageDataProvider.ToolCallData peekData = new MessageDataProvider.ToolCallData("tid_hook", "hookTool", "{}");
+        when(toolCallQueueManager.peek(sessionId)).thenReturn(peekData);
+        ToolInvoker invoker = mock(ToolInvoker.class);
+        when(toolManager.getInvoker(sessionId, "hookTool")).thenReturn(invoker);
+
+        MessageDataProvider.ToolCallData pollData = new MessageDataProvider.ToolCallData("tid_hook", "hookTool", "{}");
+        when(toolCallQueueManager.poll(sessionId)).thenReturn(pollData);
+        when(toolCallQueueManager.hasPending(sessionId)).thenReturn(false);
+        AgentContextManager.AgentSessionContext sessionCtx = mock(AgentContextManager.AgentSessionContext.class);
+        AgentExecutionContext context = mock(AgentExecutionContext.class);
+        when(sessionCtx.context()).thenReturn(context);
+        when(context.isStopped()).thenReturn(false);
+        when(agentContextManager.get(sessionId)).thenReturn(sessionCtx);
+
+        toolExecutionService.executeTool(sessionId);
+
+        verify(mockHookManager).triggerHooks(eq(HookPhase.BEFORE_TOOL_CALL), eq(context), any(HookData.class));
+        verify(mockHookManager).executePostHooks(eq(context), any(HookData.class));
     }
 
     // ========== executeTool ==========

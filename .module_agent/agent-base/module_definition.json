@@ -95,7 +95,7 @@
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ChatService.java",
-      "description": "聊天服务核心类，负责构建消息列表、管理会话上下文、过滤工具/技能、调用模型 invoker 并返回 SSE 流。包含系统消息构建（可用技能列表、已加载技能提示词、子会话能力提示合并）、会话历史折叠、loadedSkills 解析、hook 触发等功能。构建技能相关 system 消息前通过 systemToolManager 检测 _sys_load_skills（常量 LOAD_SKILLS_TOOL_NAME）是否存在，不存在时跳过所有技能相关消息；getToolDefinitions() 结果复用局部变量避免重复调用。triggerHooks/executePostHooks 参数改为 HookData，调用处用 new HookData(chunk) 包装 ChatChunk 传入。"
+      "description": "聊天服务核心类。持有 HookManager 实例，refreshHooks/triggerHooks/executePostHooks 全部委托给 hookManager。提供 setHookManager(HookManager) setter 支持外部注入共享实例。移除了原有的 systemHooks/systemPostHooks/regularPhaseHooks 字段及私有方法。"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/ContextSerializer.java",
@@ -243,7 +243,7 @@
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ToolExecutionService.java",
-      "description": "工具执行服务，提供 executeTool/getToolStatus(追加toolId)/continueAfterTools(已移除阻塞检查) 方法封装工具异步执行、状态查询和工具结果回传继续对话的完整业务逻辑，包含内部记录 ToolExecutionResult 和 ToolStatusResult"
+      "description": "工具执行服务。持有 HookManager 实例，triggerHooks/executePostHooks 委托给 hookManager。提供 setHookManager(HookManager) setter 支持外部注入共享实例。移除了原有的 chatDataProvider/systemHooks/systemPostHooks/regularPhaseHooks 字段及 refreshHooks/triggerHooks/executePostHooks 方法。"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/util/JsonMapper.java",
@@ -319,7 +319,15 @@
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/HookData.java",
-      "description": "HOOK 数据载体，包裹 ChatChunk 等 HOOK 执行上下文数据，为后续扩展预留字段"
+      "description": "HOOK 数据载体，包裹 ChatChunk 及 ToolHookContext 等 HOOK 执行上下文数据，为后续扩展预留字段"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/ToolHookContext.java",
+      "description": "工具执行钩子上下文，包裹 toolCallId/toolName/arguments/result，用于 BEFORE/AFTER_TOOL_CALL 阶段数据传递"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/HookManager.java",
+      "description": "HOOK 管理基础设施，维护 systemHooks/systemPostHooks/regularPhaseHooks 三组列表，提供 refreshHooks/triggerHooks/executePostHooks 方法，供 ChatService 和 ToolExecutionService 委托使用"
     }
   ]
 }

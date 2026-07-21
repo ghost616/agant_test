@@ -3,8 +3,6 @@ package com.ghost616.agentbase.service.agent;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -21,9 +19,7 @@ import org.springframework.http.codec.ServerSentEvent;
 import reactor.core.publisher.Flux;
 
 import com.ghost616.agentbase.service.agent.invoker.HookData;
-import com.ghost616.agentbase.service.agent.invoker.HookInvoker;
-import com.ghost616.agentbase.service.agent.invoker.SystemHook;
-import com.ghost616.agentbase.service.agent.invoker.SystemPostHook;
+import com.ghost616.agentbase.service.agent.invoker.HookManager;
 import com.ghost616.agentbase.service.model.invoker.ModelInvokerManager;
 
 import com.ghost616.agentbase.dto.chat.ChatRequest;
@@ -55,9 +51,7 @@ public class ChatService {
     private SystemToolManager systemToolManager;
     private ChatDataProvider chatDataProvider;
 
-    private final Map<HookPhase, List<HookInvoker>> systemHooks = new HashMap<>();
-    private final List<HookInvoker> systemPostHooks = new ArrayList<>();
-    private final Map<HookPhase, List<HookInvoker>> regularPhaseHooks = new HashMap<>();
+    private HookManager hookManager;
     private volatile boolean initialized;
 
     public ChatService(AgentComponentRegistry registry) {
@@ -73,6 +67,7 @@ public class ChatService {
                     modelInvokerManager = registry.getModelInvokerManager();
                     systemToolManager = registry.getSystemToolManager();
                     chatDataProvider = registry.getChatDataProvider();
+                    hookManager = registry.getHookManager();
                     initialized = true;
                 }
             }
@@ -81,39 +76,9 @@ public class ChatService {
 
     public void refreshHooks() {
         ensureInitialized();
-        systemHooks.clear();
-        systemPostHooks.clear();
-        regularPhaseHooks.clear();
-        List<HookInvoker> hooks = chatDataProvider.getHooks();
-        for (HookInvoker hook : hooks) {
-            HookPhase phase = hook.getPhase();
-            if (hook instanceof SystemPostHook) {
-                systemPostHooks.add(hook);
-            } else if (hook instanceof SystemHook) {
-                systemHooks.computeIfAbsent(phase, k -> new ArrayList<>()).add(hook);
-            } else {
-                regularPhaseHooks.computeIfAbsent(phase, k -> new ArrayList<>()).add(hook);
-            }
+        if (hookManager != null) {
+            hookManager.refreshHooks(chatDataProvider.getHooks());
         }
-    }
-
-    private void triggerHooks(HookPhase phase, AgentExecutionContext ctx, HookData data) {
-        List<HookInvoker> regularHooks = regularPhaseHooks.get(phase);
-        if (regularHooks != null) {
-            regularHooks.forEach(h -> h.execute(ctx, data));
-        }
-        List<HookInvoker> hooks = systemHooks.get(phase);
-        if (hooks != null) {
-            hooks.stream()
-                    .sorted(Comparator.comparingInt(h -> ((SystemHook) h).getIndex()))
-                    .forEach(h -> h.execute(ctx, data));
-        }
-    }
-
-    private void executePostHooks(AgentExecutionContext ctx, HookData data) {
-        systemPostHooks.stream()
-                .sorted(Comparator.comparingInt(h -> ((SystemHook) h).getIndex()))
-                .forEach(h -> h.execute(ctx, data));
     }
 
     public Flux<ServerSentEvent<ChatChunk>> chat(ChatRequest request) {
@@ -154,7 +119,7 @@ public class ChatService {
             throw new BusinessException(ErrorCode.MODEL_NOT_FOUND);
         }
 
-        triggerHooks(HookPhase.SESSION_START, context, new HookData(null));
+        hookManager.triggerHooks(HookPhase.SESSION_START, context, new HookData(null));
 
         List<Message> messages = new ArrayList<>();
         messages.add(Message.builder()
@@ -337,8 +302,8 @@ public class ChatService {
                     if (chunk.getFinishReason() != null) {
                         chunk.setHasToolCalls(hasToolCalls.get());
                     }
-                    triggerHooks(HookPhase.BEFORE_MESSAGE_SEND, context, new HookData(chunk));
-                    executePostHooks(context, new HookData(chunk));
+                    hookManager.triggerHooks(HookPhase.BEFORE_MESSAGE_SEND, context, new HookData(chunk));
+                    hookManager.executePostHooks(context, new HookData(chunk));
                 })
                 .map(chunk -> ServerSentEvent.<ChatChunk>builder()
                         .data(chunk)
@@ -347,8 +312,8 @@ public class ChatService {
                     ChatChunk completeChunk = ChatChunk.builder()
                             .hasToolCalls(hasToolCalls.get())
                             .build();
-                    triggerHooks(HookPhase.AFTER_MESSAGE_RECEIVE, context, new HookData(completeChunk));
-                    executePostHooks(context, new HookData(completeChunk));
+                    hookManager.triggerHooks(HookPhase.AFTER_MESSAGE_RECEIVE, context, new HookData(completeChunk));
+                    hookManager.executePostHooks(context, new HookData(completeChunk));
                 })
                 .doOnCancel(() -> contextMutator.setStopped());
     }

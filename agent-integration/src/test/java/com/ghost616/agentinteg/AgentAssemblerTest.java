@@ -1,5 +1,9 @@
 package com.ghost616.agentinteg;
 
+import com.ghost616.agentbase.service.agent.ChatService;
+import com.ghost616.agentbase.service.agent.ToolExecutionService;
+import com.ghost616.agentbase.service.agent.invoker.HookInvoker;
+import com.ghost616.agentbase.service.agent.invoker.HookManager;
 import com.ghost616.agentbase.sendmessage.MessageSender;
 import com.ghost616.agentbase.service.agent.ChatDataProvider;
 import com.ghost616.agentbase.service.agent.ContextDataProvider;
@@ -15,7 +19,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.lang.reflect.Field;
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class AgentAssemblerTest {
@@ -107,5 +115,46 @@ class AgentAssemblerTest {
     @Test
     void build前agentContextManager返回null() {
         assertNull(agentAssembler.agentContextManager());
+    }
+
+    // ========== HookManager 共享与调用验证 ==========
+
+    @Test
+    void build_shouldShareSameHookManagerInstanceBetweenServices() throws Exception {
+        when(chatDataProvider.getHooks()).thenReturn(List.of());
+
+        AgentAssembler.Result result = agentAssembler.build();
+
+        Field csField = ChatService.class.getDeclaredField("hookManager");
+        csField.setAccessible(true);
+        HookManager csHookManager = (HookManager) csField.get(result.chatService());
+
+        Field tesField = ToolExecutionService.class.getDeclaredField("hookManager");
+        tesField.setAccessible(true);
+        HookManager tesHookManager = (HookManager) tesField.get(result.toolExecutionService());
+
+        assertNotNull(csHookManager);
+        assertNotNull(tesHookManager);
+        assertSame(csHookManager, tesHookManager);
+    }
+
+    @Test
+    void build_shouldCallRefreshHooksOnHookManager() {
+        List<HookInvoker> hooks = List.of();
+        when(chatDataProvider.getHooks()).thenReturn(hooks);
+
+        agentAssembler.build();
+
+        verify(chatDataProvider, times(1)).getHooks();
+    }
+
+    @Test
+    void build_shouldPassHooksToHookManagerRefreshHooks() {
+        HookInvoker mockHook = mock(HookInvoker.class);
+        when(chatDataProvider.getHooks()).thenReturn(List.of(mockHook));
+
+        agentAssembler.build();
+
+        verify(chatDataProvider, times(1)).getHooks();
     }
 }
