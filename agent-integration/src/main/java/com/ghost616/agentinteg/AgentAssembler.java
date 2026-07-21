@@ -18,6 +18,8 @@ import com.ghost616.agentbase.service.agent.invoker.HookInvoker;
 import com.ghost616.agentbase.service.agent.invoker.LoadSkillsSystemTool;
 import com.ghost616.agentbase.service.agent.invoker.MessageSavePostHook;
 import com.ghost616.agentbase.service.agent.invoker.UnloadSkillsSystemTool;
+import com.ghost616.agentbase.service.agent.invoker.SessionVariableSystemTool;
+import com.ghost616.agentbase.service.agent.invoker.ConversationVariableSystemTool;
 import com.ghost616.agentbase.service.agent.invoker.SystemToolManager;
 import com.ghost616.agentbase.service.agent.invoker.SystemTool;
 import com.ghost616.agentbase.service.agent.invoker.SystemToolProvider;
@@ -128,6 +130,8 @@ public class AgentAssembler {
             result.putIfAbsent("history_query", new HistoryQuerySystemTool());
             result.putIfAbsent("load_skills", new LoadSkillsSystemTool());
             result.putIfAbsent("unload_skills", new UnloadSkillsSystemTool());
+            result.putIfAbsent("session_variable", new SessionVariableSystemTool());
+            result.putIfAbsent("conversation_variable", new ConversationVariableSystemTool());
             return result;
         }
     }
