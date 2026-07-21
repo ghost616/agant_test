@@ -44,13 +44,27 @@
   {
     "plan_id": "plan_11c6d748-d098-481e-9f6e-a9d951e2539e",
     "plan_summary": "修复 DefaultContextDataProviderTest MessageDTO 缺少 rollback",
-    "code_reviewed": false,
+    "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
   },
   {
     "plan_id": "plan_06e0763d-b43b-44d2-9f52-a860b6087f65",
     "plan_summary": "SchemaMigration 添加 message.rollback 列迁移",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_e0123bca-3aba-4117-bfec-b887e12c0b22",
+    "plan_summary": "ChatService 过滤空内容消息",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_46713223-86f5-4f58-8b6d-f97b8df96460",
+    "plan_summary": "修复 ChatService 空消息过滤使用 record 风格访问器导致编译错误",
     "code_reviewed": false,
     "plan_completed": true,
     "test_passed": true

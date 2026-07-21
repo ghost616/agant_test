@@ -10,6 +10,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -284,6 +285,9 @@ public class ChatService {
             messages.add(builder.build());
         }
 
+        messages = messages.stream()
+                .filter(m -> (m.getContent() != null && !m.getContent().isEmpty()) || (m.getToolCalls() != null && !m.getToolCalls().isEmpty()))
+                .collect(Collectors.toList());
         messages = foldMessageGroups(messages, context);
 
         ModelInvoker invoker = modelInvokerManager.getInvoker(configData);

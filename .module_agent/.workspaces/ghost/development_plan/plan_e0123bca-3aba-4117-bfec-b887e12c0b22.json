@@ -1,0 +1,9 @@
+{
+  "plan_id": "plan_e0123bca-3aba-4117-bfec-b887e12c0b22",
+  "module_name": "agent-base",
+  "development_plan": "在 ChatService.java 的 chat 方法中，foldMessageGroups 调用之前（第 287 行附近），过滤 messages 列表：移除 content 为 null 或空字符串且 toolCalls 为 null 或空的 Message。即 content 为空且无 toolCalls 的消息不保留。",
+  "session_id": "ses_07d4e80dfffeFFK4GnxABz98AE",
+  "modified_files": [
+    "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ChatService.java"
+  ]
+}

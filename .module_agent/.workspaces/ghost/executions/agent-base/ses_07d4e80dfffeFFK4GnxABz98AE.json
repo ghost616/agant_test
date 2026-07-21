@@ -14,5 +14,23 @@
     "modified_files": [],
     "summary": "力牧已接收新计划",
     "errors": []
+  },
+  {
+    "plan_id": "plan_e0123bca-3aba-4117-bfec-b887e12c0b22",
+    "plan": "ChatService.chat 方法过滤空内容消息",
+    "modified_files": [
+      "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ChatService.java"
+    ],
+    "summary": "ChatService.java 在 foldMessageGroups 调用前新增过滤：移除 content 为 null/空且 toolCalls 为 null/空的消息。现有测试无空内容历史消息，无需修改测试。",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_46713223-86f5-4f58-8b6d-f97b8df96460",
+    "plan": "修复 filter 中 getter 调用风格",
+    "modified_files": [
+      "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ChatService.java"
+    ],
+    "summary": "ChatService.java 第 289 行 filter 中的 m.content() 改为 m.getContent()、m.toolCalls() 改为 m.getToolCalls()，与 Message 的 Lombok @Data getter 命名一致。",
+    "errors": []
   }
 ]
