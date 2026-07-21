@@ -88,3 +88,4 @@
 [2026-07-21T01:39:57.787Z] [session: ses_07dabecc1ffedZ9uJo0xRyBZm8] PlatformType 枚举新增 KIMI（月之暗面）和 VOLCENGINE（火山引擎）两个平台，包含默认 API 地址和对应模型列表
 [2026-07-21T02:33:33.338Z] [session: ses_08114cd94ffeBHHPmR4M6E7aNz] 移出文件定义到 [agent-integration]: 
 [2026-07-21T02:36:21.855Z] [session: ses_07dabecc1ffedZ9uJo0xRyBZm8] 8 个文件 PlatformType import 路径从 com.ghost616.platform.enums 更新为 com.ghost616.agentinteg.model，编译测试通过
+[2026-07-21T03:23:30.811Z] [session: ses_07d4e27d5ffe49LclLTw6iehUQ] 会话 rollback 改为软回滚：schema.sql message 表新增 rollback 列；Message 实体新增 rollback 字段；MessageMapper 将 deleteBySessionIdAndGeSequenceNum 改为 UPDATE rollback=1；DefaultMessageDataProvider 移除 token 扣除逻辑、物理删除改为 rollback=1、getMessages 过滤 rollback=1；更新测试用例

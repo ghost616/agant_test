@@ -40,9 +40,6 @@ public class Message {
     @TableField("token_usage")
     private String tokenUsage;
 
-    @TableField("rollback")
-    private Boolean rollback;
-
     @TableField(value = "create_time", fill = FieldFill.INSERT)
     private LocalDateTime createTime;
 }

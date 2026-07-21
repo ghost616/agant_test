@@ -1,0 +1,9 @@
+{
+  "plan_id": "plan_98c8d15d-b4df-4a59-8a2c-7366eb0fb905",
+  "module_name": "frontend-ui",
+  "development_plan": "在 ModelTest.tsx 中添加返回功能：\n1. 从 react-router-dom 导入 useNavigate（当前已导入 useParams，在同一个 import 语句中添加）\n2. 组件内调用 useNavigate() 获取 navigate 函数\n3. 在页面标题栏（model.name 左侧或附近）添加一个\"返回\"按钮，点击调用 navigate('/models') 跳转到模型管理列表页面",
+  "session_id": "ses_07d585206ffeKA9SV3xjmAoM2q",
+  "modified_files": [
+    "src/pages/models/ModelTest.tsx"
+  ]
+}

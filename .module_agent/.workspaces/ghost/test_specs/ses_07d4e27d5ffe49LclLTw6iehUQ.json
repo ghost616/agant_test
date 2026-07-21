@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_07d4e27d5ffe49LclLTw6iehUQ",
+  "content": "编译测试：确认 SchemaMigration.java 编译通过 - migrations 列表末尾已追加 message.rollback 迁移条目",
+  "timestamp": "2026-07-21T04:17:24.849Z"
+}

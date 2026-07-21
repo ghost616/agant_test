@@ -1,0 +1,5 @@
+{
+  "lizhu_session_id": "ses_07d57e05affeJL8s1vmiwXBGsT",
+  "content": "# 测试报告：SchemaMigration 编译\n\n## 测试概览\n\n| 测试类型 | 通过 | 失败 | 总计 |\n|---------|:---:|:---:|:---:|\n| 编译测试 | 1 | 0 | 1 |\n| **合计** | **1** | **0** | **1** |\n\n---\n\n## 编译测试详情\n\n**命令**: `mvn compile -pl platform-app -am`\n\n| 检查项 | 状态 |\n|-------|:---:|\n| `SchemaMigration.java` | ✅ 编译通过 |\n| 依赖模块 | ✅ 编译通过 |\n\n**变更验证**: `migrations` 列表末尾已追加 `message.rollback` 迁移条目（第 55 行），类型 `TINYINT(1)`，默认值 `0`。\n\n---\n\n## 测试结论\n\n**总体结果: ✅ 全部通过**\n",
+  "timestamp": "2026-07-21T04:17:45.883Z"
+}

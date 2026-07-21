@@ -51,7 +51,8 @@ public class SchemaMigration implements ApplicationRunner {
                 new Migration("agent_skill", "session_auth", "INT", "0"),
                 new Migration("session_skill", "session_auth", "INT", "0"),
                 new Migration("session", "total_token_used", "BIGINT", null),
-                new Migration("message", "token_usage", "TEXT", null)
+                new Migration("message", "token_usage", "TEXT", null),
+                new Migration("message", "rollback", "TINYINT(1)", "0")
         );
 
         for (Migration migration : migrations) {

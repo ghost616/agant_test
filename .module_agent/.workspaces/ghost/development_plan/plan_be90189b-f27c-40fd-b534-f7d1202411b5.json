@@ -1,0 +1,14 @@
+{
+  "plan_id": "plan_be90189b-f27c-40fd-b534-f7d1202411b5",
+  "module_name": "platform-app",
+  "development_plan": "会话 rollback 改为软回滚（不再物理删除消息，不再修改已消耗token数）：\n1. schema.sql：message 表新增 rollback TINYINT NOT NULL DEFAULT 0 字段\n2. Message.java 实体：新增 @TableField(\"rollback\") Boolean rollback 字段\n3. MessageMapper.java：将 deleteBySessionIdAndGeSequenceNum 改为 UPDATE message SET rollback=1 WHERE session_id=? AND sequence_num>=?；添加 rollback=0 过滤到数据获取查询中\n4. DefaultMessageDataProvider.java：rollbackToLastUserMessage 方法移除 token 扣除逻辑，将物理删除改为设置 rollback=1；getMessages 方法过滤掉 rollback=1 的消息\n5. 更新相关测试代码以适配新行为",
+  "session_id": "ses_07d4e27d5ffe49LclLTw6iehUQ",
+  "modified_files": [
+    "platform-app/src/main/resources/schema.sql",
+    "platform-app/src/main/java/com/ghost616/platform/entity/Message.java",
+    "platform-app/src/main/java/com/ghost616/platform/repository/MessageMapper.java",
+    "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultMessageDataProvider.java",
+    "platform-app/src/test/java/com/ghost616/platform/service/agent/DefaultMessageDataProviderTest.java",
+    "platform-app/src/test/java/com/ghost616/platform/session/SessionRollbackTest.java"
+  ]
+}

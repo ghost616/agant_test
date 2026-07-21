@@ -3,7 +3,7 @@
   "files": [
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultMessageDataProvider.java",
-      "description": "默认消息数据提供者实现，负责消息的持久化存储、查询和回滚，实现 agent-base 的 MessageDataProvider 接口"
+      "description": "默认消息数据提供者实现，负责消息的持久化存储、查询和软回滚，实现 agent-base 的 MessageDataProvider 接口"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultContextDataProvider.java",
@@ -27,7 +27,7 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/repository/MessageMapper.java",
-      "description": "MyBatis-Plus 消息数据访问层，继承 BaseMapper<Message>，提供按 sessionId 和 sequenceNum 批量删除的自定义方法"
+      "description": "MyBatis-Plus 消息数据访问层，继承 BaseMapper<Message>，提供按 sessionId 和 sequenceNum 批量设置 rollback=1 的自定义方法"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/ChatService.java",
@@ -83,7 +83,7 @@
     },
     {
       "path": "platform-app/src/main/resources/schema.sql",
-      "description": "数据库初始化脚本，包含所有建表语句（model_config/tool_config/session/message/message_tool_call/session_tool/agent_config/agent_tool/agent_skill/skill_config/skill_tool/session_variable/session_skill），关联表含 session_auth 列（默认值 0）。session 表含 thinking TINYINT(1) 列。"
+      "description": "数据库初始化脚本，包含所有建表语句（model_config/tool_config/session/message/message_tool_call/session_tool/agent_config/agent_tool/agent_skill/skill_config/skill_tool/session_variable/session_skill），关联表含 session_auth 列（默认值 0）。message 表含 rollback TINYINT(1) 列。session 表含 thinking TINYINT(1) 列。"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/config/SchemaMigration.java",
@@ -128,6 +128,10 @@
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultToolExecutionProvider.java",
       "description": "ToolExecutionProvider 的默认实现，持有三个 ConcurrentHashMap（toolCallQueues/currentExecutions/completedResults）作为数据容器，提供工具调用队列管理和工具执行状态追踪能力。内部使用 sessionId+toolId 复合键维护执行状态和结果记录。"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/entity/Message.java",
+      "description": "消息实体，映射 message 表，包含 id/sessionId/role/content/reasoning/sequenceNum/toolCallId/toolResult/tokenUsage/rollback/createTime 字段"
     }
   ]
 }

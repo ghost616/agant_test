@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Button, Input, message, Spin, Switch, Tag, Typography } from 'antd';
@@ -9,7 +9,6 @@ import type { ModelConfig } from '../../types/model';
 
 function ModelTest(): JSX.Element {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const [model, setModel] = useState<ModelConfig | null>(null);
   const [inputValue, setInputValue] = useState('');
   const [responseText, setResponseText] = useState('');
@@ -190,9 +189,6 @@ function ModelTest(): JSX.Element {
         }
       `}</style>
       <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
-        <Button type="text" onClick={() => navigate('/models')}>
-          返回
-        </Button>
         <Typography.Title level={4} style={{ margin: 0 }}>
           {model.name}
         </Typography.Title>

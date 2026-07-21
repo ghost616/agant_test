@@ -426,9 +426,9 @@ class AgentContextManagerTest {
         @Test
         void 正向_refreshHistory后历史为最新数据() {
             var msg1 = new MessageDataProvider.MessageDTO(1L, sessionId, "user", "hello", null, null, 0,
-                    LocalDateTime.now(), null, null, null);
+                    LocalDateTime.now(), null, null, null, null);
             var msg2 = new MessageDataProvider.MessageDTO(2L, sessionId, "assistant", "hi", null, null, 1,
-                    LocalDateTime.now(), null, null, null);
+                    LocalDateTime.now(), null, null, null, null);
             when(dataProvider.getLatestMessages(sessionId)).thenReturn(List.of(msg1, msg2));
 
             agentContextManager.refreshHistory(sessionId);
@@ -489,7 +489,7 @@ class AgentContextManagerTest {
             agentContextManager.remove(sessionId);
 
             var oldMsg = new MessageDataProvider.MessageDTO(1L, sessionId, "user", "old", null, null, 0,
-                    LocalDateTime.now(), null, null, null);
+                    LocalDateTime.now(), null, null, null, null);
             when(sessionManager.getMessages(sessionId)).thenReturn(List.of(oldMsg));
 
             AgentContextManager.AgentSessionContext ctx = agentContextManager.build(sessionId).build();
@@ -497,7 +497,7 @@ class AgentContextManagerTest {
             assertEquals("old", ctx.context().getHistory().get(0).content());
 
             var newMsg = new MessageDataProvider.MessageDTO(2L, sessionId, "user", "new", null, null, 1,
-                    LocalDateTime.now(), null, null, null);
+                    LocalDateTime.now(), null, null, null, null);
             when(dataProvider.getLatestMessages(sessionId)).thenReturn(List.of(newMsg));
 
             agentContextManager.refreshHistory(sessionId);

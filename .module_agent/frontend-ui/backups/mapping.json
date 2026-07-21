@@ -17,5 +17,6 @@
   "src/pages/sessions/__tests__/AgentChat.test.tsx": "f41dd6d73d05bac96fe74043926f944f",
   "src/services/__tests__/session.test.ts": "ed578f916e9be7300d06b64e7a57d28f",
   "src/types/__tests__/session.test.ts": "83ad473a7716298d492cabb7f576204c",
-  "src/pages/models/ModelList.tsx": "307c2e4338e5ae8afbde7f7bce4891c1"
+  "src/pages/models/ModelList.tsx": "307c2e4338e5ae8afbde7f7bce4891c1",
+  "src/pages/models/ModelTest.tsx": "20498648afe0ae27f7364189e564e35f"
 }

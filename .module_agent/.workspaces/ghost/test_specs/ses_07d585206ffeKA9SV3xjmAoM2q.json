@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_07d585206ffeKA9SV3xjmAoM2q",
+  "content": "## 功能说明\n在 ModelTest.tsx 中添加\"返回\"按钮，点击跳转到模型管理列表页面（/models）。\n\n## 涉及文件\n- src/pages/models/ModelTest.tsx\n\n## 变更内容\n1. import 语句添加 useNavigate\n2. 组件内调用 useNavigate() 获取 navigate 函数\n3. 标题栏左侧添加 Button 返回按钮，点击调用 navigate('/models')\n\n## 编译测试\nTypeScript 类型检查和 Vite 构建应通过，无类型错误。",
+  "timestamp": "2026-07-21T03:11:22.724Z"
+}

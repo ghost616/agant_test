@@ -1,0 +1,9 @@
+{
+  "plan_id": "plan_02c19456-2f40-420b-a1ff-77615c11dca2",
+  "module_name": "agent-base",
+  "development_plan": "在 MessageDataProvider.MessageDTO record 中新增 Boolean rollback 字段：\n- 修改 MessageDataProvider.java 中的 MessageDTO record，添加 Boolean rollback 参数（放在最后，默认 null）",
+  "session_id": "ses_07d4e80dfffeFFK4GnxABz98AE",
+  "modified_files": [
+    "agent-base/src/main/java/com/ghost616/agentbase/service/agent/MessageDataProvider.java"
+  ]
+}

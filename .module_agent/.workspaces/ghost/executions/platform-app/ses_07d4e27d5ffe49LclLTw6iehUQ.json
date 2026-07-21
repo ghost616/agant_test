@@ -1,0 +1,48 @@
+[
+  {
+    "plan_id": "plan_be90189b-f27c-40fd-b534-f7d1202411b5",
+    "plan": "会话 rollback 改为软回滚",
+    "modified_files": [
+      "platform-app/src/main/resources/schema.sql",
+      "platform-app/src/main/java/com/ghost616/platform/entity/Message.java",
+      "platform-app/src/main/java/com/ghost616/platform/repository/MessageMapper.java",
+      "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultMessageDataProvider.java",
+      "platform-app/src/test/java/com/ghost616/platform/service/agent/DefaultMessageDataProviderTest.java",
+      "platform-app/src/test/java/com/ghost616/platform/session/SessionRollbackTest.java"
+    ],
+    "summary": "任务已启动",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_fe81b983-4f48-48b3-88b3-9a9ea4b4da40",
+    "plan": "会话 rollback 改为软回滚",
+    "modified_files": [
+      "platform-app/src/main/resources/schema.sql",
+      "platform-app/src/main/java/com/ghost616/platform/entity/Message.java",
+      "platform-app/src/main/java/com/ghost616/platform/repository/MessageMapper.java",
+      "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultMessageDataProvider.java",
+      "platform-app/src/test/java/com/ghost616/platform/service/agent/DefaultMessageDataProviderTest.java",
+      "platform-app/src/test/java/com/ghost616/platform/session/SessionRollbackTest.java"
+    ],
+    "summary": "完成软回滚改造：message 表新增 rollback 列；Message 实体新增 rollback 字段；MessageMapper 方法从 DELETE 改为 UPDATE SET rollback=1；DefaultMessageDataProvider 移除 token 扣除逻辑，物理删除改为 rollback=1，getMessages 过滤 rollback=1；修复 getMessages 中 MessageDTO 构造调用缺少 rollback 参数的问题；编译测试通过",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_11c6d748-d098-481e-9f6e-a9d951e2539e",
+    "plan": "修复测试文件 MessageDTO 构造参数缺失",
+    "modified_files": [
+      "platform-app/src/test/java/com/ghost616/platform/service/agent/DefaultContextDataProviderTest.java"
+    ],
+    "summary": "修复 DefaultContextDataProviderTest.java 中 2 处 MessageDTO 构造调用缺少 rollback 参数的问题",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_06e0763d-b43b-44d2-9f52-a860b6087f65",
+    "plan": "SchemaMigration 添加 message.rollback 列迁移",
+    "modified_files": [
+      "platform-app/src/main/java/com/ghost616/platform/config/SchemaMigration.java"
+    ],
+    "summary": "在 SchemaMigration.java migrations 列表末尾追加 new Migration(\"message\", \"rollback\", \"TINYINT(1)\", \"0\")",
+    "errors": []
+  }
+]

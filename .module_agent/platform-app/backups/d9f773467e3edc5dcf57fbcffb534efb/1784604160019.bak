@@ -91,7 +91,6 @@ public class DefaultMessageDataProvider implements MessageDataProvider {
     public List<MessageDTO> getMessages(Long sessionId) {
         LambdaQueryWrapper<Message> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Message::getSessionId, sessionId)
-                .eq(Message::getRollback, 0)
                 .orderByAsc(Message::getSequenceNum);
         List<Message> messages = messageMapper.selectList(wrapper);
 
@@ -117,8 +116,7 @@ public class DefaultMessageDataProvider implements MessageDataProvider {
             result.add(new MessageDTO(
                     msg.getId(), msg.getSessionId(), msg.getRole(), msg.getContent(),
                     msg.getReasoning(), msg.getToolCallId(), msg.getSequenceNum(),
-                    msg.getCreateTime(), msg.getToolResult(), toolCallDataList, usageInfo,
-                    msg.getRollback()));
+                    msg.getCreateTime(), msg.getToolResult(), toolCallDataList, usageInfo));
         }
 
         return result;
@@ -146,10 +144,31 @@ public class DefaultMessageDataProvider implements MessageDataProvider {
                 .map(Message::getId)
                 .collect(Collectors.toList());
 
+        long deductedTokens = 0;
+        for (Message msg : messagesToDelete) {
+            String tu = msg.getTokenUsage();
+            if (tu != null && !tu.isEmpty()) {
+                try {
+                    UsageInfo u = JsonMapper.MAPPER.readValue(tu, UsageInfo.class);
+                    if (u.getTotalTokens() != null) {
+                        deductedTokens += u.getTotalTokens().longValue();
+                    } else {
+                        deductedTokens += (u.getPromptTokens() != null ? u.getPromptTokens().longValue() : 0L)
+                                        + (u.getCompletionTokens() != null ? u.getCompletionTokens().longValue() : 0L);
+                    }
+                } catch (Exception e) {
+                    log.warn("反序列化 tokenUsage 失败，跳过该消息扣减", e);
+                }
+            }
+        }
+        if (deductedTokens > 0) {
+            sessionMapper.addTotalTokenUsed(sessionId, -deductedTokens);
+        }
+
         if (!messageIds.isEmpty()) {
             messageToolCallMapper.deleteByMessageIds(messageIds);
         }
 
-        return messageMapper.rollbackBySessionIdAndGeSequenceNum(sessionId, sequenceNum);
+        return messageMapper.deleteBySessionIdAndGeSequenceNum(sessionId, sequenceNum);
     }
 }

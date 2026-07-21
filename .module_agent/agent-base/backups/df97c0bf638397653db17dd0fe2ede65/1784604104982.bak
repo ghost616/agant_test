@@ -20,7 +20,6 @@ public interface MessageDataProvider {
 
     record MessageDTO(Long id, Long sessionId, String role, String content, String reasoning,
                       String toolCallId, Integer sequenceNum, LocalDateTime createTime,
-                      String toolResult, List<ToolCallData> toolCalls, UsageInfo usage,
-                      Boolean rollback) {
+                      String toolResult, List<ToolCallData> toolCalls, UsageInfo usage) {
     }
 }

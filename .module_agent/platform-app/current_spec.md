@@ -83,3 +83,5 @@ platform-app 模块包含以下功能：
    - 实现工具调用队列操作：enqueue/poll/peek/hasPending/clearQueue
    - 实现工具执行状态追踪：updateExecution/clearTracking/getCurrentExecution/getAndClearResults
 - PlatformType 枚举新增 KIMI（Kimi 月之暗面，https://api.moonshot.cn/v1，模型：kimi-k2.7-code/kimi-k2.6/kimi-k2.5/kimi-k3）和 VOLCENGINE（火山引擎，https://ark.cn-beijing.volces.com/api/v3，模型：doubao-seed-evolving/doubao-seed-2-1-turbo-260628/doubao-seed-2-1-pro-260628）
+
+- 会话回滚改为软回滚：message 表新增 rollback TINYINT NOT NULL DEFAULT 0 字段，回滚操作不再物理删除消息、不再修改已消耗 token 数，改为设置 rollback=1 标记，getMessages 查询过滤掉 rollback=1 的消息

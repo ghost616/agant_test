@@ -211,7 +211,7 @@ class DefaultMessageDataProviderTest {
     }
 
     @Test
-    void rollbackToLastUserMessage_存在用户消息_标记rollback后续消息() {
+    void rollbackToLastUserMessage_存在用户消息_删除后续消息() {
         Message userMsg = new Message();
         userMsg.setId(5L);
         userMsg.setSequenceNum(3);
@@ -225,14 +225,15 @@ class DefaultMessageDataProviderTest {
         msg2.setTokenUsage("{\"promptTokens\":5,\"completionTokens\":10,\"totalTokens\":15}");
         when(messageMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Arrays.asList(msg1, msg2));
         when(messageToolCallMapper.deleteByMessageIds(anyList())).thenReturn(2);
-        when(messageMapper.rollbackBySessionIdAndGeSequenceNum(10L, 3)).thenReturn(2);
+        when(messageMapper.deleteBySessionIdAndGeSequenceNum(10L, 3)).thenReturn(2);
+        when(sessionMapper.addTotalTokenUsed(anyLong(), anyLong())).thenReturn(1);
 
         int deleted = provider.rollbackToLastUserMessage(10L);
 
         assertEquals(2, deleted);
-        verify(sessionMapper, never()).addTotalTokenUsed(anyLong(), anyLong());
+        verify(sessionMapper).addTotalTokenUsed(10L, -35L);
         verify(messageToolCallMapper).deleteByMessageIds(Arrays.asList(5L, 6L));
-        verify(messageMapper).rollbackBySessionIdAndGeSequenceNum(10L, 3);
+        verify(messageMapper).deleteBySessionIdAndGeSequenceNum(10L, 3);
     }
 
     @Test
@@ -240,7 +241,7 @@ class DefaultMessageDataProviderTest {
         when(messageMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(null);
 
         assertThrows(BusinessException.class, () -> provider.rollbackToLastUserMessage(1L));
-        verify(messageMapper, never()).rollbackBySessionIdAndGeSequenceNum(any(), any());
+        verify(messageMapper, never()).deleteBySessionIdAndGeSequenceNum(any(), any());
         verify(sessionMapper, never()).addTotalTokenUsed(anyLong(), anyLong());
     }
 
@@ -256,7 +257,7 @@ class DefaultMessageDataProviderTest {
         msg.setTokenUsage(null);
         when(messageMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Collections.singletonList(msg));
         when(messageToolCallMapper.deleteByMessageIds(anyList())).thenReturn(1);
-        when(messageMapper.rollbackBySessionIdAndGeSequenceNum(10L, 3)).thenReturn(1);
+        when(messageMapper.deleteBySessionIdAndGeSequenceNum(10L, 3)).thenReturn(1);
 
         int deleted = provider.rollbackToLastUserMessage(10L);
 
@@ -279,12 +280,13 @@ class DefaultMessageDataProviderTest {
         msg2.setTokenUsage("{\"totalTokens\":10}");
         when(messageMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Arrays.asList(msg1, msg2));
         when(messageToolCallMapper.deleteByMessageIds(anyList())).thenReturn(2);
-        when(messageMapper.rollbackBySessionIdAndGeSequenceNum(10L, 3)).thenReturn(2);
+        when(messageMapper.deleteBySessionIdAndGeSequenceNum(10L, 3)).thenReturn(2);
+        when(sessionMapper.addTotalTokenUsed(anyLong(), anyLong())).thenReturn(1);
 
         int deleted = provider.rollbackToLastUserMessage(10L);
 
         assertEquals(2, deleted);
-        verify(sessionMapper, never()).addTotalTokenUsed(anyLong(), anyLong());
+        verify(sessionMapper).addTotalTokenUsed(10L, -10L);
     }
 
     @Test
@@ -458,6 +460,26 @@ class DefaultMessageDataProviderTest {
     }
 
     @Test
+    void rollbackToLastUserMessage_totalTokens为null_使用prompt加completion降级扣减() {
+        Message userMsg = new Message();
+        userMsg.setId(5L);
+        userMsg.setSequenceNum(3);
+        when(messageMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(userMsg);
+
+        Message msg = new Message();
+        msg.setId(5L);
+        msg.setTokenUsage("{\"promptTokens\":7,\"completionTokens\":13,\"totalTokens\":null}");
+        when(messageMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Collections.singletonList(msg));
+        when(messageToolCallMapper.deleteByMessageIds(anyList())).thenReturn(1);
+        when(messageMapper.deleteBySessionIdAndGeSequenceNum(10L, 3)).thenReturn(1);
+        when(sessionMapper.addTotalTokenUsed(anyLong(), anyLong())).thenReturn(1);
+
+        provider.rollbackToLastUserMessage(10L);
+
+        verify(sessionMapper).addTotalTokenUsed(10L, -20L);
+    }
+
+    @Test
     void rollbackToLastUserMessage_tokenUsage为空字符串_跳过该消息() {
         Message userMsg = new Message();
         userMsg.setId(5L);
@@ -469,7 +491,7 @@ class DefaultMessageDataProviderTest {
         msg.setTokenUsage("");
         when(messageMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Collections.singletonList(msg));
         when(messageToolCallMapper.deleteByMessageIds(anyList())).thenReturn(1);
-        when(messageMapper.rollbackBySessionIdAndGeSequenceNum(10L, 3)).thenReturn(1);
+        when(messageMapper.deleteBySessionIdAndGeSequenceNum(10L, 3)).thenReturn(1);
 
         provider.rollbackToLastUserMessage(10L);
 

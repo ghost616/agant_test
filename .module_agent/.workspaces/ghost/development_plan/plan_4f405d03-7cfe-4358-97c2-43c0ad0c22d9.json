@@ -1,9 +1,0 @@
-{
-  "plan_id": "plan_4f405d03-7cfe-4358-97c2-43c0ad0c22d9",
-  "module_name": "agent-integration",
-  "development_plan": "修复 AgentAssemblerTest 编译问题：\n1. 添加 ToolExecutionProvider 的 import 语句\n2. 添加 @Mock private ToolExecutionProvider toolExecutionProvider 字段\n3. 构造函数调用补全第 8 参数 toolExecutionProvider",
-  "session_id": "ses_07dacf62effex4yl60rWPkUv6F",
-  "modified_files": [
-    "agent-integration/src/test/java/com/ghost616/agentinteg/AgentAssemblerTest.java"
-  ]
-}
