@@ -52,7 +52,8 @@ public class MessageSavePostHook implements SystemPostHook {
     }
 
     @Override
-    public void execute(AgentExecutionContext ctx, ChatChunk chunk) {
+    public void execute(AgentExecutionContext ctx, HookData data) {
+        ChatChunk chunk = data.getChatChunk();
         if (chunk == null) {
             return;
         }

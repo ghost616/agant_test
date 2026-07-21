@@ -20,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.codec.ServerSentEvent;
 import reactor.core.publisher.Flux;
 
+import com.ghost616.agentbase.service.agent.invoker.HookData;
 import com.ghost616.agentbase.service.agent.invoker.HookInvoker;
 import com.ghost616.agentbase.service.agent.invoker.SystemHook;
 import com.ghost616.agentbase.service.agent.invoker.SystemPostHook;
@@ -96,23 +97,23 @@ public class ChatService {
         }
     }
 
-    private void triggerHooks(HookPhase phase, AgentExecutionContext ctx, ChatChunk chunk) {
+    private void triggerHooks(HookPhase phase, AgentExecutionContext ctx, HookData data) {
         List<HookInvoker> regularHooks = regularPhaseHooks.get(phase);
         if (regularHooks != null) {
-            regularHooks.forEach(h -> h.execute(ctx, chunk));
+            regularHooks.forEach(h -> h.execute(ctx, data));
         }
         List<HookInvoker> hooks = systemHooks.get(phase);
         if (hooks != null) {
             hooks.stream()
                     .sorted(Comparator.comparingInt(h -> ((SystemHook) h).getIndex()))
-                    .forEach(h -> h.execute(ctx, chunk));
+                    .forEach(h -> h.execute(ctx, data));
         }
     }
 
-    private void executePostHooks(AgentExecutionContext ctx, ChatChunk chunk) {
+    private void executePostHooks(AgentExecutionContext ctx, HookData data) {
         systemPostHooks.stream()
                 .sorted(Comparator.comparingInt(h -> ((SystemHook) h).getIndex()))
-                .forEach(h -> h.execute(ctx, chunk));
+                .forEach(h -> h.execute(ctx, data));
     }
 
     public Flux<ServerSentEvent<ChatChunk>> chat(ChatRequest request) {
@@ -153,7 +154,7 @@ public class ChatService {
             throw new BusinessException(ErrorCode.MODEL_NOT_FOUND);
         }
 
-        triggerHooks(HookPhase.SESSION_START, context, null);
+        triggerHooks(HookPhase.SESSION_START, context, new HookData(null));
 
         List<Message> messages = new ArrayList<>();
         messages.add(Message.builder()
@@ -336,8 +337,8 @@ public class ChatService {
                     if (chunk.getFinishReason() != null) {
                         chunk.setHasToolCalls(hasToolCalls.get());
                     }
-                    triggerHooks(HookPhase.BEFORE_MESSAGE_SEND, context, chunk);
-                    executePostHooks(context, chunk);
+                    triggerHooks(HookPhase.BEFORE_MESSAGE_SEND, context, new HookData(chunk));
+                    executePostHooks(context, new HookData(chunk));
                 })
                 .map(chunk -> ServerSentEvent.<ChatChunk>builder()
                         .data(chunk)
@@ -346,8 +347,8 @@ public class ChatService {
                     ChatChunk completeChunk = ChatChunk.builder()
                             .hasToolCalls(hasToolCalls.get())
                             .build();
-                    triggerHooks(HookPhase.AFTER_MESSAGE_RECEIVE, context, completeChunk);
-                    executePostHooks(context, completeChunk);
+                    triggerHooks(HookPhase.AFTER_MESSAGE_RECEIVE, context, new HookData(completeChunk));
+                    executePostHooks(context, new HookData(completeChunk));
                 })
                 .doOnCancel(() -> contextMutator.setStopped());
     }

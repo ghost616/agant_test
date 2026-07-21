@@ -1,7 +1,6 @@
 package com.ghost616.agentbase.service.agent.invoker;
 
 
-import com.ghost616.agentbase.dto.model.ChatChunk;
 import com.ghost616.agentbase.enums.HookPhase;
 import com.ghost616.agentbase.service.agent.AgentExecutionContext;
 
@@ -23,8 +22,8 @@ public interface HookInvoker {
     /**
      * 执行 HOOK。
      *
-     * @param ctx   智能体执行上下文
-     * @param chunk 聊天数据块
+     * @param ctx  智能体执行上下文
+     * @param data HOOK 数据载体
      */
-    void execute(AgentExecutionContext ctx, ChatChunk chunk);
+    void execute(AgentExecutionContext ctx, HookData data);
 }
