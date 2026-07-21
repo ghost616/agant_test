@@ -1,0 +1,25 @@
+[
+  {
+    "plan_id": "plan_5afdee8e-cfce-4651-8e33-5b75606eff69",
+    "plan": "创建 HookData 数据载体对象，替换 HookInvoker.execute 参数类型为 HookData",
+    "modified_files": [
+      "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ChatService.java"
+    ],
+    "summary": "更新了 ChatService.java 文件",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_10973eb0-e237-4fd9-861a-a2598bd6e424",
+    "plan": "创建 HookData 数据载体对象，替换 HookInvoker.execute 参数类型为 HookData",
+    "modified_files": [
+      "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/HookData.java",
+      "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/HookInvoker.java",
+      "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/MessageSavePostHook.java",
+      "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ChatService.java"
+    ],
+    "summary": "创建了 HookData.java（final ChatChunk 字段 + @Data），修改 HookInvoker.execute 签名、MessageSavePostHook 适配 data.getChatChunk()、ChatService 5处调用点用 new HookData(chunk) 包装",
+    "errors": [
+      "修改后 MessageSavePostHook 中 lombok 与项目 import 之间缺少空行，已补充；HookData.chatChunk 改为 final 使 @Data 生成构造器"
+    ]
+  }
+]

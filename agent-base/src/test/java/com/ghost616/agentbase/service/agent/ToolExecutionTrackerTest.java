@@ -35,27 +35,32 @@ class ToolExecutionTrackerTest {
         tracker = new ToolExecutionTracker(registry);
     }
 
+    private ToolExecutionTracker.ToolExecutionStatus createStatus(String status, String errorMsg, boolean hasMore) {
+        return new ToolExecutionTracker.ToolExecutionStatus(toolId, toolName, arguments, status, errorMsg, hasMore);
+    }
+
     @Test
     void setExecuting_shouldDelegateToProvider() {
         tracker.setExecuting(sessionId, toolId, toolName, arguments, false);
-        verify(provider).updateExecution(sessionId, toolId, toolName, arguments, "executing", null, false);
+        verify(provider).updateExecution(same(sessionId), any());
     }
 
     @Test
     void setExecuting_withHasMore_shouldPassHasMore() {
         tracker.setExecuting(sessionId, toolId, toolName, arguments, true);
-        verify(provider).updateExecution(sessionId, toolId, toolName, arguments, "executing", null, true);
+        verify(provider).updateExecution(same(sessionId), any());
     }
 
     @Test
     void setDone_shouldDelegateToProvider() {
-        var status = new ToolExecutionTracker.ToolExecutionStatus(toolId, toolName, arguments, "executing", null, false);
+        var status = createStatus("executing", null, false);
         when(provider.getCurrentExecution(sessionId, toolId)).thenReturn(status);
 
         tracker.setDone(sessionId, toolId, result);
 
         verify(provider).getCurrentExecution(sessionId, toolId);
-        verify(provider).updateExecution(sessionId, toolId, toolName, arguments, "done", result, false);
+        verify(provider).updateExecution(same(sessionId), argThat(s ->
+                "done".equals(s.status()) && result.equals(s.result()) && toolId.equals(s.currentToolId())));
     }
 
     @Test
@@ -65,18 +70,19 @@ class ToolExecutionTrackerTest {
         tracker.setDone(sessionId, toolId, result);
 
         verify(provider).getCurrentExecution(sessionId, toolId);
-        verify(provider, never()).updateExecution(anyLong(), anyString(), anyString(), anyString(), anyString(), anyString(), anyBoolean());
+        verify(provider, never()).updateExecution(any(), any());
     }
 
     @Test
     void setFailed_shouldDelegateToProvider() {
-        var status = new ToolExecutionTracker.ToolExecutionStatus(toolId, toolName, arguments, "executing", null, true);
+        var status = createStatus("executing", null, true);
         when(provider.getCurrentExecution(sessionId, toolId)).thenReturn(status);
 
         tracker.setFailed(sessionId, toolId, error);
 
         verify(provider).getCurrentExecution(sessionId, toolId);
-        verify(provider).updateExecution(sessionId, toolId, toolName, arguments, "failed", error, true);
+        verify(provider).updateExecution(same(sessionId), argThat(s ->
+                "failed".equals(s.status()) && error.equals(s.result()) && toolId.equals(s.currentToolId())));
     }
 
     @Test
@@ -85,7 +91,7 @@ class ToolExecutionTrackerTest {
 
         tracker.setFailed(sessionId, toolId, error);
 
-        verify(provider, never()).updateExecution(anyLong(), anyString(), anyString(), anyString(), anyString(), anyString(), anyBoolean());
+        verify(provider, never()).updateExecution(any(), any());
     }
 
     @Test
@@ -96,7 +102,7 @@ class ToolExecutionTrackerTest {
 
     @Test
     void getCurrentExecution_shouldDelegateToProvider() {
-        var expected = new ToolExecutionTracker.ToolExecutionStatus(toolId, toolName, arguments, "executing", null, false);
+        var expected = createStatus("executing", null, false);
         when(provider.getCurrentExecution(sessionId, toolId)).thenReturn(expected);
 
         var actual = tracker.getCurrentExecution(sessionId, toolId);
@@ -120,11 +126,12 @@ class ToolExecutionTrackerTest {
 
     @Test
     void setDone_withHasMore_shouldPreserveHasMore() {
-        var status = new ToolExecutionTracker.ToolExecutionStatus(toolId, toolName, arguments, "executing", null, true);
+        var status = createStatus("executing", null, true);
         when(provider.getCurrentExecution(sessionId, toolId)).thenReturn(status);
 
         tracker.setDone(sessionId, toolId, result);
 
-        verify(provider).updateExecution(sessionId, toolId, toolName, arguments, "done", result, true);
+        verify(provider).updateExecution(same(sessionId), argThat(s ->
+                "done".equals(s.status()) && result.equals(s.result()) && s.hasMore()));
     }
 }

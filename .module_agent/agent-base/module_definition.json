@@ -63,7 +63,7 @@
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/HookInvoker.java",
-      "description": "HOOK 执行契约接口，定义 getPhase() 和 execute(AgentExecutionContext, ChatChunk) 方法"
+      "description": "HOOK 执行契约接口，定义 getPhase() 和 execute(AgentExecutionContext, HookData) 方法"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/SystemHook.java",
@@ -75,7 +75,7 @@
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/MessageSavePostHook.java",
-      "description": "消息保存后置 HOOK 实现，在 AFTER_MESSAGE_RECEIVE 阶段处理流式消息持久化，从 chunk 获取 UsageInfo 透传到消息保存和历史记录"
+      "description": "消息保存后置 HOOK 实现，在 AFTER_MESSAGE_RECEIVE 阶段处理流式消息持久化，从 HookData 获取 ChatChunk 再提取 UsageInfo 透传到消息保存和历史记录"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ToolExecutionTracker.java",
@@ -95,7 +95,7 @@
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ChatService.java",
-      "description": "聊天服务核心类，负责构建消息列表、管理会话上下文、过滤工具/技能、调用模型 invoker 并返回 SSE 流。包含系统消息构建（可用技能列表、已加载技能提示词、子会话能力提示合并）、会话历史折叠、loadedSkills 解析、hook 触发等功能。构建技能相关 system 消息前通过 systemToolManager 检测 _sys_load_skills（常量 LOAD_SKILLS_TOOL_NAME）是否存在，不存在时跳过所有技能相关消息；getToolDefinitions() 结果复用局部变量避免重复调用。"
+      "description": "聊天服务核心类，负责构建消息列表、管理会话上下文、过滤工具/技能、调用模型 invoker 并返回 SSE 流。包含系统消息构建（可用技能列表、已加载技能提示词、子会话能力提示合并）、会话历史折叠、loadedSkills 解析、hook 触发等功能。构建技能相关 system 消息前通过 systemToolManager 检测 _sys_load_skills（常量 LOAD_SKILLS_TOOL_NAME）是否存在，不存在时跳过所有技能相关消息；getToolDefinitions() 结果复用局部变量避免重复调用。triggerHooks/executePostHooks 参数改为 HookData，调用处用 new HookData(chunk) 包装 ChatChunk 传入。"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/ContextSerializer.java",
@@ -308,6 +308,18 @@
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ToolExecutionProvider.java",
       "description": "工具调用队列和执行追踪的统一契约接口，定义 enqueue/poll/peek/hasPending/clearQueue/updateExecution/clearTracking/getCurrentExecution/getAndClearResults 方法"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/SessionVariableSystemTool.java",
+      "description": "会话变量管理系统工具，实现 SystemTool 接口，支持添加、获取、移除会话变量，通过 AgentExecutionContext 的 putSessionVariable/getSessionVariable/removeSessionVariable 方法操作"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/ConversationVariableSystemTool.java",
+      "description": "对话变量管理系统工具，实现 SystemTool 接口，支持添加、获取、移除对话变量，通过 AgentExecutionContext 的 putConversationVariable/getConversationVariable/removeConversationVariable 方法操作"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/HookData.java",
+      "description": "HOOK 数据载体，包裹 ChatChunk 等 HOOK 执行上下文数据，为后续扩展预留字段"
     }
   ]
 }

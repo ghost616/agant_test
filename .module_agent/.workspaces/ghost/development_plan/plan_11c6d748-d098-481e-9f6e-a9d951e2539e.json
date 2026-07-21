@@ -1,9 +1,0 @@
-{
-  "plan_id": "plan_11c6d748-d098-481e-9f6e-a9d951e2539e",
-  "module_name": "platform-app",
-  "development_plan": "修复 DefaultContextDataProviderTest.java 中 2 处 MessageDTO 构造调用缺少 rollback 参数：\n在第 387、389 行附近，每处 new MessageDataProvider.MessageDTO(...) 构造末尾追加 null",
-  "session_id": "ses_07d4e27d5ffe49LclLTw6iehUQ",
-  "modified_files": [
-    "platform-app/src/test/java/com/ghost616/platform/service/agent/DefaultContextDataProviderTest.java"
-  ]
-}

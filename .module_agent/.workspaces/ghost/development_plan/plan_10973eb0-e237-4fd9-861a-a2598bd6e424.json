@@ -1,0 +1,10 @@
+{
+  "plan_id": "plan_10973eb0-e237-4fd9-861a-a2598bd6e424",
+  "module_name": "",
+  "development_plan": "审查 HookData 编译修复和 import 格式修复",
+  "session_id": "",
+  "modified_files": [
+    "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/HookData.java",
+    "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/MessageSavePostHook.java"
+  ]
+}

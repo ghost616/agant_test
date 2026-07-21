@@ -1,9 +1,0 @@
-{
-  "plan_id": "plan_06e0763d-b43b-44d2-9f52-a860b6087f65",
-  "module_name": "platform-app",
-  "development_plan": "在 SchemaMigration.java 的 migrations 列表中添加 message.rollback 列的迁移：\nnew Migration(\"message\", \"rollback\", \"TINYINT(1)\", \"0\")\n添加在现有 migrations 列表末尾即可",
-  "session_id": "ses_07d4e27d5ffe49LclLTw6iehUQ",
-  "modified_files": [
-    "platform-app/src/main/java/com/ghost616/platform/config/SchemaMigration.java"
-  ]
-}

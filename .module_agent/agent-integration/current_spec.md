@@ -10,6 +10,7 @@
 - **SubSessionCallbackSystemTool**：参数 schema 新增 thinking（boolean，可选）；execute() 解析工具参数 JSON 中的 thinking 字段（默认 null）并传递给 createChildSession 方法
 - **SubSessionCallbackSystemTool**：execute() 方法改为通过构造函数注入的 SubSessionCallback 回调发送子会话消息，而非直接调用 ctx.sendUserMessage()；thinking 参数通过回调的第三个参数传递
 - **AgentAssembler**：构造函数新增 MessageSender 参数（可为 null），build() 中调用 registry.setMessageSender(messageSender) 传入 MessageSender 实例
+- **AgentAssembler**：build() 方法构造 SystemToolProviderProxy 代理，确保 history_query/load_skills/unload_skills/session_variable/conversation_variable 五个系统工具始终可用；SystemToolManager 使用代理而非原始 SystemToolProvider
 ## 模块职责
 提供多平台模型调用器的实现（ModelInvoker）和 Agent 组件的组装能力。
 

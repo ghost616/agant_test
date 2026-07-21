@@ -7,66 +7,17 @@
     "test_passed": false
   },
   {
-    "plan_id": "plan_98c8d15d-b4df-4a59-8a2c-7366eb0fb905",
-    "plan_summary": "ModelTest 页面添加返回模型列表按钮",
+    "plan_id": "plan_5afdee8e-cfce-4651-8e33-5b75606eff69",
+    "plan_summary": "创建 HookData 对象，改造 HookInvoker 接口将 ChatChunk 替换为 HookData，适配所有调用方",
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
   },
   {
-    "plan_id": "plan_02c19456-2f40-420b-a1ff-77615c11dca2",
-    "plan_summary": "MessageDTO 新增 rollback 字段",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": true
-  },
-  {
-    "plan_id": "plan_be90189b-f27c-40fd-b534-f7d1202411b5",
-    "plan_summary": "会话 rollback 改为软回滚：消息标记 rollback 而非删除，不修改 token",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": true
-  },
-  {
-    "plan_id": "plan_611ec1b3-b9df-41dc-8b86-2604b914866e",
-    "plan_summary": "修复 AgentContextManagerTest MessageDTO 构造缺少 rollback 参数",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": true
-  },
-  {
-    "plan_id": "plan_fe81b983-4f48-48b3-88b3-9a9ea4b4da40",
-    "plan_summary": "软回滚全部变更 + MessageDTO 修复",
+    "plan_id": "plan_10973eb0-e237-4fd9-861a-a2598bd6e424",
+    "plan_summary": "修复审查：HookData final 字段 + import 格式",
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": false
-  },
-  {
-    "plan_id": "plan_11c6d748-d098-481e-9f6e-a9d951e2539e",
-    "plan_summary": "修复 DefaultContextDataProviderTest MessageDTO 缺少 rollback",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": true
-  },
-  {
-    "plan_id": "plan_06e0763d-b43b-44d2-9f52-a860b6087f65",
-    "plan_summary": "SchemaMigration 添加 message.rollback 列迁移",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": true
-  },
-  {
-    "plan_id": "plan_e0123bca-3aba-4117-bfec-b887e12c0b22",
-    "plan_summary": "ChatService 过滤空内容消息",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": true
-  },
-  {
-    "plan_id": "plan_46713223-86f5-4f58-8b6d-f97b8df96460",
-    "plan_summary": "修复 ChatService 空消息过滤使用 record 风格访问器导致编译错误",
-    "code_reviewed": false,
-    "plan_completed": true,
-    "test_passed": true
   }
 ]

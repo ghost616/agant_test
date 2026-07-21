@@ -12,3 +12,4 @@
 [2026-07-20T05:03:01.663Z] [session: ses_08218931bffeHoAWG2xACQPBDl] AgentAssembler.java: 添加 MessageSender 导入、构造函数新增 MessageSender 参数（可为 null）、build() 中调用 registry.setMessageSender(messageSender)
 [2026-07-21T01:38:57.542Z] [session: ses_07dacf62effex4yl60rWPkUv6F] [2026-07-21] 新增 KimiInvoker（继承 OpenAIInvoker）和 VolcEngineInvoker（继承 OpenAIInvoker）；DefaultModelInvokerFactory 增加 KIMI 和 VOLCENGINE 的 switch 分支
 [2026-07-21T02:33:33.364Z] [session: ses_08114cd94ffeBHHPmR4M6E7aNz] 从 [platform-app] 移入文件定义: 
+[2026-07-21T06:10:15.860Z] [session: ses_07cb48b0fffe5QONGYtdwiuLWd] [2026-07-21] AgentAssembler.java: SystemToolProviderProxy.discoverSystemTools() 新增 session_variable 和 conversation_variable 两个系统工具注册；添加对应 import 语句
