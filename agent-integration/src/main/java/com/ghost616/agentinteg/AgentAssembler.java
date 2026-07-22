@@ -77,8 +77,6 @@ public class AgentAssembler {
     public AgentContextManager agentContextManager() { return registry != null ? registry.getAgentContextManager() : null; }
     public ModelInvokerManager modelInvokerManager() { return registry != null ? registry.getModelInvokerManager() : null; }
     public ToolExecutionTracker toolExecutionTracker() { return registry != null ? registry.getToolExecutionTracker() : null; }
-    public MessageSavePostHook messageSavePostHook() { return chatDataProviderProxy != null ? chatDataProviderProxy.getMessageSavePostHook() : null; }
-
     public void refreshHooks() {
         if (hookManager != null) {
             hookManager.refreshHooks();
