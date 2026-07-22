@@ -6,10 +6,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.ghost616.agentbase.enums.HookPhase;
 import com.ghost616.agentbase.service.agent.AgentExecutionContext;
 
 public class HookManager {
+
+    private static final Logger log = LoggerFactory.getLogger(HookManager.class);
 
     private final Map<HookPhase, List<HookInvoker>> systemHooks = new HashMap<>();
     private final List<HookInvoker> systemPostHooks = new ArrayList<>();
@@ -34,19 +39,37 @@ public class HookManager {
     public void triggerHooks(HookPhase phase, AgentExecutionContext ctx, HookData data) {
         List<HookInvoker> regularHooks = regularPhaseHooks.get(phase);
         if (regularHooks != null) {
-            regularHooks.forEach(h -> h.execute(ctx, data));
+            regularHooks.forEach(h -> {
+                try {
+                    h.execute(ctx, data);
+                } catch (Exception e) {
+                    log.warn("Hook execution failed for {}", h.getClass().getName(), e);
+                }
+            });
         }
         List<HookInvoker> hooks = systemHooks.get(phase);
         if (hooks != null) {
             hooks.stream()
                     .sorted(Comparator.comparingInt(h -> ((SystemHook) h).getIndex()))
-                    .forEach(h -> h.execute(ctx, data));
+                    .forEach(h -> {
+                        try {
+                            h.execute(ctx, data);
+                        } catch (Exception e) {
+                            log.warn("Hook execution failed for {}", h.getClass().getName(), e);
+                        }
+                    });
         }
     }
 
     public void executePostHooks(AgentExecutionContext ctx, HookData data) {
         systemPostHooks.stream()
                 .sorted(Comparator.comparingInt(h -> ((SystemHook) h).getIndex()))
-                .forEach(h -> h.execute(ctx, data));
+                .forEach(h -> {
+                    try {
+                        h.execute(ctx, data);
+                    } catch (Exception e) {
+                        log.warn("Hook execution failed for {}", h.getClass().getName(), e);
+                    }
+                });
     }
 }
