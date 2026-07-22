@@ -80,8 +80,8 @@ public class AgentAssembler {
     public MessageSavePostHook messageSavePostHook() { return chatDataProviderProxy != null ? chatDataProviderProxy.getMessageSavePostHook() : null; }
 
     public void refreshHooks() {
-        if (hookManager != null && chatDataProviderProxy != null) {
-            hookManager.refreshHooks(chatDataProviderProxy.getHooks());
+        if (hookManager != null) {
+            hookManager.refreshHooks();
         }
     }
 
@@ -115,7 +115,7 @@ public class AgentAssembler {
 
         ToolExecutionService toolExecutionService = new ToolExecutionService(registry, chatService);
 
-        this.hookManager = new HookManager();
+        this.hookManager = new HookManager(registry);
         registry.setHookManager(this.hookManager);
 
         AgentMessageProxy agentMessageProxy = new AgentMessageProxy(chatService, toolExecutionService);

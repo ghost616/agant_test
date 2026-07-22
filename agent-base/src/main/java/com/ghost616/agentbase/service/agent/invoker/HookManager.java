@@ -9,6 +9,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.ghost616.agentbase.core.AgentComponentRegistry;
 import com.ghost616.agentbase.enums.HookPhase;
 import com.ghost616.agentbase.service.agent.AgentExecutionContext;
 
@@ -16,14 +17,20 @@ public class HookManager {
 
     private static final Logger log = LoggerFactory.getLogger(HookManager.class);
 
+    private final AgentComponentRegistry registry;
     private final Map<HookPhase, List<HookInvoker>> systemHooks = new HashMap<>();
     private final List<HookInvoker> systemPostHooks = new ArrayList<>();
     private final Map<HookPhase, List<HookInvoker>> regularPhaseHooks = new HashMap<>();
 
-    public void refreshHooks(List<HookInvoker> hooks) {
+    public HookManager(AgentComponentRegistry registry) {
+        this.registry = registry;
+    }
+
+    public void refreshHooks() {
         systemHooks.clear();
         systemPostHooks.clear();
         regularPhaseHooks.clear();
+        List<HookInvoker> hooks = registry.getChatDataProvider().getHooks();
         for (HookInvoker hook : hooks) {
             HookPhase phase = hook.getPhase();
             if (hook instanceof SystemPostHook) {

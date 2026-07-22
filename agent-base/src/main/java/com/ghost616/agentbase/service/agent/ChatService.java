@@ -74,13 +74,6 @@ public class ChatService {
         }
     }
 
-    public void refreshHooks() {
-        ensureInitialized();
-        if (hookManager != null) {
-            hookManager.refreshHooks(chatDataProvider.getHooks());
-        }
-    }
-
     public Flux<ServerSentEvent<ChatChunk>> chat(ChatRequest request) {
         ensureInitialized();
         Long sessionId = request.getSessionId();

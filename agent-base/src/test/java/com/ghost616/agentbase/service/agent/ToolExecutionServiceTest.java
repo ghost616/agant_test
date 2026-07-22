@@ -54,7 +54,7 @@ class ToolExecutionServiceTest {
     @BeforeEach
     void setUp() {
         registry = new AgentComponentRegistry();
-        registry.setHookManager(new HookManager());
+        registry.setHookManager(new HookManager(registry));
         registry.setToolCallQueueManager(toolCallQueueManager);
         registry.setToolManager(toolManager);
         registry.setSystemToolManager(systemToolManager);
