@@ -112,6 +112,7 @@ public class ChatService {
             throw new BusinessException(ErrorCode.MODEL_NOT_FOUND);
         }
 
+        hookManager.triggerSessionHooks(sessionId, HookPhase.SESSION_START, context, new HookData((ChatChunk) null));
         hookManager.triggerHooks(HookPhase.SESSION_START, context, new HookData((ChatChunk) null));
 
         List<Message> messages = new ArrayList<>();
@@ -295,6 +296,7 @@ public class ChatService {
                     if (chunk.getFinishReason() != null) {
                         chunk.setHasToolCalls(hasToolCalls.get());
                     }
+                    hookManager.triggerSessionHooks(sessionId, HookPhase.BEFORE_MESSAGE_SEND, context, new HookData(chunk));
                     hookManager.triggerHooks(HookPhase.BEFORE_MESSAGE_SEND, context, new HookData(chunk));
                     hookManager.executePostHooks(context, new HookData(chunk));
                 })
@@ -305,6 +307,7 @@ public class ChatService {
                     ChatChunk completeChunk = ChatChunk.builder()
                             .hasToolCalls(hasToolCalls.get())
                             .build();
+                    hookManager.triggerSessionHooks(sessionId, HookPhase.AFTER_MESSAGE_RECEIVE, context, new HookData(completeChunk));
                     hookManager.triggerHooks(HookPhase.AFTER_MESSAGE_RECEIVE, context, new HookData(completeChunk));
                     hookManager.executePostHooks(context, new HookData(completeChunk));
                 })

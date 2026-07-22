@@ -68,6 +68,23 @@ public class HookManager {
         }
     }
 
+    public void triggerSessionHooks(Long sessionId, HookPhase phase, AgentExecutionContext ctx, HookData data) {
+        List<HookInvoker> sessionHooks = registry.getChatDataProvider().getHooks(sessionId);
+        if (sessionHooks == null || sessionHooks.isEmpty()) {
+            return;
+        }
+        for (HookInvoker hook : sessionHooks) {
+            if (hook.getPhase() != phase) {
+                continue;
+            }
+            try {
+                hook.execute(ctx, data);
+            } catch (Exception e) {
+                log.warn("Session hook execution failed for {}", hook.getClass().getName(), e);
+            }
+        }
+    }
+
     public void executePostHooks(AgentExecutionContext ctx, HookData data) {
         systemPostHooks.stream()
                 .sorted(Comparator.comparingInt(h -> ((SystemHook) h).getIndex()))

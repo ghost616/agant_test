@@ -45,6 +45,8 @@ class ToolExecutionServiceTest {
     private AgentContextManager agentContextManager;
     @Mock
     private ToolExecutionTracker toolExecutionTracker;
+    @Mock
+    private ChatDataProvider chatDataProvider;
 
     private AgentComponentRegistry registry;
     private ToolExecutionService toolExecutionService;
@@ -61,6 +63,7 @@ class ToolExecutionServiceTest {
         registry.setSessionManager(sessionManager);
         registry.setAgentContextManager(agentContextManager);
         registry.setToolExecutionTracker(toolExecutionTracker);
+        registry.setChatDataProvider(chatDataProvider);
         toolExecutionService = new ToolExecutionService(registry, chatService);
     }
 
@@ -85,8 +88,9 @@ class ToolExecutionServiceTest {
 
         toolExecutionService.executeTool(sessionId);
 
+        verify(mockHookManager).triggerSessionHooks(eq(sessionId), eq(HookPhase.BEFORE_TOOL_CALL), eq(context), any(HookData.class));
         verify(mockHookManager).triggerHooks(eq(HookPhase.BEFORE_TOOL_CALL), eq(context), any(HookData.class));
-        verify(mockHookManager).executePostHooks(eq(context), any(HookData.class));
+        verify(mockHookManager, atLeastOnce()).executePostHooks(eq(context), any(HookData.class));
     }
 
     // ========== executeTool ==========

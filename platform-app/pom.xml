@@ -48,7 +48,7 @@
                         <testExclude>**/service/agent/AgentExecutionContextTest.java</testExclude>
                         <testExclude>**/service/agent/AgentConfigServiceImplTest.java</testExclude>
                         <!-- <testExclude>**/service/agent/DefaultContextDataProviderTest.java</testExclude> -->
-                        <testExclude>**/service/agent/DefaultChatDataProviderTest.java</testExclude>
+
                         <testExclude>**/service/agent/DefaultToolDataProviderTest.java</testExclude>
                         <testExclude>**/service/agent/ChatServiceTest.java</testExclude>
                         <testExclude>**/config/**</testExclude>

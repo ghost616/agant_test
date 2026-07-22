@@ -138,4 +138,12 @@ class DefaultChatDataProviderTest {
         assertNotNull(hooks);
         assertTrue(hooks.isEmpty());
     }
+
+    @Test
+    void getHooks_withSessionId_返回空列表() {
+        List<HookInvoker> hooks = provider.getHooks(1L);
+
+        assertNotNull(hooks);
+        assertTrue(hooks.isEmpty());
+    }
 }

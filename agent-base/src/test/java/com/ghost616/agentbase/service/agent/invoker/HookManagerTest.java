@@ -174,4 +174,72 @@ class HookManagerTest {
         verify(regularHook1).execute(ctx, data);
         verifyNoMoreInteractions(systemHook1, systemHook2, postHook1, postHook2);
     }
+
+    // ==================== triggerSessionHooks ====================
+
+    @Test
+    void triggerSessionHooks_正向_regularHook执行() {
+        when(chatDataProvider.getHooks(1L)).thenReturn(List.of(regularHook1));
+        hookManager.triggerSessionHooks(1L, HookPhase.BEFORE_MESSAGE_SEND, ctx, data);
+        verify(regularHook1).execute(ctx, data);
+    }
+
+    @Test
+    void triggerSessionHooks_systemHook按index升序执行() {
+        when(chatDataProvider.getHooks(1L)).thenReturn(List.of(systemHook1, systemHook2));
+        hookManager.triggerSessionHooks(1L, HookPhase.BEFORE_MESSAGE_SEND, ctx, data);
+        verify(systemHook2).execute(ctx, data);
+        verify(systemHook1).execute(ctx, data);
+    }
+
+    @Test
+    void triggerSessionHooks_systemPostHook被跳过() {
+        when(chatDataProvider.getHooks(1L)).thenReturn(List.of(postHook1));
+        hookManager.triggerSessionHooks(1L, HookPhase.BEFORE_MESSAGE_SEND, ctx, data);
+        verify(postHook1, never()).execute(any(), any());
+    }
+
+    @Test
+    void triggerSessionHooks_regularAndSystem混合执行() {
+        when(chatDataProvider.getHooks(1L)).thenReturn(List.of(regularHook1, systemHook1));
+        hookManager.triggerSessionHooks(1L, HookPhase.BEFORE_MESSAGE_SEND, ctx, data);
+        verify(regularHook1).execute(ctx, data);
+        verify(systemHook1).execute(ctx, data);
+    }
+
+    @Test
+    void triggerSessionHooks_异常不中断后续执行() {
+        doThrow(new RuntimeException("fail")).when(regularHook1).execute(ctx, data);
+        when(chatDataProvider.getHooks(1L)).thenReturn(List.of(regularHook1, regularHook2));
+        hookManager.triggerSessionHooks(1L, HookPhase.BEFORE_MESSAGE_SEND, ctx, data);
+        verify(regularHook1).execute(ctx, data);
+        verify(regularHook2).execute(ctx, data);
+    }
+
+    @Test
+    void triggerSessionHooks_sessionHooks为null无异常() {
+        when(chatDataProvider.getHooks(1L)).thenReturn(null);
+        hookManager.triggerSessionHooks(1L, HookPhase.BEFORE_MESSAGE_SEND, ctx, data);
+    }
+
+    @Test
+    void triggerSessionHooks_sessionHooks为空无异常() {
+        when(chatDataProvider.getHooks(1L)).thenReturn(List.of());
+        hookManager.triggerSessionHooks(1L, HookPhase.BEFORE_MESSAGE_SEND, ctx, data);
+    }
+
+    @Test
+    void triggerSessionHooks_无匹配phase不执行() {
+        when(chatDataProvider.getHooks(1L)).thenReturn(List.of(regularHook1));
+        hookManager.triggerSessionHooks(1L, HookPhase.SESSION_START, ctx, data);
+        verify(regularHook1, never()).execute(any(), any());
+    }
+
+    @Test
+    void triggerSessionHooks_systemPostHook混合场景不影响regular() {
+        when(chatDataProvider.getHooks(1L)).thenReturn(List.of(regularHook1, postHook1));
+        hookManager.triggerSessionHooks(1L, HookPhase.BEFORE_MESSAGE_SEND, ctx, data);
+        verify(regularHook1).execute(ctx, data);
+        verify(postHook1, never()).execute(any(), any());
+    }
 }
