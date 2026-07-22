@@ -12,4 +12,6 @@ public interface ChatDataProvider {
     void updateSessionModelId(Long sessionId, Long modelId);
 
     List<HookInvoker> getHooks();
+
+    List<HookInvoker> getHooks(Long sessionId);
 }

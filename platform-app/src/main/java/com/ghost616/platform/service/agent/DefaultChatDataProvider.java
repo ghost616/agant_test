@@ -52,4 +52,9 @@ public class DefaultChatDataProvider implements ChatDataProvider {
         Map<String, HookInvoker> map = applicationContext.getBeansOfType(HookInvoker.class);
         return new ArrayList<>(map.values());
     }
+
+    @Override
+    public List<HookInvoker> getHooks(Long sessionId) {
+        return List.of();
+    }
 }

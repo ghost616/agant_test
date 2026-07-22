@@ -176,6 +176,10 @@ public class AgentAssembler {
             return hooks;
         }
 
+        public List<HookInvoker> getHooks(Long sessionId) {
+            return delegate.getHooks(sessionId);
+        }
+
         MessageSavePostHook getMessageSavePostHook() {
             return getOrCreateMessageSavePostHook();
         }
