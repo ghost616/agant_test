@@ -122,8 +122,7 @@ public class ToolExecutionService {
 
         toolExecutionTracker.setExecuting(sessionId, toolCallId, toolCallName, toolCallArguments, hasMore);
 
-        HookData beforeHookData = new HookData(null);
-        beforeHookData.setToolContext(new ToolHookContext(toolCallId, toolCallName, toolCallArguments, null));
+        HookData beforeHookData = new HookData(new ToolHookContext(toolCallId, toolCallName, toolCallArguments, null));
         hookManager.triggerHooks(HookPhase.BEFORE_TOOL_CALL, capturedContext, beforeHookData);
         hookManager.executePostHooks(capturedContext, beforeHookData);
 
@@ -132,8 +131,7 @@ public class ToolExecutionService {
                 String res = toolManager.execute(capturedInvoker, capturedContext, toolCallArguments);
                 toolExecutionTracker.setDone(sessionId, toolCallId, res);
 
-                HookData afterHookData = new HookData(null);
-                afterHookData.setToolContext(new ToolHookContext(toolCallId, toolCallName, toolCallArguments, res));
+                HookData afterHookData = new HookData(new ToolHookContext(toolCallId, toolCallName, toolCallArguments, res));
                 hookManager.triggerHooks(HookPhase.AFTER_TOOL_CALL, capturedContext, afterHookData);
                 hookManager.executePostHooks(capturedContext, afterHookData);
 

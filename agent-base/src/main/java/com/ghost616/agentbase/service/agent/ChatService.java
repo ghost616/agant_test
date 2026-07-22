@@ -119,7 +119,7 @@ public class ChatService {
             throw new BusinessException(ErrorCode.MODEL_NOT_FOUND);
         }
 
-        hookManager.triggerHooks(HookPhase.SESSION_START, context, new HookData(null));
+        hookManager.triggerHooks(HookPhase.SESSION_START, context, new HookData((ChatChunk) null));
 
         List<Message> messages = new ArrayList<>();
         messages.add(Message.builder()
