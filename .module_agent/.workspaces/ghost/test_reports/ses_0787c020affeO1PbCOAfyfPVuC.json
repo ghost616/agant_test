@@ -1,0 +1,5 @@
+{
+  "lizhu_session_id": "ses_0787c020affeO1PbCOAfyfPVuC",
+  "content": "# 测试报告\n\n## 编译测试\n\n**命令：** `mvn clean compile`\n\n**结果：** ✅ 通过\n\n| 验证项 | 状态 | 说明 |\n|--------|------|------|\n| 项目编译通过，无类型错误 | ✅ | `BUILD SUCCESS`，75 源文件编译成功 |\n| 构造器调用与新签名匹配 | ✅ | ToolExecutionService 2 处 `new HookData(ctx)`、ChatService 1 处 `new HookData((ChatChunk) null)` + 4 处 `new HookData(chunk)` 均匹配新定义的两个独立构造器 |\n| 无 setToolContext 调用残留 | ✅ | grep 无结果 |\n",
+  "timestamp": "2026-07-22T01:58:44.788Z"
+}

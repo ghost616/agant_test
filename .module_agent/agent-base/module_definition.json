@@ -95,7 +95,7 @@
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ChatService.java",
-      "description": "聊天服务核心类。持有 HookManager 实例，refreshHooks/triggerHooks/executePostHooks 全部委托给 hookManager。提供 setHookManager(HookManager) setter 支持外部注入共享实例。移除了原有的 systemHooks/systemPostHooks/regularPhaseHooks 字段及私有方法。"
+      "description": "聊天服务核心类。持有 HookManager 实例，refreshHooks/triggerHooks/triggerSessionHooks/executePostHooks 全部委托给 hookManager。提供 setHookManager(HookManager) setter 支持外部注入共享实例。移除了原有的 systemHooks/systemPostHooks/regularPhaseHooks 字段及私有方法。在 SESSION_START/BEFORE_MESSAGE_SEND/AFTER_MESSAGE_RECEIVE 三处 triggerHooks 调用前增加 triggerSessionHooks 调用。"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/ContextSerializer.java",
@@ -243,7 +243,7 @@
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ToolExecutionService.java",
-      "description": "工具执行服务。持有 HookManager 实例，triggerHooks/executePostHooks 委托给 hookManager。提供 setHookManager(HookManager) setter 支持外部注入共享实例。移除了原有的 chatDataProvider/systemHooks/systemPostHooks/regularPhaseHooks 字段及 refreshHooks/triggerHooks/executePostHooks 方法。"
+      "description": "工具执行服务。持有 HookManager 实例，triggerHooks/triggerSessionHooks/executePostHooks 委托给 hookManager。提供 setHookManager(HookManager) setter 支持外部注入共享实例。移除了原有的 chatDataProvider/systemHooks/systemPostHooks/regularPhaseHooks 字段及 refreshHooks/triggerHooks/executePostHooks 方法。在 BEFORE_TOOL_CALL/AFTER_TOOL_CALL 两处 triggerHooks 调用前增加 triggerSessionHooks 调用。"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/util/JsonMapper.java",
@@ -319,7 +319,7 @@
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/HookData.java",
-      "description": "HOOK 数据载体，包裹 ChatChunk 及 ToolHookContext 等 HOOK 执行上下文数据，为后续扩展预留字段"
+      "description": "HOOK 数据载体，包含 final 字段 chatChunk 和 toolContext，提供两个独立构造器按需注入，创建后不可修改"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/ToolHookContext.java",
@@ -327,7 +327,7 @@
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/HookManager.java",
-      "description": "HOOK 管理基础设施，维护 systemHooks/systemPostHooks/regularPhaseHooks 三组列表，提供 refreshHooks/triggerHooks/executePostHooks 方法，供 ChatService 和 ToolExecutionService 委托使用"
+      "description": "HOOK 管理基础设施，维护 systemHooks/systemPostHooks/regularPhaseHooks 三组列表，提供 refreshHooks/triggerHooks/triggerSessionHooks/executePostHooks 方法，供 ChatService 和 ToolExecutionService 委托使用"
     }
   ]
 }

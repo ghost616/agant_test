@@ -43,7 +43,7 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultChatDataProvider.java",
-      "description": "默认聊天数据提供者实现，实现 ChatDataProvider 接口，注入 ModelConfigMapper、SessionMapper 和 ApplicationContext，提供 getModelConfig（查询模型配置并转为 ModelConfigData）、updateSessionModelId（更新会话模型 ID）、getHooks（获取所有 HookInvoker Bean）方法"
+      "description": "默认聊天数据提供者实现，实现 ChatDataProvider 接口，注入 ModelConfigMapper、SessionMapper 和 ApplicationContext，提供 getModelConfig（查询模型配置并转为 ModelConfigData）、updateSessionModelId（更新会话模型 ID）、getHooks（获取所有 HookInvoker Bean）、getHooks(Long sessionId)（返回空列表）方法"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/PlatformApplication.java",

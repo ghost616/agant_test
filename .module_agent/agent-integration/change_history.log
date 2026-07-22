@@ -15,3 +15,6 @@
 [2026-07-21T06:10:15.860Z] [session: ses_07cb48b0fffe5QONGYtdwiuLWd] [2026-07-21] AgentAssembler.java: SystemToolProviderProxy.discoverSystemTools() 新增 session_variable 和 conversation_variable 两个系统工具注册；添加对应 import 语句
 [2026-07-21T07:53:01.233Z] [session: ses_07c575267ffef87co8z5hukr1f] AgentAssembler.build(): 创建共享 HookManager 实例，通过 setter 注入 ChatService 和 ToolExecutionService，统一调用 hookManager.refreshHooks()
 [2026-07-21T08:30:57.783Z] [session: ses_07c575267ffef87co8z5hukr1f] AgentAssembler: hookManager 改为私有字段，新增 refreshHooks() 公开方法，build() 中不再直接调用 refreshHooks
+[2026-07-22T02:24:25.953Z] [session: ses_0785cdbc7ffepodbC5qnZly07E] ChatDataProviderProxy 实现 getHooks(Long sessionId) 委托方法，直接调用 delegate.getHooks(sessionId)
+[2026-07-22T02:32:52.586Z] [session: ses_0785cdbc7ffepodbC5qnZly07E] AgentAssembler.refreshHooks() 改为无参调用 hookManager.refreshHooks()；HookManager 构造函数改为传入 registry 以支持内部获取 ChatDataProvider
+[2026-07-22T03:01:01.152Z] [session: ses_0785cdbc7ffepodbC5qnZly07E] 移除 AgentAssembler.messageSavePostHook() 公开 getter（无人调用）

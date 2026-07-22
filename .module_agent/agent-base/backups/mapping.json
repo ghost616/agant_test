@@ -33,5 +33,8 @@
   "agent-base/src/main/java/com/ghost616/agentbase/core/AgentComponentRegistry.java": "918e4cf5c42693221999ceba31ad3a75",
   "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ToolExecutionProvider.java": "4b63aca8d6f97c6b27c4be3c11d0b2a2",
   ".module_agent/agent-base/current_spec.md": "ef74045377e95cd8c4c129c14edddfc7",
-  "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/HookInvoker.java": "7cd86f6b2d1e94e77d78f8d5e53a98a6"
+  "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/HookInvoker.java": "7cd86f6b2d1e94e77d78f8d5e53a98a6",
+  "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/HookData.java": "7aa9ddacd85c83b334b9303623127f2f",
+  "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/HookManager.java": "daa5d03bbb33375312b3d820d2346787",
+  "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ChatDataProvider.java": "d8577189dce7d060e66a261cc3fe3859"
 }

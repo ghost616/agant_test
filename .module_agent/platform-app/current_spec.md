@@ -86,3 +86,4 @@ platform-app 模块包含以下功能：
 
 - 会话回滚改为软回滚：message 表新增 rollback TINYINT NOT NULL DEFAULT 0 字段，回滚操作不再物理删除消息、不再修改已消耗 token 数，改为设置 rollback=1 标记，getMessages 查询过滤掉 rollback=1 的消息
 - chatService() @Bean 中已移除 refreshHooks() 调用，HookManager.refreshHooks 由 AgentAssembler.build() 统一管理
+- DefaultChatDataProvider.getHooks(Long sessionId) 已实现，返回空列表（List.of()），作为 ChatDataProvider 接口带参 getHooks 的重载实现

@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_0787d168fffeRwAGtR6O9Kj3Qk",
+  "content": "## 编译测试\n\n**变更说明：** HookData 由全参构造器改为两个独立构造器：\n- `HookData(ChatChunk chatChunk)` — toolContext 为 null\n- `HookData(ToolHookContext toolContext)` — chatChunk 为 null\n\n**变更文件：**\n1. `agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/HookData.java` — 替换 `@Data` 为 `@Getter @ToString @EqualsAndHashCode`，增加两个独立构造器\n2. `agent-base/src/main/java/com/ghost616/agentbase/service/agent/ToolExecutionService.java` — `new HookData(null, ctx)` → `new HookData(ctx)`\n3. `agent-base/src/main/java/com/ghost616/agentbase/service/agent/ChatService.java` — `new HookData(x, null)` → `new HookData(x)`，`new HookData(null, null)` → `new HookData((ChatChunk) null)`\n\n**需要验证：**\n- 项目编译通过\n- 无 setToolContext 调用残留\n- 构造器调用与新签名匹配",
+  "timestamp": "2026-07-22T01:58:04.906Z"
+}

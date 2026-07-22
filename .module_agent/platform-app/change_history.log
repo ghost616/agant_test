@@ -90,3 +90,4 @@
 [2026-07-21T02:36:21.855Z] [session: ses_07dabecc1ffedZ9uJo0xRyBZm8] 8 个文件 PlatformType import 路径从 com.ghost616.platform.enums 更新为 com.ghost616.agentinteg.model，编译测试通过
 [2026-07-21T03:23:30.811Z] [session: ses_07d4e27d5ffe49LclLTw6iehUQ] 会话 rollback 改为软回滚：schema.sql message 表新增 rollback 列；Message 实体新增 rollback 字段；MessageMapper 将 deleteBySessionIdAndGeSequenceNum 改为 UPDATE rollback=1；DefaultMessageDataProvider 移除 token 扣除逻辑、物理删除改为 rollback=1、getMessages 过滤 rollback=1；更新测试用例
 [2026-07-21T07:52:21.409Z] [session: ses_07c570208ffeWLahcyfZZZrbNJ] 2026-07-21: 移除 AgentContextConfiguration.chatService() @Bean 中的 chatService.refreshHooks() 调用，因 HookManager.refreshHooks 改由 AgentAssembler.build() 统一管理
+[2026-07-22T02:24:35.813Z] [session: ses_0785d2b4affe8MrHPmawAndam4] [2026-07-22] DefaultChatDataProvider 实现 getHooks(Long sessionId) 方法，返回空列表（List.of()），满足 ChatDataProvider 接口契约

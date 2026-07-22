@@ -1,0 +1,7 @@
+{
+  "plan_id": "plan_a1a6fc41-8298-48e7-9e37-5b58da99760b",
+  "module_name": "agent-base",
+  "development_plan": "1. HookManager 新增 triggerSessionHooks(Long sessionId, HookPhase phase, AgentExecutionContext ctx, HookData data) 方法，通过 ChatDataProvider.getHooks(sessionId) 加载会话专属 HOOK，按 phase 匹配执行（SystemHook 按 index 排序），异常时 WARN 日志并继续\n2. ChatService 中 SESSION_START、BEFORE_MESSAGE_SEND、AFTER_MESSAGE_RECEIVE 三处 triggerHooks 调用前增加 triggerSessionHooks 调用\n3. ToolExecutionService 中 BEFORE_TOOL_CALL、AFTER_TOOL_CALL 两处 triggerHooks 调用前增加 triggerSessionHooks 调用",
+  "session_id": "ses_076fedc4fffeHxkfLtWcJeHSv2",
+  "modified_files": []
+}

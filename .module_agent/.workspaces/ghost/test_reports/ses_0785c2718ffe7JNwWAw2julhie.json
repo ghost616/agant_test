@@ -1,0 +1,5 @@
+{
+  "lizhu_session_id": "ses_0785c2718ffe7JNwWAw2julhie",
+  "content": "# 测试报告\n\n## 测试概览\n\n| 测试类型 | 结果 | 测试用例数 |\n|---------|------|-----------|\n| 单元测试 | ✅ 通过 | 8 |\n| 编译测试 | ✅ 通过 | 1 |\n| **总计** | **✅ 全部通过** | **9** |\n\n---\n\n## 详细结果\n\n### 1. 单元测试 — DefaultChatDataProviderTest\n\n- **命令**: `mvn test -pl platform-app -Dtest=com.ghost616.platform.service.agent.DefaultChatDataProviderTest`\n- **测试框架**: JUnit 5 + Mockito\n- **结果**: ✅ 通过\n- **统计**: Tests run: 8, Failures: 0, Errors: 0, Skipped: 0\n- **测试方法**:\n  - ✅ `getModelConfig_实体存在_返回ModelConfigData`\n  - ✅ `getModelConfig_实体为null_返回null`\n  - ✅ `getModelConfig_platformType为null_platformType返回null`\n  - ✅ `updateSessionModelId_会话存在_更新modelId`\n  - ✅ `updateSessionModelId_会话为null_不执行更新`\n  - ✅ `getHooks_返回所有HookInvokerBean`\n  - ✅ `getHooks_无HookInvokerBean_返回空列表`\n  - ✅ `getHooks_withSessionId_返回空列表` — **正向覆盖**：调用 `getHooks(1L)` 返回非 null 的空列表\n\n### 2. 编译测试 — Maven Compile\n\n- **命令**: `mvn compile -pl platform-app`\n- **结果**: ✅ BUILD SUCCESS\n- **JDK**: Java 17\n- **框架**: Spring Boot 3 / Maven\n\n---\n\n## 失败用例分析\n\n无失败用例。\n\n## 修复建议\n\n无。所有测试均通过。\n",
+  "timestamp": "2026-07-22T02:26:20.844Z"
+}

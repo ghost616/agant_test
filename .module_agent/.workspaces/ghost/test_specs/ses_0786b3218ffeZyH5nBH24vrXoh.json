@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_0786b3218ffeZyH5nBH24vrXoh",
+  "content": "## 待测试功能\n\n### HookManager 异常处理\n- **文件**: `agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/HookManager.java`\n- 三处 h.execute(ctx, data) 调用（regularHooks / systemHooks / systemPostHooks）在抛出异常时被 try-catch 捕获\n- 异常时应输出 WARN 级别日志，包含 hook 类名\n- 异常不应中断后续 hook 的执行\n",
+  "timestamp": "2026-07-22T02:09:07.435Z"
+}

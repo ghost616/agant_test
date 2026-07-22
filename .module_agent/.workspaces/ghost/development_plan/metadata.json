@@ -7,73 +7,11 @@
     "test_passed": false
   },
   {
-    "plan_id": "plan_5afdee8e-cfce-4651-8e33-5b75606eff69",
-    "plan_summary": "创建 HookData 对象，改造 HookInvoker 接口将 ChatChunk 替换为 HookData，适配所有调用方",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": true
-  },
-  {
-    "plan_id": "plan_10973eb0-e237-4fd9-861a-a2598bd6e424",
-    "plan_summary": "修复审查：HookData final 字段 + import 格式",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": false
-  },
-  {
-    "plan_id": "plan_cda8e552-9a69-41f8-bb76-bccb2b1c0894",
-    "plan_summary": "审查：工具执行前后 HOOK 实现",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": false
-  },
-  {
-    "plan_id": "plan_86cf911b-af27-4f60-b856-10abdeacaddb",
-    "plan_summary": "审查：HookManager 统一 HOOK 管理重构",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": false
-  },
-  {
-    "plan_id": "plan_d8a125f4-6547-4149-a945-2240f7d9394b",
-    "plan_summary": "审查：AgentAssembler 集成 HookManager",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": false
-  },
-  {
-    "plan_id": "plan_1b89f1e9-f4a7-4132-a2fc-f59278b092f2",
-    "plan_summary": "审查：移除重复 refreshHooks 调用",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": false
-  },
-  {
-    "plan_id": "plan_1556a215-4595-49e2-b646-4fabef0d9763",
-    "plan_summary": "HookManager 提升为 AgentAssembler 字段，新增公开 refreshHooks 方法",
+    "plan_id": "plan_a1a6fc41-8298-48e7-9e37-5b58da99760b",
+    "plan_summary": "HookManager新增triggerSessionHooks方法，ChatService和ToolExecutionService在triggerHooks前调用",
+    "starter_session_id": "ses_077039d03ffe98hhihYjME6nTU",
     "code_reviewed": false,
-    "plan_completed": true,
-    "test_passed": true
-  },
-  {
-    "plan_id": "plan_9a037f43-10a6-42e4-a5ef-5cc48bb9ce16",
-    "plan_summary": "AgentContextConfiguration 构建 ChatService 后调用 agentAssembler.refreshHooks()",
-    "code_reviewed": false,
-    "plan_completed": true,
-    "test_passed": true
-  },
-  {
-    "plan_id": "plan_d4c046db-9314-49e7-8c19-5325575ffc1f",
-    "plan_summary": "HookManager 通过 AgentComponentRegistry 统一获取，移除 ChatService/ToolExecutionService setter",
-    "code_reviewed": false,
-    "plan_completed": true,
-    "test_passed": true
-  },
-  {
-    "plan_id": "plan_4b41335b-99f5-4578-aee2-546720d15f98",
-    "plan_summary": "AgentAssembler.refreshHooks 改用 chatDataProviderProxy",
-    "code_reviewed": false,
-    "plan_completed": true,
-    "test_passed": true
+    "plan_completed": false,
+    "test_passed": false
   }
 ]

@@ -38,5 +38,7 @@
   "platform-app/src/test/java/com/ghost616/platform/systemtest/SystemTestSubSessionToolTest.java": "e496ddc6906a233f56c66a6b9116929f",
   "platform-app/src/main/java/com/ghost616/platform/dto/session/SubSessionDataDTO.java": "e974db12013911c1ca25fc69c60a9b91",
   "platform-app/src/main/java/com/ghost616/platform/entity/Message.java": "ebe784b2cf6c2ed697abd21fe25962c0",
-  "platform-app/src/test/java/com/ghost616/platform/service/agent/DefaultMessageDataProviderTest.java": "9e6e131b1f17011e2e7d5031deb90158"
+  "platform-app/src/test/java/com/ghost616/platform/service/agent/DefaultMessageDataProviderTest.java": "9e6e131b1f17011e2e7d5031deb90158",
+  "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultChatDataProvider.java": "cd203960d4b3546099c79d7dc731f567",
+  "platform-app/src/test/java/com/ghost616/platform/service/agent/DefaultChatDataProviderTest.java": "96121aece5dd6daa2e957240a25226c3"
 }

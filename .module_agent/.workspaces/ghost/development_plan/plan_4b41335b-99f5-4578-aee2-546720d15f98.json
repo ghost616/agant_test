@@ -1,9 +1,0 @@
-{
-  "plan_id": "plan_4b41335b-99f5-4578-aee2-546720d15f98",
-  "module_name": "agent-integration",
-  "development_plan": "## 修改文件\n\n### 修改 agent-integration/src/main/java/com/ghost616/agentinteg/AgentAssembler.java\n- refreshHooks() 方法中，将 `chatDataProvider.getHooks()` 改为 `chatDataProviderProxy.getHooks()`\n- 同时将 null 检查从 `chatDataProvider != null` 改为 `chatDataProviderProxy != null`\n- 原因：chatDataProviderProxy 是注册到 registry 的代理，其 getHooks() 会包含 MessageSavePostHook 等系统 HOOK，而原始的 chatDataProvider 不包含",
-  "session_id": "ses_07c575267ffef87co8z5hukr1f",
-  "modified_files": [
-    "agent-integration/src/main/java/com/ghost616/agentinteg/AgentAssembler.java"
-  ]
-}

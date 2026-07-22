@@ -1,9 +1,0 @@
-{
-  "plan_id": "plan_1556a215-4595-49e2-b646-4fabef0d9763",
-  "module_name": "agent-integration",
-  "development_plan": "## 修改文件\n\n### 修改 agent-integration/src/main/java/com/ghost616/agentinteg/AgentAssembler.java\n- 新增私有字段：private HookManager hookManager（初始化为 null）\n- build() 方法中：\n  - 将局部变量 `HookManager hookManager = new HookManager()` 改为赋值给 this.hookManager\n  - 移除 build() 中的 `hookManager.refreshHooks(chatDataProvider.getHooks())` 调用\n- 新增公开方法：\n  ```java\n  public void refreshHooks() {\n      if (hookManager != null && chatDataProvider != null) {\n          hookManager.refreshHooks(chatDataProvider.getHooks());\n      }\n  }\n  ```\n- chatDataProvider 已是构造参数传入的字段，可直接访问",
-  "session_id": "ses_07c575267ffef87co8z5hukr1f",
-  "modified_files": [
-    "agent-integration/src/main/java/com/ghost616/agentinteg/AgentAssembler.java"
-  ]
-}
