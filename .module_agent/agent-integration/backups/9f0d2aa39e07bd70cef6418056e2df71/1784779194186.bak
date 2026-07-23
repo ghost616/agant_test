@@ -27,6 +27,7 @@ import com.ghost616.agentbase.service.agent.invoker.SystemToolProvider;
 import com.ghost616.agentbase.service.agent.invoker.ToolCallQueueManager;
 import com.ghost616.agentbase.service.agent.invoker.ToolManager;
 import com.ghost616.agentbase.sendmessage.MessageSender;
+import com.ghost616.agentbase.service.agent.invoker.CustomToolInvokerProvider;
 import com.ghost616.agentbase.service.model.invoker.ModelInvokerFactory;
 import com.ghost616.agentbase.service.model.invoker.ModelInvokerManager;
 
@@ -45,6 +46,7 @@ public class AgentAssembler {
     private final ChatDataProvider chatDataProvider;
     private final MessageSender messageSender;
     private final ToolExecutionProvider toolExecutionProvider;
+    private final CustomToolInvokerProvider customToolInvokerProvider;
 
     private AgentComponentRegistry registry;
     private ChatDataProviderProxy chatDataProviderProxy;
@@ -59,7 +61,8 @@ public class AgentAssembler {
                  ModelInvokerFactory modelInvokerFactory,
                  ChatDataProvider chatDataProvider,
                   MessageSender messageSender,
-                   ToolExecutionProvider toolExecutionProvider) {
+                  ToolExecutionProvider toolExecutionProvider,
+                  CustomToolInvokerProvider customToolInvokerProvider) {
         this.contextDataProvider = contextDataProvider;
         this.messageDataProvider = messageDataProvider;
         this.toolDataProvider = toolDataProvider;
@@ -68,6 +71,7 @@ public class AgentAssembler {
         this.chatDataProvider = chatDataProvider;
         this.messageSender = messageSender;
         this.toolExecutionProvider = toolExecutionProvider;
+        this.customToolInvokerProvider = customToolInvokerProvider;
     }
 
     public ToolManager toolManager() { return registry != null ? registry.getToolManager() : null; }
@@ -94,6 +98,7 @@ public class AgentAssembler {
         registry.setModelInvokerFactory(modelInvokerFactory);
         registry.setMessageSender(messageSender);
         registry.setToolExecutionProvider(toolExecutionProvider);
+        registry.setCustomToolInvokerProvider(customToolInvokerProvider);
 
         SystemToolProvider systemToolProviderProxy = new SystemToolProviderProxy(systemToolProvider);
         registry.setSystemToolProvider(systemToolProviderProxy);

@@ -1,0 +1,32 @@
+[
+  {
+    "plan_id": "plan_29c86598-d2eb-4b7d-a682-f8250ff2571a",
+    "plan": "CustomToolInvokerProvider迁移到ToolDataProvider",
+    "modified_files": [
+      "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/CustomToolInvokerProvider.java",
+      "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ToolDataProvider.java",
+      "agent-base/src/main/java/com/ghost616/agentbase/core/AgentComponentRegistry.java",
+      "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/ToolManager.java",
+      "agent-base/src/test/java/com/ghost616/agentbase/service/agent/invoker/CustomToolInvokerProviderTest.java",
+      "agent-base/src/test/java/com/ghost616/agentbase/core/AgentComponentRegistryTest.java",
+      "agent-base/src/test/java/com/ghost616/agentbase/service/agent/invoker/ToolManagerTest.java"
+    ],
+    "summary": "已删除 CustomToolInvokerProvider.java 和测试文件，方法迁移到 ToolDataProvider，AgentComponentRegistry 移除相关字段，ToolManager 改为调用 dataProvider.getCustomInvoker",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_62feb3af-c2dd-4cba-9d92-b574bdce64a7",
+    "plan": "CustomToolInvokerProvider迁移到ToolDataProvider",
+    "modified_files": [
+      "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/CustomToolInvokerProvider.java (deleted)",
+      "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ToolDataProvider.java",
+      "agent-base/src/main/java/com/ghost616/agentbase/core/AgentComponentRegistry.java",
+      "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/ToolManager.java",
+      "agent-base/src/test/java/com/ghost616/agentbase/service/agent/invoker/CustomToolInvokerProviderTest.java (deleted)",
+      "agent-base/src/test/java/com/ghost616/agentbase/core/AgentComponentRegistryTest.java",
+      "agent-base/src/test/java/com/ghost616/agentbase/service/agent/invoker/ToolManagerTest.java"
+    ],
+    "summary": "已按用户要求完成：1) 删除 CustomToolInvokerProvider.java；2) ToolDataProvider 新增 getCustomInvoker 方法；3) AgentComponentRegistry 移除 CustomToolInvokerProvider 相关；4) ToolManager CUSTOM 分支改用 dataProvider.getCustomInvoker；5) 删除 CustomToolInvokerProviderTest.java；6) AgentComponentRegistryTest 删除相关 5 个测试；7) ToolManagerTest 更新 CUSTOM 测试的 mock。随后按用户补充修复了 ToolManager.java 第215行的错误消息文案。",
+    "errors": []
+  }
+]

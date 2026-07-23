@@ -23,7 +23,7 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/config/AgentContextConfiguration.java",
-      "description": "Agent 上下文 Spring 配置类，声明 SystemToolProvider、HistoryQuerySystemTool、LoadSkillsSystemTool、UnloadSkillsSystemTool、MessageSavePostHook、DefaultChatDataProvider、ModelInvokerFactory、Build、SessionManager、AgentContextManager、ToolManager、ModelInvokerManager、ChatService、ToolExecutionService 的 @Bean。内部组件由 agent-integration 的 Build 类创建后暴露。ChatService 通过 Build 内部调用 initHooks() 初始化钩子系统。"
+      "description": "Agent 上下文 Spring 配置类，声明 SystemToolProvider、DefaultChatDataProvider、ModelInvokerFactory、DefaultToolExecutionProvider、AgentAssembler、SessionManager、AgentContextManager、ToolManager、ModelInvokerManager、ChatService、ToolExecutionService 的 @Bean。内部组件由 agent-integration 的 Build 类创建后暴露。ChatService 通过 Build 内部调用 initHooks() 初始化钩子系统。agentAssembler 方法第 9 个参数传入 null（原 CustomToolInvokerProvider 已移除）。"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/repository/MessageMapper.java",
@@ -95,7 +95,7 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultToolDataProvider.java",
-      "description": "默认工具数据提供者实现，实现 ToolDataProvider 接口，负责工具和技能工具查询"
+      "description": "默认工具数据提供者实现，实现 ToolDataProvider 接口，负责工具和技能工具查询，以及 getCustomInvoker 方法（抛出 UnsupportedOperationException）"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/systemtest/SystemTestSubSessionTool.java",

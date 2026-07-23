@@ -1,0 +1,12 @@
+[
+  {
+    "plan_id": "plan_c4b11e4b-e8e5-43a5-b829-2c8091595731",
+    "plan": "移除 AgentAssembler 中的 CustomToolInvokerProvider",
+    "modified_files": [
+      "agent-integration/src/main/java/com/ghost616/agentinteg/AgentAssembler.java",
+      "agent-integration/src/test/java/com/ghost616/agentinteg/AgentAssemblerTest.java"
+    ],
+    "summary": "已完成 AgentAssembler.java 和 AgentAssemblerTest.java 中所有 CustomToolInvokerProvider 相关代码的移除",
+    "errors": []
+  }
+]

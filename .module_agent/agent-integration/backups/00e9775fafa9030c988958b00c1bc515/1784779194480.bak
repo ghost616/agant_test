@@ -10,6 +10,8 @@ import com.ghost616.agentbase.service.agent.ContextDataProvider;
 import com.ghost616.agentbase.service.agent.MessageDataProvider;
 import com.ghost616.agentbase.service.agent.ToolDataProvider;
 import com.ghost616.agentbase.service.agent.ToolExecutionProvider;
+import com.ghost616.agentbase.core.AgentComponentRegistry;
+import com.ghost616.agentbase.service.agent.invoker.CustomToolInvokerProvider;
 import com.ghost616.agentbase.service.agent.invoker.SystemToolProvider;
 import com.ghost616.agentbase.service.model.invoker.ModelInvokerFactory;
 
@@ -52,12 +54,16 @@ class AgentAssemblerTest {
     @Mock
     private ToolExecutionProvider toolExecutionProvider;
 
+    @Mock
+    private CustomToolInvokerProvider customToolInvokerProvider;
+
     private AgentAssembler agentAssembler;
 
     @BeforeEach
     void setUp() {
         agentAssembler = new AgentAssembler(contextDataProvider, messageDataProvider, toolDataProvider,
-                systemToolProvider, modelInvokerFactory, chatDataProvider, messageSender, toolExecutionProvider);
+                systemToolProvider, modelInvokerFactory, chatDataProvider, messageSender, toolExecutionProvider,
+                customToolInvokerProvider);
     }
 
     @Test
@@ -156,5 +162,23 @@ class AgentAssemblerTest {
         agentAssembler.build();
 
         verify(chatDataProvider, times(1)).getHooks();
+    }
+
+    // ========== CustomToolInvokerProvider ==========
+
+    @Test
+    void 构造函数应存储CustomToolInvokerProvider字段() throws Exception {
+        Field field = AgentAssembler.class.getDeclaredField("customToolInvokerProvider");
+        field.setAccessible(true);
+        assertSame(customToolInvokerProvider, field.get(agentAssembler));
+    }
+
+    @Test
+    void build_应调用registry_setCustomToolInvokerProvider() throws Exception {
+        agentAssembler.build();
+        Field registryField = AgentAssembler.class.getDeclaredField("registry");
+        registryField.setAccessible(true);
+        AgentComponentRegistry reg = (AgentComponentRegistry) registryField.get(agentAssembler);
+        assertSame(customToolInvokerProvider, reg.getCustomToolInvokerProvider());
     }
 }

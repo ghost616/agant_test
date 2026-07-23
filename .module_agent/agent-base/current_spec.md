@@ -7,6 +7,9 @@
 ## ToolManager
 
 getSessionTools 父会话 CHILD 副本修正：当 info.sessionAuth()==ALL 时，只基于原始未展开配置生成一份 CHILD 副本（ToolConfigDTO，非 McpExpandedToolDTO，invoker=null，mcpOriginalConfig 指向自身），而非对每个展开工具各生成一份。PARENT 副本保持对每个展开 McpExpandedToolDTO 生成一份不变。子会话逻辑不变。
+createInvoker 方法新增 CUSTOM 分支：当 toolConfig.getToolType() 为 CUSTOM 时，从 AgentComponentRegistry 获取 CustomToolInvokerProvider 调用 getInvoker(toolConfig) 创建调用器；若 provider 为 null 则抛出 UnsupportedOperationException。
+
+createInvoker 方法 CUSTOM 分支：当 toolConfig.getToolType() 为 CUSTOM 时，从 dataProvider.getCustomInvoker(toolConfig) 获取 CustomToolInvoker 创建调用器；若返回 null 则抛出 UnsupportedOperationException。
 ## ToolCallQueueManager
 
 构造函数改为接收 AgentComponentRegistry，移除内部 ConcurrentHashMap。通过 registry.getToolExecutionProvider() 获取 ToolExecutionProvider，enqueue/poll/peek/hasPending/clear 五个队列方法全部委派给 provider，public API 签名不变。
@@ -167,3 +170,13 @@ SessionVariableSystemTool（工具名：session_variable）：管理会话变量
 ConversationVariableSystemTool（工具名：conversation_variable）：管理对话变量，支持 add/get/remove 三种操作，分别调用 ctx.putConversationVariable/getConversationVariable/removeConversationVariable。
 
 两个工具的参数结构一致：action（add/get/remove）、key（变量名）、value（add 时必填）。返回值均为 JSON 格式。
+## ToolType
+
+新增 CUSTOM("CUSTOM", "自定义实现") 枚举值，用于支持外部自定义工具调用器实现。
+## CustomToolInvoker
+
+CustomToolInvoker（com.ghost616.agentbase.service.agent.invoker.CustomToolInvoker），抽象类实现 ToolInvoker 接口。持有 protected final ToolConfigDTO toolConfig 属性，通过构造函数注入。供外部实现类继承并实现 execute 方法。
+## CustomToolInvokerProvider
+## ToolDataProvider
+
+ToolDataProvider（com.ghost616.agentbase.service.agent.ToolDataProvider），工具数据提供者接口，定义 getSessionToolIds/getToolById/getSkillToolIds/getCustomInvoker 方法。getCustomInvoker(ToolConfigDTO) 返回 CustomToolInvoker，替代原 CustomToolInvokerProvider 接口能力。

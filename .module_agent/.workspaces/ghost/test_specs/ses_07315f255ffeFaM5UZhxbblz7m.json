@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_07315f255ffeFaM5UZhxbblz7m",
+  "content": "## 待测试功能\n\n### 1. AgentAssembler 构造函数新增 CustomToolInvokerProvider 参数\n- 文件: `agent-integration/src/main/java/com/ghost616/agentinteg/AgentAssembler.java`\n- 验证: 构造函数第 8 个参数为 CustomToolInvokerProvider 类型，字段赋值正确\n\n### 2. build() 方法注册 CustomToolInvokerProvider\n- 文件: `agent-integration/src/main/java/com/ghost616/agentinteg/AgentAssembler.java`\n- 验证: build() 中调用 registry.setCustomToolInvokerProvider(customToolInvokerProvider)，传入的 provider 与构造函数接收的一致\n\n### 3. 编译测试\n- 验证: agent-integration 模块编译通过（mvn compile -pl agent-integration -am）",
+  "timestamp": "2026-07-23T03:00:13.077Z"
+}

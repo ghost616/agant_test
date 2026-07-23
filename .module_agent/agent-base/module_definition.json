@@ -11,7 +11,7 @@
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/ToolManager.java",
-      "description": "工具调用管理器，注入 ToolConfigService，负责工具缓存和调用器路由，createInvoker 创建 JavaToolInvoker 时传入 toolConfig 参数"
+      "description": "工具调用管理器，负责工具缓存和调用器路由，createInvoker 支持 JAVA/TYPESCRIPT/PYTHON/MCP_HTTP/CUSTOM 五种类型，CUSTOM 分支通过 ToolDataProvider.getCustomInvoker 获取 CustomToolInvoker"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/SessionManager.java",
@@ -55,7 +55,7 @@
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ToolDataProvider.java",
-      "description": "工具数据提供者接口，定义 getSessionToolIds/getToolById/getSkillToolIds/expandMcpTools 方法"
+      "description": "工具数据提供者接口，定义 getSessionToolIds/getToolById/getSkillToolIds/getCustomInvoker 方法"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/SystemToolProvider.java",
@@ -207,7 +207,7 @@
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/enums/ToolType.java",
-      "description": "工具类型枚举"
+      "description": "工具类型枚举，包含 JAVA/TYPESCRIPT/PYTHON/MCP_HTTP/CUSTOM 五种类型"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/exception/BaseException.java",
@@ -328,6 +328,10 @@
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/HookManager.java",
       "description": "HOOK 管理基础设施，维护 systemHooks/systemPostHooks/regularPhaseHooks 三组列表，提供 refreshHooks/triggerHooks/triggerSessionHooks/executePostHooks 方法，供 ChatService 和 ToolExecutionService 委托使用"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/CustomToolInvoker.java",
+      "description": "自定义工具调用器抽象基类，实现 ToolInvoker 接口，持有 protected final ToolConfigDTO toolConfig 属性通过构造函数注入，供外部继承实现 execute 方法"
     }
   ]
 }

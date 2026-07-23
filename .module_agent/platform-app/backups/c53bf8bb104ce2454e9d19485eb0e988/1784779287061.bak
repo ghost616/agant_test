@@ -16,7 +16,6 @@ import com.ghost616.platform.repository.SkillToolMapper;
 import com.ghost616.platform.service.tool.ToolConfigService;
 import com.ghost616.agentbase.service.agent.ToolDataProvider;
 import com.ghost616.agentbase.service.agent.ToolDataProvider.SessionToolInfo;
-import com.ghost616.agentbase.service.agent.invoker.CustomToolInvoker;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -52,11 +51,6 @@ public class DefaultToolDataProvider implements ToolDataProvider {
     @Override
     public ToolConfigDTO getToolById(Long toolId) {
         return toolConfigService.getById(toolId);
-    }
-
-    @Override
-    public CustomToolInvoker getCustomInvoker(ToolConfigDTO toolConfig) {
-        throw new UnsupportedOperationException("Custom tool invoker not supported");
     }
 
     @Override

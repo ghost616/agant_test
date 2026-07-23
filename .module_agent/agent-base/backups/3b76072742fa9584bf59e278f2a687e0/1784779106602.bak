@@ -202,13 +202,16 @@ class ToolManagerTest {
                 .id(toolId).name("custom-tool").toolType(ToolType.CUSTOM).implPath("my.CustomImpl")
                 .sessionAuth(SessionAuthType.ALL).build();
 
-        CustomToolInvoker customInvoker = new CustomToolInvoker(dto) {
-            @Override
-            public String execute(com.ghost616.agentbase.service.agent.AgentExecutionContext ctx, String arguments) {
-                return "custom-result";
-            }
+        CustomToolInvokerProvider provider = tc -> {
+            assertEquals(dto, tc);
+            return new CustomToolInvoker(tc) {
+                @Override
+                public String execute(com.ghost616.agentbase.service.agent.AgentExecutionContext ctx, String arguments) {
+                    return "custom-result";
+                }
+            };
         };
-        when(dataProvider.getCustomInvoker(dto)).thenReturn(customInvoker);
+        when(registry.getCustomToolInvokerProvider()).thenReturn(provider);
         when(dataProvider.getSessionToolIds(sessionId))
                 .thenReturn(List.of(new SessionToolInfo(toolId, SessionAuthType.ALL)));
         when(dataProvider.getToolById(toolId)).thenReturn(dto);
@@ -228,7 +231,7 @@ class ToolManagerTest {
                 .id(toolId).name("custom-null").toolType(ToolType.CUSTOM).implPath("no.Provider")
                 .sessionAuth(SessionAuthType.ALL).build();
 
-        when(dataProvider.getCustomInvoker(dto)).thenReturn(null);
+        when(registry.getCustomToolInvokerProvider()).thenReturn(null);
         when(dataProvider.getSessionToolIds(sessionId))
                 .thenReturn(List.of(new SessionToolInfo(toolId, SessionAuthType.ALL)));
         when(dataProvider.getToolById(toolId)).thenReturn(dto);

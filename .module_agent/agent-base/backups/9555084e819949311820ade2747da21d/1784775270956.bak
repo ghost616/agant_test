@@ -209,12 +209,6 @@ public class ToolManager {
                         : toolConfig.getName();
                 return new McpHttpToolInvoker(toolConfig.getImplPath(), remoteName,
                         toolConfig.getAuthConfig());
-            case CUSTOM:
-                CustomToolInvoker customInvoker = dataProvider.getCustomInvoker(toolConfig);
-                if (customInvoker == null) {
-                    throw new UnsupportedOperationException("ToolDataProvider.getCustomInvoker 返回 null，无法创建自定义工具: " + toolConfig.getName());
-                }
-                return customInvoker;
             default:
                 throw new UnsupportedOperationException("暂不支持的调用类型: " + toolConfig.getToolType());
         }

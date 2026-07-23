@@ -7,6 +7,7 @@ import com.ghost616.agentbase.service.agent.MessageDataProvider;
 import com.ghost616.agentbase.service.agent.ToolDataProvider;
 import com.ghost616.agentbase.service.agent.ToolExecutionService;
 import com.ghost616.agentbase.service.agent.ToolExecutionProvider;
+import com.ghost616.agentbase.service.agent.invoker.CustomToolInvokerProvider;
 import com.ghost616.agentbase.service.agent.invoker.SystemToolProvider;
 import com.ghost616.agentbase.service.model.invoker.ModelInvokerFactory;
 import com.ghost616.agentinteg.AgentAssembler;
@@ -51,6 +52,9 @@ class AgentContextConfigurationTest {
     @Mock
     private ToolExecutionProvider toolExecutionProvider;
 
+    @Mock
+    private CustomToolInvokerProvider customToolInvokerProvider;
+
     @Test
     void defaultChatDataProvider_正确创建实例() {
         DefaultChatDataProvider provider = config.defaultChatDataProvider(
@@ -65,7 +69,7 @@ class AgentContextConfigurationTest {
         ModelInvokerFactory modelInvokerFactory = mock(ModelInvokerFactory.class);
         ChatDataProvider chatDataProvider = mock(ChatDataProvider.class);
 
-        AgentAssembler agentAssembler = config.agentAssembler(systemToolProvider, modelInvokerFactory, chatDataProvider, toolExecutionProvider);
+        AgentAssembler agentAssembler = config.agentAssembler(systemToolProvider, modelInvokerFactory, chatDataProvider, toolExecutionProvider, customToolInvokerProvider);
 
         assertNotNull(agentAssembler);
     }
@@ -76,7 +80,7 @@ class AgentContextConfigurationTest {
         ModelInvokerFactory modelInvokerFactory = mock(ModelInvokerFactory.class);
         ChatDataProvider chatDataProvider = mock(ChatDataProvider.class);
 
-        AgentAssembler agentAssembler = config.agentAssembler(systemToolProvider, modelInvokerFactory, chatDataProvider, toolExecutionProvider);
+        AgentAssembler agentAssembler = config.agentAssembler(systemToolProvider, modelInvokerFactory, chatDataProvider, toolExecutionProvider, customToolInvokerProvider);
         ChatService chatService = config.chatService(agentAssembler);
 
         assertNotNull(chatService);
@@ -88,7 +92,7 @@ class AgentContextConfigurationTest {
         ModelInvokerFactory modelInvokerFactory = mock(ModelInvokerFactory.class);
         ChatDataProvider chatDataProvider = mock(ChatDataProvider.class);
 
-        AgentAssembler agentAssembler = config.agentAssembler(systemToolProvider, modelInvokerFactory, chatDataProvider, toolExecutionProvider);
+        AgentAssembler agentAssembler = config.agentAssembler(systemToolProvider, modelInvokerFactory, chatDataProvider, toolExecutionProvider, customToolInvokerProvider);
         ToolExecutionService toolExecutionService = config.toolExecutionService(agentAssembler);
 
         assertNotNull(toolExecutionService);

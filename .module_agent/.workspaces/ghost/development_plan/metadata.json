@@ -13,5 +13,45 @@
     "code_reviewed": false,
     "plan_completed": false,
     "test_passed": false
+  },
+  {
+    "plan_id": "plan_29c86598-d2eb-4b7d-a682-f8250ff2571a",
+    "plan_summary": "移除 CustomToolInvokerProvider 接口，改为 ToolDataProvider.getCustomInvoker()",
+    "starter_session_id": "ses_072e13c0cffep8SQn3SUzTlijf",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_c4b11e4b-e8e5-43a5-b829-2c8091595731",
+    "plan_summary": "AgentAssembler 移除 CustomToolInvokerProvider",
+    "starter_session_id": "ses_072e13c0cffep8SQn3SUzTlijf",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_ed54ecce-35c3-4288-abfa-9f28bf013372",
+    "plan_summary": "平台层移除 DefaultCustomToolInvokerProvider",
+    "starter_session_id": "ses_072e13c0cffep8SQn3SUzTlijf",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_62feb3af-c2dd-4cba-9d92-b574bdce64a7",
+    "plan_summary": "修复审查问题 - ToolManager 错误消息",
+    "starter_session_id": "ses_072e13c0cffep8SQn3SUzTlijf",
+    "code_reviewed": false,
+    "plan_completed": false,
+    "test_passed": false
+  },
+  {
+    "plan_id": "plan_700ffbe2-4fa7-4e08-8255-0da446fedbca",
+    "plan_summary": "修复审查问题 - platform-app 两个编译错误",
+    "starter_session_id": "ses_072e13c0cffep8SQn3SUzTlijf",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
   }
 ]

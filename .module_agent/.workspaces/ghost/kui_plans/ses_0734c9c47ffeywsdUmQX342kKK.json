@@ -1,0 +1,21 @@
+[
+  {
+    "kui_plan_id": "kui_plan_f99eab59-82e1-4d7d-94e4-39ef3dbbf3ea",
+    "plans": [
+      {
+        "module_name": "agent-base",
+        "development_plan": "1. 在 ToolType 枚举中新增 CUSTOM(\"CUSTOM\", \"自定义实现\") 枚举值\n2. 在 service/agent/invoker 包中新增 CustomToolInvoker 抽象类：包含 ToolConfigDTO 属性，构造函数传入 ToolConfigDTO\n3. 在 service/agent/invoker 包中新增 CustomToolInvokerProvider 接口：包含方法 CustomToolInvoker getInvoker(ToolConfigDTO toolConfig)\n4. 在 AgentComponentRegistry 中新增 CustomToolInvokerProvider 字段及 getter/setter\n5. 修改 ToolManager.createInvoker 方法：新增 CUSTOM 分支，从 AgentComponentRegistry 获取 CustomToolInvokerProvider，调用 getInvoker(toolConfig) 获取 CustomToolInvoker 实例"
+      },
+      {
+        "module_name": "agent-integration",
+        "development_plan": "1. 修改 AgentAssembler 构造器：新增 CustomToolInvokerProvider 参数\n2. 在 build() 方法中将 CustomToolInvokerProvider 注册到 AgentComponentRegistry（调用 registry.setCustomToolInvokerProvider(...)）"
+      },
+      {
+        "module_name": "platform-app",
+        "development_plan": "1. 新增 CustomToolInvokerProviderImpl 空实现类（getInvoker 方法暂时返回 null 或抛出 UnsupportedOperationException）\n2. 修改 AgentContextConfiguration：注入 CustomToolInvokerProviderImpl 并传递给 AgentAssembler 构造器"
+      }
+    ],
+    "status": "running",
+    "result": ""
+  }
+]

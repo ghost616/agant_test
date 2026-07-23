@@ -18,3 +18,5 @@
 [2026-07-22T02:24:25.953Z] [session: ses_0785cdbc7ffepodbC5qnZly07E] ChatDataProviderProxy 实现 getHooks(Long sessionId) 委托方法，直接调用 delegate.getHooks(sessionId)
 [2026-07-22T02:32:52.586Z] [session: ses_0785cdbc7ffepodbC5qnZly07E] AgentAssembler.refreshHooks() 改为无参调用 hookManager.refreshHooks()；HookManager 构造函数改为传入 registry 以支持内部获取 ChatDataProvider
 [2026-07-22T03:01:01.152Z] [session: ses_0785cdbc7ffepodbC5qnZly07E] 移除 AgentAssembler.messageSavePostHook() 公开 getter（无人调用）
+[2026-07-23T03:00:03.137Z] [session: ses_07315f255ffeFaM5UZhxbblz7m] AgentAssembler: 构造函数新增 CustomToolInvokerProvider 参数，build() 中将其注册到 AgentComponentRegistry
+[2026-07-23T04:00:34.410Z] [session: ses_072dee689ffeHP2S2eP9bNvHVv] AgentAssembler 移除 CustomToolInvokerProvider：删除 import、字段、构造参数、build() 中的 registry.setCustomToolInvokerProvider 调用；AgentAssemblerTest 同步移除对应 import、mock 字段、构造参数、两个相关测试方法
