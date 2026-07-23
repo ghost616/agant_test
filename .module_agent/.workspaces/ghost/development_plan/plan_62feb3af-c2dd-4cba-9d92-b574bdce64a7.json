@@ -1,7 +1,0 @@
-{
-  "plan_id": "plan_62feb3af-c2dd-4cba-9d92-b574bdce64a7",
-  "module_name": "agent-base",
-  "development_plan": "ToolManager.java 第215行：将错误消息 \"CustomToolInvokerProvider 未注册，无法创建自定义工具: \" 改为 \"ToolDataProvider.getCustomInvoker 返回 null，无法创建自定义工具: \"",
-  "session_id": "ses_072e0a778ffeFnscEhPdl0XW3p",
-  "modified_files": []
-}

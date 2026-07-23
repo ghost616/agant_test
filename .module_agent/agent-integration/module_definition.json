@@ -48,6 +48,30 @@
     {
       "path": "agent-integration/src/main/java/com/ghost616/agentinteg/model/PlatformType.java",
       "description": "LLM 平台类型枚举，定义支持的平台（OPENAI/ANTHROPIC/AZURE/OLLAMA/DEEPSEEK/KIMI/VOLCENGINE/CUSTOM）及其默认 BaseUrl 和模型列表"
+    },
+    {
+      "path": "src/main/java/com/ghost616/agentinteg/tool/BrowserToolCallback.java",
+      "description": "函数式接口，定义 execute(String sessionId, String toolId, String toolName, String toolParams) 方法，用于浏览器工具的回调执行"
+    },
+    {
+      "path": "src/main/java/com/ghost616/agentinteg/tool/BrowserToolInvoker.java",
+      "description": "继承 CustomToolInvoker 的自定义浏览器工具调用器。构造函数注入 BrowserToolCallback 回调，execute() 从 AgentExecutionContext 和 ToolConfigDTO 提取参数后委托回调执行。提供 loadJsContent() 从 classpath 加载 JS 引擎文件、getJsContent() 返回缓存的 JS 内容"
+    },
+    {
+      "path": "src/main/resources/browser/browser_tool_executor.js",
+      "description": "JS 工具执行引擎，定义 AgentExecutionContext 对象、ToolFunction 工具函数、ToolManager 工具函数管理器（按 toolName 绑定/添加/移除/get）及四个执行函数：getAgentExecutionContext/getToolResult/passToolResult/execute"
+    },
+    {
+      "path": "agent-integration/src/main/java/com/ghost616/agentinteg/tool/BrowserToolCallback.java",
+      "description": "浏览器工具回调函数式接口，定义 execute(sessionId, toolId, toolName, toolParams) 方法返回 String，供 BrowserToolInvoker 在执行时回调宿主环境"
+    },
+    {
+      "path": "agent-integration/src/main/java/com/ghost616/agentinteg/tool/BrowserToolInvoker.java",
+      "description": "浏览器工具调用器，继承 CustomToolInvoker。构造函数注入 BrowserToolCallback 回调，execute() 方法将 sessionId/toolId/toolName/toolParams 委托给回调执行并返回结果，提供 loadJsContent() 方法从 classpath 加载 JS 引擎文件"
+    },
+    {
+      "path": "agent-integration/src/main/resources/browser/browser_tool_executor.js",
+      "description": "浏览器端 JS 工具执行引擎。HostBridge 对象封装四个主机委托方法（getAgentExecutionContext/passToolResult/putSessionVariable/putConversationVariable），方法缺失时抛出异常；AgentExecutionContext 对象定义（putSessionVariable/putConversationVariable 通过 HostBridge 委托服务器）；ToolFunction 工具函数定义；ToolManager 工具函数管理器（bind/add/remove/get/getAll/has）；ToolExecutor 执行器对象（getAgentExecutionContext 获取上下文、getToolResult 通过 toolName 调用 handler、passToolResult 回传结果、execute 主执行入口：获取上下文→执行→回传）"
     }
   ]
 }

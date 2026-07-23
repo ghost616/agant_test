@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_0721a4942ffetcgI5EH23PLQQm",
+  "content": "## 待测试功能说明\n\n### 涉及文件\n1. `agent-integration/src/main/java/com/ghost616/agentinteg/tool/BrowserToolCallback.java`\n2. `agent-integration/src/main/java/com/ghost616/agentinteg/tool/BrowserToolInvoker.java`\n3. `agent-integration/src/main/resources/browser/browser_tool_executor.js`\n\n### 需要测试的功能\n\n#### 1. BrowserToolInvoker 单元测试\n- 构造参数注入：ToolConfigDTO 和 BrowserToolCallback 正确注入\n- execute() 方法：从 AgentExecutionContext 获取 sessionId、从 ToolConfigDTO 获取 toolId/toolName、将 arguments JSON 传递给 callback.execute()\n- execute() 异常处理：callback 抛出异常时返回 JSON 格式错误信息\n- loadJsContent()：从 classpath 正确加载 browser_tool_executor.js 内容\n- getJsContent()：loadJsContent() 后能获取到 JS 内容\n\n#### 2. 编译测试\n- Maven 编译 agent-integration 模块不报错",
+  "timestamp": "2026-07-23T07:36:27.410Z"
+}

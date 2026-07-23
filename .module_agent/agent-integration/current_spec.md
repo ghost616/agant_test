@@ -40,3 +40,8 @@
 - **OpenAIInvoker.parseStreamChunk**：从流式 JSON 根节点解析 usage（prompt_tokens/completion_tokens/total_tokens），设置到 ChatChunk.usage 字段
 - **AnthropicInvoker.invokeStream**：通过 usageHolder 捕获 message_delta 事件中的 usage（input_tokens/output_tokens），在最终 stop chunk 中设置 ChatChunk.usage
 - **OllamaInvoker.parseStreamChunk**：在 done=true 的最终 chunk 中解析 eval_count/prompt_eval_count，设置到 ChatChunk.usage
+
+### 浏览器工具（Browser Tool）
+- **BrowserToolCallback**：函数式接口，定义 `execute(String sessionId, String toolId, String toolName, String toolParams)` 方法，用于浏览器工具的回调执行
+- **BrowserToolInvoker**：继承 CustomToolInvoker 的自定义工具调用器。构造函数注入 BrowserToolCallback 回调，execute() 从 AgentExecutionContext 获取 sessionId、从 ToolConfigDTO 获取 toolId/toolName，将参数 JSON 传递给回调执行；提供 loadJsContent() 方法从 classpath 加载 browser_tool_executor.js、getJsContent() 返回缓存的 JS 内容
+- **browser_tool_executor.js**：JS 工具执行引擎，定义 AgentExecutionContext 对象、ToolFunction 工具函数定义、ToolManager 工具函数管理器（按 toolName 绑定/添加/移除/get）、四个工具执行函数：getAgentExecutionContext 获取上下文、getToolResult 从管理器获取工具执行结果、passToolResult 回传结果给宿主、execute 主执行入口

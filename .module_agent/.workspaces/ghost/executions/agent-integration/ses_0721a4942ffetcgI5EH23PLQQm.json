@@ -1,0 +1,35 @@
+[
+  {
+    "plan_id": "plan_1229384d-8962-4563-8457-f9f84785e557",
+    "plan": "创建 BrowserToolCallback 函数式接口、BrowserToolInvoker（继承 CustomToolInvoker）、browser_tool_executor.js 工具执行引擎",
+    "modified_files": [],
+    "summary": "创建 BrowserToolCallback、BrowserToolInvoker、browser_tool_executor.js 三项任务已启动",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_6e50c760-dfca-40fe-8534-043ac08cb986",
+    "plan": "创建 BrowserToolCallback 函数式接口、BrowserToolInvoker（继承 CustomToolInvoker）、browser_tool_executor.js 工具执行引擎",
+    "modified_files": [
+      "agent-integration/src/main/java/com/ghost616/agentinteg/tool/BrowserToolCallback.java",
+      "agent-integration/src/main/java/com/ghost616/agentinteg/tool/BrowserToolInvoker.java",
+      "agent-integration/src/main/resources/browser/browser_tool_executor.js",
+      "agent-integration/src/test/java/com/ghost616/agentinteg/tool/BrowserToolInvokerTest.java"
+    ],
+    "summary": "已完成 BrowserToolCallback 函数式接口、BrowserToolInvoker（继承 CustomToolInvoker，注入 BrowserToolCallback 回调，提供 loadJsContent/getJsContent 方法）、browser_tool_executor.js（JS 工具执行引擎，含 AgentExecutionContext 对象定义、ToolManager 工具管理器、ToolExecutor 执行器——包含 getAgentExecutionContext/getToolResult/passToolResult/execute 四个方法）。应风后要求修改 JS 文件：execute/passToolResult/getAgentExecutionContext/getToolResult 参数签名变更、AgentExecutionContext 移除 createChildSession/sendUserMessage、putSessionVariable/putConversationVariable 追加主机委托调用、四个执行函数包装进 ToolExecutor 对象。测试 9/9 全部通过。",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_890f7239-6f3f-41e8-8375-cb5e9f461be1",
+    "plan": "修改 browser_tool_executor.js：将 _hostPassToolResult、_hostGetAgentExecutionContext、_hostPutConversationVariable、_hostPutSessionVariable 四个主机函数封装到一个对象内，调用时若对应方法不存在则报错",
+    "modified_files": [],
+    "summary": "力牧已接收新计划",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_30580d11-ca3f-498e-beda-c623d4b90a48",
+    "plan": "将 browser_tool_executor.js 中 HostBridge 重命名为 ToolHostBridge",
+    "modified_files": [],
+    "summary": "力牧已接收新计划",
+    "errors": []
+  }
+]
