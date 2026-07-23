@@ -24,11 +24,12 @@ class ToolManagerTest {
 
     private ToolManager toolManager;
     private ToolDataProvider dataProvider;
+    private AgentComponentRegistry registry;
     private ConcurrentHashMap<Long, ToolManager.ToolSessionObject> toolCache;
 
     @BeforeEach
     void setUp() throws Exception {
-        AgentComponentRegistry registry = mock(AgentComponentRegistry.class);
+        registry = mock(AgentComponentRegistry.class);
         dataProvider = mock(ToolDataProvider.class);
         when(registry.getToolDataProvider()).thenReturn(dataProvider);
         when(registry.getAgentContextManager()).thenReturn(mock(AgentContextManager.class));
@@ -191,5 +192,51 @@ class ToolManagerTest {
         assertEquals("mcp-cfg", result.get(2).toolConfig().getName());
         assertNull(result.get(2).invoker());
         assertSame(result.get(2).toolConfig(), result.get(2).mcpOriginalConfig());
+    }
+
+    @Test
+    void CUSTOM类型provider正常时返回对应invoker() {
+        Long sessionId = 600L;
+        Long toolId = 60L;
+        ToolConfigDTO dto = ToolConfigDTO.builder()
+                .id(toolId).name("custom-tool").toolType(ToolType.CUSTOM).implPath("my.CustomImpl")
+                .sessionAuth(SessionAuthType.ALL).build();
+
+        CustomToolInvokerProvider provider = tc -> {
+            assertEquals(dto, tc);
+            return new CustomToolInvoker(tc) {
+                @Override
+                public String execute(com.ghost616.agentbase.service.agent.AgentExecutionContext ctx, String arguments) {
+                    return "custom-result";
+                }
+            };
+        };
+        when(registry.getCustomToolInvokerProvider()).thenReturn(provider);
+        when(dataProvider.getSessionToolIds(sessionId))
+                .thenReturn(List.of(new SessionToolInfo(toolId, SessionAuthType.ALL)));
+        when(dataProvider.getToolById(toolId)).thenReturn(dto);
+
+        List<ToolManager.ToolSessionObject> result = toolManager.getSessionTools(sessionId, false);
+
+        assertEquals(1, result.size());
+        assertNotNull(result.get(0).invoker());
+        assertEquals(ToolType.CUSTOM, result.get(0).toolConfig().getToolType());
+    }
+
+    @Test
+    void CUSTOM类型provider为null时抛出UnsupportedOperationException() {
+        Long sessionId = 700L;
+        Long toolId = 70L;
+        ToolConfigDTO dto = ToolConfigDTO.builder()
+                .id(toolId).name("custom-null").toolType(ToolType.CUSTOM).implPath("no.Provider")
+                .sessionAuth(SessionAuthType.ALL).build();
+
+        when(registry.getCustomToolInvokerProvider()).thenReturn(null);
+        when(dataProvider.getSessionToolIds(sessionId))
+                .thenReturn(List.of(new SessionToolInfo(toolId, SessionAuthType.ALL)));
+        when(dataProvider.getToolById(toolId)).thenReturn(dto);
+
+        assertThrows(UnsupportedOperationException.class,
+                () -> toolManager.getSessionTools(sessionId, false));
     }
 }

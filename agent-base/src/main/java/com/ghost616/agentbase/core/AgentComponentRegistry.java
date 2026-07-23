@@ -9,6 +9,7 @@ import com.ghost616.agentbase.service.agent.ToolDataProvider;
 import com.ghost616.agentbase.service.agent.ToolExecutionProvider;
 import com.ghost616.agentbase.service.agent.ToolExecutionTracker;
 import com.ghost616.agentbase.service.agent.invoker.HookManager;
+import com.ghost616.agentbase.service.agent.invoker.CustomToolInvokerProvider;
 import com.ghost616.agentbase.service.agent.invoker.SystemToolManager;
 import com.ghost616.agentbase.service.agent.invoker.SystemToolProvider;
 import com.ghost616.agentbase.service.agent.invoker.ToolCallQueueManager;
@@ -50,6 +51,9 @@ public class AgentComponentRegistry {
 
     @Setter
     private MessageSender messageSender;
+
+    @Setter
+    private CustomToolInvokerProvider customToolInvokerProvider;
 
     private <T> T requireInitialized(T value, String name) {
         if (value == null) {
@@ -124,5 +128,9 @@ public class AgentComponentRegistry {
 
     public MessageSender getMessageSender() {
         return messageSender;
+    }
+
+    public CustomToolInvokerProvider getCustomToolInvokerProvider() {
+        return customToolInvokerProvider;
     }
 }

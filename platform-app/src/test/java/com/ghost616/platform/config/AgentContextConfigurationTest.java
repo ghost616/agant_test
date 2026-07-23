@@ -6,6 +6,8 @@ import com.ghost616.agentbase.service.agent.ContextDataProvider;
 import com.ghost616.agentbase.service.agent.MessageDataProvider;
 import com.ghost616.agentbase.service.agent.ToolDataProvider;
 import com.ghost616.agentbase.service.agent.ToolExecutionService;
+import com.ghost616.agentbase.service.agent.ToolExecutionProvider;
+import com.ghost616.agentbase.service.agent.invoker.CustomToolInvokerProvider;
 import com.ghost616.agentbase.service.agent.invoker.SystemToolProvider;
 import com.ghost616.agentbase.service.model.invoker.ModelInvokerFactory;
 import com.ghost616.agentinteg.AgentAssembler;
@@ -47,6 +49,12 @@ class AgentContextConfigurationTest {
     @Mock
     private DefaultSubSessionCallback defaultSubSessionCallback;
 
+    @Mock
+    private ToolExecutionProvider toolExecutionProvider;
+
+    @Mock
+    private CustomToolInvokerProvider customToolInvokerProvider;
+
     @Test
     void defaultChatDataProvider_正确创建实例() {
         DefaultChatDataProvider provider = config.defaultChatDataProvider(
@@ -61,7 +69,7 @@ class AgentContextConfigurationTest {
         ModelInvokerFactory modelInvokerFactory = mock(ModelInvokerFactory.class);
         ChatDataProvider chatDataProvider = mock(ChatDataProvider.class);
 
-        AgentAssembler agentAssembler = config.agentAssembler(systemToolProvider, modelInvokerFactory, chatDataProvider);
+        AgentAssembler agentAssembler = config.agentAssembler(systemToolProvider, modelInvokerFactory, chatDataProvider, toolExecutionProvider, customToolInvokerProvider);
 
         assertNotNull(agentAssembler);
     }
@@ -72,7 +80,7 @@ class AgentContextConfigurationTest {
         ModelInvokerFactory modelInvokerFactory = mock(ModelInvokerFactory.class);
         ChatDataProvider chatDataProvider = mock(ChatDataProvider.class);
 
-        AgentAssembler agentAssembler = config.agentAssembler(systemToolProvider, modelInvokerFactory, chatDataProvider);
+        AgentAssembler agentAssembler = config.agentAssembler(systemToolProvider, modelInvokerFactory, chatDataProvider, toolExecutionProvider, customToolInvokerProvider);
         ChatService chatService = config.chatService(agentAssembler);
 
         assertNotNull(chatService);
@@ -84,21 +92,21 @@ class AgentContextConfigurationTest {
         ModelInvokerFactory modelInvokerFactory = mock(ModelInvokerFactory.class);
         ChatDataProvider chatDataProvider = mock(ChatDataProvider.class);
 
-        AgentAssembler agentAssembler = config.agentAssembler(systemToolProvider, modelInvokerFactory, chatDataProvider);
+        AgentAssembler agentAssembler = config.agentAssembler(systemToolProvider, modelInvokerFactory, chatDataProvider, toolExecutionProvider, customToolInvokerProvider);
         ToolExecutionService toolExecutionService = config.toolExecutionService(agentAssembler);
 
         assertNotNull(toolExecutionService);
     }
 
     @Test
-    void systemToolProvider返回的工具Map包含sub_session_callback() {
+    void systemToolProvider返回的工具Map包含callback_sub_session() {
         when(applicationContext.getBeansOfType(SystemTool.class)).thenReturn(Map.of());
 
         var provider = config.systemToolProvider(applicationContext, defaultSubSessionCallback);
         Map<String, SystemTool> tools = provider.discoverSystemTools();
 
-        assertTrue(tools.containsKey("sub_session_callback"));
-        assertNotNull(tools.get("sub_session_callback"));
+        assertTrue(tools.containsKey("callback_sub_session"));
+        assertNotNull(tools.get("callback_sub_session"));
     }
 
     @Test
@@ -112,7 +120,7 @@ class AgentContextConfigurationTest {
         Map<String, SystemTool> tools = provider.discoverSystemTools();
 
         assertTrue(tools.containsKey("my_custom_tool"));
-        assertTrue(tools.containsKey("sub_session_callback"));
+        assertTrue(tools.containsKey("callback_sub_session"));
         assertEquals(2, tools.size());
     }
 
@@ -127,7 +135,7 @@ class AgentContextConfigurationTest {
         Map<String, SystemTool> tools = provider.discoverSystemTools();
 
         assertFalse(tools.containsKey(null));
-        assertTrue(tools.containsKey("sub_session_callback"));
+        assertTrue(tools.containsKey("callback_sub_session"));
         assertEquals(1, tools.size());
     }
 
@@ -141,7 +149,7 @@ class AgentContextConfigurationTest {
         var provider = config.systemToolProvider(applicationContext, defaultSubSessionCallback);
         Map<String, SystemTool> tools = provider.discoverSystemTools();
 
-        assertTrue(tools.containsKey("sub_session_callback"));
+        assertTrue(tools.containsKey("callback_sub_session"));
         assertEquals(1, tools.size());
     }
 }

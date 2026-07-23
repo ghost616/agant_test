@@ -8,6 +8,7 @@ import com.ghost616.agentbase.service.agent.MessageDataProvider;
 import com.ghost616.agentbase.service.agent.SessionManager;
 import com.ghost616.agentbase.service.agent.ToolDataProvider;
 import com.ghost616.agentbase.service.agent.ToolExecutionService;
+import com.ghost616.agentbase.service.agent.invoker.CustomToolInvokerProvider;
 import com.ghost616.agentbase.service.agent.invoker.SystemTool;
 import com.ghost616.agentbase.service.agent.invoker.SystemToolProvider;
 import com.ghost616.agentbase.service.agent.invoker.ToolManager;
@@ -20,6 +21,7 @@ import com.ghost616.agentinteg.model.invoker.DefaultModelInvokerFactory;
 import com.ghost616.platform.repository.ModelConfigMapper;
 import com.ghost616.platform.repository.SessionMapper;
 import com.ghost616.platform.service.agent.DefaultChatDataProvider;
+import com.ghost616.platform.service.agent.DefaultCustomToolInvokerProvider;
 import com.ghost616.platform.service.agent.DefaultToolExecutionProvider;
 import com.ghost616.platform.service.agent.DefaultSubSessionCallback;
 import com.ghost616.agentinteg.tool.SubSessionCallbackSystemTool;
@@ -79,12 +81,18 @@ public class AgentContextConfiguration {
     }
 
     @Bean
+    public DefaultCustomToolInvokerProvider defaultCustomToolInvokerProvider() {
+        return new DefaultCustomToolInvokerProvider();
+    }
+
+    @Bean
     public AgentAssembler agentAssembler(SystemToolProvider systemToolProvider,
                             ModelInvokerFactory modelInvokerFactory,
                             ChatDataProvider chatDataProvider,
-                            ToolExecutionProvider toolExecutionProvider) {
+                            ToolExecutionProvider toolExecutionProvider,
+                            CustomToolInvokerProvider customToolInvokerProvider) {
         return new AgentAssembler(contextDataProvider, messageDataProvider, toolDataProvider,
-                systemToolProvider, modelInvokerFactory, chatDataProvider, null, toolExecutionProvider);
+                systemToolProvider, modelInvokerFactory, chatDataProvider, null, toolExecutionProvider, customToolInvokerProvider);
     }
 
     @Bean

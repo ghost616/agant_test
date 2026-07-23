@@ -10,7 +10,8 @@ public enum ToolType {
     JAVA("JAVA", "Java接口实现"),
     TYPESCRIPT("TYPESCRIPT", "TypeScript脚本"),
     PYTHON("PYTHON", "Python脚本"),
-    MCP_HTTP("MCP_HTTP", "MCP HTTP远程工具");
+    MCP_HTTP("MCP_HTTP", "MCP HTTP远程工具"),
+    CUSTOM("CUSTOM", "自定义实现");
 
     @EnumValue
     private final String code;
