@@ -4,6 +4,8 @@ import com.ghost616.agentbase.service.agent.AgentContextManager;
 import com.ghost616.agentbase.service.agent.AgentExecutionContext;
 import com.ghost616.platform.dto.AgentContextDTO;
 import com.ghost616.platform.dto.ApiResponse;
+import com.ghost616.platform.dto.context.ConversationVariableRequest;
+import com.ghost616.platform.dto.context.SessionVariableRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,7 +16,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
-import java.util.Map;
 
 @Slf4j
 @RestController
@@ -53,23 +54,23 @@ public class AgentContextController {
 
     @PostMapping("/{sessionId}/session-variable")
     public ApiResponse<Void> putSessionVariable(@PathVariable Long sessionId,
-                                                 @RequestBody Map<String, String> body) {
+                                                 @RequestBody SessionVariableRequest body) {
         AgentContextManager.AgentSessionContext sessionContext = agentContextManager.get(sessionId);
         if (sessionContext == null) {
             return ApiResponse.fail("CONTEXT-001", "Session context not found: " + sessionId);
         }
-        sessionContext.context().putSessionVariable(body.get("key"), body.get("value"));
+        sessionContext.context().putSessionVariable(body.getKey(), body.getValue());
         return ApiResponse.success(null);
     }
 
     @PostMapping("/{sessionId}/conversation-variable")
     public ApiResponse<Void> putConversationVariable(@PathVariable Long sessionId,
-                                                      @RequestBody Map<String, String> body) {
+                                                       @RequestBody ConversationVariableRequest body) {
         AgentContextManager.AgentSessionContext sessionContext = agentContextManager.get(sessionId);
         if (sessionContext == null) {
             return ApiResponse.fail("CONTEXT-001", "Session context not found: " + sessionId);
         }
-        sessionContext.context().putConversationVariable(body.get("key"), body.get("value"));
+        sessionContext.context().putConversationVariable(body.getKey(), body.getValue());
         return ApiResponse.success(null);
     }
 

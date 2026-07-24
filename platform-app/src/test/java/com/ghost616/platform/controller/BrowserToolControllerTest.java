@@ -1,15 +1,16 @@
 package com.ghost616.platform.controller;
 
 import com.ghost616.platform.dto.ApiResponse;
+import com.ghost616.platform.dto.browser.BrowserToolTask;
+import com.ghost616.platform.dto.context.PassResultRequest;
 import com.ghost616.platform.dto.tool.ToolDetailDTO;
+import com.ghost616.platform.service.browser.BrowserToolCallbackImpl;
 import com.ghost616.platform.service.tool.ToolConfigService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -20,34 +21,43 @@ class BrowserToolControllerTest {
     @Mock
     private ToolConfigService toolConfigService;
 
+    @Mock
+    private BrowserToolCallbackImpl browserToolCallback;
+
     @InjectMocks
     private BrowserToolController controller;
 
     @Test
     void passResult_shouldAlwaysReturnSuccess() {
-        Map<String, Object> body = Map.of("sessionId", 1, "toolId", "tool-1", "result", "ok");
+        BrowserToolTask task = BrowserToolTask.builder().toolResult(new java.util.concurrent.CompletableFuture<>()).build();
+        when(browserToolCallback.getTask("1", "tool-1")).thenReturn(task);
+
+        PassResultRequest body = PassResultRequest.builder().sessionId(1L).toolId("tool-1").result("ok").build();
         ApiResponse<Void> response = controller.passResult(body);
 
         assertTrue(response.isSuccess());
+        assertEquals("ok", task.getToolResult().join());
     }
 
     @Test
-    void passResult_shouldAcceptEmptyBody() {
-        Map<String, Object> body = Map.of();
+    void passResult_shouldReturnErrorWhenSessionIdNull() {
+        PassResultRequest body = new PassResultRequest();
         ApiResponse<Void> response = controller.passResult(body);
 
-        assertTrue(response.isSuccess());
+        assertFalse(response.isSuccess());
+        assertEquals("PARAM-001", response.getCode());
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     void passResult_shouldAcceptNullBodyValue() {
-        Map<String, Object> body = new java.util.HashMap<>();
-        body.put("sessionId", 1);
-        body.put("result", null);
+        BrowserToolTask task = BrowserToolTask.builder().toolResult(new java.util.concurrent.CompletableFuture<>()).build();
+        when(browserToolCallback.getTask("1", null)).thenReturn(task);
+
+        PassResultRequest body = PassResultRequest.builder().sessionId(1L).result(null).toolId(null).build();
         ApiResponse<Void> response = controller.passResult(body);
 
         assertTrue(response.isSuccess());
+        assertNull(task.getToolResult().join());
     }
 
     @Test

@@ -1,7 +1,11 @@
 package com.ghost616.platform.controller;
 
+import com.ghost616.agentinteg.tool.BrowserToolInvoker;
 import com.ghost616.platform.dto.ApiResponse;
+import com.ghost616.platform.dto.browser.BrowserToolTask;
+import com.ghost616.platform.dto.context.PassResultRequest;
 import com.ghost616.platform.dto.tool.ToolDetailDTO;
+import com.ghost616.platform.service.browser.BrowserToolCallbackImpl;
 import com.ghost616.platform.service.tool.ToolConfigService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,7 +16,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Map;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 
 @Slf4j
 @RestController
@@ -20,16 +26,51 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class BrowserToolController {
 
+    private static volatile String cachedExtensionJs;
+
     private final ToolConfigService toolConfigService;
+    private final BrowserToolCallbackImpl browserToolCallback;
 
     @PostMapping("/pass-result")
-    public ApiResponse<Void> passResult(@RequestBody Map<String, Object> body) {
+    public ApiResponse<Void> passResult(@RequestBody PassResultRequest body) {
+        if (body.getSessionId() == null) {
+            return ApiResponse.fail("PARAM-001", "sessionId is required");
+        }
+        BrowserToolTask task = browserToolCallback.getTask(String.valueOf(body.getSessionId()), body.getToolId());
+        if (task != null) {
+            task.getToolResult().complete(body.getResult());
+        }
         return ApiResponse.success(null);
     }
 
     @GetMapping("/extension")
     public String getExtension() {
-        return EXTENSION_JS;
+        if (cachedExtensionJs == null) {
+            synchronized (BrowserToolController.class) {
+                if (cachedExtensionJs == null) {
+                    try (InputStream is = Thread.currentThread().getContextClassLoader()
+                            .getResourceAsStream("browser/browser_extension.js")) {
+                        if (is != null) {
+                            cachedExtensionJs = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+                        } else {
+                            cachedExtensionJs = "";
+                        }
+                    } catch (IOException e) {
+                        log.warn("Failed to load browser_extension.js", e);
+                        cachedExtensionJs = "";
+                    }
+                }
+            }
+        }
+        if (cachedExtensionJs == null || cachedExtensionJs.isEmpty()) {
+            String executorJs = BrowserToolInvoker.loadJsContent();
+            return executorJs != null ? executorJs : "";
+        }
+        String executorJs = BrowserToolInvoker.loadJsContent();
+        if (executorJs != null && !executorJs.isEmpty()) {
+            return cachedExtensionJs + "\n" + executorJs;
+        }
+        return cachedExtensionJs;
     }
 
     @GetMapping("/tool-script/{toolConfigId}")
@@ -41,44 +82,4 @@ public class BrowserToolController {
         return ApiResponse.success(toolDetail.getToolScript());
     }
 
-    private static final String EXTENSION_JS = """
-(function() {
-    if (typeof ToolHostBridge === 'undefined') {
-        return;
-    }
-
-    ToolHostBridge.getAgentExecutionContext = async function(sessionId) {
-        const response = await fetch('/api/context/' + sessionId);
-        const data = await response.json();
-        if (data.success) {
-            return data.data;
-        }
-        throw new Error('Failed to get agent execution context: ' + data.message);
-    };
-
-    ToolHostBridge.passToolResult = function(sessionId, toolId, result) {
-        fetch('/api/browser-tool/pass-result', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ sessionId: sessionId, toolId: toolId, result: result })
-        });
-    };
-
-    ToolHostBridge.putSessionVariable = function(sessionId, key, value) {
-        fetch('/api/context/' + sessionId + '/session-variable', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ key: key, value: value })
-        });
-    };
-
-    ToolHostBridge.putConversationVariable = function(sessionId, key, value) {
-        fetch('/api/context/' + sessionId + '/conversation-variable', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ key: key, value: value })
-        });
-    };
-})();
-""";
 }

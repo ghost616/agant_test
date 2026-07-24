@@ -4,6 +4,8 @@ import com.ghost616.agentbase.service.agent.AgentContextManager;
 import com.ghost616.agentbase.service.agent.AgentExecutionContext;
 import com.ghost616.platform.dto.AgentContextDTO;
 import com.ghost616.platform.dto.ApiResponse;
+import com.ghost616.platform.dto.context.ConversationVariableRequest;
+import com.ghost616.platform.dto.context.SessionVariableRequest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -142,7 +144,7 @@ class AgentContextControllerTest {
         when(agentContextManager.get(1L)).thenReturn(sessionCtx);
         when(sessionCtx.context()).thenReturn(ctx);
 
-        Map<String, String> body = Map.of("key", "varKey", "value", "varValue");
+        SessionVariableRequest body = new SessionVariableRequest("varKey", "varValue");
         ApiResponse<Void> response = controller.putSessionVariable(1L, body);
 
         assertTrue(response.isSuccess());
@@ -153,7 +155,7 @@ class AgentContextControllerTest {
     void putSessionVariable_shouldReturnErrorWhenSessionContextNotFound() {
         when(agentContextManager.get(999L)).thenReturn(null);
 
-        ApiResponse<Void> response = controller.putSessionVariable(999L, Map.of("key", "k", "value", "v"));
+        ApiResponse<Void> response = controller.putSessionVariable(999L, new SessionVariableRequest("k", "v"));
 
         assertFalse(response.isSuccess());
         assertEquals("CONTEXT-001", response.getCode());
@@ -166,7 +168,7 @@ class AgentContextControllerTest {
         when(agentContextManager.get(1L)).thenReturn(sessionCtx);
         when(sessionCtx.context()).thenReturn(ctx);
 
-        Map<String, String> body = Map.of("key", "convKey", "value", "convValue");
+        ConversationVariableRequest body = new ConversationVariableRequest("convKey", "convValue");
         ApiResponse<Void> response = controller.putConversationVariable(1L, body);
 
         assertTrue(response.isSuccess());
@@ -177,7 +179,7 @@ class AgentContextControllerTest {
     void putConversationVariable_shouldReturnErrorWhenSessionContextNotFound() {
         when(agentContextManager.get(999L)).thenReturn(null);
 
-        ApiResponse<Void> response = controller.putConversationVariable(999L, Map.of("key", "k", "value", "v"));
+        ApiResponse<Void> response = controller.putConversationVariable(999L, new ConversationVariableRequest("k", "v"));
 
         assertFalse(response.isSuccess());
         assertEquals("CONTEXT-001", response.getCode());
@@ -190,7 +192,7 @@ class AgentContextControllerTest {
         when(agentContextManager.get(1L)).thenReturn(sessionCtx);
         when(sessionCtx.context()).thenReturn(ctx);
 
-        Map<String, String> body = Map.of("value", "val");
+        SessionVariableRequest body = SessionVariableRequest.builder().value("val").build();
         ApiResponse<Void> response = controller.putSessionVariable(1L, body);
 
         assertTrue(response.isSuccess());
@@ -204,7 +206,7 @@ class AgentContextControllerTest {
         when(agentContextManager.get(1L)).thenReturn(sessionCtx);
         when(sessionCtx.context()).thenReturn(ctx);
 
-        Map<String, String> body = Map.of("key", "k");
+        SessionVariableRequest body = SessionVariableRequest.builder().key("k").build();
         ApiResponse<Void> response = controller.putSessionVariable(1L, body);
 
         assertTrue(response.isSuccess());
