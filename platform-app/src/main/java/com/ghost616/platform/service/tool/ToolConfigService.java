@@ -2,6 +2,7 @@ package com.ghost616.platform.service.tool;
 
 import com.ghost616.platform.dto.tool.ToolCreateRequest;
 import com.ghost616.platform.dto.tool.ToolUpdateRequest;
+import com.ghost616.platform.entity.ToolConfig;
 
 import java.util.List;
 
@@ -25,4 +26,6 @@ public interface ToolConfigService {
     ToolDetailDTO toggleStatus(Long id, CommonStatus status);
 
     ToolDetailDTO getImplByName(String name);
+
+    ToolConfig getToolConfigBySessionAndName(Long sessionId, String toolName);
 }

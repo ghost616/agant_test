@@ -4,7 +4,9 @@ import com.ghost616.agentbase.dto.model.ChatChunk;
 import com.ghost616.agentbase.service.agent.ToolExecutionService;
 import com.ghost616.platform.dto.ApiResponse;
 import com.ghost616.platform.dto.ToolStatusResultDTO;
+import com.ghost616.platform.entity.ToolConfig;
 import com.ghost616.platform.service.agent.DefaultSubSessionCallback;
+import com.ghost616.platform.service.tool.ToolConfigService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
@@ -26,6 +28,7 @@ public class ToolExecutionController {
 
     private final ToolExecutionService toolExecutionService;
     private final DefaultSubSessionCallback defaultSubSessionCallback;
+    private final ToolConfigService toolConfigService;
 
     @PostMapping("/{sessionId}/execute-tools")
     public ApiResponse<ToolStatusResultDTO> executeTools(@PathVariable Long sessionId) {
@@ -48,6 +51,16 @@ public class ToolExecutionController {
             if (subData != null) {
                 dto.setNeedsSubSessionFlow(true);
             }
+        }
+        ToolConfig toolConfig = toolConfigService.getToolConfigBySessionAndName(sessionId, result.toolName());
+        if (toolConfig != null) {
+            ToolStatusResultDTO.ToolConfigBrief brief = new ToolStatusResultDTO.ToolConfigBrief();
+            brief.setId(String.valueOf(toolConfig.getId()));
+            if (toolConfig.getSubToolType() != null) {
+                brief.setSubToolType(toolConfig.getSubToolType().getCode());
+            }
+            brief.setToolName(toolConfig.getName());
+            dto.setToolConfig(brief);
         }
         return ApiResponse.success(dto);
     }

@@ -22,6 +22,7 @@ import java.util.Map;
 
 import com.ghost616.platform.dto.tool.ToolDetailDTO;
 import com.ghost616.platform.enums.SubToolType;
+import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
 import com.ghost616.agentbase.enums.CommonStatus;
 import com.ghost616.agentbase.enums.ErrorCode;
 import com.ghost616.agentbase.enums.ToolType;
@@ -29,6 +30,7 @@ import com.ghost616.agentbase.event.ToolChangedEvent;
 import com.ghost616.agentbase.exception.BusinessException;
 import com.ghost616.agentbase.service.agent.invoker.McpAuthConfigParser;
 import com.ghost616.agentbase.service.agent.invoker.McpJsonRpcClient;
+import com.ghost616.agentbase.service.agent.invoker.ToolManager;
 
 
 @Slf4j
@@ -38,6 +40,7 @@ public class ToolConfigServiceImpl implements ToolConfigService {
 
     private final ToolConfigMapper toolConfigMapper;
     private final ApplicationEventPublisher eventPublisher;
+    private final ToolManager toolManager;
 
     @Override
     public List<ToolDetailDTO> list(String name, ToolType toolType, CommonStatus status) {
@@ -200,6 +203,19 @@ public class ToolConfigServiceImpl implements ToolConfigService {
             throw new BusinessException(ErrorCode.TOOL_NOT_FOUND);
         }
         return toDTO(entity);
+    }
+
+    @Override
+    public ToolConfig getToolConfigBySessionAndName(Long sessionId, String toolName) {
+        ToolConfigDTO dto = toolManager.getToolConfig(sessionId, toolName);
+        if (dto == null || dto.getId() == null) {
+            return null;
+        }
+        ToolConfig entity = toolConfigMapper.selectById(dto.getId());
+        if (entity == null) {
+            throw new BusinessException(ErrorCode.TOOL_NOT_FOUND);
+        }
+        return entity;
     }
 
     private String normalizeParameterSchema(String raw) {

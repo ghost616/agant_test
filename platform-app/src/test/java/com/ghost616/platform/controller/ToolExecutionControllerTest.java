@@ -4,7 +4,10 @@ import com.ghost616.agentbase.dto.model.ChatChunk;
 import com.ghost616.agentbase.service.agent.ToolExecutionService;
 import com.ghost616.platform.dto.ApiResponse;
 import com.ghost616.platform.dto.ToolStatusResultDTO;
+import com.ghost616.platform.entity.ToolConfig;
+import com.ghost616.platform.enums.SubToolType;
 import com.ghost616.platform.service.agent.DefaultSubSessionCallback;
+import com.ghost616.platform.service.tool.ToolConfigService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -26,6 +29,9 @@ class ToolExecutionControllerTest {
 
     @Mock
     private DefaultSubSessionCallback defaultSubSessionCallback;
+
+    @Mock
+    private ToolConfigService toolConfigService;
 
     @InjectMocks
     private ToolExecutionController controller;
@@ -119,6 +125,78 @@ class ToolExecutionControllerTest {
         assertTrue(response.isSuccess());
         assertFalse(response.getData().isNeedsSubSessionFlow());
         verify(defaultSubSessionCallback).getSubSessionData(sessionId);
+    }
+
+    @Test
+    void toolStatus_ToolConfig正常时正确构建ToolConfigBrief() {
+        ToolExecutionService.ToolStatusResult serviceResult =
+                new ToolExecutionService.ToolStatusResult("done", "tc-1", "browser-tool", "{}", false, "ok");
+        when(toolExecutionService.getToolStatus(sessionId, "tc-1")).thenReturn(serviceResult);
+        ToolConfig toolConfig = new ToolConfig();
+        toolConfig.setId(100L);
+        toolConfig.setName("browser-tool");
+        toolConfig.setSubToolType(SubToolType.BROWSER);
+        when(toolConfigService.getToolConfigBySessionAndName(sessionId, "browser-tool")).thenReturn(toolConfig);
+
+        ApiResponse<ToolStatusResultDTO> response = controller.toolStatus(sessionId, "tc-1");
+
+        ToolStatusResultDTO.ToolConfigBrief brief = response.getData().getToolConfig();
+        assertNotNull(brief);
+        assertEquals("100", brief.getId());
+        assertEquals("BROWSER", brief.getSubToolType());
+        assertEquals("browser-tool", brief.getToolName());
+        verify(toolConfigService).getToolConfigBySessionAndName(sessionId, "browser-tool");
+    }
+
+    @Test
+    void toolStatus_ToolConfig为null时toolConfig保持null() {
+        ToolExecutionService.ToolStatusResult serviceResult =
+                new ToolExecutionService.ToolStatusResult("done", "tc-1", "unknown-tool", "{}", false, "ok");
+        when(toolExecutionService.getToolStatus(sessionId, "tc-1")).thenReturn(serviceResult);
+        when(toolConfigService.getToolConfigBySessionAndName(sessionId, "unknown-tool")).thenReturn(null);
+
+        ApiResponse<ToolStatusResultDTO> response = controller.toolStatus(sessionId, "tc-1");
+
+        assertNull(response.getData().getToolConfig());
+        verify(toolConfigService).getToolConfigBySessionAndName(sessionId, "unknown-tool");
+    }
+
+    @Test
+    void toolStatus_SubToolType为null时brief中subToolType保持null() {
+        ToolExecutionService.ToolStatusResult serviceResult =
+                new ToolExecutionService.ToolStatusResult("done", "tc-1", "no-subtype-tool", "{}", false, "ok");
+        when(toolExecutionService.getToolStatus(sessionId, "tc-1")).thenReturn(serviceResult);
+        ToolConfig toolConfig = new ToolConfig();
+        toolConfig.setId(200L);
+        toolConfig.setName("no-subtype-tool");
+        toolConfig.setSubToolType(null);
+        when(toolConfigService.getToolConfigBySessionAndName(sessionId, "no-subtype-tool")).thenReturn(toolConfig);
+
+        ApiResponse<ToolStatusResultDTO> response = controller.toolStatus(sessionId, "tc-1");
+
+        ToolStatusResultDTO.ToolConfigBrief brief = response.getData().getToolConfig();
+        assertNotNull(brief);
+        assertEquals("200", brief.getId());
+        assertNull(brief.getSubToolType());
+        assertEquals("no-subtype-tool", brief.getToolName());
+        verify(toolConfigService).getToolConfigBySessionAndName(sessionId, "no-subtype-tool");
+    }
+
+    @Test
+    void toolStatus_原有子会话回调逻辑不受影响() {
+        ToolExecutionService.ToolStatusResult serviceResult =
+                new ToolExecutionService.ToolStatusResult("done", "tc-1", "_sys_callback_sub_session", "{}", false, "ok");
+        when(toolExecutionService.getToolStatus(sessionId, "tc-1")).thenReturn(serviceResult);
+        DefaultSubSessionCallback.SubSessionData subData = mock(DefaultSubSessionCallback.SubSessionData.class);
+        when(defaultSubSessionCallback.getSubSessionData(sessionId)).thenReturn(subData);
+        when(toolConfigService.getToolConfigBySessionAndName(sessionId, "_sys_callback_sub_session")).thenReturn(null);
+
+        ApiResponse<ToolStatusResultDTO> response = controller.toolStatus(sessionId, "tc-1");
+
+        assertTrue(response.getData().isNeedsSubSessionFlow());
+        assertNull(response.getData().getToolConfig());
+        verify(defaultSubSessionCallback).getSubSessionData(sessionId);
+        verify(toolConfigService).getToolConfigBySessionAndName(sessionId, "_sys_callback_sub_session");
     }
 
     @Test

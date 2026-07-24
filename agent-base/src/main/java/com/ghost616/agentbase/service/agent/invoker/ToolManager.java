@@ -66,6 +66,16 @@ public class ToolManager {
         return resolveSkillToolByName(sessionId, toolName);
     }
 
+    public ToolConfigDTO getToolConfig(Long sessionId, String toolName) {
+        ensureInitialized();
+        List<ToolSessionObject> sessionTools = getSessionTools(sessionId);
+        return sessionTools.stream()
+                .filter(tso -> tso.toolConfig().getName().equals(toolName))
+                .findFirst()
+                .map(tso -> tso.mcpOriginalConfig() != null ? tso.mcpOriginalConfig() : tso.toolConfig())
+                .orElse(null);
+    }
+
     public List<ToolSessionObject> getSessionTools(Long sessionId) {
         return getSessionTools(sessionId, false);
     }

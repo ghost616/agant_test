@@ -1,9 +1,11 @@
 package com.ghost616.platform.service.tool;
 
+import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
 import com.ghost616.agentbase.enums.CommonStatus;
 import com.ghost616.agentbase.enums.ErrorCode;
 import com.ghost616.agentbase.enums.ToolType;
 import com.ghost616.agentbase.exception.BusinessException;
+import com.ghost616.agentbase.service.agent.invoker.ToolManager;
 import com.ghost616.platform.dto.tool.ToolCreateRequest;
 import com.ghost616.platform.dto.tool.ToolDetailDTO;
 import com.ghost616.platform.dto.tool.ToolUpdateRequest;
@@ -33,11 +35,14 @@ class ToolConfigServiceImplTest {
     @Mock
     private ApplicationEventPublisher eventPublisher;
 
+    @Mock
+    private ToolManager toolManager;
+
     private ToolConfigServiceImpl service;
 
     @BeforeEach
     void setUp() {
-        service = new ToolConfigServiceImpl(toolConfigMapper, eventPublisher);
+        service = new ToolConfigServiceImpl(toolConfigMapper, eventPublisher, toolManager);
     }
 
     private ToolConfig createEntity(Long id, String name) {
@@ -279,6 +284,56 @@ class ToolConfigServiceImplTest {
 
             BusinessException ex = assertThrows(BusinessException.class, () -> service.delete(999L));
             assertEquals(ErrorCode.TOOL_NOT_FOUND, ex.getErrorCode());
+        }
+    }
+
+    @Nested
+    class GetToolConfigBySessionAndNameTests {
+
+        @Test
+        void whenDtoNotFound_shouldReturnNull() {
+            when(toolManager.getToolConfig(1L, "unknown")).thenReturn(null);
+
+            ToolConfig result = service.getToolConfigBySessionAndName(1L, "unknown");
+
+            assertNull(result);
+        }
+
+        @Test
+        void whenDtoFoundButEntityNotFound_shouldThrow() {
+            ToolConfigDTO dto = ToolConfigDTO.builder().id(100L).build();
+            when(toolManager.getToolConfig(1L, "ghost")).thenReturn(dto);
+            when(toolConfigMapper.selectById(100L)).thenReturn(null);
+
+            BusinessException ex = assertThrows(BusinessException.class,
+                    () -> service.getToolConfigBySessionAndName(1L, "ghost"));
+            assertEquals(ErrorCode.TOOL_NOT_FOUND, ex.getErrorCode());
+        }
+
+        @Test
+        void whenDtoIdIsNull_shouldReturnNull() {
+            ToolConfigDTO dto = ToolConfigDTO.builder().id(null).build();
+            when(toolManager.getToolConfig(1L, "null-id")).thenReturn(dto);
+
+            ToolConfig result = service.getToolConfigBySessionAndName(1L, "null-id");
+
+            assertNull(result);
+        }
+
+        @Test
+        void whenFound_shouldReturnEntity() {
+            ToolConfig entity = new ToolConfig();
+            entity.setId(100L);
+            entity.setName("my_tool");
+            ToolConfigDTO dto = ToolConfigDTO.builder().id(100L).build();
+            when(toolManager.getToolConfig(1L, "my_tool")).thenReturn(dto);
+            when(toolConfigMapper.selectById(100L)).thenReturn(entity);
+
+            ToolConfig result = service.getToolConfigBySessionAndName(1L, "my_tool");
+
+            assertNotNull(result);
+            assertEquals(100L, result.getId());
+            assertEquals("my_tool", result.getName());
         }
     }
 }
