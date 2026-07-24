@@ -31,6 +31,7 @@ import com.ghost616.agentbase.exception.BusinessException;
 import com.ghost616.agentbase.service.agent.invoker.McpAuthConfigParser;
 import com.ghost616.agentbase.service.agent.invoker.McpJsonRpcClient;
 import com.ghost616.agentbase.service.agent.invoker.ToolManager;
+import org.springframework.context.annotation.Lazy;
 
 
 @Slf4j
@@ -40,6 +41,7 @@ public class ToolConfigServiceImpl implements ToolConfigService {
 
     private final ToolConfigMapper toolConfigMapper;
     private final ApplicationEventPublisher eventPublisher;
+    @Lazy
     private final ToolManager toolManager;
 
     @Override

@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
 import com.ghost616.agentbase.service.agent.AgentExecutionContext;
 import com.ghost616.agentbase.service.agent.invoker.CustomToolInvoker;
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.BufferedReader;
@@ -22,7 +21,7 @@ public class BrowserToolInvoker extends CustomToolInvoker {
     private static final String DEFAULT_JS_PATH = "browser/browser_tool_executor.js";
 
     private final BrowserToolCallback callback;
-    private String jsContent;
+    private static String jsContent;
 
     public BrowserToolInvoker(ToolConfigDTO toolConfig, BrowserToolCallback callback) {
         super(toolConfig);
@@ -46,11 +45,8 @@ public class BrowserToolInvoker extends CustomToolInvoker {
         }
     }
 
-    public String loadJsContent() {
-        if (jsContent != null) {
-            return jsContent;
-        }
-        try (InputStream is = getClass().getClassLoader().getResourceAsStream(DEFAULT_JS_PATH)) {
+    public static String loadJsContent() {
+        try (InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream(DEFAULT_JS_PATH)) {
             if (is == null) {
                 log.warn("JS file not found at {}", DEFAULT_JS_PATH);
                 return null;
@@ -64,7 +60,7 @@ public class BrowserToolInvoker extends CustomToolInvoker {
         return jsContent;
     }
 
-    public String getJsContent() {
+    public static String getJsContent() {
         return jsContent;
     }
 }

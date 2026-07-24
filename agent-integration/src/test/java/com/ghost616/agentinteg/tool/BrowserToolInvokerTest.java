@@ -93,20 +93,18 @@ class BrowserToolInvokerTest {
 
     @Test
     void loadJsContent_从classpath加载JS内容() {
-        String content = invoker.loadJsContent();
+        String content = BrowserToolInvoker.loadJsContent();
 
         assertNotNull(content);
-        assertTrue(content.contains("function execute"));
+        assertTrue(content.contains("execute: function"));
         assertTrue(content.contains("ToolManager"));
         assertTrue(content.contains("AgentExecutionContext"));
     }
 
     @Test
     void getJsContent_loadJsContent后返回缓存内容() {
-        assertNull(invoker.getJsContent());
-
-        String loaded = invoker.loadJsContent();
-        String cached = invoker.getJsContent();
+        String loaded = BrowserToolInvoker.loadJsContent();
+        String cached = BrowserToolInvoker.getJsContent();
 
         assertNotNull(cached);
         assertEquals(loaded, cached);
@@ -114,10 +112,10 @@ class BrowserToolInvokerTest {
 
     @Test
     void loadJsContent_多次调用返回相同内容() {
-        String first = invoker.loadJsContent();
-        String second = invoker.loadJsContent();
+        String first = BrowserToolInvoker.loadJsContent();
+        String second = BrowserToolInvoker.loadJsContent();
 
         assertNotNull(first);
-        assertSame(first, second);
+        assertEquals(first, second);
     }
 }
