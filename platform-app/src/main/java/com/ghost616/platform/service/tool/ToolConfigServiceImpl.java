@@ -9,7 +9,6 @@ import com.ghost616.platform.dto.tool.ToolCreateRequest;
 import com.ghost616.platform.dto.tool.ToolUpdateRequest;
 import com.ghost616.platform.entity.ToolConfig;
 import com.ghost616.platform.repository.ToolConfigMapper;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -36,13 +35,19 @@ import org.springframework.context.annotation.Lazy;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class ToolConfigServiceImpl implements ToolConfigService {
 
     private final ToolConfigMapper toolConfigMapper;
     private final ApplicationEventPublisher eventPublisher;
-    @Lazy
     private final ToolManager toolManager;
+
+    public ToolConfigServiceImpl(ToolConfigMapper toolConfigMapper,
+                                 ApplicationEventPublisher eventPublisher,
+                                 @Lazy ToolManager toolManager) {
+        this.toolConfigMapper = toolConfigMapper;
+        this.eventPublisher = eventPublisher;
+        this.toolManager = toolManager;
+    }
 
     @Override
     public List<ToolDetailDTO> list(String name, ToolType toolType, CommonStatus status) {
