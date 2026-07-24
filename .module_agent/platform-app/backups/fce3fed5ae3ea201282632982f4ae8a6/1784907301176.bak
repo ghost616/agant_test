@@ -1,0 +1,112 @@
+package com.ghost616.platform.controller;
+
+import com.ghost616.platform.dto.ApiResponse;
+import com.ghost616.platform.dto.context.PassResultRequest;
+import com.ghost616.platform.dto.tool.ToolDetailDTO;
+import com.ghost616.platform.service.tool.ToolConfigService;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+class BrowserToolControllerTest {
+
+    @Mock
+    private ToolConfigService toolConfigService;
+
+    @InjectMocks
+    private BrowserToolController controller;
+
+    @Test
+    void passResult_shouldAlwaysReturnSuccess() {
+        PassResultRequest body = PassResultRequest.builder().sessionId(1L).toolId("tool-1").result("ok").build();
+        ApiResponse<Void> response = controller.passResult(body);
+
+        assertTrue(response.isSuccess());
+    }
+
+    @Test
+    void passResult_shouldAcceptEmptyBody() {
+        PassResultRequest body = new PassResultRequest();
+        ApiResponse<Void> response = controller.passResult(body);
+
+        assertTrue(response.isSuccess());
+    }
+
+    @Test
+    void passResult_shouldAcceptNullBodyValue() {
+        PassResultRequest body = PassResultRequest.builder().sessionId(1L).result(null).build();
+        ApiResponse<Void> response = controller.passResult(body);
+
+        assertTrue(response.isSuccess());
+    }
+
+    @Test
+    void getExtension_shouldReturnNonEmptyJavaScript() {
+        String js = controller.getExtension();
+
+        assertNotNull(js);
+        assertFalse(js.isEmpty());
+        assertTrue(js.contains("ToolHostBridge"));
+        assertTrue(js.contains("getAgentExecutionContext"));
+        assertTrue(js.contains("passToolResult"));
+        assertTrue(js.contains("putSessionVariable"));
+        assertTrue(js.contains("putConversationVariable"));
+    }
+
+    @Test
+    void getExtension_shouldContainExpectedEndpoints() {
+        String js = controller.getExtension();
+
+        assertTrue(js.contains("/api/context/"));
+        assertTrue(js.contains("/api/browser-tool/pass-result"));
+        assertTrue(js.contains("/api/context/"));
+    }
+
+    @Test
+    void getToolScript_shouldReturnToolScript() {
+        ToolDetailDTO dto = ToolDetailDTO.builder().id(1L).name("test-tool").toolScript("console.log('hello')").build();
+        when(toolConfigService.getById(1L)).thenReturn(dto);
+
+        ApiResponse<String> response = controller.getToolScript(1L);
+
+        assertTrue(response.isSuccess());
+        assertEquals("console.log('hello')", response.getData());
+    }
+
+    @Test
+    void getToolScript_shouldReturnNullScriptWhenNotSet() {
+        ToolDetailDTO dto = ToolDetailDTO.builder().id(2L).name("no-script-tool").build();
+        when(toolConfigService.getById(2L)).thenReturn(dto);
+
+        ApiResponse<String> response = controller.getToolScript(2L);
+
+        assertTrue(response.isSuccess());
+        assertNull(response.getData());
+    }
+
+    @Test
+    void getToolScript_shouldReturnErrorWhenNotFound() {
+        when(toolConfigService.getById(999L)).thenReturn(null);
+
+        ApiResponse<String> response = controller.getToolScript(999L);
+
+        assertFalse(response.isSuccess());
+        assertEquals("TOOL-001", response.getCode());
+    }
+
+    @Test
+    void getToolScript_shouldReturnErrorForZeroId() {
+        when(toolConfigService.getById(0L)).thenReturn(null);
+
+        ApiResponse<String> response = controller.getToolScript(0L);
+
+        assertFalse(response.isSuccess());
+        assertEquals("TOOL-001", response.getCode());
+    }
+}

@@ -1,0 +1,40 @@
+package com.ghost616.platform.service.browser;
+
+import com.ghost616.agentinteg.tool.BrowserToolCallback;
+import com.ghost616.platform.dto.browser.BrowserToolTask;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
+
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+
+@Slf4j
+@Component
+public class BrowserToolCallbackImpl implements BrowserToolCallback {
+
+    private final ConcurrentHashMap<String, BrowserToolTask> taskMap = new ConcurrentHashMap<>();
+
+    public BrowserToolTask getTask(String sessionId, String toolId) {
+        return taskMap.get(sessionId + ":" + toolId);
+    }
+
+    @Override
+    public String execute(String sessionId, String toolId, String toolName, String toolParams) {
+        BrowserToolTask task = BrowserToolTask.builder()
+                .sessionId(sessionId)
+                .toolId(toolId)
+                .toolName(toolName)
+                .toolParams(toolParams)
+                .toolResult(new CompletableFuture<>())
+                .build();
+        taskMap.put(sessionId + ":" + toolId, task);
+        try {
+            return task.getToolResult().get();
+        } catch (InterruptedException | ExecutionException e) {
+            log.warn("BrowserToolCallback execute failed for sessionId={} toolId={}", sessionId, toolId, e);
+            taskMap.remove(sessionId + ":" + toolId);
+            throw new RuntimeException(e);
+        }
+    }
+}

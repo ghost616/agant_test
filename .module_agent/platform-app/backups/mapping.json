@@ -43,5 +43,12 @@
   "platform-app/src/test/java/com/ghost616/platform/service/agent/DefaultChatDataProviderTest.java": "96121aece5dd6daa2e957240a25226c3",
   "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultToolDataProvider.java": "c53bf8bb104ce2454e9d19485eb0e988",
   "platform-app/src/main/java/com/ghost616/platform/dto/ToolStatusResultDTO.java": "603e3b7c67e90b55b1316c931a9385b4",
-  "platform-app/src/test/java/com/ghost616/platform/dto/ToolStatusResultDTOTest.java": "cab57b228935a9c89f9c83d1471909aa"
+  "platform-app/src/test/java/com/ghost616/platform/dto/ToolStatusResultDTOTest.java": "cab57b228935a9c89f9c83d1471909aa",
+  "platform-app/src/main/java/com/ghost616/platform/controller/BrowserToolController.java": "d2f9de7b6e5b8c31c7822e7a92523da8",
+  "platform-app/src/main/java/com/ghost616/platform/controller/AgentContextController.java": "e06bad959dd10a439d86a62e07bfcacb",
+  "platform-app/src/test/java/com/ghost616/platform/controller/BrowserToolControllerTest.java": "fce3fed5ae3ea201282632982f4ae8a6",
+  "platform-app/src/test/java/com/ghost616/platform/controller/AgentContextControllerTest.java": "24cef5786d8bd68fb50e65163bd4e0cd",
+  "platform-app/src/main/java/com/ghost616/platform/dto/context/PassResultRequest.java": "a59d0eed62955396ea04dd1faba57623",
+  "platform-app/src/main/java/com/ghost616/platform/dto/browser/BrowserToolTask.java": "45b677f13b97843a03642a9365e85b69",
+  "platform-app/src/main/java/com/ghost616/platform/service/browser/BrowserToolCallbackImpl.java": "60eb060a7fca8eb2e82f8029beb2604d"
 }

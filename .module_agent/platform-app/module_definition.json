@@ -144,6 +144,30 @@
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/controller/BrowserToolController.java",
       "description": "浏览器工具 REST 控制器，提供 POST /api/browser-tool/pass-result（空实现）、GET /api/browser-tool/extension（返回覆盖 ToolHostBridge 四个方法的 JS 桥接代码）、GET /api/browser-tool/tool-script/{toolConfigId}（查询工具脚本）的 HTTP API"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/dto/context/SessionVariableRequest.java",
+      "description": "会话变量写入请求 DTO，封装 key/value 两个字符串字段，使用 Lombok @Data/@Builder/@NoArgsConstructor/@AllArgsConstructor"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/dto/context/ConversationVariableRequest.java",
+      "description": "对话变量写入请求 DTO，封装 key/value 两个字符串字段，使用 Lombok @Data/@Builder/@NoArgsConstructor/@AllArgsConstructor"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/dto/context/PassResultRequest.java",
+      "description": "浏览器工具执行结果传递请求 DTO，封装 sessionId(Long)/toolId(String)/result(Object) 三个字段，使用 Lombok @Data/@Builder/@NoArgsConstructor/@AllArgsConstructor"
+    },
+    {
+      "path": "platform-app/src/main/resources/browser/browser_extension.js",
+      "description": "ToolHostBridge 覆写 JS 资源文件，包含 getAgentExecutionContext/passToolResult/putSessionVariable/putConversationVariable 四个方法的桥接实现，被 BrowserToolController.getExtension 从 classpath 加载返回"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/dto/browser/BrowserToolTask.java",
+      "description": "浏览器工具任务数据类，封装 sessionId/toolId/toolName/toolParams 字符串字段和 CompletableFuture<String> toolResult，用于 BrowserToolCallbackImpl 的任务管理与结果传递"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/service/browser/BrowserToolCallbackImpl.java",
+      "description": "BrowserToolCallback 接口实现，@Component，使用 ConcurrentHashMap 管理 BrowserToolTask，execute 方法阻塞等待 toolResult.complete() 后返回结果"
     }
   ]
 }
