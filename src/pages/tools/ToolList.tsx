@@ -15,7 +15,7 @@ import {
 import JsonEditor from '../../components/JsonEditor';
 import type { ColumnsType } from 'antd/es/table';
 import type { CommonStatus } from '../../types/common';
-import type { ToolConfig, ToolFormData, ToolType } from '../../types/tool';
+import type { SubToolType, ToolConfig, ToolFormData, ToolType } from '../../types/tool';
 import {
   createTool,
   deleteTool,
@@ -29,6 +29,7 @@ const TOOL_TYPE_LABELS: Record<ToolType, string> = {
   TYPESCRIPT: 'TypeScript',
   PYTHON: 'Python',
   MCP_HTTP: 'MCP HTTP',
+  CUSTOM: 'Custom',
 };
 
 const TOOL_TYPE_OPTIONS = Object.entries(TOOL_TYPE_LABELS).map(([value, label]) => ({
@@ -41,6 +42,20 @@ const TOOL_TYPE_COLORS: Record<ToolType, string> = {
   TYPESCRIPT: 'blue',
   PYTHON: 'green',
   MCP_HTTP: 'purple',
+  CUSTOM: 'cyan',
+};
+
+const SUB_TOOL_TYPE_LABELS: Record<SubToolType, string> = {
+  BROWSER: 'Browser',
+};
+
+const SUB_TOOL_TYPE_OPTIONS = Object.entries(SUB_TOOL_TYPE_LABELS).map(([value, label]) => ({
+  value,
+  label,
+}));
+
+const SUB_TOOL_TYPE_COLORS: Record<SubToolType, string> = {
+  BROWSER: 'geekblue',
 };
 
 const STATUS_LABELS: Record<CommonStatus, string> = {
@@ -65,6 +80,7 @@ function ToolList(): JSX.Element {
   const [submitting, setSubmitting] = useState(false);
   const [form] = Form.useForm<ToolFormData>();
   const toolType = Form.useWatch('toolType', form);
+  const subToolType = Form.useWatch('subToolType', form);
 
   const fetchList = useCallback(async () => {
     setLoading(true);
@@ -110,6 +126,8 @@ function ToolList(): JSX.Element {
       parameterSchema: editingTool.parameterSchema,
       returnSchema: editingTool.returnSchema,
       implPath: editingTool.implPath,
+      subToolType: editingTool.subToolType,
+      toolScript: editingTool.toolScript,
     };
     if (editingTool.authConfig) {
       try {
@@ -165,13 +183,22 @@ function ToolList(): JSX.Element {
         parameterSchema: allValues.parameterSchema || '',
         returnSchema: allValues.returnSchema || '',
         implPath: allValues.implPath,
+        subToolType: undefined,
+        toolScript: undefined,
       };
 
-      if (allValues.toolType === 'MCP_HTTP') {
+      if (allValues.toolType === 'CUSTOM') {
+        values.subToolType = allValues.subToolType;
+        values.toolScript = allValues.toolScript || '';
+        values.implPath = '';
         values.parameterSchema = '';
         values.returnSchema = '';
-        if (allValues.authorization) {
-          values.authConfig = JSON.stringify({ type: 'bearer', token: allValues.authorization });
+      } else if (allValues.toolType === 'MCP_HTTP') {
+        values.parameterSchema = '';
+        values.returnSchema = '';
+        const authorization = form.getFieldValue('authorization') as string | undefined;
+        if (authorization) {
+          values.authConfig = JSON.stringify({ type: 'bearer', token: authorization });
         }
       }
 
@@ -202,8 +229,15 @@ function ToolList(): JSX.Element {
       title: '工具类型',
       dataIndex: 'toolType',
       width: 120,
-      render: (value: ToolType) => (
-        <Tag color={TOOL_TYPE_COLORS[value]}>{TOOL_TYPE_LABELS[value] || value}</Tag>
+      render: (value: ToolType, record: ToolConfig) => (
+        <Space size={4}>
+          <Tag color={TOOL_TYPE_COLORS[value]}>{TOOL_TYPE_LABELS[value] || value}</Tag>
+          {value === 'CUSTOM' && record.subToolType && (
+            <Tag color={SUB_TOOL_TYPE_COLORS[record.subToolType]}>
+              {SUB_TOOL_TYPE_LABELS[record.subToolType]}
+            </Tag>
+          )}
+        </Space>
       ),
     },
     {
@@ -331,26 +365,45 @@ function ToolList(): JSX.Element {
               <Input placeholder="请输入 authorization token" />
             </Form.Item>
           )}
+          {toolType === 'CUSTOM' && (
+            <Form.Item
+              name="subToolType"
+              label="子工具类型"
+              rules={[{ required: true, message: '请选择子工具类型' }]}
+            >
+              <Select options={SUB_TOOL_TYPE_OPTIONS} placeholder="请选择子工具类型" />
+            </Form.Item>
+          )}
           <Form.Item name="description" label="描述">
             <Input.TextArea placeholder="请输入工具描述" rows={3} maxLength={500} showCount />
           </Form.Item>
-          {toolType !== 'MCP_HTTP' && (
+          {toolType !== 'MCP_HTTP' && toolType !== 'CUSTOM' && (
             <Form.Item name="parameterSchema" label="参数 Schema">
               <JsonEditor />
             </Form.Item>
           )}
-          {toolType !== 'MCP_HTTP' && (
+          {toolType !== 'MCP_HTTP' && toolType !== 'CUSTOM' && (
             <Form.Item name="returnSchema" label="返回 Schema">
               <JsonEditor />
             </Form.Item>
           )}
-          <Form.Item
-            name="implPath"
-            label="实现路径"
-            rules={[{ required: true, message: '请输入实现路径' }]}
-          >
-            <Input placeholder="请输入实现路径" />
-          </Form.Item>
+          {toolType === 'CUSTOM' && subToolType === 'BROWSER' ? (
+            <Form.Item
+              name="toolScript"
+              label="工具脚本"
+              rules={[{ required: true, message: '请输入工具脚本' }]}
+            >
+              <Input.TextArea placeholder="请输入工具脚本" rows={6} />
+            </Form.Item>
+          ) : (
+            <Form.Item
+              name="implPath"
+              label="实现路径"
+              rules={[{ required: true, message: '请输入实现路径' }]}
+            >
+              <Input placeholder="请输入实现路径" />
+            </Form.Item>
+          )}
         </Form>
       </Modal>
     </div>

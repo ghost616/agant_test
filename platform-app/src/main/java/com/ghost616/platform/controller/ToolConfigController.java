@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
-import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
+import com.ghost616.platform.dto.tool.ToolDetailDTO;
 import com.ghost616.agentbase.enums.CommonStatus;
 import com.ghost616.agentbase.enums.ToolType;
 
@@ -31,30 +31,30 @@ public class ToolConfigController {
     private final ToolConfigService toolConfigService;
 
     @GetMapping
-    public ApiResponse<List<ToolConfigDTO>> list(
+    public ApiResponse<List<ToolDetailDTO>> list(
             @RequestParam(required = false) String name,
             @RequestParam(required = false) ToolType toolType,
             @RequestParam(required = false) CommonStatus status) {
-        List<ToolConfigDTO> result = toolConfigService.list(name, toolType, status);
+        List<ToolDetailDTO> result = toolConfigService.list(name, toolType, status);
         return ApiResponse.success(result);
     }
 
     @GetMapping("/{id}")
-    public ApiResponse<ToolConfigDTO> getById(@PathVariable Long id) {
-        ToolConfigDTO result = toolConfigService.getById(id);
+    public ApiResponse<ToolDetailDTO> getById(@PathVariable Long id) {
+        ToolDetailDTO result = toolConfigService.getById(id);
         return ApiResponse.success(result);
     }
 
     @PostMapping
-    public ApiResponse<ToolConfigDTO> create(@Valid @RequestBody ToolCreateRequest request) {
-        ToolConfigDTO result = toolConfigService.create(request);
+    public ApiResponse<ToolDetailDTO> create(@Valid @RequestBody ToolCreateRequest request) {
+        ToolDetailDTO result = toolConfigService.create(request);
         return ApiResponse.success(result);
     }
 
     @PutMapping("/{id}")
-    public ApiResponse<ToolConfigDTO> update(@PathVariable Long id,
+    public ApiResponse<ToolDetailDTO> update(@PathVariable Long id,
                                              @Valid @RequestBody ToolUpdateRequest request) {
-        ToolConfigDTO result = toolConfigService.update(id, request);
+        ToolDetailDTO result = toolConfigService.update(id, request);
         return ApiResponse.success(result);
     }
 
@@ -65,15 +65,15 @@ public class ToolConfigController {
     }
 
     @GetMapping("/{name}/impl")
-    public ApiResponse<ToolConfigDTO> getImplByName(@PathVariable String name) {
-        ToolConfigDTO result = toolConfigService.getImplByName(name);
+    public ApiResponse<ToolDetailDTO> getImplByName(@PathVariable String name) {
+        ToolDetailDTO result = toolConfigService.getImplByName(name);
         return ApiResponse.success(result);
     }
 
     @PutMapping("/{id}/status")
-    public ApiResponse<ToolConfigDTO> toggleStatus(@PathVariable Long id,
+    public ApiResponse<ToolDetailDTO> toggleStatus(@PathVariable Long id,
                                                    @RequestParam CommonStatus status) {
-        ToolConfigDTO result = toolConfigService.toggleStatus(id, status);
+        ToolDetailDTO result = toolConfigService.toggleStatus(id, status);
         return ApiResponse.success(result);
     }
 }

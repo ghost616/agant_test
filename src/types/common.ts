@@ -14,8 +14,6 @@ export interface PageResult<T> {
 
 export type CommonStatus = 'ENABLED' | 'DISABLED';
 
-export type ToolType = 'JAVA' | 'TYPESCRIPT' | 'PYTHON' | 'MCP_HTTP';
-
 export type HookPhase =
   | 'SESSION_START'
   | 'SESSION_END'

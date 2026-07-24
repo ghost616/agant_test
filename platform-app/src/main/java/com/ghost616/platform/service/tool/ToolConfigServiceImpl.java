@@ -20,7 +20,8 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
-import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
+import com.ghost616.platform.dto.tool.ToolDetailDTO;
+import com.ghost616.platform.enums.SubToolType;
 import com.ghost616.agentbase.enums.CommonStatus;
 import com.ghost616.agentbase.enums.ErrorCode;
 import com.ghost616.agentbase.enums.ToolType;
@@ -39,7 +40,7 @@ public class ToolConfigServiceImpl implements ToolConfigService {
     private final ApplicationEventPublisher eventPublisher;
 
     @Override
-    public List<ToolConfigDTO> list(String name, ToolType toolType, CommonStatus status) {
+    public List<ToolDetailDTO> list(String name, ToolType toolType, CommonStatus status) {
         LambdaQueryWrapper<ToolConfig> wrapper = new LambdaQueryWrapper<>();
         if (StringUtils.isNotBlank(name)) {
             wrapper.like(ToolConfig::getName, name);
@@ -57,7 +58,7 @@ public class ToolConfigServiceImpl implements ToolConfigService {
     }
 
     @Override
-    public ToolConfigDTO getById(Long id) {
+    public ToolDetailDTO getById(Long id) {
         ToolConfig entity = toolConfigMapper.selectById(id);
         if (entity == null) {
             throw new BusinessException(ErrorCode.TOOL_NOT_FOUND);
@@ -66,8 +67,23 @@ public class ToolConfigServiceImpl implements ToolConfigService {
     }
 
     @Override
-    public ToolConfigDTO create(ToolCreateRequest request) {
+    public ToolDetailDTO create(ToolCreateRequest request) {
         checkNameDuplicate(request.getName(), null);
+
+        SubToolType subToolType = request.getSubToolType();
+        if (subToolType == SubToolType.BROWSER) {
+            if (request.getToolType() == null) {
+                request.setToolType(ToolType.CUSTOM);
+            }
+            if (request.getToolScript() == null || request.getToolScript().isBlank()) {
+                throw new BusinessException(ErrorCode.TOOL_SCHEMA_INVALID, "子工具类型为 BROWSER 时 toolScript 不能为空");
+            }
+        } else {
+            if (request.getImplPath() == null || request.getImplPath().isBlank()) {
+                throw new BusinessException(ErrorCode.TOOL_SCHEMA_INVALID, "实现路径不能为空");
+            }
+            validateImplPath(request.getImplPath(), request.getToolType(), request.getAuthConfig());
+        }
 
         ToolConfig entity = new ToolConfig();
         entity.setName(request.getName());
@@ -75,9 +91,10 @@ public class ToolConfigServiceImpl implements ToolConfigService {
         entity.setDescription(request.getDescription());
         entity.setParameterSchema(normalizeParameterSchema(request.getParameterSchema()));
         entity.setReturnSchema(request.getReturnSchema());
-        validateImplPath(request.getImplPath(), request.getToolType(), request.getAuthConfig());
         entity.setImplPath(request.getImplPath());
         entity.setAuthConfig(request.getAuthConfig());
+        entity.setSubToolType(subToolType);
+        entity.setToolScript(request.getToolScript());
         entity.setStatus(request.getStatus() != null ? request.getStatus() : CommonStatus.ENABLED);
 
         toolConfigMapper.insert(entity);
@@ -85,7 +102,7 @@ public class ToolConfigServiceImpl implements ToolConfigService {
     }
 
     @Override
-    public ToolConfigDTO update(Long id, ToolUpdateRequest request) {
+    public ToolDetailDTO update(Long id, ToolUpdateRequest request) {
         ToolConfig entity = toolConfigMapper.selectById(id);
         if (entity == null) {
             throw new BusinessException(ErrorCode.TOOL_NOT_FOUND);
@@ -107,9 +124,39 @@ public class ToolConfigServiceImpl implements ToolConfigService {
         if (request.getReturnSchema() != null) {
             entity.setReturnSchema(request.getReturnSchema());
         }
-        if (request.getImplPath() != null) {
-            validateImplPath(request.getImplPath(), entity.getToolType(), request.getAuthConfig());
-            entity.setImplPath(request.getImplPath());
+
+        SubToolType subToolType = request.getSubToolType();
+        if (subToolType == SubToolType.BROWSER) {
+            if (entity.getToolType() == null) {
+                entity.setToolType(ToolType.CUSTOM);
+            }
+            if (request.getToolScript() != null && request.getToolScript().isBlank()) {
+                throw new BusinessException(ErrorCode.TOOL_SCHEMA_INVALID, "子工具类型为 BROWSER 时 toolScript 不能为空");
+            }
+            if (request.getToolScript() != null) {
+                entity.setToolScript(request.getToolScript());
+            }
+        } else if (subToolType != null) {
+            if (request.getImplPath() != null) {
+                validateImplPath(request.getImplPath(),
+                        request.getToolType() != null ? request.getToolType() : entity.getToolType(),
+                        request.getAuthConfig());
+                entity.setImplPath(request.getImplPath());
+            }
+        } else {
+            if (request.getImplPath() != null) {
+                validateImplPath(request.getImplPath(),
+                        request.getToolType() != null ? request.getToolType() : entity.getToolType(),
+                        request.getAuthConfig());
+                entity.setImplPath(request.getImplPath());
+            }
+        }
+
+        if (subToolType != null) {
+            entity.setSubToolType(subToolType);
+        }
+        if (request.getToolScript() != null) {
+            entity.setToolScript(request.getToolScript());
         }
         if (request.getAuthConfig() != null) {
             entity.setAuthConfig(request.getAuthConfig());
@@ -134,7 +181,7 @@ public class ToolConfigServiceImpl implements ToolConfigService {
     }
 
     @Override
-    public ToolConfigDTO toggleStatus(Long id, CommonStatus status) {
+    public ToolDetailDTO toggleStatus(Long id, CommonStatus status) {
         ToolConfig entity = toolConfigMapper.selectById(id);
         if (entity == null) {
             throw new BusinessException(ErrorCode.TOOL_NOT_FOUND);
@@ -145,7 +192,7 @@ public class ToolConfigServiceImpl implements ToolConfigService {
     }
 
     @Override
-    public ToolConfigDTO getImplByName(String name) {
+    public ToolDetailDTO getImplByName(String name) {
         LambdaQueryWrapper<ToolConfig> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(ToolConfig::getName, name);
         ToolConfig entity = toolConfigMapper.selectOne(wrapper);
@@ -231,8 +278,8 @@ public class ToolConfigServiceImpl implements ToolConfigService {
         }
     }
 
-    private ToolConfigDTO toDTO(ToolConfig entity) {
-        return ToolConfigDTO.builder()
+    private ToolDetailDTO toDTO(ToolConfig entity) {
+        return ToolDetailDTO.builder()
                 .id(entity.getId())
                 .name(entity.getName())
                 .toolType(entity.getToolType())
@@ -241,6 +288,8 @@ public class ToolConfigServiceImpl implements ToolConfigService {
                 .returnSchema(entity.getReturnSchema())
                 .implPath(entity.getImplPath())
                 .authConfig(entity.getAuthConfig())
+                .subToolType(entity.getSubToolType())
+                .toolScript(entity.getToolScript())
                 .status(entity.getStatus())
                 .createTime(entity.getCreateTime())
                 .updateTime(entity.getUpdateTime())

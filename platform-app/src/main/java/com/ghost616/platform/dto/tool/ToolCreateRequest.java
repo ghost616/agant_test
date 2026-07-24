@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 
 import com.ghost616.agentbase.enums.CommonStatus;
 import com.ghost616.agentbase.enums.ToolType;
+import com.ghost616.platform.enums.SubToolType;
 
 
 @Data
@@ -31,10 +32,13 @@ public class ToolCreateRequest {
 
     private String returnSchema;
 
-    @NotBlank(message = "实现路径不能为空")
     private String implPath;
 
     private String authConfig;
+
+    private String toolScript;
+
+    private SubToolType subToolType;
 
     private CommonStatus status;
 }

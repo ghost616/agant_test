@@ -23,6 +23,8 @@ CREATE TABLE IF NOT EXISTS tool_config (
     return_schema    TEXT,
     impl_path        VARCHAR(512),
     auth_config      TEXT,
+    sub_tool_type    VARCHAR(32),
+    tool_script      TEXT,
     status           VARCHAR(32),
     create_time      TIMESTAMP,
     update_time      TIMESTAMP,

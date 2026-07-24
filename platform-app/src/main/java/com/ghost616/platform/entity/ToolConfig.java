@@ -7,6 +7,7 @@ import lombok.EqualsAndHashCode;
 
 import com.ghost616.agentbase.enums.CommonStatus;
 import com.ghost616.agentbase.enums.ToolType;
+import com.ghost616.platform.enums.SubToolType;
 
 
 @Data
@@ -32,6 +33,12 @@ public class ToolConfig extends BaseEntity {
 
     @TableField("auth_config")
     private String authConfig;
+
+    @TableField("sub_tool_type")
+    private SubToolType subToolType;
+
+    @TableField("tool_script")
+    private String toolScript;
 
     private CommonStatus status;
 }
