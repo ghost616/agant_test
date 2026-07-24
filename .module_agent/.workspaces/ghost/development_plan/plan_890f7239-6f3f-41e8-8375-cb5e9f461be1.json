@@ -1,9 +1,0 @@
-{
-  "plan_id": "plan_890f7239-6f3f-41e8-8375-cb5e9f461be1",
-  "module_name": "",
-  "development_plan": "主机函数封装进 HostBridge 对象，移除 safety check，方法缺失时直接报错",
-  "session_id": "",
-  "modified_files": [
-    "agent-integration/src/main/resources/browser/browser_tool_executor.js"
-  ]
-}

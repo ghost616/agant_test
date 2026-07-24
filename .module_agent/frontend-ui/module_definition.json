@@ -15,7 +15,7 @@
     },
     {
       "path": "src/types/tool.ts",
-      "description": "工具配置类型定义，含 ToolType(含MCP_HTTP)/ToolConfig(含authConfig)/ToolFormData"
+      "description": "工具配置类型定义，含 ToolType(含MCP_HTTP/CUSTOM)/SubToolType(BROWSER)/ToolConfig(含authConfig/subToolType/toolScript)/ToolFormData"
     },
     {
       "path": "src/services/tool.ts",
@@ -23,7 +23,7 @@
     },
     {
       "path": "src/pages/tools/ToolList.tsx",
-      "description": "工具管理列表页面：MCP_HTTP 类型支持（Authorization 表单/提交组装 authConfig/隐藏 Schema/编辑回填）"
+      "description": "工具管理列表页面：MCP_HTTP/CUSTOM 类型支持（Authorization 表单/提交组装 authConfig/隐藏 Schema/编辑回填/CUSTOM 子工具类型/工具脚本/条件字段切换）"
     },
     {
       "path": "src/types/agent.ts",

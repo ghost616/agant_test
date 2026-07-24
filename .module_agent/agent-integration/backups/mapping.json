@@ -10,5 +10,7 @@
   "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ToolExecutionTracker.java": "b4a679734316bb3ee94151112a8373a7",
   "agent-integration/src/main/java/com/ghost616/agentinteg/model/invoker/DefaultModelInvokerFactory.java": "89a0448742732184d3f5ce45f441385c",
   "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/HookManager.java": "daa5d03bbb33375312b3d820d2346787",
-  "agent-integration/src/test/java/com/ghost616/agentinteg/AgentAssemblerTest.java": "00e9775fafa9030c988958b00c1bc515"
+  "agent-integration/src/test/java/com/ghost616/agentinteg/AgentAssemblerTest.java": "00e9775fafa9030c988958b00c1bc515",
+  "agent-integration/src/main/java/com/ghost616/agentinteg/tool/BrowserToolInvoker.java": "f153fdebdd5a0055f86c2a271088b628",
+  "agent-integration/src/test/java/com/ghost616/agentinteg/tool/BrowserToolInvokerTest.java": "79c2c7615fe4f0ea12335fcb07b1d1f1"
 }

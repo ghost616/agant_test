@@ -32,6 +32,14 @@
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/tool/ToolConfigServiceImpl.java",
       "description": "工具配置服务实现，含四种类型的 validateImplPath 校验"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/enums/SubToolType.java",
+      "description": "子工具类型枚举，包含 BROWSER（浏览器工具）"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/dto/tool/ToolDetailDTO.java",
+      "description": "工具详情 DTO，继承 ToolConfigDTO，新增 subToolType 和 toolScript 字段，作为 Service 层统一的返回类型，提供更完整的工具信息"
     }
   ]
 }

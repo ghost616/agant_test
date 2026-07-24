@@ -57,3 +57,4 @@
 [2026-07-18T07:18:06.621Z] [session: ses_08be969d9ffegt2UZsFpXSPvR8] Session 接口新增 totalTokenUsed 可选字段；SessionList 表格新增 Token 消耗列，scroll.x 调整为 960
 [2026-07-21T01:48:28.215Z] [session: ses_07da41425ffeybiHuz493h1Bto] 2026-07-21: PlatformType 联合类型增加 'KIMI' 和 'VOLCENGINE'
 [2026-07-21T01:49:55.870Z] [session: ses_07da41425ffeybiHuz493h1Bto] 2026-07-21: 离朱修复 ModelList.tsx 类型错误——PLATFORM_TYPE_LABELS 映射表中新增 KIMI 和 VOLCENGINE 条目
+[2026-07-24T03:05:23.864Z] [session: ses_06deb073effePK3SaPzmV4oBsu] ToolType 添加 CUSTOM；新增 SubToolType(BROWSER)；ToolConfig 新增 subToolType/toolScript；ToolList 新增 CUSTOM 标签/颜色、子工具类型下拉、BROWSER 工具脚本 TextArea、条件隐藏 implPath/Schema

@@ -1,0 +1,11 @@
+{
+  "plan_id": "plan_9ce364a4-b0f1-4648-b7db-33ca7835c8b3",
+  "module_name": "platform-app",
+  "development_plan": "新增AgentContextController和BrowserToolController两个REST控制器。\\n\\nAgentContextController（/api/context）：\\n1. GET /api/context/{sessionId}：通过AgentContextManager获取AgentExecutionContext，返回DTO包含sessionId、agentId、systemPrompt、modelId、parentSessionId、recentMessageCount、history列表（role/content/reasoning/toolCallId/sequenceNum/createTime/toolCalls/usage）、tools列表、skills列表、projectDir、sessionVariables、conversationVariables，字段与browser_tool_executor.js中AgentExecutionContext对齐\\n2. POST /api/context/{sessionId}/session-variable：接收key和value，调用AgentContextManager中上下文putSessionVariable\\n3. POST /api/context/{sessionId}/conversation-variable：接收key和value，调用AgentContextManager中上下文putConversationVariable\\n\\nBrowserToolController（/api/browser-tool）：\\n1. POST /api/browser-tool/pass-result：空实现接口，接收请求体但不执行任何逻辑\\n2. GET /api/browser-tool/extension：返回一段JS字符串，覆盖browser_tool_executor.js的ToolHostBridge四个方法，通过fetch调用上述/api/context和/api/browser-tool接口实现桥接，最终与browser_tool_executor.js原始内容拼接后返回\\n3. GET /api/browser-tool/tool-script/{toolConfigId}：通过ToolConfigService查询toolConfigId对应记录的toolScript字段并返回",
+  "session_id": "ses_06bd5ea75ffeEmNzUACItJiTZ8",
+  "modified_files": [
+    "platform-app/src/main/java/com/ghost616/platform/dto/AgentContextDTO.java",
+    "platform-app/src/main/java/com/ghost616/platform/controller/AgentContextController.java",
+    "platform-app/src/main/java/com/ghost616/platform/controller/BrowserToolController.java"
+  ]
+}

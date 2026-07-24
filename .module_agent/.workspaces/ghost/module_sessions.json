@@ -1,8 +1,12 @@
 {
   "_checked": [
-    "ses_073289863ffej3UOwimGhiI8sp"
+    "ses_073289863ffej3UOwimGhiI8sp",
+    "ses_06bd5ea75ffeEmNzUACItJiTZ8"
   ],
   "agent-integration": [
-    "ses_0721a4942ffetcgI5EH23PLQQm"
+    "ses_06bd60157ffeCBV6X8zwIKDEt5"
+  ],
+  "platform-app": [
+    "ses_06bd5ea75ffeEmNzUACItJiTZ8"
   ]
 }

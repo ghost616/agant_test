@@ -12,5 +12,14 @@
   "src/main/java/com/ghost616/platform/service/agent/invoker/McpHttpToolInvoker.java": "284d002179682e1eaa52f1e8b911420c",
   "src/main/java/com/ghost616/platform/service/agent/SessionManager.java": "0e1fa7e887d444dcfc87075135628284",
   "src/main/resources/agent/_runner.py": "2ae9ba9905ad89472db46047f647c64d",
-  "src/main/java/com/ghost616/platform/dto/tool/ToolConfigDTO.java": "17b335d09ae7bc544abf4a1b2f567680"
+  "src/main/java/com/ghost616/platform/dto/tool/ToolConfigDTO.java": "17b335d09ae7bc544abf4a1b2f567680",
+  "platform-app/src/main/java/com/ghost616/platform/entity/ToolConfig.java": "6686279a09452fe444ba7d24e298b6bf",
+  "platform-app/src/main/java/com/ghost616/platform/dto/tool/ToolCreateRequest.java": "4a8b217e7bea52070114e2a6dc0470a5",
+  "platform-app/src/main/java/com/ghost616/platform/dto/tool/ToolUpdateRequest.java": "55861a255cfee6b892576bf9d0ab19f0",
+  "platform-app/src/main/java/com/ghost616/platform/service/tool/ToolConfigService.java": "fa138f60d4b4e06bc798404000ef34c9",
+  "platform-app/src/main/java/com/ghost616/platform/service/tool/ToolConfigServiceImpl.java": "67a324059a2f7700b13fc78b974d2fb4",
+  "platform-app/src/main/java/com/ghost616/platform/controller/ToolConfigController.java": "c39b471a1e2a8f4a05ba0d522190b8b9",
+  "platform-app/src/main/resources/schema.sql": "df1b3748452b006a442caa1fe7ff282c",
+  "platform-app/src/main/java/com/ghost616/platform/config/SchemaMigration.java": "0bd39f7d32b67543dcb2abc0b99161e9",
+  "platform-app/src/test/java/com/ghost616/platform/service/tool/ToolConfigServiceImplTest.java": "8c4b0dc2f7c219c08b75536bb2771cec"
 }

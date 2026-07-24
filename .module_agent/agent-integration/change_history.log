@@ -21,3 +21,4 @@
 [2026-07-23T03:00:03.137Z] [session: ses_07315f255ffeFaM5UZhxbblz7m] AgentAssembler: 构造函数新增 CustomToolInvokerProvider 参数，build() 中将其注册到 AgentComponentRegistry
 [2026-07-23T04:00:34.410Z] [session: ses_072dee689ffeHP2S2eP9bNvHVv] AgentAssembler 移除 CustomToolInvokerProvider：删除 import、字段、构造参数、build() 中的 registry.setCustomToolInvokerProvider 调用；AgentAssemblerTest 同步移除对应 import、mock 字段、构造参数、两个相关测试方法
 [2026-07-23T07:36:22.426Z] [session: ses_0721a4942ffetcgI5EH23PLQQm] [session: ses_0721a4942ffetcgI5EH23PLQQm] 新增 BrowserToolCallback 函数式接口、BrowserToolInvoker（继承 CustomToolInvoker，注入 BrowserToolCallback 回调）、browser_tool_executor.js（JS 工具执行引擎，含 AgentExecutionContext 对象/ToolFunction/ToolManager/四个执行函数）
+[2026-07-24T12:47:46.444Z] [session: ses_06bd60157ffeCBV6X8zwIKDEt5] BrowserToolInvoker: jsContent/loadJsContent/getJsContent 改为 static，移除实例缓存检测逻辑；测试同步改为静态调用

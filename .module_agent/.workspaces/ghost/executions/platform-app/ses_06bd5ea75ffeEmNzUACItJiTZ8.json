@@ -1,0 +1,22 @@
+[
+  {
+    "plan_id": "plan_9ce364a4-b0f1-4648-b7db-33ca7835c8b3",
+    "plan": "新增AgentContextController和BrowserToolController",
+    "modified_files": [
+      "platform-app/src/main/java/com/ghost616/platform/dto/AgentContextDTO.java",
+      "platform-app/src/main/java/com/ghost616/platform/controller/AgentContextController.java",
+      "platform-app/src/main/java/com/ghost616/platform/controller/BrowserToolController.java"
+    ],
+    "summary": "已创建 AgentContextDTO、AgentContextController、BrowserToolController 三个文件",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_be3d74c1-e53f-4d04-a7e6-8e3dc0617399",
+    "plan": "修复 AgentContextConfiguration↔ToolConfigServiceImpl 循环依赖",
+    "modified_files": [
+      "platform-app/src/main/java/com/ghost616/platform/service/tool/ToolConfigServiceImpl.java"
+    ],
+    "summary": "在 ToolConfigServiceImpl.java 的 toolManager 字段上添加 @Lazy 注解，打破 AgentContextConfiguration → DefaultContextDataProvider → ToolConfigServiceImpl → ToolManager → AgentContextConfiguration 的循环依赖链",
+    "errors": []
+  }
+]

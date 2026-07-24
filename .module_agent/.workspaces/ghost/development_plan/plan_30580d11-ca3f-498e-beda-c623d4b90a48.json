@@ -1,7 +1,0 @@
-{
-  "plan_id": "plan_30580d11-ca3f-498e-beda-c623d4b90a48",
-  "module_name": "agent-integration",
-  "development_plan": "将 browser_tool_executor.js 中 HostBridge 重命名为 ToolHostBridge",
-  "session_id": "ses_0721a4942ffetcgI5EH23PLQQm",
-  "modified_files": []
-}

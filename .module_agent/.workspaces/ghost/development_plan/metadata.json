@@ -15,33 +15,25 @@
     "test_passed": false
   },
   {
-    "plan_id": "plan_1229384d-8962-4563-8457-f9f84785e557",
-    "plan_summary": "为 agent-integration 模块添加浏览器工具执行能力",
-    "starter_session_id": "ses_072c54441ffebQsyWc3xaAGPp2",
-    "code_reviewed": true,
+    "plan_id": "plan_7ec00ab0-c727-4b7d-962b-7b629dbc40d9",
+    "plan_summary": "BrowserToolInvoker.loadJsContent改为静态方法",
+    "starter_session_id": "ses_06bd65d4effee7ii0hPEG2YOj2",
+    "code_reviewed": false,
     "plan_completed": true,
     "test_passed": true
   },
   {
-    "plan_id": "plan_6e50c760-dfca-40fe-8534-043ac08cb986",
-    "plan_summary": "修改 browser_tool_executor.js 架构",
-    "starter_session_id": "ses_072c54441ffebQsyWc3xaAGPp2",
-    "code_reviewed": true,
+    "plan_id": "plan_9ce364a4-b0f1-4648-b7db-33ca7835c8b3",
+    "plan_summary": "新增AgentContextController和BrowserToolController两个REST控制器",
+    "starter_session_id": "ses_06bd65d4effee7ii0hPEG2YOj2",
+    "code_reviewed": false,
     "plan_completed": true,
-    "test_passed": false
+    "test_passed": true
   },
   {
-    "plan_id": "plan_890f7239-6f3f-41e8-8375-cb5e9f461be1",
-    "plan_summary": "HostBridge 对象封装",
-    "starter_session_id": "ses_072c54441ffebQsyWc3xaAGPp2",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": false
-  },
-  {
-    "plan_id": "plan_30580d11-ca3f-498e-beda-c623d4b90a48",
-    "plan_summary": "HostBridge 重命名为 ToolHostBridge",
-    "starter_session_id": "ses_072c54441ffebQsyWc3xaAGPp2",
+    "plan_id": "plan_be3d74c1-e53f-4d04-a7e6-8e3dc0617399",
+    "plan_summary": "修复循环依赖：ToolConfigServiceImpl对ToolManager注入加@Lazy",
+    "starter_session_id": "ses_06be83199ffemwKxWiT4sAwP2N",
     "code_reviewed": false,
     "plan_completed": false,
     "test_passed": false

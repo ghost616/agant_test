@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_06cb917daffeRUdk6EpoK5zcfL",
+  "content": "## 待测试功能\n\n### getToolConfig 方法测试（ToolManager.java:69-77）\n\n涉及文件：\n- `agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/ToolManager.java`（新增方法）\n- `agent-base/src/test/java/com/ghost616/agentbase/service/agent/invoker/ToolManagerTest.java`（新增测试）\n\n需测试的场景：\n1. 匹配到非 MCP 工具（mcpOriginalConfig == null）时，返回 toolConfig\n2. 匹配到 MCP 展开工具（mcpOriginalConfig != null）时，返回 mcpOriginalConfig\n3. 未匹配到 toolName 时，返回 null\n4. 遍历多个工具时，正确匹配到指定名称的工具",
+  "timestamp": "2026-07-24T08:39:11.982Z"
+}

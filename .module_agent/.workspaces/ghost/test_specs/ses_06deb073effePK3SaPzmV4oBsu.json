@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_06deb073effePK3SaPzmV4oBsu",
+  "content": "## 待测试功能\n\n### 涉及的代码文件\n- `src/types/tool.ts` — ToolType 新增 'CUSTOM' 类型；新增 SubToolType（'BROWSER'）；ToolConfig 新增 subToolType 和 toolScript 字段\n- `src/pages/tools/ToolList.tsx` — 新增 CUSTOM 标签/颜色；新增子工具类型下拉框；BROWSER 子类型显示工具脚本TextArea并隐藏implPath/Schema；编辑时回填 subToolType/toolScript；提交时CUSTOM类型逻辑\n\n### 测试项\n1. **编译测试**：TypeScript 编译是否通过（tsc --noEmit）\n2. **单元测试**：\n   - CUSTOM 类型提交时正确设置 subToolType、toolScript，清空 implPath/parameterSchema/returnSchema\n   - 编辑 MCP_HTTP 时 authConfig 回填 authorization 逻辑不受影响\n   - 非 CUSTOM/非 MCP_HTTP 类型提交时保持原有逻辑\n",
+  "timestamp": "2026-07-24T03:05:42.827Z"
+}

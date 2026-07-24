@@ -35,7 +35,7 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/controller/ToolExecutionController.java",
-      "description": "工具执行控制器，提供工具执行、状态轮询、继续对话等 HTTP 接口，业务逻辑委托给 agent-base 的 ToolExecutionService；注入 DefaultSubSessionCallback 用于检测 _sys_callback_sub_session 子会话回调流程；executeTools 和 toolStatus 接口返回 ToolStatusResultDTO 统一响应体"
+      "description": "工具执行控制器，提供工具执行、状态轮询、继续对话等 HTTP 接口，业务逻辑委托给 agent-base 的 ToolExecutionService；注入 ToolConfigService 和 DefaultSubSessionCallback，在 toolStatus 方法中根据 ToolConfig 构建 ToolConfigBrief（id=String.valueOf(toolConfig.getId())，subToolType=toolConfig.getSubToolType().getCode()，toolName=toolConfig.getName()）赋值给 dto.toolConfig，并检测 _sys_callback_sub_session 子会话回调流程设置 needsSubSessionFlow；executeTools 和 toolStatus 接口返回 ToolStatusResultDTO 统一响应体"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/controller/ChatController.java",
@@ -111,7 +111,7 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/dto/ToolStatusResultDTO.java",
-      "description": "工具执行结果数据传输对象，封装 status/toolId/toolName/arguments/hasMore/result/message/needsSubSessionFlow 字段，用于 executeTools 和 toolStatus 接口的统一响应"
+      "description": "工具执行结果数据传输对象，封装 status/toolId/toolName/arguments/hasMore/result/message/needsSubSessionFlow 字段及 ToolConfigBrief 内部类（id/subToolType/toolName），用于 executeTools 和 toolStatus 接口的统一响应"
     },
     {
       "path": "platform-app/src/test/java/com/ghost616/platform/dto/ToolStatusResultDTOTest.java",
@@ -132,6 +132,18 @@
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/entity/Message.java",
       "description": "消息实体，映射 message 表，包含 id/sessionId/role/content/reasoning/sequenceNum/toolCallId/toolResult/tokenUsage/rollback/createTime 字段"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/dto/AgentContextDTO.java",
+      "description": "AgentExecutionContext 上下文数据传输对象，包含 sessionId/agentId/systemPrompt/modelId/parentSessionId/recentMessageCount/history/tools/skills/projectDir/sessionVariables/conversationVariables 字段及 HistoryEntryDTO 内部类"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/controller/AgentContextController.java",
+      "description": "上下文 REST 控制器，提供 GET /api/context/{sessionId} 获取 AgentExecutionContext 内容、POST /api/context/{sessionId}/session-variable 和 POST /api/context/{sessionId}/conversation-variable 写入上下文变量的 HTTP API"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/controller/BrowserToolController.java",
+      "description": "浏览器工具 REST 控制器，提供 POST /api/browser-tool/pass-result（空实现）、GET /api/browser-tool/extension（返回覆盖 ToolHostBridge 四个方法的 JS 桥接代码）、GET /api/browser-tool/tool-script/{toolConfigId}（查询工具脚本）的 HTTP API"
     }
   ]
 }

@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_06c9c560affeRAWEoxN00XUtpT",
+  "content": "## 待测试功能说明\n\n### 涉及功能\n1. **ToolConfigService 接口新增方法**：`ToolConfig getToolConfigBySessionAndName(Long sessionId, String toolName)`\n2. **ToolConfigServiceImpl 实现**：\n   - 注入 `ToolManager` 依赖\n   - `getToolConfigBySessionAndName()` 方法调用 `toolManager.getToolConfig(sessionId, toolName)` 获取 `ToolConfigDTO`\n   - 用 DTO 的 id 通过 `toolConfigMapper.selectById()` 查询 `ToolConfig` 实体\n   - 若 DTO 为 null 或 id 为 null，抛出 `BusinessException(ErrorCode.TOOL_NOT_FOUND)`\n   - 若查询结果实体为 null，抛出 `BusinessException(ErrorCode.TOOL_NOT_FOUND)`\n   - 实体存在则直接返回实体\n\n### 涉及代码文件\n- `platform-app/src/main/java/com/ghost616/platform/service/tool/ToolConfigService.java`\n- `platform-app/src/main/java/com/ghost616/platform/service/tool/ToolConfigServiceImpl.java`\n- `platform-app/src/test/java/com/ghost616/platform/service/tool/ToolConfigServiceImplTest.java`\n\n### 测试类型判断\n- **单元测试**：是（新方法有具体实现逻辑）\n- **编译测试**：是（Java 编译型语言，新增了 ToolManager 依赖注入）\n",
+  "timestamp": "2026-07-24T09:11:28.047Z"
+}
