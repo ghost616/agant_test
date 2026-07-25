@@ -10,7 +10,7 @@ vi.mock('../api', () => ({
   },
 }));
 
-import { stopChat, listChildSessions, getSubSessionData, completeSubSession, getBrowserExtension, getToolScript, passResult } from '../session';
+import { stopChat, listChildSessions, getSubSessionData, completeSubSession, getBrowserExtension, getToolScript } from '../session';
 
 describe('stopChat', () => {
   beforeEach(() => {
@@ -214,33 +214,4 @@ describe('getToolScript', () => {
   });
 });
 
-describe('passResult', () => {
-  beforeEach(() => {
-    mockPost.mockReset();
-  });
 
-  it('应调用 POST /browser-tool/pass-result 并传递请求体', async () => {
-    mockPost.mockResolvedValueOnce(undefined);
-    await passResult('session-123', 'tool-456', '执行成功');
-    expect(mockPost).toHaveBeenCalledWith('/browser-tool/pass-result', {
-      sessionId: 'session-123',
-      toolId: 'tool-456',
-      result: '执行成功',
-    });
-  });
-
-  it('应正确处理不同的参数组合', async () => {
-    mockPost.mockResolvedValueOnce(undefined);
-    await passResult('sid-a', 'tid-b', '{"status":"ok"}');
-    expect(mockPost).toHaveBeenCalledWith('/browser-tool/pass-result', {
-      sessionId: 'sid-a',
-      toolId: 'tid-b',
-      result: '{"status":"ok"}',
-    });
-  });
-
-  it('应在 API 失败时抛出错误', async () => {
-    mockPost.mockRejectedValueOnce(new Error('Network Error'));
-    await expect(passResult('sid', 'tid', 'result')).rejects.toThrow('Network Error');
-  });
-});

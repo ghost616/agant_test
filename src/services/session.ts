@@ -104,9 +104,7 @@ async function processSSEStream(
         // ignore parse error
       }
     }
-  }
 }
-
 export function agentChatStream(
   params: { sessionId: string; content: string; modelId?: string; thinking?: boolean },
   callbacks: StreamCallbacks,
@@ -233,6 +231,4 @@ export async function getToolScript(toolConfigId: string): Promise<{ data: strin
   return res.data.data;
 }
 
-export async function passResult(sessionId: string, toolId: string, result: string): Promise<void> {
-  await api.post('/browser-tool/pass-result', { sessionId, toolId, result });
-}
+

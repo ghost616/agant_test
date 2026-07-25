@@ -1,8 +1,16 @@
 import { getBrowserExtension, getToolScript } from './session';
 
+declare global {
+  interface Window {
+    ToolHostBridge?: {
+      registerTool?: (name: string, handler: Function) => void;
+      passToolResult?: (sessionId: string, toolId: string, result: string) => void;
+    };
+  }
+}
+
 class ToolManager {
   private static instance: ToolManager;
-  public functions: Map<string, Function> = new Map();
   public extensionLoaded = false;
 
   private constructor() {}
@@ -14,7 +22,7 @@ class ToolManager {
     return ToolManager.instance;
   }
 
-  /** 加载 extension JS，仅用于浏览器 API polyfill（如定义 window 对象上的浏览器交互方法），无需访问 ToolManager 上下文 */
+  /** 加载 extension JS，仅用于浏览器 API polyfill，无需访问 ToolManager 上下文 */
   async loadExtension(): Promise<void> {
     if (this.extensionLoaded) return;
     const js = await getBrowserExtension();
@@ -24,31 +32,33 @@ class ToolManager {
   }
 
   hasFunction(toolName: string): boolean {
-    return this.functions.has(toolName);
+    if (typeof window !== 'undefined' && window.ToolHostBridge?.registerTool) {
+      return (window as any).ToolManager?.has?.(toolName) ?? false;
+    }
+    return false;
   }
 
   registerFunction(toolName: string, toolScript: string): void {
     if (!toolName) return;
-    const escapedName = toolName.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-    const wrappedFn = new Function('ToolManager', `
-      var toolFn = ${toolScript};
-      ToolManager.functions.set('${escapedName}', toolFn);
-    `);
-    wrappedFn(ToolManager.getInstance());
+    const handler = new Function('params', 'context', toolScript) as Function;
+    if (typeof window !== 'undefined' && window.ToolHostBridge?.registerTool) {
+      window.ToolHostBridge.registerTool(toolName, handler);
+      (window as any).ToolManager?.add?.({ name: toolName, handler });
+    }
   }
 
   getFunction(toolName: string): Function | undefined {
-    return this.functions.get(toolName);
+    if (typeof window !== 'undefined') {
+      return (window as any).ToolManager?.get?.(toolName);
+    }
+    return undefined;
   }
 }
 
 class ToolExecutor {
   private static instance: ToolExecutor;
-  private toolManager: ToolManager;
 
-  private constructor() {
-    this.toolManager = ToolManager.getInstance();
-  }
+  private constructor() {}
 
   static getInstance(): ToolExecutor {
     if (!ToolExecutor.instance) {
@@ -63,14 +73,18 @@ class ToolExecutor {
     sessionId: string,
     toolId: string,
   ): Promise<string> {
-    const fn = this.toolManager.getFunction(toolName);
-    if (!fn) {
-      throw new Error(`工具函数 ${toolName} 未注册`);
+    const params = JSON.parse(args);
+    if (typeof window !== 'undefined' && (window as any).ToolExecutor?.execute) {
+      return (window as any).ToolExecutor.execute(sessionId, toolId, toolName, params);
     }
-    const context = { sessionId, toolId };
-    const parsedArgs = JSON.parse(args);
-    const result = await fn(parsedArgs, context);
+    const fn = this.getManager().getFunction(toolName);
+    if (!fn) throw new Error(`工具函数 ${toolName} 未注册`);
+    const result = await fn(params, { sessionId, toolId });
     return typeof result === 'string' ? result : JSON.stringify(result);
+  }
+
+  private getManager(): ToolManager {
+    return ToolManager.getInstance();
   }
 }
 

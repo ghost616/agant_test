@@ -22,7 +22,6 @@ import {
   getToolScript,
   getToolStatus,
   listChildSessions,
-  passResult,
   rollbackSession,
   stopChat,
 } from '../../services/session';
@@ -248,15 +247,16 @@ function AgentChat(): JSX.Element {
       toolManager.registerFunction(toolConfig.toolName, scriptResult.data);
     }
     try {
-      const executionResult = await toolExecutor.execute(
+      await toolExecutor.execute(
         toolConfig.toolName,
         status.arguments,
         sid,
         toolId,
       );
-      await passResult(sid, toolId, executionResult);
     } catch {
-      await passResult(sid, toolId, `"执行失败"`);
+      if (typeof window !== 'undefined' && window.ToolHostBridge?.passToolResult) {
+        window.ToolHostBridge.passToolResult(sid, toolId, `"执行失败"`);
+      }
     }
   };
 

@@ -119,13 +119,13 @@ describe('AgentChat handleAbort (static verification)', () => {
     expect(source).toContain("subToolType === 'BROWSER'");
   });
 
-  it('executeBrowserTool 应调用 passResult 提交执行结果', () => {
+  it('executeBrowserTool 应调用 toolExecutor.execute', () => {
     const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
     const execBlock = source.match(/const executeBrowserTool[\s\S]*?^  };/m);
     expect(execBlock).not.toBeNull();
     if (execBlock) {
-      expect(execBlock[0]).toContain('passResult');
       expect(execBlock[0]).toContain('toolExecutor.execute');
+      expect(execBlock[0]).not.toContain('passResult');
     }
   });
 
