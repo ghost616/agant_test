@@ -127,7 +127,7 @@ const ToolExecutor = {
         return ToolHostBridge.getAgentExecutionContext(sessionId);
     },
 
-    getToolResult: function (agentExecContext, toolName, params) {
+    getToolResult: async function (agentExecContext, toolName, params) {
         const tool = ToolManager.get(toolName);
         if (!tool) {
             throw new Error("Tool not found: " + toolName);
@@ -135,14 +135,14 @@ const ToolExecutor = {
         if (typeof tool.handler !== "function") {
             throw new Error("Tool has no handler: " + toolName);
         }
-        return tool.handler(agentExecContext, params);
+        return await tool.handler(agentExecContext, params);
     },
 
     passToolResult: function (sessionId, toolId, result) {
         ToolHostBridge.passToolResult(sessionId, toolId, result);
     },
 
-    execute: function (sessionId, toolId, toolName, params) {
+    execute: async function (sessionId, toolId, toolName, params) {
         const tool = ToolManager.get(toolName);
         if (!tool) {
             throw new Error("Tool not found: " + toolName);
@@ -150,8 +150,8 @@ const ToolExecutor = {
         if (typeof tool.handler !== "function") {
             throw new Error("Tool has no handler: " + toolName);
         }
-        const agentCtx = this.getAgentExecutionContext(sessionId);
-        const result = tool.handler(agentCtx, params);
+        const agentCtx = await this.getAgentExecutionContext(sessionId);
+        const result = await tool.handler(agentCtx, params);
         this.passToolResult(sessionId, toolId, result);
         return result;
     }
