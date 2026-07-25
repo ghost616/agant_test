@@ -12,11 +12,11 @@
         throw new Error('Failed to get agent execution context: ' + data.message);
     };
 
-    ToolHostBridge.passToolResult = function(sessionId, toolId, result) {
+    ToolHostBridge.passToolResult = function(sessionId, toolConfigId, result) {
         fetch('/api/browser-tool/pass-result', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ sessionId: sessionId, toolId: toolId, result: result })
+            body: JSON.stringify({ sessionId: sessionId, toolConfigId: toolConfigId, result: result })
         });
     };
 

@@ -36,7 +36,7 @@ public class BrowserToolController {
         if (body.getSessionId() == null) {
             return ApiResponse.fail("PARAM-001", "sessionId is required");
         }
-        BrowserToolTask task = browserToolCallback.getTask(String.valueOf(body.getSessionId()), body.getToolId());
+        BrowserToolTask task = browserToolCallback.getTask(String.valueOf(body.getSessionId()), body.getToolConfigId());
         if (task != null) {
             task.getToolResult().complete(body.getResult());
         }

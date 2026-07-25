@@ -6,7 +6,7 @@ const ToolHostBridge = {
         throw new Error("ToolHostBridge.getAgentExecutionContext not implemented");
     },
 
-    passToolResult: function (sessionId, toolId, result) {
+    passToolResult: function (sessionId, toolConfigId, result) {
         throw new Error("ToolHostBridge.passToolResult not implemented");
     },
 
@@ -138,11 +138,11 @@ const ToolExecutor = {
         return await tool.handler(agentExecContext, params);
     },
 
-    passToolResult: function (sessionId, toolId, result) {
-        ToolHostBridge.passToolResult(sessionId, toolId, result);
+    passToolResult: function (sessionId, toolConfigId, result) {
+        ToolHostBridge.passToolResult(sessionId, toolConfigId, result);
     },
 
-    execute: async function (sessionId, toolId, toolName, params) {
+    execute: async function (sessionId, toolConfigId, toolName, params) {
         const tool = ToolManager.get(toolName);
         if (!tool) {
             throw new Error("Tool not found: " + toolName);
@@ -152,7 +152,7 @@ const ToolExecutor = {
         }
         const agentCtx = await this.getAgentExecutionContext(sessionId);
         const result = await tool.handler(agentCtx, params);
-        this.passToolResult(sessionId, toolId, result);
+        this.passToolResult(sessionId, toolConfigId, result);
         return result;
     }
 };

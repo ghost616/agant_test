@@ -11,6 +11,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class PassResultRequest {
     private Long sessionId;
-    private String toolId;
+    private String toolConfigId;
     private String result;
 }

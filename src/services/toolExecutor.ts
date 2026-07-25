@@ -1,17 +1,26 @@
 import { getBrowserExtension, getToolScript } from './session';
 
-declare global {
-  interface Window {
-    ToolHostBridge?: {
-      registerTool?: (name: string, handler: Function) => void;
-      passToolResult?: (sessionId: string, toolId: string, result: string) => void;
-    };
-  }
+interface JBToolHostBridge {
+  passToolResult?: (sessionId: string, toolId: string, result: string) => void;
+}
+
+interface JBToolManager {
+  has?: (toolName: string) => boolean;
+  add?: (entry: { name: string; handler: Function }) => void;
+  get?: (toolName: string) => Function | undefined;
+}
+
+interface JBToolExecutor {
+  execute?: (sessionId: string, toolId: string, toolName: string, params: any, toolConfigId: string) => Promise<string>;
 }
 
 class ToolManager {
   private static instance: ToolManager;
   public extensionLoaded = false;
+
+  public jbToolHostBridge?: JBToolHostBridge;
+  public jbToolManager?: JBToolManager;
+  public jbToolExecutor?: JBToolExecutor;
 
   private constructor() {}
 
@@ -22,47 +31,41 @@ class ToolManager {
     return ToolManager.instance;
   }
 
-  /** 加载 extension JS，仅用于浏览器 API polyfill，无需访问 ToolManager 上下文 */
   async loadExtension(): Promise<void> {
     if (this.extensionLoaded) return;
     console.log(`[ToolManager.loadExtension] getBrowserExtension 前`);
     const js = await getBrowserExtension();
     console.log(`[ToolManager.loadExtension] getBrowserExtension 返回`, { js长度: js.length });
     console.log(`[ToolManager.loadExtension] new Function 前`);
-    const fn = new Function(js);
+    const fn = new Function(js + '; return { ToolHostBridge, ToolManager, ToolExecutor };');
     console.log(`[ToolManager.loadExtension] new Function 后`);
     console.log(`[ToolManager.loadExtension] fn() 执行前`);
+    let result: { ToolHostBridge: JBToolHostBridge; ToolManager: JBToolManager; ToolExecutor: JBToolExecutor };
     try {
-      fn();
+      result = fn();
     } catch (e) {
       console.error(`[ToolManager.loadExtension] fn() 异常`, e);
       throw e;
     }
     console.log(`[ToolManager.loadExtension] fn() 执行后`);
+    this.jbToolHostBridge = result!.ToolHostBridge;
+    this.jbToolManager = result!.ToolManager;
+    this.jbToolExecutor = result!.ToolExecutor;
     this.extensionLoaded = true;
   }
 
   hasFunction(toolName: string): boolean {
-    if (typeof window !== 'undefined' && window.ToolHostBridge?.registerTool) {
-      return (window as any).ToolManager?.has?.(toolName) ?? false;
-    }
-    return false;
+    return this.jbToolManager?.has?.(toolName) ?? false;
   }
 
   registerFunction(toolName: string, toolScript: string): void {
     if (!toolName) return;
     const handler = new Function('params', 'context', toolScript) as Function;
-    if (typeof window !== 'undefined' && window.ToolHostBridge?.registerTool) {
-      window.ToolHostBridge.registerTool(toolName, handler);
-      (window as any).ToolManager?.add?.({ name: toolName, handler });
-    }
+    this.jbToolManager?.add?.({ name: toolName, handler });
   }
 
   getFunction(toolName: string): Function | undefined {
-    if (typeof window !== 'undefined') {
-      return (window as any).ToolManager?.get?.(toolName);
-    }
-    return undefined;
+    return this.jbToolManager?.get?.(toolName);
   }
 }
 
@@ -83,10 +86,12 @@ class ToolExecutor {
     args: string,
     sessionId: string,
     toolId: string,
+    toolConfigId: string,
   ): Promise<string> {
     const params = JSON.parse(args);
-    if (typeof window !== 'undefined' && (window as any).ToolExecutor?.execute) {
-      return (window as any).ToolExecutor.execute(sessionId, toolId, toolName, params);
+    const jbExecutor = this.getManager().jbToolExecutor;
+    if (jbExecutor?.execute) {
+      return jbExecutor.execute(sessionId, toolId, toolName, params, toolConfigId);
     }
     const fn = this.getManager().getFunction(toolName);
     if (!fn) throw new Error(`工具函数 ${toolName} 未注册`);

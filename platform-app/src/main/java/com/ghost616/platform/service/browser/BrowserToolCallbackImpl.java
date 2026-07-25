@@ -17,16 +17,16 @@ public class BrowserToolCallbackImpl implements BrowserToolCallback {
 
     private final ConcurrentHashMap<String, BrowserToolTask> taskMap = new ConcurrentHashMap<>();
 
-    public BrowserToolTask getTask(String sessionId, String toolId) {
-        return taskMap.get(sessionId + ":" + toolId);
+    public BrowserToolTask getTask(String sessionId, String toolConfigId) {
+        return taskMap.get(sessionId + ":" + toolConfigId);
     }
 
     @Override
-    public String execute(String sessionId, String toolId, String toolName, String toolParams) {
-        String key = sessionId + ":" + toolId;
+    public String execute(String sessionId, String toolConfigId, String toolName, String toolParams) {
+        String key = sessionId + ":" + toolConfigId;
         BrowserToolTask task = BrowserToolTask.builder()
                 .sessionId(sessionId)
-                .toolId(toolId)
+                .toolId(toolConfigId)
                 .toolName(toolName)
                 .toolParams(toolParams)
                 .toolResult(new CompletableFuture<>())
@@ -35,14 +35,14 @@ public class BrowserToolCallbackImpl implements BrowserToolCallback {
         try {
             return task.getToolResult().get(600, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
-            log.warn("BrowserToolCallback execute interrupted for sessionId={} toolId={}", sessionId, toolId, e);
+            log.warn("BrowserToolCallback execute interrupted for sessionId={} toolConfigId={}", sessionId, toolConfigId, e);
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
         } catch (ExecutionException e) {
-            log.warn("BrowserToolCallback execute failed for sessionId={} toolId={}", sessionId, toolId, e);
+            log.warn("BrowserToolCallback execute failed for sessionId={} toolConfigId={}", sessionId, toolConfigId, e);
             throw new RuntimeException(e);
         } catch (TimeoutException e) {
-            log.warn("BrowserToolCallback execute timed out for sessionId={} toolId={}", sessionId, toolId, e);
+            log.warn("BrowserToolCallback execute timed out for sessionId={} toolConfigId={}", sessionId, toolConfigId, e);
             throw new RuntimeException(e);
         } finally {
             taskMap.remove(key);

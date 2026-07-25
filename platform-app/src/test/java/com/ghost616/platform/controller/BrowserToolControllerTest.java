@@ -32,7 +32,7 @@ class BrowserToolControllerTest {
         BrowserToolTask task = BrowserToolTask.builder().toolResult(new java.util.concurrent.CompletableFuture<>()).build();
         when(browserToolCallback.getTask("1", "tool-1")).thenReturn(task);
 
-        PassResultRequest body = PassResultRequest.builder().sessionId(1L).toolId("tool-1").result("ok").build();
+        PassResultRequest body = PassResultRequest.builder().sessionId(1L).toolConfigId("tool-1").result("ok").build();
         ApiResponse<Void> response = controller.passResult(body);
 
         assertTrue(response.isSuccess());
@@ -53,7 +53,7 @@ class BrowserToolControllerTest {
         BrowserToolTask task = BrowserToolTask.builder().toolResult(new java.util.concurrent.CompletableFuture<>()).build();
         when(browserToolCallback.getTask("1", null)).thenReturn(task);
 
-        PassResultRequest body = PassResultRequest.builder().sessionId(1L).result(null).toolId(null).build();
+        PassResultRequest body = PassResultRequest.builder().sessionId(1L).result(null).toolConfigId(null).build();
         ApiResponse<Void> response = controller.passResult(body);
 
         assertTrue(response.isSuccess());

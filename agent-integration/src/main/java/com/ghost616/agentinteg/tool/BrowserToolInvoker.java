@@ -32,9 +32,9 @@ public class BrowserToolInvoker extends CustomToolInvoker {
     public String execute(AgentExecutionContext ctx, String arguments) {
         try {
             String sessionId = String.valueOf(ctx.getSessionId());
-            String toolId = String.valueOf(toolConfig.getId());
+            String toolConfigId = String.valueOf(toolConfig.getId());
             String toolName = toolConfig.getName();
-            return callback.execute(sessionId, toolId, toolName, arguments);
+            return callback.execute(sessionId, toolConfigId, toolName, arguments);
         } catch (Exception e) {
             log.error("BrowserToolInvoker execute failed", e);
             try {
