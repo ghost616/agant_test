@@ -113,6 +113,22 @@ describe('AgentChat handleAbort (static verification)', () => {
     expect(source).toContain(".catch(() => {})");
   });
 
+  it('executeBrowserTool 应包含 subToolType === BROWSER 判断逻辑', () => {
+    const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
+    expect(source).toContain('executeBrowserTool');
+    expect(source).toContain("subToolType === 'BROWSER'");
+  });
+
+  it('executeBrowserTool 应调用 passResult 提交执行结果', () => {
+    const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
+    const execBlock = source.match(/const executeBrowserTool[\s\S]*?^  };/m);
+    expect(execBlock).not.toBeNull();
+    if (execBlock) {
+      expect(execBlock[0]).toContain('passResult');
+      expect(execBlock[0]).toContain('toolExecutor.execute');
+    }
+  });
+
   it('handleAbort should set toolAbortRef and call abortRef.abort after stopChat', () => {
     const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
     expect(source).toContain("toolAbortRef.current = true");

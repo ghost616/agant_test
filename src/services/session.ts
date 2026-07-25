@@ -152,6 +152,7 @@ export interface ToolStatusResult {
   result?: string;
   hasMore?: boolean;
   needsSubSessionFlow?: boolean;
+  toolConfig?: { id: string; subToolType: string; toolName: string };
 }
 
 export interface SubSessionData {
@@ -218,4 +219,20 @@ export function continueChatStream(
 
   run();
   return controller;
+}
+
+export async function getBrowserExtension(): Promise<string> {
+  const res = await api.get<ApiResponse<string>>('/browser-tool/extension');
+  return res.data.data;
+}
+
+export async function getToolScript(toolConfigId: string): Promise<{ data: string }> {
+  const res = await api.get<ApiResponse<{ data: string }>>(
+    `/browser-tool/tool-script/${encodeURIComponent(toolConfigId)}`,
+  );
+  return res.data.data;
+}
+
+export async function passResult(sessionId: string, toolId: string, result: string): Promise<void> {
+  await api.post('/browser-tool/pass-result', { sessionId, toolId, result });
 }

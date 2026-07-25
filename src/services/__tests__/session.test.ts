@@ -10,7 +10,7 @@ vi.mock('../api', () => ({
   },
 }));
 
-import { stopChat, listChildSessions, getSubSessionData, completeSubSession } from '../session';
+import { stopChat, listChildSessions, getSubSessionData, completeSubSession, getBrowserExtension, getToolScript, passResult } from '../session';
 
 describe('stopChat', () => {
   beforeEach(() => {
@@ -168,5 +168,79 @@ describe('completeSubSession', () => {
     const testError = new Error('Network Error');
     mockPost.mockRejectedValueOnce(testError);
     await expect(completeSubSession('session-123')).rejects.toThrow('Network Error');
+  });
+});
+
+describe('getBrowserExtension', () => {
+  beforeEach(() => {
+    mockGet.mockReset();
+  });
+
+  it('应调用 GET /browser-tool/extension', async () => {
+    mockGet.mockResolvedValueOnce({ data: { data: 'var test = 1;' } });
+    const result = await getBrowserExtension();
+    expect(mockGet).toHaveBeenCalledWith('/browser-tool/extension');
+    expect(result).toBe('var test = 1;');
+  });
+
+  it('应在 API 失败时抛出错误', async () => {
+    mockGet.mockRejectedValueOnce(new Error('Network Error'));
+    await expect(getBrowserExtension()).rejects.toThrow('Network Error');
+  });
+});
+
+describe('getToolScript', () => {
+  beforeEach(() => {
+    mockGet.mockReset();
+  });
+
+  it('应调用 GET /browser-tool/tool-script/{id}', async () => {
+    const fakeScript = { data: '() => console.log("test")' };
+    mockGet.mockResolvedValueOnce({ data: { data: fakeScript } });
+    const result = await getToolScript('config-123');
+    expect(mockGet).toHaveBeenCalledWith('/browser-tool/tool-script/config-123');
+    expect(result).toEqual(fakeScript);
+  });
+
+  it('应 encodeURIComponent 处理特殊字符的 ID', async () => {
+    mockGet.mockResolvedValueOnce({ data: { data: { data: '' } } });
+    await getToolScript('special/id?foo=bar');
+    expect(mockGet).toHaveBeenCalledWith('/browser-tool/tool-script/special%2Fid%3Ffoo%3Dbar');
+  });
+
+  it('应在 API 失败时抛出错误', async () => {
+    mockGet.mockRejectedValueOnce(new Error('Network Error'));
+    await expect(getToolScript('config-123')).rejects.toThrow('Network Error');
+  });
+});
+
+describe('passResult', () => {
+  beforeEach(() => {
+    mockPost.mockReset();
+  });
+
+  it('应调用 POST /browser-tool/pass-result 并传递请求体', async () => {
+    mockPost.mockResolvedValueOnce(undefined);
+    await passResult('session-123', 'tool-456', '执行成功');
+    expect(mockPost).toHaveBeenCalledWith('/browser-tool/pass-result', {
+      sessionId: 'session-123',
+      toolId: 'tool-456',
+      result: '执行成功',
+    });
+  });
+
+  it('应正确处理不同的参数组合', async () => {
+    mockPost.mockResolvedValueOnce(undefined);
+    await passResult('sid-a', 'tid-b', '{"status":"ok"}');
+    expect(mockPost).toHaveBeenCalledWith('/browser-tool/pass-result', {
+      sessionId: 'sid-a',
+      toolId: 'tid-b',
+      result: '{"status":"ok"}',
+    });
+  });
+
+  it('应在 API 失败时抛出错误', async () => {
+    mockPost.mockRejectedValueOnce(new Error('Network Error'));
+    await expect(passResult('sid', 'tid', 'result')).rejects.toThrow('Network Error');
   });
 });
