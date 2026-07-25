@@ -68,7 +68,7 @@ public class BrowserToolController {
         }
         String executorJs = BrowserToolInvoker.loadJsContent();
         if (executorJs != null && !executorJs.isEmpty()) {
-            return cachedExtensionJs + "\n" + executorJs;
+            return executorJs + "\n" + cachedExtensionJs;
         }
         return cachedExtensionJs;
     }

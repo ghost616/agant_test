@@ -25,9 +25,20 @@ class ToolManager {
   /** 加载 extension JS，仅用于浏览器 API polyfill，无需访问 ToolManager 上下文 */
   async loadExtension(): Promise<void> {
     if (this.extensionLoaded) return;
+    console.log(`[ToolManager.loadExtension] getBrowserExtension 前`);
     const js = await getBrowserExtension();
+    console.log(`[ToolManager.loadExtension] getBrowserExtension 返回`, { js长度: js.length });
+    console.log(`[ToolManager.loadExtension] new Function 前`);
     const fn = new Function(js);
-    fn();
+    console.log(`[ToolManager.loadExtension] new Function 后`);
+    console.log(`[ToolManager.loadExtension] fn() 执行前`);
+    try {
+      fn();
+    } catch (e) {
+      console.error(`[ToolManager.loadExtension] fn() 异常`, e);
+      throw e;
+    }
+    console.log(`[ToolManager.loadExtension] fn() 执行后`);
     this.extensionLoaded = true;
   }
 

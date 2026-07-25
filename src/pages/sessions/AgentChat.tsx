@@ -239,21 +239,34 @@ function AgentChat(): JSX.Element {
     status: BrowserToolStatus,
   ): Promise<void> => {
     const { toolConfig } = status;
-    if (!toolManager.extensionLoaded) {
-      await toolManager.loadExtension();
-    }
-    if (!toolManager.hasFunction(toolConfig.toolName)) {
-      const scriptResult = await getToolScript(toolConfig.id);
-      toolManager.registerFunction(toolConfig.toolName, scriptResult);
-    }
     try {
-      await toolExecutor.execute(
+      console.log(`[executeBrowserTool] 入口`, { sessionId: sid, toolId, toolName: toolConfig.toolName });
+      if (!toolManager.extensionLoaded) {
+        const loadStart = Date.now();
+        console.log(`[executeBrowserTool] loadExtension 前`, { extensionLoaded: toolManager.extensionLoaded });
+        await toolManager.loadExtension();
+        console.log(`[executeBrowserTool] loadExtension 后`, { extensionLoaded: toolManager.extensionLoaded, 耗时: Date.now() - loadStart });
+      }
+      const hasFunc = toolManager.hasFunction(toolConfig.toolName);
+      console.log(`[executeBrowserTool] hasFunction`, { toolName: toolConfig.toolName, hasFunc });
+      if (!hasFunc) {
+        console.log(`[executeBrowserTool] getToolScript 请求前`, { toolConfigId: toolConfig.id });
+        const scriptResult = await getToolScript(toolConfig.id);
+        console.log(`[executeBrowserTool] getToolScript 返回`, { 前100字符: scriptResult.substring(0, 100) });
+        console.log(`[executeBrowserTool] registerFunction 前`, { toolName: toolConfig.toolName });
+        toolManager.registerFunction(toolConfig.toolName, scriptResult);
+        console.log(`[executeBrowserTool] registerFunction 后`);
+      }
+      console.log(`[executeBrowserTool] toolExecutor.execute 前`, { toolName: toolConfig.toolName, args: status.arguments, sessionId: sid, toolId });
+      const execResult = await toolExecutor.execute(
         toolConfig.toolName,
         status.arguments,
         sid,
         toolId,
       );
-    } catch {
+      console.log(`[executeBrowserTool] toolExecutor.execute 返回`, { result: execResult });
+    } catch (e) {
+      console.log(`[executeBrowserTool] 异常`, { message: e instanceof Error ? e.message : e, stack: e instanceof Error ? e.stack : undefined });
       if (typeof window !== 'undefined' && window.ToolHostBridge?.passToolResult) {
         window.ToolHostBridge.passToolResult(sid, toolId, `"执行失败"`);
       }
