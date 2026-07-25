@@ -16,6 +16,8 @@ import org.springframework.stereotype.Service;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.List;
 import java.util.Map;
 
@@ -31,6 +33,8 @@ import com.ghost616.agentbase.service.agent.invoker.McpAuthConfigParser;
 import com.ghost616.agentbase.service.agent.invoker.McpJsonRpcClient;
 import com.ghost616.agentbase.service.agent.invoker.ToolManager;
 import org.springframework.context.annotation.Lazy;
+
+
 
 
 @Slf4j
@@ -88,6 +92,7 @@ public class ToolConfigServiceImpl implements ToolConfigService {
             if (request.getToolScript() == null || request.getToolScript().isBlank()) {
                 throw new BusinessException(ErrorCode.TOOL_SCHEMA_INVALID, "子工具类型为 BROWSER 时 toolScript 不能为空");
             }
+            validateToolScript(request.getToolScript());
         } else {
             if (request.getImplPath() == null || request.getImplPath().isBlank()) {
                 throw new BusinessException(ErrorCode.TOOL_SCHEMA_INVALID, "实现路径不能为空");
@@ -144,6 +149,7 @@ public class ToolConfigServiceImpl implements ToolConfigService {
                 throw new BusinessException(ErrorCode.TOOL_SCHEMA_INVALID, "子工具类型为 BROWSER 时 toolScript 不能为空");
             }
             if (request.getToolScript() != null) {
+                validateToolScript(request.getToolScript());
                 entity.setToolScript(request.getToolScript());
             }
         } else if (subToolType != null) {
@@ -164,9 +170,6 @@ public class ToolConfigServiceImpl implements ToolConfigService {
 
         if (subToolType != null) {
             entity.setSubToolType(subToolType);
-        }
-        if (request.getToolScript() != null) {
-            entity.setToolScript(request.getToolScript());
         }
         if (request.getAuthConfig() != null) {
             entity.setAuthConfig(request.getAuthConfig());
@@ -237,6 +240,52 @@ public class ToolConfigServiceImpl implements ToolConfigService {
             throw new BusinessException(ErrorCode.TOOL_SCHEMA_INVALID,
                     "参数 Schema 不是有效的 JSON: " + e.getMessage());
         }
+    }
+
+    private void validateToolScript(String toolScript) {
+        if (toolScript == null || toolScript.isBlank()) {
+            throw new BusinessException(ErrorCode.TOOL_SCHEMA_INVALID,
+                    "toolScript 不能为空");
+        }
+        String stripped = toolScript.strip()
+                .replaceAll("//[^\n]*", "")
+                .replaceAll("/\\*[\\s\\S]*?\\*/", "")
+                .strip();
+        if (stripped.isEmpty()) {
+            throw new BusinessException(ErrorCode.TOOL_SCHEMA_INVALID,
+                    "toolScript 不能仅包含空白和注释");
+        }
+        validateJsSyntax(stripped);
+    }
+
+    private void validateJsSyntax(String script) {
+        Deque<Character> stack = new ArrayDeque<>();
+        boolean inSingle = false, inDouble = false;
+        for (int i = 0; i < script.length(); i++) {
+            char c = script.charAt(i);
+            if (c == '\'' && !inDouble) { inSingle = !inSingle; continue; }
+            if (c == '"' && !inSingle) { inDouble = !inDouble; continue; }
+            if (inSingle || inDouble) continue;
+
+            if (c == '(' || c == '[' || c == '{') {
+                stack.push(c);
+            } else if (c == ')') {
+                if (stack.isEmpty() || stack.pop() != '(')
+                    throw new BusinessException(ErrorCode.TOOL_SCHEMA_INVALID,
+                            "toolScript 语法错误：括号不匹配");
+            } else if (c == ']') {
+                if (stack.isEmpty() || stack.pop() != '[')
+                    throw new BusinessException(ErrorCode.TOOL_SCHEMA_INVALID,
+                            "toolScript 语法错误：括号不匹配");
+            } else if (c == '}') {
+                if (stack.isEmpty() || stack.pop() != '{')
+                    throw new BusinessException(ErrorCode.TOOL_SCHEMA_INVALID,
+                            "toolScript 语法错误：括号不匹配");
+            }
+        }
+        if (!stack.isEmpty())
+            throw new BusinessException(ErrorCode.TOOL_SCHEMA_INVALID,
+                    "toolScript 语法错误：括号不匹配");
     }
 
     private void validateImplPath(String implPath, ToolType toolType, String authConfig) {

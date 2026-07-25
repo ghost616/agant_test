@@ -58,6 +58,8 @@ const SUB_TOOL_TYPE_COLORS: Record<SubToolType, string> = {
   BROWSER: 'geekblue',
 };
 
+const BROWSER_TOOL_SCRIPT_TEMPLATE = `return doSomething(params);`;
+
 const STATUS_LABELS: Record<CommonStatus, string> = {
   ENABLED: '启用',
   DISABLED: '禁用',
@@ -141,6 +143,16 @@ function ToolList(): JSX.Element {
     }
     form.setFieldsValue(values);
   }, [editingTool, modalVisible, form]);
+
+  useEffect(() => {
+    if (!modalVisible) return;
+    if (editingTool) return;
+    if (subToolType === 'BROWSER') {
+      form.setFieldsValue({ toolScript: BROWSER_TOOL_SCRIPT_TEMPLATE });
+    } else {
+      form.setFieldsValue({ toolScript: undefined });
+    }
+  }, [subToolType, editingTool, modalVisible, form]);
 
   const handleDelete = async (record: ToolConfig): Promise<void> => {
     try {
@@ -393,7 +405,7 @@ function ToolList(): JSX.Element {
               label="工具脚本"
               rules={[{ required: true, message: '请输入工具脚本' }]}
             >
-              <Input.TextArea placeholder="请输入工具脚本" rows={6} />
+              <Input.TextArea placeholder="请输入工具脚本" rows={12} />
             </Form.Item>
           ) : (
             <Form.Item

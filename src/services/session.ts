@@ -104,6 +104,7 @@ async function processSSEStream(
         // ignore parse error
       }
     }
+  }
 }
 export function agentChatStream(
   params: { sessionId: string; content: string; modelId?: string; thinking?: boolean },

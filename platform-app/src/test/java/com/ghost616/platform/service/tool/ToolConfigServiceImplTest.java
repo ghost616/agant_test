@@ -135,6 +135,144 @@ class ToolConfigServiceImplTest {
             assertEquals(ErrorCode.TOOL_SCHEMA_INVALID, ex.getErrorCode());
             assertTrue(ex.getMessage().contains("实现路径"));
         }
+
+        @Test
+        void browserSubType_withOnlyComments_shouldThrow() {
+            when(toolConfigMapper.selectCount(any())).thenReturn(0L);
+
+            ToolCreateRequest request = ToolCreateRequest.builder()
+                    .name("comment_tool")
+                    .toolType(ToolType.CUSTOM)
+                    .subToolType(SubToolType.BROWSER)
+                    .toolScript("// just a comment")
+                    .build();
+
+            BusinessException ex = assertThrows(BusinessException.class, () -> service.create(request));
+            assertEquals(ErrorCode.TOOL_SCHEMA_INVALID, ex.getErrorCode());
+            assertTrue(ex.getMessage().contains("toolScript"));
+        }
+
+        @Test
+        void browserSubType_withOnlyBlockComments_shouldThrow() {
+            when(toolConfigMapper.selectCount(any())).thenReturn(0L);
+
+            ToolCreateRequest request = ToolCreateRequest.builder()
+                    .name("block_comment_tool")
+                    .toolType(ToolType.CUSTOM)
+                    .subToolType(SubToolType.BROWSER)
+                    .toolScript("/* block comment */")
+                    .build();
+
+            BusinessException ex = assertThrows(BusinessException.class, () -> service.create(request));
+            assertEquals(ErrorCode.TOOL_SCHEMA_INVALID, ex.getErrorCode());
+            assertTrue(ex.getMessage().contains("toolScript"));
+        }
+
+        @Test
+        void browserSubType_withMismatchedBrackets_shouldThrow() {
+            when(toolConfigMapper.selectCount(any())).thenReturn(0L);
+
+            ToolCreateRequest request = ToolCreateRequest.builder()
+                    .name("bracket_tool")
+                    .toolType(ToolType.CUSTOM)
+                    .subToolType(SubToolType.BROWSER)
+                    .toolScript("function() { console.log('test') ")
+                    .build();
+
+            BusinessException ex = assertThrows(BusinessException.class, () -> service.create(request));
+            assertEquals(ErrorCode.TOOL_SCHEMA_INVALID, ex.getErrorCode());
+            assertTrue(ex.getMessage().contains("语法错误"));
+        }
+
+        @Test
+        void browserSubType_withCrossMismatchedBrackets_shouldThrow() {
+            when(toolConfigMapper.selectCount(any())).thenReturn(0L);
+
+            ToolCreateRequest request = ToolCreateRequest.builder()
+                    .name("cross_bracket_tool")
+                    .toolType(ToolType.CUSTOM)
+                    .subToolType(SubToolType.BROWSER)
+                    .toolScript("({[)}")
+                    .build();
+
+            BusinessException ex = assertThrows(BusinessException.class, () -> service.create(request));
+            assertEquals(ErrorCode.TOOL_SCHEMA_INVALID, ex.getErrorCode());
+        }
+
+        @Test
+        void browserSubType_withExtraClosingBracket_shouldThrow() {
+            when(toolConfigMapper.selectCount(any())).thenReturn(0L);
+
+            ToolCreateRequest request = ToolCreateRequest.builder()
+                    .name("extra_close_tool")
+                    .toolType(ToolType.CUSTOM)
+                    .subToolType(SubToolType.BROWSER)
+                    .toolScript("function() }")
+                    .build();
+
+            BusinessException ex = assertThrows(BusinessException.class, () -> service.create(request));
+            assertEquals(ErrorCode.TOOL_SCHEMA_INVALID, ex.getErrorCode());
+        }
+
+        @Test
+        void browserSubType_withBracketsInDoubleQuotes_shouldSucceed() {
+            when(toolConfigMapper.selectCount(any())).thenReturn(0L);
+            doAnswer(inv -> {
+                ToolConfig arg = inv.getArgument(0);
+                arg.setId(1L);
+                return null;
+            }).when(toolConfigMapper).insert(any(ToolConfig.class));
+
+            ToolCreateRequest request = ToolCreateRequest.builder()
+                    .name("string_bracket_tool")
+                    .toolType(ToolType.CUSTOM)
+                    .subToolType(SubToolType.BROWSER)
+                    .toolScript("var s = \"test(\"")
+                    .build();
+
+            ToolDetailDTO result = service.create(request);
+            assertEquals("var s = \"test(\"", result.getToolScript());
+        }
+
+        @Test
+        void browserSubType_withBracketsInSingleQuotes_shouldSucceed() {
+            when(toolConfigMapper.selectCount(any())).thenReturn(0L);
+            doAnswer(inv -> {
+                ToolConfig arg = inv.getArgument(0);
+                arg.setId(1L);
+                return null;
+            }).when(toolConfigMapper).insert(any(ToolConfig.class));
+
+            ToolCreateRequest request = ToolCreateRequest.builder()
+                    .name("single_quote_tool")
+                    .toolType(ToolType.CUSTOM)
+                    .subToolType(SubToolType.BROWSER)
+                    .toolScript("var s = 'test('")
+                    .build();
+
+            ToolDetailDTO result = service.create(request);
+            assertEquals("var s = 'test('", result.getToolScript());
+        }
+
+        @Test
+        void browserSubType_withNestedValidBrackets_shouldSucceed() {
+            when(toolConfigMapper.selectCount(any())).thenReturn(0L);
+            doAnswer(inv -> {
+                ToolConfig arg = inv.getArgument(0);
+                arg.setId(1L);
+                return null;
+            }).when(toolConfigMapper).insert(any(ToolConfig.class));
+
+            ToolCreateRequest request = ToolCreateRequest.builder()
+                    .name("nested_bracket_tool")
+                    .toolType(ToolType.CUSTOM)
+                    .subToolType(SubToolType.BROWSER)
+                    .toolScript("({[]})")
+                    .build();
+
+            ToolDetailDTO result = service.create(request);
+            assertEquals("({[]})", result.getToolScript());
+        }
     }
 
     @Nested
@@ -223,6 +361,140 @@ class ToolConfigServiceImplTest {
 
             ToolDetailDTO result = service.update(1L, request);
             assertNotNull(result);
+        }
+
+        @Test
+        void browserSubType_withOnlyComments_shouldThrow() {
+            ToolConfig existing = createEntity(1L, "existing_tool");
+            existing.setSubToolType(null);
+            existing.setToolScript(null);
+            when(toolConfigMapper.selectById(1L)).thenReturn(existing);
+
+            ToolUpdateRequest request = ToolUpdateRequest.builder()
+                    .subToolType(SubToolType.BROWSER)
+                    .toolScript("// comment only")
+                    .build();
+
+            BusinessException ex = assertThrows(BusinessException.class, () -> service.update(1L, request));
+            assertEquals(ErrorCode.TOOL_SCHEMA_INVALID, ex.getErrorCode());
+            assertTrue(ex.getMessage().contains("toolScript"));
+        }
+
+        @Test
+        void browserSubType_withOnlyBlockComments_shouldThrow() {
+            ToolConfig existing = createEntity(1L, "existing_tool");
+            existing.setSubToolType(null);
+            existing.setToolScript(null);
+            when(toolConfigMapper.selectById(1L)).thenReturn(existing);
+
+            ToolUpdateRequest request = ToolUpdateRequest.builder()
+                    .subToolType(SubToolType.BROWSER)
+                    .toolScript("/* block comment */")
+                    .build();
+
+            BusinessException ex = assertThrows(BusinessException.class, () -> service.update(1L, request));
+            assertEquals(ErrorCode.TOOL_SCHEMA_INVALID, ex.getErrorCode());
+            assertTrue(ex.getMessage().contains("toolScript"));
+        }
+
+        @Test
+        void browserSubType_withMismatchedBrackets_shouldThrow() {
+            ToolConfig existing = createEntity(1L, "existing_tool");
+            existing.setSubToolType(null);
+            existing.setToolScript(null);
+            when(toolConfigMapper.selectById(1L)).thenReturn(existing);
+
+            ToolUpdateRequest request = ToolUpdateRequest.builder()
+                    .subToolType(SubToolType.BROWSER)
+                    .toolScript("if (true { return; }")
+                    .build();
+
+            BusinessException ex = assertThrows(BusinessException.class, () -> service.update(1L, request));
+            assertEquals(ErrorCode.TOOL_SCHEMA_INVALID, ex.getErrorCode());
+            assertTrue(ex.getMessage().contains("语法错误"));
+        }
+
+        @Test
+        void browserSubType_withCrossMismatchedBrackets_shouldThrow() {
+            ToolConfig existing = createEntity(1L, "existing_tool");
+            existing.setSubToolType(null);
+            existing.setToolScript(null);
+            when(toolConfigMapper.selectById(1L)).thenReturn(existing);
+
+            ToolUpdateRequest request = ToolUpdateRequest.builder()
+                    .subToolType(SubToolType.BROWSER)
+                    .toolScript("({[)}")
+                    .build();
+
+            BusinessException ex = assertThrows(BusinessException.class, () -> service.update(1L, request));
+            assertEquals(ErrorCode.TOOL_SCHEMA_INVALID, ex.getErrorCode());
+        }
+
+        @Test
+        void browserSubType_withExtraClosingBracket_shouldThrow() {
+            ToolConfig existing = createEntity(1L, "existing_tool");
+            existing.setSubToolType(null);
+            existing.setToolScript(null);
+            when(toolConfigMapper.selectById(1L)).thenReturn(existing);
+
+            ToolUpdateRequest request = ToolUpdateRequest.builder()
+                    .subToolType(SubToolType.BROWSER)
+                    .toolScript("function() }")
+                    .build();
+
+            BusinessException ex = assertThrows(BusinessException.class, () -> service.update(1L, request));
+            assertEquals(ErrorCode.TOOL_SCHEMA_INVALID, ex.getErrorCode());
+        }
+
+        @Test
+        void browserSubType_withBracketsInDoubleQuotes_shouldSucceed() {
+            ToolConfig existing = createEntity(1L, "existing_tool");
+            existing.setSubToolType(null);
+            existing.setToolScript(null);
+            when(toolConfigMapper.selectById(1L)).thenReturn(existing);
+            when(toolConfigMapper.updateById(any(ToolConfig.class))).thenReturn(1);
+
+            ToolUpdateRequest request = ToolUpdateRequest.builder()
+                    .subToolType(SubToolType.BROWSER)
+                    .toolScript("var s = \"test(\"")
+                    .build();
+
+            ToolDetailDTO result = service.update(1L, request);
+            assertEquals("var s = \"test(\"", result.getToolScript());
+        }
+
+        @Test
+        void browserSubType_withBracketsInSingleQuotes_shouldSucceed() {
+            ToolConfig existing = createEntity(1L, "existing_tool");
+            existing.setSubToolType(null);
+            existing.setToolScript(null);
+            when(toolConfigMapper.selectById(1L)).thenReturn(existing);
+            when(toolConfigMapper.updateById(any(ToolConfig.class))).thenReturn(1);
+
+            ToolUpdateRequest request = ToolUpdateRequest.builder()
+                    .subToolType(SubToolType.BROWSER)
+                    .toolScript("var s = 'test('")
+                    .build();
+
+            ToolDetailDTO result = service.update(1L, request);
+            assertEquals("var s = 'test('", result.getToolScript());
+        }
+
+        @Test
+        void browserSubType_withNestedValidBrackets_shouldSucceed() {
+            ToolConfig existing = createEntity(1L, "existing_tool");
+            existing.setSubToolType(null);
+            existing.setToolScript(null);
+            when(toolConfigMapper.selectById(1L)).thenReturn(existing);
+            when(toolConfigMapper.updateById(any(ToolConfig.class))).thenReturn(1);
+
+            ToolUpdateRequest request = ToolUpdateRequest.builder()
+                    .subToolType(SubToolType.BROWSER)
+                    .toolScript("({[]})")
+                    .build();
+
+            ToolDetailDTO result = service.update(1L, request);
+            assertEquals("({[]})", result.getToolScript());
         }
     }
 
