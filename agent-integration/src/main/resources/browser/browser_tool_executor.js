@@ -135,7 +135,8 @@ const ToolExecutor = {
         if (typeof tool.handler !== "function") {
             throw new Error("Tool has no handler: " + toolName);
         }
-        return await tool.handler(agentExecContext, params);
+        const result = await tool.handler(agentExecContext, params);
+        return (typeof result === 'string') ? result : JSON.stringify(result);
     },
 
     passToolResult: function (sessionId, toolConfigId, result) {
@@ -152,7 +153,8 @@ const ToolExecutor = {
         }
         const agentCtx = await this.getAgentExecutionContext(sessionId);
         const result = await tool.handler(agentCtx, params);
-        this.passToolResult(sessionId, toolConfigId, result);
-        return result;
+        const resultStr = (typeof result === 'string') ? result : JSON.stringify(result);
+        this.passToolResult(sessionId, toolConfigId, resultStr);
+        return resultStr;
     }
 };
