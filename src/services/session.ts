@@ -221,12 +221,12 @@ export function continueChatStream(
 }
 
 export async function getBrowserExtension(): Promise<string> {
-  const res = await api.get<ApiResponse<string>>('/browser-tool/extension');
-  return res.data.data;
+  const response = await fetch('/api/browser-tool/extension');
+  return response.text();
 }
 
-export async function getToolScript(toolConfigId: string): Promise<{ data: string }> {
-  const res = await api.get<ApiResponse<{ data: string }>>(
+export async function getToolScript(toolConfigId: string): Promise<string> {
+  const res = await api.get<ApiResponse<string>>(
     `/browser-tool/tool-script/${encodeURIComponent(toolConfigId)}`,
   );
   return res.data.data;

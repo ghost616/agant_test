@@ -1,7 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 const mockPost = vi.hoisted(() => vi.fn());
 const mockGet = vi.hoisted(() => vi.fn());
+const mockFetch = vi.hoisted(() => vi.fn());
 
 vi.mock('../api', () => ({
   default: {
@@ -173,18 +174,29 @@ describe('completeSubSession', () => {
 
 describe('getBrowserExtension', () => {
   beforeEach(() => {
-    mockGet.mockReset();
+    mockFetch.mockReset();
+    vi.stubGlobal('fetch', mockFetch);
   });
 
-  it('应调用 GET /browser-tool/extension', async () => {
-    mockGet.mockResolvedValueOnce({ data: { data: 'var test = 1;' } });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('应调用 fetch /api/browser-tool/extension 并返回文本内容', async () => {
+    mockFetch.mockResolvedValueOnce({ text: () => Promise.resolve('var test = 1;') });
     const result = await getBrowserExtension();
-    expect(mockGet).toHaveBeenCalledWith('/browser-tool/extension');
+    expect(mockFetch).toHaveBeenCalledWith('/api/browser-tool/extension');
     expect(result).toBe('var test = 1;');
   });
 
-  it('应在 API 失败时抛出错误', async () => {
-    mockGet.mockRejectedValueOnce(new Error('Network Error'));
+  it('应返回原始文本而非 JSON 解析结果', async () => {
+    mockFetch.mockResolvedValueOnce({ text: () => Promise.resolve('plain text content') });
+    const result = await getBrowserExtension();
+    expect(result).toBe('plain text content');
+  });
+
+  it('应在 fetch 失败时抛出错误', async () => {
+    mockFetch.mockRejectedValueOnce(new Error('Network Error'));
     await expect(getBrowserExtension()).rejects.toThrow('Network Error');
   });
 });
@@ -194,16 +206,15 @@ describe('getToolScript', () => {
     mockGet.mockReset();
   });
 
-  it('应调用 GET /browser-tool/tool-script/{id}', async () => {
-    const fakeScript = { data: '() => console.log("test")' };
-    mockGet.mockResolvedValueOnce({ data: { data: fakeScript } });
+  it('应调用 GET /browser-tool/tool-script/{id} 并返回字符串', async () => {
+    mockGet.mockResolvedValueOnce({ data: { data: '() => console.log("test")' } });
     const result = await getToolScript('config-123');
     expect(mockGet).toHaveBeenCalledWith('/browser-tool/tool-script/config-123');
-    expect(result).toEqual(fakeScript);
+    expect(result).toBe('() => console.log("test")');
   });
 
   it('应 encodeURIComponent 处理特殊字符的 ID', async () => {
-    mockGet.mockResolvedValueOnce({ data: { data: { data: '' } } });
+    mockGet.mockResolvedValueOnce({ data: { data: '' } });
     await getToolScript('special/id?foo=bar');
     expect(mockGet).toHaveBeenCalledWith('/browser-tool/tool-script/special%2Fid%3Ffoo%3Dbar');
   });

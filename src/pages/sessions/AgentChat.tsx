@@ -244,7 +244,7 @@ function AgentChat(): JSX.Element {
     }
     if (!toolManager.hasFunction(toolConfig.toolName)) {
       const scriptResult = await getToolScript(toolConfig.id);
-      toolManager.registerFunction(toolConfig.toolName, scriptResult.data);
+      toolManager.registerFunction(toolConfig.toolName, scriptResult);
     }
     try {
       await toolExecutor.execute(
