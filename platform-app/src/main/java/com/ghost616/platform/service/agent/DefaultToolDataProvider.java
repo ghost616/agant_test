@@ -14,9 +14,14 @@ import com.ghost616.platform.repository.SessionSkillMapper;
 import com.ghost616.platform.repository.SessionToolMapper;
 import com.ghost616.platform.repository.SkillToolMapper;
 import com.ghost616.platform.service.tool.ToolConfigService;
+import com.ghost616.agentbase.enums.ToolType;
 import com.ghost616.agentbase.service.agent.ToolDataProvider;
 import com.ghost616.agentbase.service.agent.ToolDataProvider.SessionToolInfo;
 import com.ghost616.agentbase.service.agent.invoker.CustomToolInvoker;
+import com.ghost616.agentinteg.tool.BrowserToolCallback;
+import com.ghost616.agentinteg.tool.BrowserToolInvoker;
+import com.ghost616.platform.dto.tool.ToolDetailDTO;
+import com.ghost616.platform.enums.SubToolType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -35,6 +40,7 @@ public class DefaultToolDataProvider implements ToolDataProvider {
     private final SkillToolMapper skillToolMapper;
     private final SessionSkillMapper sessionSkillMapper;
     private final ToolConfigService toolConfigService;
+    private final BrowserToolCallback browserToolCallback;
 
     @Override
     public List<SessionToolInfo> getSessionToolIds(Long sessionId) {
@@ -56,6 +62,10 @@ public class DefaultToolDataProvider implements ToolDataProvider {
 
     @Override
     public CustomToolInvoker getCustomInvoker(ToolConfigDTO toolConfig) {
+        ToolDetailDTO detail = toolConfigService.getById(toolConfig.getId());
+        if (toolConfig.getToolType() == ToolType.CUSTOM && detail.getSubToolType() == SubToolType.BROWSER) {
+            return new BrowserToolInvoker(toolConfig, browserToolCallback);
+        }
         throw new UnsupportedOperationException("Custom tool invoker not supported");
     }
 

@@ -1,8 +1,15 @@
 package com.ghost616.platform.service.agent;
 
+import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
 import com.ghost616.agentbase.enums.SessionAuthType;
+import com.ghost616.agentbase.enums.ToolType;
+import com.ghost616.agentbase.service.agent.invoker.CustomToolInvoker;
 import com.ghost616.agentbase.service.agent.ToolDataProvider.SessionToolInfo;
+import com.ghost616.agentinteg.tool.BrowserToolCallback;
+import com.ghost616.agentinteg.tool.BrowserToolInvoker;
+import com.ghost616.platform.dto.tool.ToolDetailDTO;
 import com.ghost616.platform.entity.SessionTool;
+import com.ghost616.platform.enums.SubToolType;
 import com.ghost616.platform.repository.AgentSkillMapper;
 import com.ghost616.platform.repository.SessionMapper;
 import com.ghost616.platform.repository.SessionSkillMapper;
@@ -32,13 +39,15 @@ class DefaultToolDataProviderTest {
     @Mock private SkillToolMapper skillToolMapper;
     @Mock private SessionSkillMapper sessionSkillMapper;
     @Mock private ToolConfigService toolConfigService;
+    @Mock private BrowserToolCallback browserToolCallback;
 
     private DefaultToolDataProvider provider;
 
     @BeforeEach
     void setUp() {
         provider = new DefaultToolDataProvider(sessionToolMapper, sessionMapper,
-                agentSkillMapper, skillToolMapper, sessionSkillMapper, toolConfigService);
+                agentSkillMapper, skillToolMapper, sessionSkillMapper, toolConfigService,
+                browserToolCallback);
     }
 
     private SessionTool createSessionTool(Long toolId, SessionAuthType auth) {
@@ -89,6 +98,73 @@ class DefaultToolDataProviderTest {
             List<SessionToolInfo> result = provider.getSessionToolIds(1L);
 
             assertTrue(result.isEmpty());
+        }
+    }
+
+    @Nested
+    @DisplayName("getCustomInvoker")
+    class GetCustomInvokerTest {
+
+        private final Long toolId = 100L;
+
+        private ToolConfigDTO createToolConfig(ToolType toolType) {
+            return ToolConfigDTO.builder()
+                    .id(toolId)
+                    .toolType(toolType)
+                    .build();
+        }
+
+        private ToolDetailDTO createToolDetail(SubToolType subToolType) {
+            return ToolDetailDTO.builder()
+                    .id(toolId)
+                    .subToolType(subToolType)
+                    .build();
+        }
+
+        @Test
+        @DisplayName("CUSTOM + BROWSER 返回 BrowserToolInvoker")
+        void customBrowser_shouldReturnBrowserToolInvoker() {
+            ToolConfigDTO config = createToolConfig(ToolType.CUSTOM);
+            ToolDetailDTO detail = createToolDetail(SubToolType.BROWSER);
+            when(toolConfigService.getById(toolId)).thenReturn(detail);
+
+            CustomToolInvoker result = provider.getCustomInvoker(config);
+
+            assertInstanceOf(BrowserToolInvoker.class, result);
+        }
+
+        @Test
+        @DisplayName("CUSTOM + BROWSER 返回的 Invoker 包含正确 toolConfig")
+        void customBrowser_invokerShouldContainCorrectConfig() {
+            ToolConfigDTO config = createToolConfig(ToolType.CUSTOM);
+            ToolDetailDTO detail = createToolDetail(SubToolType.BROWSER);
+            when(toolConfigService.getById(toolId)).thenReturn(detail);
+
+            CustomToolInvoker result = provider.getCustomInvoker(config);
+
+            assertNotNull(result);
+        }
+
+        @Test
+        @DisplayName("非 CUSTOM 类型抛出 UnsupportedOperationException")
+        void nonCustom_shouldThrow() {
+            ToolConfigDTO config = createToolConfig(ToolType.JAVA);
+            ToolDetailDTO detail = createToolDetail(SubToolType.BROWSER);
+            when(toolConfigService.getById(toolId)).thenReturn(detail);
+
+            assertThrows(UnsupportedOperationException.class,
+                    () -> provider.getCustomInvoker(config));
+        }
+
+        @Test
+        @DisplayName("CUSTOM + 非 BROWSER 子类型抛出 UnsupportedOperationException")
+        void customNonBrowser_shouldThrow() {
+            ToolConfigDTO config = createToolConfig(ToolType.CUSTOM);
+            ToolDetailDTO detail = createToolDetail(null);
+            when(toolConfigService.getById(toolId)).thenReturn(detail);
+
+            assertThrows(UnsupportedOperationException.class,
+                    () -> provider.getCustomInvoker(config));
         }
     }
 }
