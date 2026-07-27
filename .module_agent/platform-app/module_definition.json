@@ -152,6 +152,30 @@
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/util/IdConverter.java",
       "description": "ID 类型转换工具类，提供 String 与 Long 之间的转换方法（parse/toString/parseList/toStringList），统一处理 agent-base（String）与 platform-app（Long）之间的 ID 类型转换"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/dto/evaluation/EvaluationDTO.java",
+      "description": "评估响应 DTO，包含 id/name/description/benchmarkSessionId/executionCount/modelId/createTime/updateTime 字段，Long 型字段使用 ToStringSerializer 序列化"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/dto/evaluation/EvaluationCreateRequest.java",
+      "description": "评估创建请求 DTO，包含必填字段 name/modelId/benchmarkSessionId/executionCount（均使用 jakarta.validation 注解校验）和可选字段 description"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/dto/evaluation/EvaluationUpdateRequest.java",
+      "description": "评估更新请求 DTO，所有字段可选，仅更新非 null 字段"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/service/evaluation/EvaluationService.java",
+      "description": "评估业务服务接口，定义 list/getById/create/update/delete 五个方法的契约"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/service/evaluation/EvaluationServiceImpl.java",
+      "description": "评估业务服务实现类，包含 name 唯一性校验、级联删除（EvaluationResult → Session → SessionVariable/SessionTool/SessionSkill/Message → MessageToolCall）等完整业务逻辑"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/controller/EvaluationController.java",
+      "description": "评估 REST 控制器，路径 /api/evaluations，提供完整的 CRUD 五个接口：GET 列表/GET 详情/POST 创建/PUT 修改/DELETE 删除"
     }
   ]
 }

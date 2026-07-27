@@ -34,7 +34,10 @@ public enum ErrorCode {
     SESSION_NOT_FOUND("SESSION-001", "会话不存在"),
     SESSION_NO_USER_MESSAGE("SESSION-003", "会话中无用户消息"),
     SUB_SESSION_DATA_NOT_FOUND("SESSION-004", "子会话数据不存在"),
-    CHILD_SESSION_NO_MESSAGES("SESSION-005", "子会话无消息");
+    CHILD_SESSION_NO_MESSAGES("SESSION-005", "子会话无消息"),
+
+    EVALUATION_NOT_FOUND("EVAL-001", "评估配置不存在"),
+    EVALUATION_ALREADY_EXISTS("EVAL-002", "评估名称已存在");
 
     private final String code;
     private final String message;

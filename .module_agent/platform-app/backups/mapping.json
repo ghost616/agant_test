@@ -54,5 +54,6 @@
   "platform-app/src/test/java/com/ghost616/platform/service/agent/DefaultToolDataProviderTest.java": "cc7faf5824c2271c672f886a4eb9dd5c",
   "platform-app/src/main/resources/browser/browser_extension.js": "f4625b6c76049df6efc92f5727d4cf41",
   "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultToolExecutionProvider.java": "cd02bdf31d489ed04196bd4848c2327a",
-  "platform-app/pom.xml": "bb66e2f58873d1ca3335b4071182f1b6"
+  "platform-app/pom.xml": "bb66e2f58873d1ca3335b4071182f1b6",
+  "agent-base/src/main/java/com/ghost616/agentbase/enums/ErrorCode.java": "9aa842faaabb347224af909697c236dd"
 }

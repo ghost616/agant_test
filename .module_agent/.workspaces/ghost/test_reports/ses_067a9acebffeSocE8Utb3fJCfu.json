@@ -1,5 +1,0 @@
-{
-  "lizhu_session_id": "ses_067a9acebffeSocE8Utb3fJCfu",
-  "content": "# 测试报告\n\n## 测试概览\n\n| 项目 | 结果 |\n|------|------|\n| **测试类型** | 单元测试（Node.js） |\n| **目标文件** | `agent-integration/src/main/resources/browser/browser_tool_executor.js` |\n| **通过数** | 4 / 4 |\n| **失败数** | 0 |\n\n---\n\n## 测试详情\n\n### 1. getToolResult handler 返回对象 → JSON 字符串 ✅\n- 输入：handler 返回 `{ key: 'value', num: 42 }`\n- 输出：`'{\"key\":\"value\",\"num\":42}'`\n- 验证：结果是 JSON 字符串，非原始对象\n\n### 2. getToolResult handler 返回字符串 → 不变 ✅\n- 输入：handler 返回 `'hello world'`\n- 输出：`'hello world'`\n- 验证：字符串原样返回，未变更\n\n### 3. execute handler 返回对象 → passToolResult 得 JSON ✅\n- 输入：handler 返回 `{ foo: 'bar' }`\n- 输出：passToolResult 收到 `'{\"foo\":\"bar\"}'`\n- 验证：传给 passToolResult 的是 JSON 字符串\n\n### 4. execute handler 返回字符串 → passToolResult 得原始字符串 ✅\n- 输入：handler 返回 `'plain string'`\n- 输出：passToolResult 收到 `'plain string'`\n- 验证：字符串未经 JSON.stringify 处理\n\n---\n\n## 结论\n\n**4/4 测试全部通过。** `typeof result === 'string' ? result : JSON.stringify(result)` 逻辑正确覆盖了 handler 返回对象和字符串两种情况。\n",
-  "timestamp": "2026-07-25T08:40:01.848Z"
-}

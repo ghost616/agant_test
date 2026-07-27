@@ -54,7 +54,24 @@ public class SchemaMigration implements ApplicationRunner {
                 new Migration("message", "token_usage", "TEXT", null),
                 new Migration("message", "rollback", "TINYINT(1)", "0"),
                 new Migration("tool_config", "sub_tool_type", "VARCHAR(32)", null),
-                new Migration("tool_config", "tool_script", "TEXT", null)
+                new Migration("tool_config", "tool_script", "TEXT", null),
+                new Migration("session", "is_evaluation", "TINYINT(1)", "0"),
+                new Migration("evaluation", "id", "BIGINT", null),
+                new Migration("evaluation", "name", "VARCHAR(255)", null),
+                new Migration("evaluation", "description", "TEXT", null),
+                new Migration("evaluation", "benchmark_session_id", "BIGINT", null),
+                new Migration("evaluation", "execution_count", "INTEGER", "0"),
+                new Migration("evaluation", "model_id", "BIGINT", null),
+                new Migration("evaluation", "create_time", "TIMESTAMP", null),
+                new Migration("evaluation", "update_time", "TIMESTAMP", null),
+                new Migration("evaluation", "deleted", "INTEGER", "0"),
+                new Migration("evaluation_result", "id", "BIGINT", null),
+                new Migration("evaluation_result", "evaluation_id", "BIGINT", null),
+                new Migration("evaluation_result", "evaluation_session_id", "BIGINT", null),
+                new Migration("evaluation_result", "result", "TEXT", null),
+                new Migration("evaluation_result", "create_time", "TIMESTAMP", null),
+                new Migration("evaluation_result", "update_time", "TIMESTAMP", null),
+                new Migration("evaluation_result", "deleted", "INTEGER", "0")
         );
 
         for (Migration migration : migrations) {

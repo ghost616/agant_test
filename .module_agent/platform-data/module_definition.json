@@ -124,6 +124,22 @@
     {
       "path": "platform-data/src/main/java/com/ghost616/platform/config/SchemaMigration.java",
       "description": "数据库 Schema 迁移组件，通过 ALTER TABLE 实现列增量迁移和 NULL 回填，确保新增列的兼容性"
+    },
+    {
+      "path": "platform-data/src/main/java/com/ghost616/platform/entity/Evaluation.java",
+      "description": "评估配置实体，继承 BaseEntity，映射 evaluation 表；字段：name（评估名称）、description（描述）、benchmarkSessionId（基准会话ID）、executionCount（执行次数）"
+    },
+    {
+      "path": "platform-data/src/main/java/com/ghost616/platform/entity/EvaluationResult.java",
+      "description": "评估结果实体，继承 BaseEntity，映射 evaluation_result 表；字段：evaluationId（评估配置ID）、evaluationSessionId（评估执行会话ID）、result（评估结果内容）"
+    },
+    {
+      "path": "platform-data/src/main/java/com/ghost616/platform/repository/EvaluationMapper.java",
+      "description": "Evaluation 实体的 MyBatis-Plus Mapper 接口，继承 BaseMapper<Evaluation>，提供基础 CRUD 操作"
+    },
+    {
+      "path": "platform-data/src/main/java/com/ghost616/platform/repository/EvaluationResultMapper.java",
+      "description": "EvaluationResult 实体的 MyBatis-Plus Mapper 接口，继承 BaseMapper<EvaluationResult>，提供基础 CRUD 操作"
     }
   ]
 }

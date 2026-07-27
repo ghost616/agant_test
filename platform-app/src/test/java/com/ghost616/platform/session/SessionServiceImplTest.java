@@ -253,4 +253,131 @@ class SessionServiceImplTest {
         assertEquals(1, result.size());
         assertEquals(0L, result.get(0).getTotalTokenUsed());
     }
+
+    // ========== listSessions isEvaluation 过滤 ==========
+
+    @Test
+    void listSessions_过滤isEvaluation为false() {
+        Session normalSession = new Session();
+        normalSession.setId(1L);
+        normalSession.setTitle("normal");
+        normalSession.setIsEvaluation(false);
+        normalSession.setIsChild(false);
+
+        when(sessionMapper.selectList(any())).thenReturn(List.of(normalSession));
+
+        List<SessionDTO> result = sessionService.listSessions(null);
+
+        assertEquals(1, result.size());
+        assertFalse(result.get(0).getIsEvaluation());
+    }
+
+    @Test
+    void listSessions_当agentId不为空_添加agentId条件() {
+        Session session = new Session();
+        session.setId(1L);
+        session.setAgentId(100L);
+        session.setIsEvaluation(false);
+        session.setIsChild(false);
+        session.setTitle("agent-specific");
+
+        when(sessionMapper.selectList(any())).thenReturn(List.of(session));
+
+        List<SessionDTO> result = sessionService.listSessions(100L);
+
+        assertEquals(1, result.size());
+        assertEquals(100L, result.get(0).getAgentId());
+    }
+
+    @Test
+    void listSessions_无匹配会话_返回空列表() {
+        when(sessionMapper.selectList(any())).thenReturn(List.of());
+
+        List<SessionDTO> result = sessionService.listSessions(100L);
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void listSessions_查询条件包含isEvaluation等于false() {
+        when(sessionMapper.selectList(any())).thenReturn(List.of());
+
+        sessionService.listSessions(100L);
+
+        verify(sessionMapper).selectList(any());
+    }
+
+    @Test
+    void listSessions_按创建时间倒序() {
+        Session s1 = new Session();
+        s1.setId(1L);
+        s1.setTitle("older");
+        s1.setIsEvaluation(false);
+        s1.setIsChild(false);
+        s1.setCreateTime(LocalDateTime.of(2026, 1, 1, 0, 0));
+
+        Session s2 = new Session();
+        s2.setId(2L);
+        s2.setTitle("newer");
+        s2.setIsEvaluation(false);
+        s2.setIsChild(false);
+        s2.setCreateTime(LocalDateTime.of(2026, 1, 2, 0, 0));
+
+        when(sessionMapper.selectList(any())).thenReturn(List.of(s2, s1));
+
+        List<SessionDTO> result = sessionService.listSessions(null);
+
+        assertEquals(2, result.size());
+        assertEquals("newer", result.get(0).getTitle());
+        assertEquals("older", result.get(1).getTitle());
+    }
+
+    // ========== toDTO isEvaluation 映射 ==========
+
+    @Test
+    void toDTO_isEvaluation为true_映射正确() {
+        Session entity = new Session();
+        entity.setId(1L);
+        entity.setIsChild(false);
+        entity.setTitle("eval-true");
+        entity.setIsEvaluation(true);
+
+        when(sessionMapper.selectList(any())).thenReturn(List.of(entity));
+
+        List<SessionDTO> result = sessionService.listSessions(1L);
+
+        assertEquals(1, result.size());
+        assertTrue(result.get(0).getIsEvaluation());
+    }
+
+    @Test
+    void toDTO_isEvaluation为false_映射正确() {
+        Session entity = new Session();
+        entity.setId(1L);
+        entity.setIsChild(false);
+        entity.setTitle("eval-false");
+        entity.setIsEvaluation(false);
+
+        when(sessionMapper.selectList(any())).thenReturn(List.of(entity));
+
+        List<SessionDTO> result = sessionService.listSessions(1L);
+
+        assertEquals(1, result.size());
+        assertFalse(result.get(0).getIsEvaluation());
+    }
+
+    @Test
+    void toDTO_isEvaluation为null_不报错() {
+        Session entity = new Session();
+        entity.setId(1L);
+        entity.setIsChild(false);
+        entity.setTitle("eval-null");
+
+        when(sessionMapper.selectList(any())).thenReturn(List.of(entity));
+
+        List<SessionDTO> result = sessionService.listSessions(1L);
+
+        assertEquals(1, result.size());
+        assertNull(result.get(0).getIsEvaluation());
+    }
 }

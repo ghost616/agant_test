@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_05c6783d1ffev4deebfprR05Bc",
+  "content": "## 需要测试的功能\n\nEvaluation 实体新增 modelId 字段及其对应的数据库列和迁移逻辑。\n\n### 涉及代码文件\n- platform-data/src/main/java/com/ghost616/platform/entity/Evaluation.java — 新增 `modelId` 字段\n- platform-data/src/main/resources/schema.sql — evaluation 表新增 `model_id` BIGINT 列\n- platform-data/src/main/java/com/ghost616/platform/config/SchemaMigration.java — 新增 evaluation.model_id 迁移条目\n\n### 可测试项\n- **编译测试**: Maven compile 验证 entity 编译通过，新增字段无语法错误",
+  "timestamp": "2026-07-27T12:42:11.347Z"
+}

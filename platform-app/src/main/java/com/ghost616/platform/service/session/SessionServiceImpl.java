@@ -41,6 +41,7 @@ public class SessionServiceImpl implements SessionService {
             wrapper.eq(Session::getAgentId, agentId);
         }
         wrapper.and(w -> w.isNull(Session::getIsChild).or().eq(Session::getIsChild, false));
+        wrapper.eq(Session::getIsEvaluation, false);
         wrapper.orderByDesc(Session::getCreateTime);
 
         List<Session> entities = sessionMapper.selectList(wrapper);
@@ -142,6 +143,7 @@ public class SessionServiceImpl implements SessionService {
                 .parentSessionId(entity.getParentSessionId())
                 .isChild(entity.getIsChild())
                 .description(entity.getDescription())
+                .isEvaluation(entity.getIsEvaluation())
                 .createTime(entity.getCreateTime())
                 .updateTime(entity.getUpdateTime())
                 .totalTokenUsed(entity.getTotalTokenUsed())

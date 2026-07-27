@@ -80,6 +80,22 @@
     {
       "path": "src/services/toolExecutor.ts",
       "description": "浏览器端工具管理和执行模块。ToolManager 类（单例）管理已注册的工具函数和 extension JS 加载；ToolExecutor 类（单例）执行已注册的工具函数并返回结果。提供 getBrowserExtension 加载、registerFunction 注册、execute 执行等能力。"
+    },
+    {
+      "path": "src/types/evaluation.ts",
+      "description": "评估管理类型定义，含 Evaluation/EvaluationCreateRequest/EvaluationUpdateRequest/EvaluationResult 接口"
+    },
+    {
+      "path": "src/services/evaluation.ts",
+      "description": "评估管理 API 服务封装，含列表/CRUD/评估结果查询接口"
+    },
+    {
+      "path": "src/pages/evaluations/EvaluationList.tsx",
+      "description": "评估列表页面组件，包含评估列表展示、新增/编辑 Modal（name/description/benchmarkSessionId/modelId/executionCount 含会话和模型选择下拉）、删除 Popconfirm、跳转评估结果页"
+    },
+    {
+      "path": "src/pages/evaluations/EvaluationResultList.tsx",
+      "description": "评估结果历史列表页面组件，从路由参数获取 evaluationId，展示评估结果列表，含执行按钮（提示功能开发中）和修改按钮"
     }
   ]
 }

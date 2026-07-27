@@ -1,13 +1,14 @@
 {
-  "_checked": [
-    "ses_05e7684acffeEJTLtFoogakzis"
-  ],
   "platform-data": [
-    "ses_05de35dc1ffe8dXrkD1DB3twMz",
-    "ses_05dbd91faffeBLhkUwjTy4365g"
+    "ses_05c6783d1ffev4deebfprR05Bc"
+  ],
+  "frontend-ui": [
+    "ses_05c676690ffeVhJyKNcMnsggbd"
   ],
   "platform-app": [
-    "ses_05dde37f4ffeli1xdphepQAFrQ",
-    "ses_05dd6f094ffezrgOHnN1u4hlF5"
+    "ses_05c63456affefAWrxeu0QYxk9p"
+  ],
+  "_checked": [
+    "ses_05c63456affefAWrxeu0QYxk9p"
   ]
 }

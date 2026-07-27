@@ -1,5 +1,0 @@
-{
-  "session_id": "ses_05e9882e3ffeik74UbBHwIhGW4",
-  "content": "## 待测试功能\n\n### 1. ToolExecutionService.setFailed 错误格式\n- 文件：ToolExecutionService.java\n- 异步工具执行异常时 setFailed 传入的 error 格式为 `{\"status\":\"error\",\"errMsg\":\"...\"}` JSON 格式\n\n### 2. SystemTool 错误返回格式统一\n- 文件：HistoryQuerySystemTool.java, LoadSkillsSystemTool.java, UnloadSkillsSystemTool.java, SessionVariableSystemTool.java, ConversationVariableSystemTool.java\n- 所有错误返回从 `{\"error\":\"...\"}` 改为 `{\"status\":\"error\",\"errMsg\":\"...\"}` 格式\n\n### 3. 测试文件断言更新\n- 文件：SessionVariableSystemToolTest.java, ConversationVariableSystemToolTest.java\n- 错误断言从 `result.contains(\"\\\"error\\\"\")` 改为 `result.contains(\"\\\"errMsg\\\"\")`\n",
-  "timestamp": "2026-07-27T02:30:19.759Z"
-}

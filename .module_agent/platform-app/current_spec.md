@@ -97,3 +97,8 @@ platform-app 模块包含以下功能：
 - Controller 层（ChatController、ToolExecutionController、AgentContextController）中调用 agent-base 服务时，将 Controller 路径参数 Long 转换为 String 传入
 - SessionServiceImpl 中调用 SessionManager、AgentContextManager、ToolManager 时，将 Long sessionId 转换为 String
 - AgentContextController 中从 AgentExecutionContext（String ID）读取数据填充 AgentContextDTO（Long ID）时，将 String 转换为 Long
+## 评估管理
+
+- 评估(Evaluation) CRUD 接口：DTO（EvaluationDTO/EvaluationCreateRequest/EvaluationUpdateRequest）、Service（EvaluationService 接口与 EvaluationServiceImpl 实现）、Controller（EvaluationController，路径 /api/evaluations）
+- 支持 name 唯一性校验（create 和 update 时检查，重复抛 EVALUATION_ALREADY_EXISTS）
+- 级联删除：删除 Evaluation 时同时删除关联的 EvaluationResult、子会话相关数据（Session、SessionVariable、SessionTool、SessionSkill、Message、MessageToolCall）

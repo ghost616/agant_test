@@ -1,9 +1,0 @@
-{
-  "plan_id": "plan_58ac5534-738d-4d40-b215-6071c4e76b2b",
-  "module_name": "platform-data",
-  "development_plan": "platform-data 的 pom.xml 将 spring-boot-starter-data-jpa 替换为 spring-boot-starter。项目使用 MyBatis-Plus + SQLite，不需要 JPA/Hibernate，移除 JPA starter 避免 Hibernate 自动配置报错。",
-  "session_id": "ses_05dbd91faffeBLhkUwjTy4365g",
-  "modified_files": [
-    "platform-data/pom.xml"
-  ]
-}

@@ -1,5 +1,0 @@
-{
-  "lizhu_session_id": "ses_05ee10292ffeV5tALFytK8OdvO",
-  "content": "## 测试报告\n\n### 测试概览\n\n| 测试类型 | 通过 | 失败 | 跳过 |\n|---------|:---:|:---:|:---:|\n| 编译测试 (tsc) | ✅ 1 | 0 | 0 |\n\n### 编译测试详情\n\n**命令**: `npx tsc --noEmit`\n\n**涉及的变更文件**:\n- `src/services/toolExecutor.ts` — `JBToolHostBridge.passToolResult` 参数名已为 `toolConfigId`，无编译错误\n- `src/pages/sessions/AgentChat.tsx` — `passToolResult` 调用已为 3 参数 `(sid, toolConfig.id, result)`，无编译错误\n\n**结果**: ✅ **通过** — 两个目标文件均无与本次变更相关的 TypeScript 编译错误。\n\n### 非本次变更的已知错误\n\n以下错误均为预先存在的问题，与本次测试的变更无关：\n\n| 错误来源 | 错误类型 | 数量 |\n|---------|---------|:---:|\n| 测试文件 (__tests__/*.test.tsx) | `TS2307: Cannot find module 'fs'/'path'` + `TS2304: Cannot find name '__dirname'` | 43 处 |\n| `src/pages/sessions/AgentChat.tsx:270-271` | `TS2339: Property 'ToolHostBridge' does not exist on type 'Window'` | 2 处 |\n| `src/pages/tools/ToolList.tsx:211` | `TS2345: Argument type mismatch` | 1 处 |\n\n这些错误不影响本次变更的正确性。\n\n### 结论\n\n✅ **编译测试全部通过。** 两处方法签名变更均已正确应用，未引入新的 TypeScript 类型错误。\n",
-  "timestamp": "2026-07-27T01:10:26.007Z"
-}

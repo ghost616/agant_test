@@ -4,6 +4,7 @@ import { Layout, Menu } from 'antd';
 import type { MenuProps } from 'antd';
 import {
   ApiOutlined,
+  CheckCircleOutlined,
   MessageOutlined,
   RobotOutlined,
   ThunderboltOutlined,
@@ -16,6 +17,8 @@ import AgentList from './pages/agents/AgentList';
 import SessionList from './pages/sessions/SessionList';
 import AgentChat from './pages/sessions/AgentChat';
 import SkillList from './pages/skills/SkillList';
+import EvaluationList from './pages/evaluations/EvaluationList';
+import EvaluationResultList from './pages/evaluations/EvaluationResultList';
 
 const { Header, Sider, Content } = Layout;
 
@@ -44,6 +47,11 @@ const MENU_ITEMS: MenuProps['items'] = [
     key: '/sessions',
     icon: <MessageOutlined />,
     label: '会话管理',
+  },
+  {
+    key: '/evaluations',
+    icon: <CheckCircleOutlined />,
+    label: '评估管理',
   },
 ];
 
@@ -104,6 +112,8 @@ function App() {
             <Route path="/skills" element={<SkillList />} />
             <Route path="/sessions" element={<SessionList />} />
             <Route path="/sessions/:id/chat" element={<AgentChat />} />
+            <Route path="/evaluations" element={<EvaluationList />} />
+            <Route path="/evaluations/:id/results" element={<EvaluationResultList />} />
           </Routes>
         </Content>
       </Layout>

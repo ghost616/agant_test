@@ -177,3 +177,15 @@
 - 工具列表数据用于表单 toolIds 下拉选择
 - 路由 /skills 已注册，侧边栏"技能管理"菜单项（ThunderboltOutlined 图标）
 - Table pagination={false} 全量展示
+## 评估管理界面
+
+- 评估配置管理页面 `/evaluations`，支持评估列表展示、新增/编辑/删除
+- Table 列：名称、描述、基准会话ID、执行次数、模型ID、创建时间、操作(修改/进行评估/删除Popconfirm)
+- Table pagination={false} 全量展示
+- 新增/编辑 Modal：name(Input 必填)、description(TextArea)、benchmarkSessionId(Select 从会话列表获取)、modelId(Select 从模型列表获取)、executionCount(InputNumber 必填正整数)
+- 删除使用 Popconfirm 确认
+- 「进行评估」按钮跳转 `/evaluations/{id}/results`
+- 评估结果历史列表页面 `/evaluations/{id}/results`：展示指定评估的执行结果历史
+- 页面标题显示评估名称，上方有「执行」按钮（暂无功能，点击提示"功能开发中"）
+- Table 列：ID、会话ID、结果摘要、创建时间、操作(修改按钮暂无功能)
+- API 服务封装：getEvaluationList、getEvaluation、createEvaluation、updateEvaluation、deleteEvaluation、getEvaluationResults

@@ -31,4 +31,7 @@ public class Session extends BaseEntity {
 
     @TableField("total_token_used")
     private Long totalTokenUsed;
+
+    @TableField("is_evaluation")
+    private Boolean isEvaluation;
 }

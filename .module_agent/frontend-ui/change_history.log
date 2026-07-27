@@ -72,3 +72,4 @@
 [2026-07-25T08:01:34.870Z] [session: ses_067d3b1baffeXKknIEnUOQNCSh] toolExecutor.ts: loadExtension 通过 return 获取 JS 对象存入实例属性，所有方法改用实例属性替代 window 访问
 [2026-07-25T08:24:29.737Z] [session: ses_067d3b1baffeXKknIEnUOQNCSh] toolExecutor.ts: JBToolExecutor.execute 参数顺序改为 (sessionId, toolConfigId, toolName, params) 以匹配 JS 端；ToolExecutor.execute 移除 toolId 参数
 [2026-07-27T01:09:43.444Z] [session: ses_05ee1651effeZ6JYxEQvyHQuNW] 修正 JBToolHostBridge.passToolResult 接口参数名 toolId → toolConfigId (toolExecutor.ts:4)；修正 AgentChat.tsx:271 passToolResult 调用从 4 参数改为 3 参数，移除冗余 toolId
+[2026-07-27T12:43:01.729Z] [session: ses_05c676690ffeVhJyKNcMnsggbd] 2026-07-27: 实现评估管理前端页面。新增 types/evaluation.ts 类型定义、services/evaluation.ts API 封装、pages/evaluations/EvaluationList.tsx 评估列表页（含新增/编辑 Modal、删除 Popconfirm、跳转评估结果）、pages/evaluations/EvaluationResultList.tsx 评估结果历史列表页（含执行/修改按钮占位）；更新 App.tsx 路由和侧边栏菜单

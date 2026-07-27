@@ -1,0 +1,34 @@
+export interface Evaluation {
+  id: string;
+  name: string;
+  description?: string;
+  benchmarkSessionId: string;
+  executionCount: number;
+  modelId: string;
+  createTime?: string;
+  updateTime?: string;
+}
+
+export interface EvaluationCreateRequest {
+  name: string;
+  description?: string;
+  benchmarkSessionId: string;
+  executionCount: number;
+  modelId: string;
+}
+
+export interface EvaluationUpdateRequest {
+  name?: string;
+  description?: string;
+  benchmarkSessionId?: string;
+  executionCount?: number;
+  modelId?: string;
+}
+
+export interface EvaluationResult {
+  id: string;
+  evaluationId: string;
+  evaluationSessionId: string;
+  result?: string;
+  createTime?: string;
+}

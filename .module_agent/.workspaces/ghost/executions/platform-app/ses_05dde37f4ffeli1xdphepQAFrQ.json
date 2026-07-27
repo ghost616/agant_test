@@ -1,9 +1,0 @@
-[
-  {
-    "plan_id": "plan_f857f925-aa52-45d7-8eba-14265429ab21",
-    "plan": "适配 platform-data 独立工程：1) pom.xml 已添加 platform-data 模块依赖（已完成）；2) 删除 entity/ 和 repository/ 目录下已迁移到 platform-data 的全部文件（共 27 个：BaseEntity.java、Message.java、AgentConfig.java、AgentTool.java、AgentSkill.java、ModelConfig.java、ToolConfig.java、SkillConfig.java、SkillTool.java、Session.java、MessageToolCall.java、SessionTool.java、SessionVariable.java、SessionSkill.java 以及对应的 13 个 Mapper 文件）；3) 确保编译通过，排查可能的 import 或依赖问题。",
-    "modified_files": [],
-    "summary": "力牧已启动",
-    "errors": []
-  }
-]

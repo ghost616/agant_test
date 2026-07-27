@@ -42,6 +42,7 @@ CREATE TABLE IF NOT EXISTS session (
     description      VARCHAR(500),
     thinking         TINYINT(1),
     total_token_used BIGINT,
+    is_evaluation    TINYINT(1) DEFAULT 0,
     create_time      TIMESTAMP,
     update_time      TIMESTAMP,
     deleted          INTEGER DEFAULT 0
@@ -155,3 +156,25 @@ CREATE TABLE IF NOT EXISTS session_skill (
 );
 CREATE INDEX IF NOT EXISTS idx_session_skill_session_id ON session_skill(session_id);
 CREATE INDEX IF NOT EXISTS idx_session_skill_skill_id ON session_skill(skill_id);
+
+CREATE TABLE IF NOT EXISTS evaluation (
+    id                  BIGINT PRIMARY KEY,
+    name                VARCHAR(255) NOT NULL,
+    description         TEXT,
+    benchmark_session_id BIGINT,
+    execution_count     INTEGER DEFAULT 0,
+    model_id            BIGINT,
+    create_time         TIMESTAMP,
+    update_time         TIMESTAMP,
+    deleted             INTEGER DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS evaluation_result (
+    id                    BIGINT PRIMARY KEY,
+    evaluation_id         BIGINT,
+    evaluation_session_id BIGINT,
+    result                TEXT,
+    create_time           TIMESTAMP,
+    update_time           TIMESTAMP,
+    deleted               INTEGER DEFAULT 0
+);

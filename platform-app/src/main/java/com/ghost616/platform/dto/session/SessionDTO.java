@@ -27,6 +27,8 @@ public class SessionDTO {
     private Long parentSessionId;
     private Boolean isChild;
     private String description;
+    @JsonSerialize(using = ToStringSerializer.class)
+    private Boolean isEvaluation;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
     @JsonSerialize(using = ToStringSerializer.class)

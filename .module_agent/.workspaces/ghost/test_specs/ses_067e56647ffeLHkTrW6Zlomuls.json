@@ -1,5 +1,0 @@
-{
-  "session_id": "ses_067e56647ffeLHkTrW6Zlomuls",
-  "content": "## 待测试功能\n\n### 1. getBrowserExtension 改用 fetch 绕过 axios 拦截器\n- **涉及文件**: src/services/session.ts\n- **变更**: getBrowserExtension 从 `api.get<ApiResponse<string>>` 改为使用 `fetch('/api/browser-tool/extension')` + `response.text()`，绕过 axios 响应拦截器对 JSON 格式的依赖\n- **验证点**: \n  - 函数返回类型仍为 Promise<string>\n  - fetch 路径正确（/api/browser-tool/extension）\n  - 返回原始文本而非 JSON 解析结果\n\n### 2. getToolScript 返回类型修正\n- **涉及文件**: src/services/session.ts\n- **变更**: 返回类型从 `Promise<{ data: string }>` 修正为 `Promise<string>`，泛型参数从 `ApiResponse<{ data: string }>` 修正为 `ApiResponse<string>`\n- **验证点**: TypeScript 类型检查通过\n\n### 3. AgentChat.tsx 调用点适配\n- **涉及文件**: src/pages/sessions/AgentChat.tsx (第247行)\n- **变更**: `scriptResult.data` 改为 `scriptResult`，因 getToolScript 已返回纯字符串\n- **验证点**: TypeScript 类型检查通过\n",
-  "timestamp": "2026-07-25T07:09:07.206Z"
-}

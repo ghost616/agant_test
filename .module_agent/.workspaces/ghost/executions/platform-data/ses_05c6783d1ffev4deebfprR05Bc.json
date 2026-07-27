@@ -1,0 +1,13 @@
+[
+  {
+    "plan_id": "plan_666c8d98-171c-4414-a3cf-18ba878a965b",
+    "plan": "Evaluation 实体添加 modelId 字段",
+    "modified_files": [
+      "platform-data/src/main/java/com/ghost616/platform/entity/Evaluation.java",
+      "platform-data/src/main/resources/schema.sql",
+      "platform-data/src/main/java/com/ghost616/platform/config/SchemaMigration.java"
+    ],
+    "summary": "Evaluation 实体添加 modelId 字段任务已启动",
+    "errors": []
+  }
+]

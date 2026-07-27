@@ -1,0 +1,15 @@
+[
+  {
+    "plan_id": "plan_fe0811e0-f68e-40bf-ae19-ac4f604ac13c",
+    "plan": "评估管理前端页面实现",
+    "modified_files": [
+      "src/types/evaluation.ts",
+      "src/services/evaluation.ts",
+      "src/pages/evaluations/EvaluationList.tsx",
+      "src/pages/evaluations/EvaluationResultList.tsx",
+      "src/App.tsx"
+    ],
+    "summary": "已更新 src/App.tsx 路由和菜单配置",
+    "errors": []
+  }
+]

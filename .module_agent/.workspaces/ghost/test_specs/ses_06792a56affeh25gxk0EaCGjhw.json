@@ -1,5 +1,0 @@
-{
-  "session_id": "ses_06792a56affeh25gxk0EaCGjhw",
-  "content": "## Bug 修复验证：handler 返回对象导致 pass-result 反序列化失败\n\n### 问题\n工具 handler 返回值可能是对象，`passToolResult` 直接塞入 JSON body 导致后端 `PassResultRequest.result` (String) 反序列化失败。\n\n### 修改内容\n**文件**: `agent-integration/src/main/resources/browser/browser_tool_executor.js`\n\n**getToolResult** (第 138-139 行): handler 返回值若非 string 则 JSON.stringify 后再返回\n\n**execute** (第 156-158 行): handler 返回值若非 string 则 JSON.stringify 后再传给 passToolResult\n\n### 可测试的功能（单元测试）\n1. getToolResult 在 handler 返回对象时，输出的结果是 JSON 字符串而非原始对象\n2. getToolResult 在 handler 返回字符串时，输出的结果保持不变\n3. execute 在 handler 返回对象时，传给 passToolResult 的是 JSON 字符串\n4. execute 在 handler 返回字符串时，传给 passToolResult 的是原始字符串\n",
-  "timestamp": "2026-07-25T08:39:21.473Z"
-}

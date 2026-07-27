@@ -1,0 +1,11 @@
+{
+  "plan_id": "plan_666c8d98-171c-4414-a3cf-18ba878a965b",
+  "module_name": "platform-data",
+  "development_plan": "## Evaluation 实体添加 modelId 字段\n\n1. **Evaluation.java** — 新增 `@TableField(\"model_id\") private Long modelId;` 字段\n2. **schema.sql** — evaluation 表新增 `model_id BIGINT` 列，位于 execution_count 之后\n3. **SchemaMigration.java** — 新增 `new Migration(\"evaluation\", \"model_id\", \"BIGINT\", null)` 迁移条目，位于 evaluation.execution_count 之后",
+  "session_id": "ses_05c6783d1ffev4deebfprR05Bc",
+  "modified_files": [
+    "platform-data/src/main/java/com/ghost616/platform/entity/Evaluation.java",
+    "platform-data/src/main/resources/schema.sql",
+    "platform-data/src/main/java/com/ghost616/platform/config/SchemaMigration.java"
+  ]
+}
