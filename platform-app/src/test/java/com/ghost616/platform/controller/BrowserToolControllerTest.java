@@ -84,7 +84,7 @@ class BrowserToolControllerTest {
 
     @Test
     void getToolScript_shouldReturnToolScript() {
-        ToolDetailDTO dto = ToolDetailDTO.builder().id(1L).name("test-tool").toolScript("console.log('hello')").build();
+        ToolDetailDTO dto = ToolDetailDTO.builder().id("1").name("test-tool").toolScript("console.log('hello')").build();
         when(toolConfigService.getById(1L)).thenReturn(dto);
 
         ApiResponse<String> response = controller.getToolScript(1L);
@@ -95,7 +95,7 @@ class BrowserToolControllerTest {
 
     @Test
     void getToolScript_shouldReturnNullScriptWhenNotSet() {
-        ToolDetailDTO dto = ToolDetailDTO.builder().id(2L).name("no-script-tool").build();
+        ToolDetailDTO dto = ToolDetailDTO.builder().id("2").name("no-script-tool").build();
         when(toolConfigService.getById(2L)).thenReturn(dto);
 
         ApiResponse<String> response = controller.getToolScript(2L);

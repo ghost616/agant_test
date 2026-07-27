@@ -20,5 +20,5 @@ public interface SubSessionCallback {
      * @param thinking    是否启用思考模式，可为 null 表示使用默认行为
      * @return 执行结果消息
      */
-    Message execute(Long sessionId, String userMessage, Boolean thinking);
+    Message execute(String sessionId, String userMessage, Boolean thinking);
 }

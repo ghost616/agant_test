@@ -8,13 +8,13 @@ import java.util.List;
 
 public interface ToolDataProvider {
 
-    record SessionToolInfo(Long toolId, SessionAuthType sessionAuth) {}
+    record SessionToolInfo(String toolId, SessionAuthType sessionAuth) {}
 
-    List<SessionToolInfo> getSessionToolIds(Long sessionId);
+    List<SessionToolInfo> getSessionToolIds(String sessionId);
 
-    ToolConfigDTO getToolById(Long toolId);
+    ToolConfigDTO getToolById(String toolId);
 
-    List<Long> getSkillToolIds(Long sessionId);
+    List<String> getSkillToolIds(String sessionId);
 
     CustomToolInvoker getCustomInvoker(ToolConfigDTO toolConfig);
 }

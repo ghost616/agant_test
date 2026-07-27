@@ -26,7 +26,7 @@ class ToolManagerTest {
     private ToolManager toolManager;
     private ToolDataProvider dataProvider;
     private AgentComponentRegistry registry;
-    private ConcurrentHashMap<Long, ToolManager.ToolSessionObject> toolCache;
+    private ConcurrentHashMap<String, ToolManager.ToolSessionObject> toolCache;
 
     @BeforeEach
     void setUp() throws Exception {
@@ -39,7 +39,7 @@ class ToolManagerTest {
 
         Field toolCacheField = ToolManager.class.getDeclaredField("toolCache");
         toolCacheField.setAccessible(true);
-        toolCache = (ConcurrentHashMap<Long, ToolManager.ToolSessionObject>) toolCacheField.get(toolManager);
+        toolCache = (ConcurrentHashMap<String, ToolManager.ToolSessionObject>) toolCacheField.get(toolManager);
     }
 
     @Test
@@ -56,15 +56,15 @@ class ToolManagerTest {
 
     @Test
     void 父会话非MCP工具sessionAuth使用SessionToolInfo的值() {
-        Long sessionId = 100L;
+        String sessionId = "100";
         ToolConfigDTO dto = ToolConfigDTO.builder()
-                .id(1L).name("java-tool").toolType(ToolType.JAVA).implPath("com.test.Foo")
+                .id("1").name("java-tool").toolType(ToolType.JAVA).implPath("com.test.Foo")
                 .sessionAuth(SessionAuthType.ALL).build();
         ToolInvoker invoker = mock(ToolInvoker.class);
-        toolCache.put(1L, new ToolManager.ToolSessionObject(dto, invoker, null, List.of(), List.of()));
+        toolCache.put("1", new ToolManager.ToolSessionObject(dto, invoker, null, List.of(), List.of()));
 
         when(dataProvider.getSessionToolIds(sessionId))
-                .thenReturn(List.of(new SessionToolInfo(1L, SessionAuthType.CHILD)));
+                .thenReturn(List.of(new SessionToolInfo("1", SessionAuthType.CHILD)));
 
         List<ToolManager.ToolSessionObject> result = toolManager.getSessionTools(sessionId, false);
 
@@ -75,20 +75,20 @@ class ToolManagerTest {
 
     @Test
     void 父会话MCP工具sessionAuth设为PARENT() {
-        Long sessionId = 200L;
+        String sessionId = "200";
         ToolConfigDTO originalConfig = ToolConfigDTO.builder()
-                .id(2L).name("mcp-cfg").toolType(ToolType.MCP_HTTP).implPath("http://localhost/mcp")
+                .id("2").name("mcp-cfg").toolType(ToolType.MCP_HTTP).implPath("http://localhost/mcp")
                 .sessionAuth(SessionAuthType.CHILD).build();
         McpExpandedToolDTO expanded = McpExpandedToolDTO.builder()
-                .id(2L).name("mcp-cfg_tool1").toolType(ToolType.MCP_HTTP)
+                .id("2").name("mcp-cfg_tool1").toolType(ToolType.MCP_HTTP)
                 .implPath("http://localhost/mcp").remoteToolName("tool1")
                 .sessionAuth(SessionAuthType.CHILD).build();
         ToolInvoker invoker = mock(ToolInvoker.class);
-        toolCache.put(2L, new ToolManager.ToolSessionObject(
+        toolCache.put("2", new ToolManager.ToolSessionObject(
                 originalConfig, null, originalConfig, List.of(expanded), List.of(invoker)));
 
         when(dataProvider.getSessionToolIds(sessionId))
-                .thenReturn(List.of(new SessionToolInfo(2L, SessionAuthType.PARENT)));
+                .thenReturn(List.of(new SessionToolInfo("2", SessionAuthType.PARENT)));
 
         List<ToolManager.ToolSessionObject> result = toolManager.getSessionTools(sessionId, false);
 
@@ -99,20 +99,20 @@ class ToolManagerTest {
 
     @Test
     void 父会话MCP工具ALL时产生PARENT展开副本和一份CHILD原始配置() {
-        Long sessionId = 300L;
+        String sessionId = "300";
         ToolConfigDTO originalConfig = ToolConfigDTO.builder()
-                .id(3L).name("mcp-all").toolType(ToolType.MCP_HTTP).implPath("http://localhost/mcp")
+                .id("3").name("mcp-all").toolType(ToolType.MCP_HTTP).implPath("http://localhost/mcp")
                 .sessionAuth(SessionAuthType.ALL).build();
         McpExpandedToolDTO expanded = McpExpandedToolDTO.builder()
-                .id(3L).name("mcp-all_tool1").toolType(ToolType.MCP_HTTP)
+                .id("3").name("mcp-all_tool1").toolType(ToolType.MCP_HTTP)
                 .implPath("http://localhost/mcp").remoteToolName("tool1")
                 .sessionAuth(SessionAuthType.ALL).build();
         ToolInvoker invoker = mock(ToolInvoker.class);
-        toolCache.put(3L, new ToolManager.ToolSessionObject(
+        toolCache.put("3", new ToolManager.ToolSessionObject(
                 originalConfig, null, originalConfig, List.of(expanded), List.of(invoker)));
 
         when(dataProvider.getSessionToolIds(sessionId))
-                .thenReturn(List.of(new SessionToolInfo(3L, SessionAuthType.ALL)));
+                .thenReturn(List.of(new SessionToolInfo("3", SessionAuthType.ALL)));
 
         List<ToolManager.ToolSessionObject> result = toolManager.getSessionTools(sessionId, false);
 
@@ -132,15 +132,15 @@ class ToolManagerTest {
 
     @Test
     void 子会话所有工具sessionAuth为PARENT() {
-        Long sessionId = 400L;
+        String sessionId = "400";
         ToolConfigDTO dto = ToolConfigDTO.builder()
-                .id(4L).name("py-tool").toolType(ToolType.PYTHON).implPath("test.py")
+                .id("4").name("py-tool").toolType(ToolType.PYTHON).implPath("test.py")
                 .sessionAuth(SessionAuthType.CHILD).build();
         ToolInvoker invoker = mock(ToolInvoker.class);
-        toolCache.put(4L, new ToolManager.ToolSessionObject(dto, invoker, null, List.of(), List.of()));
+        toolCache.put("4", new ToolManager.ToolSessionObject(dto, invoker, null, List.of(), List.of()));
 
         when(dataProvider.getSessionToolIds(sessionId))
-                .thenReturn(List.of(new SessionToolInfo(4L, SessionAuthType.CHILD)));
+                .thenReturn(List.of(new SessionToolInfo("4", SessionAuthType.CHILD)));
 
         List<ToolManager.ToolSessionObject> result = toolManager.getSessionTools(sessionId, true);
 
@@ -151,27 +151,27 @@ class ToolManagerTest {
 
     @Test
     void 多个工具各自按规则设置sessionAuth() {
-        Long sessionId = 500L;
+        String sessionId = "500";
         ToolConfigDTO javaDto = ToolConfigDTO.builder()
-                .id(5L).name("java-tool").toolType(ToolType.JAVA).implPath("com.test.Bar")
+                .id("5").name("java-tool").toolType(ToolType.JAVA).implPath("com.test.Bar")
                 .sessionAuth(SessionAuthType.ALL).build();
         ToolConfigDTO mcpConfig = ToolConfigDTO.builder()
-                .id(6L).name("mcp-cfg").toolType(ToolType.MCP_HTTP).implPath("http://localhost/mcp")
+                .id("6").name("mcp-cfg").toolType(ToolType.MCP_HTTP).implPath("http://localhost/mcp")
                 .sessionAuth(SessionAuthType.ALL).build();
         McpExpandedToolDTO mcpExpanded = McpExpandedToolDTO.builder()
-                .id(6L).name("mcp-cfg_toolA").toolType(ToolType.MCP_HTTP)
+                .id("6").name("mcp-cfg_toolA").toolType(ToolType.MCP_HTTP)
                 .implPath("http://localhost/mcp").remoteToolName("toolA")
                 .sessionAuth(SessionAuthType.ALL).build();
         ToolInvoker invoker1 = mock(ToolInvoker.class);
         ToolInvoker invoker2 = mock(ToolInvoker.class);
-        toolCache.put(5L, new ToolManager.ToolSessionObject(javaDto, invoker1, null, List.of(), List.of()));
-        toolCache.put(6L, new ToolManager.ToolSessionObject(
+        toolCache.put("5", new ToolManager.ToolSessionObject(javaDto, invoker1, null, List.of(), List.of()));
+        toolCache.put("6", new ToolManager.ToolSessionObject(
                 mcpConfig, null, mcpConfig, List.of(mcpExpanded), List.of(invoker2)));
 
         when(dataProvider.getSessionToolIds(sessionId))
                 .thenReturn(List.of(
-                        new SessionToolInfo(5L, SessionAuthType.PARENT),
-                        new SessionToolInfo(6L, SessionAuthType.ALL)));
+                        new SessionToolInfo("5", SessionAuthType.PARENT),
+                        new SessionToolInfo("6", SessionAuthType.ALL)));
 
         List<ToolManager.ToolSessionObject> result = toolManager.getSessionTools(sessionId, false);
 
@@ -197,8 +197,8 @@ class ToolManagerTest {
 
     @Test
     void CUSTOM类型provider正常时返回对应invoker() {
-        Long sessionId = 600L;
-        Long toolId = 60L;
+        String sessionId = "600";
+        String toolId = "60";
         ToolConfigDTO dto = ToolConfigDTO.builder()
                 .id(toolId).name("custom-tool").toolType(ToolType.CUSTOM).implPath("my.CustomImpl")
                 .sessionAuth(SessionAuthType.ALL).build();
@@ -223,8 +223,8 @@ class ToolManagerTest {
 
     @Test
     void CUSTOM类型provider为null时抛出UnsupportedOperationException() {
-        Long sessionId = 700L;
-        Long toolId = 70L;
+        String sessionId = "700";
+        String toolId = "70";
         ToolConfigDTO dto = ToolConfigDTO.builder()
                 .id(toolId).name("custom-null").toolType(ToolType.CUSTOM).implPath("no.Provider")
                 .sessionAuth(SessionAuthType.ALL).build();
@@ -240,39 +240,39 @@ class ToolManagerTest {
 
     @Test
     void 匹配到非MCP工具时返回toolConfig() {
-        Long sessionId = 800L;
+        String sessionId = "800";
         ToolConfigDTO dto = ToolConfigDTO.builder()
-                .id(80L).name("java-tool").toolType(ToolType.JAVA).implPath("com.test.Foo")
+                .id("80").name("java-tool").toolType(ToolType.JAVA).implPath("com.test.Foo")
                 .sessionAuth(SessionAuthType.ALL).build();
         ToolInvoker invoker = mock(ToolInvoker.class);
-        toolCache.put(80L, new ToolManager.ToolSessionObject(dto, invoker, null, List.of(), List.of()));
+        toolCache.put("80", new ToolManager.ToolSessionObject(dto, invoker, null, List.of(), List.of()));
 
         when(dataProvider.getSessionToolIds(sessionId))
-                .thenReturn(List.of(new SessionToolInfo(80L, SessionAuthType.ALL)));
+                .thenReturn(List.of(new SessionToolInfo("80", SessionAuthType.ALL)));
 
         ToolConfigDTO result = toolManager.getToolConfig(sessionId, "java-tool");
 
         assertNotNull(result);
         assertEquals("java-tool", result.getName());
-        assertEquals(80L, result.getId());
+        assertEquals("80", result.getId());
         assertNull(toolManager.getToolConfig(sessionId, "non-existent"));
     }
 
     @Test
     void 匹配到MCP展开工具时返回mcpOriginalConfig() {
-        Long sessionId = 900L;
+        String sessionId = "900";
         ToolConfigDTO originalConfig = ToolConfigDTO.builder()
-                .id(90L).name("mcp-cfg").toolType(ToolType.MCP_HTTP).implPath("http://localhost/mcp")
+                .id("90").name("mcp-cfg").toolType(ToolType.MCP_HTTP).implPath("http://localhost/mcp")
                 .sessionAuth(SessionAuthType.ALL).build();
         ToolConfigDTO toolConfig = ToolConfigDTO.builder()
-                .id(90L).name("mcp-cfg_tool1").toolType(ToolType.MCP_HTTP)
+                .id("90").name("mcp-cfg_tool1").toolType(ToolType.MCP_HTTP)
                 .implPath("http://localhost/mcp")
                 .sessionAuth(SessionAuthType.PARENT).build();
         ToolInvoker invoker = mock(ToolInvoker.class);
-        toolCache.put(90L, new ToolManager.ToolSessionObject(toolConfig, invoker, originalConfig, List.of(), List.of()));
+        toolCache.put("90", new ToolManager.ToolSessionObject(toolConfig, invoker, originalConfig, List.of(), List.of()));
 
         when(dataProvider.getSessionToolIds(sessionId))
-                .thenReturn(List.of(new SessionToolInfo(90L, SessionAuthType.ALL)));
+                .thenReturn(List.of(new SessionToolInfo("90", SessionAuthType.ALL)));
 
         ToolConfigDTO result = toolManager.getToolConfig(sessionId, "mcp-cfg_tool1");
 
@@ -282,15 +282,15 @@ class ToolManagerTest {
 
     @Test
     void 未匹配到toolName时返回null() {
-        Long sessionId = 1000L;
+        String sessionId = "1000";
         ToolConfigDTO dto = ToolConfigDTO.builder()
-                .id(100L).name("some-tool").toolType(ToolType.JAVA).implPath("com.test.Bar")
+                .id("100").name("some-tool").toolType(ToolType.JAVA).implPath("com.test.Bar")
                 .sessionAuth(SessionAuthType.ALL).build();
         ToolInvoker invoker = mock(ToolInvoker.class);
-        toolCache.put(100L, new ToolManager.ToolSessionObject(dto, invoker, null, List.of(), List.of()));
+        toolCache.put("100", new ToolManager.ToolSessionObject(dto, invoker, null, List.of(), List.of()));
 
         when(dataProvider.getSessionToolIds(sessionId))
-                .thenReturn(List.of(new SessionToolInfo(100L, SessionAuthType.ALL)));
+                .thenReturn(List.of(new SessionToolInfo("100", SessionAuthType.ALL)));
 
         ToolConfigDTO result = toolManager.getToolConfig(sessionId, "non-existent-tool");
 
@@ -299,32 +299,32 @@ class ToolManagerTest {
 
     @Test
     void 遍历多个工具时正确匹配到指定名称的工具() {
-        Long sessionId = 1100L;
+        String sessionId = "1100";
         ToolConfigDTO dto1 = ToolConfigDTO.builder()
-                .id(101L).name("tool-alpha").toolType(ToolType.JAVA).implPath("com.test.Alpha")
+                .id("101").name("tool-alpha").toolType(ToolType.JAVA).implPath("com.test.Alpha")
                 .sessionAuth(SessionAuthType.ALL).build();
         ToolConfigDTO dto2 = ToolConfigDTO.builder()
-                .id(102L).name("tool-beta").toolType(ToolType.PYTHON).implPath("beta.py")
+                .id("102").name("tool-beta").toolType(ToolType.PYTHON).implPath("beta.py")
                 .sessionAuth(SessionAuthType.CHILD).build();
         ToolConfigDTO dto3 = ToolConfigDTO.builder()
-                .id(103L).name("tool-gamma").toolType(ToolType.TYPESCRIPT).implPath("gamma.ts")
+                .id("103").name("tool-gamma").toolType(ToolType.TYPESCRIPT).implPath("gamma.ts")
                 .sessionAuth(SessionAuthType.PARENT).build();
         ToolInvoker invoker = mock(ToolInvoker.class);
-        toolCache.put(101L, new ToolManager.ToolSessionObject(dto1, invoker, null, List.of(), List.of()));
-        toolCache.put(102L, new ToolManager.ToolSessionObject(dto2, invoker, null, List.of(), List.of()));
-        toolCache.put(103L, new ToolManager.ToolSessionObject(dto3, invoker, null, List.of(), List.of()));
+        toolCache.put("101", new ToolManager.ToolSessionObject(dto1, invoker, null, List.of(), List.of()));
+        toolCache.put("102", new ToolManager.ToolSessionObject(dto2, invoker, null, List.of(), List.of()));
+        toolCache.put("103", new ToolManager.ToolSessionObject(dto3, invoker, null, List.of(), List.of()));
 
         when(dataProvider.getSessionToolIds(sessionId))
                 .thenReturn(List.of(
-                        new SessionToolInfo(101L, SessionAuthType.ALL),
-                        new SessionToolInfo(102L, SessionAuthType.ALL),
-                        new SessionToolInfo(103L, SessionAuthType.ALL)));
+                        new SessionToolInfo("101", SessionAuthType.ALL),
+                        new SessionToolInfo("102", SessionAuthType.ALL),
+                        new SessionToolInfo("103", SessionAuthType.ALL)));
 
         ToolConfigDTO result = toolManager.getToolConfig(sessionId, "tool-beta");
 
         assertNotNull(result);
         assertEquals("tool-beta", result.getName());
-        assertEquals(102L, result.getId());
+        assertEquals("102", result.getId());
         assertEquals(ToolType.PYTHON, result.getToolType());
     }
 }

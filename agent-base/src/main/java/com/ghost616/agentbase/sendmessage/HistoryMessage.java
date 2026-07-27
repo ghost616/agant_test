@@ -8,7 +8,7 @@ public class HistoryMessage extends SessionMessage {
 
     private final AgentExecutionContext.HistoryEntry historyEntry;
 
-    public HistoryMessage(Long sessionId, AgentExecutionContext.HistoryEntry historyEntry) {
+    public HistoryMessage(String sessionId, AgentExecutionContext.HistoryEntry historyEntry) {
         setSessionId(sessionId);
         this.historyEntry = historyEntry;
     }

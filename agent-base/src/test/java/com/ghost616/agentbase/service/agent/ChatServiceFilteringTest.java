@@ -73,12 +73,12 @@ class ChatServiceFilteringTest {
         final AgentExecutionContext context;
         final AgentExecutionContext.AgentContextMutator mutator;
 
-        TestHarness(Long sessionId, String systemPrompt, List<ToolConfigDTO> tools,
+        TestHarness(String sessionId, String systemPrompt, List<ToolConfigDTO> tools,
                     List<SkillConfigDTO> skills, Map<String, String> sessionVariables,
-                    Long parentSessionId) {
+                    String parentSessionId) {
             this.mutator = new AgentExecutionContext.AgentContextMutator();
             this.context = new AgentExecutionContext(
-                    sessionId, 1L, systemPrompt, 1L, null,
+                    sessionId, "1", systemPrompt, "1", null,
                     new ArrayList<>(), tools != null ? new ArrayList<>(tools) : new ArrayList<>(),
                     skills != null ? new ArrayList<>(skills) : null, mutator,
                     sessionVariables != null ? sessionVariables : new HashMap<>(),
@@ -88,7 +88,7 @@ class ChatServiceFilteringTest {
 
     private void mockChatInfrastructure() {
         lenient().when(chatDataProvider.getModelConfig(any())).thenReturn(
-                new ModelConfigData(1L, "key", "url", "model", 0.7, 1000, "test"));
+                new ModelConfigData("1", "key", "url", "model", 0.7, 1000, "test"));
         lenient().when(modelInvokerManager.getInvoker(any())).thenReturn(modelInvoker);
         lenient().when(modelInvoker.invokeStream(any())).thenReturn(Flux.empty());
         lenient().when(modelInvoker.toToolDefinition(any())).thenReturn(
@@ -97,7 +97,7 @@ class ChatServiceFilteringTest {
                 List.of(ToolDefinition.builder().name("_sys_load_skills").build()));
     }
 
-    private com.ghost616.agentbase.dto.model.ChatRequest executeChat(Long sessionId, TestHarness harness) {
+    private com.ghost616.agentbase.dto.model.ChatRequest executeChat(String sessionId, TestHarness harness) {
         AgentContextManager.Builder builder = mock(AgentContextManager.Builder.class);
         when(agentContextManager.build(sessionId)).thenReturn(builder);
         when(builder.modelIdOverride(any())).thenReturn(builder);
@@ -151,9 +151,9 @@ class ChatServiceFilteringTest {
             SkillConfigDTO nullAuthSkill = SkillConfigDTO.builder()
                     .name("null_auth").description("null desc").build();
 
-            var harness = new TestHarness(1L, "sys_prompt", List.of(),
+            var harness = new TestHarness("1", "sys_prompt", List.of(),
                     List.of(childSkill, parentSkill, allSkill, nullAuthSkill), null, null);
-            var captured = executeChat(1L, harness);
+            var captured = executeChat("1", harness);
 
             String skillsContent = findMessageByContent(getSystemMessages(captured), "可用的技能");
             assertNotNull(skillsContent, "应有技能列表消息");
@@ -171,9 +171,9 @@ class ChatServiceFilteringTest {
             SkillConfigDTO nullSkill = SkillConfigDTO.builder()
                     .name("null_skill").build();
 
-            var harness = new TestHarness(1L, "sys_prompt", List.of(),
+            var harness = new TestHarness("1", "sys_prompt", List.of(),
                     List.of(parentSkill, nullSkill), null, null);
-            var captured = executeChat(1L, harness);
+            var captured = executeChat("1", harness);
 
             String skillsContent = findMessageByContent(getSystemMessages(captured), "可用的技能");
             assertNotNull(skillsContent);
@@ -189,9 +189,9 @@ class ChatServiceFilteringTest {
             SkillConfigDTO parentSkill = SkillConfigDTO.builder()
                     .name("parent_skill").sessionAuth(SessionAuthType.PARENT).build();
 
-            var harness = new TestHarness(1L, "sys_prompt", List.of(),
-                    List.of(childSkill, parentSkill), null, 99L);
-            var captured = executeChat(1L, harness);
+            var harness = new TestHarness("1", "sys_prompt", List.of(),
+                    List.of(childSkill, parentSkill), null, "99");
+            var captured = executeChat("1", harness);
 
             String skillsContent = findMessageByContent(getSystemMessages(captured), "可用的技能");
             assertNotNull(skillsContent);
@@ -202,8 +202,8 @@ class ChatServiceFilteringTest {
         @Test
         @DisplayName("技能列表为空时，不生成可用技能消息")
         void emptySkills_shouldNotAddSkillMessage() {
-            var harness = new TestHarness(1L, "sys_prompt", List.of(), List.of(), null, null);
-            var captured = executeChat(1L, harness);
+            var harness = new TestHarness("1", "sys_prompt", List.of(), List.of(), null, null);
+            var captured = executeChat("1", harness);
 
             String skillsContent = findMessageByContent(getSystemMessages(captured), "可用的技能");
             assertNull(skillsContent, "不应有技能列表消息");
@@ -212,8 +212,8 @@ class ChatServiceFilteringTest {
         @Test
         @DisplayName("skills 为 null 时，不生成可用技能消息")
         void nullSkills_shouldNotAddSkillMessage() {
-            var harness = new TestHarness(1L, "sys_prompt", List.of(), null, null, null);
-            var captured = executeChat(1L, harness);
+            var harness = new TestHarness("1", "sys_prompt", List.of(), null, null, null);
+            var captured = executeChat("1", harness);
 
             String skillsContent = findMessageByContent(getSystemMessages(captured), "可用的技能");
             assertNull(skillsContent, "不应有技能列表消息");
@@ -226,11 +226,11 @@ class ChatServiceFilteringTest {
 
         private TestHarness createHarnessWithLoadedSkills(List<SkillConfigDTO> skills,
                                                            List<String> loadedSkillNames,
-                                                           Long parentSessionId) {
+                                                            String parentSessionId) {
             Map<String, String> sessionVars = new HashMap<>();
             sessionVars.put("_sys_loading_SKILLS",
                     "[\"" + String.join("\",\"", loadedSkillNames) + "\"]");
-            return new TestHarness(1L, "sys_prompt", List.of(), skills, sessionVars, parentSessionId);
+            return new TestHarness("1", "sys_prompt", List.of(), skills, sessionVars, parentSessionId);
         }
 
         @Test
@@ -243,7 +243,7 @@ class ChatServiceFilteringTest {
 
             var harness = createHarnessWithLoadedSkills(
                     List.of(childSkill, allSkill), List.of("child_loaded", "all_loaded"), null);
-            var captured = executeChat(1L, harness);
+            var captured = executeChat("1", harness);
 
             String loadedContent = findMessageByContent(getSystemMessages(captured), "以下技能已加载");
             assertNotNull(loadedContent);
@@ -263,7 +263,7 @@ class ChatServiceFilteringTest {
 
             var harness = createHarnessWithLoadedSkills(
                     List.of(parentSkill, nullSkill), List.of("parent_loaded", "null_loaded"), null);
-            var captured = executeChat(1L, harness);
+            var captured = executeChat("1", harness);
 
             String loadedContent = findMessageByContent(getSystemMessages(captured), "以下技能已加载");
             assertNotNull(loadedContent);
@@ -278,7 +278,7 @@ class ChatServiceFilteringTest {
                     .name("child_loaded").sessionAuth(SessionAuthType.CHILD).prompt("child prompt").build();
 
             var harness = createHarnessWithLoadedSkills(
-                    List.of(childSkill), List.of("child_loaded"), 99L);
+                    List.of(childSkill), List.of("child_loaded"), "99");
             // 子会话的 getSessionVariable 通过 mutator 回调委托给父会话，需设置回调
             harness.mutator.getSessionVarCallback = key -> {
                 if ("_sys_loading_SKILLS".equals(key)) {
@@ -286,7 +286,7 @@ class ChatServiceFilteringTest {
                 }
                 return null;
             };
-            var captured = executeChat(1L, harness);
+            var captured = executeChat("1", harness);
 
             String loadedContent = findMessageByContent(getSystemMessages(captured), "以下技能已加载");
             assertNotNull(loadedContent);
@@ -301,8 +301,8 @@ class ChatServiceFilteringTest {
 
             Map<String, String> sessionVars = new HashMap<>();
             sessionVars.put("_sys_loading_SKILLS", "[]");
-            var harness = new TestHarness(1L, "sys_prompt", List.of(), List.of(skill), sessionVars, null);
-            var captured = executeChat(1L, harness);
+            var harness = new TestHarness("1", "sys_prompt", List.of(), List.of(skill), sessionVars, null);
+            var captured = executeChat("1", harness);
 
             String loadedContent = findMessageByContent(getSystemMessages(captured), "以下技能已加载");
             assertNull(loadedContent, "不应有已加载技能提示词消息");
@@ -314,8 +314,8 @@ class ChatServiceFilteringTest {
             SkillConfigDTO skill = SkillConfigDTO.builder()
                     .name("skill_a").sessionAuth(SessionAuthType.ALL).prompt("prompt").build();
 
-            var harness = new TestHarness(1L, "sys_prompt", List.of(), List.of(skill), null, null);
-            var captured = executeChat(1L, harness);
+            var harness = new TestHarness("1", "sys_prompt", List.of(), List.of(skill), null, null);
+            var captured = executeChat("1", harness);
 
             String loadedContent = findMessageByContent(getSystemMessages(captured), "以下技能已加载");
             assertNull(loadedContent, "不应有已加载技能提示词消息");
@@ -336,9 +336,9 @@ class ChatServiceFilteringTest {
             ToolConfigDTO nullTool = ToolConfigDTO.builder()
                     .name("null_tool").build();
 
-            var harness = new TestHarness(1L, "sys_prompt",
+            var harness = new TestHarness("1", "sys_prompt",
                     List.of(childTool, allTool, nullTool), null, null, null);
-            var captured = executeChat(1L, harness);
+            var captured = executeChat("1", harness);
 
             String capsContent = findMessageByContent(getSystemMessages(captured), "子会话可");
             assertNotNull(capsContent, "应有子会话能力消息");
@@ -359,9 +359,9 @@ class ChatServiceFilteringTest {
             SkillConfigDTO nullSkill = SkillConfigDTO.builder()
                     .name("null_skill").build();
 
-            var harness = new TestHarness(1L, "sys_prompt", List.of(),
+            var harness = new TestHarness("1", "sys_prompt", List.of(),
                     List.of(childSkill, allSkill, nullSkill), null, null);
-            var captured = executeChat(1L, harness);
+            var captured = executeChat("1", harness);
 
             String capsContent = findMessageByContent(getSystemMessages(captured), "子会话可");
             assertNotNull(capsContent);
@@ -380,9 +380,9 @@ class ChatServiceFilteringTest {
             SkillConfigDTO childSkill = SkillConfigDTO.builder()
                     .name("child_skill").sessionAuth(SessionAuthType.CHILD).build();
 
-            var harness = new TestHarness(1L, "sys_prompt",
+            var harness = new TestHarness("1", "sys_prompt",
                     List.of(childTool), List.of(childSkill), null, null);
-            var captured = executeChat(1L, harness);
+            var captured = executeChat("1", harness);
 
             var sysMsgs = getSystemMessages(captured);
             long capsMsgCount = sysMsgs.stream()
@@ -407,8 +407,8 @@ class ChatServiceFilteringTest {
         @Test
         @DisplayName("工具和技能均为空时：不生成子会话能力消息")
         void bothEmpty_shouldNotGenerateMessage() {
-            var harness = new TestHarness(1L, "sys_prompt", List.of(), List.of(), null, null);
-            var captured = executeChat(1L, harness);
+            var harness = new TestHarness("1", "sys_prompt", List.of(), List.of(), null, null);
+            var captured = executeChat("1", harness);
 
             String capsContent = findMessageByContent(getSystemMessages(captured), "子会话可");
             assertNull(capsContent, "不应有子会话能力消息");
@@ -428,9 +428,9 @@ class ChatServiceFilteringTest {
             SkillConfigDTO parentSkill = SkillConfigDTO.builder()
                     .name("parent_skill").sessionAuth(SessionAuthType.PARENT).build();
 
-            var harness = new TestHarness(1L, "sys_prompt", List.of(tool),
+            var harness = new TestHarness("1", "sys_prompt", List.of(tool),
                     List.of(childSkill, allSkill, nullSkill, parentSkill), null, null);
-            var captured = executeChat(1L, harness);
+            var captured = executeChat("1", harness);
 
             String capsContent = findMessageByContent(getSystemMessages(captured), "子会话可");
             assertNotNull(capsContent);
@@ -448,9 +448,9 @@ class ChatServiceFilteringTest {
             SkillConfigDTO childSkill = SkillConfigDTO.builder()
                     .name("child_skill").sessionAuth(SessionAuthType.CHILD).build();
 
-            var harness = new TestHarness(1L, "sys_prompt",
-                    List.of(childTool), List.of(childSkill), null, 99L);
-            var captured = executeChat(1L, harness);
+            var harness = new TestHarness("1", "sys_prompt",
+                    List.of(childTool), List.of(childSkill), null, "99");
+            var captured = executeChat("1", harness);
 
             String capsContent = findMessageByContent(getSystemMessages(captured), "子会话可");
             assertNull(capsContent, "子会话自身不应生成子会话能力消息");

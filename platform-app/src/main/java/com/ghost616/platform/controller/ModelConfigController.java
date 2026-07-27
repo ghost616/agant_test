@@ -38,6 +38,7 @@ import com.ghost616.agentbase.enums.CommonStatus;
 import com.ghost616.agentbase.enums.ErrorCode;
 import com.ghost616.agentbase.exception.BusinessException;
 import com.ghost616.agentbase.service.model.invoker.ModelInvoker;
+import com.ghost616.platform.util.IdConverter;
 
 
 @RestController
@@ -108,7 +109,7 @@ public class ModelConfigController {
         if (config == null) {
             throw new BusinessException(ErrorCode.MODEL_NOT_FOUND);
         }
-        ModelConfigData configData = new ModelConfigData(config.getId(), config.getApiKey(), config.getBaseUrl(), config.getModelName(), config.getTemperature(), config.getMaxTokens(), config.getPlatformType().name());
+        ModelConfigData configData = new ModelConfigData(IdConverter.toString(config.getId()), config.getApiKey(), config.getBaseUrl(), config.getModelName(), config.getTemperature(), config.getMaxTokens(), config.getPlatformType().name());
         ModelInvoker invoker = modelInvokerManager.getInvoker(configData);
         boolean result = invoker.verify();
         return ApiResponse.success(result);
@@ -121,7 +122,7 @@ public class ModelConfigController {
         if (config == null) {
             throw new BusinessException(ErrorCode.MODEL_NOT_FOUND);
         }
-        ModelConfigData configData = new ModelConfigData(config.getId(), config.getApiKey(), config.getBaseUrl(), config.getModelName(), config.getTemperature(), config.getMaxTokens(), config.getPlatformType().name());
+        ModelConfigData configData = new ModelConfigData(IdConverter.toString(config.getId()), config.getApiKey(), config.getBaseUrl(), config.getModelName(), config.getTemperature(), config.getMaxTokens(), config.getPlatformType().name());
         ModelInvoker invoker = modelInvokerManager.getInvoker(configData);
         ChatResponse response = invoker.invoke(request);
         return ApiResponse.success(response);
@@ -134,7 +135,7 @@ public class ModelConfigController {
         if (config == null) {
             return Flux.error(new BusinessException(ErrorCode.MODEL_NOT_FOUND));
         }
-        ModelConfigData configData = new ModelConfigData(config.getId(), config.getApiKey(), config.getBaseUrl(), config.getModelName(), config.getTemperature(), config.getMaxTokens(), config.getPlatformType().name());
+        ModelConfigData configData = new ModelConfigData(IdConverter.toString(config.getId()), config.getApiKey(), config.getBaseUrl(), config.getModelName(), config.getTemperature(), config.getMaxTokens(), config.getPlatformType().name());
         ModelInvoker invoker = modelInvokerManager.getInvoker(configData);
         return invoker.invokeStream(request)
                 .map(chunk -> ServerSentEvent.<ChatChunk>builder().data(chunk).build());
@@ -146,7 +147,7 @@ public class ModelConfigController {
         if (config == null) {
             throw new BusinessException(ErrorCode.MODEL_NOT_FOUND);
         }
-        ModelConfigData configData = new ModelConfigData(config.getId(), config.getApiKey(), config.getBaseUrl(), config.getModelName(), config.getTemperature(), config.getMaxTokens(), config.getPlatformType().name());
+        ModelConfigData configData = new ModelConfigData(IdConverter.toString(config.getId()), config.getApiKey(), config.getBaseUrl(), config.getModelName(), config.getTemperature(), config.getMaxTokens(), config.getPlatformType().name());
         ModelInvoker invoker = modelInvokerManager.getInvoker(configData);
         Map<String, String> info = new HashMap<>();
         info.put("platformType", config.getPlatformType().name());

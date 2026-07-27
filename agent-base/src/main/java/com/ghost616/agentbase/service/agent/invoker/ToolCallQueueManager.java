@@ -16,23 +16,23 @@ public class ToolCallQueueManager {
         this.provider = registry.getToolExecutionProvider();
     }
 
-    public void enqueue(Long sessionId, List<MessageDataProvider.ToolCallData> toolCalls) {
+    public void enqueue(String sessionId, List<MessageDataProvider.ToolCallData> toolCalls) {
         provider.enqueue(sessionId, toolCalls);
     }
 
-    public MessageDataProvider.ToolCallData poll(Long sessionId) {
+    public MessageDataProvider.ToolCallData poll(String sessionId) {
         return provider.poll(sessionId);
     }
 
-    public MessageDataProvider.ToolCallData peek(Long sessionId) {
+    public MessageDataProvider.ToolCallData peek(String sessionId) {
         return provider.peek(sessionId);
     }
 
-    public boolean hasPending(Long sessionId) {
+    public boolean hasPending(String sessionId) {
         return provider.hasPending(sessionId);
     }
 
-    public void clear(Long sessionId) {
+    public void clear(String sessionId) {
         provider.clearQueue(sessionId);
     }
 }

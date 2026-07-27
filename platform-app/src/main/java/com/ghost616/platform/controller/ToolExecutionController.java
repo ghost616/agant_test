@@ -7,6 +7,7 @@ import com.ghost616.platform.dto.ToolStatusResultDTO;
 import com.ghost616.platform.entity.ToolConfig;
 import com.ghost616.platform.service.agent.DefaultSubSessionCallback;
 import com.ghost616.platform.service.tool.ToolConfigService;
+import com.ghost616.platform.util.IdConverter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
@@ -32,7 +33,7 @@ public class ToolExecutionController {
 
     @PostMapping("/{sessionId}/execute-tools")
     public ApiResponse<ToolStatusResultDTO> executeTools(@PathVariable Long sessionId) {
-        ToolExecutionService.ToolExecutionResult result = toolExecutionService.executeTool(sessionId);
+        ToolExecutionService.ToolExecutionResult result = toolExecutionService.executeTool(IdConverter.toString(sessionId));
         ToolStatusResultDTO dto = new ToolStatusResultDTO(
                 result.status(), result.toolId(), result.toolName(), result.arguments(),
                 result.hasMore(), null, result.message(), false);
@@ -41,8 +42,8 @@ public class ToolExecutionController {
 
     @GetMapping("/{sessionId}/tool-status")
     public ApiResponse<ToolStatusResultDTO> toolStatus(@PathVariable Long sessionId,
-                                                        @RequestParam String toolId) {
-        ToolExecutionService.ToolStatusResult result = toolExecutionService.getToolStatus(sessionId, toolId);
+                                                         @RequestParam String toolId) {
+        ToolExecutionService.ToolStatusResult result = toolExecutionService.getToolStatus(IdConverter.toString(sessionId), toolId);
         ToolStatusResultDTO dto = new ToolStatusResultDTO(
                 result.status(), result.toolId(), result.toolName(), result.arguments(),
                 result.hasMore(), result.result(), null, false);
@@ -67,6 +68,6 @@ public class ToolExecutionController {
 
     @PostMapping(value = "/{sessionId}/continue", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<ServerSentEvent<ChatChunk>> continueChat(@PathVariable Long sessionId) {
-        return toolExecutionService.continueAfterTools(sessionId);
+        return toolExecutionService.continueAfterTools(IdConverter.toString(sessionId));
     }
 }

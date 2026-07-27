@@ -37,12 +37,13 @@ class ToolExecutionControllerTest {
     private ToolExecutionController controller;
 
     private final Long sessionId = 1L;
+    private final String sessionIdStr = "1";
 
     @Test
     void executeTools_委托服务并返回ToolStatusResultDTO() {
         ToolExecutionService.ToolExecutionResult serviceResult =
                 new ToolExecutionService.ToolExecutionResult("executing", "tc-1", "testTool", "{}", false, null);
-        when(toolExecutionService.executeTool(sessionId)).thenReturn(serviceResult);
+        when(toolExecutionService.executeTool(sessionIdStr)).thenReturn(serviceResult);
 
         ApiResponse<ToolStatusResultDTO> response = controller.executeTools(sessionId);
 
@@ -51,7 +52,7 @@ class ToolExecutionControllerTest {
         assertEquals("tc-1", response.getData().getToolId());
         assertEquals("testTool", response.getData().getToolName());
         assertFalse(response.getData().isNeedsSubSessionFlow());
-        verify(toolExecutionService).executeTool(sessionId);
+        verify(toolExecutionService).executeTool(sessionIdStr);
         verifyNoInteractions(defaultSubSessionCallback);
     }
 
@@ -59,21 +60,21 @@ class ToolExecutionControllerTest {
     void executeTools_返回empty状态() {
         ToolExecutionService.ToolExecutionResult serviceResult =
                 new ToolExecutionService.ToolExecutionResult("empty", null, null, null, false, null);
-        when(toolExecutionService.executeTool(sessionId)).thenReturn(serviceResult);
+        when(toolExecutionService.executeTool(sessionIdStr)).thenReturn(serviceResult);
 
         ApiResponse<ToolStatusResultDTO> response = controller.executeTools(sessionId);
 
         assertTrue(response.isSuccess());
         assertEquals("empty", response.getData().getStatus());
         assertFalse(response.getData().isHasMore());
-        verify(toolExecutionService).executeTool(sessionId);
+        verify(toolExecutionService).executeTool(sessionIdStr);
     }
 
     @Test
     void toolStatus_返回状态结果() {
         ToolExecutionService.ToolStatusResult serviceResult =
                 new ToolExecutionService.ToolStatusResult("done", "tc-1", "testTool", "{}", false, "ok");
-        when(toolExecutionService.getToolStatus(sessionId, "tc-1")).thenReturn(serviceResult);
+        when(toolExecutionService.getToolStatus(sessionIdStr, "tc-1")).thenReturn(serviceResult);
 
         ApiResponse<ToolStatusResultDTO> response = controller.toolStatus(sessionId, "tc-1");
 
@@ -81,7 +82,7 @@ class ToolExecutionControllerTest {
         assertEquals("done", response.getData().getStatus());
         assertEquals("ok", response.getData().getResult());
         assertFalse(response.getData().isNeedsSubSessionFlow());
-        verify(toolExecutionService).getToolStatus(sessionId, "tc-1");
+        verify(toolExecutionService).getToolStatus(sessionIdStr, "tc-1");
         verifyNoInteractions(defaultSubSessionCallback);
     }
 
@@ -89,20 +90,20 @@ class ToolExecutionControllerTest {
     void toolStatus_返回idle状态() {
         ToolExecutionService.ToolStatusResult serviceResult =
                 new ToolExecutionService.ToolStatusResult("idle", null, null, null, false, null);
-        when(toolExecutionService.getToolStatus(sessionId, "tc-1")).thenReturn(serviceResult);
+        when(toolExecutionService.getToolStatus(sessionIdStr, "tc-1")).thenReturn(serviceResult);
 
         ApiResponse<ToolStatusResultDTO> response = controller.toolStatus(sessionId, "tc-1");
 
         assertTrue(response.isSuccess());
         assertEquals("idle", response.getData().getStatus());
-        verify(toolExecutionService).getToolStatus(sessionId, "tc-1");
+        verify(toolExecutionService).getToolStatus(sessionIdStr, "tc-1");
     }
 
     @Test
     void toolStatus_检测子会话回调设置needsSubSessionFlow() {
         ToolExecutionService.ToolStatusResult serviceResult =
                 new ToolExecutionService.ToolStatusResult("done", "tc-1", "_sys_callback_sub_session", "{}", false, "ok");
-        when(toolExecutionService.getToolStatus(sessionId, "tc-1")).thenReturn(serviceResult);
+        when(toolExecutionService.getToolStatus(sessionIdStr, "tc-1")).thenReturn(serviceResult);
         DefaultSubSessionCallback.SubSessionData subData = mock(DefaultSubSessionCallback.SubSessionData.class);
         when(defaultSubSessionCallback.getSubSessionData(sessionId)).thenReturn(subData);
 
@@ -117,7 +118,7 @@ class ToolExecutionControllerTest {
     void toolStatus_子会话回调无数据时不设置needsSubSessionFlow() {
         ToolExecutionService.ToolStatusResult serviceResult =
                 new ToolExecutionService.ToolStatusResult("done", "tc-1", "_sys_callback_sub_session", "{}", false, "ok");
-        when(toolExecutionService.getToolStatus(sessionId, "tc-1")).thenReturn(serviceResult);
+        when(toolExecutionService.getToolStatus(sessionIdStr, "tc-1")).thenReturn(serviceResult);
         when(defaultSubSessionCallback.getSubSessionData(sessionId)).thenReturn(null);
 
         ApiResponse<ToolStatusResultDTO> response = controller.toolStatus(sessionId, "tc-1");
@@ -131,7 +132,7 @@ class ToolExecutionControllerTest {
     void toolStatus_ToolConfig正常时正确构建ToolConfigBrief() {
         ToolExecutionService.ToolStatusResult serviceResult =
                 new ToolExecutionService.ToolStatusResult("done", "tc-1", "browser-tool", "{}", false, "ok");
-        when(toolExecutionService.getToolStatus(sessionId, "tc-1")).thenReturn(serviceResult);
+        when(toolExecutionService.getToolStatus(sessionIdStr, "tc-1")).thenReturn(serviceResult);
         ToolConfig toolConfig = new ToolConfig();
         toolConfig.setId(100L);
         toolConfig.setName("browser-tool");
@@ -152,7 +153,7 @@ class ToolExecutionControllerTest {
     void toolStatus_ToolConfig为null时toolConfig保持null() {
         ToolExecutionService.ToolStatusResult serviceResult =
                 new ToolExecutionService.ToolStatusResult("done", "tc-1", "unknown-tool", "{}", false, "ok");
-        when(toolExecutionService.getToolStatus(sessionId, "tc-1")).thenReturn(serviceResult);
+        when(toolExecutionService.getToolStatus(sessionIdStr, "tc-1")).thenReturn(serviceResult);
         when(toolConfigService.getToolConfigBySessionAndName(sessionId, "unknown-tool")).thenReturn(null);
 
         ApiResponse<ToolStatusResultDTO> response = controller.toolStatus(sessionId, "tc-1");
@@ -165,7 +166,7 @@ class ToolExecutionControllerTest {
     void toolStatus_SubToolType为null时brief中subToolType保持null() {
         ToolExecutionService.ToolStatusResult serviceResult =
                 new ToolExecutionService.ToolStatusResult("done", "tc-1", "no-subtype-tool", "{}", false, "ok");
-        when(toolExecutionService.getToolStatus(sessionId, "tc-1")).thenReturn(serviceResult);
+        when(toolExecutionService.getToolStatus(sessionIdStr, "tc-1")).thenReturn(serviceResult);
         ToolConfig toolConfig = new ToolConfig();
         toolConfig.setId(200L);
         toolConfig.setName("no-subtype-tool");
@@ -186,7 +187,7 @@ class ToolExecutionControllerTest {
     void toolStatus_原有子会话回调逻辑不受影响() {
         ToolExecutionService.ToolStatusResult serviceResult =
                 new ToolExecutionService.ToolStatusResult("done", "tc-1", "_sys_callback_sub_session", "{}", false, "ok");
-        when(toolExecutionService.getToolStatus(sessionId, "tc-1")).thenReturn(serviceResult);
+        when(toolExecutionService.getToolStatus(sessionIdStr, "tc-1")).thenReturn(serviceResult);
         DefaultSubSessionCallback.SubSessionData subData = mock(DefaultSubSessionCallback.SubSessionData.class);
         when(defaultSubSessionCallback.getSubSessionData(sessionId)).thenReturn(subData);
         when(toolConfigService.getToolConfigBySessionAndName(sessionId, "_sys_callback_sub_session")).thenReturn(null);
@@ -204,7 +205,7 @@ class ToolExecutionControllerTest {
         ChatChunk chunk = ChatChunk.builder().delta("continue").build();
         Flux<ServerSentEvent<ChatChunk>> expectedFlux =
                 Flux.just(ServerSentEvent.builder(chunk).build());
-        when(toolExecutionService.continueAfterTools(sessionId)).thenReturn(expectedFlux);
+        when(toolExecutionService.continueAfterTools(sessionIdStr)).thenReturn(expectedFlux);
 
         Flux<ServerSentEvent<ChatChunk>> result = controller.continueChat(sessionId);
 
@@ -212,18 +213,18 @@ class ToolExecutionControllerTest {
                 .expectNextMatches(sse -> "continue".equals(sse.data().getDelta()))
                 .expectComplete()
                 .verify();
-        verify(toolExecutionService).continueAfterTools(sessionId);
+        verify(toolExecutionService).continueAfterTools(sessionIdStr);
     }
 
     @Test
     void continueChat_stopped返回空Flux() {
-        when(toolExecutionService.continueAfterTools(sessionId)).thenReturn(Flux.empty());
+        when(toolExecutionService.continueAfterTools(sessionIdStr)).thenReturn(Flux.empty());
 
         Flux<ServerSentEvent<ChatChunk>> result = controller.continueChat(sessionId);
 
         StepVerifier.create(result)
                 .expectComplete()
                 .verify();
-        verify(toolExecutionService).continueAfterTools(sessionId);
+        verify(toolExecutionService).continueAfterTools(sessionIdStr);
     }
 }

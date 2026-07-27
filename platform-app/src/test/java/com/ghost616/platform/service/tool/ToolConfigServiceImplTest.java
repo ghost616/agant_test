@@ -564,7 +564,7 @@ class ToolConfigServiceImplTest {
 
         @Test
         void whenDtoNotFound_shouldReturnNull() {
-            when(toolManager.getToolConfig(1L, "unknown")).thenReturn(null);
+            when(toolManager.getToolConfig("1", "unknown")).thenReturn(null);
 
             ToolConfig result = service.getToolConfigBySessionAndName(1L, "unknown");
 
@@ -573,9 +573,9 @@ class ToolConfigServiceImplTest {
 
         @Test
         void whenDtoFoundButEntityNotFound_shouldThrow() {
-            ToolConfigDTO dto = ToolConfigDTO.builder().id(100L).build();
-            when(toolManager.getToolConfig(1L, "ghost")).thenReturn(dto);
-            when(toolConfigMapper.selectById(100L)).thenReturn(null);
+            ToolConfigDTO dto = ToolConfigDTO.builder().id("100").build();
+            when(toolManager.getToolConfig("1", "ghost")).thenReturn(dto);
+            when(toolConfigMapper.selectById("100")).thenReturn(null);
 
             BusinessException ex = assertThrows(BusinessException.class,
                     () -> service.getToolConfigBySessionAndName(1L, "ghost"));
@@ -585,7 +585,7 @@ class ToolConfigServiceImplTest {
         @Test
         void whenDtoIdIsNull_shouldReturnNull() {
             ToolConfigDTO dto = ToolConfigDTO.builder().id(null).build();
-            when(toolManager.getToolConfig(1L, "null-id")).thenReturn(dto);
+            when(toolManager.getToolConfig("1", "null-id")).thenReturn(dto);
 
             ToolConfig result = service.getToolConfigBySessionAndName(1L, "null-id");
 
@@ -597,9 +597,9 @@ class ToolConfigServiceImplTest {
             ToolConfig entity = new ToolConfig();
             entity.setId(100L);
             entity.setName("my_tool");
-            ToolConfigDTO dto = ToolConfigDTO.builder().id(100L).build();
-            when(toolManager.getToolConfig(1L, "my_tool")).thenReturn(dto);
-            when(toolConfigMapper.selectById(100L)).thenReturn(entity);
+            ToolConfigDTO dto = ToolConfigDTO.builder().id("100").build();
+            when(toolManager.getToolConfig("1", "my_tool")).thenReturn(dto);
+            when(toolConfigMapper.selectById("100")).thenReturn(entity);
 
             ToolConfig result = service.getToolConfigBySessionAndName(1L, "my_tool");
 

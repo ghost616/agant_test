@@ -7,5 +7,5 @@ import lombok.Setter;
 @Setter
 public abstract class SessionMessage implements MessageDefinition {
 
-    private Long sessionId;
+    private String sessionId;
 }

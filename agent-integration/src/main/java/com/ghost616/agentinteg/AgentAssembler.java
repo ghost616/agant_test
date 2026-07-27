@@ -155,11 +155,11 @@ public class AgentAssembler {
             this.registry = registry;
         }
 
-        public ModelConfigData getModelConfig(Long modelId) {
+        public ModelConfigData getModelConfig(String modelId) {
             return delegate.getModelConfig(modelId);
         }
 
-        public void updateSessionModelId(Long sessionId, Long modelId) {
+        public void updateSessionModelId(String sessionId, String modelId) {
             delegate.updateSessionModelId(sessionId, modelId);
         }
 
@@ -174,7 +174,7 @@ public class AgentAssembler {
             return hooks;
         }
 
-        public List<HookInvoker> getHooks(Long sessionId) {
+        public List<HookInvoker> getHooks(String sessionId) {
             return delegate.getHooks(sessionId);
         }
 

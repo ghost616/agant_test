@@ -88,9 +88,9 @@ class DefaultContextDataProviderTest {
             return null;
         }).when(sessionMapper).insert(any(Session.class));
 
-        Long result = provider.createChildSession(parentId, "test-agent", "desc", modelId, toolIds, skillIds, "system prompt");
+        String result = provider.createChildSession("1", "test-agent", "desc", "10", List.of("100", "101"), List.of("200", "201"), "system prompt");
 
-        assertEquals(999L, result);
+        assertEquals("999", result);
         verify(sessionMapper).insert(sessionCaptor.capture());
         Session saved = sessionCaptor.getValue();
         assertEquals("test-agent", saved.getTitle());
@@ -125,7 +125,7 @@ class DefaultContextDataProviderTest {
         when(sessionMapper.selectById(1L)).thenReturn(null);
 
         assertThrows(BusinessException.class,
-                () -> provider.createChildSession(1L, "a", null, null, null, null, null));
+                () -> provider.createChildSession("1", "a", null, null, null, null, null));
                 
     }
 
@@ -135,7 +135,7 @@ class DefaultContextDataProviderTest {
         when(modelConfigMapper.selectById(10L)).thenReturn(null);
 
         assertThrows(BusinessException.class,
-                () -> provider.createChildSession(1L, "a", null, 10L, null, null, null));
+                () -> provider.createChildSession("1", "a", null, "10", null, null, null));
                 
     }
 
@@ -146,7 +146,7 @@ class DefaultContextDataProviderTest {
         when(toolConfigMapper.selectById(100L)).thenReturn(null);
 
         assertThrows(BusinessException.class,
-                () -> provider.createChildSession(1L, "a", null, 10L, List.of(100L), null, null));
+                () -> provider.createChildSession("1", "a", null, "10", List.of("100"), null, null));
     }
 
     @Test
@@ -156,7 +156,7 @@ class DefaultContextDataProviderTest {
         when(skillConfigMapper.selectById(200L)).thenReturn(null);
 
         assertThrows(BusinessException.class,
-                () -> provider.createChildSession(1L, "a", null, 10L, null, List.of(200L), null));
+                () -> provider.createChildSession("1", "a", null, "10", null, List.of("200"), null));
     }
 
     @Test
@@ -168,7 +168,7 @@ class DefaultContextDataProviderTest {
             return null;
         }).when(sessionMapper).insert(any(Session.class));
 
-        provider.createChildSession(1L, "a", null, null, null, null, "p");
+        provider.createChildSession("1", "a", null, null, null, null, "p");
 
         verify(toolConfigMapper, never()).selectById(any());
         verify(sessionToolMapper, never()).insert(any(SessionTool.class));
@@ -186,7 +186,7 @@ class DefaultContextDataProviderTest {
             return null;
         }).when(sessionMapper).insert(any(Session.class));
 
-        provider.createChildSession(1L, "a", null, 10L, List.of(100L), null, "p");
+        provider.createChildSession("1", "a", null, "10", List.of("100"), null, "p");
 
         verify(sessionToolMapper).insert(any(SessionTool.class));
         verify(sessionSkillMapper, never()).insert(any(SessionSkill.class));
@@ -196,7 +196,7 @@ class DefaultContextDataProviderTest {
     void loadAgentContext_session不存在_返回null() {
         when(sessionMapper.selectById(99L)).thenReturn(null);
 
-        AgentContextData result = provider.loadAgentContext(99L);
+        AgentContextData result = provider.loadAgentContext("99");
 
         assertNull(result);
     }
@@ -214,11 +214,11 @@ class DefaultContextDataProviderTest {
         when(sessionSkillMapper.selectList(any())).thenReturn(List.of());
         when(sessionVariableMapper.selectList(any())).thenReturn(List.of());
 
-        AgentContextData result = provider.loadAgentContext(2L);
+        AgentContextData result = provider.loadAgentContext("2");
 
         assertNotNull(result);
         assertNull(result.agentId());
-        assertEquals(Long.valueOf(1L), result.parentSessionId());
+        assertEquals("1", result.parentSessionId());
         assertNull(result.childSessions());
     }
 
@@ -232,7 +232,7 @@ class DefaultContextDataProviderTest {
         when(sessionSkillMapper.selectList(any())).thenReturn(List.of());
         when(sessionVariableMapper.selectList(any())).thenReturn(List.of());
 
-        AgentContextData result = provider.loadAgentContext(3L);
+        AgentContextData result = provider.loadAgentContext("3");
 
         assertNull(result.recentMessageCount());
         verify(sessionMapper, times(1)).selectById(any());
@@ -251,7 +251,7 @@ class DefaultContextDataProviderTest {
         when(sessionSkillMapper.selectList(any())).thenReturn(List.of());
         when(sessionVariableMapper.selectList(any())).thenReturn(List.of());
 
-        AgentContextData result = provider.loadAgentContext(4L);
+        AgentContextData result = provider.loadAgentContext("4");
 
         assertNull(result.recentMessageCount());
     }
@@ -272,7 +272,7 @@ class DefaultContextDataProviderTest {
         when(sessionSkillMapper.selectList(any())).thenReturn(List.of());
         when(sessionVariableMapper.selectList(any())).thenReturn(List.of());
 
-        AgentContextData result = provider.loadAgentContext(5L);
+        AgentContextData result = provider.loadAgentContext("5");
 
         assertEquals(Integer.valueOf(50), result.recentMessageCount());
     }
@@ -293,7 +293,7 @@ class DefaultContextDataProviderTest {
         when(sessionVariableMapper.selectList(any())).thenReturn(List.of());
         when(sessionMapper.selectList(any())).thenReturn(List.of());
 
-        AgentContextData result = provider.loadAgentContext(6L);
+        AgentContextData result = provider.loadAgentContext("6");
 
         assertNull(result.parentSessionId());
     }
@@ -323,15 +323,15 @@ class DefaultContextDataProviderTest {
         child2.setModelId(201L);
         when(sessionMapper.selectList(any())).thenReturn(List.of(child1, child2));
 
-        AgentContextData result = provider.loadAgentContext(7L);
+        AgentContextData result = provider.loadAgentContext("7");
 
         assertNotNull(result.childSessions());
         assertEquals(2, result.childSessions().size());
-        assertEquals(Long.valueOf(71L), result.childSessions().get(0).sessionId());
+        assertEquals("71", result.childSessions().get(0).sessionId());
         assertEquals("child1", result.childSessions().get(0).sessionName());
         assertEquals("desc1", result.childSessions().get(0).description());
-        assertEquals(Long.valueOf(200L), result.childSessions().get(0).modelId());
-        assertEquals(Long.valueOf(72L), result.childSessions().get(1).sessionId());
+        assertEquals("200", result.childSessions().get(0).modelId());
+        assertEquals("72", result.childSessions().get(1).sessionId());
         assertEquals("child2", result.childSessions().get(1).sessionName());
     }
 
@@ -349,7 +349,7 @@ class DefaultContextDataProviderTest {
         when(sessionVariableMapper.selectList(any())).thenReturn(List.of());
         when(sessionMapper.selectList(any())).thenReturn(List.of());
 
-        AgentContextData result = provider.loadAgentContext(8L);
+        AgentContextData result = provider.loadAgentContext("8");
 
         assertNotNull(result.childSessions());
         assertTrue(result.childSessions().isEmpty());
@@ -371,22 +371,22 @@ class DefaultContextDataProviderTest {
         when(sessionVariableMapper.selectList(any())).thenReturn(List.of());
         when(sessionMapper.selectList(any())).thenReturn(List.of());
 
-        AgentContextData result = provider.loadAgentContext(9L);
+        AgentContextData result = provider.loadAgentContext("9");
 
-        assertEquals(Long.valueOf(10L), result.agentId());
+        assertEquals("10", result.agentId());
         assertEquals("sys prompt", result.systemPrompt());
-        assertEquals(Long.valueOf(300L), result.defaultModelId());
+        assertEquals("300", result.defaultModelId());
         assertEquals(Integer.valueOf(15), result.recentMessageCount());
         assertNotNull(result.sessionVariables());
     }
 
     @Test
     void getLatestMessages_委托调用MessageDataProvider并返回结果() {
-        Long sessionId = 100L;
+        String sessionId = "100";
         MessageDataProvider.MessageDTO msg1 = new MessageDataProvider.MessageDTO(
-                1L, 100L, "user", "hello", null, null, 1, null, null, null, null, null);
+                "1", "100", "user", "hello", null, null, 1, null, null, null, null, null);
         MessageDataProvider.MessageDTO msg2 = new MessageDataProvider.MessageDTO(
-                2L, 100L, "assistant", "world", null, null, 2, null, null, null, null, null);
+                "2", "100", "assistant", "world", null, null, 2, null, null, null, null, null);
         when(messageDataProvider.getMessages(sessionId)).thenReturn(List.of(msg1, msg2));
 
         List<MessageDataProvider.MessageDTO> result = provider.getLatestMessages(sessionId);
@@ -400,13 +400,13 @@ class DefaultContextDataProviderTest {
 
     @Test
     void getLatestMessages_返回空列表() {
-        when(messageDataProvider.getMessages(200L)).thenReturn(List.of());
+        when(messageDataProvider.getMessages("200")).thenReturn(List.of());
 
-        List<MessageDataProvider.MessageDTO> result = provider.getLatestMessages(200L);
+        List<MessageDataProvider.MessageDTO> result = provider.getLatestMessages("200");
 
         assertNotNull(result);
         assertTrue(result.isEmpty());
-        verify(messageDataProvider).getMessages(200L);
+        verify(messageDataProvider).getMessages("200");
     }
 
     @Test
@@ -420,7 +420,7 @@ class DefaultContextDataProviderTest {
         sv2.setVariableValue("val2");
         when(sessionVariableMapper.selectList(any())).thenReturn(List.of(sv1, sv2));
 
-        Map<String, String> result = provider.getLatestSessionVariables(sessionId);
+        Map<String, String> result = provider.getLatestSessionVariables(String.valueOf(sessionId));
 
         assertEquals(2, result.size());
         assertEquals("val1", result.get("key1"));
@@ -431,7 +431,7 @@ class DefaultContextDataProviderTest {
     void getLatestSessionVariables_无变量时返回空Map() {
         when(sessionVariableMapper.selectList(any())).thenReturn(List.of());
 
-        Map<String, String> result = provider.getLatestSessionVariables(20L);
+        Map<String, String> result = provider.getLatestSessionVariables("20");
 
         assertNotNull(result);
         assertTrue(result.isEmpty());
@@ -439,7 +439,7 @@ class DefaultContextDataProviderTest {
 
     @Test
     void getLatestConversationVariables_返回空Map() {
-        Map<String, String> result = provider.getLatestConversationVariables(30L);
+        Map<String, String> result = provider.getLatestConversationVariables("30");
 
         assertNotNull(result);
         assertTrue(result.isEmpty());
@@ -460,15 +460,15 @@ class DefaultContextDataProviderTest {
         child2.setModelId(301L);
         when(sessionMapper.selectList(any())).thenReturn(List.of(child1, child2));
 
-        List<AgentExecutionContext.ChildSession> result = provider.getLatestChildSessions(sessionId);
+        List<AgentExecutionContext.ChildSession> result = provider.getLatestChildSessions(String.valueOf(sessionId));
 
         assertNotNull(result);
         assertEquals(2, result.size());
-        assertEquals(Long.valueOf(51L), result.get(0).sessionId());
+        assertEquals("51", result.get(0).sessionId());
         assertEquals("child-a", result.get(0).sessionName());
         assertEquals("desc-a", result.get(0).description());
-        assertEquals(Long.valueOf(300L), result.get(0).modelId());
-        assertEquals(Long.valueOf(52L), result.get(1).sessionId());
+        assertEquals("300", result.get(0).modelId());
+        assertEquals("52", result.get(1).sessionId());
         assertEquals("child-b", result.get(1).sessionName());
     }
 
@@ -476,7 +476,7 @@ class DefaultContextDataProviderTest {
     void getLatestChildSessions_无子会话时返回空列表() {
         when(sessionMapper.selectList(any())).thenReturn(List.of());
 
-        List<AgentExecutionContext.ChildSession> result = provider.getLatestChildSessions(60L);
+        List<AgentExecutionContext.ChildSession> result = provider.getLatestChildSessions("60");
 
         assertNotNull(result);
         assertTrue(result.isEmpty());
@@ -486,7 +486,7 @@ class DefaultContextDataProviderTest {
     void getLatestChildSessions_selectList返回null时返回空列表() {
         when(sessionMapper.selectList(any())).thenReturn(null);
 
-        List<AgentExecutionContext.ChildSession> result = provider.getLatestChildSessions(70L);
+        List<AgentExecutionContext.ChildSession> result = provider.getLatestChildSessions("70");
 
         assertNotNull(result);
         assertTrue(result.isEmpty());

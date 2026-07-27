@@ -1,7 +1,5 @@
 package com.ghost616.agentbase.dto.skill;
 
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
 import com.ghost616.agentbase.enums.CommonStatus;
 import com.ghost616.agentbase.enums.SessionAuthType;
@@ -19,8 +17,7 @@ import java.util.List;
 @AllArgsConstructor
 public class SkillConfigDTO {
 
-    @JsonSerialize(using = ToStringSerializer.class)
-    private Long id;
+    private String id;
 
     private String name;
 
@@ -32,8 +29,7 @@ public class SkillConfigDTO {
 
     private SessionAuthType sessionAuth;
 
-    @JsonSerialize(contentUsing = ToStringSerializer.class)
-    private List<Long> toolIds;
+    private List<String> toolIds;
 
     private List<ToolConfigDTO> skillTools;
 

@@ -72,12 +72,12 @@ class ChatServiceNoLoadSkillsTest {
         final AgentExecutionContext context;
         final AgentExecutionContext.AgentContextMutator mutator;
 
-        TestHarness(Long sessionId, String systemPrompt, List<ToolConfigDTO> tools,
+        TestHarness(String sessionId, String systemPrompt, List<ToolConfigDTO> tools,
                     List<SkillConfigDTO> skills, Map<String, String> sessionVariables,
-                    Long parentSessionId) {
+                    String parentSessionId) {
             this.mutator = new AgentExecutionContext.AgentContextMutator();
             this.context = new AgentExecutionContext(
-                    sessionId, 1L, systemPrompt, 1L, null,
+                    sessionId, "1", systemPrompt, "1", null,
                     new ArrayList<>(), tools != null ? new ArrayList<>(tools) : new ArrayList<>(),
                     skills != null ? new ArrayList<>(skills) : null, mutator,
                     sessionVariables != null ? sessionVariables : new HashMap<>(),
@@ -87,14 +87,14 @@ class ChatServiceNoLoadSkillsTest {
 
     private void mockChatInfrastructure() {
         lenient().when(chatDataProvider.getModelConfig(any())).thenReturn(
-                new ModelConfigData(1L, "key", "url", "model", 0.7, 1000, "test"));
+                new ModelConfigData("1", "key", "url", "model", 0.7, 1000, "test"));
         lenient().when(modelInvokerManager.getInvoker(any())).thenReturn(modelInvoker);
         lenient().when(modelInvoker.invokeStream(any())).thenReturn(Flux.empty());
         lenient().when(modelInvoker.toToolDefinition(any())).thenReturn(
                 ToolDefinition.builder().name("test_tool").build());
     }
 
-    private com.ghost616.agentbase.dto.model.ChatRequest executeChat(Long sessionId, TestHarness harness) {
+    private com.ghost616.agentbase.dto.model.ChatRequest executeChat(String sessionId, TestHarness harness) {
         AgentContextManager.Builder builder = mock(AgentContextManager.Builder.class);
         when(agentContextManager.build(sessionId)).thenReturn(builder);
         when(builder.modelIdOverride(any())).thenReturn(builder);
@@ -148,9 +148,9 @@ class ChatServiceNoLoadSkillsTest {
             SkillConfigDTO skill = SkillConfigDTO.builder()
                     .name("my_skill").sessionAuth(null).description("my desc").build();
 
-            var harness = new TestHarness(1L, "sys_prompt", List.of(),
+            var harness = new TestHarness("1", "sys_prompt", List.of(),
                     List.of(skill), null, null);
-            var captured = executeChat(1L, harness);
+            var captured = executeChat("1", harness);
 
             String skillsContent = findMessageByContent(getSystemMessages(captured), "可用的技能");
             assertNull(skillsContent, "不应有可用技能列表消息");
@@ -164,9 +164,9 @@ class ChatServiceNoLoadSkillsTest {
 
             Map<String, String> sessionVars = new HashMap<>();
             sessionVars.put("_sys_loading_SKILLS", "[\"loaded_skill\"]");
-            var harness = new TestHarness(1L, "sys_prompt", List.of(),
+            var harness = new TestHarness("1", "sys_prompt", List.of(),
                     List.of(skill), sessionVars, null);
-            var captured = executeChat(1L, harness);
+            var captured = executeChat("1", harness);
 
             String loadedContent = findMessageByContent(getSystemMessages(captured), "以下技能已加载");
             assertNull(loadedContent, "不应有已加载技能提示消息");
@@ -184,9 +184,9 @@ class ChatServiceNoLoadSkillsTest {
             Map<String, String> sessionVars = new HashMap<>();
             sessionVars.put("_sys_loading_SKILLS", "[\"my_skill\"]");
 
-            var harness = new TestHarness(1L, "sys_prompt", List.of(),
+            var harness = new TestHarness("1", "sys_prompt", List.of(),
                     List.of(skill), sessionVars, null);
-            var captured = executeChat(1L, harness);
+            var captured = executeChat("1", harness);
 
             int toolCount = captured.getTools() != null ? captured.getTools().size() : 0;
             assertEquals(1, toolCount, "工具列表应只包含系统工具（some_other_tool），无技能工具");
@@ -195,9 +195,9 @@ class ChatServiceNoLoadSkillsTest {
         @Test
         @DisplayName("parseLoadedSkills 被跳过：无已加载技能消息")
         void parseLoadedSkillsSkipped() {
-            var harness = new TestHarness(1L, "sys_prompt", List.of(),
+            var harness = new TestHarness("1", "sys_prompt", List.of(),
                     List.of(), null, null);
-            var captured = executeChat(1L, harness);
+            var captured = executeChat("1", harness);
 
             long systemMsgCount = getSystemMessages(captured).stream()
                     .filter(m -> m.getContent() != null && m.getContent().contains("技能"))
@@ -221,9 +221,9 @@ class ChatServiceNoLoadSkillsTest {
             SkillConfigDTO skill = SkillConfigDTO.builder()
                     .name("my_skill").sessionAuth(null).description("my desc").build();
 
-            var harness = new TestHarness(1L, "sys_prompt", List.of(),
+            var harness = new TestHarness("1", "sys_prompt", List.of(),
                     List.of(skill), null, null);
-            var captured = executeChat(1L, harness);
+            var captured = executeChat("1", harness);
 
             String skillsContent = findMessageByContent(getSystemMessages(captured), "可用的技能");
             assertNull(skillsContent, "不应有可用技能列表消息");
@@ -237,9 +237,9 @@ class ChatServiceNoLoadSkillsTest {
 
             Map<String, String> sessionVars = new HashMap<>();
             sessionVars.put("_sys_loading_SKILLS", "[\"loaded_skill\"]");
-            var harness = new TestHarness(1L, "sys_prompt", List.of(),
+            var harness = new TestHarness("1", "sys_prompt", List.of(),
                     List.of(skill), sessionVars, null);
-            var captured = executeChat(1L, harness);
+            var captured = executeChat("1", harness);
 
             String loadedContent = findMessageByContent(getSystemMessages(captured), "以下技能已加载");
             assertNull(loadedContent, "不应有已加载技能提示消息");
@@ -257,9 +257,9 @@ class ChatServiceNoLoadSkillsTest {
             Map<String, String> sessionVars = new HashMap<>();
             sessionVars.put("_sys_loading_SKILLS", "[\"my_skill\"]");
 
-            var harness = new TestHarness(1L, "sys_prompt", List.of(),
+            var harness = new TestHarness("1", "sys_prompt", List.of(),
                     List.of(skill), sessionVars, null);
-            var captured = executeChat(1L, harness);
+            var captured = executeChat("1", harness);
 
             int toolCount = captured.getTools() != null ? captured.getTools().size() : 0;
             assertEquals(0, toolCount, "工具列表应为空，无技能工具");

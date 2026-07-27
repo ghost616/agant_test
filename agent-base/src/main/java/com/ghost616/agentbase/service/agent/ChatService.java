@@ -76,9 +76,9 @@ public class ChatService {
 
     public Flux<ServerSentEvent<ChatChunk>> chat(ChatRequest request) {
         ensureInitialized();
-        Long sessionId = request.getSessionId();
+        String sessionId = request.getSessionId();
         String content = request.getContent();
-        Long modelId = request.getModelId();
+        String modelId = request.getModelId();
 
         AgentContextManager.AgentSessionContext sessionContext =
                 agentContextManager.build(sessionId).modelIdOverride(modelId).build();
@@ -106,7 +106,7 @@ public class ChatService {
             contextMutator.setModelId(modelId);
         }
 
-        Long finalModelId = (modelId != null) ? modelId : context.getModelId();
+        String finalModelId = (modelId != null) ? modelId : context.getModelId();
         ModelConfigData configData = chatDataProvider.getModelConfig(finalModelId);
         if (configData == null) {
             throw new BusinessException(ErrorCode.MODEL_NOT_FOUND);

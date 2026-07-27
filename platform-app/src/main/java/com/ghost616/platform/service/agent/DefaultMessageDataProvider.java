@@ -13,6 +13,7 @@ import com.ghost616.agentbase.service.agent.MessageDataProvider.ToolCallData;
 import com.ghost616.agentbase.service.agent.MessageDataProvider.MessageDTO;
 import com.ghost616.agentbase.util.JsonMapper;
 import com.ghost616.platform.repository.SessionMapper;
+import com.ghost616.platform.util.IdConverter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -32,11 +33,12 @@ public class DefaultMessageDataProvider implements MessageDataProvider {
     private final SessionMapper sessionMapper;
 
     @Override
-    public Long saveMessage(Long sessionId, String role, String content, String reasoning,
-                             String toolCallId, String toolResult, List<ToolCallData> toolCalls,
-                             UsageInfo usage) {
+    public String saveMessage(String sessionId, String role, String content, String reasoning,
+                               String toolCallId, String toolResult, List<ToolCallData> toolCalls,
+                               UsageInfo usage) {
+        Long sid = IdConverter.parse(sessionId);
         Message message = new Message();
-        message.setSessionId(sessionId);
+        message.setSessionId(sid);
         message.setRole(role);
         message.setContent(content);
         message.setReasoning(reasoning);
@@ -44,7 +46,7 @@ public class DefaultMessageDataProvider implements MessageDataProvider {
         message.setToolResult(toolResult);
 
         LambdaQueryWrapper<Message> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(Message::getSessionId, sessionId)
+        wrapper.eq(Message::getSessionId, sid)
                 .orderByDesc(Message::getSequenceNum)
                 .last("LIMIT 1");
         Message lastMessage = messageMapper.selectOne(wrapper);
@@ -66,7 +68,7 @@ public class DefaultMessageDataProvider implements MessageDataProvider {
                           + (usage.getCompletionTokens() != null ? usage.getCompletionTokens().longValue() : 0L);
             }
             if (addTokens > 0) {
-                sessionMapper.addTotalTokenUsed(sessionId, addTokens);
+                sessionMapper.addTotalTokenUsed(sid, addTokens);
             }
         }
 
@@ -84,13 +86,14 @@ public class DefaultMessageDataProvider implements MessageDataProvider {
             }
         }
 
-        return messageId;
+        return IdConverter.toString(messageId);
     }
 
     @Override
-    public List<MessageDTO> getMessages(Long sessionId) {
+    public List<MessageDTO> getMessages(String sessionId) {
+        Long sid = IdConverter.parse(sessionId);
         LambdaQueryWrapper<Message> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(Message::getSessionId, sessionId)
+        wrapper.eq(Message::getSessionId, sid)
                 .eq(Message::getRollback, 0)
                 .orderByAsc(Message::getSequenceNum);
         List<Message> messages = messageMapper.selectList(wrapper);
@@ -115,7 +118,7 @@ public class DefaultMessageDataProvider implements MessageDataProvider {
                 }
             }
             result.add(new MessageDTO(
-                    msg.getId(), msg.getSessionId(), msg.getRole(), msg.getContent(),
+                    IdConverter.toString(msg.getId()), IdConverter.toString(msg.getSessionId()), msg.getRole(), msg.getContent(),
                     msg.getReasoning(), msg.getToolCallId(), msg.getSequenceNum(),
                     msg.getCreateTime(), msg.getToolResult(), toolCallDataList, usageInfo,
                     msg.getRollback()));
@@ -125,9 +128,10 @@ public class DefaultMessageDataProvider implements MessageDataProvider {
     }
 
     @Override
-    public int rollbackToLastUserMessage(Long sessionId) {
+    public int rollbackToLastUserMessage(String sessionId) {
+        Long sid = IdConverter.parse(sessionId);
         LambdaQueryWrapper<Message> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(Message::getSessionId, sessionId)
+        wrapper.eq(Message::getSessionId, sid)
                 .eq(Message::getRole, "user")
                 .orderByDesc(Message::getSequenceNum)
                 .last("LIMIT 1");
@@ -139,7 +143,7 @@ public class DefaultMessageDataProvider implements MessageDataProvider {
         Integer sequenceNum = lastUserMessage.getSequenceNum();
 
         LambdaQueryWrapper<Message> idWrapper = new LambdaQueryWrapper<>();
-        idWrapper.eq(Message::getSessionId, sessionId)
+        idWrapper.eq(Message::getSessionId, sid)
                 .ge(Message::getSequenceNum, sequenceNum);
         List<Message> messagesToDelete = messageMapper.selectList(idWrapper);
         List<Long> messageIds = messagesToDelete.stream()
@@ -150,6 +154,6 @@ public class DefaultMessageDataProvider implements MessageDataProvider {
             messageToolCallMapper.deleteByMessageIds(messageIds);
         }
 
-        return messageMapper.rollbackBySessionIdAndGeSequenceNum(sessionId, sequenceNum);
+        return messageMapper.rollbackBySessionIdAndGeSequenceNum(sid, sequenceNum);
     }
 }

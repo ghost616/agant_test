@@ -22,10 +22,10 @@ public final class ContextSerializer {
             ObjectNode root = MAPPER.createObjectNode();
 
             ObjectNode contextNode = MAPPER.createObjectNode();
-            contextNode.put("sessionId", ctx.getSessionId() != null ? ctx.getSessionId().toString() : null);
-            contextNode.put("agentId", ctx.getAgentId() != null ? ctx.getAgentId().toString() : null);
+            contextNode.put("sessionId", ctx.getSessionId());
+            contextNode.put("agentId", ctx.getAgentId());
             contextNode.put("systemPrompt", ctx.getSystemPrompt());
-            contextNode.put("modelId", ctx.getModelId() != null ? ctx.getModelId().toString() : null);
+            contextNode.put("modelId", ctx.getModelId());
             contextNode.put("recentMessageCount", ctx.getRecentMessageCount());
             contextNode.put("stopped", ctx.isStopped());
             contextNode.put("projectDir", ctx.getProjectDir());

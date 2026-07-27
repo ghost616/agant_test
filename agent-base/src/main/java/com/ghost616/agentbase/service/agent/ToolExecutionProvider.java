@@ -4,21 +4,21 @@ import java.util.List;
 
 public interface ToolExecutionProvider {
 
-    void enqueue(Long sessionId, List<MessageDataProvider.ToolCallData> toolCalls);
+    void enqueue(String sessionId, List<MessageDataProvider.ToolCallData> toolCalls);
 
-    MessageDataProvider.ToolCallData poll(Long sessionId);
+    MessageDataProvider.ToolCallData poll(String sessionId);
 
-    MessageDataProvider.ToolCallData peek(Long sessionId);
+    MessageDataProvider.ToolCallData peek(String sessionId);
 
-    boolean hasPending(Long sessionId);
+    boolean hasPending(String sessionId);
 
-    void clearQueue(Long sessionId);
+    void clearQueue(String sessionId);
 
-    void updateExecution(Long sessionId, ToolExecutionTracker.ToolExecutionStatus status);
+    void updateExecution(String sessionId, ToolExecutionTracker.ToolExecutionStatus status);
 
-    void clearTracking(Long sessionId);
+    void clearTracking(String sessionId);
 
-    ToolExecutionTracker.ToolExecutionStatus getCurrentExecution(Long sessionId, String toolId);
+    ToolExecutionTracker.ToolExecutionStatus getCurrentExecution(String sessionId, String toolId);
 
-    List<ToolExecutionTracker.ToolResult> getAndClearResults(Long sessionId);
+    List<ToolExecutionTracker.ToolResult> getAndClearResults(String sessionId);
 }

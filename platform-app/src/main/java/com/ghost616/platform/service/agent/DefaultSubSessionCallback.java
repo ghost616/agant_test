@@ -4,6 +4,7 @@ import com.ghost616.agentbase.dto.model.Message;
 import com.ghost616.agentbase.service.agent.invoker.SubSessionCallback;
 import com.ghost616.platform.entity.Session;
 import com.ghost616.platform.repository.SessionMapper;
+import com.ghost616.platform.util.IdConverter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -20,15 +21,16 @@ public class DefaultSubSessionCallback implements SubSessionCallback {
     private final ConcurrentHashMap<Long, SubSessionData> subSessionDataMap = new ConcurrentHashMap<>();
 
     @Override
-    public Message execute(Long sessionId, String userMessage, Boolean thinking) {
-        Session session = sessionMapper.selectById(sessionId);
+    public Message execute(String sessionId, String userMessage, Boolean thinking) {
+        Long sid = IdConverter.parse(sessionId);
+        Session session = sessionMapper.selectById(sid);
         if (session == null || session.getParentSessionId() == null) {
             return null;
         }
         Long parentSessionId = session.getParentSessionId();
 
         CompletableFuture<Message> messageResult = new CompletableFuture<>();
-        SubSessionData data = new SubSessionData(sessionId, userMessage, thinking, messageResult);
+        SubSessionData data = new SubSessionData(sid, userMessage, thinking, messageResult);
         subSessionDataMap.put(parentSessionId, data);
 
         try {

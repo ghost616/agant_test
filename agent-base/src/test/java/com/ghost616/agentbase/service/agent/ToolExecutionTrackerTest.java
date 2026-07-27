@@ -21,7 +21,7 @@ class ToolExecutionTrackerTest {
     private AgentComponentRegistry registry;
     private ToolExecutionTracker tracker;
 
-    private final Long sessionId = 1L;
+    private final String sessionId = "1";
     private final String toolId = "tool1";
     private final String toolName = "TestTool";
     private final String arguments = "args";

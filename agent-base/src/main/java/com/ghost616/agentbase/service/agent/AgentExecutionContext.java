@@ -29,11 +29,11 @@ import java.util.function.Supplier;
 @Getter
 public class AgentExecutionContext {
 
-    private final Long sessionId;
-    private final Long agentId;
+    private final String sessionId;
+    private final String agentId;
     private final String systemPrompt;
-    private Long modelId;
-    private final Long parentSessionId;
+    private String modelId;
+    private final String parentSessionId;
     private final Integer recentMessageCount;
     @Getter(AccessLevel.NONE)
     private final List<HistoryEntry> history;
@@ -50,14 +50,14 @@ public class AgentExecutionContext {
     @Getter(AccessLevel.NONE)
     private final List<ChildSession> childSessions = new ArrayList<>();
 
-    public AgentExecutionContext(Long sessionId, Long agentId, String systemPrompt, Long modelId,
+    public AgentExecutionContext(String sessionId, String agentId, String systemPrompt, String modelId,
                                   Integer recentMessageCount,
                                  List<HistoryEntry> history, List<ToolConfigDTO> tools,
                                  List<SkillConfigDTO> skills,
                                  AgentContextMutator mutator,
                                   Map<String, String> sessionVariables,
                                   Map<String, String> conversationVariables,
-                                  Long parentSessionId, String projectDir, List<ChildSession> childSessions) {
+                                  String parentSessionId, String projectDir, List<ChildSession> childSessions) {
         this.sessionId = sessionId;
         this.agentId = agentId;
         this.systemPrompt = systemPrompt;
@@ -81,20 +81,20 @@ public class AgentExecutionContext {
         return Collections.unmodifiableList(childSessions);
     }
 
-    public Long createChildSession(String sessionName, String description, Long modelId,
-                                     List<Long> toolIds, List<Long> skillIds, String prompt) {
-        Long childSessionId = mutator.createChildSession(sessionName, description, modelId, toolIds, skillIds, prompt);
+    public String createChildSession(String sessionName, String description, String modelId,
+                                      List<String> toolIds, List<String> skillIds, String prompt) {
+        String childSessionId = mutator.createChildSession(sessionName, description, modelId, toolIds, skillIds, prompt);
         if (childSessionId != null) {
             childSessions.add(new ChildSession(childSessionId, sessionName, description, modelId));
         }
         return childSessionId;
     }
 
-    public Message sendUserMessage(Long childSessionId, String content, Long modelId, Boolean thinking) {
+        public Message sendUserMessage(String childSessionId, String content, String modelId, Boolean thinking) {
         return mutator.sendUserMessage(childSessionId, content, modelId, thinking);
     }
 
-    public record ChildSession(Long sessionId, String sessionName, String description, Long modelId) {
+    public record ChildSession(String sessionId, String sessionName, String description, String modelId) {
     }
 
     public List<HistoryEntry> getHistory() {
@@ -199,20 +199,20 @@ public class AgentExecutionContext {
 
         @FunctionalInterface
         public interface CreateChildSessionCallback {
-            Long create(Long parentSessionId, String sessionName, String description, Long modelId,
-                        List<Long> toolIds, List<Long> skillIds, String prompt);
+            String create(String parentSessionId, String sessionName, String description, String modelId,
+                          List<String> toolIds, List<String> skillIds, String prompt);
         }
 
         @FunctionalInterface
         public interface SendUserMessageCallback {
-            Message send(Long childSessionId, String content, Long modelId, Boolean thinking);
+            Message send(String childSessionId, String content, String modelId, Boolean thinking);
         }
 
         public void bind(AgentExecutionContext context) {
             this.context = context;
         }
 
-        public void setModelId(Long modelId) {
+        public void setModelId(String modelId) {
             context.modelId = modelId;
         }
 
@@ -327,8 +327,8 @@ public class AgentExecutionContext {
             context.stopped.set(false);
         }
 
-        public Long createChildSession(String sessionName, String description, Long modelId,
-                                          List<Long> toolIds, List<Long> skillIds, String prompt) {
+        public String createChildSession(String sessionName, String description, String modelId,
+                                           List<String> toolIds, List<String> skillIds, String prompt) {
             if (context.parentSessionId != null) {
                 return null;
             }
@@ -338,7 +338,7 @@ public class AgentExecutionContext {
             if (modelId == null) {
                 modelId = context.modelId;
             }
-            Long childSessionId = null;
+            String childSessionId = null;
             if (createChildSessionCallback != null) {
                 childSessionId = createChildSessionCallback.create(context.sessionId, sessionName, description, modelId,
                         toolIds, skillIds, prompt);
@@ -350,7 +350,7 @@ public class AgentExecutionContext {
             return childSessionId;
         }
 
-        public Message sendUserMessage(Long childSessionId, String content, Long modelId, Boolean thinking) {
+    public Message sendUserMessage(String childSessionId, String content, String modelId, Boolean thinking) {
             Message result = null;
             if (sendUserMessageCallback != null) {
                 result = sendUserMessageCallback.send(childSessionId, content, modelId, thinking);

@@ -51,7 +51,7 @@ class ToolExecutionServiceTest {
     private AgentComponentRegistry registry;
     private ToolExecutionService toolExecutionService;
 
-    private final Long sessionId = 1L;
+    private final String sessionId = "1";
 
     @BeforeEach
     void setUp() {
@@ -342,7 +342,7 @@ class ToolExecutionServiceTest {
         when(saveBuilder.content(any())).thenReturn(saveBuilder);
         when(saveBuilder.toolCallId(any())).thenReturn(saveBuilder);
         when(saveBuilder.toolResult(any())).thenReturn(saveBuilder);
-        when(saveBuilder.save()).thenReturn(100L);
+        when(saveBuilder.save()).thenReturn("100");
         when(sessionManager.messageSave()).thenReturn(saveBuilder);
 
         Flux<ServerSentEvent<ChatChunk>> expectedFlux = Flux.empty();

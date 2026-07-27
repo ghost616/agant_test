@@ -67,7 +67,7 @@ public class ToolExecutionService {
                                     String arguments, boolean hasMore, String result) {
     }
 
-    public ToolExecutionResult executeTool(Long sessionId) {
+    public ToolExecutionResult executeTool(String sessionId) {
         ensureInitialized();
         MessageDataProvider.ToolCallData peekData = toolCallQueueManager.peek(sessionId);
         if (peekData == null) {
@@ -140,7 +140,12 @@ public class ToolExecutionService {
                 return res;
             } catch (Exception e) {
                 log.error("sessionId={} 工具执行异常, toolName={}", sessionId, toolCallName, e);
-                String errMsg = "{\"status\":\"error\",\"errMsg\":" + JsonMapper.MAPPER.writeValueAsString(e.getMessage()) + "}";
+                String errMsg;
+                try {
+                    errMsg = "{\"status\":\"error\",\"errMsg\":" + JsonMapper.MAPPER.writeValueAsString(e.getMessage()) + "}";
+                } catch (Exception ex) {
+                    errMsg = "{\"status\":\"error\",\"errMsg\":\"Serialization failed\"}";
+                }
                 toolExecutionTracker.setFailed(sessionId, toolCallId, errMsg);
                 return null;
             }
@@ -149,7 +154,7 @@ public class ToolExecutionService {
         return new ToolExecutionResult("executing", toolCallId, toolCallName, toolCallArguments, hasMore, null);
     }
 
-    public ToolStatusResult getToolStatus(Long sessionId, String toolId) {
+    public ToolStatusResult getToolStatus(String sessionId, String toolId) {
         ensureInitialized();
         ToolExecutionTracker.ToolExecutionStatus status = toolExecutionTracker.getCurrentExecution(sessionId, toolId);
         if (status == null) {
@@ -159,7 +164,7 @@ public class ToolExecutionService {
                 status.currentArguments(), status.hasMore(), status.result());
     }
 
-    public Flux<ServerSentEvent<ChatChunk>> continueAfterTools(Long sessionId) {
+    public Flux<ServerSentEvent<ChatChunk>> continueAfterTools(String sessionId) {
         ensureInitialized();
 
         AgentContextManager.AgentSessionContext sessionCtx = agentContextManager.get(sessionId);

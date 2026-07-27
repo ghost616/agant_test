@@ -6,10 +6,10 @@ import lombok.Getter;
 @Getter
 public class ChildCreateSession extends SessionMessage {
 
-    private final Long parentSessionId;
+    private final String parentSessionId;
     private final ChildSession childSession;
 
-    public ChildCreateSession(Long parentSessionId, ChildSession childSession) {
+    public ChildCreateSession(String parentSessionId, ChildSession childSession) {
         this.parentSessionId = parentSessionId;
         this.childSession = childSession;
         this.setSessionId(parentSessionId);

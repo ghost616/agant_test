@@ -10,7 +10,7 @@ public class VariableMessage extends SessionMessage {
     private final String value;
     private final String operation;
 
-    public VariableMessage(Long sessionId, String scope, String key, String value, String operation) {
+    public VariableMessage(String sessionId, String scope, String key, String value, String operation) {
         setSessionId(sessionId);
         this.scope = scope;
         this.key = key;

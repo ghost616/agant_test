@@ -68,12 +68,12 @@ class DefaultToolDataProviderTest {
                     createSessionTool(100L, SessionAuthType.CHILD),
                     createSessionTool(101L, SessionAuthType.PARENT)));
 
-            List<SessionToolInfo> result = provider.getSessionToolIds(1L);
+            List<SessionToolInfo> result = provider.getSessionToolIds("1");
 
             assertEquals(2, result.size());
-            assertEquals(100L, result.get(0).toolId());
+            assertEquals("100", result.get(0).toolId());
             assertEquals(SessionAuthType.CHILD, result.get(0).sessionAuth());
-            assertEquals(101L, result.get(1).toolId());
+            assertEquals("101", result.get(1).toolId());
             assertEquals(SessionAuthType.PARENT, result.get(1).sessionAuth());
         }
 
@@ -83,10 +83,10 @@ class DefaultToolDataProviderTest {
             when(sessionToolMapper.selectList(any())).thenReturn(List.of(
                     createSessionTool(200L, null)));
 
-            List<SessionToolInfo> result = provider.getSessionToolIds(1L);
+            List<SessionToolInfo> result = provider.getSessionToolIds("1");
 
             assertEquals(1, result.size());
-            assertEquals(200L, result.get(0).toolId());
+            assertEquals("200", result.get(0).toolId());
             assertEquals(SessionAuthType.ALL, result.get(0).sessionAuth());
         }
 
@@ -95,7 +95,7 @@ class DefaultToolDataProviderTest {
         void emptyTools_shouldReturnEmptyList() {
             when(sessionToolMapper.selectList(any())).thenReturn(List.of());
 
-            List<SessionToolInfo> result = provider.getSessionToolIds(1L);
+            List<SessionToolInfo> result = provider.getSessionToolIds("1");
 
             assertTrue(result.isEmpty());
         }

@@ -6,13 +6,13 @@ import lombok.Getter;
 @Getter
 public class ChildMessageEvent extends SessionMessage {
 
-    private final Long childSessionId;
+    private final String childSessionId;
     private final String content;
-    private final Long modelId;
+    private final String modelId;
     private final Boolean thinking;
     private final Message result;
 
-    public ChildMessageEvent(Long sessionId, Long childSessionId, String content, Long modelId, Boolean thinking, Message result) {
+    public ChildMessageEvent(String sessionId, String childSessionId, String content, String modelId, Boolean thinking, Message result) {
         setSessionId(sessionId);
         this.childSessionId = childSessionId;
         this.content = content;

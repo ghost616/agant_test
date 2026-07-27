@@ -68,7 +68,7 @@ public class HookManager {
         }
     }
 
-    public void triggerSessionHooks(Long sessionId, HookPhase phase, AgentExecutionContext ctx, HookData data) {
+    public void triggerSessionHooks(String sessionId, HookPhase phase, AgentExecutionContext ctx, HookData data) {
         List<HookInvoker> sessionHooks = registry.getChatDataProvider().getHooks(sessionId);
         if (sessionHooks == null || sessionHooks.isEmpty()) {
             return;

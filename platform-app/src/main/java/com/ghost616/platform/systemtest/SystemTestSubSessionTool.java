@@ -26,13 +26,13 @@ public class SystemTestSubSessionTool implements ToolInvoker {
             String description = root.has("description") && !root.get("description").isNull()
                     ? root.get("description").asText() : "system test sub-session";
 
-            Long modelId = ctx.getModelId();
-            List<Long> toolIds = ctx.getTools() != null && !ctx.getTools().isEmpty()
+            String modelId = ctx.getModelId();
+            List<String> toolIds = ctx.getTools() != null && !ctx.getTools().isEmpty()
                     ? ctx.getTools().stream().map(ToolConfigDTO::getId).distinct().toList() : null;
-            List<Long> skillIds = ctx.getSkills() != null && !ctx.getSkills().isEmpty()
+            List<String> skillIds = ctx.getSkills() != null && !ctx.getSkills().isEmpty()
                     ? ctx.getSkills().stream().map(SkillConfigDTO::getId).toList() : null;
 
-            Long childSessionId = ctx.createChildSession(sessionName, description, modelId, toolIds, skillIds, null);
+            String childSessionId = ctx.createChildSession(sessionName, description, modelId, toolIds, skillIds, null);
             if (childSessionId == null) {
                 return "{\"error\":\"createChildSession returned null\"}";
             }

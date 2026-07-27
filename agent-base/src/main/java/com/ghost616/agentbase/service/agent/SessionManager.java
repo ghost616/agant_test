@@ -34,7 +34,7 @@ public class SessionManager {
     }
 
     public class MessageSaveBuilder {
-        private Long sessionId;
+        private String sessionId;
         private String role;
         private String content;
         private String reasoning;
@@ -46,7 +46,7 @@ public class SessionManager {
         private MessageSaveBuilder() {
         }
 
-        public MessageSaveBuilder sessionId(Long sessionId) {
+        public MessageSaveBuilder sessionId(String sessionId) {
             this.sessionId = sessionId;
             return this;
         }
@@ -86,7 +86,7 @@ public class SessionManager {
             return this;
         }
 
-        public Long save() {
+        public String save() {
             if (sessionId == null) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "sessionId 不能为空");
             }
@@ -101,12 +101,12 @@ public class SessionManager {
         }
     }
 
-    public List<MessageDataProvider.MessageDTO> getMessages(Long sessionId) {
+    public List<MessageDataProvider.MessageDTO> getMessages(String sessionId) {
         ensureInitialized();
         return dataProvider.getMessages(sessionId);
     }
 
-    public int rollbackToLastUserMessage(Long sessionId) {
+    public int rollbackToLastUserMessage(String sessionId) {
         ensureInitialized();
         return dataProvider.rollbackToLastUserMessage(sessionId);
     }

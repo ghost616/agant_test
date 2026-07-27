@@ -51,10 +51,10 @@ class DefaultChatDataProviderTest {
         entity.setPlatformType(PlatformType.OPENAI);
         when(modelConfigMapper.selectById(1L)).thenReturn(entity);
 
-        ModelConfigData result = provider.getModelConfig(1L);
+        ModelConfigData result = provider.getModelConfig("1");
 
         assertNotNull(result);
-        assertEquals(1L, result.id());
+        assertEquals("1", result.id());
         assertEquals("sk-test", result.apiKey());
         assertEquals("https://test.com", result.baseUrl());
         assertEquals("gpt-4", result.modelName());
@@ -67,7 +67,7 @@ class DefaultChatDataProviderTest {
     void getModelConfig_实体为null_返回null() {
         when(modelConfigMapper.selectById(99L)).thenReturn(null);
 
-        ModelConfigData result = provider.getModelConfig(99L);
+        ModelConfigData result = provider.getModelConfig("99");
 
         assertNull(result);
     }
@@ -84,10 +84,10 @@ class DefaultChatDataProviderTest {
         entity.setPlatformType(null);
         when(modelConfigMapper.selectById(2L)).thenReturn(entity);
 
-        ModelConfigData result = provider.getModelConfig(2L);
+        ModelConfigData result = provider.getModelConfig("2");
 
         assertNotNull(result);
-        assertEquals(2L, result.id());
+        assertEquals("2", result.id());
         assertNull(result.platformType());
     }
 
@@ -99,7 +99,7 @@ class DefaultChatDataProviderTest {
         session.setAgentId(100L);
         when(sessionMapper.selectById(1L)).thenReturn(session);
 
-        provider.updateSessionModelId(1L, 99L);
+        provider.updateSessionModelId("1", "99");
 
         assertEquals(99L, session.getModelId());
         verify(sessionMapper).updateById((Session) session);
@@ -109,7 +109,7 @@ class DefaultChatDataProviderTest {
     void updateSessionModelId_会话为null_不执行更新() {
         when(sessionMapper.selectById(999L)).thenReturn(null);
 
-        provider.updateSessionModelId(999L, 99L);
+        provider.updateSessionModelId("999", "99");
 
         verify(sessionMapper, never()).updateById(any(Session.class));
     }
@@ -141,7 +141,7 @@ class DefaultChatDataProviderTest {
 
     @Test
     void getHooks_withSessionId_返回空列表() {
-        List<HookInvoker> hooks = provider.getHooks(1L);
+        List<HookInvoker> hooks = provider.getHooks("1");
 
         assertNotNull(hooks);
         assertTrue(hooks.isEmpty());

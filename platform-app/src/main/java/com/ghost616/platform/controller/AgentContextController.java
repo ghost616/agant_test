@@ -6,6 +6,7 @@ import com.ghost616.platform.dto.AgentContextDTO;
 import com.ghost616.platform.dto.ApiResponse;
 import com.ghost616.platform.dto.context.ConversationVariableRequest;
 import com.ghost616.platform.dto.context.SessionVariableRequest;
+import com.ghost616.platform.util.IdConverter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,18 +28,18 @@ public class AgentContextController {
 
     @GetMapping("/{sessionId}")
     public ApiResponse<AgentContextDTO> getContext(@PathVariable Long sessionId) {
-        AgentContextManager.AgentSessionContext sessionContext = agentContextManager.get(sessionId);
+        AgentContextManager.AgentSessionContext sessionContext = agentContextManager.get(IdConverter.toString(sessionId));
         if (sessionContext == null) {
             return ApiResponse.fail("CONTEXT-001", "Session context not found: " + sessionId);
         }
         AgentExecutionContext ctx = sessionContext.context();
 
         AgentContextDTO dto = new AgentContextDTO();
-        dto.setSessionId(ctx.getSessionId());
-        dto.setAgentId(ctx.getAgentId());
+        dto.setSessionId(IdConverter.parse(ctx.getSessionId()));
+        dto.setAgentId(IdConverter.parse(ctx.getAgentId()));
         dto.setSystemPrompt(ctx.getSystemPrompt());
-        dto.setModelId(ctx.getModelId());
-        dto.setParentSessionId(ctx.getParentSessionId());
+        dto.setModelId(IdConverter.parse(ctx.getModelId()));
+        dto.setParentSessionId(IdConverter.parse(ctx.getParentSessionId()));
         dto.setRecentMessageCount(ctx.getRecentMessageCount());
         dto.setHistory(mapHistory(ctx.getHistory()));
         dto.setTools(ctx.getTools());
@@ -54,8 +55,8 @@ public class AgentContextController {
 
     @PostMapping("/{sessionId}/session-variable")
     public ApiResponse<Void> putSessionVariable(@PathVariable Long sessionId,
-                                                 @RequestBody SessionVariableRequest body) {
-        AgentContextManager.AgentSessionContext sessionContext = agentContextManager.get(sessionId);
+                                                  @RequestBody SessionVariableRequest body) {
+        AgentContextManager.AgentSessionContext sessionContext = agentContextManager.get(IdConverter.toString(sessionId));
         if (sessionContext == null) {
             return ApiResponse.fail("CONTEXT-001", "Session context not found: " + sessionId);
         }
@@ -65,8 +66,8 @@ public class AgentContextController {
 
     @PostMapping("/{sessionId}/conversation-variable")
     public ApiResponse<Void> putConversationVariable(@PathVariable Long sessionId,
-                                                       @RequestBody ConversationVariableRequest body) {
-        AgentContextManager.AgentSessionContext sessionContext = agentContextManager.get(sessionId);
+                                                        @RequestBody ConversationVariableRequest body) {
+        AgentContextManager.AgentSessionContext sessionContext = agentContextManager.get(IdConverter.toString(sessionId));
         if (sessionContext == null) {
             return ApiResponse.fail("CONTEXT-001", "Session context not found: " + sessionId);
         }

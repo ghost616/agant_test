@@ -26,9 +26,9 @@ public class ToolManager {
     private ToolDataProvider dataProvider;
     private AgentContextManager agentContextManager;
 
-    private final ConcurrentHashMap<Long, List<ToolSessionObject>> sessionToolCache = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<Long, ToolSessionObject> toolCache = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<Long, List<Long>> sessionSkillToolIdsCache = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, List<ToolSessionObject>> sessionToolCache = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, ToolSessionObject> toolCache = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, List<String>> sessionSkillToolIdsCache = new ConcurrentHashMap<>();
     private volatile boolean initialized;
 
     public ToolManager(AgentComponentRegistry registry) {
@@ -47,12 +47,12 @@ public class ToolManager {
         }
     }
 
-    private boolean isSubSession(Long sessionId) {
+    private boolean isSubSession(String sessionId) {
         AgentContextManager.AgentSessionContext ctx = agentContextManager.get(sessionId);
         return ctx != null && !ctx.context().isMainSession();
     }
 
-    public ToolInvoker getInvoker(Long sessionId, String toolName) {
+    public ToolInvoker getInvoker(String sessionId, String toolName) {
         ensureInitialized();
         List<ToolSessionObject> sessionTools = getSessionTools(sessionId, isSubSession(sessionId));
         ToolInvoker invoker = sessionTools.stream()
@@ -66,7 +66,7 @@ public class ToolManager {
         return resolveSkillToolByName(sessionId, toolName);
     }
 
-    public ToolConfigDTO getToolConfig(Long sessionId, String toolName) {
+    public ToolConfigDTO getToolConfig(String sessionId, String toolName) {
         ensureInitialized();
         List<ToolSessionObject> sessionTools = getSessionTools(sessionId);
         return sessionTools.stream()
@@ -76,18 +76,18 @@ public class ToolManager {
                 .orElse(null);
     }
 
-    public List<ToolSessionObject> getSessionTools(Long sessionId) {
+    public List<ToolSessionObject> getSessionTools(String sessionId) {
         return getSessionTools(sessionId, false);
     }
 
-    public List<ToolSessionObject> getSessionTools(Long sessionId, boolean expandChildMcp) {
+    public List<ToolSessionObject> getSessionTools(String sessionId, boolean expandChildMcp) {
         ensureInitialized();
         return sessionToolCache.computeIfAbsent(sessionId, id -> {
             List<SessionToolInfo> sessionToolInfos = dataProvider.getSessionToolIds(id);
 
             List<ToolSessionObject> result = new ArrayList<>();
             for (SessionToolInfo info : sessionToolInfos) {
-                Long toolId = info.toolId();
+                String toolId = info.toolId();
                 ToolSessionObject tso = toolCache.computeIfAbsent(toolId,
                         tid -> buildToolSessionObject(dataProvider.getToolById(tid)));
                 boolean isOriginalMcp = tso.toolConfig().getToolType() == ToolType.MCP_HTTP;
@@ -130,16 +130,16 @@ public class ToolManager {
         });
     }
 
-    private ToolInvoker resolveSkillToolByName(Long sessionId, String toolName) {
+    private ToolInvoker resolveSkillToolByName(String sessionId, String toolName) {
         ensureInitialized();
-        List<Long> toolIds = sessionSkillToolIdsCache.computeIfAbsent(sessionId,
+        List<String> toolIds = sessionSkillToolIdsCache.computeIfAbsent(sessionId,
                 dataProvider::getSkillToolIds);
 
         if (toolIds.isEmpty()) {
             return null;
         }
 
-        for (Long toolId : toolIds) {
+        for (String toolId : toolIds) {
             ToolSessionObject tso = toolCache.computeIfAbsent(toolId,
                     id -> buildToolSessionObject(dataProvider.getToolById(id)));
             ToolConfigDTO dto = tso.toolConfig();
@@ -279,12 +279,12 @@ public class ToolManager {
         return invoker.execute(context, arguments);
     }
 
-    public void clearSessionCache(Long sessionId) {
+    public void clearSessionCache(String sessionId) {
         sessionToolCache.remove(sessionId);
         sessionSkillToolIdsCache.remove(sessionId);
     }
 
-    public void clearToolCache(Long toolId) {
+    public void clearToolCache(String toolId) {
         toolCache.remove(toolId);
     }
 

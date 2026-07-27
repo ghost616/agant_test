@@ -24,8 +24,8 @@ class AgentMessageProxyTest {
     private ToolExecutionService toolExecutionService;
 
     private AgentMessageProxy proxy;
-    private final Long sessionId = 1L;
-    private final Long modelId = 100L;
+    private final String sessionId = "1";
+    private final String modelId = "100";
 
     @BeforeEach
     void setUp() {

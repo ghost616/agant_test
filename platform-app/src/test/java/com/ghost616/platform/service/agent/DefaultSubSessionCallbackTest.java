@@ -44,7 +44,7 @@ class DefaultSubSessionCallbackTest {
         when(sessionMapper.selectById(sessionId)).thenReturn(session);
 
         CompletableFuture<Message> futureResult = CompletableFuture.supplyAsync(
-                () -> callback.execute(sessionId, userMessage, null), executor);
+                () -> callback.execute(String.valueOf(sessionId), userMessage, null), executor);
 
         DefaultSubSessionCallback.SubSessionData data = waitForMapEntry(parentSessionId);
         assertNotNull(data);
@@ -69,7 +69,7 @@ class DefaultSubSessionCallbackTest {
         when(sessionMapper.selectById(sessionId)).thenReturn(session);
 
         CompletableFuture<Message> futureResult = CompletableFuture.supplyAsync(
-                () -> callback.execute(sessionId, userMessage, true), executor);
+                () -> callback.execute(String.valueOf(sessionId), userMessage, true), executor);
 
         DefaultSubSessionCallback.SubSessionData data = waitForMapEntry(parentSessionId);
         assertNotNull(data);
@@ -88,7 +88,7 @@ class DefaultSubSessionCallbackTest {
         when(session.getParentSessionId()).thenReturn(null);
         when(sessionMapper.selectById(sessionId)).thenReturn(session);
 
-        Message result = callback.execute(sessionId, "no parent", null);
+        Message result = callback.execute(String.valueOf(sessionId), "no parent", null);
         assertNull(result);
     }
 
@@ -97,7 +97,7 @@ class DefaultSubSessionCallbackTest {
         Long sessionId = 300L;
         when(sessionMapper.selectById(sessionId)).thenReturn(null);
 
-        Message result = callback.execute(sessionId, "not found", null);
+        Message result = callback.execute(String.valueOf(sessionId), "not found", null);
         assertNull(result);
     }
 
@@ -111,7 +111,7 @@ class DefaultSubSessionCallbackTest {
         when(sessionMapper.selectById(sessionId)).thenReturn(session);
 
         CompletableFuture<Message> futureResult = CompletableFuture.supplyAsync(
-                () -> callback.execute(sessionId, "cleanup test", null), executor);
+                () -> callback.execute(String.valueOf(sessionId), "cleanup test", null), executor);
 
         DefaultSubSessionCallback.SubSessionData data = waitForMapEntry(parentSessionId);
         assertNotNull(data);
@@ -139,7 +139,7 @@ class DefaultSubSessionCallbackTest {
         when(sessionMapper.selectById(sessionId)).thenReturn(session);
 
         CompletableFuture<Message> futureResult = CompletableFuture.supplyAsync(
-                () -> callback.execute(sessionId, userMessage, null), executor);
+                () -> callback.execute(String.valueOf(sessionId), userMessage, null), executor);
 
         DefaultSubSessionCallback.SubSessionData data = waitForMapEntry(parentSessionId);
         assertNotNull(data);
@@ -164,7 +164,7 @@ class DefaultSubSessionCallbackTest {
 
         Thread testThread = new Thread(() -> {
             try {
-                callback.execute(sessionId, "interrupt test", null);
+                callback.execute(String.valueOf(sessionId), "interrupt test", null);
                 fail("Should have thrown exception");
             } catch (RuntimeException e) {
                 assertTrue(e.getMessage().contains("interrupted"));

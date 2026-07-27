@@ -1,7 +1,6 @@
 package com.ghost616.agentbase.dto.chat;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -13,13 +12,13 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ChatRequest {
 
-    @NotNull(message = "sessionId不能为空")
-    private Long sessionId;
+    @NotBlank(message = "sessionId不能为空")
+    private String sessionId;
 
     @NotBlank(message = "content不能为空")
     private String content;
 
-    private Long modelId;
+    private String modelId;
 
     private Boolean thinking;
 }

@@ -27,7 +27,7 @@ class BrowserToolInvokerTest {
     @BeforeEach
     void setUp() {
         toolConfig = ToolConfigDTO.builder()
-                .id(100L)
+                .id("100")
                 .name("browser_tool")
                 .build();
         invoker = new BrowserToolInvoker(toolConfig, callback);
@@ -40,7 +40,7 @@ class BrowserToolInvokerTest {
 
     @Test
     void execute_从ctx获取sessionId并传递给callback() {
-        when(ctx.getSessionId()).thenReturn(42L);
+        when(ctx.getSessionId()).thenReturn("42");
         when(callback.execute("42", "100", "browser_tool", "{\"url\":\"https://example.com\"}"))
                 .thenReturn("result_data");
 
@@ -54,12 +54,12 @@ class BrowserToolInvokerTest {
     @Test
     void execute_从toolConfig获取id和name传递给callback() {
         ToolConfigDTO customConfig = ToolConfigDTO.builder()
-                .id(200L)
+                .id("200")
                 .name("custom_tool")
                 .build();
         BrowserToolInvoker customInvoker = new BrowserToolInvoker(customConfig, callback);
 
-        when(ctx.getSessionId()).thenReturn(1L);
+        when(ctx.getSessionId()).thenReturn("1");
         when(callback.execute("1", "200", "custom_tool", "{}")).thenReturn("ok");
 
         String result = customInvoker.execute(ctx, "{}");
@@ -69,7 +69,7 @@ class BrowserToolInvokerTest {
 
     @Test
     void execute_callback抛出异常_返回JSON错误信息() {
-        when(ctx.getSessionId()).thenReturn(1L);
+        when(ctx.getSessionId()).thenReturn("1");
         when(callback.execute(anyString(), anyString(), anyString(), anyString()))
                 .thenThrow(new RuntimeException("浏览器执行失败"));
 
@@ -81,7 +81,7 @@ class BrowserToolInvokerTest {
 
     @Test
     void execute_callback抛出异常_内部序列化也失败时返回简单错误JSON() {
-        when(ctx.getSessionId()).thenReturn(1L);
+        when(ctx.getSessionId()).thenReturn("1");
         when(callback.execute(anyString(), anyString(), anyString(), anyString()))
                 .thenThrow(new RuntimeException("普通错误"));
 

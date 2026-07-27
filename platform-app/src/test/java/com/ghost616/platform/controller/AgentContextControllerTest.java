@@ -33,12 +33,12 @@ class AgentContextControllerTest {
     void getContext_shouldReturnAgentContextDTO() {
         AgentContextManager.AgentSessionContext sessionCtx = mock(AgentContextManager.AgentSessionContext.class);
         AgentExecutionContext ctx = mock(AgentExecutionContext.class);
-        when(agentContextManager.get(1L)).thenReturn(sessionCtx);
+        when(agentContextManager.get("1")).thenReturn(sessionCtx);
         when(sessionCtx.context()).thenReturn(ctx);
-        when(ctx.getSessionId()).thenReturn(1L);
-        when(ctx.getAgentId()).thenReturn(100L);
+        when(ctx.getSessionId()).thenReturn("1");
+        when(ctx.getAgentId()).thenReturn("100");
         when(ctx.getSystemPrompt()).thenReturn("prompt");
-        when(ctx.getModelId()).thenReturn(200L);
+        when(ctx.getModelId()).thenReturn("200");
         when(ctx.getParentSessionId()).thenReturn(null);
         when(ctx.getRecentMessageCount()).thenReturn(10);
         when(ctx.getHistory()).thenReturn(List.of());
@@ -65,7 +65,7 @@ class AgentContextControllerTest {
     void getContext_shouldMapHistoryEntries() {
         AgentContextManager.AgentSessionContext sessionCtx = mock(AgentContextManager.AgentSessionContext.class);
         AgentExecutionContext ctx = mock(AgentExecutionContext.class);
-        when(agentContextManager.get(1L)).thenReturn(sessionCtx);
+        when(agentContextManager.get("1")).thenReturn(sessionCtx);
         when(sessionCtx.context()).thenReturn(ctx);
 
         AgentExecutionContext.HistoryEntry entry = new AgentExecutionContext.HistoryEntry(
@@ -89,7 +89,7 @@ class AgentContextControllerTest {
     void getContext_shouldMapSessionVariables() {
         AgentContextManager.AgentSessionContext sessionCtx = mock(AgentContextManager.AgentSessionContext.class);
         AgentExecutionContext ctx = mock(AgentExecutionContext.class);
-        when(agentContextManager.get(1L)).thenReturn(sessionCtx);
+        when(agentContextManager.get("1")).thenReturn(sessionCtx);
         when(sessionCtx.context()).thenReturn(ctx);
         when(ctx.getHistory()).thenReturn(List.of());
         when(ctx.getSessionVariableKeys()).thenReturn(Set.of("key1", "key2"));
@@ -110,7 +110,7 @@ class AgentContextControllerTest {
     void getContext_shouldMapConversationVariables() {
         AgentContextManager.AgentSessionContext sessionCtx = mock(AgentContextManager.AgentSessionContext.class);
         AgentExecutionContext ctx = mock(AgentExecutionContext.class);
-        when(agentContextManager.get(1L)).thenReturn(sessionCtx);
+        when(agentContextManager.get("1")).thenReturn(sessionCtx);
         when(sessionCtx.context()).thenReturn(ctx);
         when(ctx.getHistory()).thenReturn(List.of());
         when(ctx.getSessionVariableKeys()).thenReturn(Set.of());
@@ -129,7 +129,7 @@ class AgentContextControllerTest {
 
     @Test
     void getContext_shouldReturnErrorWhenSessionContextNotFound() {
-        when(agentContextManager.get(999L)).thenReturn(null);
+        when(agentContextManager.get("999")).thenReturn(null);
 
         ApiResponse<AgentContextDTO> response = controller.getContext(999L);
 
@@ -141,7 +141,7 @@ class AgentContextControllerTest {
     void putSessionVariable_shouldPutVariable() {
         AgentContextManager.AgentSessionContext sessionCtx = mock(AgentContextManager.AgentSessionContext.class);
         AgentExecutionContext ctx = mock(AgentExecutionContext.class);
-        when(agentContextManager.get(1L)).thenReturn(sessionCtx);
+        when(agentContextManager.get("1")).thenReturn(sessionCtx);
         when(sessionCtx.context()).thenReturn(ctx);
 
         SessionVariableRequest body = new SessionVariableRequest("varKey", "varValue");
@@ -153,7 +153,7 @@ class AgentContextControllerTest {
 
     @Test
     void putSessionVariable_shouldReturnErrorWhenSessionContextNotFound() {
-        when(agentContextManager.get(999L)).thenReturn(null);
+        when(agentContextManager.get("999")).thenReturn(null);
 
         ApiResponse<Void> response = controller.putSessionVariable(999L, new SessionVariableRequest("k", "v"));
 
@@ -165,7 +165,7 @@ class AgentContextControllerTest {
     void putConversationVariable_shouldPutVariable() {
         AgentContextManager.AgentSessionContext sessionCtx = mock(AgentContextManager.AgentSessionContext.class);
         AgentExecutionContext ctx = mock(AgentExecutionContext.class);
-        when(agentContextManager.get(1L)).thenReturn(sessionCtx);
+        when(agentContextManager.get("1")).thenReturn(sessionCtx);
         when(sessionCtx.context()).thenReturn(ctx);
 
         ConversationVariableRequest body = new ConversationVariableRequest("convKey", "convValue");
@@ -177,7 +177,7 @@ class AgentContextControllerTest {
 
     @Test
     void putConversationVariable_shouldReturnErrorWhenSessionContextNotFound() {
-        when(agentContextManager.get(999L)).thenReturn(null);
+        when(agentContextManager.get("999")).thenReturn(null);
 
         ApiResponse<Void> response = controller.putConversationVariable(999L, new ConversationVariableRequest("k", "v"));
 
@@ -189,7 +189,7 @@ class AgentContextControllerTest {
     void putSessionVariable_shouldHandleMissingKey() {
         AgentContextManager.AgentSessionContext sessionCtx = mock(AgentContextManager.AgentSessionContext.class);
         AgentExecutionContext ctx = mock(AgentExecutionContext.class);
-        when(agentContextManager.get(1L)).thenReturn(sessionCtx);
+        when(agentContextManager.get("1")).thenReturn(sessionCtx);
         when(sessionCtx.context()).thenReturn(ctx);
 
         SessionVariableRequest body = SessionVariableRequest.builder().value("val").build();
@@ -203,7 +203,7 @@ class AgentContextControllerTest {
     void putSessionVariable_shouldHandleMissingValue() {
         AgentContextManager.AgentSessionContext sessionCtx = mock(AgentContextManager.AgentSessionContext.class);
         AgentExecutionContext ctx = mock(AgentExecutionContext.class);
-        when(agentContextManager.get(1L)).thenReturn(sessionCtx);
+        when(agentContextManager.get("1")).thenReturn(sessionCtx);
         when(sessionCtx.context()).thenReturn(ctx);
 
         SessionVariableRequest body = SessionVariableRequest.builder().key("k").build();

@@ -7,18 +7,18 @@ import com.ghost616.agentbase.dto.model.UsageInfo;
 
 public interface MessageDataProvider {
 
-    Long saveMessage(Long sessionId, String role, String content, String reasoning,
-                     String toolCallId, String toolResult, List<ToolCallData> toolCalls,
-                     UsageInfo usage);
+    String saveMessage(String sessionId, String role, String content, String reasoning,
+                       String toolCallId, String toolResult, List<ToolCallData> toolCalls,
+                       UsageInfo usage);
 
-    List<MessageDTO> getMessages(Long sessionId);
+    List<MessageDTO> getMessages(String sessionId);
 
-    int rollbackToLastUserMessage(Long sessionId);
+    int rollbackToLastUserMessage(String sessionId);
 
     record ToolCallData(String toolCallId, String toolCallName, String toolCallArguments) {
     }
 
-    record MessageDTO(Long id, Long sessionId, String role, String content, String reasoning,
+    record MessageDTO(String id, String sessionId, String role, String content, String reasoning,
                       String toolCallId, Integer sequenceNum, LocalDateTime createTime,
                       String toolResult, List<ToolCallData> toolCalls, UsageInfo usage,
                       Boolean rollback) {

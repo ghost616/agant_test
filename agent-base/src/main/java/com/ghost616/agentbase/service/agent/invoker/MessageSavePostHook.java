@@ -44,7 +44,7 @@ public class MessageSavePostHook implements SystemPostHook {
         final ConcurrentHashMap<String, ToolAccumulator> toolCallBuffers = new ConcurrentHashMap<>();
     }
 
-    private final ConcurrentHashMap<Long, SessionBuffer> buffers = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, SessionBuffer> buffers = new ConcurrentHashMap<>();
 
     @Override
     public HookPhase getPhase() {
@@ -57,7 +57,7 @@ public class MessageSavePostHook implements SystemPostHook {
         if (chunk == null) {
             return;
         }
-        Long sessionId = ctx.getSessionId();
+        String sessionId = ctx.getSessionId();
 
         if ("stop".equals(chunk.getFinishReason())) {
             SessionBuffer sb = buffers.remove(sessionId);

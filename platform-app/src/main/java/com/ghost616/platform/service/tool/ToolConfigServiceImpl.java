@@ -28,10 +28,12 @@ import com.ghost616.agentbase.enums.CommonStatus;
 import com.ghost616.agentbase.enums.ErrorCode;
 import com.ghost616.agentbase.enums.ToolType;
 import com.ghost616.agentbase.event.ToolChangedEvent;
+import com.ghost616.platform.util.IdConverter;
 import com.ghost616.agentbase.exception.BusinessException;
 import com.ghost616.agentbase.service.agent.invoker.McpAuthConfigParser;
 import com.ghost616.agentbase.service.agent.invoker.McpJsonRpcClient;
 import com.ghost616.agentbase.service.agent.invoker.ToolManager;
+import com.ghost616.platform.util.IdConverter;
 import org.springframework.context.annotation.Lazy;
 
 
@@ -179,7 +181,7 @@ public class ToolConfigServiceImpl implements ToolConfigService {
         }
 
         toolConfigMapper.updateById(entity);
-        eventPublisher.publishEvent(new ToolChangedEvent(this, id));
+        eventPublisher.publishEvent(new ToolChangedEvent(this, IdConverter.toString(id)));
         return toDTO(entity);
     }
 
@@ -190,7 +192,7 @@ public class ToolConfigServiceImpl implements ToolConfigService {
             throw new BusinessException(ErrorCode.TOOL_NOT_FOUND);
         }
         toolConfigMapper.deleteById(id);
-        eventPublisher.publishEvent(new ToolChangedEvent(this, id));
+        eventPublisher.publishEvent(new ToolChangedEvent(this, IdConverter.toString(id)));
     }
 
     @Override
@@ -217,11 +219,11 @@ public class ToolConfigServiceImpl implements ToolConfigService {
 
     @Override
     public ToolConfig getToolConfigBySessionAndName(Long sessionId, String toolName) {
-        ToolConfigDTO dto = toolManager.getToolConfig(sessionId, toolName);
+        ToolConfigDTO dto = toolManager.getToolConfig(IdConverter.toString(sessionId), toolName);
         if (dto == null || dto.getId() == null) {
             return null;
         }
-        ToolConfig entity = toolConfigMapper.selectById(dto.getId());
+        ToolConfig entity = toolConfigMapper.selectById(IdConverter.parse(dto.getId()));
         if (entity == null) {
             throw new BusinessException(ErrorCode.TOOL_NOT_FOUND);
         }
@@ -352,7 +354,7 @@ public class ToolConfigServiceImpl implements ToolConfigService {
 
     private ToolDetailDTO toDTO(ToolConfig entity) {
         return ToolDetailDTO.builder()
-                .id(entity.getId())
+                .id(IdConverter.toString(entity.getId()))
                 .name(entity.getName())
                 .toolType(entity.getToolType())
                 .description(entity.getDescription())

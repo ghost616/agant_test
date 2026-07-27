@@ -63,9 +63,9 @@ class DefaultMessageDataProviderTest {
         when(sessionMapper.addTotalTokenUsed(anyLong(), anyLong())).thenReturn(1);
 
         UsageInfo usage = UsageInfo.builder().promptTokens(10).completionTokens(20).totalTokens(30).build();
-        Long result = provider.saveMessage(1L, "user", "hello", null, null, null, null, usage);
+        String result = provider.saveMessage("1", "user", "hello", null, null, null, null, usage);
 
-        assertEquals(100L, result);
+        assertEquals("100", result);
         verify(messageMapper).insert(messageCaptor.capture());
         Message saved = messageCaptor.getValue();
         assertEquals(1L, saved.getSessionId());
@@ -92,7 +92,7 @@ class DefaultMessageDataProviderTest {
                 new ToolCallData("tc2", "func2", "{\"key\":\"val\"}")
         );
 
-        provider.saveMessage(1L, "assistant", "response", "thinking...", "call-1", null, toolCalls, null);
+        provider.saveMessage("1", "assistant", "response", "thinking...", "call-1", null, toolCalls, null);
 
         verify(messageMapper).insert(messageCaptor.capture());
         assertEquals("assistant", messageCaptor.getValue().getRole());
@@ -122,7 +122,7 @@ class DefaultMessageDataProviderTest {
             return 1;
         });
 
-        provider.saveMessage(1L, "user", "next", null, null, null, null, null);
+        provider.saveMessage("1", "user", "next", null, null, null, null, null);
 
         verify(messageMapper).insert(messageCaptor.capture());
         assertEquals(6, messageCaptor.getValue().getSequenceNum());
@@ -137,7 +137,7 @@ class DefaultMessageDataProviderTest {
             return 1;
         });
 
-        provider.saveMessage(1L, "user", "test", null, null, null, null, null);
+        provider.saveMessage("1", "user", "test", null, null, null, null, null);
 
         verify(messageMapper).insert(any(Message.class));
         verify(messageToolCallMapper, never()).insert(any(MessageToolCall.class));
@@ -163,12 +163,12 @@ class DefaultMessageDataProviderTest {
         mtc.setToolCallArguments("{}");
         when(messageToolCallMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Collections.singletonList(mtc));
 
-        List<MessageDTO> result = provider.getMessages(10L);
+        List<MessageDTO> result = provider.getMessages("10");
 
         assertEquals(1, result.size());
         MessageDTO dto = result.get(0);
-        assertEquals(1L, dto.id());
-        assertEquals(10L, dto.sessionId());
+        assertEquals("1", dto.id());
+        assertEquals("10", dto.sessionId());
         assertEquals("assistant", dto.role());
         assertEquals("response", dto.content());
         assertEquals("reason", dto.reasoning());
@@ -194,7 +194,7 @@ class DefaultMessageDataProviderTest {
         when(messageMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Collections.singletonList(msg));
         when(messageToolCallMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Collections.emptyList());
 
-        List<MessageDTO> result = provider.getMessages(10L);
+        List<MessageDTO> result = provider.getMessages("10");
 
         assertEquals(1, result.size());
         assertTrue(result.get(0).toolCalls().isEmpty());
@@ -205,7 +205,7 @@ class DefaultMessageDataProviderTest {
     void getMessages_无消息_返回空列表() {
         when(messageMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Collections.emptyList());
 
-        List<MessageDTO> result = provider.getMessages(999L);
+        List<MessageDTO> result = provider.getMessages("999");
 
         assertTrue(result.isEmpty());
     }
@@ -227,7 +227,7 @@ class DefaultMessageDataProviderTest {
         when(messageToolCallMapper.deleteByMessageIds(anyList())).thenReturn(2);
         when(messageMapper.rollbackBySessionIdAndGeSequenceNum(10L, 3)).thenReturn(2);
 
-        int deleted = provider.rollbackToLastUserMessage(10L);
+        int deleted = provider.rollbackToLastUserMessage("10");
 
         assertEquals(2, deleted);
         verify(sessionMapper, never()).addTotalTokenUsed(anyLong(), anyLong());
@@ -239,7 +239,7 @@ class DefaultMessageDataProviderTest {
     void rollbackToLastUserMessage_无用户消息_抛出BusinessException() {
         when(messageMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(null);
 
-        assertThrows(BusinessException.class, () -> provider.rollbackToLastUserMessage(1L));
+        assertThrows(BusinessException.class, () -> provider.rollbackToLastUserMessage("1"));
         verify(messageMapper, never()).rollbackBySessionIdAndGeSequenceNum(any(), any());
         verify(sessionMapper, never()).addTotalTokenUsed(anyLong(), anyLong());
     }
@@ -258,7 +258,7 @@ class DefaultMessageDataProviderTest {
         when(messageToolCallMapper.deleteByMessageIds(anyList())).thenReturn(1);
         when(messageMapper.rollbackBySessionIdAndGeSequenceNum(10L, 3)).thenReturn(1);
 
-        int deleted = provider.rollbackToLastUserMessage(10L);
+        int deleted = provider.rollbackToLastUserMessage("10");
 
         assertEquals(1, deleted);
         verify(sessionMapper, never()).addTotalTokenUsed(anyLong(), anyLong());
@@ -281,7 +281,7 @@ class DefaultMessageDataProviderTest {
         when(messageToolCallMapper.deleteByMessageIds(anyList())).thenReturn(2);
         when(messageMapper.rollbackBySessionIdAndGeSequenceNum(10L, 3)).thenReturn(2);
 
-        int deleted = provider.rollbackToLastUserMessage(10L);
+        int deleted = provider.rollbackToLastUserMessage("10");
 
         assertEquals(2, deleted);
         verify(sessionMapper, never()).addTotalTokenUsed(anyLong(), anyLong());
@@ -298,7 +298,7 @@ class DefaultMessageDataProviderTest {
         when(sessionMapper.addTotalTokenUsed(anyLong(), anyLong())).thenReturn(1);
 
         UsageInfo usage = UsageInfo.builder().promptTokens(5).completionTokens(15).totalTokens(20).build();
-        provider.saveMessage(1L, "assistant", "reply", null, null, null, null, usage);
+        provider.saveMessage("1", "assistant", "reply", null, null, null, null, usage);
 
         verify(messageMapper).insert(messageCaptor.capture());
         Message saved = messageCaptor.getValue();
@@ -318,7 +318,7 @@ class DefaultMessageDataProviderTest {
             return 1;
         });
 
-        provider.saveMessage(1L, "user", "no usage", null, null, null, null, null);
+        provider.saveMessage("1", "user", "no usage", null, null, null, null, null);
 
         verify(messageMapper).insert(messageCaptor.capture());
         assertNull(messageCaptor.getValue().getTokenUsage());
@@ -336,7 +336,7 @@ class DefaultMessageDataProviderTest {
         when(sessionMapper.addTotalTokenUsed(anyLong(), anyLong())).thenReturn(1);
 
         UsageInfo usage = UsageInfo.builder().promptTokens(8).completionTokens(12).totalTokens(null).build();
-        provider.saveMessage(1L, "assistant", "fallback", null, null, null, null, usage);
+        provider.saveMessage("1", "assistant", "fallback", null, null, null, null, usage);
 
         verify(messageMapper).insert(messageCaptor.capture());
         assertNotNull(messageCaptor.getValue().getTokenUsage());
@@ -353,7 +353,7 @@ class DefaultMessageDataProviderTest {
         });
 
         UsageInfo usage = UsageInfo.builder().promptTokens(null).completionTokens(null).totalTokens(null).build();
-        provider.saveMessage(1L, "assistant", "zero", null, null, null, null, usage);
+        provider.saveMessage("1", "assistant", "zero", null, null, null, null, usage);
 
         verify(messageMapper).insert(messageCaptor.capture());
         assertNotNull(messageCaptor.getValue().getTokenUsage());
@@ -370,7 +370,7 @@ class DefaultMessageDataProviderTest {
         });
 
         UsageInfo usage = UsageInfo.builder().promptTokens(0).completionTokens(0).totalTokens(0).build();
-        provider.saveMessage(1L, "assistant", "zero tokens", null, null, null, null, usage);
+        provider.saveMessage("1", "assistant", "zero tokens", null, null, null, null, usage);
 
         verify(messageMapper).insert(messageCaptor.capture());
         assertNotNull(messageCaptor.getValue().getTokenUsage());
@@ -390,7 +390,7 @@ class DefaultMessageDataProviderTest {
         when(messageMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Collections.singletonList(msg));
         when(messageToolCallMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Collections.emptyList());
 
-        List<MessageDTO> result = provider.getMessages(10L);
+        List<MessageDTO> result = provider.getMessages("10");
 
         assertEquals(1, result.size());
         MessageDTO dto = result.get(0);
@@ -413,7 +413,7 @@ class DefaultMessageDataProviderTest {
         when(messageMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Collections.singletonList(msg));
         when(messageToolCallMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Collections.emptyList());
 
-        List<MessageDTO> result = provider.getMessages(10L);
+        List<MessageDTO> result = provider.getMessages("10");
 
         assertEquals(1, result.size());
         assertNull(result.get(0).usage());
@@ -432,7 +432,7 @@ class DefaultMessageDataProviderTest {
         when(messageMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Collections.singletonList(msg));
         when(messageToolCallMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Collections.emptyList());
 
-        List<MessageDTO> result = provider.getMessages(10L);
+        List<MessageDTO> result = provider.getMessages("10");
 
         assertEquals(1, result.size());
         assertNull(result.get(0).usage());
@@ -451,7 +451,7 @@ class DefaultMessageDataProviderTest {
         when(messageMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Collections.singletonList(msg));
         when(messageToolCallMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Collections.emptyList());
 
-        List<MessageDTO> result = provider.getMessages(10L);
+        List<MessageDTO> result = provider.getMessages("10");
 
         assertEquals(1, result.size());
         assertNull(result.get(0).usage());
@@ -471,7 +471,7 @@ class DefaultMessageDataProviderTest {
         when(messageToolCallMapper.deleteByMessageIds(anyList())).thenReturn(1);
         when(messageMapper.rollbackBySessionIdAndGeSequenceNum(10L, 3)).thenReturn(1);
 
-        provider.rollbackToLastUserMessage(10L);
+        provider.rollbackToLastUserMessage("10");
 
         verify(sessionMapper, never()).addTotalTokenUsed(anyLong(), anyLong());
     }

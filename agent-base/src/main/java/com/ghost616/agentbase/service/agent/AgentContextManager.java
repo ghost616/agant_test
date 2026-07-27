@@ -35,7 +35,7 @@ public class AgentContextManager {
     private ToolManager toolManager;
     private AgentMessageProxy agentMessageProxy;
 
-    private final ConcurrentHashMap<Long, AgentSessionContext> cache = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, AgentSessionContext> cache = new ConcurrentHashMap<>();
     private volatile boolean initialized;
 
     public AgentContextManager(AgentComponentRegistry registry) {
@@ -59,20 +59,20 @@ public class AgentContextManager {
         this.agentMessageProxy = agentMessageProxy;
     }
 
-    public Builder build(Long sessionId) {
+    public Builder build(String sessionId) {
         ensureInitialized();
         return new Builder(sessionId);
     }
 
     public class Builder {
-        private final Long sessionId;
-        private Long modelIdOverride;
+        private final String sessionId;
+        private String modelIdOverride;
 
-        private Builder(Long sessionId) {
+        private Builder(String sessionId) {
             this.sessionId = sessionId;
         }
 
-        public Builder modelIdOverride(Long modelId) {
+        public Builder modelIdOverride(String modelId) {
             this.modelIdOverride = modelId;
             return this;
         }
@@ -93,13 +93,13 @@ public class AgentContextManager {
                 throw new BusinessException(ErrorCode.SESSION_NOT_FOUND);
             }
 
-            Long agentId = ctxData.agentId();
+            String agentId = ctxData.agentId();
             String systemPrompt = ctxData.systemPrompt();
             if (systemPrompt == null) {
                 systemPrompt = "";
             }
 
-            Long effectiveModelId = (modelIdOverride != null) ? modelIdOverride : ctxData.defaultModelId();
+            String effectiveModelId = (modelIdOverride != null) ? modelIdOverride : ctxData.defaultModelId();
 
             boolean isSubSession = ctxData.parentSessionId() != null;
             List<ToolConfigDTO> tools = toolManager.getSessionTools(sessionId, isSubSession).stream()
@@ -137,7 +137,7 @@ public class AgentContextManager {
 
             AgentExecutionContext.AgentContextMutator mutator = new AgentExecutionContext.AgentContextMutator();
 
-            Long parentSessionId = ctxData.parentSessionId();
+            String parentSessionId = ctxData.parentSessionId();
             AgentSessionContext parentCtx = null;
             if (parentSessionId != null) {
                 parentCtx = cache.get(parentSessionId);
@@ -160,7 +160,7 @@ public class AgentContextManager {
         }
 
         private void injectVariableCallbacks(AgentExecutionContext.AgentContextMutator mutator,
-                                              Long sessionId, Long parentSessionId,
+                                              String sessionId, String parentSessionId,
                                               AgentSessionContext parentCtx) {
             if (parentSessionId != null && parentCtx != null) {
                 AgentExecutionContext parentContext = parentCtx.context();
@@ -192,24 +192,24 @@ public class AgentContextManager {
         }
     }
 
-    private Long createChildSession(Long parentSessionId, String sessionName, String description, Long modelId,
-                                      List<Long> toolIds, List<Long> skillIds, String prompt) {
+    private String createChildSession(String parentSessionId, String sessionName, String description, String modelId,
+                                       List<String> toolIds, List<String> skillIds, String prompt) {
         return dataProvider.createChildSession(parentSessionId, sessionName, description, modelId, toolIds, skillIds, prompt);
     }
 
-    private Message sendUserMessage(Long childSessionId, String content, Long modelId, Boolean thinking) {
+    private Message sendUserMessage(String childSessionId, String content, String modelId, Boolean thinking) {
         if (agentMessageProxy != null) {
             return agentMessageProxy.sendUserMessage(childSessionId, content, modelId, thinking);
         }
         return null;
     }
 
-    public AgentSessionContext get(Long sessionId) {
+    public AgentSessionContext get(String sessionId) {
         ensureInitialized();
         return cache.get(sessionId);
     }
 
-    public void addHistoryEntry(Long sessionId, AgentExecutionContext.HistoryEntry entry) {
+    public void addHistoryEntry(String sessionId, AgentExecutionContext.HistoryEntry entry) {
         ensureInitialized();
         AgentSessionContext ctx = cache.get(sessionId);
         if (ctx != null) {
@@ -217,7 +217,7 @@ public class AgentContextManager {
         }
     }
 
-    public void remove(Long sessionId) {
+    public void remove(String sessionId) {
         cache.remove(sessionId);
     }
 
@@ -244,7 +244,7 @@ public class AgentContextManager {
         return history;
     }
 
-    public void refreshHistory(Long sessionId) {
+    public void refreshHistory(String sessionId) {
         ensureInitialized();
         AgentSessionContext ctx = cache.get(sessionId);
         if (ctx == null) {
@@ -255,7 +255,7 @@ public class AgentContextManager {
         ctx.mutator().refreshHistory(history);
     }
 
-    public void refreshSessionVariables(Long sessionId) {
+    public void refreshSessionVariables(String sessionId) {
         ensureInitialized();
         AgentSessionContext ctx = cache.get(sessionId);
         if (ctx == null) {
@@ -265,7 +265,7 @@ public class AgentContextManager {
         ctx.mutator().refreshSessionVariables(vars);
     }
 
-    public void refreshConversationVariables(Long sessionId) {
+    public void refreshConversationVariables(String sessionId) {
         ensureInitialized();
         AgentSessionContext ctx = cache.get(sessionId);
         if (ctx == null) {
@@ -275,7 +275,7 @@ public class AgentContextManager {
         ctx.mutator().refreshConversationVariables(vars);
     }
 
-    public void refreshChildSessions(Long sessionId) {
+    public void refreshChildSessions(String sessionId) {
         ensureInitialized();
         AgentSessionContext ctx = cache.get(sessionId);
         if (ctx == null) {
@@ -287,7 +287,7 @@ public class AgentContextManager {
 
     public void handleChildCreateSession(ChildCreateSession message) {
         ensureInitialized();
-        Long parentSessionId = message.getParentSessionId();
+        String parentSessionId = message.getParentSessionId();
         AgentSessionContext ctx = cache.get(parentSessionId);
         if (ctx != null) {
             List<AgentExecutionContext.ChildSession> current = ctx.context().getChildSessions();

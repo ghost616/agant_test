@@ -25,7 +25,7 @@ public class AgentMessageProxy {
         this.toolExecutionService = toolExecutionService;
     }
 
-    public Message sendUserMessage(Long childSessionId, String content, Long modelId, Boolean thinking) {
+    public Message sendUserMessage(String childSessionId, String content, String modelId, Boolean thinking) {
         ChatRequest request = ChatRequest.builder()
                 .sessionId(childSessionId)
                 .content(content)
@@ -53,7 +53,7 @@ public class AgentMessageProxy {
                 .build();
     }
 
-    private Message processToolCalls(Long sessionId, Map<String, Integer> toolCallCounts) {
+    private Message processToolCalls(String sessionId, Map<String, Integer> toolCallCounts) {
         while (true) {
             ToolExecutionService.ToolExecutionResult execResult = toolExecutionService.executeTool(sessionId);
             String status = execResult.status();
@@ -97,7 +97,7 @@ public class AgentMessageProxy {
                 .build();
     }
 
-    private void waitForToolCompletion(Long sessionId, String toolId) {
+    private void waitForToolCompletion(String sessionId, String toolId) {
         long deadline = System.currentTimeMillis() + TOOL_WAIT_TIMEOUT_MS;
         while (System.currentTimeMillis() < deadline) {
             ToolExecutionService.ToolStatusResult status = toolExecutionService.getToolStatus(sessionId, toolId);

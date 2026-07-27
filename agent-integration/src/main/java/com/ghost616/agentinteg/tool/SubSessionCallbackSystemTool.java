@@ -63,10 +63,10 @@ public class SubSessionCallbackSystemTool implements SystemTool {
             Boolean thinking = root.has("thinking") && !root.get("thinking").isNull()
                     ? root.get("thinking").asBoolean() : null;
 
-            List<Long> toolIds = resolveToolIds(ctx, root.get("toolNames"));
-            List<Long> skillIds = resolveSkillIds(ctx, root.get("skillNames"));
+            List<String> toolIds = resolveToolIds(ctx, root.get("toolNames"));
+            List<String> skillIds = resolveSkillIds(ctx, root.get("skillNames"));
 
-            Long childSessionId = ctx.createChildSession(sessionName, description, ctx.getModelId(), toolIds, skillIds, null);
+            String childSessionId = ctx.createChildSession(sessionName, description, ctx.getModelId(), toolIds, skillIds, null);
 
             Message message = callback.execute(childSessionId, userMessage, thinking);
 
@@ -76,12 +76,12 @@ public class SubSessionCallbackSystemTool implements SystemTool {
             try {
                 return OBJECT_MAPPER.writeValueAsString(Map.of("status", "error", "errMsg", e.getMessage()));
             } catch (Exception inner) {
-                return OBJECT_MAPPER.writeValueAsString(Map.of("status", "error", "errMsg", inner.getMessage()));
+                return "{\"status\":\"error\",\"errMsg\":\"" + inner.getMessage() + "\"}";
             }
         }
     }
 
-    private List<Long> resolveToolIds(AgentExecutionContext ctx, JsonNode toolNamesNode) {
+    private List<String> resolveToolIds(AgentExecutionContext ctx, JsonNode toolNamesNode) {
         if (toolNamesNode == null || toolNamesNode.isNull() || !toolNamesNode.isArray()) {
             return null;
         }
@@ -99,7 +99,7 @@ public class SubSessionCallbackSystemTool implements SystemTool {
                 .toList();
     }
 
-    private List<Long> resolveSkillIds(AgentExecutionContext ctx, JsonNode skillNamesNode) {
+    private List<String> resolveSkillIds(AgentExecutionContext ctx, JsonNode skillNamesNode) {
         if (skillNamesNode == null || skillNamesNode.isNull() || !skillNamesNode.isArray()) {
             return null;
         }

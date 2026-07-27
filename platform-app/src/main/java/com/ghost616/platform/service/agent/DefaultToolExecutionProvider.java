@@ -10,6 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import com.ghost616.agentbase.service.agent.MessageDataProvider;
 import com.ghost616.agentbase.service.agent.ToolExecutionProvider;
 import com.ghost616.agentbase.service.agent.ToolExecutionTracker;
+import com.ghost616.platform.util.IdConverter;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -19,24 +20,26 @@ public class DefaultToolExecutionProvider implements ToolExecutionProvider {
     private final ConcurrentHashMap<String, ToolExecutionTracker.ToolExecutionStatus> currentExecutions = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, List<ToolExecutionTracker.ToolResult>> completedResults = new ConcurrentHashMap<>();
 
-    private static String key(Long sessionId, String toolId) {
+    private static String key(String sessionId, String toolId) {
         return sessionId + "_" + toolId;
     }
 
     @Override
-    public void enqueue(Long sessionId, List<MessageDataProvider.ToolCallData> toolCalls) {
+    public void enqueue(String sessionId, List<MessageDataProvider.ToolCallData> toolCalls) {
         if (toolCalls == null || toolCalls.isEmpty()) {
             return;
         }
-        Deque<MessageDataProvider.ToolCallData> queue = toolCallQueues.computeIfAbsent(sessionId,
+        Long sid = IdConverter.parse(sessionId);
+        Deque<MessageDataProvider.ToolCallData> queue = toolCallQueues.computeIfAbsent(sid,
                 k -> new ArrayDeque<>());
         queue.addAll(toolCalls);
         log.debug("sessionId={} 已入队 {} 个工具调用", sessionId, toolCalls.size());
     }
 
     @Override
-    public MessageDataProvider.ToolCallData poll(Long sessionId) {
-        Deque<MessageDataProvider.ToolCallData> queue = toolCallQueues.get(sessionId);
+    public MessageDataProvider.ToolCallData poll(String sessionId) {
+        Long sid = IdConverter.parse(sessionId);
+        Deque<MessageDataProvider.ToolCallData> queue = toolCallQueues.get(sid);
         if (queue == null || queue.isEmpty()) {
             return null;
         }
@@ -44,8 +47,9 @@ public class DefaultToolExecutionProvider implements ToolExecutionProvider {
     }
 
     @Override
-    public MessageDataProvider.ToolCallData peek(Long sessionId) {
-        Deque<MessageDataProvider.ToolCallData> queue = toolCallQueues.get(sessionId);
+    public MessageDataProvider.ToolCallData peek(String sessionId) {
+        Long sid = IdConverter.parse(sessionId);
+        Deque<MessageDataProvider.ToolCallData> queue = toolCallQueues.get(sid);
         if (queue == null || queue.isEmpty()) {
             return null;
         }
@@ -53,19 +57,21 @@ public class DefaultToolExecutionProvider implements ToolExecutionProvider {
     }
 
     @Override
-    public boolean hasPending(Long sessionId) {
-        Deque<MessageDataProvider.ToolCallData> queue = toolCallQueues.get(sessionId);
+    public boolean hasPending(String sessionId) {
+        Long sid = IdConverter.parse(sessionId);
+        Deque<MessageDataProvider.ToolCallData> queue = toolCallQueues.get(sid);
         return queue != null && !queue.isEmpty();
     }
 
     @Override
-    public void clearQueue(Long sessionId) {
-        toolCallQueues.remove(sessionId);
+    public void clearQueue(String sessionId) {
+        Long sid = IdConverter.parse(sessionId);
+        toolCallQueues.remove(sid);
         log.debug("sessionId={} 已清理工具调用队列", sessionId);
     }
 
     @Override
-    public void updateExecution(Long sessionId, ToolExecutionTracker.ToolExecutionStatus status) {
+    public void updateExecution(String sessionId, ToolExecutionTracker.ToolExecutionStatus status) {
         String k = key(sessionId, status.currentToolId());
         switch (status.status()) {
             case "executing":
@@ -95,19 +101,19 @@ public class DefaultToolExecutionProvider implements ToolExecutionProvider {
     }
 
     @Override
-    public void clearTracking(Long sessionId) {
+    public void clearTracking(String sessionId) {
         String prefix = sessionId + "_";
         currentExecutions.keySet().removeIf(k -> k.startsWith(prefix));
         completedResults.keySet().removeIf(k -> k.startsWith(prefix));
     }
 
     @Override
-    public ToolExecutionTracker.ToolExecutionStatus getCurrentExecution(Long sessionId, String toolId) {
+    public ToolExecutionTracker.ToolExecutionStatus getCurrentExecution(String sessionId, String toolId) {
         return currentExecutions.get(key(sessionId, toolId));
     }
 
     @Override
-    public List<ToolExecutionTracker.ToolResult> getAndClearResults(Long sessionId) {
+    public List<ToolExecutionTracker.ToolResult> getAndClearResults(String sessionId) {
         String prefix = sessionId + "_";
         List<ToolExecutionTracker.ToolResult> results = new ArrayList<>();
         completedResults.keySet().removeIf(k -> {

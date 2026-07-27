@@ -7,6 +7,7 @@ import com.ghost616.platform.entity.ModelConfig;
 import com.ghost616.platform.entity.Session;
 import com.ghost616.platform.repository.ModelConfigMapper;
 import com.ghost616.platform.repository.SessionMapper;
+import com.ghost616.platform.util.IdConverter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationContext;
 
@@ -22,13 +23,17 @@ public class DefaultChatDataProvider implements ChatDataProvider {
     private final ApplicationContext applicationContext;
 
     @Override
-    public ModelConfigData getModelConfig(Long id) {
+    public ModelConfigData getModelConfig(String modelId) {
+        Long id = IdConverter.parse(modelId);
+        if (id == null) {
+            return null;
+        }
         ModelConfig entity = modelConfigMapper.selectById(id);
         if (entity == null) {
             return null;
         }
         return new ModelConfigData(
-                entity.getId(),
+                IdConverter.toString(entity.getId()),
                 entity.getApiKey(),
                 entity.getBaseUrl(),
                 entity.getModelName(),
@@ -39,10 +44,12 @@ public class DefaultChatDataProvider implements ChatDataProvider {
     }
 
     @Override
-    public void updateSessionModelId(Long id, Long modelId) {
-        Session session = sessionMapper.selectById(id);
+    public void updateSessionModelId(String sessionId, String modelId) {
+        Long sid = IdConverter.parse(sessionId);
+        Long mid = IdConverter.parse(modelId);
+        Session session = sessionMapper.selectById(sid);
         if (session != null) {
-            session.setModelId(modelId);
+            session.setModelId(mid);
             sessionMapper.updateById(session);
         }
     }
@@ -54,7 +61,7 @@ public class DefaultChatDataProvider implements ChatDataProvider {
     }
 
     @Override
-    public List<HookInvoker> getHooks(Long sessionId) {
+    public List<HookInvoker> getHooks(String sessionId) {
         return List.of();
     }
 }

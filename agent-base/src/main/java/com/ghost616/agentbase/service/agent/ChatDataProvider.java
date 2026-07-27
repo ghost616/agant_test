@@ -7,11 +7,11 @@ import java.util.List;
 
 public interface ChatDataProvider {
 
-    ModelConfigData getModelConfig(Long modelId);
+    ModelConfigData getModelConfig(String modelId);
 
-    void updateSessionModelId(Long sessionId, Long modelId);
+    void updateSessionModelId(String sessionId, String modelId);
 
     List<HookInvoker> getHooks();
 
-    List<HookInvoker> getHooks(Long sessionId);
+    List<HookInvoker> getHooks(String sessionId);
 }

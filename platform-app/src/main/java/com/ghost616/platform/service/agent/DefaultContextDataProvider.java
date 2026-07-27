@@ -28,6 +28,7 @@ import com.ghost616.platform.repository.SkillConfigMapper;
 import com.ghost616.platform.repository.SkillToolMapper;
 import com.ghost616.platform.repository.ToolConfigMapper;
 import com.ghost616.platform.service.tool.ToolConfigService;
+import com.ghost616.platform.util.IdConverter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -58,8 +59,9 @@ public class DefaultContextDataProvider implements ContextDataProvider {
     private final MessageDataProvider messageDataProvider;
 
     @Override
-    public AgentContextData loadAgentContext(Long sessionId) {
-        Session session = sessionMapper.selectById(sessionId);
+    public AgentContextData loadAgentContext(String sessionId) {
+        Long sid = IdConverter.parse(sessionId);
+        Session session = sessionMapper.selectById(sid);
         if (session == null) {
             return null;
         }
@@ -77,7 +79,7 @@ public class DefaultContextDataProvider implements ContextDataProvider {
 
             List<SessionSkill> sessionSkills = sessionSkillMapper.selectList(
                     new LambdaQueryWrapper<SessionSkill>()
-                            .eq(SessionSkill::getSessionId, sessionId));
+                            .eq(SessionSkill::getSessionId, sid));
             Map<Long, SessionAuthType> skillAuthMap = new HashMap<>();
             List<Long> skillIds = sessionSkills.stream()
                     .peek(ss -> skillAuthMap.put(ss.getSkillId(),
@@ -87,11 +89,11 @@ public class DefaultContextDataProvider implements ContextDataProvider {
                     .toList();
 
             List<SkillConfigDTO> skills = skillIds.isEmpty() ? List.of() : loadSkillConfigDTOs(skillIds, skillAuthMap);
-            Map<String, String> sessionVariables = loadSessionVariablesInternal(sessionId);
+            Map<String, String> sessionVariables = loadSessionVariablesInternal(sid);
 
-            return new AgentContextData(null, session.getSystemPrompt(), session.getModelId(),
+            return new AgentContextData(null, session.getSystemPrompt(), IdConverter.toString(session.getModelId()),
                     recentMessageCount, skills, sessionVariables,
-                    session.getParentSessionId(), null);
+                    IdConverter.toString(session.getParentSessionId()), null);
         }
 
         Long agentId = session.getAgentId();
@@ -101,16 +103,16 @@ public class DefaultContextDataProvider implements ContextDataProvider {
         Integer recentMessageCount = agentConfig != null ? agentConfig.getRecentMessageCount() : null;
 
         List<SkillConfigDTO> skills = loadSkillsInternal(agentId);
-        Map<String, String> sessionVariables = loadSessionVariablesInternal(sessionId);
+        Map<String, String> sessionVariables = loadSessionVariablesInternal(sid);
 
         List<AgentExecutionContext.ChildSession> childSessions = sessionMapper.selectList(
                         new LambdaQueryWrapper<Session>()
-                                .eq(Session::getParentSessionId, sessionId))
+                                .eq(Session::getParentSessionId, sid))
                 .stream()
-                .map(s -> new AgentExecutionContext.ChildSession(s.getId(), s.getTitle(), s.getDescription(), s.getModelId()))
+                .map(s -> new AgentExecutionContext.ChildSession(IdConverter.toString(s.getId()), s.getTitle(), s.getDescription(), IdConverter.toString(s.getModelId())))
                 .toList();
 
-        return new AgentContextData(agentId, systemPrompt, defaultModelId, recentMessageCount, skills, sessionVariables,
+        return new AgentContextData(IdConverter.toString(agentId), systemPrompt, IdConverter.toString(defaultModelId), recentMessageCount, skills, sessionVariables,
                 null, childSessions);
     }
 
@@ -163,7 +165,7 @@ public class DefaultContextDataProvider implements ContextDataProvider {
             }
 
             result.add(SkillConfigDTO.builder()
-                    .id(sc.getId())
+                    .id(IdConverter.toString(sc.getId()))
                     .name(sc.getName())
                     .description(sc.getDescription())
                     .prompt(sc.getPrompt())
@@ -187,10 +189,11 @@ public class DefaultContextDataProvider implements ContextDataProvider {
     }
 
     @Override
-    public void saveSessionVariable(Long sessionId, String key, String value) {
+    public void saveSessionVariable(String sessionId, String key, String value) {
+        Long sid = IdConverter.parse(sessionId);
         List<SessionVariable> existing = sessionVariableMapper.selectList(
                 new LambdaQueryWrapper<SessionVariable>()
-                        .eq(SessionVariable::getSessionId, sessionId)
+                        .eq(SessionVariable::getSessionId, sid)
                         .eq(SessionVariable::getVariableKey, key));
         if (existing != null && !existing.isEmpty()) {
             SessionVariable sv = existing.get(0);
@@ -198,7 +201,7 @@ public class DefaultContextDataProvider implements ContextDataProvider {
             sessionVariableMapper.updateById(sv);
         } else {
             SessionVariable sv = new SessionVariable();
-            sv.setSessionId(sessionId);
+            sv.setSessionId(sid);
             sv.setVariableKey(key);
             sv.setVariableValue(value);
             sessionVariableMapper.insert(sv);
@@ -206,30 +209,35 @@ public class DefaultContextDataProvider implements ContextDataProvider {
     }
 
     @Override
-    public void deleteSessionVariable(Long sessionId, String key) {
+    public void deleteSessionVariable(String sessionId, String key) {
+        Long sid = IdConverter.parse(sessionId);
         sessionVariableMapper.delete(
                 new LambdaQueryWrapper<SessionVariable>()
-                        .eq(SessionVariable::getSessionId, sessionId)
+                        .eq(SessionVariable::getSessionId, sid)
                         .eq(SessionVariable::getVariableKey, key));
     }
 
     @Override
-    public Long createChildSession(Long parentSessionId, String sessionName, String description, Long modelId,
-                                    List<Long> toolIds, List<Long> skillIds, String prompt) {
-        Session parentSession = sessionMapper.selectById(parentSessionId);
+    public String createChildSession(String parentSessionId, String sessionName, String description, String modelId,
+                                    List<String> toolIds, List<String> skillIds, String prompt) {
+        Long pid = IdConverter.parse(parentSessionId);
+        Long mid = IdConverter.parse(modelId);
+        List<Long> tids = IdConverter.parseList(toolIds);
+        List<Long> sids = IdConverter.parseList(skillIds);
+        Session parentSession = sessionMapper.selectById(pid);
         if (parentSession == null) {
             throw new BusinessException(ErrorCode.SESSION_NOT_FOUND);
         }
 
-        if (modelId != null) {
-            ModelConfig modelConfig = modelConfigMapper.selectById(modelId);
+        if (mid != null) {
+            ModelConfig modelConfig = modelConfigMapper.selectById(mid);
             if (modelConfig == null) {
                 throw new BusinessException(ErrorCode.MODEL_NOT_FOUND);
             }
         }
 
-        if (toolIds != null) {
-            for (Long toolId : toolIds) {
+        if (tids != null) {
+            for (Long toolId : tids) {
                 ToolConfig toolConfig = toolConfigMapper.selectById(toolId);
                 if (toolConfig == null) {
                     throw new BusinessException(ErrorCode.TOOL_NOT_FOUND);
@@ -237,8 +245,8 @@ public class DefaultContextDataProvider implements ContextDataProvider {
             }
         }
 
-        if (skillIds != null) {
-            for (Long skillId : skillIds) {
+        if (sids != null) {
+            for (Long skillId : sids) {
                 SkillConfig skillConfig = skillConfigMapper.selectById(skillId);
                 if (skillConfig == null) {
                     throw new BusinessException(ErrorCode.SKILL_NOT_FOUND);
@@ -250,13 +258,13 @@ public class DefaultContextDataProvider implements ContextDataProvider {
         session.setTitle(sessionName);
         session.setSystemPrompt(prompt);
         session.setDescription(description);
-        session.setParentSessionId(parentSessionId);
+        session.setParentSessionId(pid);
         session.setIsChild(true);
-        session.setModelId(modelId);
+        session.setModelId(mid);
         sessionMapper.insert(session);
 
-        if (toolIds != null) {
-            for (Long toolId : toolIds) {
+        if (tids != null) {
+            for (Long toolId : tids) {
                 SessionTool st = new SessionTool();
                 st.setSessionId(session.getId());
                 st.setToolId(toolId);
@@ -265,8 +273,8 @@ public class DefaultContextDataProvider implements ContextDataProvider {
             }
         }
 
-        if (skillIds != null) {
-            for (Long skillId : skillIds) {
+        if (sids != null) {
+            for (Long skillId : sids) {
                 SessionSkill ss = new SessionSkill();
                 ss.setSessionId(session.getId());
                 ss.setSkillId(skillId);
@@ -275,34 +283,36 @@ public class DefaultContextDataProvider implements ContextDataProvider {
             }
         }
 
-        return session.getId();
+        return IdConverter.toString(session.getId());
     }
 
     @Override
-    public List<MessageDataProvider.MessageDTO> getLatestMessages(Long sessionId) {
+    public List<MessageDataProvider.MessageDTO> getLatestMessages(String sessionId) {
         return messageDataProvider.getMessages(sessionId);
     }
 
     @Override
-    public Map<String, String> getLatestSessionVariables(Long sessionId) {
-        return loadSessionVariablesInternal(sessionId);
+    public Map<String, String> getLatestSessionVariables(String sessionId) {
+        Long sid = IdConverter.parse(sessionId);
+        return loadSessionVariablesInternal(sid);
     }
 
     @Override
-    public Map<String, String> getLatestConversationVariables(Long sessionId) {
+    public Map<String, String> getLatestConversationVariables(String sessionId) {
         return Map.of();
     }
 
     @Override
-    public List<AgentExecutionContext.ChildSession> getLatestChildSessions(Long sessionId) {
+    public List<AgentExecutionContext.ChildSession> getLatestChildSessions(String sessionId) {
+        Long sid = IdConverter.parse(sessionId);
         List<Session> sessions = sessionMapper.selectList(
                 new LambdaQueryWrapper<Session>()
-                        .eq(Session::getParentSessionId, sessionId));
+                        .eq(Session::getParentSessionId, sid));
         if (sessions == null || sessions.isEmpty()) {
             return List.of();
         }
         return sessions.stream()
-                .map(s -> new AgentExecutionContext.ChildSession(s.getId(), s.getTitle(), s.getDescription(), s.getModelId()))
+                .map(s -> new AgentExecutionContext.ChildSession(IdConverter.toString(s.getId()), s.getTitle(), s.getDescription(), IdConverter.toString(s.getModelId())))
                 .toList();
     }
 }

@@ -7,27 +7,27 @@ import java.util.Map;
 
 public interface ContextDataProvider {
 
-    record AgentContextData(Long agentId, String systemPrompt, Long defaultModelId,
+    record AgentContextData(String agentId, String systemPrompt, String defaultModelId,
                             Integer recentMessageCount, List<SkillConfigDTO> skills,
                             Map<String, String> sessionVariables,
-                            Long parentSessionId,
+                            String parentSessionId,
                             List<AgentExecutionContext.ChildSession> childSessions) {
     }
 
-    AgentContextData loadAgentContext(Long sessionId);
+    AgentContextData loadAgentContext(String sessionId);
 
-    void saveSessionVariable(Long sessionId, String key, String value);
+    void saveSessionVariable(String sessionId, String key, String value);
 
-    void deleteSessionVariable(Long sessionId, String key);
+    void deleteSessionVariable(String sessionId, String key);
 
-    Long createChildSession(Long parentSessionId, String sessionName, String description, Long modelId,
-                            List<Long> toolIds, List<Long> skillIds, String prompt);
+    String createChildSession(String parentSessionId, String sessionName, String description, String modelId,
+                              List<String> toolIds, List<String> skillIds, String prompt);
 
-    List<MessageDataProvider.MessageDTO> getLatestMessages(Long sessionId);
+    List<MessageDataProvider.MessageDTO> getLatestMessages(String sessionId);
 
-    Map<String, String> getLatestSessionVariables(Long sessionId);
+    Map<String, String> getLatestSessionVariables(String sessionId);
 
-    Map<String, String> getLatestConversationVariables(Long sessionId);
+    Map<String, String> getLatestConversationVariables(String sessionId);
 
-    List<AgentExecutionContext.ChildSession> getLatestChildSessions(Long sessionId);
+    List<AgentExecutionContext.ChildSession> getLatestChildSessions(String sessionId);
 }

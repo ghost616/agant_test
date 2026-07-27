@@ -30,7 +30,7 @@ class ToolConfigControllerTest {
 
     @Test
     void list_shouldReturnToolDetailDTOList() {
-        ToolDetailDTO dto = ToolDetailDTO.builder().id(1L).name("test").build();
+        ToolDetailDTO dto = ToolDetailDTO.builder().id("1").name("test").build();
         when(toolConfigService.list(null, null, null)).thenReturn(List.of(dto));
 
         ApiResponse<List<ToolDetailDTO>> response = controller.list(null, null, null);
@@ -42,7 +42,7 @@ class ToolConfigControllerTest {
 
     @Test
     void getById_shouldReturnToolDetailDTO() {
-        ToolDetailDTO dto = ToolDetailDTO.builder().id(1L).name("test").build();
+        ToolDetailDTO dto = ToolDetailDTO.builder().id("1").name("test").build();
         when(toolConfigService.getById(1L)).thenReturn(dto);
 
         ApiResponse<ToolDetailDTO> response = controller.getById(1L);
@@ -54,7 +54,7 @@ class ToolConfigControllerTest {
     @Test
     void create_shouldReturnToolDetailDTO() {
         ToolDetailDTO dto = ToolDetailDTO.builder()
-                .id(1L).name("browser_tool")
+                .id("1").name("browser_tool")
                 .subToolType(SubToolType.BROWSER)
                 .toolScript("script")
                 .build();
@@ -72,7 +72,7 @@ class ToolConfigControllerTest {
     @Test
     void update_shouldReturnToolDetailDTO() {
         ToolDetailDTO dto = ToolDetailDTO.builder()
-                .id(1L).name("updated_tool")
+                .id("1").name("updated_tool")
                 .subToolType(SubToolType.BROWSER)
                 .build();
         ToolUpdateRequest request = ToolUpdateRequest.builder().name("updated_tool").build();
@@ -96,7 +96,7 @@ class ToolConfigControllerTest {
 
     @Test
     void getImplByName_shouldReturnToolDetailDTO() {
-        ToolDetailDTO dto = ToolDetailDTO.builder().id(1L).name("test_tool").build();
+        ToolDetailDTO dto = ToolDetailDTO.builder().id("1").name("test_tool").build();
         when(toolConfigService.getImplByName("test_tool")).thenReturn(dto);
 
         ApiResponse<ToolDetailDTO> response = controller.getImplByName("test_tool");
@@ -107,7 +107,7 @@ class ToolConfigControllerTest {
 
     @Test
     void toggleStatus_shouldReturnToolDetailDTO() {
-        ToolDetailDTO dto = ToolDetailDTO.builder().id(1L).name("test").status(CommonStatus.DISABLED).build();
+        ToolDetailDTO dto = ToolDetailDTO.builder().id("1").name("test").status(CommonStatus.DISABLED).build();
         when(toolConfigService.toggleStatus(1L, CommonStatus.DISABLED)).thenReturn(dto);
 
         ApiResponse<ToolDetailDTO> response = controller.toggleStatus(1L, CommonStatus.DISABLED);

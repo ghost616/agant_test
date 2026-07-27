@@ -27,7 +27,7 @@ class ToolDetailDTOTest {
     void builder_shouldSetAllFields() {
         LocalDateTime now = LocalDateTime.now();
         ToolDetailDTO dto = ToolDetailDTO.builder()
-                .id(1L)
+                .id("1")
                 .name("test_tool")
                 .toolType(ToolType.CUSTOM)
                 .description("desc")

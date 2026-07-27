@@ -41,7 +41,7 @@ class SessionManagerTest {
     @Test
     void save_role为null时抛出BusinessException() {
         SessionManager.MessageSaveBuilder builder = sessionManager.messageSave()
-                .sessionId(1L)
+                .sessionId("1")
                 .content("hello");
         BusinessException ex = assertThrows(BusinessException.class, builder::save);
         assertEquals(ErrorCode.PARAM_INVALID, ex.getErrorCode());
@@ -51,7 +51,7 @@ class SessionManagerTest {
     @Test
     void save_content为null时抛出BusinessException() {
         SessionManager.MessageSaveBuilder builder = sessionManager.messageSave()
-                .sessionId(1L)
+                .sessionId("1")
                 .role("user");
         BusinessException ex = assertThrows(BusinessException.class, builder::save);
         assertEquals(ErrorCode.PARAM_INVALID, ex.getErrorCode());
@@ -60,28 +60,28 @@ class SessionManagerTest {
 
     @Test
     void save_参数均非null时正常调用dataProvider() {
-        when(dataProvider.saveMessage(1L, "user", "hello", null, null, null, null, null))
-                .thenReturn(100L);
+        when(dataProvider.saveMessage("1", "user", "hello", null, null, null, null, null))
+                .thenReturn("100");
 
-        Long result = sessionManager.messageSave()
-                .sessionId(1L)
+        String result = sessionManager.messageSave()
+                .sessionId("1")
                 .role("user")
                 .content("hello")
                 .save();
 
-        assertEquals(100L, result);
-        verify(dataProvider).saveMessage(1L, "user", "hello", null, null, null, null, null);
+        assertEquals("100", result);
+        verify(dataProvider).saveMessage("1", "user", "hello", null, null, null, null, null);
     }
 
     @Test
     void save_参数均非null时正常调用dataProvider_withAllFields() {
         var toolCalls = java.util.List.of(
                 new MessageDataProvider.ToolCallData("tc1", "getWeather", "{}"));
-        when(dataProvider.saveMessage(1L, "assistant", "response", "thinking...",
-                "tc1", "result_ok", toolCalls, null)).thenReturn(200L);
+        when(dataProvider.saveMessage("1", "assistant", "response", "thinking...",
+                "tc1", "result_ok", toolCalls, null)).thenReturn("200");
 
-        Long result = sessionManager.messageSave()
-                .sessionId(1L)
+        String result = sessionManager.messageSave()
+                .sessionId("1")
                 .role("assistant")
                 .content("response")
                 .reasoning("thinking...")
@@ -90,8 +90,8 @@ class SessionManagerTest {
                 .toolCalls(toolCalls)
                 .save();
 
-        assertEquals(200L, result);
-        verify(dataProvider).saveMessage(1L, "assistant", "response", "thinking...",
+        assertEquals("200", result);
+        verify(dataProvider).saveMessage("1", "assistant", "response", "thinking...",
                 "tc1", "result_ok", toolCalls, null);
     }
 }

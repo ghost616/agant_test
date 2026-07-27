@@ -40,8 +40,8 @@ class AgentContextManagerTest {
     private AgentComponentRegistry registry;
     private AgentContextManager agentContextManager;
 
-    private final Long sessionId = 1L;
-    private final Long agentId = 100L;
+    private final String sessionId = "1";
+    private final String agentId = "100";
 
     @BeforeEach
     void setUp() {
@@ -54,7 +54,7 @@ class AgentContextManagerTest {
 
     private void stubBasicContext() {
         when(dataProvider.loadAgentContext(sessionId)).thenReturn(
-                new ContextDataProvider.AgentContextData(agentId, "test prompt", 200L, 10, List.of(), Map.of(), null, null));
+                new ContextDataProvider.AgentContextData(agentId, "test prompt", "200", 10, List.of(), Map.of(), null, null));
         when(sessionManager.getMessages(sessionId)).thenReturn(List.of());
         when(toolManager.getSessionTools(eq(sessionId), anyBoolean())).thenReturn(List.of());
     }
@@ -93,7 +93,7 @@ class AgentContextManagerTest {
                 .build();
 
         when(dataProvider.loadAgentContext(sessionId)).thenReturn(
-                new ContextDataProvider.AgentContextData(agentId, "test prompt", 200L, 10, List.of(skill), Map.of(), null, null));
+                new ContextDataProvider.AgentContextData(agentId, "test prompt", "200", 10, List.of(skill), Map.of(), null, null));
         when(toolManager.expandMcpTools(mcpTool)).thenReturn(List.of(expanded1, expanded2));
 
         AgentContextManager.AgentSessionContext sessionContext = agentContextManager.build(sessionId).build();
@@ -127,7 +127,7 @@ class AgentContextManagerTest {
                 .build();
 
         when(dataProvider.loadAgentContext(sessionId)).thenReturn(
-                new ContextDataProvider.AgentContextData(agentId, "test prompt", 200L, 10, List.of(skill), Map.of(), null, null));
+                new ContextDataProvider.AgentContextData(agentId, "test prompt", "200", 10, List.of(skill), Map.of(), null, null));
 
         AgentContextManager.AgentSessionContext sessionContext = agentContextManager.build(sessionId).build();
         AgentExecutionContext context = sessionContext.context();
@@ -147,7 +147,7 @@ class AgentContextManagerTest {
                 .build();
 
         when(dataProvider.loadAgentContext(sessionId)).thenReturn(
-                new ContextDataProvider.AgentContextData(agentId, "test prompt", 200L, 10, List.of(skill), Map.of(), null, null));
+                new ContextDataProvider.AgentContextData(agentId, "test prompt", "200", 10, List.of(skill), Map.of(), null, null));
 
         AgentContextManager.AgentSessionContext sessionContext = agentContextManager.build(sessionId).build();
         AgentExecutionContext context = sessionContext.context();
@@ -170,7 +170,7 @@ class AgentContextManagerTest {
         SkillConfigDTO skill = SkillConfigDTO.builder().name("all_mcp").skillTools(List.of(mcp1, mcp2)).build();
 
         when(dataProvider.loadAgentContext(sessionId)).thenReturn(
-                new ContextDataProvider.AgentContextData(agentId, "test prompt", 200L, 10, List.of(skill), Map.of(), null, null));
+                new ContextDataProvider.AgentContextData(agentId, "test prompt", "200", 10, List.of(skill), Map.of(), null, null));
         when(toolManager.expandMcpTools(mcp1)).thenReturn(List.of(e1));
         when(toolManager.expandMcpTools(mcp2)).thenReturn(List.of(e2));
 
@@ -193,7 +193,7 @@ class AgentContextManagerTest {
         SkillConfigDTO skill = SkillConfigDTO.builder().name("no_mcp").skillTools(List.of(javaTool, tsTool)).build();
 
         when(dataProvider.loadAgentContext(sessionId)).thenReturn(
-                new ContextDataProvider.AgentContextData(agentId, "test prompt", 200L, 10, List.of(skill), Map.of(), null, null));
+                new ContextDataProvider.AgentContextData(agentId, "test prompt", "200", 10, List.of(skill), Map.of(), null, null));
 
         AgentContextManager.AgentSessionContext sessionContext = agentContextManager.build(sessionId).build();
         AgentExecutionContext context = sessionContext.context();
@@ -227,7 +227,7 @@ class AgentContextManagerTest {
                 .build();
 
         when(dataProvider.loadAgentContext(sessionId)).thenReturn(
-                new ContextDataProvider.AgentContextData(agentId, "test prompt", 200L, 10, List.of(skill), Map.of(), null, null));
+                new ContextDataProvider.AgentContextData(agentId, "test prompt", "200", 10, List.of(skill), Map.of(), null, null));
         when(toolManager.expandMcpTools(mcpTool)).thenReturn(List.of(
                 McpExpandedToolDTO.builder().name("mcp_tool_funcA").toolType(ToolType.MCP_HTTP).remoteToolName("funcA").build()
         ));
@@ -256,7 +256,7 @@ class AgentContextManagerTest {
     @Test
     void 正向_agentId为null时build正常返回() {
         when(dataProvider.loadAgentContext(sessionId)).thenReturn(
-                new ContextDataProvider.AgentContextData(null, "test prompt", 200L, 10, List.of(), Map.of(), null, null));
+                new ContextDataProvider.AgentContextData(null, "test prompt", "200", 10, List.of(), Map.of(), null, null));
         when(sessionManager.getMessages(sessionId)).thenReturn(List.of());
         when(toolManager.getSessionTools(eq(sessionId), anyBoolean())).thenReturn(List.of());
 
@@ -294,7 +294,7 @@ class AgentContextManagerTest {
                 .build();
 
         when(dataProvider.loadAgentContext(sessionId)).thenReturn(
-                new ContextDataProvider.AgentContextData(agentId, "test prompt", 200L, 10, List.of(skill), Map.of(), null, null));
+                new ContextDataProvider.AgentContextData(agentId, "test prompt", "200", 10, List.of(skill), Map.of(), null, null));
         when(toolManager.expandMcpTools(mcpTool)).thenReturn(List.of(expanded1, expanded2));
 
         AgentExecutionContext context = agentContextManager.build(sessionId).build().context();
@@ -318,7 +318,7 @@ class AgentContextManagerTest {
                 .build();
 
         when(dataProvider.loadAgentContext(sessionId)).thenReturn(
-                new ContextDataProvider.AgentContextData(agentId, "test prompt", 200L, 10, List.of(skill), Map.of(), null, null));
+                new ContextDataProvider.AgentContextData(agentId, "test prompt", "200", 10, List.of(skill), Map.of(), null, null));
 
         AgentExecutionContext context = agentContextManager.build(sessionId).build().context();
         List<ToolConfigDTO> resultTools = context.getSkills().get(0).getSkillTools();
@@ -343,7 +343,7 @@ class AgentContextManagerTest {
                 .build();
 
         when(dataProvider.loadAgentContext(sessionId)).thenReturn(
-                new ContextDataProvider.AgentContextData(agentId, "test prompt", 200L, 10, List.of(skill), Map.of(), null, null));
+                new ContextDataProvider.AgentContextData(agentId, "test prompt", "200", 10, List.of(skill), Map.of(), null, null));
 
         AgentExecutionContext context = agentContextManager.build(sessionId).build().context();
         List<ToolConfigDTO> resultTools = context.getSkills().get(0).getSkillTools();
@@ -356,8 +356,8 @@ class AgentContextManagerTest {
 
     @Test
     void 正向_子会话模式下MCP工具正常展开并设置sessionAuth为PARENT() {
-        Long childSessionId = 99L;
-        Long parentId = 1L;
+        String childSessionId = "99";
+        String parentId = "1";
         ToolConfigDTO mcpTool = ToolConfigDTO.builder()
                 .name("mcp_tool")
                 .toolType(ToolType.MCP_HTTP)
@@ -375,11 +375,11 @@ class AgentContextManagerTest {
                 .build();
 
         when(dataProvider.loadAgentContext(parentId)).thenReturn(
-                new ContextDataProvider.AgentContextData(agentId, "parent", 200L, 10, List.of(), Map.of(), null, null));
+                new ContextDataProvider.AgentContextData(agentId, "parent", "200", 10, List.of(), Map.of(), null, null));
         when(dataProvider.loadAgentContext(childSessionId)).thenReturn(
-                new ContextDataProvider.AgentContextData(agentId, "sub prompt", 200L, 10, List.of(childSkill), Map.of(), parentId, null));
-        when(sessionManager.getMessages(anyLong())).thenReturn(List.of());
-        when(toolManager.getSessionTools(anyLong(), anyBoolean())).thenReturn(List.of());
+                new ContextDataProvider.AgentContextData(agentId, "sub prompt", "200", 10, List.of(childSkill), Map.of(), parentId, null));
+        when(sessionManager.getMessages(anyString())).thenReturn(List.of());
+        when(toolManager.getSessionTools(anyString(), anyBoolean())).thenReturn(List.of());
         when(toolManager.expandMcpTools(mcpTool)).thenReturn(List.of(expanded));
 
         AgentExecutionContext context = agentContextManager.build(childSessionId).build().context();
@@ -404,7 +404,7 @@ class AgentContextManagerTest {
                 .build();
 
         when(dataProvider.loadAgentContext(sessionId)).thenReturn(
-                new ContextDataProvider.AgentContextData(agentId, "test prompt", 200L, 10, List.of(skill), Map.of(), null, null));
+                new ContextDataProvider.AgentContextData(agentId, "test prompt", "200", 10, List.of(skill), Map.of(), null, null));
 
         AgentExecutionContext context = agentContextManager.build(sessionId).build().context();
         List<ToolConfigDTO> resultTools = context.getSkills().get(0).getSkillTools();
@@ -425,9 +425,9 @@ class AgentContextManagerTest {
 
         @Test
         void 正向_refreshHistory后历史为最新数据() {
-            var msg1 = new MessageDataProvider.MessageDTO(1L, sessionId, "user", "hello", null, null, 0,
+            var msg1 = new MessageDataProvider.MessageDTO("1", sessionId, "user", "hello", null, null, 0,
                     LocalDateTime.now(), null, null, null, null);
-            var msg2 = new MessageDataProvider.MessageDTO(2L, sessionId, "assistant", "hi", null, null, 1,
+            var msg2 = new MessageDataProvider.MessageDTO("2", sessionId, "assistant", "hi", null, null, 1,
                     LocalDateTime.now(), null, null, null, null);
             when(dataProvider.getLatestMessages(sessionId)).thenReturn(List.of(msg1, msg2));
 
@@ -464,19 +464,19 @@ class AgentContextManagerTest {
 
         @Test
         void 正向_refreshChildSessions后子会话为最新数据() {
-            var child = new AgentExecutionContext.ChildSession(10L, "child", "desc", 300L);
+            var child = new AgentExecutionContext.ChildSession("10", "child", "desc", "300");
             when(dataProvider.getLatestChildSessions(sessionId)).thenReturn(List.of(child));
 
             agentContextManager.refreshChildSessions(sessionId);
 
             AgentExecutionContext context = agentContextManager.get(sessionId).context();
             assertEquals(1, context.getChildSessions().size());
-            assertEquals(Long.valueOf(10L), context.getChildSessions().get(0).sessionId());
+            assertEquals("10", context.getChildSessions().get(0).sessionId());
         }
 
         @Test
         void 边界_缓存中无上下文时刷新方法不抛异常() {
-            Long nonExistentSession = 999L;
+            String nonExistentSession = "999";
 
             assertDoesNotThrow(() -> agentContextManager.refreshHistory(nonExistentSession));
             assertDoesNotThrow(() -> agentContextManager.refreshSessionVariables(nonExistentSession));
@@ -488,7 +488,7 @@ class AgentContextManagerTest {
         void 正向_refreshHistory后getHistory返回新数据而非旧数据() {
             agentContextManager.remove(sessionId);
 
-            var oldMsg = new MessageDataProvider.MessageDTO(1L, sessionId, "user", "old", null, null, 0,
+            var oldMsg = new MessageDataProvider.MessageDTO("1", sessionId, "user", "old", null, null, 0,
                     LocalDateTime.now(), null, null, null, null);
             when(sessionManager.getMessages(sessionId)).thenReturn(List.of(oldMsg));
 
@@ -496,7 +496,7 @@ class AgentContextManagerTest {
             assertEquals(1, ctx.context().getHistory().size());
             assertEquals("old", ctx.context().getHistory().get(0).content());
 
-            var newMsg = new MessageDataProvider.MessageDTO(2L, sessionId, "user", "new", null, null, 1,
+            var newMsg = new MessageDataProvider.MessageDTO("2", sessionId, "user", "new", null, null, 1,
                     LocalDateTime.now(), null, null, null, null);
             when(dataProvider.getLatestMessages(sessionId)).thenReturn(List.of(newMsg));
 
@@ -510,22 +510,22 @@ class AgentContextManagerTest {
     @Nested
     class ParentChildSessionTest {
 
-        private final Long parentSessionId = 1L;
-        private final Long childSessionId = 2L;
+        private final String parentSessionId = "1";
+        private final String childSessionId = "2";
 
         @BeforeEach
         void setUpParent() {
             when(dataProvider.loadAgentContext(parentSessionId)).thenReturn(
-                    new ContextDataProvider.AgentContextData(agentId, "parent prompt", 200L, 10, List.of(), new HashMap<>(), null, null));
+                    new ContextDataProvider.AgentContextData(agentId, "parent prompt", "200", 10, List.of(), new HashMap<>(), null, null));
             when(sessionManager.getMessages(parentSessionId)).thenReturn(List.of());
             when(toolManager.getSessionTools(eq(parentSessionId), anyBoolean())).thenReturn(List.of());
 
             agentContextManager.build(parentSessionId).build();
         }
 
-        private void stubChildSession(Long childId, Long parentId) {
+        private void stubChildSession(String childId, String parentId) {
             when(dataProvider.loadAgentContext(childId)).thenReturn(
-                    new ContextDataProvider.AgentContextData(agentId, "child prompt", 200L, 10, List.of(), new HashMap<>(), parentId, null));
+                    new ContextDataProvider.AgentContextData(agentId, "child prompt", "200", 10, List.of(), new HashMap<>(), parentId, null));
             when(sessionManager.getMessages(childId)).thenReturn(List.of());
             when(toolManager.getSessionTools(eq(childId), anyBoolean())).thenReturn(List.of());
         }
@@ -542,17 +542,17 @@ class AgentContextManagerTest {
 
         @Test
         void 正向_构建时传入childSessions在context中可见() {
-            Long freshSessionId = 100L;
-            var childSession = new AgentExecutionContext.ChildSession(10L, "sub-agent", "test sub", 300L);
+            String freshSessionId = "100";
+            var childSession = new AgentExecutionContext.ChildSession("10", "sub-agent", "test sub", "300");
             when(dataProvider.loadAgentContext(freshSessionId)).thenReturn(
-                    new ContextDataProvider.AgentContextData(agentId, "parent prompt", 200L, 10, List.of(), new HashMap<>(), null, List.of(childSession)));
+                    new ContextDataProvider.AgentContextData(agentId, "parent prompt", "200", 10, List.of(), new HashMap<>(), null, List.of(childSession)));
             when(sessionManager.getMessages(freshSessionId)).thenReturn(List.of());
             when(toolManager.getSessionTools(eq(freshSessionId), anyBoolean())).thenReturn(List.of());
 
             AgentExecutionContext parentContext = agentContextManager.build(freshSessionId).build().context();
 
             assertEquals(1, parentContext.getChildSessions().size());
-            assertEquals(Long.valueOf(10L), parentContext.getChildSessions().get(0).sessionId());
+            assertEquals("10", parentContext.getChildSessions().get(0).sessionId());
             assertEquals("sub-agent", parentContext.getChildSessions().get(0).sessionName());
         }
 
@@ -594,10 +594,10 @@ class AgentContextManagerTest {
 
         @Test
         void 正向_子会话build时父上下文被自动构建并缓存() {
-            Long autoParentId = 100L;
-            Long autoChildId = 101L;
+            String autoParentId = "100";
+            String autoChildId = "101";
             when(dataProvider.loadAgentContext(autoParentId)).thenReturn(
-                    new ContextDataProvider.AgentContextData(agentId, "auto parent", 200L, 10, List.of(), new HashMap<>(), null, null));
+                    new ContextDataProvider.AgentContextData(agentId, "auto parent", "200", 10, List.of(), new HashMap<>(), null, null));
             when(sessionManager.getMessages(autoParentId)).thenReturn(List.of());
             when(toolManager.getSessionTools(eq(autoParentId), anyBoolean())).thenReturn(List.of());
 
@@ -615,8 +615,8 @@ class AgentContextManagerTest {
 
         @Test
         void 反向_parentSessionId对应父session不存在时子会话构建抛异常() {
-            Long nonExistentParent = 999L;
-            Long orphanSessionId = 3L;
+            String nonExistentParent = "999";
+            String orphanSessionId = "3";
             stubChildSession(orphanSessionId, nonExistentParent);
 
             assertThrows(BusinessException.class,

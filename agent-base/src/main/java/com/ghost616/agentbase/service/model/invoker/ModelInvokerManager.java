@@ -9,7 +9,7 @@ public class ModelInvokerManager {
 
     private final AgentComponentRegistry registry;
     private ModelInvokerFactory invokerFactory;
-    private final Map<Long, ModelInvoker> cache = new ConcurrentHashMap<>();
+    private final Map<String, ModelInvoker> cache = new ConcurrentHashMap<>();
     private volatile boolean initialized;
 
     public ModelInvokerManager(AgentComponentRegistry registry) {
@@ -32,11 +32,11 @@ public class ModelInvokerManager {
         return cache.computeIfAbsent(config.id(), id -> invokerFactory.createInvoker(config));
     }
 
-    public void register(Long id, ModelInvoker invoker) {
+    public void register(String id, ModelInvoker invoker) {
         cache.put(id, invoker);
     }
 
-    public void evict(Long id) {
+    public void evict(String id) {
         cache.remove(id);
     }
 
@@ -48,7 +48,7 @@ public class ModelInvokerManager {
         return cache.size();
     }
 
-    public ModelInvoker getInvokerById(Long id) {
+    public ModelInvoker getInvokerById(String id) {
         return cache.get(id);
     }
 }

@@ -20,6 +20,7 @@ import com.ghost616.agentbase.service.agent.AgentContextManager;
 import com.ghost616.agentbase.service.agent.MessageDataProvider;
 import com.ghost616.agentbase.service.agent.SessionManager;
 import com.ghost616.agentbase.service.agent.invoker.ToolManager;
+import com.ghost616.platform.util.IdConverter;
 
 
 @Service
@@ -95,8 +96,8 @@ public class SessionServiceImpl implements SessionService {
         sessionToolMapper.delete(deleteWrapper);
 
         sessionMapper.deleteById(id);
-        agentContextManager.remove(id);
-        toolManager.clearSessionCache(id);
+        agentContextManager.remove(IdConverter.toString(id));
+        toolManager.clearSessionCache(IdConverter.toString(id));
     }
 
     @Override
@@ -106,8 +107,8 @@ public class SessionServiceImpl implements SessionService {
         if (entity == null) {
             throw new BusinessException(ErrorCode.SESSION_NOT_FOUND);
         }
-        int deleted = sessionManager.rollbackToLastUserMessage(sessionId);
-        agentContextManager.remove(sessionId);
+        int deleted = sessionManager.rollbackToLastUserMessage(IdConverter.toString(sessionId));
+        agentContextManager.remove(IdConverter.toString(sessionId));
         return deleted;
     }
 
@@ -117,7 +118,7 @@ public class SessionServiceImpl implements SessionService {
         if (entity == null) {
             throw new BusinessException(ErrorCode.SESSION_NOT_FOUND);
         }
-        return sessionManager.getMessages(sessionId);
+        return sessionManager.getMessages(IdConverter.toString(sessionId));
     }
 
     @Override

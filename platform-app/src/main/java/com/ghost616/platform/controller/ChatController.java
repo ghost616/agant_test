@@ -19,6 +19,7 @@ import java.util.Map;
 import com.ghost616.agentbase.dto.model.ChatChunk;
 import com.ghost616.agentbase.dto.chat.ChatRequest;
 import com.ghost616.agentbase.service.agent.AgentContextManager;
+import com.ghost616.platform.util.IdConverter;
 
 
 @RestController
@@ -36,7 +37,7 @@ public class ChatController {
 
     @PostMapping("/chat/{sessionId}/stop")
     public ApiResponse<Map<String, Object>> stopChat(@PathVariable Long sessionId) {
-        AgentContextManager.AgentSessionContext sessionCtx = agentContextManager.get(sessionId);
+        AgentContextManager.AgentSessionContext sessionCtx = agentContextManager.get(IdConverter.toString(sessionId));
         if (sessionCtx != null) {
             sessionCtx.mutator().setStopped();
         }

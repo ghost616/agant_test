@@ -17,6 +17,7 @@ import java.util.List;
 import com.ghost616.agentbase.enums.CommonStatus;
 import com.ghost616.agentbase.enums.ErrorCode;
 import com.ghost616.agentbase.exception.BusinessException;
+import com.ghost616.platform.util.IdConverter;
 
 
 @Service
@@ -115,7 +116,7 @@ public class ModelConfigServiceImpl implements ModelConfigService {
         }
 
         modelConfigMapper.updateById(entity);
-        modelInvokerManager.evict(id);
+        modelInvokerManager.evict(IdConverter.toString(id));
         return toDTO(entity);
     }
 
@@ -126,7 +127,7 @@ public class ModelConfigServiceImpl implements ModelConfigService {
             throw new BusinessException(ErrorCode.MODEL_NOT_FOUND);
         }
         modelConfigMapper.deleteById(id);
-        modelInvokerManager.evict(id);
+        modelInvokerManager.evict(IdConverter.toString(id));
     }
 
     @Override
@@ -137,7 +138,7 @@ public class ModelConfigServiceImpl implements ModelConfigService {
         }
         entity.setStatus(status);
         modelConfigMapper.updateById(entity);
-        modelInvokerManager.evict(id);
+        modelInvokerManager.evict(IdConverter.toString(id));
         return toDTO(entity);
     }
 

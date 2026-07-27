@@ -22,13 +22,13 @@ public class ToolExecutionTracker {
     public record ToolResult(String toolId, String toolName, String arguments, String result) {
     }
 
-    public void setExecuting(Long sessionId, String toolId, String toolName,
-                               String arguments, boolean hasMore) {
+    public void setExecuting(String sessionId, String toolId, String toolName,
+                              String arguments, boolean hasMore) {
         provider.updateExecution(sessionId, new ToolExecutionStatus(
                 toolId, toolName, arguments, "executing", null, hasMore));
     }
 
-    public void setDone(Long sessionId, String toolId, String result) {
+    public void setDone(String sessionId, String toolId, String result) {
         ToolExecutionStatus current = provider.getCurrentExecution(sessionId, toolId);
         if (current == null) {
             return;
@@ -39,7 +39,7 @@ public class ToolExecutionTracker {
         log.debug("sessionId={} 工具执行完成, toolName={}, result={}", sessionId, current.currentToolName(), result);
     }
 
-    public void setFailed(Long sessionId, String toolId, String error) {
+    public void setFailed(String sessionId, String toolId, String error) {
         ToolExecutionStatus current = provider.getCurrentExecution(sessionId, toolId);
         if (current == null) {
             return;
@@ -49,15 +49,15 @@ public class ToolExecutionTracker {
                 current.currentArguments(), "failed", error, current.hasMore()));
     }
 
-    public void clear(Long sessionId) {
+    public void clear(String sessionId) {
         provider.clearTracking(sessionId);
     }
 
-    public ToolExecutionStatus getCurrentExecution(Long sessionId, String toolId) {
+    public ToolExecutionStatus getCurrentExecution(String sessionId, String toolId) {
         return provider.getCurrentExecution(sessionId, toolId);
     }
 
-    public List<ToolResult> getAndClearResults(Long sessionId) {
+    public List<ToolResult> getAndClearResults(String sessionId) {
         return provider.getAndClearResults(sessionId);
     }
 }

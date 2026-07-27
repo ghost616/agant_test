@@ -34,6 +34,7 @@ class ChatControllerTest {
     private ChatController chatController;
 
     private final Long sessionId = 1L;
+    private final String sessionIdStr = "1";
 
     @Test
     void chat_调用chatService并返回SSE流() {
@@ -53,7 +54,7 @@ class ChatControllerTest {
     void stopChat_会话存在_返回status_stopped() {
         AgentContextManager.AgentSessionContext sessionCtx = mock(AgentContextManager.AgentSessionContext.class);
         AgentExecutionContext.AgentContextMutator mutator = mock(AgentExecutionContext.AgentContextMutator.class);
-        when(agentContextManager.get(sessionId)).thenReturn(sessionCtx);
+        when(agentContextManager.get(sessionIdStr)).thenReturn(sessionCtx);
         when(sessionCtx.mutator()).thenReturn(mutator);
 
         ApiResponse<Map<String, Object>> response = chatController.stopChat(sessionId);
@@ -67,7 +68,7 @@ class ChatControllerTest {
 
     @Test
     void stopChat_会话不存在_幂等返回status_stopped() {
-        when(agentContextManager.get(sessionId)).thenReturn(null);
+        when(agentContextManager.get(sessionIdStr)).thenReturn(null);
 
         ApiResponse<Map<String, Object>> response = chatController.stopChat(sessionId);
 
@@ -75,6 +76,6 @@ class ChatControllerTest {
         assertEquals("SYS-000", response.getCode());
         assertNotNull(response.getData());
         assertEquals("stopped", response.getData().get("status"));
-        verify(agentContextManager).get(sessionId);
+        verify(agentContextManager).get(sessionIdStr);
     }
 }
