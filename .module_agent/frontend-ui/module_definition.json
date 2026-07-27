@@ -76,6 +76,10 @@
     {
       "path": "src/types/common.ts",
       "description": "公共类型定义文件，包含 ApiResponse、PageResult、CommonStatus、ToolType、HookPhase、PlatformType 等共享类型"
+    },
+    {
+      "path": "src/services/toolExecutor.ts",
+      "description": "浏览器端工具管理和执行模块。ToolManager 类（单例）管理已注册的工具函数和 extension JS 加载；ToolExecutor 类（单例）执行已注册的工具函数并返回结果。提供 getBrowserExtension 加载、registerFunction 注册、execute 执行等能力。"
     }
   ]
 }

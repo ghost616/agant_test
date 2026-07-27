@@ -24,7 +24,7 @@ AgentComponentRegistry（com.ghost616.agentbase.core.AgentComponentRegistry）�
 
 ## HookManager
 
-HookManager 抽取自 ChatService/ToolExecutionService 的公共 HOOK 管理基础设施。内部持有 AgentComponentRegistry registry 字段、systemHooks / systemPostHooks / regularPhaseHooks 三个集合。构造函数注入 AgentComponentRegistry，提供 refreshHooks() 无参方法（内部通过 registry.getChatDataProvider().getHooks() 获取 HookInvoker 列表后按类型分类）、triggerHooks(HookPhase, AgentExecutionContext, HookData) 触发全局阶段钩子、triggerSessionHooks(Long sessionId, HookPhase, AgentExecutionContext, HookData) 通过 ChatDataProvider.getHooks(sessionId) 加载会话专属 HOOK 并按 phase 匹配执行、executePostHooks(AgentExecutionContext, HookData) 触发后置钩子共四个方法。
+HookManager 抽取自 ChatService/ToolExecutionService 的公共 HOOK 管理基础设施。内部持有 AgentComponentRegistry registry 字段、systemHooks / systemPostHooks / regularPhaseHooks 三个集合。构造函数注入 AgentComponentRegistry，提供 refreshHooks() 无参方法（内部通过 registry.getChatDataProvider().getHooks() 获取 HookInvoker 列表后按类型分类）、triggerHooks(HookPhase, AgentExecutionContext, HookData) 触发全局阶段钩子、triggerSessionHooks(String sessionId, HookPhase, AgentExecutionContext, HookData) 通过 ChatDataProvider.getHooks(sessionId) 加载会话专属 HOOK 并按 phase 匹配执行、executePostHooks(AgentExecutionContext, HookData) 触发后置钩子共四个方法。
 triggerHooks / triggerSessionHooks / executePostHooks 中每个 h.execute(ctx, data) 调用均包裹 try-catch，异常时以 WARN 级别日志记录失败信息（含 hook 类名），继续执行后续 hook，不中断整体流程。
 triggerSessionHooks 按与 triggerHooks 相同的 phase 匹配逻辑：普通 HOOK 直接执行，SystemHook 按 index 排序后执行，SystemPostHook 跳过（归 executePostHooks 处理）。
 ## HookData
@@ -42,7 +42,7 @@ execute 方法签名由 execute(AgentExecutionContext, ChatChunk) 改为 execute
 非 Spring 组件（已去掉 @Component），保留 @Slf4j。构造函数改为接收 AgentComponentRegistry，通过 registry.getToolExecutionProvider() 获取 ToolExecutionProvider，所有 Map 操作（setExecuting/setDone/setFailed/clear/getCurrentExecution/getAndClearResults）委派给 provider。内部 record ToolExecutionStatus（status/toolId/toolName/arguments）和 ToolResult（toolId/toolName/arguments/result）保持不变。
 ## ModelConfigData
 
-ModelConfigData record（com.ghost616.agentbase.dto.model.ModelConfigData），包含字段：Long id, String apiKey, String baseUrl, String modelName, Double temperature, Integer maxTokens, String platformType。
+ModelConfigData record（com.ghost616.agentbase.dto.model.ModelConfigData），包含字段：String id, String apiKey, String baseUrl, String modelName, Double temperature, Integer maxTokens, String platformType。
 ## ModelInvokerFactory
 
 ModelInvokerFactory 接口（com.ghost616.agentbase.service.model.invoker.ModelInvokerFactory），定义 createInvoker(ModelConfigData) 方法，返回 ModelInvoker。用于解耦 ModelInvokerManager 与具体 invoker 创建逻辑。
@@ -55,21 +55,21 @@ ChatService 聊天服务，非 Spring 组件。构造函数改为接收 AgentCom
 新增 setHookManager(HookManager) setter 方法，支持外部注入共享 HookManager 实例替换默认创建的单例。
 ## ChatDataProvider
 
-聊天数据提供者接口（com.ghost616.agentbase.service.agent.ChatDataProvider），定义四个方法：getModelConfig(Long modelId) 按 ID 获取 ModelConfigData、updateSessionModelId(Long sessionId, Long modelId) 更新会话的模型 ID、getHooks() 获取所有已注册的 HookInvoker、getHooks(Long sessionId) 按会话 ID 获取对应的 HookInvoker 列表。用于解耦 ChatService 与具体数据访问层。
+聊天数据提供者接口（com.ghost616.agentbase.service.agent.ChatDataProvider），定义四个方法：getModelConfig(String modelId) 按 ID 获取 ModelConfigData、updateSessionModelId(String sessionId, String modelId) 更新会话的模型 ID、getHooks() 获取所有已注册的 HookInvoker、getHooks(String sessionId) 按会话 ID 获取对应的 HookInvoker 列表。用于解耦 ChatService 与具体数据访问层。
 ## ChatRequest
 
 聊天请求 DTO（com.ghost616.agentbase.dto.chat.ChatRequest），从 platform-app 迁移而来，改包名为 com.ghost616.agentbase.dto.chat。包含字段：sessionId（必填）、content（必填）、modelId（可选）、thinking（可选）。
 ## AgentContextManager
 
-AgentContextManager（非 @Component，通过 @Bean 注册）：注入 ContextDataProvider/SessionManager/ToolManager，管理会话上下文缓存 ConcurrentHashMap；提供 build(sessionId) 实例方法返回 Builder 内部类（支持 modelIdOverride 链式调用），Builder.build() 通过 cache.computeIfAbsent 使用 dataProvider 查询 agent/session 数据、toolManager 加载工具、sessionManager 获取历史消息，并在加载 skills 后遍历每条 SkillConfigDTO 的 skillTools，对 MCP_HTTP 类型工具调用 toolManager.expandMcpTools() 展开为 McpExpandedToolDTO 列表替换原始 DTO；保留 get/remove/addHistoryEntry 方法。
+AgentContextManager（非 @Component，通过 @Bean 注册）：注入 ContextDataProvider/SessionManager/ToolManager，管理会话上下文缓存 ConcurrentHashMap<String, AgentSessionContext>；提供 build(sessionId) 实例方法返回 Builder 内部类（支持 modelIdOverride 链式调用），Builder.build() 通过 cache.computeIfAbsent 使用 dataProvider 查询 agent/session 数据、toolManager 加载工具、sessionManager 获取历史消息，并在加载 skills 后遍历每条 SkillConfigDTO 的 skillTools，对 MCP_HTTP 类型工具调用 toolManager.expandMcpTools() 展开为 McpExpandedToolDTO 列表替换原始 DTO；保留 get/remove/addHistoryEntry 方法。
 sendUserMessage 方法签名改为 Message 返回类型，透传给 AgentContextMutator 回调；方法体实现消息持久化（通过 sessionManager.messageSave()）并返回 Message 对象。
 sendUserMessage 方法签名改为 Message 返回类型，通过 setter 注入 AgentMessageProxy 并委托给 proxy.sendUserMessage()；proxy 为 null 时回退为旧的直接保存 + 返回简单 Message。
 Builder.doBuild() 在遍历 skills 展开 skillTools 的循环中，对每个加入 expandedTools 的 ToolConfigDTO 设置 sessionAuth = SessionAuthType.PARENT；MCP_HTTP 展开得到的 McpExpandedToolDTO 列表也逐个设置 sessionAuth = PARENT，使 skill 下的工具授权统一为父会话使用。
 - doBuild() 中构建 HistoryEntry 时从 msg.usage() 获取 UsageInfo 传入构造器
-- refreshHistory(Long sessionId)：调用 dataProvider.getLatestMessages() 获取最新消息，通过 convertMessagesToHistory() 转为 HistoryEntry 列表，经 mutator.refreshHistory() 更新缓存
-- refreshSessionVariables(Long sessionId)：调用 dataProvider.getLatestSessionVariables()，通过 mutator.refreshSessionVariables() 更新
-- refreshConversationVariables(Long sessionId)：调用 dataProvider.getLatestConversationVariables()，通过 mutator.refreshConversationVariables() 更新
-- refreshChildSessions(Long sessionId)：调用 dataProvider.getLatestChildSessions()，通过 mutator.refreshChildSessions() 更新
+- refreshHistory(String sessionId)：调用 dataProvider.getLatestMessages() 获取最新消息，通过 convertMessagesToHistory() 转为 HistoryEntry 列表，经 mutator.refreshHistory() 更新缓存
+- refreshSessionVariables(String sessionId)：调用 dataProvider.getLatestSessionVariables()，通过 mutator.refreshSessionVariables() 更新
+- refreshConversationVariables(String sessionId)：调用 dataProvider.getLatestConversationVariables()，通过 mutator.refreshConversationVariables() 更新
+- refreshChildSessions(String sessionId)：调用 dataProvider.getLatestChildSessions()，通过 mutator.refreshChildSessions() 更新
 - convertMessagesToHistory(List<MessageDTO>) 从 doBuild 中提取的私有方法，复用消息转 HistoryEntry 逻辑
 - 所有刷新方法在缓存中无对应 sessionId 的上下文时静默返回
 
@@ -83,8 +83,7 @@ AgentContextManager 提供 3 个 public handler 方法供外部系统在收到�
 injectVariableCallbacks() 方法在子会话上下文中，将 sessionVarPutCallback/sessionVarRemoveCallback 直接指向父会话上下文的 putSessionVariable/removeSessionVariable，实现子会话变量读写直接委托给父会话，不经过 MessageSender。ConversationVariable 同理。
 ## ToolExecutionService
 
-工具执行服务，非 Spring 组件。构造函数改为接收 (AgentComponentRegistry, ChatService)，通过 registry 延迟获取 ToolCallQueueManager/ToolManager/SystemToolManager/SessionManager/AgentContextManager/ToolExecutionTracker。提供三个核心方法：executeTool(Long sessionId) 从队列获取下一个工具调用，解析调用器并异步执行；getToolStatus(Long sessionId) 查询当前工具执行状态；continueAfterTools(Long sessionId) 检查无工具在执行后，持久化工具结果、添加历史记录、清理队列和跟踪器，构造 TOOL_CONTINUE_MARKER 请求并调用 chatService.chat()。getToolStatus(Long sessionId, String toolId) toolId 为必传参数。
-新增 setHookManager(HookManager) setter 方法，支持外部注入共享 HookManager 实例替换默认创建的单例。
+工具执行服务，非 Spring 组件。构造函数改为接收 (AgentComponentRegistry, ChatService)，通过 registry 延迟获取 ToolCallQueueManager/ToolManager/SystemToolManager/SessionManager/AgentContextManager/ToolExecutionTracker。提供三个核心方法：executeTool(String sessionId) 从队列获取下一个工具调用，解析调用器并异步执行；getToolStatus(String sessionId, String toolId) 查询当前工具执行状态（toolId 为必传参数）；continueAfterTools(String sessionId) 检查无工具在执行后，持久化工具结果、添加历史记录、清理队列和跟踪器，构造 TOOL_CONTINUE_MARKER 请求并调用 chatService.chat()。
 ## ToolHookContext
 ToolHookContext 数据载体（@Data @AllArgsConstructor @NoArgsConstructor），包含 toolCallId / toolName / arguments / result 四个字段，用于在 BEFORE_TOOL_CALL 和 AFTER_TOOL_CALL 阶段向 HOOK 传递工具执行上下文。
 
@@ -108,10 +107,10 @@ ConfigurableToolInvoker 接口，继承 ToolInvoker，定义 setToolConfig(ToolC
 
 上下文数据提供者接口，定义 agent 配置、技能、会话变量等数据查询方法，以及子会话创建方法 createChildSession。
 - createChildSession 方法参数 agentName 重命名为 sessionName
-- getLatestMessages(Long sessionId) → List<MessageDTO>：获取会话全部消息
-- getLatestSessionVariables(Long sessionId) → Map<String, String>：获取全部会话变量
-- getLatestConversationVariables(Long sessionId) → Map<String, String>：获取全部对话变量
-- getLatestChildSessions(Long sessionId) → List<ChildSession>：获取全部子会话列表
+- getLatestMessages(String sessionId) → List<MessageDTO>：获取会话全部消息
+- getLatestSessionVariables(String sessionId) → Map<String, String>：获取全部会话变量
+- getLatestConversationVariables(String sessionId) → Map<String, String>：获取全部对话变量
+- getLatestChildSessions(String sessionId) → List<ChildSession>：获取全部子会话列表
 ## AgentMessageProxy
 
 AgentMessageProxy 消息代理类，注入 ChatService 和 ToolExecutionService。sendUserMessage(childSessionId, content, modelId) 同步代理：创建 ChatRequest 调用 chatService.chat() 收集 Flux<ServerSentEvent<ChatChunk>> 拼装 Message；检测 hasToolCalls 后循环调用 ToolExecutionService.executeTool() 等待完成 + continueAfterTools() 直到无工具调用，返回最终 assistant Message。
@@ -121,7 +120,7 @@ processChat 创建 Map<String, Integer> toolCallCounts 以 "toolName:arguments" 
 测试覆盖 7 个用例，含振荡保护边界（count >= 5）和 MAX_TOOL_ROUNDS 极限（round > 10），全部通过。
 ## SubSessionCallback
 
-SubSessionCallback 函数式接口（com.ghost616.agentbase.service.agent.invoker），使用 @FunctionalInterface 注解，定义 execute(Long sessionId, String userMessage, Boolean thinking) 方法返回 Message，作为子会话消息处理的回调契约。thinking 参数表示是否启用思考模式，可为 null 表示使用默认行为。
+SubSessionCallback 函数式接口（com.ghost616.agentbase.service.agent.invoker），使用 @FunctionalInterface 注解，定义 execute(String sessionId, String userMessage, Boolean thinking) 方法返回 Message，作为子会话消息处理的回调契约。thinking 参数表示是否启用思考模式，可为 null 表示使用默认行为。
 ## ErrorCode
 
 ErrorCode 枚举，包含系统、模型、工具、智能体、SKILL、会话等模块统一的错误码定义。已定义的系统错误码：SYSTEM_ERROR/PARAM_INVALID/NOT_FOUND/UNAUTHORIZED/DUPLICATE_KEY；模型错误码：MODEL_INVOKE_ERROR/MODEL_VERIFY_ERROR/MODEL_UNSUPPORTED/MODEL_NOT_FOUND/MODEL_ALREADY_EXISTS；工具错误码：TOOL_NOT_FOUND/TOOL_ALREADY_EXISTS/TOOL_SCHEMA_INVALID/TOOL_INVOKE_ERROR/TOOL_RUNTIME_NOT_FOUND/TOOL_EXECUTE_TIMEOUT/TOOL_EXECUTE_ERROR；智能体错误码：AGENT_NOT_FOUND/AGENT_ALREADY_EXISTS；SKILL 错误码：SKILL_NOT_FOUND/SKILL_ALREADY_EXISTS；会话错误码：SESSION_NOT_FOUND/SESSION_NO_USER_MESSAGE/SUB_SESSION_DATA_NOT_FOUND/CHILD_SESSION_NO_MESSAGES。
@@ -140,7 +139,7 @@ MessageDefinition 接口（com.ghost616.agentbase.sendmessage.MessageDefinition�
 MessageName 常量类，定义 5 种消息类型名称：HISTORY_MESSAGE、SESSION_VARIABLE、CONVERSATION_VARIABLE、CHILD_SESSION、CHILD_MESSAGE。
 ## SessionMessage
 
-SessionMessage 抽象类，实现 MessageDefinition，新增 Long sessionId 字段，作为所有会话级消息的基类。
+SessionMessage 抽象类，实现 MessageDefinition，新增 String sessionId 字段，作为所有会话级消息的基类。
 ## HistoryMessage
 
 HistoryMessage 消息类，继承 SessionMessage，messageName=HISTORY_MESSAGE。携带 HistoryEntry historyEntry 字段，由 AgentContextMutator.addHistoryEntry() 在添加历史记录时触发发送。
@@ -149,10 +148,10 @@ HistoryMessage 消息类，继承 SessionMessage，messageName=HISTORY_MESSAGE�
 VariableMessage 消息类，继承 SessionMessage。messageName 为 SESSION_VARIABLE 或 CONVERSATION_VARIABLE，通过 scope 字段区分。携带 scope（"SESSION"/"CONVERSATION"）、key、value、operation（"PUT"/"REMOVE"）字段。由 AgentContextMutator 的 putSessionVariable/removeSessionVariable 发送 SESSION 作用域消息，putConversationVariable/removeConversationVariable 发送 CONVERSATION 作用域消息。messageSender 为 null 时静默跳过发送。
 ## ChildCreateSession
 
-ChildCreateSession 消息类，继承 SessionMessage，messageName=CHILD_SESSION。携带 Long parentSessionId 和 ChildSession childSession 字段。由 AgentContextMutator.createChildSession() 在创建子会话后触发。
+ChildCreateSession 消息类，继承 SessionMessage，messageName=CHILD_SESSION。携带 String parentSessionId 和 ChildSession childSession 字段。由 AgentContextMutator.createChildSession() 在创建子会话后触发。
 ## ChildMessageEvent
 
-ChildMessageEvent 消息类，继承 SessionMessage，messageName=CHILD_MESSAGE。携带 Long childSessionId、String content、Long modelId、Boolean thinking、Message result 字段。由 AgentContextMutator.sendUserMessage() 在子会话消息完成时触发。
+ChildMessageEvent 消息类，继承 SessionMessage，messageName=CHILD_MESSAGE。携带 String childSessionId、String content、String modelId、Boolean thinking、Message result 字段。由 AgentContextMutator.sendUserMessage() 在子会话消息完成时触发。
 ## 资源文件
 
 从 platform-app 迁移而来。agent-base/src/main/resources/agent/ 目录下包含两个工具运行桥接脚本：
@@ -160,7 +159,7 @@ ChildMessageEvent 消息类，继承 SessionMessage，messageName=CHILD_MESSAGE�
 - _runner.ts：TypeScript 工具运行桥接，供 TypeScriptToolInvoker 调用
 ## MessageDataProvider
 
-消息数据提供者接口（com.ghost616.agentbase.service.agent.MessageDataProvider），定义消息保存、查询、回退方法。内部 record MessageDTO 包含字段：Long id, Long sessionId, String role, String content, String reasoning, String toolCallId, Integer sequenceNum, LocalDateTime createTime, String toolResult, List&lt;ToolCallData&gt; toolCalls, UsageInfo usage, Boolean rollback（默认 null）。内部 record ToolCallData 包含字段：String toolCallId, String toolCallName, String toolCallArguments。
+消息数据提供者接口（com.ghost616.agentbase.service.agent.MessageDataProvider），定义消息保存、查询、回退方法。内部 record MessageDTO 包含字段：String id, String sessionId, String role, String content, String reasoning, String toolCallId, Integer sequenceNum, LocalDateTime createTime, String toolResult, List&lt;ToolCallData&gt; toolCalls, UsageInfo usage, Boolean rollback（默认 null）。内部 record ToolCallData 包含字段：String toolCallId, String toolCallName, String toolCallArguments。
 ## SessionVariableSystemTool / ConversationVariableSystemTool
 
 两个系统工具类，实现 SystemTool 接口，用于在会话过程中管理变量。

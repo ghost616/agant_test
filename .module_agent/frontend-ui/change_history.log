@@ -58,3 +58,17 @@
 [2026-07-21T01:48:28.215Z] [session: ses_07da41425ffeybiHuz493h1Bto] 2026-07-21: PlatformType 联合类型增加 'KIMI' 和 'VOLCENGINE'
 [2026-07-21T01:49:55.870Z] [session: ses_07da41425ffeybiHuz493h1Bto] 2026-07-21: 离朱修复 ModelList.tsx 类型错误——PLATFORM_TYPE_LABELS 映射表中新增 KIMI 和 VOLCENGINE 条目
 [2026-07-24T03:05:23.864Z] [session: ses_06deb073effePK3SaPzmV4oBsu] ToolType 添加 CUSTOM；新增 SubToolType(BROWSER)；ToolConfig 新增 subToolType/toolScript；ToolList 新增 CUSTOM 标签/颜色、子工具类型下拉、BROWSER 工具脚本 TextArea、条件隐藏 implPath/Schema
+[2026-07-25T02:40:28.885Z] [session: ses_068db8777ffe1Po85zgpJeWvkr] 新增浏览器工具执行分支功能：session.ts ToolStatusResult 接口新增 toolConfig 字段；新增 getBrowserExtension/getToolScript/passResult 三个 API；新建 toolExecutor.ts 实现 ToolManager（单例管理工具函数注册与 extension 加载）和 ToolExecutor（单例执行工具函数）；AgentChat.tsx 的 pollToolStatus 和 pollSubToolStatus 添加 BROWSER 分支逻辑（加载 extension→注册工具函数→本地执行→passResult 提交结果→继续轮询）
+[2026-07-25T02:49:20.425Z] [session: ses_068db8777ffe1Po85zgpJeWvkr] 审查问题修复：toolExecutor.ts registerFunction 中 toolName 转义防注入、添加 loadExtension JSDoc 注释；AgentChat.tsx 抽取 executeBrowserTool 公共函数消除 BROWSER 分支代码重复
+[2026-07-25T02:53:53.088Z] [session: ses_068db8777ffe1Po85zgpJeWvkr] 第三次修复：toolExecutor.ts registerFunction 转义顺序修正为先反斜杠后单引号；AgentChat.tsx 新增 BrowserToolStatus 接口、优化 executeBrowserTool 类型签名；AgentChat.test.tsx 补充 executeBrowserTool 静态验证测试
+[2026-07-25T02:56:23.144Z] [session: ses_068db8777ffe1Po85zgpJeWvkr] 回归修复：AgentChat.tsx pollToolStatus BROWSER 分支补 continue 语句；toolExecutor.ts registerFunction 增加 toolName 空值校验
+[2026-07-25T04:27:19.424Z] [session: ses_068db8777ffe1Po85zgpJeWvkr] 重构复用全局对象：删除 session.ts 中 passResult（由全局 ToolHostBridge.passToolResult 替代）；toolExecutor.ts 委托全局 ToolManager/ToolExecutor 对象实现函数注册和调用；AgentChat.tsx 移除 passResult 导入和调用；同步更新测试文件
+[2026-07-25T05:27:22.962Z] [session: ses_068426329ffeNAIrOEtM5GvqMX] ToolList: 新增 BROWSER_TOOL_SCRIPT_TEMPLATE 常量；新建 BROWSER 子工具时自动填入模板；toolScript 输入框 rows 增至 12
+[2026-07-25T05:43:55.071Z] [session: ses_06832ff49ffejIhxJyzgvZph6g] fix(ToolList): 移除 BROWSER_TOOL_SCRIPT_TEMPLATE 中 await，避免 new Function 同步执行抛 SyntaxError
+[2026-07-25T05:54:00.079Z] [session: ses_06832ff49ffejIhxJyzgvZph6g] fix(session): 补全 processSSEStream 中 while(true) 循环缺失的闭合花括号，修复 export function agentChatStream 被错误解析为函数内部语句的编译错误
+[2026-07-25T07:28:07.954Z] [session: ses_067d3b1baffeXKknIEnUOQNCSh] AgentChat.tsx: executeBrowserTool 添加 7 个链路日志点（入口、loadExtension、hasFunction、getToolScript、registerFunction、execute、catch）
+[2026-07-25T07:32:36.776Z] [session: ses_067d3b1baffeXKknIEnUOQNCSh] 第二轮链路日志：toolExecutor.ts loadExtension 内部添加 6 个日志点；AgentChat.tsx executeBrowserTool 提升 try-catch 至外层并完善 error 打印（message+stack）
+[2026-07-25T07:50:50.035Z] [session: ses_067d3b1baffeXKknIEnUOQNCSh] toolExecutor.ts: hasFunction/registerFunction 移除错误的 ToolHostBridge.registerTool 前置条件，直接操作 ToolManager
+[2026-07-25T08:01:34.870Z] [session: ses_067d3b1baffeXKknIEnUOQNCSh] toolExecutor.ts: loadExtension 通过 return 获取 JS 对象存入实例属性，所有方法改用实例属性替代 window 访问
+[2026-07-25T08:24:29.737Z] [session: ses_067d3b1baffeXKknIEnUOQNCSh] toolExecutor.ts: JBToolExecutor.execute 参数顺序改为 (sessionId, toolConfigId, toolName, params) 以匹配 JS 端；ToolExecutor.execute 移除 toolId 参数
+[2026-07-27T01:09:43.444Z] [session: ses_05ee1651effeZ6JYxEQvyHQuNW] 修正 JBToolHostBridge.passToolResult 接口参数名 toolId → toolConfigId (toolExecutor.ts:4)；修正 AgentChat.tsx:271 passToolResult 调用从 4 参数改为 3 参数，移除冗余 toolId

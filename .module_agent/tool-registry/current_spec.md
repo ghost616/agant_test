@@ -52,3 +52,6 @@ ToolManager.expandMcpTools() 返回类型改为 List<McpExpandedToolDTO>，展�
 - ToolDetailDTO 继承 ToolConfigDTO，增加 subToolType 和 toolScript 字段，作为 Service 层统一的返回类型
 - ToolCreateRequest 和 ToolUpdateRequest 新增 subToolType 和 toolScript 字段，create 的 implPath 不再必填
 - 创建/更新时：subToolType==BROWSER 且 toolType==null 时自动设为 CUSTOM；BROWSER 时 toolScript 必填，跳过 implPath 校验；非 BROWSER 时仍按原逻辑校验 implPath
+- validateToolScript() 校验 toolScript：非空、非仅空白/注释（strip 后去除 // 单行注释和 /**/ 多块注释），通过 validateJsSyntax() 进行括号匹配（()/[]/{}，跳过字符串字面量内的括号），括号不匹配抛 TOOL_SCHEMA_INVALID 异常。
+- create() 和 update() 的 BROWSER 分支在空/空白校验通过后调用 validateToolScript()
+- update() 中 toolScript 仅由 BROWSER 分支设置，移除冗余的全局 setToolScript() 调用

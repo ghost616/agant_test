@@ -168,6 +168,10 @@
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/browser/BrowserToolCallbackImpl.java",
       "description": "BrowserToolCallback 接口实现，@Component，使用 ConcurrentHashMap 管理 BrowserToolTask，execute 方法阻塞等待 toolResult.complete() 后返回结果"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/util/IdConverter.java",
+      "description": "ID 类型转换工具类，提供 String 与 Long 之间的转换方法（parse/toString/parseList/toStringList），统一处理 agent-base（String）与 platform-app（Long）之间的 ID 类型转换"
     }
   ]
 }

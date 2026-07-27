@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_068424a66ffeR8HfkX8beaSkUG",
+  "content": "## 待测试功能\n\n### 1. validateToolScript() / validateJsSyntax()\n- 非空验证：null 或空白应抛出异常\n- 仅注释验证：仅 `//` 或 `/* */` 注释应抛出异常\n- 括号匹配验证：未闭合/错位括号应抛出异常（如 `function() {` 缺 `}`、`({[)}` 错位）\n- 括号内嵌字符串：字符串内的括号不参与匹配\n\n### 2. create() BROWSER 分支\n- 合法 toolScript → 创建成功\n- 仅注释 → 抛出异常\n- 括号不匹配 → 抛出异常\n\n### 3. update() BROWSER 分支\n- 合法 toolScript → 更新成功\n- 仅注释 → 抛出异常\n- 括号不匹配 → 抛出异常\n- null toolScript → 保留原值（不触发校验）\n- 非 BROWSER 更新 → 不涉及 toolScript\n\n## 涉及文件\n- platform-app/src/main/java/com/ghost616/platform/service/tool/ToolConfigServiceImpl.java\n- platform-app/src/test/java/com/ghost616/platform/service/tool/ToolConfigServiceImplTest.java",
+  "timestamp": "2026-07-25T05:38:44.531Z"
+}

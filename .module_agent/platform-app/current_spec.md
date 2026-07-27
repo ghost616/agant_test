@@ -89,3 +89,11 @@ platform-app 模块包含以下功能：
 - DefaultChatDataProvider.getHooks(Long sessionId) 已实现，返回空列表（List.of()），作为 ChatDataProvider 接口带参 getHooks 的重载实现
 - DefaultToolDataProvider 实现 ToolDataProvider 新增的 getCustomInvoker 方法（抛出 UnsupportedOperationException）
 - 已删除 DefaultCustomToolInvokerProvider（原实现 CustomToolInvokerProvider），AgentContextConfiguration 中移除相关 @Bean、import 及 agentAssembler 参数，AgentContextConfigurationTest 同步清理
+## ID 类型转换层
+
+- IdConverter 工具类（com.ghost616.platform.util.IdConverter）提供 parse/toString/parseList/toStringList 方法，统一处理 agent-base（String）与 platform-app（Long）之间的 ID 类型转换
+- DataProvider 实现类（DefaultContextDataProvider、DefaultMessageDataProvider、DefaultChatDataProvider、DefaultToolDataProvider、DefaultToolExecutionProvider）的接口方法入参 String ID 转换为 Long 后再执行内部逻辑，返回值中的 Long ID 转换为 String
+- DefaultSubSessionCallback 的 SubSessionCallback.execute 方法签名适配为 String sessionId，内部转换为 Long
+- Controller 层（ChatController、ToolExecutionController、AgentContextController）中调用 agent-base 服务时，将 Controller 路径参数 Long 转换为 String 传入
+- SessionServiceImpl 中调用 SessionManager、AgentContextManager、ToolManager 时，将 Long sessionId 转换为 String
+- AgentContextController 中从 AgentExecutionContext（String ID）读取数据填充 AgentContextDTO（Long ID）时，将 String 转换为 Long

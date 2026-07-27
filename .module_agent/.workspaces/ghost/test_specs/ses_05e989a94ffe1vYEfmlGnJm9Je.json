@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_05e989a94ffe1vYEfmlGnJm9Je",
+  "content": "## 待测试功能\n\n### 1. BrowserToolInvoker 异常返回格式统一\n- **涉及文件**: \n  - `agent-integration/src/main/java/com/ghost616/agentinteg/tool/BrowserToolInvoker.java`\n  - `agent-integration/src/test/java/com/ghost616/agentinteg/tool/BrowserToolInvokerTest.java`\n- **变更内容**: catch 块返回 JSON 从 `{\"error\":\"...\"}` 改为 `{\"status\":\"error\",\"errMsg\":\"...\"}`\n- **已有测试**: `execute_callback抛出异常_返回JSON错误信息()`、`execute_callback抛出异常_内部序列化也失败时返回简单错误JSON()`\n- **已有测试验证点**: 返回值包含 \"error\" 和异常消息字符串\n\n### 2. browser_tool_executor.js tool.handler() try/catch\n- **涉及文件**:\n  - `agent-integration/src/main/resources/browser/browser_tool_executor.js`\n- **变更内容**: `ToolExecutor.execute()` 和 `getToolResult()` 中 `tool.handler()` 调用包裹 try/catch，异常时返回 `{\"status\":\"error\",\"errMsg\":\"...\"}`\n",
+  "timestamp": "2026-07-27T02:29:46.654Z"
+}

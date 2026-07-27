@@ -1,5 +1,15 @@
 {
+  "agent-base": [
+    "ses_05e765149ffevFMfMUibZ46mBU",
+    "ses_05e760befffeO7RiBJITiidJ5R"
+  ],
+  "agent-integration": [
+    "ses_05e6a3185ffe2YcBy97rgcDo87"
+  ],
+  "platform-app": [
+    "ses_05e6493deffesAJJWwDwm8Eg2N"
+  ],
   "_checked": [
-    "ses_073289863ffej3UOwimGhiI8sp"
+    "ses_05e7684acffeEJTLtFoogakzis"
   ]
 }

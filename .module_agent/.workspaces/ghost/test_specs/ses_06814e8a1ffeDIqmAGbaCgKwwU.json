@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_06814e8a1ffeDIqmAGbaCgKwwU",
+  "content": "## 待测试功能\n\n### 1. DefaultToolDataProvider.getCustomInvoker\n- **文件**: `platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultToolDataProvider.java`\n- **功能**: 根据 ToolConfigDTO 获取自定义工具调用器。当 toolType==CUSTOM 且 subToolType==BROWSER 时返回 BrowserToolInvoker；否则抛出 UnsupportedOperationException。\n\n### 2. 测试文件\n- **文件**: `platform-app/src/test/java/com/ghost616/platform/service/agent/DefaultToolDataProviderTest.java`\n- **涉及类/方法**:\n  - `DefaultToolDataProviderTest.GetCustomInvokerTest`:\n    - `customBrowser_shouldReturnBrowserToolInvoker` — CUSTOM+BROWSER 返回 BrowserToolInvoker 实例\n    - `customBrowser_invokerShouldContainCorrectConfig` — 返回的 invoker 不为 null\n    - `nonCustom_shouldThrow` — 非 CUSTOM 类型抛出 UnsupportedOperationException\n    - `customNonBrowser_shouldThrow` — CUSTOM + null subToolType 抛出 UnsupportedOperationException\n  - `DefaultToolDataProviderTest.GetSessionToolIdsTest`（回归）:\n    - `shouldReturnSessionToolInfoList` — 已有测试回归\n    - `nullAuth_shouldDefaultToAll` — 已有测试回归\n    - `emptyTools_shouldReturnEmptyList` — 已有测试回归",
+  "timestamp": "2026-07-25T06:17:49.568Z"
+}

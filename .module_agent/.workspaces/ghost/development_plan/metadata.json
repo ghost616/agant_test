@@ -1,23 +1,32 @@
 [
   {
-    "plan_id": "plan_8b4b7658-7b91-4446-9e92-ba1e2c60d481",
-    "plan_summary": "DefaultToolExecutionProvider.updateExecution实现同步更新",
+    "plan_id": "plan_3d2416f2-01d1-4612-a36d-68f193ad3637",
+    "plan_summary": "agent-base 模块 Long 类型 ID 字段改为 String 类型",
+    "starter_session_id": "ses_05e7684acffeEJTLtFoogakzis",
     "code_reviewed": false,
-    "plan_completed": false,
-    "test_passed": false
+    "plan_completed": true,
+    "test_passed": true
   },
   {
-    "plan_id": "plan_a1a6fc41-8298-48e7-9e37-5b58da99760b",
-    "plan_summary": "HookManager新增triggerSessionHooks方法，ChatService和ToolExecutionService在triggerHooks前调用",
-    "starter_session_id": "ses_077039d03ffe98hhihYjME6nTU",
+    "plan_id": "plan_5817555d-d555-48f9-b0b1-7c6e332e221e",
+    "plan_summary": "agent-base 模块 Long 类型 ID 改为 String 类型",
+    "starter_session_id": "ses_05e7684acffeEJTLtFoogakzis",
     "code_reviewed": false,
-    "plan_completed": false,
-    "test_passed": false
+    "plan_completed": true,
+    "test_passed": true
   },
   {
-    "plan_id": "plan_9ce364a4-b0f1-4648-b7db-33ca7835c8b3",
-    "plan_summary": "新增AgentContextController和BrowserToolController两个REST控制器",
-    "starter_session_id": "ses_06bd65d4effee7ii0hPEG2YOj2",
+    "plan_id": "plan_bda52cd6-812c-4fef-ad34-763479a73bca",
+    "plan_summary": "agent-integration 模块 Long 类型 ID 改为 String 类型",
+    "starter_session_id": "ses_05e7684acffeEJTLtFoogakzis",
+    "code_reviewed": false,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_f73e22ef-f9e2-44ef-85ab-4d2f3a622544",
+    "plan_summary": "platform-app 模块增加 String/Long 转换逻辑",
+    "starter_session_id": "ses_05e7684acffeEJTLtFoogakzis",
     "code_reviewed": false,
     "plan_completed": true,
     "test_passed": true

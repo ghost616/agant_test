@@ -12,5 +12,9 @@
   "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/HookManager.java": "daa5d03bbb33375312b3d820d2346787",
   "agent-integration/src/test/java/com/ghost616/agentinteg/AgentAssemblerTest.java": "00e9775fafa9030c988958b00c1bc515",
   "agent-integration/src/main/java/com/ghost616/agentinteg/tool/BrowserToolInvoker.java": "f153fdebdd5a0055f86c2a271088b628",
-  "agent-integration/src/test/java/com/ghost616/agentinteg/tool/BrowserToolInvokerTest.java": "79c2c7615fe4f0ea12335fcb07b1d1f1"
+  "agent-integration/src/test/java/com/ghost616/agentinteg/tool/BrowserToolInvokerTest.java": "79c2c7615fe4f0ea12335fcb07b1d1f1",
+  "agent-integration/src/main/resources/browser/browser_tool_executor.js": "74b1cd1939e566234d0ea0f92f00045a",
+  "agent-integration/src/main/java/com/ghost616/agentinteg/tool/BrowserToolCallback.java": "9cb2e7b1e1bbba4bb0f2cdef1919a168",
+  "platform-app/src/main/java/com/ghost616/platform/service/browser/BrowserToolCallbackImpl.java": "60eb060a7fca8eb2e82f8029beb2604d",
+  "agent-integration\\src\\main\\java\\com\\ghost616\\agentinteg\\tool\\SubSessionCallbackSystemTool.java": "124b85718139b6728e43dbcf90e3bd4a"
 }

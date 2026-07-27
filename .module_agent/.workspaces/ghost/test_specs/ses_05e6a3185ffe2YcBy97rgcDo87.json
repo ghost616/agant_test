@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_05e6a3185ffe2YcBy97rgcDo87",
+  "content": "## 待测试功能\n\n### 1. 编译测试（适用：所有修改的 Java 源文件）\n涉及类型签名变更（Long→String），需要 Maven 编译验证：\n- AgentAssembler.java — ChatDataProviderProxy 中三个方法签名参数类型变更\n- SubSessionCallbackSystemTool.java — toolIds/skillIds/childSessionId 类型变更\n- BrowserToolInvoker.java — 移除 String.valueOf() 调用\n\n### 2. 单元测试\n涉及文件：\n- agent-integration/src/test/java/com/ghost616/agentinteg/tool/SubSessionCallbackSystemToolTest.java — 测试子会话回调逻辑（toolIds/skillIds 类型变更适配）\n- agent-integration/src/test/java/com/ghost616/agentinteg/tool/BrowserToolInvokerTest.java — 测试浏览器工具调用器（sessionId 类型变更适配）\n- agent-integration/src/test/java/com/ghost616/agentinteg/AgentAssemblerTest.java — 测试组件组装器（ChatDataProviderProxy 签名变更适配）",
+  "timestamp": "2026-07-27T03:21:56.157Z"
+}
