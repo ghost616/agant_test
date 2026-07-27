@@ -3,6 +3,7 @@ package com.ghost616.platform.controller;
 import com.ghost616.platform.dto.ApiResponse;
 import com.ghost616.platform.dto.evaluation.EvaluationCreateRequest;
 import com.ghost616.platform.dto.evaluation.EvaluationDTO;
+import com.ghost616.platform.dto.evaluation.EvaluationResultDTO;
 import com.ghost616.platform.dto.evaluation.EvaluationUpdateRequest;
 import com.ghost616.platform.service.evaluation.EvaluationService;
 import jakarta.validation.Valid;
@@ -28,6 +29,12 @@ public class EvaluationController {
     @GetMapping
     public ApiResponse<List<EvaluationDTO>> list() {
         List<EvaluationDTO> result = evaluationService.list();
+        return ApiResponse.success(result);
+    }
+
+    @GetMapping("/{id}/results")
+    public ApiResponse<List<EvaluationResultDTO>> listResults(@PathVariable Long id) {
+        List<EvaluationResultDTO> result = evaluationService.listResults(id);
         return ApiResponse.success(result);
     }
 

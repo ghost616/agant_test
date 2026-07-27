@@ -1,0 +1,5 @@
+{
+  "lizhu_session_id": "ses_05c577728ffedK6B3HfLV3GasD",
+  "content": "# Evaluation 结果列表接口编译测试报告\n\n## 测试概览\n\n| 测试类型 | 通过 | 失败 | 跳过 |\n|---------|------|------|------|\n| 编译测试 | 1 | 0 | 0 |\n| **合计** | **1** | **0** | **0** |\n\n## 编译测试详情\n\n### 1. Maven 编译检查\n\n- **命令**: `mvn compile -pl agent-base,platform-app -am -q`\n- **工作目录**: `E:\\test_tool`\n- **Exit Code**: `0`\n- **输出**: 无错误输出\n- **结果**: ✅ **通过**\n\n编译涉及以下文件：\n- `platform-app/src/main/java/com/ghost616/platform/dto/evaluation/EvaluationResultDTO.java`\n- `platform-app/src/main/java/com/ghost616/platform/service/evaluation/EvaluationService.java`\n- `platform-app/src/main/java/com/ghost616/platform/service/evaluation/EvaluationServiceImpl.java`\n- `platform-app/src/main/java/com/ghost616/platform/controller/EvaluationController.java`\n\n## 结论\n\n所有测试均通过。Maven 编译检查无任何错误。\n",
+  "timestamp": "2026-07-27T12:59:57.523Z"
+}

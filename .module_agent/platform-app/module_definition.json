@@ -167,15 +167,19 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/evaluation/EvaluationService.java",
-      "description": "评估业务服务接口，定义 list/getById/create/update/delete 五个方法的契约"
+      "description": "评估业务服务接口，定义 list/getById/create/update/delete/listResults 六个方法的契约"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/evaluation/EvaluationServiceImpl.java",
-      "description": "评估业务服务实现类，包含 name 唯一性校验、级联删除（EvaluationResult → Session → SessionVariable/SessionTool/SessionSkill/Message → MessageToolCall）等完整业务逻辑"
+      "description": "评估业务服务实现类，包含 name 唯一性校验、级联删除（EvaluationResult → Session → SessionVariable/SessionTool/SessionSkill/Message → MessageToolCall）、listResults 列表查询等完整业务逻辑"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/controller/EvaluationController.java",
-      "description": "评估 REST 控制器，路径 /api/evaluations，提供完整的 CRUD 五个接口：GET 列表/GET 详情/POST 创建/PUT 修改/DELETE 删除"
+      "description": "评估 REST 控制器，路径 /api/evaluations，提供完整的 CRUD 五个接口以及 /{id}/results 结果列表查询共六个端点"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/dto/evaluation/EvaluationResultDTO.java",
+      "description": "评估结果响应 DTO，包含 id/evaluationId/evaluationSessionId/result/createTime 字段，Long 型字段使用 ToStringSerializer 序列化"
     }
   ]
 }

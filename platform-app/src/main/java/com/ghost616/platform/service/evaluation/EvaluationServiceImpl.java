@@ -3,6 +3,7 @@ package com.ghost616.platform.service.evaluation;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.ghost616.platform.dto.evaluation.EvaluationCreateRequest;
 import com.ghost616.platform.dto.evaluation.EvaluationDTO;
+import com.ghost616.platform.dto.evaluation.EvaluationResultDTO;
 import com.ghost616.platform.dto.evaluation.EvaluationUpdateRequest;
 import com.ghost616.platform.entity.Evaluation;
 import com.ghost616.platform.entity.EvaluationResult;
@@ -25,6 +26,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import com.ghost616.agentbase.enums.ErrorCode;
 import com.ghost616.agentbase.exception.BusinessException;
@@ -156,6 +159,26 @@ public class EvaluationServiceImpl implements EvaluationService {
         evaluationMapper.deleteById(id);
     }
 
+    @Override
+    public List<EvaluationResultDTO> listResults(Long evaluationId) {
+        LambdaQueryWrapper<EvaluationResult> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(EvaluationResult::getEvaluationId, evaluationId);
+        wrapper.orderByDesc(EvaluationResult::getCreateTime);
+        List<EvaluationResult> entities = evaluationResultMapper.selectList(wrapper);
+
+        List<Long> sessionIds = entities.stream()
+                .map(EvaluationResult::getEvaluationSessionId)
+                .distinct()
+                .toList();
+        Map<Long, Session> sessionMap = sessionMapper.selectBatchIds(sessionIds)
+                .stream()
+                .collect(Collectors.toMap(Session::getId, s -> s));
+
+        return entities.stream()
+                .map(e -> toResultDTO(e, sessionMap.get(e.getEvaluationSessionId())))
+                .toList();
+    }
+
     private EvaluationDTO toDTO(Evaluation entity) {
         return EvaluationDTO.builder()
                 .id(entity.getId())
@@ -166,6 +189,17 @@ public class EvaluationServiceImpl implements EvaluationService {
                 .modelId(entity.getModelId())
                 .createTime(entity.getCreateTime())
                 .updateTime(entity.getUpdateTime())
+                .build();
+    }
+
+    private EvaluationResultDTO toResultDTO(EvaluationResult entity, Session session) {
+        return EvaluationResultDTO.builder()
+                .id(entity.getId())
+                .evaluationId(entity.getEvaluationId())
+                .evaluationSessionId(entity.getEvaluationSessionId())
+                .result(entity.getResult())
+                .totalTokenUsed(session != null ? session.getTotalTokenUsed() : null)
+                .createTime(entity.getCreateTime())
                 .build();
     }
 }

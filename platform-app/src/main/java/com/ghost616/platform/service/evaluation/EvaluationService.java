@@ -2,6 +2,7 @@ package com.ghost616.platform.service.evaluation;
 
 import com.ghost616.platform.dto.evaluation.EvaluationCreateRequest;
 import com.ghost616.platform.dto.evaluation.EvaluationDTO;
+import com.ghost616.platform.dto.evaluation.EvaluationResultDTO;
 import com.ghost616.platform.dto.evaluation.EvaluationUpdateRequest;
 
 import java.util.List;
@@ -17,4 +18,6 @@ public interface EvaluationService {
     EvaluationDTO update(Long id, EvaluationUpdateRequest request);
 
     void delete(Long id);
+
+    List<EvaluationResultDTO> listResults(Long evaluationId);
 }

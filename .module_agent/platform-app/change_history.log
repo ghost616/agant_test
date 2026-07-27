@@ -107,3 +107,4 @@
 [2026-07-27T06:28:06.704Z] [session: ses_05debf2f8ffeGNMFrpvpp3qFMb] 移出文件定义到 [platform-data]: platform-app/src/main/resources/schema.sql, platform-app/src/main/java/com/ghost616/platform/config/SchemaMigration.java
 [2026-07-27T08:26:38.572Z] [session: ses_05d518535ffeWkFCZQ6FdxhIXu] SessionDTO 新增 isEvaluation(Boolean) 字段（@JsonSerialize ToStringSerializer）；SessionServiceImpl.toDTO 映射 entity.getIsEvaluation()；listSessions 添加 wrapper.eq(Session::getIsEvaluation, false) 过滤评估会话
 [2026-07-27T12:47:28.555Z] [session: ses_05c63456affefAWrxeu0QYxk9p] 新增 Evaluation CRUD 后端接口：dto/evaluation/ 包下三个 DTO、service/evaluation/ 包下 EvaluationService 接口与实现、controller/EvaluationController.java 控制器，提供 /api/evaluations 五端点（GET 列表/GET 详情/POST 创建/PUT 修改/DELETE 删除），包含 name 唯一性校验和级联删除逻辑
+[2026-07-27T12:59:11.747Z] [session: ses_05c63456affefAWrxeu0QYxk9p] EvaluationResultDTO 新增；EvaluationService/EvaluationServiceImpl 新增 listResults 方法；EvaluationController 新增 GET /{id}/results 端点

@@ -149,10 +149,14 @@ function EvaluationList(): JSX.Element {
       ellipsis: true,
     },
     {
-      title: '基准会话ID',
+      title: '基准会话',
       dataIndex: 'benchmarkSessionId',
       width: 200,
       ellipsis: true,
+      render: (id: string) => {
+        const session = sessionList.find((s) => s.id === id);
+        return session?.title || id;
+      },
     },
     {
       title: '执行次数',
@@ -160,10 +164,14 @@ function EvaluationList(): JSX.Element {
       width: 100,
     },
     {
-      title: '模型ID',
+      title: '模型',
       dataIndex: 'modelId',
       width: 160,
       ellipsis: true,
+      render: (id: string) => {
+        const model = modelList.find((m) => m.id === id);
+        return model?.name || id;
+      },
     },
     {
       title: '创建时间',

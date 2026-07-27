@@ -5,5 +5,24 @@
     "modified_files": [],
     "summary": "力牧已启动",
     "errors": []
+  },
+  {
+    "plan_id": "plan_1ff3235a-81be-4242-b8ba-ff64c8789f2d",
+    "plan": "添加评估结果列表接口",
+    "modified_files": [
+      "platform-app/src/main/java/com/ghost616/platform/dto/evaluation/EvaluationResultDTO.java",
+      "platform-app/src/main/java/com/ghost616/platform/service/evaluation/EvaluationService.java",
+      "platform-app/src/main/java/com/ghost616/platform/service/evaluation/EvaluationServiceImpl.java",
+      "platform-app/src/main/java/com/ghost616/platform/controller/EvaluationController.java"
+    ],
+    "summary": "新增 EvaluationResultDTO、EvaluationService.listResults 方法、EvaluationServiceImpl.listResults 与 toResultDTO 实现、EvaluationController GET /{id}/results 端点。编译测试通过。",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_7595f0e1-ead6-44ec-82e8-9f197833a76d",
+    "plan": "## 评估结果列表增加会话Token消耗字段\n\n### 1. EvaluationResultDTO.java 新增字段\n添加 `@JsonSerialize(using = ToStringSerializer.class) private Long totalTokenUsed;` 字段\n\n### 2. EvaluationServiceImpl.java 修改 listResults 和 toResultDTO\n在 listResults() 方法中：\n- 查询所有 EvaluationResult 后，收集 evaluationSessionId 列表（去重），批量调用 sessionMapper.selectBatchIds(sessionIds) 获取 Session 列表\n- 构建 Map<Long, Session> sessionMap\n- 修改 toResultDTO 方法签名为 toResultDTO(EvaluationResult entity, Session session)，从 session 获取 totalTokenUsed 传入 Builder\n- 若 Session 为 null，totalTokenUsed 设为 null\n\nlistResults() 中 map 调用改为：entities.stream().map(e -> toResultDTO(e, sessionMap.get(e.getEvaluationSessionId()))).toList()",
+    "modified_files": [],
+    "summary": "力牧已接收新计划",
+    "errors": []
   }
 ]

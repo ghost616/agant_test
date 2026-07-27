@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Button, message, Space, Table } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import type { Evaluation, EvaluationResult } from '../../types/evaluation';
 import { getEvaluation, getEvaluationResults } from '../../services/evaluation';
 
 function EvaluationResultList(): JSX.Element {
+  const navigate = useNavigate();
   const { id: evaluationId } = useParams<{ id: string }>();
   const [evaluation, setEvaluation] = useState<Evaluation | null>(null);
   const [dataSource, setDataSource] = useState<EvaluationResult[]>([]);
@@ -50,6 +51,12 @@ function EvaluationResultList(): JSX.Element {
       ellipsis: true,
     },
     {
+      title: 'Token消耗',
+      dataIndex: 'totalTokenUsed',
+      width: 120,
+      render: (val: string) => val || '-',
+    },
+    {
       title: '结果摘要',
       dataIndex: 'result',
       width: 300,
@@ -78,6 +85,9 @@ function EvaluationResultList(): JSX.Element {
         评估名称：{evaluation?.name || '-'}
       </h3>
       <Space style={{ marginBottom: 16 }}>
+        <Button onClick={() => navigate('/evaluations')}>
+          回退
+        </Button>
         <Button type="primary" onClick={handleExecute}>
           执行
         </Button>
@@ -89,7 +99,7 @@ function EvaluationResultList(): JSX.Element {
         dataSource={dataSource}
         loading={loading}
         pagination={false}
-        scroll={{ x: 1000 }}
+        scroll={{ x: 1200 }}
       />
     </div>
   );

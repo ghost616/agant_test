@@ -30,5 +30,6 @@ export interface EvaluationResult {
   evaluationId: string;
   evaluationSessionId: string;
   result?: string;
+  totalTokenUsed?: string;
   createTime?: string;
 }
