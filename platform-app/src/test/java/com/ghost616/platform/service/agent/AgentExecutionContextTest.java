@@ -36,9 +36,9 @@ class AgentExecutionContextTest {
     void setUp() {
         mutator = new AgentExecutionContext.AgentContextMutator();
         context = new AgentExecutionContext(
-                1L, 1L, "system prompt", 1L, 10,
+                "1", "1", "system prompt", "1", 10,
                 new ArrayList<>(), new ArrayList<>(), new ArrayList<>(),
-                mutator, new HashMap<>(), new HashMap<>(), null, null);
+                mutator, new HashMap<>(), new HashMap<>(), null, null, null);
     }
 
     @Test
@@ -345,12 +345,12 @@ class AgentExecutionContextTest {
             Message expected = Message.builder().role("user").content("hello").build();
             setCallback(new AgentExecutionContext.AgentContextMutator.SendUserMessageCallback() {
                 @Override
-                public Message send(Long childSessionId, String content, Long modelId, Boolean thinking) {
+                public Message send(String childSessionId, String content, String modelId, Boolean thinking) {
                     return expected;
                 }
             });
 
-            Message result = mutator.sendUserMessage(1L, "hello", 100L, null);
+            Message result = mutator.sendUserMessage("1", "hello", "100", null);
             assertNotNull(result);
             assertEquals("user", result.getRole());
             assertEquals("hello", result.getContent());
@@ -358,7 +358,7 @@ class AgentExecutionContextTest {
 
         @Test
         void 反向_mutator_sendUserMessage_回调为null返回null() {
-            assertNull(mutator.sendUserMessage(1L, "hello", 100L, null));
+            assertNull(mutator.sendUserMessage("1", "hello", "100", null));
         }
 
         @Test
@@ -366,12 +366,12 @@ class AgentExecutionContextTest {
             Message expected = Message.builder().role("user").content("from context").build();
             setCallback(new AgentExecutionContext.AgentContextMutator.SendUserMessageCallback() {
                 @Override
-                public Message send(Long childSessionId, String content, Long modelId, Boolean thinking) {
+                public Message send(String childSessionId, String content, String modelId, Boolean thinking) {
                     return expected;
                 }
             });
 
-            Message result = context.sendUserMessage(2L, "from context", 200L, null);
+            Message result = context.sendUserMessage("2", "from context", "200", null);
             assertNotNull(result);
             assertEquals("user", result.getRole());
             assertEquals("from context", result.getContent());
@@ -379,18 +379,18 @@ class AgentExecutionContextTest {
 
         @Test
         void 反向_context_sendUserMessage_mutator回调为null返回null() {
-            assertNull(context.sendUserMessage(2L, "any", 200L, null));
+            assertNull(context.sendUserMessage("2", "any", "200", null));
         }
 
         @Test
         void 正向_context_sendUserMessage_透传参数给mutator() {
-            AtomicReference<Long> capturedSessionId = new AtomicReference<>();
+            AtomicReference<String> capturedSessionId = new AtomicReference<>();
             AtomicReference<String> capturedContent = new AtomicReference<>();
-            AtomicReference<Long> capturedModelId = new AtomicReference<>();
+            AtomicReference<String> capturedModelId = new AtomicReference<>();
             AtomicReference<Boolean> capturedThinking = new AtomicReference<>();
             setCallback(new AgentExecutionContext.AgentContextMutator.SendUserMessageCallback() {
                 @Override
-                public Message send(Long childSessionId, String content, Long modelId, Boolean thinking) {
+                public Message send(String childSessionId, String content, String modelId, Boolean thinking) {
                     capturedSessionId.set(childSessionId);
                     capturedContent.set(content);
                     capturedModelId.set(modelId);
@@ -399,10 +399,10 @@ class AgentExecutionContextTest {
                 }
             });
 
-            context.sendUserMessage(99L, "paramTest", 300L, true);
-            assertEquals(Long.valueOf(99L), capturedSessionId.get());
+            context.sendUserMessage("99", "paramTest", "300", true);
+            assertEquals("99", capturedSessionId.get());
             assertEquals("paramTest", capturedContent.get());
-            assertEquals(Long.valueOf(300L), capturedModelId.get());
+            assertEquals("300", capturedModelId.get());
             assertEquals(true, capturedThinking.get());
         }
     }
@@ -443,8 +443,8 @@ class AgentExecutionContextTest {
             parentVars.put("parentKey", "parentVal");
 
             AgentExecutionContext parentCtx = new AgentExecutionContext(
-                    1L, 1L, "p", 1L, 10, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(),
-                    new AgentExecutionContext.AgentContextMutator(), parentVars, new HashMap<>(), null, null);
+                    "1", "1", "p", "1", 10, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(),
+                    new AgentExecutionContext.AgentContextMutator(), parentVars, new HashMap<>(), null, null, null);
 
             try {
                 Field f = AgentExecutionContext.AgentContextMutator.class.getDeclaredField("getSessionVarCallback");
@@ -455,8 +455,8 @@ class AgentExecutionContextTest {
             }
 
             AgentExecutionContext childCtx = new AgentExecutionContext(
-                    2L, 1L, "c", 1L, 10, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(),
-                    childMutator, new HashMap<>(), new HashMap<>(), 1L, null);
+                    "2", "1", "c", "1", 10, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(),
+                    childMutator, new HashMap<>(), new HashMap<>(), "1", null, null);
 
             assertEquals("parentVal", childCtx.getSessionVariable("parentKey"));
         }
@@ -469,8 +469,8 @@ class AgentExecutionContextTest {
             parentVars.put("pk2", "pv2");
 
             AgentExecutionContext parentCtx = new AgentExecutionContext(
-                    1L, 1L, "p", 1L, 10, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(),
-                    new AgentExecutionContext.AgentContextMutator(), parentVars, new HashMap<>(), null, null);
+                    "1", "1", "p", "1", 10, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(),
+                    new AgentExecutionContext.AgentContextMutator(), parentVars, new HashMap<>(), null, null, null);
 
             try {
                 Field f = AgentExecutionContext.AgentContextMutator.class.getDeclaredField("getSessionVarKeysCallback");
@@ -481,8 +481,8 @@ class AgentExecutionContextTest {
             }
 
             AgentExecutionContext childCtx = new AgentExecutionContext(
-                    2L, 1L, "c", 1L, 10, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(),
-                    childMutator, new HashMap<>(), new HashMap<>(), 1L, null);
+                    "2", "1", "c", "1", 10, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(),
+                    childMutator, new HashMap<>(), new HashMap<>(), "1", null, null);
 
             Set<String> keys = childCtx.getSessionVariableKeys();
             assertTrue(keys.containsAll(Set.of("pk1", "pk2")));

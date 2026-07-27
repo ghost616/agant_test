@@ -1,0 +1,2 @@
+专长：Spring Boot 3 + JPA + MyBatis-Plus 数据层开发，Maven 多模块项目管理。
+其他约定：本模块为独立 Maven 工程，包含 entity 和 repository 层，不依赖其他业务模块。

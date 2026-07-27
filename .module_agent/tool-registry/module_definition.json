@@ -6,20 +6,12 @@
       "description": "数学计算测试 Python 工具，安全求值（禁用 __builtins__），支持 math 模块所有函数"
     },
     {
-      "path": "platform-app/src/main/java/com/ghost616/platform/entity/ToolConfig.java",
-      "description": "工具配置实体，含 authConfig 字段"
-    },
-    {
       "path": "platform-app/src/main/java/com/ghost616/platform/dto/tool/ToolCreateRequest.java",
       "description": "工具创建请求 DTO，name 字段 @Pattern 校验"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/dto/tool/ToolUpdateRequest.java",
       "description": "工具更新请求 DTO"
-    },
-    {
-      "path": "platform-app/src/main/java/com/ghost616/platform/repository/ToolConfigMapper.java",
-      "description": "工具配置 MyBatis-Plus Mapper"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/tool/ToolConfigService.java",

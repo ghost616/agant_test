@@ -21,6 +21,7 @@
     <modules>
         <module>agent-base</module>
         <module>agent-integration</module>
+        <module>platform-data</module>
         <module>platform-app</module>
     </modules>
 

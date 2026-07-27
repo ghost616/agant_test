@@ -26,10 +26,6 @@
       "description": "Agent 上下文 Spring 配置类，声明 SystemToolProvider、DefaultChatDataProvider、ModelInvokerFactory、DefaultToolExecutionProvider、AgentAssembler、SessionManager、AgentContextManager、ToolManager、ModelInvokerManager、ChatService、ToolExecutionService 的 @Bean。内部组件由 agent-integration 的 Build 类创建后暴露。ChatService 通过 Build 内部调用 initHooks() 初始化钩子系统。agentAssembler 方法第 9 个参数传入 null（原 CustomToolInvokerProvider 已移除）。"
     },
     {
-      "path": "platform-app/src/main/java/com/ghost616/platform/repository/MessageMapper.java",
-      "description": "MyBatis-Plus 消息数据访问层，继承 BaseMapper<Message>，提供按 sessionId 和 sequenceNum 批量设置 rollback=1 的自定义方法"
-    },
-    {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/ChatService.java",
       "description": "聊天服务核心实现，处理用户消息、技能加载、历史折叠、LLM 流式调用、钩子触发等完整对话流程。import HookInvoker/SystemHook/SystemPostHook 自 agent-base 包。"
     },
@@ -62,10 +58,6 @@
       "description": "分页结果 {list,total,page,size}，of(Page,List) 工厂方法"
     },
     {
-      "path": "platform-app/src/main/java/com/ghost616/platform/entity/BaseEntity.java",
-      "description": "实体基类 @Data，@TableId ASSIGN_ID，@TableField 自动填充 createTime/updateTime，implements Serializable"
-    },
-    {
       "path": "platform-app/src/main/java/com/ghost616/platform/config/GlobalExceptionHandler.java",
       "description": "全局异常处理器 @RestControllerAdvice，处理 BaseException/Validation/兜底异常"
     },
@@ -80,14 +72,6 @@
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/config/MyMetaObjectHandler.java",
       "description": "MyBatis-Plus 元对象处理器，自动填充 createTime/updateTime"
-    },
-    {
-      "path": "platform-app/src/main/resources/schema.sql",
-      "description": "数据库初始化脚本，包含所有建表语句（model_config/tool_config/session/message/message_tool_call/session_tool/agent_config/agent_tool/agent_skill/skill_config/skill_tool/session_variable/session_skill），关联表含 session_auth 列（默认值 0）。message 表含 rollback TINYINT(1) 列。session 表含 thinking TINYINT(1) 列。"
-    },
-    {
-      "path": "platform-app/src/main/java/com/ghost616/platform/config/SchemaMigration.java",
-      "description": "数据库 Schema 迁移组件，ApplicationRunner 启动时执行 PRAGMA 检测+ALTER TABLE ADD COLUMN；session_auth 迁移默认值设为 0；迁移循环后对 session_tool/agent_tool/agent_skill/session_skill 四张表执行幂等 NULL 回填（UPDATE ... SET session_auth=0 WHERE IS NULL），回填失败不中断启动。新增 session.thinking 列的 ALTER TABLE 迁移。"
     },
     {
       "path": "platform-app/pom.xml",
@@ -128,10 +112,6 @@
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultToolExecutionProvider.java",
       "description": "ToolExecutionProvider 的默认实现，持有三个 ConcurrentHashMap（toolCallQueues/currentExecutions/completedResults）作为数据容器，提供工具调用队列管理和工具执行状态追踪能力。内部使用 sessionId+toolId 复合键维护执行状态和结果记录。"
-    },
-    {
-      "path": "platform-app/src/main/java/com/ghost616/platform/entity/Message.java",
-      "description": "消息实体，映射 message 表，包含 id/sessionId/role/content/reasoning/sequenceNum/toolCallId/toolResult/tokenUsage/rollback/createTime 字段"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/dto/AgentContextDTO.java",

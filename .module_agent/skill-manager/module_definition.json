@@ -2,22 +2,6 @@
   "module_name": "skill-manager",
   "files": [
     {
-      "path": "platform-app/src/main/java/com/ghost616/platform/entity/SkillConfig.java",
-      "description": "SKILL 配置实体（extends BaseEntity），映射 skill_config 表"
-    },
-    {
-      "path": "platform-app/src/main/java/com/ghost616/platform/entity/SkillTool.java",
-      "description": "SKILL-工具关联实体，映射 skill_tool 表"
-    },
-    {
-      "path": "platform-app/src/main/java/com/ghost616/platform/repository/SkillConfigMapper.java",
-      "description": "MyBatis-Plus Mapper 接口，继承 BaseMapper<SkillConfig>"
-    },
-    {
-      "path": "platform-app/src/main/java/com/ghost616/platform/repository/SkillToolMapper.java",
-      "description": "MyBatis-Plus Mapper 接口，继承 BaseMapper<SkillTool>"
-    },
-    {
       "path": "platform-app/src/main/java/com/ghost616/platform/dto/skill/SkillCreateRequest.java",
       "description": "SKILL 创建请求 DTO，name 和 prompt 为必填"
     },

@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_05dbd91faffeBLhkUwjTy4365g",
+  "content": "## 本次变更涉及的可测试功能\n\n### 1. 编译测试\n验证 pom.xml 依赖替换后编译不受影响：\n- `platform-data/pom.xml` 中 `spring-boot-starter-data-jpa` 替换为 `spring-boot-starter`\n- 项目使用 MyBatis-Plus + SQLite，不需要 JPA/Hibernate\n- 编译测试确认 0 errors\n\n运行命令：`mvn test-compile -pl platform-data -am`\n",
+  "timestamp": "2026-07-27T06:39:32.023Z"
+}

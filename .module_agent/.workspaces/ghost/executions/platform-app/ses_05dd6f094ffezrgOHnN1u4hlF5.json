@@ -1,0 +1,36 @@
+[
+  {
+    "plan_id": "plan_150d24cb-100f-486e-b2ce-9ae059491011",
+    "plan": "移除 maven-compiler-plugin testExcludes 配置",
+    "modified_files": [
+      "platform-app/pom.xml"
+    ],
+    "summary": "已移除 platform-app/pom.xml 中 maven-compiler-plugin 的 `<testExcludes>` 配置（16个 `<testExclude>` 条目 + 1个注释），约17个之前被排除的测试类已恢复编译。运行 `mvn test-compile` 显示 53 个编译错误，均为之前被排除的测试类未适配 agent-base 模块接口变更（如 AgentExecutionContext 构造函数参数从 long 改为 String），属预存问题，与本次 pom.xml 修改无关。",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_a2c6dc17-baad-4019-81f5-927ce74a61ed",
+    "plan": "修复 platform-app 测试目录下 53 个编译错误",
+    "modified_files": [
+      "platform-app/pom.xml",
+      "platform-app/src/test/java/com/ghost616/platform/session/SessionRollbackTest.java",
+      "platform-app/src/test/java/com/ghost616/platform/service/agent/ChatServiceTest.java",
+      "platform-app/src/test/java/com/ghost616/platform/service/agent/invoker/ContextSerializerTest.java",
+      "platform-app/src/test/java/com/ghost616/platform/service/agent/AgentExecutionContextTest.java",
+      "platform-app/src/test/java/com/ghost616/platform/service/agent/DefaultToolDataProviderTest.java",
+      "platform-app/src/test/java/com/ghost616/platform/systemtest/SystemTestSubSessionToolTest.java"
+    ],
+    "summary": "移除 pom.xml 中 testExcludes 后，原被排除的约17个测试类因 agent-base 模块接口变更（AgentExecutionContext 构造函数参数从 long 改为 String 等）产生 53 个编译错误。在 6 个测试文件中修复了所有类型不匹配问题：构造函数参数 Long→String、SendUserMessageCallback 签名适配、SessionManager 构造改为 AgentComponentRegistry、ChatRequest 字段类型适配、Mock 桩方法参数类型修正。最终 mvn test-compile 通过，0 错误。",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_02c1df54-00d7-42ab-b286-9ea494015842",
+    "plan": "修复 ChatServiceTest @InjectMocks 注入和清理 pom.xml 空 configuration",
+    "modified_files": [
+      "platform-app/src/test/java/com/ghost616/platform/service/agent/ChatServiceTest.java",
+      "platform-app/pom.xml"
+    ],
+    "summary": "ChatServiceTest.java 添加 @Mock AgentComponentRegistry、ChatDataProvider、HookManager 及 registry getter 桩方法，解决 @InjectMocks 注入后 ensureInitialized() NPE 问题。pom.xml 移除 maven-compiler-plugin 空 `<configuration>` 块。mvn test-compile 通过（29 个测试源文件编译成功）。",
+    "errors": []
+  }
+]

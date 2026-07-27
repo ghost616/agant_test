@@ -1,0 +1,10 @@
+{
+  "plan_id": "plan_662d5cca-004b-44c7-85ae-611ad639fe76",
+  "module_name": "platform-data",
+  "development_plan": "迁移数据库 schema 文件到 platform-data 工程：1) 将 platform-app/src/main/resources/schema.sql 移动到 platform-data/src/main/resources/schema.sql；2) 将 platform-app/src/main/java/com/ghost616/platform/config/SchemaMigration.java 移动到 platform-data 对应包路径下；3) platform-app 中删除原文件；4) 确保 mvn test-compile 通过。",
+  "session_id": "ses_05dbd91faffeBLhkUwjTy4365g",
+  "modified_files": [
+    "platform-data/src/main/resources/schema.sql",
+    "platform-data/src/main/java/com/ghost616/platform/config/SchemaMigration.java"
+  ]
+}

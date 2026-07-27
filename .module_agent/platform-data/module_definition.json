@@ -1,0 +1,129 @@
+{
+  "module_name": "platform-data",
+  "files": [
+    {
+      "path": "platform-data/pom.xml",
+      "description": "platform-data 模块 Maven 构建文件，声明 spring-boot-starter-data-jpa、mybatis-plus-spring-boot3-starter、h2、lombok、jackson-databind 依赖，以及 agent-base 和 agent-integration 模块依赖"
+    },
+    {
+      "path": "platform-data/src/main/java/com/ghost616/platform/entity/BaseEntity.java",
+      "description": "实体基类 @Data，@TableId ASSIGN_ID，@TableField 自动填充 createTime/updateTime，implements Serializable"
+    },
+    {
+      "path": "platform-data/src/main/java/com/ghost616/platform/entity/Message.java",
+      "description": "消息实体（message 表），不继承 BaseEntity，含雪花ID、会话ID、角色、内容、推理、序号、工具调用ID、工具结果、创建时间"
+    },
+    {
+      "path": "platform-data/src/main/java/com/ghost616/platform/entity/AgentConfig.java",
+      "description": "智能体配置实体类，继承 BaseEntity，映射 agent_config 表"
+    },
+    {
+      "path": "platform-data/src/main/java/com/ghost616/platform/entity/AgentTool.java",
+      "description": "智能体-工具关联实体类，映射 agent_tool 表"
+    },
+    {
+      "path": "platform-data/src/main/java/com/ghost616/platform/entity/AgentSkill.java",
+      "description": "智能体-技能关联实体类，映射 agent_skill 表"
+    },
+    {
+      "path": "platform-data/src/main/java/com/ghost616/platform/entity/ModelConfig.java",
+      "description": "模型配置实体（name/platformType/apiKey/baseUrl/modelName/temperature/maxTokens/status/description）"
+    },
+    {
+      "path": "platform-data/src/main/java/com/ghost616/platform/entity/ToolConfig.java",
+      "description": "工具配置实体，含 authConfig 字段"
+    },
+    {
+      "path": "platform-data/src/main/java/com/ghost616/platform/entity/SkillConfig.java",
+      "description": "SKILL 配置实体（extends BaseEntity），映射 skill_config 表"
+    },
+    {
+      "path": "platform-data/src/main/java/com/ghost616/platform/entity/SkillTool.java",
+      "description": "SKILL-工具关联实体，映射 skill_tool 表"
+    },
+    {
+      "path": "platform-data/src/main/java/com/ghost616/platform/entity/Session.java",
+      "description": "会话实体，继承BaseEntity，@TableName(\"session\")"
+    },
+    {
+      "path": "platform-data/src/main/java/com/ghost616/platform/entity/MessageToolCall.java",
+      "description": "工具调用记录实体，@TableName(\"message_tool_call\")"
+    },
+    {
+      "path": "platform-data/src/main/java/com/ghost616/platform/entity/SessionTool.java",
+      "description": "会话工具关联实体，@TableName(\"session_tool\")"
+    },
+    {
+      "path": "platform-data/src/main/java/com/ghost616/platform/entity/SessionVariable.java",
+      "description": "会话变量实体，@TableName(\"session_variable\")"
+    },
+    {
+      "path": "platform-data/src/main/java/com/ghost616/platform/entity/SessionSkill.java",
+      "description": "会话技能关联实体"
+    },
+    {
+      "path": "platform-data/src/main/java/com/ghost616/platform/enums/SubToolType.java",
+      "description": "子工具类型枚举（BROWSER），使用 MyBatis-Plus @EnumValue 标记 code 字段"
+    },
+    {
+      "path": "platform-data/src/main/java/com/ghost616/platform/repository/MessageMapper.java",
+      "description": "MyBatis-Plus 消息数据访问层，继承 BaseMapper<Message>，提供按 sessionId 和 sequenceNum 批量设置 rollback=1 的自定义方法"
+    },
+    {
+      "path": "platform-data/src/main/java/com/ghost616/platform/repository/AgentConfigMapper.java",
+      "description": "AgentConfig 的 MyBatis-Plus Mapper 接口"
+    },
+    {
+      "path": "platform-data/src/main/java/com/ghost616/platform/repository/AgentToolMapper.java",
+      "description": "AgentTool 的 MyBatis-Plus Mapper 接口"
+    },
+    {
+      "path": "platform-data/src/main/java/com/ghost616/platform/repository/AgentSkillMapper.java",
+      "description": "AgentSkill 的 MyBatis-Plus Mapper 接口"
+    },
+    {
+      "path": "platform-data/src/main/java/com/ghost616/platform/repository/ModelConfigMapper.java",
+      "description": "模型配置 MyBatis-Plus Mapper"
+    },
+    {
+      "path": "platform-data/src/main/java/com/ghost616/platform/repository/ToolConfigMapper.java",
+      "description": "工具配置 MyBatis-Plus Mapper"
+    },
+    {
+      "path": "platform-data/src/main/java/com/ghost616/platform/repository/SkillConfigMapper.java",
+      "description": "MyBatis-Plus Mapper 接口，继承 BaseMapper<SkillConfig>"
+    },
+    {
+      "path": "platform-data/src/main/java/com/ghost616/platform/repository/SkillToolMapper.java",
+      "description": "MyBatis-Plus Mapper 接口，继承 BaseMapper<SkillTool>"
+    },
+    {
+      "path": "platform-data/src/main/java/com/ghost616/platform/repository/SessionMapper.java",
+      "description": "Session 实体的 MyBatis-Plus Mapper 接口"
+    },
+    {
+      "path": "platform-data/src/main/java/com/ghost616/platform/repository/MessageToolCallMapper.java",
+      "description": "MessageToolCall 实体的 MyBatis-Plus Mapper 接口"
+    },
+    {
+      "path": "platform-data/src/main/java/com/ghost616/platform/repository/SessionToolMapper.java",
+      "description": "SessionTool 实体的 MyBatis-Plus Mapper 接口"
+    },
+    {
+      "path": "platform-data/src/main/java/com/ghost616/platform/repository/SessionVariableMapper.java",
+      "description": "SessionVariable 实体的 MyBatis-Plus Mapper 接口"
+    },
+    {
+      "path": "platform-data/src/main/java/com/ghost616/platform/repository/SessionSkillMapper.java",
+      "description": "会话技能数据访问接口"
+    },
+    {
+      "path": "platform-data/src/main/resources/schema.sql",
+      "description": "DDL 初始化脚本，定义所有业务表（model_config、tool_config、session、message、message_tool_call、session_tool、agent_config、agent_tool、agent_skill、skill_config、skill_tool、session_variable、session_skill）的建表语句和索引"
+    },
+    {
+      "path": "platform-data/src/main/java/com/ghost616/platform/config/SchemaMigration.java",
+      "description": "数据库 Schema 迁移组件，通过 ALTER TABLE 实现列增量迁移和 NULL 回填，确保新增列的兼容性"
+    }
+  ]
+}

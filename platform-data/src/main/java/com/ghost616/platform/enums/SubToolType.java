@@ -2,9 +2,6 @@ package com.ghost616.platform.enums;
 
 import com.baomidou.mybatisplus.annotation.EnumValue;
 
-/**
- * 子工具类型枚举。
- */
 public enum SubToolType {
 
     BROWSER("BROWSER", "浏览器");

@@ -109,14 +109,14 @@ class DefaultToolDataProviderTest {
 
         private ToolConfigDTO createToolConfig(ToolType toolType) {
             return ToolConfigDTO.builder()
-                    .id(toolId)
+                    .id(String.valueOf(toolId))
                     .toolType(toolType)
                     .build();
         }
 
         private ToolDetailDTO createToolDetail(SubToolType subToolType) {
             return ToolDetailDTO.builder()
-                    .id(toolId)
+                    .id(String.valueOf(toolId))
                     .subToolType(subToolType)
                     .build();
         }

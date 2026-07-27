@@ -22,40 +22,8 @@
       "description": "Session 变量读取工具 (TypeScript)，AgentExecutionContext 含 sessionId/agentId/systemPrompt/modelId/recentMessageCount/history/tools/sessionVariables/conversationVariables，接收 {key} 返回 {key,value,exists}"
     },
     {
-      "path": "platform-app/src/main/java/com/ghost616/platform/entity/Session.java",
-      "description": "会话实体，继承BaseEntity，@TableName(\"session\")"
-    },
-    {
-      "path": "platform-app/src/main/java/com/ghost616/platform/entity/Message.java",
-      "description": "消息实体（message 表），不继承 BaseEntity，含雪花ID、会话ID、角色、内容、推理、序号、工具调用ID、工具结果、创建时间"
-    },
-    {
-      "path": "platform-app/src/main/java/com/ghost616/platform/entity/MessageToolCall.java",
-      "description": "工具调用记录实体，@TableName(\"message_tool_call\")"
-    },
-    {
-      "path": "platform-app/src/main/java/com/ghost616/platform/entity/SessionTool.java",
-      "description": "会话工具关联实体，@TableName(\"session_tool\")"
-    },
-    {
       "path": "platform-app/src/main/java/com/ghost616/platform/systemtest/SystemInfoTool.java",
       "description": "系统信息工具，实现 ToolInvoker 接口"
-    },
-    {
-      "path": "platform-app/src/main/java/com/ghost616/platform/repository/MessageMapper.java",
-      "description": "Message 实体的 MyBatis-Plus Mapper 接口"
-    },
-    {
-      "path": "platform-app/src/main/java/com/ghost616/platform/repository/MessageToolCallMapper.java",
-      "description": "MessageToolCall 实体的 MyBatis-Plus Mapper 接口"
-    },
-    {
-      "path": "platform-app/src/main/java/com/ghost616/platform/repository/SessionToolMapper.java",
-      "description": "SessionTool 实体的 MyBatis-Plus Mapper 接口"
-    },
-    {
-      "path": "platform-app/src/main/java/com/ghost616/platform/repository/SessionMapper.java",
-      "description": "Session 实体的 MyBatis-Plus Mapper 接口"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/dto/session/SessionDTO.java",
@@ -80,14 +48,6 @@
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/controller/ChatController.java",
       "description": "对话 REST 控制器，SSE 流式端点"
-    },
-    {
-      "path": "platform-app/src/main/java/com/ghost616/platform/entity/SessionVariable.java",
-      "description": "会话变量实体，@TableName(\"session_variable\")"
-    },
-    {
-      "path": "platform-app/src/main/java/com/ghost616/platform/repository/SessionVariableMapper.java",
-      "description": "SessionVariable 实体的 MyBatis-Plus Mapper 接口"
     }
   ]
 }

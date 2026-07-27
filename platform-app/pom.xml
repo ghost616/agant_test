@@ -15,6 +15,11 @@
     <dependencies>
         <dependency>
             <groupId>com.ghost616</groupId>
+            <artifactId>platform-data</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.ghost616</groupId>
             <artifactId>agent-integration</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -41,27 +46,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <testExcludes>
-                        <testExclude>**/systemtest/**</testExclude>
-                        <testExclude>**/controller/ChatControllerTest.java</testExclude>
-                        <testExclude>**/service/agent/AgentExecutionContextTest.java</testExclude>
-                        <testExclude>**/service/agent/AgentConfigServiceImplTest.java</testExclude>
-                        <!-- <testExclude>**/service/agent/DefaultContextDataProviderTest.java</testExclude> -->
-
-                        <testExclude>**/service/agent/DefaultToolDataProviderTest.java</testExclude>
-                        <testExclude>**/service/agent/ChatServiceTest.java</testExclude>
-                        <testExclude>**/config/**</testExclude>
-                        <testExclude>**/session/SessionRollbackTest.java</testExclude>
-                        <testExclude>**/controller/ToolExecutionControllerTest.java</testExclude>
-                        <testExclude>**/dto/agent/AgentToolItemTest.java</testExclude>
-                        <testExclude>**/migration/SchemaMigrationTest.java</testExclude>
-                        <testExclude>**/service/agent/invoker/ContextSerializerTest.java</testExclude>
-                        <testExclude>**/service/skill/SkillConfigServiceImplTest.java</testExclude>
-                        <testExclude>**/session/SessionServiceImplTest.java</testExclude>
-                        <testExclude>**/dto/ToolStatusResultDTOTest.java</testExclude>
-                    </testExcludes>
-                </configuration>
             </plugin>
         </plugins>
     </build>

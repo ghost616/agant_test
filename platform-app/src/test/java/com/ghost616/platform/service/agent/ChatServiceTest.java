@@ -29,9 +29,12 @@ import static org.mockito.Mockito.*;
 
 import com.ghost616.agentbase.dto.model.ChatChunk;
 import com.ghost616.agentbase.dto.chat.ChatRequest;
+import com.ghost616.agentbase.core.AgentComponentRegistry;
 import com.ghost616.agentbase.service.agent.AgentContextManager;
 import com.ghost616.agentbase.service.agent.AgentExecutionContext;
+import com.ghost616.agentbase.service.agent.ChatDataProvider;
 import com.ghost616.agentbase.service.agent.SessionManager;
+import com.ghost616.agentbase.service.agent.invoker.HookManager;
 import com.ghost616.agentbase.service.agent.invoker.SystemToolManager;
 import com.ghost616.agentbase.dto.model.ModelConfigData;
 import com.ghost616.agentbase.service.model.invoker.ModelInvoker;
@@ -60,6 +63,12 @@ class ChatServiceTest {
     private SystemToolManager systemToolManager;
     @Mock
     private ModelInvoker modelInvoker;
+    @Mock
+    private AgentComponentRegistry registry;
+    @Mock
+    private ChatDataProvider chatDataProvider;
+    @Mock
+    private HookManager hookManager;
 
     @InjectMocks
     private ChatService chatService;
@@ -72,9 +81,16 @@ class ChatServiceTest {
     void setUp() {
         mutator = new AgentExecutionContext.AgentContextMutator();
         context = new AgentExecutionContext(
-                1L, 1L, "system prompt", 1L, 10,
+                "1", "1", "system prompt", "1", 10,
                 new ArrayList<>(), new ArrayList<>(), new ArrayList<>(),
-                mutator, new HashMap<>(), new HashMap<>(), null, null);
+                mutator, new HashMap<>(), new HashMap<>(), null, null, null);
+        when(registry.getAgentContextManager()).thenReturn(agentContextManager);
+        when(registry.getSessionManager()).thenReturn(sessionManager);
+        when(registry.getModelInvokerManager()).thenReturn(modelInvokerManager);
+        when(registry.getSystemToolManager()).thenReturn(systemToolManager);
+        when(registry.getChatDataProvider()).thenReturn(chatDataProvider);
+        when(registry.getHookManager()).thenReturn(hookManager);
+
         AtomicBoolean toolInvoking = new AtomicBoolean(false);
         sessionContext = new AgentContextManager.AgentSessionContext(context, mutator, toolInvoking);
         when(systemToolManager.getToolDefinitions()).thenReturn(java.util.Collections.emptyList());
@@ -90,14 +106,14 @@ class ChatServiceTest {
     @Test
     void takeWhile_stopped为true时_非toolContinue消息会resetStopped_正常发射() {
         ChatRequest request = ChatRequest.builder()
-                .sessionId(1L)
+                .sessionId("1")
                 .content("hello")
-                .modelId(1L)
+                .modelId("1")
                 .build();
 
         AgentContextManager.Builder builder = mock(AgentContextManager.Builder.class);
-        when(agentContextManager.build(1L)).thenReturn(builder);
-        when(builder.modelIdOverride(1L)).thenReturn(builder);
+        when(agentContextManager.build("1")).thenReturn(builder);
+        when(builder.modelIdOverride("1")).thenReturn(builder);
         when(builder.build()).thenReturn(sessionContext);
         when(sessionMapper.selectById(1L)).thenReturn(null);
 
@@ -126,14 +142,14 @@ class ChatServiceTest {
     @Test
     void takeWhile_stopped为false时正常发射() {
         ChatRequest request = ChatRequest.builder()
-                .sessionId(1L)
+                .sessionId("1")
                 .content("hello")
-                .modelId(1L)
+                .modelId("1")
                 .build();
 
         AgentContextManager.Builder builder = mock(AgentContextManager.Builder.class);
-        when(agentContextManager.build(1L)).thenReturn(builder);
-        when(builder.modelIdOverride(1L)).thenReturn(builder);
+        when(agentContextManager.build("1")).thenReturn(builder);
+        when(builder.modelIdOverride("1")).thenReturn(builder);
         when(builder.build()).thenReturn(sessionContext);
         when(sessionMapper.selectById(1L)).thenReturn(null);
 
@@ -159,14 +175,14 @@ class ChatServiceTest {
     @Test
     void toolContinue路径不应调用resetStopped() {
         ChatRequest request = ChatRequest.builder()
-                .sessionId(1L)
-                .content(ChatService.TOOL_CONTINUE_MARKER)
-                .modelId(1L)
+                .sessionId("1")
+                .content("hello")
+                .modelId("1")
                 .build();
 
         AgentContextManager.Builder builder = mock(AgentContextManager.Builder.class);
-        when(agentContextManager.build(1L)).thenReturn(builder);
-        when(builder.modelIdOverride(1L)).thenReturn(builder);
+        when(agentContextManager.build("1")).thenReturn(builder);
+        when(builder.modelIdOverride("1")).thenReturn(builder);
         when(builder.build()).thenReturn(sessionContext);
         when(sessionMapper.selectById(1L)).thenReturn(null);
 
@@ -192,14 +208,14 @@ class ChatServiceTest {
     @Test
     void doOnCancel_调用setStopped() {
         ChatRequest request = ChatRequest.builder()
-                .sessionId(1L)
+                .sessionId("1")
                 .content("hello")
-                .modelId(1L)
+                .modelId("1")
                 .build();
 
         AgentContextManager.Builder builder = mock(AgentContextManager.Builder.class);
-        when(agentContextManager.build(1L)).thenReturn(builder);
-        when(builder.modelIdOverride(1L)).thenReturn(builder);
+        when(agentContextManager.build("1")).thenReturn(builder);
+        when(builder.modelIdOverride("1")).thenReturn(builder);
         when(builder.build()).thenReturn(sessionContext);
         when(sessionMapper.selectById(1L)).thenReturn(null);
 

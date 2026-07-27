@@ -1,32 +1,64 @@
 [
   {
-    "plan_id": "plan_3d2416f2-01d1-4612-a36d-68f193ad3637",
-    "plan_summary": "agent-base 模块 Long 类型 ID 字段改为 String 类型",
-    "starter_session_id": "ses_05e7684acffeEJTLtFoogakzis",
+    "plan_id": "plan_29f98f73-9c67-46d5-a61a-bbf64521043b",
+    "plan_summary": "创建 platform-data 独立 Maven 工程，迁移 entity 和 repository 文件",
+    "starter_session_id": "ses_05de39d09ffe44vKtYvc28Lyu7",
     "code_reviewed": false,
     "plan_completed": true,
     "test_passed": true
   },
   {
-    "plan_id": "plan_5817555d-d555-48f9-b0b1-7c6e332e221e",
-    "plan_summary": "agent-base 模块 Long 类型 ID 改为 String 类型",
-    "starter_session_id": "ses_05e7684acffeEJTLtFoogakzis",
+    "plan_id": "plan_f857f925-aa52-45d7-8eba-14265429ab21",
+    "plan_summary": "适配 platform-data 独立工程，删除已迁移的 entity/repository 文件",
+    "starter_session_id": "ses_05de39d09ffe44vKtYvc28Lyu7",
     "code_reviewed": false,
     "plan_completed": true,
     "test_passed": true
   },
   {
-    "plan_id": "plan_bda52cd6-812c-4fef-ad34-763479a73bca",
-    "plan_summary": "agent-integration 模块 Long 类型 ID 改为 String 类型",
-    "starter_session_id": "ses_05e7684acffeEJTLtFoogakzis",
+    "plan_id": "kui_plan_d0a76697-579e-400e-80a5-e84ba6baac1b",
+    "plan_summary": "审查 platform-app 适配变更：pom.xml 依赖调整，entity/repo 文件清理",
+    "starter_session_id": "ses_05debf2f8ffeGNMFrpvpp3qFMb",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": false
+  },
+  {
+    "plan_id": "plan_150d24cb-100f-486e-b2ce-9ae059491011",
+    "plan_summary": "移除 pom.xml 的 testExcludes 恢复测试编译",
+    "starter_session_id": "ses_05debf2f8ffeGNMFrpvpp3qFMb",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_a2c6dc17-baad-4019-81f5-927ce74a61ed",
+    "plan_summary": "审查测试编译错误修复：6个测试文件适配 agent-base 接口变更",
+    "starter_session_id": "ses_05debf2f8ffeGNMFrpvpp3qFMb",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": false
+  },
+  {
+    "plan_id": "plan_02c1df54-00d7-42ab-b286-9ea494015842",
+    "plan_summary": "审查 ChatServiceTest 注入修复和 pom.xml 空配置清理",
+    "starter_session_id": "ses_05debf2f8ffeGNMFrpvpp3qFMb",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": false
+  },
+  {
+    "plan_id": "plan_662d5cca-004b-44c7-85ae-611ad639fe76",
+    "plan_summary": "迁移 schema.sql 和 SchemaMigration.java 到 platform-data",
+    "starter_session_id": "ses_05debf2f8ffeGNMFrpvpp3qFMb",
     "code_reviewed": false,
     "plan_completed": true,
     "test_passed": true
   },
   {
-    "plan_id": "plan_f73e22ef-f9e2-44ef-85ab-4d2f3a622544",
-    "plan_summary": "platform-app 模块增加 String/Long 转换逻辑",
-    "starter_session_id": "ses_05e7684acffeEJTLtFoogakzis",
+    "plan_id": "plan_58ac5534-738d-4d40-b215-6071c4e76b2b",
+    "plan_summary": "替换 JPA starter 为 spring-boot-starter",
+    "starter_session_id": "ses_05debf2f8ffeGNMFrpvpp3qFMb",
     "code_reviewed": false,
     "plan_completed": true,
     "test_passed": true

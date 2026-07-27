@@ -24,9 +24,9 @@ class ContextSerializerTest {
     void setUp() {
         mutator = new AgentExecutionContext.AgentContextMutator();
         context = new AgentExecutionContext(
-                1L, 1L, "system prompt", 1L, 10,
+                "1", "1", "system prompt", "1", 10,
                 new ArrayList<>(), new ArrayList<>(), new ArrayList<>(),
-                mutator, new HashMap<>(), new HashMap<>(), null, null);
+                mutator, new HashMap<>(), new HashMap<>(), null, null, null);
     }
 
     @Test

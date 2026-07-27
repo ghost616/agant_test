@@ -2,30 +2,6 @@
   "module_name": "agent-config",
   "files": [
     {
-      "path": "platform-app/src/main/java/com/ghost616/platform/entity/AgentConfig.java",
-      "description": "智能体配置实体类，继承 BaseEntity，映射 agent_config 表"
-    },
-    {
-      "path": "platform-app/src/main/java/com/ghost616/platform/entity/AgentTool.java",
-      "description": "智能体-工具关联实体类，映射 agent_tool 表"
-    },
-    {
-      "path": "platform-app/src/main/java/com/ghost616/platform/entity/AgentSkill.java",
-      "description": "智能体-技能关联实体类，映射 agent_skill 表"
-    },
-    {
-      "path": "platform-app/src/main/java/com/ghost616/platform/repository/AgentConfigMapper.java",
-      "description": "AgentConfig 的 MyBatis-Plus Mapper 接口"
-    },
-    {
-      "path": "platform-app/src/main/java/com/ghost616/platform/repository/AgentToolMapper.java",
-      "description": "AgentTool 的 MyBatis-Plus Mapper 接口"
-    },
-    {
-      "path": "platform-app/src/main/java/com/ghost616/platform/repository/AgentSkillMapper.java",
-      "description": "AgentSkill 的 MyBatis-Plus Mapper 接口"
-    },
-    {
       "path": "platform-app/src/main/java/com/ghost616/platform/dto/agent/AgentConfigDTO.java",
       "description": "智能体配置数据传输对象，含 tools（List<AgentToolItem>）和 skills（List<AgentSkillItem>）列表"
     },

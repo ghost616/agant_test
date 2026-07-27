@@ -1,15 +1,13 @@
 {
-  "agent-base": [
-    "ses_05e765149ffevFMfMUibZ46mBU",
-    "ses_05e760befffeO7RiBJITiidJ5R"
-  ],
-  "agent-integration": [
-    "ses_05e6a3185ffe2YcBy97rgcDo87"
-  ],
-  "platform-app": [
-    "ses_05e6493deffesAJJWwDwm8Eg2N"
-  ],
   "_checked": [
     "ses_05e7684acffeEJTLtFoogakzis"
+  ],
+  "platform-data": [
+    "ses_05de35dc1ffe8dXrkD1DB3twMz",
+    "ses_05dbd91faffeBLhkUwjTy4365g"
+  ],
+  "platform-app": [
+    "ses_05dde37f4ffeli1xdphepQAFrQ",
+    "ses_05dd6f094ffezrgOHnN1u4hlF5"
   ]
 }

@@ -23,6 +23,7 @@ import static org.mockito.Mockito.*;
 import com.ghost616.agentbase.service.agent.MessageDataProvider;
 import com.ghost616.agentbase.enums.ErrorCode;
 import com.ghost616.agentbase.exception.BusinessException;
+import com.ghost616.agentbase.core.AgentComponentRegistry;
 import com.ghost616.agentbase.service.agent.AgentContextManager;
 import com.ghost616.agentbase.service.agent.SessionManager;
 import com.ghost616.agentbase.service.agent.invoker.ToolManager;
@@ -54,13 +55,13 @@ class SessionRollbackTest {
         Session session = new Session();
         session.setId(sessionId);
         when(sessionMapper.selectById(sessionId)).thenReturn(session);
-        when(sessionManager.rollbackToLastUserMessage(sessionId)).thenReturn(3);
+        when(sessionManager.rollbackToLastUserMessage("1")).thenReturn(3);
 
         int deleted = sessionService.rollback(sessionId);
 
         assertEquals(3, deleted);
-        verify(sessionManager).rollbackToLastUserMessage(sessionId);
-        verify(agentContextManager).remove(sessionId);
+        verify(sessionManager).rollbackToLastUserMessage("1");
+        verify(agentContextManager).remove("1");
     }
 
     @Test
@@ -79,7 +80,7 @@ class SessionRollbackTest {
         Session session = new Session();
         session.setId(sessionId);
         when(sessionMapper.selectById(sessionId)).thenReturn(session);
-        when(sessionManager.rollbackToLastUserMessage(sessionId))
+        when(sessionManager.rollbackToLastUserMessage("1"))
                 .thenThrow(new BusinessException(ErrorCode.SESSION_NO_USER_MESSAGE));
 
         BusinessException ex = assertThrows(BusinessException.class,
@@ -90,9 +91,11 @@ class SessionRollbackTest {
 
     @Test
     void rollback_SessionManager有用户消息_删除后续消息() {
-        Long sid = 99L;
+        String sid = "99";
+        AgentComponentRegistry registry = mock(AgentComponentRegistry.class);
         MessageDataProvider messageDataProvider = mock(MessageDataProvider.class);
-        SessionManager realManager = new SessionManager(messageDataProvider);
+        when(registry.getMessageDataProvider()).thenReturn(messageDataProvider);
+        SessionManager realManager = new SessionManager(registry);
 
         when(messageDataProvider.rollbackToLastUserMessage(sid)).thenReturn(2);
 
@@ -103,9 +106,11 @@ class SessionRollbackTest {
 
     @Test
     void rollback_SessionManager无用户消息_抛出异常() {
-        Long sid = 99L;
+        String sid = "99";
+        AgentComponentRegistry registry = mock(AgentComponentRegistry.class);
         MessageDataProvider messageDataProvider = mock(MessageDataProvider.class);
-        SessionManager realManager = new SessionManager(messageDataProvider);
+        when(registry.getMessageDataProvider()).thenReturn(messageDataProvider);
+        SessionManager realManager = new SessionManager(registry);
 
         when(messageDataProvider.rollbackToLastUserMessage(sid))
                 .thenThrow(new BusinessException(ErrorCode.SESSION_NO_USER_MESSAGE));

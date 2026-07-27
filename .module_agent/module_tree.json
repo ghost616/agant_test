@@ -39,6 +39,10 @@
     {
       "name": "agent-integration",
       "description": "Agent 整合与扩展模块，整合 agent-base 核心组件，提供 ModelInvoker 实现和 Agent 组件组装能力"
+    },
+    {
+      "name": "platform-data",
+      "description": "数据库交互模块，包含所有 JPA Entity 和 MyBatis-Plus Mapper，作为独立 Maven 工程供其他模块依赖"
     }
   ]
 }

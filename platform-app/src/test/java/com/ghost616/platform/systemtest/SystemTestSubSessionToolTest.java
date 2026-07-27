@@ -35,12 +35,12 @@ class SystemTestSubSessionToolTest {
     // === 正向：正常执行 ===
     @Test
     void 正常执行返回role和content() throws Exception {
-        when(ctx.getModelId()).thenReturn(1L);
-        when(ctx.createChildSession(anyString(), anyString(), anyLong(), isNull(), isNull(), isNull()))
-                .thenReturn(100L);
+        when(ctx.getModelId()).thenReturn("1");
+        when(ctx.createChildSession(anyString(), anyString(), anyString(), isNull(), isNull(), isNull()))
+                .thenReturn("100");
 
         Message reply = Message.builder().role("assistant").content("Hello from child").build();
-        when(ctx.sendUserMessage(eq(100L), eq("Hi"), eq(1L), isNull())).thenReturn(reply);
+        when(ctx.sendUserMessage(eq("100"), eq("Hi"), eq("1"), isNull())).thenReturn(reply);
 
         String result = tool.execute(ctx, "{\"sessionName\":\"test-session\",\"message\":\"Hi\"}");
 
@@ -51,8 +51,8 @@ class SystemTestSubSessionToolTest {
     // === 反向：createChildSession 返回 null ===
     @Test
     void createChildSession返回null返回错误() {
-        when(ctx.getModelId()).thenReturn(1L);
-        when(ctx.createChildSession(anyString(), anyString(), anyLong(), isNull(), isNull(), isNull()))
+        when(ctx.getModelId()).thenReturn("1");
+        when(ctx.createChildSession(anyString(), anyString(), anyString(), isNull(), isNull(), isNull()))
                 .thenReturn(null);
 
         String result = tool.execute(ctx, "{\"sessionName\":\"test\",\"message\":\"hello\"}");
@@ -83,12 +83,12 @@ class SystemTestSubSessionToolTest {
     // === 边界：sessionName 为空 ===
     @Test
     void sessionName为空字符串仍然正常执行() {
-        when(ctx.getModelId()).thenReturn(1L);
-        when(ctx.createChildSession(anyString(), anyString(), anyLong(), isNull(), isNull(), isNull()))
-                .thenReturn(200L);
+        when(ctx.getModelId()).thenReturn("1");
+        when(ctx.createChildSession(anyString(), anyString(), anyString(), isNull(), isNull(), isNull()))
+                .thenReturn("200");
 
         Message reply = Message.builder().role("user").content("ok").build();
-        when(ctx.sendUserMessage(eq(200L), eq("msg"), eq(1L), isNull())).thenReturn(reply);
+        when(ctx.sendUserMessage(eq("200"), eq("msg"), eq("1"), isNull())).thenReturn(reply);
 
         String result = tool.execute(ctx, "{\"sessionName\":\"\",\"message\":\"msg\"}");
 
@@ -100,12 +100,12 @@ class SystemTestSubSessionToolTest {
     @Test
     void message内容超长仍然正常执行() {
         String longMsg = "a".repeat(10000);
-        when(ctx.getModelId()).thenReturn(1L);
-        when(ctx.createChildSession(anyString(), anyString(), anyLong(), isNull(), isNull(), isNull()))
-                .thenReturn(300L);
+        when(ctx.getModelId()).thenReturn("1");
+        when(ctx.createChildSession(anyString(), anyString(), anyString(), isNull(), isNull(), isNull()))
+                .thenReturn("300");
 
         Message reply = Message.builder().role("assistant").content(longMsg).build();
-        when(ctx.sendUserMessage(eq(300L), eq(longMsg), eq(1L), isNull())).thenReturn(reply);
+        when(ctx.sendUserMessage(eq("300"), eq(longMsg), eq("1"), isNull())).thenReturn(reply);
 
         String result = tool.execute(ctx, "{\"sessionName\":\"long\",\"message\":\"" + longMsg + "\"}");
 
