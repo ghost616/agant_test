@@ -1,7 +1,7 @@
 import { getBrowserExtension, getToolScript } from './session';
 
 interface JBToolHostBridge {
-  passToolResult?: (sessionId: string, toolId: string, result: string) => void;
+  passToolResult?: (sessionId: string, toolConfigId: string, result: string) => void;
 }
 
 interface JBToolManager {
@@ -11,7 +11,7 @@ interface JBToolManager {
 }
 
 interface JBToolExecutor {
-  execute?: (sessionId: string, toolId: string, toolName: string, params: any, toolConfigId: string) => Promise<string>;
+  execute?: (sessionId: string, toolConfigId: string, toolName: string, params: any) => Promise<string>;
 }
 
 class ToolManager {
@@ -85,17 +85,16 @@ class ToolExecutor {
     toolName: string,
     args: string,
     sessionId: string,
-    toolId: string,
     toolConfigId: string,
   ): Promise<string> {
     const params = JSON.parse(args);
     const jbExecutor = this.getManager().jbToolExecutor;
     if (jbExecutor?.execute) {
-      return jbExecutor.execute(sessionId, toolId, toolName, params, toolConfigId);
+      return jbExecutor.execute(sessionId, toolConfigId, toolName, params);
     }
     const fn = this.getManager().getFunction(toolName);
     if (!fn) throw new Error(`工具函数 ${toolName} 未注册`);
-    const result = await fn(params, { sessionId, toolId });
+    const result = await fn(params, { sessionId, toolConfigId });
     return typeof result === 'string' ? result : JSON.stringify(result);
   }
 

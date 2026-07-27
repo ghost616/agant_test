@@ -163,8 +163,8 @@ describe('ToolExecutor.execute', () => {
 
   it('应优先使用全局 ToolExecutor.execute', async () => {
     mockToolExecutorObj.execute.mockResolvedValueOnce('global result');
-    const result = await toolExecutor.execute('echo', '{"msg":"hello"}', 'sid', 'tid', 'toolConfig-1');
-    expect(mockToolExecutorObj.execute).toHaveBeenCalledWith('sid', 'tid', 'echo', { msg: 'hello' }, 'toolConfig-1');
+    const result = await toolExecutor.execute('echo', '{"msg":"hello"}', 'sid', 'toolConfig-1');
+    expect(mockToolExecutorObj.execute).toHaveBeenCalledWith('sid', 'toolConfig-1', 'echo', { msg: 'hello' });
     expect(result).toBe('global result');
   });
 
@@ -174,7 +174,7 @@ describe('ToolExecutor.execute', () => {
       ToolManager: mockToolManagerObj,
     };
     toolManager.registerFunction('echo', 'return params.msg');
-    const result = await toolExecutor.execute('echo', '{"msg":"hello"}', 'sid', 'tid', 'toolConfig-1');
+    const result = await toolExecutor.execute('echo', '{"msg":"hello"}', 'sid', 'toolConfig-1');
     expect(result).toBe('hello');
   });
 
@@ -184,7 +184,7 @@ describe('ToolExecutor.execute', () => {
       ToolManager: mockToolManagerObj,
     };
     await expect(
-      toolExecutor.execute('unknownTool', '{}', 'sid', 'tid', 'toolConfig-1'),
+      toolExecutor.execute('unknownTool', '{}', 'sid', 'toolConfig-1'),
     ).rejects.toThrow('工具函数 unknownTool 未注册');
   });
 
@@ -194,7 +194,7 @@ describe('ToolExecutor.execute', () => {
       ToolManager: mockToolManagerObj,
     };
     toolManager.registerFunction('strFn', 'return "result string"');
-    const result = await toolExecutor.execute('strFn', '{}', 'sid', 'tid', 'toolConfig-1');
+    const result = await toolExecutor.execute('strFn', '{}', 'sid', 'toolConfig-1');
     expect(result).toBe('result string');
   });
 
@@ -204,7 +204,7 @@ describe('ToolExecutor.execute', () => {
       ToolManager: mockToolManagerObj,
     };
     toolManager.registerFunction('objFn', 'return { key: "value", num: 42 }');
-    const result = await toolExecutor.execute('objFn', '{}', 'sid', 'tid', 'toolConfig-1');
+    const result = await toolExecutor.execute('objFn', '{}', 'sid', 'toolConfig-1');
     expect(result).toBe('{"key":"value","num":42}');
   });
 
@@ -213,8 +213,8 @@ describe('ToolExecutor.execute', () => {
       ToolHostBridge: { registerTool: vi.fn(), passToolResult: vi.fn() },
       ToolManager: mockToolManagerObj,
     };
-    toolManager.registerFunction('ctxFn', 'return context.sessionId + ":" + context.toolId');
-    const result = await toolExecutor.execute('ctxFn', '{}', 'session-1', 'tool-1', 'toolConfig-1');
-    expect(result).toBe('session-1:tool-1');
+    toolManager.registerFunction('ctxFn', 'return context.sessionId + ":" + context.toolConfigId');
+    const result = await toolExecutor.execute('ctxFn', '{}', 'session-1', 'toolConfig-1');
+    expect(result).toBe('session-1:toolConfig-1');
   });
 });

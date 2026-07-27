@@ -257,19 +257,18 @@ function AgentChat(): JSX.Element {
         toolManager.registerFunction(toolConfig.toolName, scriptResult);
         console.log(`[executeBrowserTool] registerFunction 后`);
       }
-      console.log(`[executeBrowserTool] toolExecutor.execute 前`, { toolName: toolConfig.toolName, args: status.arguments, sessionId: sid, toolId, toolConfigId: toolConfig.id });
+      console.log(`[executeBrowserTool] toolExecutor.execute 前`, { toolName: toolConfig.toolName, args: status.arguments, sessionId: sid, toolConfigId: toolConfig.id });
       const execResult = await toolExecutor.execute(
         toolConfig.toolName,
         status.arguments,
         sid,
-        toolId,
         toolConfig.id,
       );
       console.log(`[executeBrowserTool] toolExecutor.execute 返回`, { result: execResult });
     } catch (e) {
       console.log(`[executeBrowserTool] 异常`, { message: e instanceof Error ? e.message : e, stack: e instanceof Error ? e.stack : undefined });
       if (typeof window !== 'undefined' && window.ToolHostBridge?.passToolResult) {
-        window.ToolHostBridge.passToolResult(sid, toolId, toolConfig.id, `"执行失败"`);
+        window.ToolHostBridge.passToolResult(sid, toolConfig.id, `"执行失败"`);
       }
     }
   };

@@ -13,7 +13,7 @@ AI 智能体调试与管理平台，基于 opencode + DeepSeek 及 module_agent 
 ## 功能模块
 
 - **LLM 模型管理** — 模型配置的增删改查，支持 OpenAI / Anthropic / Azure / Ollama / DeepSeek / 自定义平台；各平台模型调用器均已实现，当前仅 DeepSeek 已完成连通性验证及全流程测试
-- **工具注册与管理** — 工具元数据注册，支持 Java / TypeScript / Python / MCP HTTP 四种工具类型。MCP HTTP 支持 Bearer Token 与 API Key 两种认证方式
+- **工具注册与管理** — 工具元数据注册，支持 Java / TypeScript / Python / MCP HTTP / CUSTOM 五种工具类型。MCP HTTP 支持 Bearer Token 与 API Key 两种认证方式。CUSTOM 为扩展工具类型，支持通过子工具类型（当前支持 BROWSER 浏览器工具）实现特殊工具能力
 - **SKILL 技能管理** — 技能配置的 CRUD，关联工具列表；智能体执行引擎按名称加载技能，自动注入提示词和关联工具
 - **HOOK 管理** — 提供 HookInvoker 与 SystemHook 接口，覆盖六个生命周期阶段（SESSION_START/END、BEFORE/AFTER MESSAGE、BEFORE/AFTER TOOL_CALL）。用户实现接口并放入工程即可被 Spring 自动发现加载，MessageSavePostHook 已内置运行，无需管理界面
 - **智能体配置** — 智能体名称、系统提示词、关联模型与工具的配置管理，支持最近消息数量控制与技能关联
@@ -150,3 +150,12 @@ build.bat
 | TypeScript | index.ts 导出 execute(ctx, args) 函数；_runner.ts 桥接文件可手动放入或首次执行时自动生成；bun 优先，node+tsx fallback | 环境依赖 bun 或 node+tsx 任一可用 → 创建目录 → 编写 index.ts，函数签名为 execute(ctx: AgentExecutionContext, args: string): string，从 ./_runner 导入类型，args 为 JSON 字符串格式的工具参数，返回执行结果字符串 → 注册填入目录路径 |
 | Python | index.py 定义 execute(context, arguments) 函数；_runner.py 桥接文件可手动放入或首次执行时自动生成；python3 优先，python fallback | 环境依赖 Python 3.10+ → 创建目录 → 编写 index.py，函数签名为 execute(context, arguments)，从 _runner 模块导入类型，arguments 为字典格式的工具参数，返回执行结果字符串 → 注册填入目录路径 |
 | MCP HTTP | 注册服务 URL，运行时通过 JSON-RPC 协议发现远程工具并自动展开；支持 Bearer Token 认证 | 部署 MCP 协议服务 → 注册填入 URL 和 Token |
+| CUSTOM | 扩展工具类型，支持通过子工具类型（当前支持 BROWSER）实现特殊工具能力 | 实现子工具类型对应的调用器并注册 → 注册工具时选择 CUSTOM 类型并指定子工具类型 |
+
+## 浏览器工具
+
+BROWSER 浏览器工具通过客户端执行机制，在用户浏览器环境中执行工具操作。
+
+**执行原理：**
+
+服务端 BrowserToolInvoker 发起调用 → 委托回调 BrowserToolCallbackImpl 阻塞等待 → 前端通过 ToolHostBridge JS 桥接获取执行上下文 → 调用 browser_tool_executor.js 引擎中的工具函数 → 结果回调至服务端，唤醒阻塞等待完成。

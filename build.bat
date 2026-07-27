@@ -32,7 +32,7 @@ if errorlevel 1 (
 
 echo.
 echo [3/5] 同步静态资源到 Spring Boot...
-set "STATIC_DIR=src\main\resources\static"
+set "STATIC_DIR=platform-app\src\main\resources\static"
 if not exist "%STATIC_DIR%" (
     mkdir "%STATIC_DIR%"
 )
