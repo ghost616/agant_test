@@ -40,7 +40,7 @@ public class LoadSkillsSystemTool implements SystemTool {
             JsonNode root = MAPPER.readTree(arguments);
             JsonNode namesNode = root.get("names");
             if (namesNode == null || !namesNode.isArray()) {
-                return "{\"error\":\"缺少 names 参数\"}";
+                return "{\"status\":\"error\",\"errMsg\":\"缺少 names 参数\"}";
             }
 
             List<String> requestedNames = new ArrayList<>();
@@ -76,7 +76,7 @@ public class LoadSkillsSystemTool implements SystemTool {
             return "{\"status\":\"ok\",\"loaded\":\"" + newlyLoaded.size() + "\",\"names\":" + MAPPER.writeValueAsString(newlyLoaded) + "}";
         } catch (Exception e) {
             log.error("load_skills 执行失败", e);
-            return "{\"error\":\"" + e.getMessage() + "\"}";
+            return "{\"status\":\"error\",\"errMsg\":\"" + e.getMessage() + "\"}";
         }
     }
 

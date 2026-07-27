@@ -103,11 +103,9 @@ export function chatStream(
 
         for (const line of lines) {
           if (!line.trim()) continue;
-          console.log('[chatStream] raw line:', line);
           const jsonStr = line.startsWith('data:') ? line.slice(5) : line;
           try {
             const chunk: ChatChunk = JSON.parse(jsonStr);
-            console.log('[chatStream] parsed chunk:', chunk);
             if (chunk.finishReason === 'error') {
               callbacks.onError(new Error(chunk.delta || '模型请求失败'));
               continue;
@@ -122,8 +120,8 @@ export function chatStream(
             if (chunk.delta) {
               callbacks.onChunk(chunk.delta);
             }
-          } catch (parseErr) {
-            console.log('[chatStream] JSON parse failed for line:', line, parseErr);
+          } catch {
+            // ignore parse error
           }
         }
       }

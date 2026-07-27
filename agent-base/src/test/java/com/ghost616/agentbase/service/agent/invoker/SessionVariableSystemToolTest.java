@@ -86,7 +86,7 @@ class SessionVariableSystemToolTest {
         String result = tool.execute(ctx, "{\"key\":\"myKey\"}");
 
         verifyNoInteractions(ctx);
-        assertTrue(result.contains("\"error\""));
+        assertTrue(result.contains("\"errMsg\""));
         assertTrue(result.contains("缺少 action 或 key 参数"));
     }
 
@@ -95,7 +95,7 @@ class SessionVariableSystemToolTest {
         String result = tool.execute(ctx, "{\"action\":\"add\"}");
 
         verifyNoInteractions(ctx);
-        assertTrue(result.contains("\"error\""));
+        assertTrue(result.contains("\"errMsg\""));
         assertTrue(result.contains("缺少 action 或 key 参数"));
     }
 
@@ -104,7 +104,7 @@ class SessionVariableSystemToolTest {
         String result = tool.execute(ctx, "{\"action\":\"add\",\"key\":\"myKey\"}");
 
         verifyNoMoreInteractions(ctx);
-        assertTrue(result.contains("\"error\""));
+        assertTrue(result.contains("\"errMsg\""));
         assertTrue(result.contains("add 操作缺少 value 参数"));
     }
 
@@ -113,7 +113,7 @@ class SessionVariableSystemToolTest {
         String result = tool.execute(ctx, "{\"action\":\"invalid\",\"key\":\"myKey\"}");
 
         verifyNoInteractions(ctx);
-        assertTrue(result.contains("\"error\""));
+        assertTrue(result.contains("\"errMsg\""));
         assertTrue(result.contains("不支持的 action"));
     }
 
@@ -122,7 +122,7 @@ class SessionVariableSystemToolTest {
         String result = tool.execute(ctx, "not valid json");
 
         verifyNoInteractions(ctx);
-        assertTrue(result.contains("\"error\""));
+        assertTrue(result.contains("\"errMsg\""));
     }
 
     @Test
@@ -130,7 +130,7 @@ class SessionVariableSystemToolTest {
         String result = tool.execute(ctx, "{\"action\":\"add\",\"key\":\"  \",\"value\":\"val\"}");
 
         verifyNoInteractions(ctx);
-        assertTrue(result.contains("\"error\""));
+        assertTrue(result.contains("\"errMsg\""));
         assertTrue(result.contains("缺少 action 或 key 参数"));
     }
 }

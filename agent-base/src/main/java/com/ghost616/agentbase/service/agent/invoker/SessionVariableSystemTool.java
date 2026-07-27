@@ -33,14 +33,14 @@ public class SessionVariableSystemTool implements SystemTool {
             String key = root.has("key") ? root.get("key").asText() : null;
 
             if (action == null || key == null || key.isBlank()) {
-                return "{\"error\":\"缺少 action 或 key 参数\"}";
+                return "{\"status\":\"error\",\"errMsg\":\"缺少 action 或 key 参数\"}";
             }
 
             switch (action) {
                 case "add": {
                     String value = root.has("value") ? root.get("value").asText() : null;
                     if (value == null) {
-                        return "{\"error\":\"add 操作缺少 value 参数\"}";
+                        return "{\"status\":\"error\",\"errMsg\":\"add 操作缺少 value 参数\"}";
                     }
                     ctx.putSessionVariable(key, value);
                     return "{\"status\":\"ok\",\"action\":\"add\",\"key\":\"" + key + "\"}";
@@ -54,11 +54,11 @@ public class SessionVariableSystemTool implements SystemTool {
                     return "{\"status\":\"ok\",\"action\":\"remove\",\"key\":\"" + key + "\"}";
                 }
                 default:
-                    return "{\"error\":\"不支持的 action: " + action + "\"}";
+                    return "{\"status\":\"error\",\"errMsg\":\"不支持的 action: " + action + "\"}";
             }
         } catch (Exception e) {
             log.error("session_variable 执行失败", e);
-            return "{\"error\":\"" + e.getMessage() + "\"}";
+            return "{\"status\":\"error\",\"errMsg\":\"" + e.getMessage() + "\"}";
         }
     }
 }

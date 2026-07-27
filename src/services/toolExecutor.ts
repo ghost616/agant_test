@@ -33,13 +33,8 @@ class ToolManager {
 
   async loadExtension(): Promise<void> {
     if (this.extensionLoaded) return;
-    console.log(`[ToolManager.loadExtension] getBrowserExtension 前`);
     const js = await getBrowserExtension();
-    console.log(`[ToolManager.loadExtension] getBrowserExtension 返回`, { js长度: js.length });
-    console.log(`[ToolManager.loadExtension] new Function 前`);
     const fn = new Function(js + '; return { ToolHostBridge, ToolManager, ToolExecutor };');
-    console.log(`[ToolManager.loadExtension] new Function 后`);
-    console.log(`[ToolManager.loadExtension] fn() 执行前`);
     let result: { ToolHostBridge: JBToolHostBridge; ToolManager: JBToolManager; ToolExecutor: JBToolExecutor };
     try {
       result = fn();
@@ -47,7 +42,6 @@ class ToolManager {
       console.error(`[ToolManager.loadExtension] fn() 异常`, e);
       throw e;
     }
-    console.log(`[ToolManager.loadExtension] fn() 执行后`);
     this.jbToolHostBridge = result!.ToolHostBridge;
     this.jbToolManager = result!.ToolManager;
     this.jbToolExecutor = result!.ToolExecutor;

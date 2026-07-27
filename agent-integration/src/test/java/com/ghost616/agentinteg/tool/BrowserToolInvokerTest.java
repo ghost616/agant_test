@@ -96,7 +96,7 @@ class BrowserToolInvokerTest {
         String content = BrowserToolInvoker.loadJsContent();
 
         assertNotNull(content);
-        assertTrue(content.contains("execute: function"));
+        assertTrue(content.contains("execute: async function"));
         assertTrue(content.contains("ToolManager"));
         assertTrue(content.contains("AgentExecutionContext"));
     }

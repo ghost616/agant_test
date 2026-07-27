@@ -38,7 +38,7 @@ public class UnloadSkillsSystemTool implements SystemTool {
             JsonNode root = MAPPER.readTree(arguments);
             JsonNode namesNode = root.get("names");
             if (namesNode == null || !namesNode.isArray()) {
-                return "{\"error\":\"缺少 names 参数\"}";
+                return "{\"status\":\"error\",\"errMsg\":\"缺少 names 参数\"}";
             }
 
             Set<String> namesToRemove = new HashSet<>();
@@ -64,7 +64,7 @@ public class UnloadSkillsSystemTool implements SystemTool {
             return "{\"status\":\"ok\",\"unloaded\":" + removedCount + "}";
         } catch (Exception e) {
             log.error("unload_skills 执行失败", e);
-            return "{\"error\":\"" + e.getMessage() + "\"}";
+            return "{\"status\":\"error\",\"errMsg\":\"" + e.getMessage() + "\"}";
         }
     }
 

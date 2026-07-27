@@ -135,8 +135,12 @@ const ToolExecutor = {
         if (typeof tool.handler !== "function") {
             throw new Error("Tool has no handler: " + toolName);
         }
-        const result = await tool.handler(agentExecContext, params);
-        return (typeof result === 'string') ? result : JSON.stringify(result);
+        try {
+            const result = await tool.handler(agentExecContext, params);
+            return (typeof result === 'string') ? result : JSON.stringify(result);
+        } catch (e) {
+            return JSON.stringify({ status: "error", errMsg: e.message || String(e) });
+        }
     },
 
     passToolResult: function (sessionId, toolConfigId, result) {
@@ -151,10 +155,16 @@ const ToolExecutor = {
         if (typeof tool.handler !== "function") {
             throw new Error("Tool has no handler: " + toolName);
         }
-        const agentCtx = await this.getAgentExecutionContext(sessionId);
-        const result = await tool.handler(agentCtx, params);
-        const resultStr = (typeof result === 'string') ? result : JSON.stringify(result);
-        this.passToolResult(sessionId, toolConfigId, resultStr);
-        return resultStr;
+        try {
+            const agentCtx = await this.getAgentExecutionContext(sessionId);
+            const result = await tool.handler(agentCtx, params);
+            const resultStr = (typeof result === 'string') ? result : JSON.stringify(result);
+            this.passToolResult(sessionId, toolConfigId, resultStr);
+            return resultStr;
+        } catch (e) {
+            const errMsg = JSON.stringify({ status: "error", errMsg: e.message || String(e) });
+            this.passToolResult(sessionId, toolConfigId, errMsg);
+            return errMsg;
+        }
     }
 };

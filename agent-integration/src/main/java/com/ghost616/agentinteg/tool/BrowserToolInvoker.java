@@ -38,9 +38,9 @@ public class BrowserToolInvoker extends CustomToolInvoker {
         } catch (Exception e) {
             log.error("BrowserToolInvoker execute failed", e);
             try {
-                return OBJECT_MAPPER.writeValueAsString(Map.of("error", e.getMessage()));
+                return OBJECT_MAPPER.writeValueAsString(Map.of("status", "error", "errMsg", e.getMessage()));
             } catch (Exception inner) {
-                return "{\"error\":\"" + inner.getMessage() + "\"}";
+                return "{\"status\":\"error\",\"errMsg\":\"" + inner.getMessage() + "\"}";
             }
         }
     }

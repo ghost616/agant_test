@@ -31,14 +31,14 @@ public class HistoryQuerySystemTool implements SystemTool {
             JsonNode root = MAPPER.readTree(arguments);
             JsonNode indicesNode = root.get("indices");
             if (indicesNode == null || !indicesNode.isArray()) {
-                return "{\"error\":\"缺少 indices 参数\"}";
+                return "{\"status\":\"error\",\"errMsg\":\"缺少 indices 参数\"}";
             }
             String jsonStr = indicesNode.toString();
             ctx.putConversationVariable(VAR_NAME, jsonStr);
             return "{\"status\":\"ok\",\"indices\":" + jsonStr + "}";
         } catch (Exception e) {
             log.error("history_query 执行失败", e);
-            return "{\"error\":\"" + e.getMessage() + "\"}";
+            return "{\"status\":\"error\",\"errMsg\":\"" + e.getMessage() + "\"}";
         }
     }
 }

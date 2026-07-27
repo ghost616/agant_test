@@ -140,7 +140,8 @@ public class ToolExecutionService {
                 return res;
             } catch (Exception e) {
                 log.error("sessionId={} 工具执行异常, toolName={}", sessionId, toolCallName, e);
-                toolExecutionTracker.setFailed(sessionId, toolCallId, e.getMessage());
+                String errMsg = "{\"status\":\"error\",\"errMsg\":" + JsonMapper.MAPPER.writeValueAsString(e.getMessage()) + "}";
+                toolExecutionTracker.setFailed(sessionId, toolCallId, errMsg);
                 return null;
             }
         });

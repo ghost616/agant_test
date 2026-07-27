@@ -74,9 +74,9 @@ public class SubSessionCallbackSystemTool implements SystemTool {
         } catch (Exception e) {
             log.error("callback_sub_session 执行失败", e);
             try {
-                return OBJECT_MAPPER.writeValueAsString(Map.of("error", e.getMessage()));
+                return OBJECT_MAPPER.writeValueAsString(Map.of("status", "error", "errMsg", e.getMessage()));
             } catch (Exception inner) {
-                return "{\"error\":\"" + inner.getMessage() + "\"}";
+                return OBJECT_MAPPER.writeValueAsString(Map.of("status", "error", "errMsg", inner.getMessage()));
             }
         }
     }
