@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_05933c9baffewwf4sCllpyqkVv",
+  "content": "## 待测试功能\n\n### 1. updateSessionThinking API 函数 (src/services/session.ts)\n- updateSessionThinking(sessionId, thinking) 调用 PUT /api/sessions/{id}/thinking\n- 参数和返回值类型正确性\n\n### 2. EvaluationList 组件变更 (src/pages/evaluations/EvaluationList.tsx)\n- 移除 agentEvalId Form.Item\n- 新增\"基准会话数据产生\"按钮，仅 benchmarkSessionId 存在时显示\n- 按钮导航到 /sessions/{benchmarkSessionId}/chat?benchmark=1\n\n### 3. AgentChat 组件变更 (src/pages/sessions/AgentChat.tsx)\n- benchmark=1 时 disabled 模型选择 Select\n- benchmark=1 时不调用 listModels\n- loadHistory 中初始 thinking 从 session.thinking 读取\n- thinking Switch onChange 调用 updateSessionThinking 保存\n\n### 涉及文件\n- src/types/evaluation.ts\n- src/types/session.ts\n- src/services/session.ts\n- src/pages/evaluations/EvaluationList.tsx\n- src/pages/sessions/AgentChat.tsx\n- src/pages/sessions/__tests__/AgentChat.test.tsx",
+  "timestamp": "2026-07-28T03:38:40.605Z"
+}

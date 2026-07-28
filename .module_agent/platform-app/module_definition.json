@@ -43,7 +43,7 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/PlatformApplication.java",
-      "description": "Spring Boot 启动类，@SpringBootApplication"
+      "description": "Spring Boot 启动类，@SpringBootApplication @EnableAsync"
     },
     {
       "path": "platform-app/src/main/resources/application.yml",
@@ -155,31 +155,83 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/dto/evaluation/EvaluationDTO.java",
-      "description": "评估响应 DTO，包含 id/name/description/benchmarkSessionId/executionCount/modelId/createTime/updateTime 字段，Long 型字段使用 ToStringSerializer 序列化"
+      "description": "Evaluation 数据传输对象，包含 id/name/description/executionCount/modelId/agentEvalId/agentId/agentName/benchmarkSessionId/executionType/createTime/updateTime 字段"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/dto/evaluation/EvaluationCreateRequest.java",
-      "description": "评估创建请求 DTO，包含必填字段 name/modelId/benchmarkSessionId/executionCount（均使用 jakarta.validation 注解校验）和可选字段 description"
+      "description": "Evaluation 创建请求 DTO，包含 name/description/modelId/agentEvalId/executionCount/executionType 字段，executionType 可选"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/dto/evaluation/EvaluationUpdateRequest.java",
-      "description": "评估更新请求 DTO，所有字段可选，仅更新非 null 字段"
+      "description": "Evaluation 更新请求 DTO，包含 name/description/modelId/executionCount/executionType 字段，所有字段可选"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/evaluation/EvaluationService.java",
-      "description": "评估业务服务接口，定义 list/getById/create/update/delete/listResults 六个方法的契约"
+      "description": "评估业务服务接口，定义 list(getById/create/update/delete/listResults 六个方法的契约，list 方法支持 agentEvalId 可选参数过滤"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/evaluation/EvaluationServiceImpl.java",
-      "description": "评估业务服务实现类，包含 name 唯一性校验、级联删除（EvaluationResult → Session → SessionVariable/SessionTool/SessionSkill/Message → MessageToolCall）、listResults 列表查询等完整业务逻辑"
+      "description": "EvaluationService 实现类，提供 CRUD 操作 + EvaluationResult 查询；create 时 executionType 默认 BACKGROUND，update 条件更新，toDTO 映射 executionType"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/controller/EvaluationController.java",
-      "description": "评估 REST 控制器，路径 /api/evaluations，提供完整的 CRUD 五个接口以及 /{id}/results 结果列表查询共六个端点"
+      "description": "评估 REST 控制器，路径 /api/evaluations，提供完整的 CRUD 五个接口、/{id}/results 结果列表查询共六个端点，list 端点支持 agentEvalId 查询参数过滤"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/dto/evaluation/EvaluationResultDTO.java",
-      "description": "评估结果响应 DTO，包含 id/evaluationId/evaluationSessionId/result/createTime 字段，Long 型字段使用 ToStringSerializer 序列化"
+      "description": "评估结果响应 DTO，包含 id/evaluationId/evaluationSessionId/result/executionStatus/totalTokenUsed/createTime 字段，Long 型字段使用 ToStringSerializer 序列化"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/dto/agent_evaluation/AgentEvaluationDTO.java",
+      "description": "智能体评估响应 DTO，包含 id/name/description/agentId/agentName/createTime/updateTime 字段，Long 型字段使用 ToStringSerializer 序列化"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/dto/agent_evaluation/AgentEvaluationCreateRequest.java",
+      "description": "智能体评估创建请求 DTO，包含必填字段 name/agentId（使用 jakarta.validation 注解校验）和可选字段 description"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/dto/agent_evaluation/AgentEvaluationUpdateRequest.java",
+      "description": "智能体评估更新请求 DTO，所有字段可选，仅更新非 null 字段"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/service/agent_evaluation/AgentEvaluationService.java",
+      "description": "智能体评估业务服务接口，定义 list/getById/create/update/delete 五个方法的契约"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/service/agent_evaluation/AgentEvaluationServiceImpl.java",
+      "description": "智能体评估业务服务实现类，包含 name 唯一性校验、级联删除（关联 Evaluation → EvaluationResult → benchmarkSession/executionSession → SessionVariable/SessionTool/SessionSkill/Message → MessageToolCall）、AgentConfigMapper 查询 agentName 等完整业务逻辑"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/controller/AgentEvaluationController.java",
+      "description": "智能体评估 REST 控制器，路径 /api/agent-evaluations，提供完整的 CRUD 五个接口端点"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/dto/evaluation/EvaluationExecutionStatusDTO.java",
+      "description": "评估执行状态 DTO，包含 evaluationId/executionSessionId/status/currentStep/totalSteps 五个字段，Long 型字段使用 ToStringSerializer 序列化"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/dto/evaluation/EvaluationSessionCreateResponse.java",
+      "description": "评估前台创建响应 DTO，包含 sessionId(Long) 和 userMessages(List<String>) 两个字段"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/service/evaluation/EvaluationExecutionService.java",
+      "description": "评估后台执行服务：接收 evaluationId 异步执行评估，验证基准会话有用户消息，复制基准会话数据创建执行会话，通过 AgentMessageProxy 逐条执行用户消息（含工具调用），完成后调用 EvaluationResultGenerateService 生成评估结果。维护内存状态 Map 供状态轮询。提供 createExecutionSession 和 generateResult 方法供前台控制器调用。"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/service/evaluation/EvaluationResultGenerateService.java",
+      "description": "评估结果生成服务：接收基准会话ID和执行会话ID，获取双方消息构建系统提示词对比差异度，调用 evaluation.modelId 对应模型评估，将结果写入 EvaluationResult 表"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/controller/EvaluationExecutionController.java",
+      "description": "评估后台执行控制器，路径 /api/evaluations，提供 POST /{id}/execute（异步执行）和 GET /{id}/execute/status（状态轮询）两个端点"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/controller/EvaluationSessionController.java",
+      "description": "评估前台会话控制器，路径 /api/evaluations，提供 POST /{id}/session（复制基准会话创建执行会话）和 POST /{id}/session/{sessionId}/generate（生成评估结果）两个端点"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/service/evaluation/AsyncEvaluationExecutor.java",
+      "description": "异步评估执行器（独立 @Component），被 EvaluationExecutionService 注入后调用，确保 @Async 通过 Spring AOP 代理生效。执行 AgentMessageProxy 逐条用户消息、工具调用，完成后调用 EvaluationResultGenerateService"
     }
   ]
 }

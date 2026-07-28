@@ -108,3 +108,22 @@
 [2026-07-27T08:26:38.572Z] [session: ses_05d518535ffeWkFCZQ6FdxhIXu] SessionDTO 新增 isEvaluation(Boolean) 字段（@JsonSerialize ToStringSerializer）；SessionServiceImpl.toDTO 映射 entity.getIsEvaluation()；listSessions 添加 wrapper.eq(Session::getIsEvaluation, false) 过滤评估会话
 [2026-07-27T12:47:28.555Z] [session: ses_05c63456affefAWrxeu0QYxk9p] 新增 Evaluation CRUD 后端接口：dto/evaluation/ 包下三个 DTO、service/evaluation/ 包下 EvaluationService 接口与实现、controller/EvaluationController.java 控制器，提供 /api/evaluations 五端点（GET 列表/GET 详情/POST 创建/PUT 修改/DELETE 删除），包含 name 唯一性校验和级联删除逻辑
 [2026-07-27T12:59:11.747Z] [session: ses_05c63456affefAWrxeu0QYxk9p] EvaluationResultDTO 新增；EvaluationService/EvaluationServiceImpl 新增 listResults 方法；EvaluationController 新增 GET /{id}/results 端点
+[2026-07-28T01:40:12.574Z] [session: ses_059a11eb5ffeBADRW63vk6GZ56] AgentEvaluation 模块开发：创建 AgentEvaluation DTOs/Service/Controller，实现 CRUD + 级联删除；改造 Evaluation DTOs/Service/Controller：benchmarkSessionId 替换为 agentEvalId，create 自动创建基准 Session，list 支持 agentEvalId 过滤，DTO 新增 agentEvalId/agentId/agentName 字段；ErrorCode 新增 AGENT_EVALUATION_NOT_FOUND/ALREADY_EXISTS
+[2026-07-28T03:33:01.489Z] [session: ses_059381f7dffesARZCepY93qHnb] [2026-07-28] EvaluationDTO 新增 benchmarkSessionId 字段；SessionDTO 新增 thinking 字段；SessionService 新增 updateThinking 方法；SessionServiceImpl 实现 updateThinking 并补充 toDTO 中 thinking 字段；SessionController 新增 PUT /api/sessions/{id}/thinking 端点；EvaluationServiceImpl.toDTO 补充 benchmarkSessionId 字段
+[2026-07-28T04:33:27.916Z] [session: ses_059010d8effewX10ds4jMwe899] EvaluationServiceImpl.create: 创建 benchmarkSession 后，查询 AgentTool 表获取该 agent 的工具列表并逐条插入 SessionTool；查询 AgentSkill 表获取技能列表并逐条插入 SessionSkill。注入 AgentToolMapper、AgentSkillMapper。
+[2026-07-28T05:40:39.079Z] [session: ses_058c33f52ffeBJCrLH6hPCgmzs] [2026-07-28] EvaluationDTO/EvaluationCreateRequest/EvaluationUpdateRequest 新增 executionType 字段；EvaluationServiceImpl.create 设置 executionType（默认 BACKGROUND）、update 支持更新 executionType、toDTO 映射 executionType 字段
+[2026-07-28T09:18:25.873Z] [session: ses_057fd13caffeTfyrw5l3imWNq2] 新增评估执行与结果生成模块：
+- EvaluationResultDTO 新增 executionStatus 字段
+- 新建 EvaluationExecutionStatusDTO 执行状态 DTO
+- 新建 EvaluationSessionCreateResponse 前台创建响应 DTO
+- 新建 EvaluationResultGenerateService：对比基准/执行会话消息，调用评估模型生成结果，写入 EvaluationResult 表
+- 新建 EvaluationExecutionService：异步执行评估（验证基准会话、复制会话数据、通过 AgentMessageProxy 逐条执行用户消息、调用结果生成服务），内存状态 Map 支持轮询，提供 createExecutionSession/generateResult 供前台调用
+- 新建 EvaluationExecutionController：POST /{id}/execute（异步）、GET /{id}/execute/status（轮询）
+- 新建 EvaluationSessionController：POST /{id}/session（创建执行会话）、POST /{id}/session/{sessionId}/generate（生成结果）
+- PlatformApplication 添加 @EnableAsync 注解
+[2026-07-28T09:29:36.857Z] [session: ses_057fd13caffeTfyrw5l3imWNq2] 修复代码审查 3 个问题：
+1. asyncExecute 提取到独立 @Component AsyncEvaluationExecutor 解决 @Async 自调用绕过 AOP 问题
+2. executionStatusMap 增加 TTL(1h)+@Scheduled 周期清理，防止内存泄漏；PlatformApplication 添加 @EnableScheduling
+3. createExecutionSession 新增 Evaluation 参数重载，EvaluationSessionController 传入已查询对象避免重复 DB 查询
+[2026-07-28T10:07:05.111Z] [session: ses_057cf13a4ffeiDMKQhNsQ6jU4f] 修复 EvaluationSessionController.java 编译错误：移除未使用的 evaluationResultMapper 字段（缺少 import）及重复的 MessageDataProvider import
+[2026-07-28T12:00:52.473Z] [session: ses_057680528ffe1jV0b0THfgvOoI] [2026-07-28] 修复 EvaluationExecutionServiceTest.java 编译错误：(1) 移除多余的 EvaluationResultMapper/MessageMapper/MessageToolCallMapper 的 @Mock 字段及 import；(2) 构造器参数对齐实际 EvaluationExecutionService 的 7 参（evaluationMapper, sessionMapper, sessionToolMapper, sessionSkillMapper, messageDataProvider, evaluationResultGenerateService, asyncEvaluationExecutor）；(3) 删除 doNothing().when(service).asyncExecute(...)，改为通过注入的 AsyncEvaluationExecutor mock 处理；同步添加 sessionToolMapper/sessionSkillMapper selectList 空列表 stub 防止 NPE

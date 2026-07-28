@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_057eafe56ffeHnQTwzQS0b4Qy4",
+  "content": "## 待测试功能\n\n### 涉及文件\n- `src/pages/evaluations/EvaluationResultList.tsx`\n\n### 功能点\n验证 hasMore 分支 break→continue 后内层 while 正确继续轮询新 currentResult.toolId\n\n### 测试类型\n- 编译测试：TypeScript 类型检查\n- 单元测试：内层 while 循环在 hasMore 后使用新 currentResult 继续轮询\n",
+  "timestamp": "2026-07-28T09:58:57.375Z"
+}

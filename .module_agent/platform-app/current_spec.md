@@ -99,6 +99,20 @@ platform-app 模块包含以下功能：
 - AgentContextController 中从 AgentExecutionContext（String ID）读取数据填充 AgentContextDTO（Long ID）时，将 String 转换为 Long
 ## 评估管理
 
+- 智能体评估(AgentEvaluation) CRUD 接口：DTO（AgentEvaluationDTO/AgentEvaluationCreateRequest/AgentEvaluationUpdateRequest）、Service（AgentEvaluationService 接口与 AgentEvaluationServiceImpl 实现）、Controller（AgentEvaluationController，路径 /api/agent-evaluations）
+- 支持 name 唯一性校验（create 和 update 时检查，重复抛 AGENT_EVALUATION_ALREADY_EXISTS）
+- 级联删除：删除 AgentEvaluation 时同时删除关联的 Evaluation、EvaluationResult、benchmark Session、execution Session 及关联数据（SessionVariable、SessionTool、SessionSkill、Message、MessageToolCall）
 - 评估(Evaluation) CRUD 接口：DTO（EvaluationDTO/EvaluationCreateRequest/EvaluationUpdateRequest）、Service（EvaluationService 接口与 EvaluationServiceImpl 实现）、Controller（EvaluationController，路径 /api/evaluations）
-- 支持 name 唯一性校验（create 和 update 时检查，重复抛 EVALUATION_ALREADY_EXISTS）
-- 级联删除：删除 Evaluation 时同时删除关联的 EvaluationResult、子会话相关数据（Session、SessionVariable、SessionTool、SessionSkill、Message、MessageToolCall）
+- EvaluationCreateRequest 新增 agentEvalId 字段替代原 benchmarkSessionId；Evaluation.list 和 EvaluationController.list 支持 agentEvalId 查询参数过滤
+- Evaluation.create 自动创建基准 Session（agentId 从 AgentEvaluation 获取，modelId 从请求参数获取，title=name+BenchmarkSession，isEvaluation=true，systemPrompt 从 agent 表获取），并将 Session ID 设置为 evaluation 的 benchmarkSessionId
+- EvaluationDTO 新增 agentEvalId、agentId、agentName 字段，toDTO 通过 AgentConfigMapper 查询 agentName
+- 级联删除：删除 Evaluation 时同时删除关联的 EvaluationResult、benchmark Session 及子会话相关数据（Session、SessionVariable、SessionTool、SessionSkill、Message、MessageToolCall）
+- 评估后台执行(EvaluationExecutionService)：接收 evaluationId 执行异步评估，验证基准会话有用户消息，复制基准会话数据创建执行会话，通过 AgentMessageProxy 逐条执行用户消息（含工具调用），完成后调用 EvaluationResultGenerateService 生成评估结果。内存中维护 ConcurrentHashMap 存储执行状态（evaluationId → EvaluationExecutionStatusDTO），提供 getStatus 查询
+- 评估结果生成(EvaluationResultGenerateService)：接收基准会话ID和执行会话ID，获取双方全部消息，构建系统提示词对比差异度，调用 evaluation.modelId 对应模型执行评估，将评估结果写入 EvaluationResult 表
+- 执行状态 DTO(EvaluationExecutionStatusDTO)：包含 evaluationId/executionSessionId/status/currentStep/totalSteps 五个字段
+- 前台创建响应 DTO(EvaluationSessionCreateResponse)：包含 sessionId/userMessages 列表两个字段
+- EvaluationResultDTO 新增 executionStatus 字段
+- 评估后台执行控制器(EvaluationExecutionController)：POST /api/evaluations/{id}/execute（异步执行）、GET /api/evaluations/{id}/execute/status（状态轮询）
+- 评估前台会话控制器(EvaluationSessionController)：POST /api/evaluations/{id}/session（复制基准会话→返回执行会话ID+user消息列表）、POST /api/evaluations/{id}/session/{sessionId}/generate（接收评估ID和会话ID，调用结果生成服务）
+- PlatformApplication 添加 @EnableAsync 注解，支持异步任务执行
+- 审查修复：asyncExecute 提取到独立 @Component AsyncEvaluationExecutor 解决 @Async 自调用问题；executionStatusMap 增加 TTL(1h) + @Scheduled 清理机制；createExecutionSession 新增 Evaluation 参数重载避免重复查询

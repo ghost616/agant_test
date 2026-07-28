@@ -1,0 +1,275 @@
+import { useCallback, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+  Button,
+  Form,
+  Input,
+  message,
+  Modal,
+  Popconfirm,
+  Select,
+  Space,
+  Table,
+} from 'antd';
+import type { ColumnsType } from 'antd/es/table';
+import type { AgentEvaluation, AgentEvaluationCreateRequest, AgentEvaluationUpdateRequest } from '../../types/agentEvaluation';
+import type { AgentConfig } from '../../types/agent';
+import type { CommonStatus } from '../../types/common';
+import {
+  getAgentEvaluationList,
+  createAgentEvaluation,
+  updateAgentEvaluation,
+  deleteAgentEvaluation,
+  updateAgentEvaluationStatus,
+} from '../../services/agentEvaluation';
+import { listAgents } from '../../services/agent';
+
+function AgentEvaluationList(): JSX.Element {
+  const navigate = useNavigate();
+  const [dataSource, setDataSource] = useState<AgentEvaluation[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [editingEvaluation, setEditingEvaluation] = useState<AgentEvaluation | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [form] = Form.useForm<AgentEvaluationCreateRequest>();
+  const [agentList, setAgentList] = useState<AgentConfig[]>([]);
+
+  const fetchList = useCallback(async () => {
+    setLoading(true);
+    try {
+      const result = await getAgentEvaluationList();
+      setDataSource(result);
+    } catch {
+      message.error('获取评估列表失败');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const fetchAgents = useCallback(async () => {
+    try {
+      const agents = await listAgents({});
+      setAgentList(agents);
+    } catch {
+      message.error('获取智能体列表失败');
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchList();
+  }, [fetchList]);
+
+  useEffect(() => {
+    fetchAgents();
+  }, [fetchAgents]);
+
+  const handleAdd = (): void => {
+    setEditingEvaluation(null);
+    form.resetFields();
+    setModalVisible(true);
+  };
+
+  const handleEdit = (record: AgentEvaluation): void => {
+    setEditingEvaluation(record);
+    setModalVisible(true);
+  };
+
+  useEffect(() => {
+    if (!editingEvaluation || !modalVisible) return;
+    form.setFieldsValue({
+      name: editingEvaluation.name,
+      description: editingEvaluation.description,
+      agentId: editingEvaluation.agentId,
+    });
+  }, [editingEvaluation, modalVisible, form]);
+
+  const handleDelete = async (record: AgentEvaluation): Promise<void> => {
+    try {
+      await deleteAgentEvaluation(record.id);
+      message.success('删除成功');
+      fetchList();
+    } catch {
+      message.error('删除失败');
+    }
+  };
+
+  const handleStatusToggle = async (record: AgentEvaluation): Promise<void> => {
+    const newStatus: CommonStatus = record.status === 'ENABLED' ? 'DISABLED' : 'ENABLED';
+    try {
+      await updateAgentEvaluationStatus(record.id, newStatus);
+      message.success(newStatus === 'ENABLED' ? '已启用' : '已禁用');
+      fetchList();
+    } catch {
+      message.error('操作失败');
+    }
+  };
+
+  const handleModalOk = async (): Promise<void> => {
+    let values: AgentEvaluationCreateRequest;
+    try {
+      values = await form.validateFields();
+    } catch {
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      if (editingEvaluation) {
+        const updateData: AgentEvaluationUpdateRequest = {
+          name: values.name,
+          description: values.description,
+          agentId: values.agentId,
+        };
+        await updateAgentEvaluation(editingEvaluation.id, updateData);
+        message.success('更新成功');
+      } else {
+        await createAgentEvaluation(values);
+        message.success('创建成功');
+      }
+      setModalVisible(false);
+      fetchList();
+    } catch {
+      message.error(editingEvaluation ? '更新失败' : '创建失败');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const columns: ColumnsType<AgentEvaluation> = [
+    {
+      title: '名称',
+      dataIndex: 'name',
+      width: 160,
+      ellipsis: true,
+    },
+    {
+      title: '描述',
+      dataIndex: 'description',
+      width: 240,
+      ellipsis: true,
+    },
+    {
+      title: '智能体',
+      dataIndex: 'agentName',
+      width: 160,
+      ellipsis: true,
+      render: (agentName: string, record: AgentEvaluation) => {
+        return agentName || record.agentId;
+      },
+    },
+    {
+      title: '状态',
+      dataIndex: 'status',
+      width: 100,
+      render: (status: CommonStatus) => {
+        const color = status === 'ENABLED' ? 'green' : 'red';
+        const label = status === 'ENABLED' ? '已启用' : '已禁用';
+        return <span style={{ color }}>{label}</span>;
+      },
+    },
+    {
+      title: '创建时间',
+      dataIndex: 'createTime',
+      width: 180,
+    },
+    {
+      title: '操作',
+      key: 'actions',
+      width: 320,
+      render: (_: unknown, record: AgentEvaluation) => (
+        <Space size="small">
+          <Button type="link" size="small" onClick={() => handleEdit(record)}>
+            编辑
+          </Button>
+          <Button
+            type="link"
+            size="small"
+            onClick={() => navigate(`/evaluations/${record.id}/items`)}
+          >
+            进行评估
+          </Button>
+          <Button
+            type="link"
+            size="small"
+            onClick={() => handleStatusToggle(record)}
+          >
+            {record.status === 'ENABLED' ? '禁用' : '启用'}
+          </Button>
+          <Popconfirm
+            title="确定删除该评估？"
+            onConfirm={() => handleDelete(record)}
+          >
+            <Button type="link" size="small" danger>
+              删除
+            </Button>
+          </Popconfirm>
+        </Space>
+      ),
+    },
+  ];
+
+  return (
+    <div>
+      <Space style={{ marginBottom: 16 }}>
+        <Button type="primary" onClick={handleAdd}>
+          新增智能体评估
+        </Button>
+      </Space>
+
+      <Table<AgentEvaluation>
+        rowKey="id"
+        columns={columns}
+        dataSource={dataSource}
+        loading={loading}
+        pagination={false}
+        scroll={{ x: 1200 }}
+      />
+
+      <Modal
+        title={editingEvaluation ? '编辑智能体评估' : '新增智能体评估'}
+        open={modalVisible}
+        onOk={handleModalOk}
+        onCancel={() => setModalVisible(false)}
+        confirmLoading={submitting}
+        width={640}
+        destroyOnClose
+      >
+        <Form form={form} layout="vertical" preserve={false}>
+          <Form.Item
+            name="name"
+            label="名称"
+            rules={[{ required: true, message: '请输入评估名称' }]}
+          >
+            <Input placeholder="请输入评估名称" maxLength={100} />
+          </Form.Item>
+          <Form.Item name="description" label="描述">
+            <Input.TextArea
+              placeholder="请输入评估描述"
+              rows={3}
+              maxLength={500}
+              showCount
+            />
+          </Form.Item>
+          <Form.Item
+            name="agentId"
+            label="智能体"
+            rules={[{ required: true, message: '请选择智能体' }]}
+          >
+            <Select
+              placeholder="请选择智能体"
+              allowClear
+              showSearch
+              optionFilterProp="label"
+              options={agentList.map((a) => ({
+                value: a.id,
+                label: a.name,
+              }))}
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
+    </div>
+  );
+}
+
+export default AgentEvaluationList;

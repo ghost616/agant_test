@@ -43,7 +43,7 @@
     },
     {
       "path": "platform-data/src/main/java/com/ghost616/platform/entity/Session.java",
-      "description": "会话实体，继承BaseEntity，@TableName(\"session\")"
+      "description": "会话实体，继承BaseEntity，@TableName(\"session\")，含thinking字段"
     },
     {
       "path": "platform-data/src/main/java/com/ghost616/platform/entity/MessageToolCall.java",
@@ -119,19 +119,19 @@
     },
     {
       "path": "platform-data/src/main/resources/schema.sql",
-      "description": "DDL 初始化脚本，定义所有业务表（model_config、tool_config、session、message、message_tool_call、session_tool、agent_config、agent_tool、agent_skill、skill_config、skill_tool、session_variable、session_skill）的建表语句和索引"
+      "description": "DDL 初始化脚本，定义所有业务表（model_config、tool_config、session、message、message_tool_call、session_tool、agent_config、agent_tool、agent_skill、skill_config、skill_tool、session_variable、session_skill、agent_evaluation、evaluation、evaluation_result）的建表语句和索引"
     },
     {
       "path": "platform-data/src/main/java/com/ghost616/platform/config/SchemaMigration.java",
-      "description": "数据库 Schema 迁移组件，通过 ALTER TABLE 实现列增量迁移和 NULL 回填，确保新增列的兼容性"
+      "description": "数据库 Schema 迁移组件，通过 ALTER TABLE 实现列增量迁移和 NULL 回填，确保新增列的兼容性；覆盖 agent_evaluation 表全字段及 evaluation 表 agent_eval_id/agent_id 迁移"
     },
     {
       "path": "platform-data/src/main/java/com/ghost616/platform/entity/Evaluation.java",
-      "description": "评估配置实体，继承 BaseEntity，映射 evaluation 表；字段：name（评估名称）、description（描述）、benchmarkSessionId（基准会话ID）、executionCount（执行次数）"
+      "description": "评估配置实体，继承 BaseEntity，映射 evaluation 表；字段：name（评估名称）、description（描述）、benchmarkSessionId（基准会话ID）、executionCount（执行次数）、modelId（模型ID）、agentEvalId（关联智能体评估ID）、agentId（关联智能体ID）"
     },
     {
       "path": "platform-data/src/main/java/com/ghost616/platform/entity/EvaluationResult.java",
-      "description": "评估结果实体，继承 BaseEntity，映射 evaluation_result 表；字段：evaluationId（评估配置ID）、evaluationSessionId（评估执行会话ID）、result（评估结果内容）"
+      "description": "评估结果实体，继承 BaseEntity，映射 evaluation_result 表；字段：evaluationId（评估配置ID）、evaluationSessionId（评估执行会话ID）、result（评估结果内容）、executionStatus（执行状态，PENDING/RUNNING/COMPLETED/FAILED，默认 PENDING）"
     },
     {
       "path": "platform-data/src/main/java/com/ghost616/platform/repository/EvaluationMapper.java",
@@ -140,6 +140,14 @@
     {
       "path": "platform-data/src/main/java/com/ghost616/platform/repository/EvaluationResultMapper.java",
       "description": "EvaluationResult 实体的 MyBatis-Plus Mapper 接口，继承 BaseMapper<EvaluationResult>，提供基础 CRUD 操作"
+    },
+    {
+      "path": "platform-data/src/main/java/com/ghost616/platform/entity/AgentEvaluation.java",
+      "description": "智能体评估实体，继承 BaseEntity，映射 agent_evaluation 表；字段：name（评估名称）、description（描述）、agentId（关联智能体ID）"
+    },
+    {
+      "path": "platform-data/src/main/java/com/ghost616/platform/repository/AgentEvaluationMapper.java",
+      "description": "AgentEvaluation 实体的 MyBatis-Plus Mapper 接口，继承 BaseMapper<AgentEvaluation>，提供基础 CRUD 操作"
     }
   ]
 }

@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_059128faeffeLXxhviWEG01fuC",
+  "content": "## 待测试功能\n\n### 1. EvaluationList.tsx\n- 按钮文字变更：操作列的\"基准会话数据产生\"缩短为\"基准会话\"\n\n### 2. AgentChat.tsx\n- 添加 useNavigate 导入并在组件内初始化 navigate\n- loadHistory 中移除 !isBenchmark 条件，始终加载模型列表\n- renderMainChat 中 isBenchmark 为 true 时顶部显示返回按钮，导航到 /evaluations\n- benchmark 模式下模型选择标签改为\"模型\"\n\n### 涉及文件\n- src/pages/evaluations/EvaluationList.tsx\n- src/pages/sessions/AgentChat.tsx\n",
+  "timestamp": "2026-07-28T04:13:54.296Z"
+}

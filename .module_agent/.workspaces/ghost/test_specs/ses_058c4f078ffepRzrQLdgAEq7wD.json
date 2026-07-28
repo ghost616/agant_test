@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_058c4f078ffepRzrQLdgAEq7wD",
+  "content": "## 待测试功能\n\n### 编译检查\n- 验证 Evaluation.java 新增 executionType 字段后编译通过\n- 验证 SchemaMigration.java 新增 execution_type 迁移条目后编译通过\n\n### 涉及的文件\n- platform-data/src/main/java/com/ghost616/platform/entity/Evaluation.java\n- platform-data/src/main/java/com/ghost616/platform/config/SchemaMigration.java",
+  "timestamp": "2026-07-28T05:38:55.088Z"
+}

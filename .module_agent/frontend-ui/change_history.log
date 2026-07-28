@@ -73,3 +73,15 @@
 [2026-07-25T08:24:29.737Z] [session: ses_067d3b1baffeXKknIEnUOQNCSh] toolExecutor.ts: JBToolExecutor.execute 参数顺序改为 (sessionId, toolConfigId, toolName, params) 以匹配 JS 端；ToolExecutor.execute 移除 toolId 参数
 [2026-07-27T01:09:43.444Z] [session: ses_05ee1651effeZ6JYxEQvyHQuNW] 修正 JBToolHostBridge.passToolResult 接口参数名 toolId → toolConfigId (toolExecutor.ts:4)；修正 AgentChat.tsx:271 passToolResult 调用从 4 参数改为 3 参数，移除冗余 toolId
 [2026-07-27T12:43:01.729Z] [session: ses_05c676690ffeVhJyKNcMnsggbd] 2026-07-27: 实现评估管理前端页面。新增 types/evaluation.ts 类型定义、services/evaluation.ts API 封装、pages/evaluations/EvaluationList.tsx 评估列表页（含新增/编辑 Modal、删除 Popconfirm、跳转评估结果）、pages/evaluations/EvaluationResultList.tsx 评估结果历史列表页（含执行/修改按钮占位）；更新 App.tsx 路由和侧边栏菜单
+[2026-07-28T01:43:00.242Z] [session: ses_0599dc4c3ffemUUWu5SM7KXDRK] 2026-07-28: 评估管理重构 — 新建 AgentEvaluationList 智能体评估页面（列表/CRUD/状态切换/跳转评估项），修改 EvaluationList 为评估项子页面（从 URL 获取 agentEvalId/移除基准会话/添加 agentName 列/返回按钮），修改 EvaluationResultList 返回导航到 /evaluations/:agentEvalId/items，修改 App.tsx 路由结构，修改 evaluation.ts 类型添加 agentEvalId/agentId/agentName 和移除 benchmarkSessionId，修改 evaluation.ts API 支持 agentEvalId 参数
+[2026-07-28T01:49:27.682Z] [session: ses_0599dc4c3ffemUUWu5SM7KXDRK] 2026-07-28: 审查修复 — 从 agentEvaluation.ts 类型和 API 中移除 status/updateAgentEvaluationStatus（后端 DTO 无 status）；修复 EvaluationList.tsx 中"进行评估"和"查看结果"按钮导航相同 URL 的问题，分别指向 /evaluations/items/:evaluationId/benchmark 和 /evaluations/items/:evaluationId/results
+[2026-07-28T02:08:18.755Z] [session: ses_059856aadffeM8gxC1Ey41TOvy] 修复评估页面 UI 问题：AgentEvaluationList.tsx - "编辑"→"修改"，"进行评估"→"进入评估"；EvaluationList.tsx - "编辑"→"修改"，评估链接从 /benchmark 改为 /results，移除冗余"查看结果"按钮
+[2026-07-28T09:37:23.424Z] [session: ses_057eafe56ffeHnQTwzQS0b4Qy4] 评估执行功能增强：
+- types/evaluation.ts: EvaluationResult 新增 executionStatus 字段；新增 ExecutionStatusResponse、EvalSessionCreateResponse 接口
+- services/evaluation.ts: 新增 executeEvaluation、getExecutionStatus、createEvalSession、generateEvalResult 四个 API 函数
+- pages/evaluations/EvaluationResultList.tsx: 替换"执行"按钮为完整逻辑（BACKGROUND 执行+轮询；FOREGROUND 会话创建→逐条消息发送含工具调用→结果生成→刷新列表），新增前台执行模态日志展示
+[2026-07-28T09:46:17.387Z] [session: ses_057eafe56ffeHnQTwzQS0b4Qy4] 审查问题修复：
+- 工具轮询 while 循环中 hasMore 分支获取 nextExec 后执行 currentResult = nextExec 再 break 使外层循环使用更新后的结果
+- 提取 runToolCycle 独立函数消除初始工具调用与递归调用的代码重复
+- catch 块区分 DOMException AbortError（用户取消）与实际异常，取消不弹错误提示
+[2026-07-28T11:39:37.522Z] [session: ses_0577acb85ffe7S7zQd4753XrYJ] EvaluationResultList.tsx: runToolCycle 轮询中增加 BROWSER 分支，检测 toolStatus.toolConfig?.subToolType === 'BROWSER' 时复用 toolExecutor/toolManager/getToolScript 执行客户端浏览器工具（与 AgentChat.tsx executeBrowserTool 逻辑一致）

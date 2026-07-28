@@ -1,0 +1,9 @@
+[
+  {
+    "plan_id": "plan_0ceab77b-855f-49d7-8a15-78ba54995ed1",
+    "plan": "修复 EvaluationExecutionServiceTest.java 编译错误：\n1. 移除多余的 EvaluationResultMapper/MessageMapper/MessageToolCallMapper Mock 字段及 import\n2. 构造器参数对齐实际 EvaluationExecutionService 的 7 参（evaluationMapper, sessionMapper, sessionToolMapper, sessionSkillMapper, messageDataProvider, asyncEvaluationExecutor, evaluationResultGenerateService）\n3. doNothing().when(service).asyncExecute(...) 删除，改为 mock AsyncEvaluationExecutor.executeAsync",
+    "modified_files": [],
+    "summary": "力牧已启动",
+    "errors": []
+  }
+]

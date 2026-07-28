@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_058c33f52ffeBJCrLH6hPCgmzs",
+  "content": "## 待测试功能\n\n### 涉及代码文件\n- `platform-app/src/main/java/com/ghost616/platform/dto/evaluation/EvaluationDTO.java` - 新增 executionType 字段\n- `platform-app/src/main/java/com/ghost616/platform/dto/evaluation/EvaluationCreateRequest.java` - 新增 executionType 可选字段\n- `platform-app/src/main/java/com/ghost616/platform/dto/evaluation/EvaluationUpdateRequest.java` - 新增 executionType 可选字段\n- `platform-app/src/main/java/com/ghost616/platform/service/evaluation/EvaluationServiceImpl.java` - create 默认 BACKGROUND、update 条件更新、toDTO 映射\n\n### 需要测试的功能\n1. EvaluationCreateRequest 可以设置 executionType，该字段为可选（可为 null）\n2. EvaluationUpdateRequest 可以设置 executionType，该字段为可选（可为 null）\n3. EvaluationDTO 包含 executionType 字段\n4. EvaluationServiceImpl.create：\n   - 当请求中 executionType 不为空时，entity 使用请求中的值\n   - 当请求中 executionType 为空时，entity 默认 \"BACKGROUND\"\n5. EvaluationServiceImpl.update：\n   - 当请求中 executionType 不为空时，entity 更新为新值\n   - 当请求中 executionType 为空时，entity 保持不变\n6. EvaluationServiceImpl.toDTO 正确映射 executionType 字段\n",
+  "timestamp": "2026-07-28T05:40:43.833Z"
+}

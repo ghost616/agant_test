@@ -1,0 +1,7 @@
+{
+  "plan_id": "plan_f32bd65b-edf2-406f-a126-3757b0fc59d3",
+  "module_name": "frontend-ui",
+  "development_plan": "修复以下两个审查问题：\n1. src/types/agentEvaluation.ts 中 AgentEvaluation 和 AgentEvaluationUpdateRequest 移除 status 字段（后端 DTO 无 status）；src/services/agentEvaluation.ts 移除 updateAgentEvaluationStatus 函数（后端无 PATCH 端点）\n2. src/pages/evaluations/EvaluationList.tsx 中两个操作按钮导航到相同 URL，修复为区分评估与查看结果（如 /evaluations/:evaluationId/results 与 /evaluations/:evaluationId/benchmark）",
+  "session_id": "ses_0599dc4c3ffemUUWu5SM7KXDRK",
+  "modified_files": []
+}

@@ -18,12 +18,12 @@
 - **SessionTool**：会话工具关联实体，映射 session_tool 表
 - **SessionVariable**：会话变量实体，映射 session_variable 表
 - **SessionSkill**：会话技能关联实体
-- **Evaluation**：评估配置实体，继承 BaseEntity，映射 evaluation 表，含 name/description/benchmarkSessionId/executionCount
+- **Evaluation**：评估配置实体，继承 BaseEntity，映射 evaluation 表，含 name/description/benchmarkSessionId/executionCount/modelId/agentEvalId/agentId/executionType
 - **EvaluationResult**：评估结果实体，继承 BaseEntity，映射 evaluation_result 表，含 evaluationId/evaluationSessionId/result
 
 枚举位于 `com.ghost616.platform.enums` 包：
 - **SubToolType**：子工具类型枚举（BROWSER），@EnumValue 标记 code 字段
-- **Evaluation** 字段更新：新增 modelId（Long，映射 model_id 列）
+- **AgentEvaluation**：智能体评估实体，继承 BaseEntity，映射 agent_evaluation 表，含 name/description/agentId
 ## 数据访问层
 
 提供 15 个 MyBatis-Plus Mapper 接口，均位于 `com.ghost616.platform.repository` 包下：
@@ -36,7 +36,9 @@
 - **SessionToolMapper、SessionVariableMapper、SessionSkillMapper**：基础 CRUD Mapper
 - **EvaluationMapper**：继承 BaseMapper\<Evaluation\>，基础 CRUD Mapper
 - **EvaluationResultMapper**：继承 BaseMapper\<EvaluationResult\>，基础 CRUD Mapper
+- **AgentEvaluationMapper**：继承 BaseMapper\<AgentEvaluation\>，基础 CRUD Mapper
 ## 数据库初始化与迁移
 
 - **schema.sql** (classpath 根路径)：DDL 初始化脚本，定义所有业务表（model_config、tool_config、session、message、message_tool_call、session_tool、agent_config、agent_tool、agent_skill、skill_config、skill_tool、session_variable、session_skill、evaluation、evaluation_result）的建表语句和索引
 - **SchemaMigration**（com.ghost616.platform.config）：数据库 Schema 迁移组件，继承 ApplicationRunner，通过 ALTER TABLE 实现列增量迁移和 NULL 回填，支持幂等执行和异常跳过；新增 session.is_evaluation 列及 evaluation、evaluation_result 表的全字段迁移
+新增 agent_evaluation 表建表语句及 evaluation 表 agent_eval_id/agent_id/execution_type 列；SchemaMigration 新增 agent_evaluation 表全字段迁移及 evaluation.agent_eval_id/evaluation.agent_id/evaluation.execution_type 迁移条目

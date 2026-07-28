@@ -1,1 +1,18 @@
-[]
+[
+  {
+    "plan_id": "plan_f32bd65b-edf2-406f-a126-3757b0fc59d3",
+    "plan_summary": "修复代码审查问题：移除 status 字段和 PATCH 调用，修复 EvaluationList 导航 URL",
+    "starter_session_id": "ses_059a310ddffeAwsrjNeCMR4LnY",
+    "code_reviewed": true,
+    "plan_completed": false,
+    "test_passed": false
+  },
+  {
+    "plan_id": "plan_0ceab77b-855f-49d7-8a15-78ba54995ed1",
+    "plan_summary": "修复测试文件构造器参数不匹配编译错误",
+    "starter_session_id": "ses_05854abcbffems5Ks5nqCAgxDH",
+    "code_reviewed": false,
+    "plan_completed": true,
+    "test_passed": true
+  }
+]

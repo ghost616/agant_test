@@ -55,5 +55,14 @@
   "platform-app/src/main/resources/browser/browser_extension.js": "f4625b6c76049df6efc92f5727d4cf41",
   "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultToolExecutionProvider.java": "cd02bdf31d489ed04196bd4848c2327a",
   "platform-app/pom.xml": "bb66e2f58873d1ca3335b4071182f1b6",
-  "agent-base/src/main/java/com/ghost616/agentbase/enums/ErrorCode.java": "9aa842faaabb347224af909697c236dd"
+  "agent-base/src/main/java/com/ghost616/agentbase/enums/ErrorCode.java": "9aa842faaabb347224af909697c236dd",
+  "platform-app/src/main/java/com/ghost616/platform/dto/evaluation/EvaluationCreateRequest.java": "a5311c695356e39ee6ffc63e969357f3",
+  "platform-app/src/main/java/com/ghost616/platform/dto/evaluation/EvaluationUpdateRequest.java": "600a8f37ccda0272b2ad9ba02c80cf90",
+  "platform-app/src/main/java/com/ghost616/platform/dto/evaluation/EvaluationDTO.java": "68879defc17464cba191c685d799e9e1",
+  "platform-app/src/main/java/com/ghost616/platform/service/evaluation/EvaluationService.java": "1e6edd08f82ccaeec70c18cce6213685",
+  "platform-app/src/main/java/com/ghost616/platform/service/evaluation/EvaluationServiceImpl.java": "988be0f9dd695c66b5ae0c4baaa9cf17",
+  "platform-app/src/main/java/com/ghost616/platform/controller/EvaluationController.java": "1408c1d15eff36759b143f38a35c27f7",
+  "platform-app/src/main/java/com/ghost616/platform/dto/evaluation/EvaluationResultDTO.java": "3836e26936374952acb9de4be1d1ce28",
+  "platform-app\\src\\main\\java\\com\\ghost616\\platform\\controller\\EvaluationSessionController.java": "5652446cfd94c442fc3ccdfb3c7f5d7a",
+  "platform-app/src/test/java/com/ghost616/platform/service/evaluation/EvaluationExecutionServiceTest.java": "51108fc90da9c4f22f239e420e6cc6b1"
 }

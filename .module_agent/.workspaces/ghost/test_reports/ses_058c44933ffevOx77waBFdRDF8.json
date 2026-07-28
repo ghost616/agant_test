@@ -1,0 +1,5 @@
+{
+  "lizhu_session_id": "ses_058c44933ffevOx77waBFdRDF8",
+  "content": "# 测试报告\n\n## 测试概览\n\n| 测试类型 | 结果 | 说明 |\n|---------|------|------|\n| TypeScript 编译检查 | ✅ 通过 | tsc --noEmit 成功，相关文件零错误 |\n\n## 编译检查详情\n\n### 涉及文件\n- `src/types/evaluation.ts` — 新增 `executionType?: string` 字段（Evaluation / EvaluationCreateRequest / EvaluationUpdateRequest）\n- `src/pages/evaluations/EvaluationList.tsx` — 引用 `executionType` 字段，类型正确匹配\n- `src/services/evaluation.ts` — 引用 EvaluationCreateRequest / EvaluationUpdateRequest，类型匹配\n\n### 执行命令\n```\nnpx tsc --noEmit\n```\n\n### 结果\n- `src/types/evaluation.ts` — 0 错误\n- `src/pages/evaluations/EvaluationList.tsx` — 0 错误\n- `src/services/evaluation.ts` — 0 错误\n\n### 预存错误说明\n其他文件中的错误均为测试文件预存问题（`ts2307: Cannot find module 'fs'`, `ts2304: Cannot find name '__dirname'`），源于 `@types/node` 缺失，与 `executionType` 变更无关。\n",
+  "timestamp": "2026-07-28T06:01:09.492Z"
+}

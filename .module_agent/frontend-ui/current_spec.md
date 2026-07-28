@@ -179,13 +179,21 @@
 - Table pagination={false} 全量展示
 ## 评估管理界面
 
-- 评估配置管理页面 `/evaluations`，支持评估列表展示、新增/编辑/删除
-- Table 列：名称、描述、基准会话ID、执行次数、模型ID、创建时间、操作(修改/进行评估/删除Popconfirm)
+- 智能体评估配置管理页面 `/evaluations`，支持评估列表展示、新增/编辑/删除/启用禁用
+- Table 列：名称、描述、智能体名称、状态(Tag green/red)、创建时间、操作(编辑/进行评估/禁用/删除Popconfirm)
 - Table pagination={false} 全量展示
-- 新增/编辑 Modal：name(Input 必填)、description(TextArea)、benchmarkSessionId(Select 从会话列表获取)、modelId(Select 从模型列表获取)、executionCount(InputNumber 必填正整数)
+- 新增/编辑 Modal：name(Input 必填)、description(TextArea)、agentId(Select 从智能体列表获取)
 - 删除使用 Popconfirm 确认
-- 「进行评估」按钮跳转 `/evaluations/{id}/results`
-- 评估结果历史列表页面 `/evaluations/{id}/results`：展示指定评估的执行结果历史
+- 禁用使用 Switch 切换
+- 「进行评估」按钮跳转 `/evaluations/{id}/items`（进入该智能体评估的评估项列表）
+- 评估项列表页面 `/evaluations/:agentEvalId/items`：从路由参数获取 agentEvalId
+- Table 列：名称、描述、智能体名称、执行次数、模型ID、创建时间、操作(编辑/进行评估/查看结果/删除Popconfirm)
+- 新增/编辑 Modal：name、description、agentEvalId(只读显示)、modelId(Select)、executionCount(InputNumber)
+- 返回按钮导航到 `/evaluations`
+- 评估结果历史列表页面 `/evaluations/items/:evaluationId/results`：展示指定评估的执行结果历史
 - 页面标题显示评估名称，上方有「执行」按钮（暂无功能，点击提示"功能开发中"）
-- Table 列：ID、会话ID、结果摘要、创建时间、操作(修改按钮暂无功能)
-- API 服务封装：getEvaluationList、getEvaluation、createEvaluation、updateEvaluation、deleteEvaluation、getEvaluationResults
+- 返回按钮根据评估的 agentEvalId 导航回 `/evaluations/:agentEvalId/items`
+- Table 列：ID、会话ID、Token消耗、结果摘要、创建时间、操作(修改按钮暂无功能)
+- API 服务封装：
+  - agentEvaluation.ts: getAgentEvaluationList、getAgentEvaluation、createAgentEvaluation、updateAgentEvaluation、deleteAgentEvaluation、updateAgentEvaluationStatus
+  - evaluation.ts: getEvaluationList(支持 agentEvalId 筛选)、getEvaluation、createEvaluation、updateEvaluation、deleteEvaluation、getEvaluationResults

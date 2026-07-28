@@ -1,0 +1,5 @@
+{
+  "lizhu_session_id": "ses_05779daeeffeHXZYJaGpcXuqFA",
+  "content": "# 测试报告\n\n## 测试结果\n\n**命令**: `npx vitest run src/pages/sessions/__tests__/AgentChat.test.tsx`\n\n```\n ✓ src/pages/sessions/__tests__/AgentChat.test.tsx (19 tests)\n Test Files  1 passed (1)\n      Tests  19 passed (19)\n```\n\n## ✅ 全部通过 (19/19)\n\n| BROWSER 分支位置 | `await sleep(500)` 状态 |\n|-----------------|:---------------------:|\n| `AgentChat.tsx` — `pollToolStatus` (line 263) | ✅ 已添加 |\n| `AgentChat.tsx` — `pollSubToolStatus` (line 399) | ✅ 已添加 |\n| `EvaluationResultList.tsx` — `runToolCycle` (line 125) | ✅ 已添加 |\n\n3 个轮询函数中的 BROWSER 分支添加 `await sleep(500)` 后，AgentChat.test.tsx 的 19 个测试全部通过，无回归。\n",
+  "timestamp": "2026-07-28T12:14:04.571Z"
+}

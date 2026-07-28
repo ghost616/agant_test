@@ -83,19 +83,31 @@
     },
     {
       "path": "src/types/evaluation.ts",
-      "description": "评估管理类型定义，含 Evaluation/EvaluationCreateRequest/EvaluationUpdateRequest/EvaluationResult 接口"
+      "description": "评估管理类型定义，含 Evaluation（含 agentEvalId/agentId/agentName）/EvaluationCreateRequest（含 agentEvalId）/EvaluationUpdateRequest/EvaluationResult 接口"
     },
     {
       "path": "src/services/evaluation.ts",
-      "description": "评估管理 API 服务封装，含列表/CRUD/评估结果查询接口"
+      "description": "评估管理 API 服务封装，含列表（支持 agentEvalId 筛选参数）/CRUD/评估结果查询接口"
     },
     {
       "path": "src/pages/evaluations/EvaluationList.tsx",
-      "description": "评估列表页面组件，包含评估列表展示、新增/编辑 Modal（name/description/benchmarkSessionId/modelId/executionCount 含会话和模型选择下拉）、删除 Popconfirm、跳转评估结果页"
+      "description": "评估项列表页面组件，从路由参数获取 agentEvalId，表格含名称/描述/智能体 agentName/执行次数/模型/创建时间/操作列，新增/编辑 Modal（name/description/agentEvalId 只读/modelId/executionCount），删除 Popconfirm，返回按钮导航回智能体评估页"
     },
     {
       "path": "src/pages/evaluations/EvaluationResultList.tsx",
-      "description": "评估结果历史列表页面组件，从路由参数获取 evaluationId，展示评估结果列表，含执行按钮（提示功能开发中）和修改按钮"
+      "description": "评估结果历史列表页面组件，从路由参数获取 evaluationId，展示评估结果列表，含执行按钮（提示功能开发中），回退按钮根据 agentEvalId 导航回 /evaluations/:agentEvalId/items"
+    },
+    {
+      "path": "src/types/agentEvaluation.ts",
+      "description": "智能体评估类型定义，含 AgentEvaluation/AgentEvaluationCreateRequest/AgentEvaluationUpdateRequest 接口"
+    },
+    {
+      "path": "src/services/agentEvaluation.ts",
+      "description": "智能体评估 API 服务封装，含列表/CRUD 接口"
+    },
+    {
+      "path": "src/pages/evaluations/AgentEvaluationList.tsx",
+      "description": "智能体评估列表页面组件，包含评估列表展示（名称/描述/智能体/创建时间/操作）、新增/编辑 Modal（name/description/agentId 含智能体选择下拉）、删除 Popconfirm、跳转评估项页面"
     }
   ]
 }
