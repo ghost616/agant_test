@@ -260,6 +260,7 @@ function AgentChat(): JSX.Element {
       }
       if (status.toolConfig?.subToolType === 'BROWSER') {
         await executeBrowserTool(sid, toolId, status);
+        await new Promise((resolve) => setTimeout(resolve, 500));
         continue;
       }
       if (status.status === 'idle') {
@@ -395,6 +396,7 @@ function AgentChat(): JSX.Element {
                   if (status.status === 'idle') continue;
                   if (status.toolConfig?.subToolType === 'BROWSER') {
                     await executeBrowserTool(sid, tid, status);
+                    await new Promise((r) => setTimeout(r, 500));
                     continue;
                   }
                   if (status.status === 'failed' || status.status === 'error') {

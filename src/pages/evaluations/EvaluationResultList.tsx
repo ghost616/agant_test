@@ -102,7 +102,7 @@ function EvaluationResultList(): JSX.Element {
           logLines.push(`[工具] 状态: ${toolStatus.status}`);
           setForegroundLog([...logLines]);
 
-          if (toolStatus.status === 'completed' || toolStatus.status === 'error') {
+          if (toolStatus.status === 'done' || toolStatus.status === 'error') {
             if (toolStatus.result) {
               logLines.push(`[工具] 结果: ${toolStatus.result}`);
               setForegroundLog([...logLines]);
@@ -122,6 +122,7 @@ function EvaluationResultList(): JSX.Element {
           }
           if (toolStatus.toolConfig?.subToolType === 'BROWSER') {
             await executeBrowserTool(sessionId, currentResult.toolId, toolStatus);
+            await sleep(500);
             continue;
           }
           await sleep(1000);
