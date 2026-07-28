@@ -22,4 +22,6 @@ public interface SessionService {
     int rollback(Long sessionId);
 
     List<SessionDTO> listChildSessions(Long parentId);
+
+    void updateThinking(Long sessionId, Boolean thinking);
 }

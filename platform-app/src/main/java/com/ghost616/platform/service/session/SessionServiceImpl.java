@@ -133,6 +133,17 @@ public class SessionServiceImpl implements SessionService {
         return entities.stream().map(this::toDTO).toList();
     }
 
+    @Override
+    @Transactional
+    public void updateThinking(Long sessionId, Boolean thinking) {
+        Session entity = sessionMapper.selectById(sessionId);
+        if (entity == null) {
+            throw new BusinessException(ErrorCode.SESSION_NOT_FOUND);
+        }
+        entity.setThinking(thinking);
+        sessionMapper.updateById(entity);
+    }
+
     private SessionDTO toDTO(Session entity) {
         return SessionDTO.builder()
                 .id(entity.getId())
@@ -144,6 +155,7 @@ public class SessionServiceImpl implements SessionService {
                 .isChild(entity.getIsChild())
                 .description(entity.getDescription())
                 .isEvaluation(entity.getIsEvaluation())
+                .thinking(entity.getThinking())
                 .createTime(entity.getCreateTime())
                 .updateTime(entity.getUpdateTime())
                 .totalTokenUsed(entity.getTotalTokenUsed())

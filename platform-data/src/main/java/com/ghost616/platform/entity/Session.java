@@ -34,4 +34,7 @@ public class Session extends BaseEntity {
 
     @TableField("is_evaluation")
     private Boolean isEvaluation;
+
+    @TableField("thinking")
+    private Boolean thinking;
 }

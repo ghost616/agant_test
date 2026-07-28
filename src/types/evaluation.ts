@@ -7,6 +7,7 @@ export interface Evaluation {
   agentName?: string;
   executionCount: number;
   modelId: string;
+  benchmarkSessionId?: string;
   createTime?: string;
   updateTime?: string;
 }

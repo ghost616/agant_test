@@ -31,7 +31,7 @@ function EvaluationList(): JSX.Element {
   const [modalVisible, setModalVisible] = useState(false);
   const [editingEvaluation, setEditingEvaluation] = useState<Evaluation | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [form] = Form.useForm<EvaluationCreateRequest & { agentEvalId: string }>();
+  const [form] = Form.useForm<EvaluationCreateRequest>();
 
   const [modelList, setModelList] = useState<ModelConfig[]>([]);
 
@@ -173,7 +173,7 @@ function EvaluationList(): JSX.Element {
     {
       title: '操作',
       key: 'actions',
-      width: 320,
+      width: 440,
       render: (_: unknown, record: Evaluation) => (
         <Space size="small">
            <Button type="link" size="small" onClick={() => handleEdit(record)}>
@@ -186,6 +186,15 @@ function EvaluationList(): JSX.Element {
            >
              进行评估
            </Button>
+          {record.benchmarkSessionId && (
+            <Button
+              type="link"
+              size="small"
+              onClick={() => navigate(`/sessions/${record.benchmarkSessionId}/chat?benchmark=1&returnUrl=${encodeURIComponent(`/evaluations/${record.agentEvalId}/items`)}`)}
+            >
+              基准会话
+            </Button>
+          )}
           <Popconfirm
             title="确定删除该评估？"
             onConfirm={() => handleDelete(record)}
@@ -240,13 +249,6 @@ function EvaluationList(): JSX.Element {
           </Form.Item>
           <Form.Item name="description" label="描述">
             <Input.TextArea placeholder="请输入评估描述" rows={3} maxLength={500} showCount />
-          </Form.Item>
-          <Form.Item
-            name="agentEvalId"
-            label="智能体评估"
-            initialValue={urlAgentEvalId || ''}
-          >
-            <Input disabled placeholder="智能体评估ID" />
           </Form.Item>
           <Form.Item
             name="modelId"

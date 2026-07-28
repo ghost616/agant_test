@@ -6,6 +6,7 @@ export interface Session {
   systemPrompt?: string;
   parentSessionId?: string;
   isChild?: boolean;
+  thinking?: boolean;
   createTime: string;
   updateTime: string;
   totalTokenUsed?: string;

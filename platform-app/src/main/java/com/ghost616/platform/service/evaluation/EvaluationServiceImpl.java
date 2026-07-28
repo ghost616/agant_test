@@ -9,6 +9,10 @@ import com.ghost616.platform.dto.evaluation.EvaluationResultDTO;
 import com.ghost616.platform.dto.evaluation.EvaluationUpdateRequest;
 import com.ghost616.platform.entity.AgentConfig;
 import com.ghost616.platform.entity.AgentEvaluation;
+import com.ghost616.platform.entity.AgentSkill;
+import com.ghost616.platform.entity.AgentTool;
+import com.ghost616.platform.repository.AgentSkillMapper;
+import com.ghost616.platform.repository.AgentToolMapper;
 import com.ghost616.platform.entity.Evaluation;
 import com.ghost616.platform.entity.EvaluationResult;
 import com.ghost616.platform.entity.Message;
@@ -49,6 +53,8 @@ public class EvaluationServiceImpl implements EvaluationService {
     private final SessionSkillMapper sessionSkillMapper;
     private final AgentEvaluationMapper agentEvaluationMapper;
     private final AgentConfigMapper agentConfigMapper;
+    private final AgentToolMapper agentToolMapper;
+    private final AgentSkillMapper agentSkillMapper;
 
     @Override
     public List<EvaluationDTO> list(Long agentEvalId) {
@@ -94,6 +100,31 @@ public class EvaluationServiceImpl implements EvaluationService {
         baselineSession.setAgentId(agentEval.getAgentId());
         baselineSession.setSystemPrompt(systemPrompt);
         sessionMapper.insert(baselineSession);
+
+        Long sessionId = baselineSession.getId();
+        Long agentId = agentEval.getAgentId();
+
+        LambdaQueryWrapper<AgentTool> toolWrapper = new LambdaQueryWrapper<>();
+        toolWrapper.eq(AgentTool::getAgentId, agentId);
+        List<AgentTool> agentTools = agentToolMapper.selectList(toolWrapper);
+        for (AgentTool agentTool : agentTools) {
+            SessionTool sessionTool = new SessionTool();
+            sessionTool.setSessionId(sessionId);
+            sessionTool.setToolId(agentTool.getToolId());
+            sessionTool.setSessionAuth(agentTool.getSessionAuth());
+            sessionToolMapper.insert(sessionTool);
+        }
+
+        LambdaQueryWrapper<AgentSkill> skillWrapper = new LambdaQueryWrapper<>();
+        skillWrapper.eq(AgentSkill::getAgentId, agentId);
+        List<AgentSkill> agentSkills = agentSkillMapper.selectList(skillWrapper);
+        for (AgentSkill agentSkill : agentSkills) {
+            SessionSkill sessionSkill = new SessionSkill();
+            sessionSkill.setSessionId(sessionId);
+            sessionSkill.setSkillId(agentSkill.getSkillId());
+            sessionSkill.setSessionAuth(agentSkill.getSessionAuth());
+            sessionSkillMapper.insert(sessionSkill);
+        }
 
         Evaluation entity = new Evaluation();
         entity.setName(request.getName());
@@ -242,6 +273,7 @@ public class EvaluationServiceImpl implements EvaluationService {
                 .agentEvalId(entity.getAgentEvalId())
                 .agentId(entity.getAgentId())
                 .agentName(agentName)
+                .benchmarkSessionId(entity.getBenchmarkSessionId())
                 .createTime(entity.getCreateTime())
                 .updateTime(entity.getUpdateTime())
                 .build();

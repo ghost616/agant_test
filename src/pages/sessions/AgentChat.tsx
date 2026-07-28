@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Button, Input, message, Modal, Select, Spin, Switch, Table, Tabs, Typography } from 'antd';
@@ -24,6 +24,7 @@ import {
   listChildSessions,
   rollbackSession,
   stopChat,
+  updateSessionThinking,
 } from '../../services/session';
 import { toolExecutor, toolManager } from '../../services/toolExecutor';
 import { listModels } from '../../services/model';
@@ -78,6 +79,11 @@ const BUBBLE_STYLES: Record<MessageRole, React.CSSProperties> = {
 function AgentChat(): JSX.Element {
   const { id } = useParams<{ id: string }>();
   const sessionId = id!;
+  const [searchParams] = useSearchParams();
+  const isBenchmark = searchParams.get('benchmark') === '1';
+  const returnUrlRaw = searchParams.get('returnUrl');
+  const returnUrl = returnUrlRaw ? decodeURIComponent(returnUrlRaw) : '/evaluations';
+  const navigate = useNavigate();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [loading, setLoading] = useState(false);
@@ -131,13 +137,14 @@ function AgentChat(): JSX.Element {
 
   const loadHistory = useCallback(async (): Promise<void> => {
     try {
-      const [session, models, historyMessages] = await Promise.all([
+      const [session, historyMessages] = await Promise.all([
         getSession(sessionId),
-        listModels({ status: 'ENABLED' }),
         getSessionMessages(sessionId),
       ]);
+      const models = await listModels({ status: 'ENABLED' });
       setModelList(models);
       setModelId(session.modelId);
+      if (session.thinking !== undefined) setThinking(session.thinking);
       const mapped: ChatMessage[] = historyMessages.map((msg: SessionMessage) => {
         let content = msg.content;
         if (msg.role === 'tool' && msg.toolResult) {
@@ -974,11 +981,12 @@ function AgentChat(): JSX.Element {
       <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <Typography.Text type="secondary" style={{ fontSize: 13, whiteSpace: 'nowrap' }}>
-            选择模型
+            {isBenchmark ? '模型' : '选择模型'}
           </Typography.Text>
           <Select
             placeholder="选择模型"
             allowClear
+            disabled={isBenchmark}
             style={{ width: 200 }}
             value={modelId}
             onChange={setModelId}
@@ -994,7 +1002,10 @@ function AgentChat(): JSX.Element {
           </Typography.Text>
           <Switch
             checked={thinking}
-            onChange={setThinking}
+            onChange={(checked) => {
+              setThinking(checked);
+              updateSessionThinking(sessionId, checked).catch(() => {});
+            }}
             size="small"
           />
         </div>
@@ -1195,6 +1206,17 @@ function AgentChat(): JSX.Element {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 180px)' }}>
       {renderSubSessionModal()}
+      {isBenchmark && (
+        <div style={{ padding: '12px 0 0 12px' }}>
+          <Button
+            icon={<ArrowLeftOutlined />}
+            style={{ alignSelf: 'flex-start', width: 'fit-content' }}
+            onClick={() => navigate(returnUrl)}
+          >
+            返回评估
+          </Button>
+        </div>
+      )}
       <style>{`
         .agent-chat-tabs {
           display: flex;

@@ -220,6 +220,10 @@ export function continueChatStream(
   return controller;
 }
 
+export async function updateSessionThinking(sessionId: string, thinking: boolean): Promise<void> {
+  await api.put(`/sessions/${sessionId}/thinking`, { thinking });
+}
+
 export async function getBrowserExtension(): Promise<string> {
   const response = await fetch('/api/browser-tool/extension');
   return response.text();

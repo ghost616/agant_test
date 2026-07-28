@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -23,6 +24,8 @@ import com.ghost616.agentbase.dto.model.ToolCall;
 import com.ghost616.agentbase.enums.ErrorCode;
 import com.ghost616.agentbase.service.agent.MessageDataProvider;
 import com.ghost616.platform.service.agent.DefaultSubSessionCallback;
+
+import java.util.Map;
 
 
 @RestController
@@ -62,6 +65,12 @@ public class SessionController {
     public ApiResponse<Integer> rollback(@PathVariable Long id) {
         int deleted = sessionService.rollback(id);
         return ApiResponse.success(deleted);
+    }
+
+    @PutMapping("/{id}/thinking")
+    public ApiResponse<Void> updateThinking(@PathVariable Long id, @RequestBody Map<String, Boolean> body) {
+        sessionService.updateThinking(id, body.get("thinking"));
+        return ApiResponse.success(null);
     }
 
     @GetMapping("/{id}/children")

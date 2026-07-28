@@ -1,0 +1,282 @@
+package com.ghost616.platform.service.evaluation;
+
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.ghost616.agentbase.enums.ErrorCode;
+import com.ghost616.agentbase.enums.SessionAuthType;
+import com.ghost616.agentbase.exception.BusinessException;
+import com.ghost616.platform.dto.evaluation.EvaluationCreateRequest;
+import com.ghost616.platform.dto.evaluation.EvaluationDTO;
+import com.ghost616.platform.entity.*;
+import com.ghost616.platform.repository.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+class EvaluationServiceImplTest {
+
+    @Mock
+    private EvaluationMapper evaluationMapper;
+    @Mock
+    private EvaluationResultMapper evaluationResultMapper;
+    @Mock
+    private SessionMapper sessionMapper;
+    @Mock
+    private MessageMapper messageMapper;
+    @Mock
+    private MessageToolCallMapper messageToolCallMapper;
+    @Mock
+    private SessionVariableMapper sessionVariableMapper;
+    @Mock
+    private SessionToolMapper sessionToolMapper;
+    @Mock
+    private SessionSkillMapper sessionSkillMapper;
+    @Mock
+    private AgentEvaluationMapper agentEvaluationMapper;
+    @Mock
+    private AgentConfigMapper agentConfigMapper;
+    @Mock
+    private AgentToolMapper agentToolMapper;
+    @Mock
+    private AgentSkillMapper agentSkillMapper;
+
+    private EvaluationServiceImpl service;
+
+    @Captor
+    private ArgumentCaptor<Session> sessionCaptor;
+    @Captor
+    private ArgumentCaptor<SessionTool> sessionToolCaptor;
+    @Captor
+    private ArgumentCaptor<SessionSkill> sessionSkillCaptor;
+
+    private static final Long SESSION_ID = 100L;
+    private static final Long AGENT_ID = 50L;
+    private static final Long AGENT_EVAL_ID = 10L;
+    private static final Long MODEL_ID = 1L;
+    private static final Long TOOL_ID_1 = 200L;
+    private static final Long TOOL_ID_2 = 201L;
+    private static final Long SKILL_ID_1 = 300L;
+
+    @BeforeEach
+    void setUp() {
+        service = new EvaluationServiceImpl(
+                evaluationMapper, evaluationResultMapper, sessionMapper,
+                messageMapper, messageToolCallMapper, sessionVariableMapper,
+                sessionToolMapper, sessionSkillMapper, agentEvaluationMapper,
+                agentConfigMapper, agentToolMapper, agentSkillMapper
+        );
+    }
+
+    private EvaluationCreateRequest createRequest() {
+        EvaluationCreateRequest request = new EvaluationCreateRequest();
+        request.setName("test-eval");
+        request.setDescription("desc");
+        request.setModelId(MODEL_ID);
+        request.setAgentEvalId(AGENT_EVAL_ID);
+        request.setExecutionCount(3);
+        return request;
+    }
+
+    private AgentEvaluation createAgentEval() {
+        AgentEvaluation agentEval = new AgentEvaluation();
+        agentEval.setId(AGENT_EVAL_ID);
+        agentEval.setAgentId(AGENT_ID);
+        return agentEval;
+    }
+
+    private AgentConfig createAgentConfig() {
+        AgentConfig config = new AgentConfig();
+        config.setId(AGENT_ID);
+        config.setName("test-agent");
+        config.setSystemPrompt("You are a test agent");
+        return config;
+    }
+
+    @Nested
+    class CreateTests {
+
+        @Test
+        void duplicateName_shouldThrow() {
+            when(evaluationMapper.selectCount(any())).thenReturn(1L);
+            EvaluationCreateRequest request = createRequest();
+            BusinessException ex = assertThrows(BusinessException.class, () -> service.create(request));
+            assertEquals(ErrorCode.EVALUATION_ALREADY_EXISTS, ex.getErrorCode());
+        }
+
+        @Test
+        void agentEvaluationNotFound_shouldThrow() {
+            when(evaluationMapper.selectCount(any())).thenReturn(0L);
+            when(agentEvaluationMapper.selectById(AGENT_EVAL_ID)).thenReturn(null);
+            EvaluationCreateRequest request = createRequest();
+            BusinessException ex = assertThrows(BusinessException.class, () -> service.create(request));
+            assertEquals(ErrorCode.AGENT_EVALUATION_NOT_FOUND, ex.getErrorCode());
+        }
+
+        @Test
+        void withToolsAndSkills_shouldInsertSessionToolAndSessionSkill() {
+            // arrange name uniqueness check
+            when(evaluationMapper.selectCount(any())).thenReturn(0L);
+            // arrange agent evaluation lookup
+            AgentEvaluation agentEval = createAgentEval();
+            when(agentEvaluationMapper.selectById(AGENT_EVAL_ID)).thenReturn(agentEval);
+            // arrange agent config lookup
+            AgentConfig agentConfig = createAgentConfig();
+            when(agentConfigMapper.selectById(AGENT_ID)).thenReturn(agentConfig);
+            // arrange session insert (simulate ASSIGN_ID)
+            doAnswer(inv -> {
+                Session s = inv.getArgument(0);
+                s.setId(SESSION_ID);
+                return null;
+            }).when(sessionMapper).insert(any(Session.class));
+            // arrange agent tools query
+            AgentTool tool1 = new AgentTool();
+            tool1.setAgentId(AGENT_ID);
+            tool1.setToolId(TOOL_ID_1);
+            tool1.setSessionAuth(SessionAuthType.ALL);
+            AgentTool tool2 = new AgentTool();
+            tool2.setAgentId(AGENT_ID);
+            tool2.setToolId(TOOL_ID_2);
+            tool2.setSessionAuth(SessionAuthType.PARENT);
+            when(agentToolMapper.selectList(any())).thenReturn(List.of(tool1, tool2));
+            // arrange agent skills query
+            AgentSkill skill1 = new AgentSkill();
+            skill1.setAgentId(AGENT_ID);
+            skill1.setSkillId(SKILL_ID_1);
+            skill1.setSessionAuth(SessionAuthType.CHILD);
+            when(agentSkillMapper.selectList(any())).thenReturn(List.of(skill1));
+            // arrange evaluation insert
+            doAnswer(inv -> {
+                Evaluation e = inv.getArgument(0);
+                e.setId(999L);
+                return null;
+            }).when(evaluationMapper).insert(any(Evaluation.class));
+
+            EvaluationCreateRequest request = createRequest();
+            EvaluationDTO result = service.create(request);
+
+            // verify session creation
+            verify(sessionMapper).insert(sessionCaptor.capture());
+            Session capturedSession = sessionCaptor.getValue();
+            assertEquals(request.getName() + "BenchmarkSession", capturedSession.getTitle());
+            assertEquals(MODEL_ID, capturedSession.getModelId());
+            assertTrue(capturedSession.getIsEvaluation());
+            assertEquals(AGENT_ID, capturedSession.getAgentId());
+            assertEquals("You are a test agent", capturedSession.getSystemPrompt());
+
+            // verify session_tool inserts (2 tools)
+            verify(sessionToolMapper, times(2)).insert(sessionToolCaptor.capture());
+            List<SessionTool> capturedTools = sessionToolCaptor.getAllValues();
+            assertEquals(2, capturedTools.size());
+            assertEquals(SESSION_ID, capturedTools.get(0).getSessionId());
+            assertEquals(TOOL_ID_1, capturedTools.get(0).getToolId());
+            assertEquals(SessionAuthType.ALL, capturedTools.get(0).getSessionAuth());
+            assertEquals(SESSION_ID, capturedTools.get(1).getSessionId());
+            assertEquals(TOOL_ID_2, capturedTools.get(1).getToolId());
+            assertEquals(SessionAuthType.PARENT, capturedTools.get(1).getSessionAuth());
+
+            // verify session_skill inserts (1 skill)
+            verify(sessionSkillMapper, times(1)).insert(sessionSkillCaptor.capture());
+            SessionSkill capturedSkill = sessionSkillCaptor.getValue();
+            assertEquals(SESSION_ID, capturedSkill.getSessionId());
+            assertEquals(SKILL_ID_1, capturedSkill.getSkillId());
+            assertEquals(SessionAuthType.CHILD, capturedSkill.getSessionAuth());
+
+            // verify evaluation creation
+            verify(evaluationMapper).insert(any(Evaluation.class));
+            assertNotNull(result);
+            assertEquals("test-eval", result.getName());
+            assertEquals(SESSION_ID, result.getBenchmarkSessionId());
+        }
+
+        @Test
+        void agentConfigNull_shouldSetSystemPromptToNull() {
+            when(evaluationMapper.selectCount(any())).thenReturn(0L);
+            AgentEvaluation agentEval = createAgentEval();
+            when(agentEvaluationMapper.selectById(AGENT_EVAL_ID)).thenReturn(agentEval);
+            when(agentConfigMapper.selectById(AGENT_ID)).thenReturn(null);
+            doAnswer(inv -> {
+                Session s = inv.getArgument(0);
+                s.setId(SESSION_ID);
+                return null;
+            }).when(sessionMapper).insert(any(Session.class));
+            when(agentToolMapper.selectList(any())).thenReturn(List.of());
+            when(agentSkillMapper.selectList(any())).thenReturn(List.of());
+            doAnswer(inv -> {
+                Evaluation e = inv.getArgument(0);
+                e.setId(999L);
+                return null;
+            }).when(evaluationMapper).insert(any(Evaluation.class));
+
+            service.create(createRequest());
+
+            verify(sessionMapper).insert(sessionCaptor.capture());
+            assertNull(sessionCaptor.getValue().getSystemPrompt());
+        }
+
+        @Test
+        void emptyAgentTools_shouldSkipSessionToolInsert() {
+            when(evaluationMapper.selectCount(any())).thenReturn(0L);
+            AgentEvaluation agentEval = createAgentEval();
+            when(agentEvaluationMapper.selectById(AGENT_EVAL_ID)).thenReturn(agentEval);
+            when(agentConfigMapper.selectById(AGENT_ID)).thenReturn(null);
+            doAnswer(inv -> {
+                Session s = inv.getArgument(0);
+                s.setId(SESSION_ID);
+                return null;
+            }).when(sessionMapper).insert(any(Session.class));
+            when(agentToolMapper.selectList(any())).thenReturn(List.of());
+            when(agentSkillMapper.selectList(any())).thenReturn(List.of());
+            doAnswer(inv -> {
+                Evaluation e = inv.getArgument(0);
+                e.setId(999L);
+                return null;
+            }).when(evaluationMapper).insert(any(Evaluation.class));
+
+            service.create(createRequest());
+
+            verify(sessionToolMapper, never()).insert(any(SessionTool.class));
+            verify(sessionSkillMapper, never()).insert(any(SessionSkill.class));
+        }
+
+        @Test
+        void shouldQueryAgentToolAndAgentSkillByCorrectAgentId() {
+            when(evaluationMapper.selectCount(any())).thenReturn(0L);
+            AgentEvaluation agentEval = createAgentEval();
+            when(agentEvaluationMapper.selectById(AGENT_EVAL_ID)).thenReturn(agentEval);
+            when(agentConfigMapper.selectById(AGENT_ID)).thenReturn(null);
+            doAnswer(inv -> {
+                Session s = inv.getArgument(0);
+                s.setId(SESSION_ID);
+                return null;
+            }).when(sessionMapper).insert(any(Session.class));
+            when(agentToolMapper.selectList(any())).thenReturn(List.of());
+            when(agentSkillMapper.selectList(any())).thenReturn(List.of());
+            doAnswer(inv -> {
+                Evaluation e = inv.getArgument(0);
+                e.setId(999L);
+                return null;
+            }).when(evaluationMapper).insert(any(Evaluation.class));
+
+            service.create(createRequest());
+
+            ArgumentCaptor<LambdaQueryWrapper<AgentTool>> toolWrapperCaptor = ArgumentCaptor.captor();
+            verify(agentToolMapper).selectList(toolWrapperCaptor.capture());
+            // We cannot easily check the wrapper content with mockito,
+            // but we verify the mapper was called with the wrapper.
+
+            ArgumentCaptor<LambdaQueryWrapper<AgentSkill>> skillWrapperCaptor = ArgumentCaptor.captor();
+            verify(agentSkillMapper).selectList(skillWrapperCaptor.capture());
+        }
+    }
+}

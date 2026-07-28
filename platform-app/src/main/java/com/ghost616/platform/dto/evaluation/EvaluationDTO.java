@@ -35,6 +35,9 @@ public class EvaluationDTO {
 
     private String agentName;
 
+    @JsonSerialize(using = ToStringSerializer.class)
+    private Long benchmarkSessionId;
+
     private LocalDateTime createTime;
 
     private LocalDateTime updateTime;

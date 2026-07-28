@@ -29,6 +29,7 @@ public class SessionDTO {
     private String description;
     @JsonSerialize(using = ToStringSerializer.class)
     private Boolean isEvaluation;
+    private Boolean thinking;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
     @JsonSerialize(using = ToStringSerializer.class)
