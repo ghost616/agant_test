@@ -1,4 +1,5 @@
 import { getBrowserExtension, getToolScript } from './session';
+import type { ToolStatusResult } from './session';
 
 interface JBToolHostBridge {
   passToolResult?: (sessionId: string, toolConfigId: string, result: string) => void;
@@ -99,3 +100,39 @@ class ToolExecutor {
 
 export const toolManager = ToolManager.getInstance();
 export const toolExecutor = ToolExecutor.getInstance();
+
+export async function executeBrowserTool(
+  sessionId: string,
+  toolId: string,
+  toolStatus: ToolStatusResult,
+): Promise<void> {
+  const toolConfig = toolStatus.toolConfig;
+  if (!toolConfig) return;
+  try {
+    if (!toolManager.extensionLoaded) {
+      await toolManager.loadExtension();
+    }
+    const hasFunc = toolManager.hasFunction(toolConfig.toolName);
+    if (!hasFunc) {
+      const scriptResult = await getToolScript(toolConfig.id);
+      toolManager.registerFunction(toolConfig.toolName, scriptResult);
+    }
+    await toolExecutor.execute(
+      toolConfig.toolName,
+      toolStatus.arguments,
+      sessionId,
+      toolConfig.id,
+    );
+  } catch {
+    if (
+      typeof window !== 'undefined' &&
+      (window as any).ToolHostBridge?.passToolResult
+    ) {
+      (window as any).ToolHostBridge.passToolResult(
+        sessionId,
+        toolConfig.id,
+        '"执行失败"',
+      );
+    }
+  }
+}

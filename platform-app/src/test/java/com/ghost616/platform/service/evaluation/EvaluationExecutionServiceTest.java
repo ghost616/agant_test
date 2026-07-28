@@ -7,9 +7,6 @@ import com.ghost616.platform.dto.evaluation.EvaluationExecutionStatusDTO;
 import com.ghost616.platform.entity.Evaluation;
 import com.ghost616.platform.entity.Session;
 import com.ghost616.platform.repository.EvaluationMapper;
-import com.ghost616.platform.repository.EvaluationResultMapper;
-import com.ghost616.platform.repository.MessageMapper;
-import com.ghost616.platform.repository.MessageToolCallMapper;
 import com.ghost616.platform.repository.SessionMapper;
 import com.ghost616.platform.repository.SessionSkillMapper;
 import com.ghost616.platform.repository.SessionToolMapper;
@@ -26,8 +23,6 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -37,19 +32,17 @@ class EvaluationExecutionServiceTest {
     @Mock
     private EvaluationMapper evaluationMapper;
     @Mock
-    private EvaluationResultMapper evaluationResultMapper;
-    @Mock
     private SessionMapper sessionMapper;
     @Mock
     private SessionToolMapper sessionToolMapper;
     @Mock
     private SessionSkillMapper sessionSkillMapper;
     @Mock
-    private MessageMapper messageMapper;
-    @Mock
-    private MessageToolCallMapper messageToolCallMapper;
-    @Mock
     private MessageDataProvider messageDataProvider;
+    @Mock
+    private EvaluationResultGenerateService evaluationResultGenerateService;
+    @Mock
+    private AsyncEvaluationExecutor asyncEvaluationExecutor;
 
     private EvaluationExecutionService service;
 
@@ -60,11 +53,12 @@ class EvaluationExecutionServiceTest {
     @BeforeEach
     void setUp() {
         service = spy(new EvaluationExecutionService(
-                evaluationMapper, evaluationResultMapper, sessionMapper,
-                sessionToolMapper, sessionSkillMapper, messageMapper,
-                messageToolCallMapper, messageDataProvider, null, null, null
+                evaluationMapper, sessionMapper, sessionToolMapper,
+                sessionSkillMapper, messageDataProvider,
+                evaluationResultGenerateService, asyncEvaluationExecutor
         ));
-        doNothing().when(service).asyncExecute(anyLong(), anyLong(), anyList());
+        when(sessionToolMapper.selectList(any())).thenReturn(List.of());
+        when(sessionSkillMapper.selectList(any())).thenReturn(List.of());
     }
 
     private Evaluation createEvaluation(Long benchmarkSessionId) {
@@ -222,14 +216,8 @@ class EvaluationExecutionServiceTest {
 
         @Test
         void shouldDelegateToGenerateService() {
-            EvaluationResultGenerateService generateService = mock(EvaluationResultGenerateService.class);
-            EvaluationExecutionService localService = new EvaluationExecutionService(
-                    evaluationMapper, evaluationResultMapper, sessionMapper,
-                    sessionToolMapper, sessionSkillMapper, messageMapper,
-                    messageToolCallMapper, messageDataProvider, null, null, generateService
-            );
-            localService.generateResult(EVALUATION_ID, EXECUTION_SESSION_ID);
-            verify(generateService).generate(EVALUATION_ID, EXECUTION_SESSION_ID);
+            service.generateResult(EVALUATION_ID, EXECUTION_SESSION_ID);
+            verify(evaluationResultGenerateService).generate(EVALUATION_ID, EXECUTION_SESSION_ID);
         }
     }
 

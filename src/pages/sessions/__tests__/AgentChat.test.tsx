@@ -114,18 +114,19 @@ describe('AgentChat handleAbort (static verification)', () => {
   });
 
   it('executeBrowserTool 应包含 subToolType === BROWSER 判断逻辑', () => {
-    const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
-    expect(source).toContain('executeBrowserTool');
-    expect(source).toContain("subToolType === 'BROWSER'");
+    const agentSource = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
+    const executorSource = readFileSync(resolve(__dirname, '../../../services/toolExecutor.ts'), 'utf-8');
+    expect(executorSource).toContain('export async function executeBrowserTool');
+    expect(agentSource).toContain("subToolType === 'BROWSER'");
   });
 
   it('executeBrowserTool 应调用 toolExecutor.execute', () => {
-    const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
-    const execBlock = source.match(/const executeBrowserTool[\s\S]*?^  };/m);
-    expect(execBlock).not.toBeNull();
-    if (execBlock) {
-      expect(execBlock[0]).toContain('toolExecutor.execute');
-      expect(execBlock[0]).not.toContain('passResult');
+    const source = readFileSync(resolve(__dirname, '../../../services/toolExecutor.ts'), 'utf-8');
+    const fnBlock = source.match(/export async function executeBrowserTool[\s\S]*?^}/m);
+    expect(fnBlock).not.toBeNull();
+    if (fnBlock) {
+      expect(fnBlock[0]).toContain('toolExecutor.execute');
+      expect(fnBlock[0]).not.toContain('passResult');
     }
   });
 

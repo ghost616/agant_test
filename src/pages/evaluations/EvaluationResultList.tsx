@@ -12,6 +12,7 @@ import {
   generateEvalResult,
 } from '../../services/evaluation';
 import { agentChatStream, executeTools, getToolStatus, continueChatStream } from '../../services/session';
+import { executeBrowserTool } from '../../services/toolExecutor';
 
 function EvaluationResultList(): JSX.Element {
   const navigate = useNavigate();
@@ -118,6 +119,10 @@ function EvaluationResultList(): JSX.Element {
             }
             pollComplete = true;
             break;
+          }
+          if (toolStatus.toolConfig?.subToolType === 'BROWSER') {
+            await executeBrowserTool(sessionId, currentResult.toolId, toolStatus);
+            continue;
           }
           await sleep(1000);
         }

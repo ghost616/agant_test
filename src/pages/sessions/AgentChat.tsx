@@ -19,14 +19,13 @@ import {
   getSession,
   getSessionMessages,
   getSubSessionData,
-  getToolScript,
   getToolStatus,
   listChildSessions,
   rollbackSession,
   stopChat,
   updateSessionThinking,
 } from '../../services/session';
-import { toolExecutor, toolManager } from '../../services/toolExecutor';
+import { executeBrowserTool } from '../../services/toolExecutor';
 import { listModels } from '../../services/model';
 import type { Session, SessionMessage } from '../../types/session';
 import type { ModelConfig } from '../../types/model';
@@ -38,12 +37,6 @@ interface ChatMessage {
   content: string;
   reasoning?: string;
   toolResult?: string;
-}
-
-interface BrowserToolStatus {
-  status: string;
-  toolConfig: { id: string; subToolType: string; toolName: string };
-  arguments: string;
 }
 
 const ROLE_CONFIG: Record<MessageRole, { label: string; icon: JSX.Element; color: string }> = {
@@ -240,34 +233,6 @@ function AgentChat(): JSX.Element {
     return () => handleAbort();
   }, [handleAbort]);
 
-  const executeBrowserTool = async (
-    sid: string,
-    toolId: string,
-    status: BrowserToolStatus,
-  ): Promise<void> => {
-    const { toolConfig } = status;
-    try {
-      if (!toolManager.extensionLoaded) {
-        await toolManager.loadExtension();
-      }
-      const hasFunc = toolManager.hasFunction(toolConfig.toolName);
-      if (!hasFunc) {
-        const scriptResult = await getToolScript(toolConfig.id);
-        toolManager.registerFunction(toolConfig.toolName, scriptResult);
-      }
-      const execResult = await toolExecutor.execute(
-        toolConfig.toolName,
-        status.arguments,
-        sid,
-        toolConfig.id,
-      );
-    } catch (e) {
-      if (typeof window !== 'undefined' && window.ToolHostBridge?.passToolResult) {
-        window.ToolHostBridge.passToolResult(sid, toolConfig.id, `"执行失败"`);
-      }
-    }
-  };
-
   const pollToolStatus = useCallback(async (sid: string, toolId: string): Promise<boolean> => {
     let done = false;
     while (!done && !toolAbortRef.current) {
@@ -294,7 +259,7 @@ function AgentChat(): JSX.Element {
         continue;
       }
       if (status.toolConfig?.subToolType === 'BROWSER') {
-        await executeBrowserTool(sid, toolId, status as BrowserToolStatus);
+        await executeBrowserTool(sid, toolId, status);
         continue;
       }
       if (status.status === 'idle') {
@@ -429,7 +394,7 @@ function AgentChat(): JSX.Element {
                   }
                   if (status.status === 'idle') continue;
                   if (status.toolConfig?.subToolType === 'BROWSER') {
-                    await executeBrowserTool(sid, tid, status as BrowserToolStatus);
+                    await executeBrowserTool(sid, tid, status);
                     continue;
                   }
                   if (status.status === 'failed' || status.status === 'error') {
