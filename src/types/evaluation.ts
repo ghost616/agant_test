@@ -7,6 +7,7 @@ export interface Evaluation {
   agentName?: string;
   executionCount: number;
   modelId: string;
+  executionType?: string;
   benchmarkSessionId?: string;
   createTime?: string;
   updateTime?: string;
@@ -18,6 +19,7 @@ export interface EvaluationCreateRequest {
   agentEvalId: string;
   executionCount: number;
   modelId: string;
+  executionType?: string;
 }
 
 export interface EvaluationUpdateRequest {
@@ -25,6 +27,7 @@ export interface EvaluationUpdateRequest {
   description?: string;
   executionCount?: number;
   modelId?: string;
+  executionType?: string;
 }
 
 export interface EvaluationResult {

@@ -83,6 +83,7 @@ function EvaluationList(): JSX.Element {
       agentEvalId: editingEvaluation.agentEvalId,
       executionCount: editingEvaluation.executionCount,
       modelId: editingEvaluation.modelId,
+      executionType: editingEvaluation.executionType,
     });
   }, [editingEvaluation, modalVisible, form]);
 
@@ -112,6 +113,7 @@ function EvaluationList(): JSX.Element {
           description: values.description,
           executionCount: values.executionCount,
           modelId: values.modelId,
+          executionType: values.executionType,
         };
         await updateEvaluation(editingEvaluation.id, updateData);
         message.success('更新成功');
@@ -163,6 +165,16 @@ function EvaluationList(): JSX.Element {
       render: (id: string) => {
         const model = modelList.find((m) => m.id === id);
         return model?.name || id;
+      },
+    },
+    {
+      title: '执行类型',
+      dataIndex: 'executionType',
+      width: 100,
+      render: (type: string) => {
+        if (type === 'BACKGROUND') return '后台执行';
+        if (type === 'FOREGROUND') return '前台执行';
+        return type || '-';
       },
     },
     {
@@ -227,7 +239,7 @@ function EvaluationList(): JSX.Element {
         dataSource={dataSource}
         loading={loading}
         pagination={false}
-        scroll={{ x: 1200 }}
+        scroll={{ x: 1400 }}
       />
 
       <Modal
@@ -236,7 +248,7 @@ function EvaluationList(): JSX.Element {
         onOk={handleModalOk}
         onCancel={() => setModalVisible(false)}
         confirmLoading={submitting}
-        width={640}
+        width={720}
         destroyOnClose
       >
         <Form form={form} layout="vertical" preserve={false}>
@@ -264,6 +276,19 @@ function EvaluationList(): JSX.Element {
                 value: m.id,
                 label: m.name,
               }))}
+            />
+          </Form.Item>
+          <Form.Item
+            name="executionType"
+            label="执行类型"
+            initialValue="BACKGROUND"
+          >
+            <Select
+              placeholder="请选择执行类型"
+              options={[
+                { label: '后台执行', value: 'BACKGROUND' },
+                { label: '前台执行', value: 'FOREGROUND' },
+              ]}
             />
           </Form.Item>
           <Form.Item

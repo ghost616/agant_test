@@ -20,4 +20,6 @@ public class EvaluationCreateRequest {
 
     @NotNull(message = "执行次数不能为空")
     private Integer executionCount;
+
+    private String executionType;
 }

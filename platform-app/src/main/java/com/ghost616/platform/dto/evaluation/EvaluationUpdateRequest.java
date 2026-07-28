@@ -12,4 +12,6 @@ public class EvaluationUpdateRequest {
     private Long modelId;
 
     private Integer executionCount;
+
+    private String executionType;
 }

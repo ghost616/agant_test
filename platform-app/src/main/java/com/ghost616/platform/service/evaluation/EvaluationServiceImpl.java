@@ -134,6 +134,9 @@ public class EvaluationServiceImpl implements EvaluationService {
         entity.setModelId(request.getModelId());
         entity.setAgentEvalId(request.getAgentEvalId());
         entity.setAgentId(agentEval.getAgentId());
+
+        String executionType = request.getExecutionType();
+        entity.setExecutionType(executionType != null ? executionType : "BACKGROUND");
         evaluationMapper.insert(entity);
 
         return toDTO(entity);
@@ -165,6 +168,9 @@ public class EvaluationServiceImpl implements EvaluationService {
         }
         if (request.getExecutionCount() != null) {
             entity.setExecutionCount(request.getExecutionCount());
+        }
+        if (request.getExecutionType() != null) {
+            entity.setExecutionType(request.getExecutionType());
         }
 
         evaluationMapper.updateById(entity);
@@ -274,6 +280,7 @@ public class EvaluationServiceImpl implements EvaluationService {
                 .agentId(entity.getAgentId())
                 .agentName(agentName)
                 .benchmarkSessionId(entity.getBenchmarkSessionId())
+                .executionType(entity.getExecutionType())
                 .createTime(entity.getCreateTime())
                 .updateTime(entity.getUpdateTime())
                 .build();

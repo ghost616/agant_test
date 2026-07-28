@@ -30,4 +30,7 @@ public class Evaluation extends BaseEntity {
 
     @TableField("agent_id")
     private Long agentId;
+
+    @TableField("execution_type")
+    private String executionType = "BACKGROUND";
 }

@@ -80,7 +80,8 @@ public class SchemaMigration implements ApplicationRunner {
                 new Migration("agent_evaluation", "update_time", "TIMESTAMP", null),
                 new Migration("agent_evaluation", "deleted", "INTEGER", "0"),
                 new Migration("evaluation", "agent_eval_id", "BIGINT", null),
-                new Migration("evaluation", "agent_id", "BIGINT", null)
+                new Migration("evaluation", "agent_id", "BIGINT", null),
+                new Migration("evaluation", "execution_type", "VARCHAR(32)", "'BACKGROUND'")
         );
 
         for (Migration migration : migrations) {
