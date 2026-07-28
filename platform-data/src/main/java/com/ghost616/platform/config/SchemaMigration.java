@@ -71,7 +71,16 @@ public class SchemaMigration implements ApplicationRunner {
                 new Migration("evaluation_result", "result", "TEXT", null),
                 new Migration("evaluation_result", "create_time", "TIMESTAMP", null),
                 new Migration("evaluation_result", "update_time", "TIMESTAMP", null),
-                new Migration("evaluation_result", "deleted", "INTEGER", "0")
+                new Migration("evaluation_result", "deleted", "INTEGER", "0"),
+                new Migration("agent_evaluation", "id", "BIGINT", null),
+                new Migration("agent_evaluation", "name", "VARCHAR(255)", null),
+                new Migration("agent_evaluation", "description", "TEXT", null),
+                new Migration("agent_evaluation", "agent_id", "BIGINT", null),
+                new Migration("agent_evaluation", "create_time", "TIMESTAMP", null),
+                new Migration("agent_evaluation", "update_time", "TIMESTAMP", null),
+                new Migration("agent_evaluation", "deleted", "INTEGER", "0"),
+                new Migration("evaluation", "agent_eval_id", "BIGINT", null),
+                new Migration("evaluation", "agent_id", "BIGINT", null)
         );
 
         for (Migration migration : migrations) {

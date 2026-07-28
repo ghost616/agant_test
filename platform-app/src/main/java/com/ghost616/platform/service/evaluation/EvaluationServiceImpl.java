@@ -1,10 +1,14 @@
 package com.ghost616.platform.service.evaluation;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.ghost616.agentbase.enums.ErrorCode;
+import com.ghost616.agentbase.exception.BusinessException;
 import com.ghost616.platform.dto.evaluation.EvaluationCreateRequest;
 import com.ghost616.platform.dto.evaluation.EvaluationDTO;
 import com.ghost616.platform.dto.evaluation.EvaluationResultDTO;
 import com.ghost616.platform.dto.evaluation.EvaluationUpdateRequest;
+import com.ghost616.platform.entity.AgentConfig;
+import com.ghost616.platform.entity.AgentEvaluation;
 import com.ghost616.platform.entity.Evaluation;
 import com.ghost616.platform.entity.EvaluationResult;
 import com.ghost616.platform.entity.Message;
@@ -13,6 +17,8 @@ import com.ghost616.platform.entity.Session;
 import com.ghost616.platform.entity.SessionSkill;
 import com.ghost616.platform.entity.SessionTool;
 import com.ghost616.platform.entity.SessionVariable;
+import com.ghost616.platform.repository.AgentConfigMapper;
+import com.ghost616.platform.repository.AgentEvaluationMapper;
 import com.ghost616.platform.repository.EvaluationMapper;
 import com.ghost616.platform.repository.EvaluationResultMapper;
 import com.ghost616.platform.repository.MessageMapper;
@@ -29,9 +35,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import com.ghost616.agentbase.enums.ErrorCode;
-import com.ghost616.agentbase.exception.BusinessException;
-
 @Service
 @RequiredArgsConstructor
 public class EvaluationServiceImpl implements EvaluationService {
@@ -44,10 +47,15 @@ public class EvaluationServiceImpl implements EvaluationService {
     private final SessionVariableMapper sessionVariableMapper;
     private final SessionToolMapper sessionToolMapper;
     private final SessionSkillMapper sessionSkillMapper;
+    private final AgentEvaluationMapper agentEvaluationMapper;
+    private final AgentConfigMapper agentConfigMapper;
 
     @Override
-    public List<EvaluationDTO> list() {
+    public List<EvaluationDTO> list(Long agentEvalId) {
         LambdaQueryWrapper<Evaluation> wrapper = new LambdaQueryWrapper<>();
+        if (agentEvalId != null) {
+            wrapper.eq(Evaluation::getAgentEvalId, agentEvalId);
+        }
         wrapper.orderByDesc(Evaluation::getCreateTime);
         List<Evaluation> entities = evaluationMapper.selectList(wrapper);
         return entities.stream().map(this::toDTO).toList();
@@ -71,12 +79,30 @@ public class EvaluationServiceImpl implements EvaluationService {
             throw new BusinessException(ErrorCode.EVALUATION_ALREADY_EXISTS);
         }
 
+        AgentEvaluation agentEval = agentEvaluationMapper.selectById(request.getAgentEvalId());
+        if (agentEval == null) {
+            throw new BusinessException(ErrorCode.AGENT_EVALUATION_NOT_FOUND);
+        }
+
+        AgentConfig agentConfig = agentConfigMapper.selectById(agentEval.getAgentId());
+        String systemPrompt = agentConfig != null ? agentConfig.getSystemPrompt() : null;
+
+        Session baselineSession = new Session();
+        baselineSession.setTitle(request.getName() + "BenchmarkSession");
+        baselineSession.setModelId(request.getModelId());
+        baselineSession.setIsEvaluation(true);
+        baselineSession.setAgentId(agentEval.getAgentId());
+        baselineSession.setSystemPrompt(systemPrompt);
+        sessionMapper.insert(baselineSession);
+
         Evaluation entity = new Evaluation();
         entity.setName(request.getName());
         entity.setDescription(request.getDescription());
-        entity.setBenchmarkSessionId(request.getBenchmarkSessionId());
+        entity.setBenchmarkSessionId(baselineSession.getId());
         entity.setExecutionCount(request.getExecutionCount());
         entity.setModelId(request.getModelId());
+        entity.setAgentEvalId(request.getAgentEvalId());
+        entity.setAgentId(agentEval.getAgentId());
         evaluationMapper.insert(entity);
 
         return toDTO(entity);
@@ -106,9 +132,6 @@ public class EvaluationServiceImpl implements EvaluationService {
         if (request.getModelId() != null) {
             entity.setModelId(request.getModelId());
         }
-        if (request.getBenchmarkSessionId() != null) {
-            entity.setBenchmarkSessionId(request.getBenchmarkSessionId());
-        }
         if (request.getExecutionCount() != null) {
             entity.setExecutionCount(request.getExecutionCount());
         }
@@ -125,6 +148,8 @@ public class EvaluationServiceImpl implements EvaluationService {
         if (entity == null) {
             throw new BusinessException(ErrorCode.EVALUATION_NOT_FOUND);
         }
+
+        Long benchmarkSessionId = entity.getBenchmarkSessionId();
 
         LambdaQueryWrapper<EvaluationResult> resultWrapper = new LambdaQueryWrapper<>();
         resultWrapper.eq(EvaluationResult::getEvaluationId, id);
@@ -156,6 +181,26 @@ public class EvaluationServiceImpl implements EvaluationService {
 
         evaluationResultMapper.delete(resultWrapper);
 
+        if (benchmarkSessionId != null) {
+            sessionVariableMapper.delete(new LambdaQueryWrapper<SessionVariable>()
+                    .eq(SessionVariable::getSessionId, benchmarkSessionId));
+            sessionToolMapper.delete(new LambdaQueryWrapper<SessionTool>()
+                    .eq(SessionTool::getSessionId, benchmarkSessionId));
+            sessionSkillMapper.delete(new LambdaQueryWrapper<SessionSkill>()
+                    .eq(SessionSkill::getSessionId, benchmarkSessionId));
+
+            LambdaQueryWrapper<Message> msgWrapper = new LambdaQueryWrapper<>();
+            msgWrapper.eq(Message::getSessionId, benchmarkSessionId);
+            List<Message> messages = messageMapper.selectList(msgWrapper);
+            if (!messages.isEmpty()) {
+                List<Long> messageIds = messages.stream().map(Message::getId).toList();
+                messageToolCallMapper.deleteByMessageIds(messageIds);
+                messageMapper.delete(msgWrapper);
+            }
+
+            sessionMapper.deleteById(benchmarkSessionId);
+        }
+
         evaluationMapper.deleteById(id);
     }
 
@@ -180,13 +225,23 @@ public class EvaluationServiceImpl implements EvaluationService {
     }
 
     private EvaluationDTO toDTO(Evaluation entity) {
+        String agentName = null;
+        if (entity.getAgentId() != null) {
+            AgentConfig agentConfig = agentConfigMapper.selectById(entity.getAgentId());
+            if (agentConfig != null) {
+                agentName = agentConfig.getName();
+            }
+        }
+
         return EvaluationDTO.builder()
                 .id(entity.getId())
                 .name(entity.getName())
                 .description(entity.getDescription())
-                .benchmarkSessionId(entity.getBenchmarkSessionId())
                 .executionCount(entity.getExecutionCount())
                 .modelId(entity.getModelId())
+                .agentEvalId(entity.getAgentEvalId())
+                .agentId(entity.getAgentId())
+                .agentName(agentName)
                 .createTime(entity.getCreateTime())
                 .updateTime(entity.getUpdateTime())
                 .build();

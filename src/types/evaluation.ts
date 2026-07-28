@@ -2,7 +2,9 @@ export interface Evaluation {
   id: string;
   name: string;
   description?: string;
-  benchmarkSessionId: string;
+  agentEvalId: string;
+  agentId: string;
+  agentName?: string;
   executionCount: number;
   modelId: string;
   createTime?: string;
@@ -12,7 +14,7 @@ export interface Evaluation {
 export interface EvaluationCreateRequest {
   name: string;
   description?: string;
-  benchmarkSessionId: string;
+  agentEvalId: string;
   executionCount: number;
   modelId: string;
 }
@@ -20,7 +22,6 @@ export interface EvaluationCreateRequest {
 export interface EvaluationUpdateRequest {
   name?: string;
   description?: string;
-  benchmarkSessionId?: string;
   executionCount?: number;
   modelId?: string;
 }

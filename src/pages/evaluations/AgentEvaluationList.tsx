@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
   Button,
   Form,
   Input,
-  InputNumber,
   message,
   Modal,
   Popconfirm,
@@ -13,46 +12,44 @@ import {
   Table,
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import type { Evaluation, EvaluationCreateRequest, EvaluationUpdateRequest } from '../../types/evaluation';
-import type { ModelConfig } from '../../types/model';
+import type { AgentEvaluation, AgentEvaluationCreateRequest, AgentEvaluationUpdateRequest } from '../../types/agentEvaluation';
+import type { AgentConfig } from '../../types/agent';
 import {
-  getEvaluationList,
-  createEvaluation,
-  updateEvaluation,
-  deleteEvaluation,
-} from '../../services/evaluation';
-import { listModels } from '../../services/model';
+  getAgentEvaluationList,
+  createAgentEvaluation,
+  updateAgentEvaluation,
+  deleteAgentEvaluation,
+} from '../../services/agentEvaluation';
+import { listAgents } from '../../services/agent';
 
-function EvaluationList(): JSX.Element {
+function AgentEvaluationList(): JSX.Element {
   const navigate = useNavigate();
-  const { agentEvalId: urlAgentEvalId } = useParams<{ agentEvalId: string }>();
-  const [dataSource, setDataSource] = useState<Evaluation[]>([]);
+  const [dataSource, setDataSource] = useState<AgentEvaluation[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
-  const [editingEvaluation, setEditingEvaluation] = useState<Evaluation | null>(null);
+  const [editingEvaluation, setEditingEvaluation] = useState<AgentEvaluation | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [form] = Form.useForm<EvaluationCreateRequest & { agentEvalId: string }>();
-
-  const [modelList, setModelList] = useState<ModelConfig[]>([]);
+  const [form] = Form.useForm<AgentEvaluationCreateRequest>();
+  const [agentList, setAgentList] = useState<AgentConfig[]>([]);
 
   const fetchList = useCallback(async () => {
     setLoading(true);
     try {
-      const result = await getEvaluationList(urlAgentEvalId);
+      const result = await getAgentEvaluationList();
       setDataSource(result);
     } catch {
       message.error('获取评估列表失败');
     } finally {
       setLoading(false);
     }
-  }, [urlAgentEvalId]);
+  }, []);
 
-  const fetchModels = useCallback(async () => {
+  const fetchAgents = useCallback(async () => {
     try {
-      const models = await listModels({});
-      setModelList(models);
+      const agents = await listAgents({});
+      setAgentList(agents);
     } catch {
-      message.error('获取模型列表失败');
+      message.error('获取智能体列表失败');
     }
   }, []);
 
@@ -61,8 +58,8 @@ function EvaluationList(): JSX.Element {
   }, [fetchList]);
 
   useEffect(() => {
-    fetchModels();
-  }, [fetchModels]);
+    fetchAgents();
+  }, [fetchAgents]);
 
   const handleAdd = (): void => {
     setEditingEvaluation(null);
@@ -70,7 +67,7 @@ function EvaluationList(): JSX.Element {
     setModalVisible(true);
   };
 
-  const handleEdit = (record: Evaluation): void => {
+  const handleEdit = (record: AgentEvaluation): void => {
     setEditingEvaluation(record);
     setModalVisible(true);
   };
@@ -80,15 +77,13 @@ function EvaluationList(): JSX.Element {
     form.setFieldsValue({
       name: editingEvaluation.name,
       description: editingEvaluation.description,
-      agentEvalId: editingEvaluation.agentEvalId,
-      executionCount: editingEvaluation.executionCount,
-      modelId: editingEvaluation.modelId,
+      agentId: editingEvaluation.agentId,
     });
   }, [editingEvaluation, modalVisible, form]);
 
-  const handleDelete = async (record: Evaluation): Promise<void> => {
+  const handleDelete = async (record: AgentEvaluation): Promise<void> => {
     try {
-      await deleteEvaluation(record.id);
+      await deleteAgentEvaluation(record.id);
       message.success('删除成功');
       fetchList();
     } catch {
@@ -97,7 +92,7 @@ function EvaluationList(): JSX.Element {
   };
 
   const handleModalOk = async (): Promise<void> => {
-    let values: EvaluationCreateRequest;
+    let values: AgentEvaluationCreateRequest;
     try {
       values = await form.validateFields();
     } catch {
@@ -107,16 +102,15 @@ function EvaluationList(): JSX.Element {
     setSubmitting(true);
     try {
       if (editingEvaluation) {
-        const updateData: EvaluationUpdateRequest = {
+        const updateData: AgentEvaluationUpdateRequest = {
           name: values.name,
           description: values.description,
-          executionCount: values.executionCount,
-          modelId: values.modelId,
+          agentId: values.agentId,
         };
-        await updateEvaluation(editingEvaluation.id, updateData);
+        await updateAgentEvaluation(editingEvaluation.id, updateData);
         message.success('更新成功');
       } else {
-        await createEvaluation({ ...values, agentEvalId: values.agentEvalId || urlAgentEvalId || '' });
+        await createAgentEvaluation(values);
         message.success('创建成功');
       }
       setModalVisible(false);
@@ -128,7 +122,7 @@ function EvaluationList(): JSX.Element {
     }
   };
 
-  const columns: ColumnsType<Evaluation> = [
+  const columns: ColumnsType<AgentEvaluation> = [
     {
       title: '名称',
       dataIndex: 'name',
@@ -146,23 +140,8 @@ function EvaluationList(): JSX.Element {
       dataIndex: 'agentName',
       width: 160,
       ellipsis: true,
-      render: (agentName: string, record: Evaluation) => {
-        return agentName || record.agentId || '-';
-      },
-    },
-    {
-      title: '执行次数',
-      dataIndex: 'executionCount',
-      width: 100,
-    },
-    {
-      title: '模型',
-      dataIndex: 'modelId',
-      width: 160,
-      ellipsis: true,
-      render: (id: string) => {
-        const model = modelList.find((m) => m.id === id);
-        return model?.name || id;
+      render: (agentName: string, record: AgentEvaluation) => {
+        return agentName || record.agentId;
       },
     },
     {
@@ -174,18 +153,18 @@ function EvaluationList(): JSX.Element {
       title: '操作',
       key: 'actions',
       width: 320,
-      render: (_: unknown, record: Evaluation) => (
+      render: (_: unknown, record: AgentEvaluation) => (
         <Space size="small">
            <Button type="link" size="small" onClick={() => handleEdit(record)}>
              修改
            </Button>
           <Button
-             type="link"
-             size="small"
-             onClick={() => navigate(`/evaluations/items/${record.id}/results`)}
-           >
-             进行评估
-           </Button>
+            type="link"
+            size="small"
+            onClick={() => navigate(`/evaluations/${record.id}/items`)}
+          >
+             进入评估
+          </Button>
           <Popconfirm
             title="确定删除该评估？"
             onConfirm={() => handleDelete(record)}
@@ -202,17 +181,12 @@ function EvaluationList(): JSX.Element {
   return (
     <div>
       <Space style={{ marginBottom: 16 }}>
-        {urlAgentEvalId && (
-          <Button onClick={() => navigate('/evaluations')}>
-            返回
-          </Button>
-        )}
         <Button type="primary" onClick={handleAdd}>
-          新增评估
+          新增智能体评估
         </Button>
       </Space>
 
-      <Table<Evaluation>
+      <Table<AgentEvaluation>
         rowKey="id"
         columns={columns}
         dataSource={dataSource}
@@ -222,7 +196,7 @@ function EvaluationList(): JSX.Element {
       />
 
       <Modal
-        title={editingEvaluation ? '修改评估' : '新增评估'}
+        title={editingEvaluation ? '修改智能体评估' : '新增智能体评估'}
         open={modalVisible}
         onOk={handleModalOk}
         onCancel={() => setModalVisible(false)}
@@ -239,40 +213,27 @@ function EvaluationList(): JSX.Element {
             <Input placeholder="请输入评估名称" maxLength={100} />
           </Form.Item>
           <Form.Item name="description" label="描述">
-            <Input.TextArea placeholder="请输入评估描述" rows={3} maxLength={500} showCount />
-          </Form.Item>
-          <Form.Item
-            name="agentEvalId"
-            label="智能体评估"
-            initialValue={urlAgentEvalId || ''}
-          >
-            <Input disabled placeholder="智能体评估ID" />
-          </Form.Item>
-          <Form.Item
-            name="modelId"
-            label="模型"
-            rules={[{ required: true, message: '请选择模型' }]}
-          >
-            <Select
-              placeholder="请选择模型"
-              allowClear
-              showSearch
-              optionFilterProp="label"
-              options={modelList.map((m) => ({
-                value: m.id,
-                label: m.name,
-              }))}
+            <Input.TextArea
+              placeholder="请输入评估描述"
+              rows={3}
+              maxLength={500}
+              showCount
             />
           </Form.Item>
           <Form.Item
-            name="executionCount"
-            label="执行次数"
-            rules={[{ required: true, message: '请输入执行次数' }]}
+            name="agentId"
+            label="智能体"
+            rules={[{ required: true, message: '请选择智能体' }]}
           >
-            <InputNumber
-              placeholder="请输入执行次数"
-              min={1}
-              style={{ width: '100%' }}
+            <Select
+              placeholder="请选择智能体"
+              allowClear
+              showSearch
+              optionFilterProp="label"
+              options={agentList.map((a) => ({
+                value: a.id,
+                label: a.name,
+              }))}
             />
           </Form.Item>
         </Form>
@@ -281,4 +242,4 @@ function EvaluationList(): JSX.Element {
   );
 }
 
-export default EvaluationList;
+export default AgentEvaluationList;

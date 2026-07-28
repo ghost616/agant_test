@@ -37,7 +37,10 @@ public enum ErrorCode {
     CHILD_SESSION_NO_MESSAGES("SESSION-005", "子会话无消息"),
 
     EVALUATION_NOT_FOUND("EVAL-001", "评估配置不存在"),
-    EVALUATION_ALREADY_EXISTS("EVAL-002", "评估名称已存在");
+    EVALUATION_ALREADY_EXISTS("EVAL-002", "评估名称已存在"),
+
+    AGENT_EVALUATION_NOT_FOUND("AGENT-EVAL-001", "智能体评估不存在"),
+    AGENT_EVALUATION_ALREADY_EXISTS("AGENT-EVAL-002", "智能体评估名称已存在");
 
     private final String code;
     private final String message;

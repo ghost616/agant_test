@@ -15,8 +15,8 @@ public class EvaluationCreateRequest {
     @NotNull(message = "模型ID不能为空")
     private Long modelId;
 
-    @NotNull(message = "基准会话ID不能为空")
-    private Long benchmarkSessionId;
+    @NotNull(message = "智能体评估ID不能为空")
+    private Long agentEvalId;
 
     @NotNull(message = "执行次数不能为空")
     private Integer executionCount;

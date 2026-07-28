@@ -9,7 +9,7 @@ import java.util.List;
 
 public interface EvaluationService {
 
-    List<EvaluationDTO> list();
+    List<EvaluationDTO> list(Long agentEvalId);
 
     EvaluationDTO getById(Long id);
 

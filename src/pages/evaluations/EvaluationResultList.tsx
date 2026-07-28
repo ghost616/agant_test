@@ -7,7 +7,7 @@ import { getEvaluation, getEvaluationResults } from '../../services/evaluation';
 
 function EvaluationResultList(): JSX.Element {
   const navigate = useNavigate();
-  const { id: evaluationId } = useParams<{ id: string }>();
+  const { evaluationId } = useParams<{ evaluationId: string }>();
   const [evaluation, setEvaluation] = useState<Evaluation | null>(null);
   const [dataSource, setDataSource] = useState<EvaluationResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -85,7 +85,15 @@ function EvaluationResultList(): JSX.Element {
         评估名称：{evaluation?.name || '-'}
       </h3>
       <Space style={{ marginBottom: 16 }}>
-        <Button onClick={() => navigate('/evaluations')}>
+        <Button
+          onClick={() =>
+            navigate(
+              evaluation?.agentEvalId
+                ? `/evaluations/${evaluation.agentEvalId}/items`
+                : '/evaluations',
+            )
+          }
+        >
           回退
         </Button>
         <Button type="primary" onClick={handleExecute}>

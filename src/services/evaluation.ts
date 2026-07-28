@@ -7,8 +7,13 @@ import type {
 } from '../types/evaluation';
 import api from './api';
 
-export async function getEvaluationList(): Promise<Evaluation[]> {
-  const res = await api.get<ApiResponse<Evaluation[]>>('/evaluations');
+export async function getEvaluationList(
+  agentEvalId?: string,
+): Promise<Evaluation[]> {
+  const params = agentEvalId ? { agentEvalId } : undefined;
+  const res = await api.get<ApiResponse<Evaluation[]>>('/evaluations', {
+    params,
+  });
   return res.data.data;
 }
 

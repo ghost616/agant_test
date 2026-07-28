@@ -157,6 +157,16 @@ CREATE TABLE IF NOT EXISTS session_skill (
 CREATE INDEX IF NOT EXISTS idx_session_skill_session_id ON session_skill(session_id);
 CREATE INDEX IF NOT EXISTS idx_session_skill_skill_id ON session_skill(skill_id);
 
+CREATE TABLE IF NOT EXISTS agent_evaluation (
+    id          BIGINT PRIMARY KEY,
+    name        VARCHAR(255) NOT NULL,
+    description TEXT,
+    agent_id    BIGINT,
+    create_time TIMESTAMP,
+    update_time TIMESTAMP,
+    deleted     INTEGER DEFAULT 0
+);
+
 CREATE TABLE IF NOT EXISTS evaluation (
     id                  BIGINT PRIMARY KEY,
     name                VARCHAR(255) NOT NULL,
@@ -164,6 +174,8 @@ CREATE TABLE IF NOT EXISTS evaluation (
     benchmark_session_id BIGINT,
     execution_count     INTEGER DEFAULT 0,
     model_id            BIGINT,
+    agent_eval_id       BIGINT,
+    agent_id            BIGINT,
     create_time         TIMESTAMP,
     update_time         TIMESTAMP,
     deleted             INTEGER DEFAULT 0

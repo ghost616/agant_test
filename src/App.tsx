@@ -17,6 +17,7 @@ import AgentList from './pages/agents/AgentList';
 import SessionList from './pages/sessions/SessionList';
 import AgentChat from './pages/sessions/AgentChat';
 import SkillList from './pages/skills/SkillList';
+import AgentEvaluationList from './pages/evaluations/AgentEvaluationList';
 import EvaluationList from './pages/evaluations/EvaluationList';
 import EvaluationResultList from './pages/evaluations/EvaluationResultList';
 
@@ -112,8 +113,9 @@ function App() {
             <Route path="/skills" element={<SkillList />} />
             <Route path="/sessions" element={<SessionList />} />
             <Route path="/sessions/:id/chat" element={<AgentChat />} />
-            <Route path="/evaluations" element={<EvaluationList />} />
-            <Route path="/evaluations/:id/results" element={<EvaluationResultList />} />
+            <Route path="/evaluations" element={<AgentEvaluationList />} />
+            <Route path="/evaluations/:agentEvalId/items" element={<EvaluationList />} />
+            <Route path="/evaluations/items/:evaluationId/results" element={<EvaluationResultList />} />
           </Routes>
         </Content>
       </Layout>

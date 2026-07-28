@@ -11,7 +11,5 @@ public class EvaluationUpdateRequest {
 
     private Long modelId;
 
-    private Long benchmarkSessionId;
-
     private Integer executionCount;
 }

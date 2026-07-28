@@ -1,4 +1,4 @@
-package com.ghost616.platform.dto.evaluation;
+package com.ghost616.platform.dto.agent_evaluation;
 
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class EvaluationDTO {
+public class AgentEvaluationDTO {
 
     @JsonSerialize(using = ToStringSerializer.class)
     private Long id;
@@ -21,14 +21,6 @@ public class EvaluationDTO {
     private String name;
 
     private String description;
-
-    private Integer executionCount;
-
-    @JsonSerialize(using = ToStringSerializer.class)
-    private Long modelId;
-
-    @JsonSerialize(using = ToStringSerializer.class)
-    private Long agentEvalId;
 
     @JsonSerialize(using = ToStringSerializer.class)
     private Long agentId;
