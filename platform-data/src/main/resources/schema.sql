@@ -186,6 +186,7 @@ CREATE TABLE IF NOT EXISTS evaluation_result (
     evaluation_id         BIGINT,
     evaluation_session_id BIGINT,
     result                TEXT,
+    execution_status      VARCHAR(32) DEFAULT 'PENDING',
     create_time           TIMESTAMP,
     update_time           TIMESTAMP,
     deleted               INTEGER DEFAULT 0

@@ -4,6 +4,8 @@ import type {
   EvaluationCreateRequest,
   EvaluationUpdateRequest,
   EvaluationResult,
+  ExecutionStatusResponse,
+  EvalSessionCreateResponse,
 } from '../types/evaluation';
 import api from './api';
 
@@ -51,4 +53,33 @@ export async function getEvaluationResults(
     `/evaluations/${evaluationId}/results`,
   );
   return res.data.data;
+}
+
+export async function executeEvaluation(id: string): Promise<void> {
+  await api.post(`/evaluations/${id}/execute`);
+}
+
+export async function getExecutionStatus(
+  id: string,
+): Promise<ExecutionStatusResponse> {
+  const res = await api.get<ApiResponse<ExecutionStatusResponse>>(
+    `/evaluations/${id}/execute/status`,
+  );
+  return res.data.data;
+}
+
+export async function createEvalSession(
+  id: string,
+): Promise<EvalSessionCreateResponse> {
+  const res = await api.post<ApiResponse<EvalSessionCreateResponse>>(
+    `/evaluations/${id}/session`,
+  );
+  return res.data.data;
+}
+
+export async function generateEvalResult(
+  id: string,
+  sessionId: string,
+): Promise<void> {
+  await api.post(`/evaluations/${id}/session/${sessionId}/generate`);
 }

@@ -7,29 +7,21 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
-
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class EvaluationResultDTO {
-
-    @JsonSerialize(using = ToStringSerializer.class)
-    private Long id;
+public class EvaluationExecutionStatusDTO {
 
     @JsonSerialize(using = ToStringSerializer.class)
     private Long evaluationId;
 
     @JsonSerialize(using = ToStringSerializer.class)
-    private Long evaluationSessionId;
+    private Long executionSessionId;
 
-    private String result;
+    private String status;
 
-    @JsonSerialize(using = ToStringSerializer.class)
-    private Long totalTokenUsed;
+    private Integer currentStep;
 
-    private String executionStatus;
-
-    private LocalDateTime createTime;
+    private Integer totalSteps;
 }

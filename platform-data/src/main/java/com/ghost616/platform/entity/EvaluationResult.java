@@ -18,4 +18,7 @@ public class EvaluationResult extends BaseEntity {
 
     @TableField("result")
     private String result;
+
+    @TableField("execution_status")
+    private String executionStatus = "PENDING";
 }

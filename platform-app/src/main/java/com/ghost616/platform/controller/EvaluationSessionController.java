@@ -1,0 +1,58 @@
+package com.ghost616.platform.controller;
+
+import com.ghost616.agentbase.service.agent.MessageDataProvider;
+import com.ghost616.platform.dto.ApiResponse;
+import com.ghost616.platform.dto.evaluation.EvaluationSessionCreateResponse;
+import com.ghost616.platform.entity.Evaluation;
+import com.ghost616.platform.repository.EvaluationMapper;
+import com.ghost616.platform.service.evaluation.EvaluationExecutionService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
+
+import com.ghost616.agentbase.enums.ErrorCode;
+import com.ghost616.agentbase.exception.BusinessException;
+
+@RestController
+@RequestMapping("/api/evaluations")
+@RequiredArgsConstructor
+public class EvaluationSessionController {
+
+    private final EvaluationExecutionService evaluationExecutionService;
+    private final EvaluationMapper evaluationMapper;
+    private final MessageDataProvider messageDataProvider;
+
+    @PostMapping("/{id}/session")
+    public ApiResponse<EvaluationSessionCreateResponse> createSession(@PathVariable Long id) {
+        Evaluation evaluation = evaluationMapper.selectById(id);
+        if (evaluation == null) {
+            throw new BusinessException(ErrorCode.EVALUATION_NOT_FOUND);
+        }
+
+        Long executionSessionId = evaluationExecutionService.createExecutionSession(evaluation);
+
+        List<MessageDataProvider.MessageDTO> benchmarkMessages = messageDataProvider.getMessages(
+                String.valueOf(evaluation.getBenchmarkSessionId()));
+        List<String> userMessages = benchmarkMessages.stream()
+                .filter(m -> "user".equals(m.role()))
+                .map(m -> m.content() != null ? m.content() : "")
+                .toList();
+
+        EvaluationSessionCreateResponse response = EvaluationSessionCreateResponse.builder()
+                .sessionId(executionSessionId)
+                .userMessages(userMessages)
+                .build();
+
+        return ApiResponse.success(response);
+    }
+
+    @PostMapping("/{id}/session/{sessionId}/generate")
+    public ApiResponse<Void> generateResult(@PathVariable Long id, @PathVariable Long sessionId) {
+        evaluationExecutionService.generateResult(id, sessionId);
+        return ApiResponse.success(null);
+    }
+}

@@ -69,6 +69,7 @@ public class SchemaMigration implements ApplicationRunner {
                 new Migration("evaluation_result", "evaluation_id", "BIGINT", null),
                 new Migration("evaluation_result", "evaluation_session_id", "BIGINT", null),
                 new Migration("evaluation_result", "result", "TEXT", null),
+                new Migration("evaluation_result", "execution_status", "VARCHAR(32)", "'PENDING'"),
                 new Migration("evaluation_result", "create_time", "TIMESTAMP", null),
                 new Migration("evaluation_result", "update_time", "TIMESTAMP", null),
                 new Migration("evaluation_result", "deleted", "INTEGER", "0"),

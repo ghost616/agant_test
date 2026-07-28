@@ -293,6 +293,7 @@ public class EvaluationServiceImpl implements EvaluationService {
                 .evaluationSessionId(entity.getEvaluationSessionId())
                 .result(entity.getResult())
                 .totalTokenUsed(session != null ? session.getTotalTokenUsed() : null)
+                .executionStatus(entity.getExecutionStatus())
                 .createTime(entity.getCreateTime())
                 .build();
     }

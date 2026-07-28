@@ -36,5 +36,17 @@ export interface EvaluationResult {
   evaluationSessionId: string;
   result?: string;
   totalTokenUsed?: string;
+  executionStatus?: string;
   createTime?: string;
+}
+
+export interface ExecutionStatusResponse {
+  status: string;
+  currentStep: number;
+  totalSteps: number;
+}
+
+export interface EvalSessionCreateResponse {
+  sessionId: string;
+  userMessages: string[];
 }
