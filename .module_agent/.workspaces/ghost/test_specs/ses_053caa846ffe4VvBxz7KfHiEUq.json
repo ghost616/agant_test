@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_053caa846ffe4VvBxz7KfHiEUq",
+  "content": "## 待测试功能说明\n\n### 涉及文件\n1. `src/pages/evaluations/__tests__/EvaluationResultList.test.tsx` - 更新测试：按钮\"回退\"→\"返回\"，移除已迁移到 hook 的断言\n2. `src/pages/evaluations/__tests__/useEvaluationExecute.test.tsx` - 新建文件，承接从 EvaluationResultList 迁移到 hook 的执行逻辑相关测试\n\n### 测试类型\n- 单元测试：运行 vitest 验证两个测试文件通过",
+  "timestamp": "2026-07-29T05:05:24.618Z"
+}

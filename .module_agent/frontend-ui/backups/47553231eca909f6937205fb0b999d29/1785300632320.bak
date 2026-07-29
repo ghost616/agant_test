@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Button, message, Spin, Typography } from 'antd';
+import { Button, Spin, Typography } from 'antd';
 import {
   UserOutlined,
   RobotOutlined,
@@ -75,7 +75,7 @@ function EvaluationResultDetail(): JSX.Element {
           setMessages(mapped);
         }
       } catch {
-        message.error('加载评估结果失败');
+        // error silently
       } finally {
         setLoading(false);
       }

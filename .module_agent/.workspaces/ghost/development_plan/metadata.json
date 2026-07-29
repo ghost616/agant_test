@@ -6,5 +6,37 @@
     "code_reviewed": true,
     "plan_completed": false,
     "test_passed": false
+  },
+  {
+    "plan_id": "plan_8e6c1985-4a99-47c1-94fb-6efbd92b7561",
+    "plan_summary": "审查README评估功能说明",
+    "starter_session_id": "ses_0546ce96effeOAGfgp2FRTza6c",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": false
+  },
+  {
+    "plan_id": "plan_d9141787-23ce-452a-b7ae-b2dcccfe63bb",
+    "plan_summary": "审查三项修复",
+    "starter_session_id": "ses_0546ce96effeOAGfgp2FRTza6c",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": false
+  },
+  {
+    "plan_id": "plan_1c2f92ef-169c-4f6e-a0c9-946fd29865e2",
+    "plan_summary": "审查测试文件修复",
+    "starter_session_id": "ses_0546ce96effeOAGfgp2FRTza6c",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": false
+  },
+  {
+    "plan_id": "plan_2547d6dc-7514-4cd9-813b-0f927faef484",
+    "plan_summary": "审查基准会话补充",
+    "starter_session_id": "ses_0546ce96effeOAGfgp2FRTza6c",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": false
   }
 ]

@@ -4,5 +4,11 @@
     "ses_059018ed1ffeitPKMbnB2O6dCC",
     "ses_058c525c3ffee9X8QANaEy5RYZ",
     "ses_053f9c467ffe2P0osc6ApgDHNd"
+  ],
+  "framework": [
+    "ses_053cff8f9ffeMI3Klv1kEOHQis"
+  ],
+  "frontend-ui": [
+    "ses_053caa846ffe4VvBxz7KfHiEUq"
   ]
 }

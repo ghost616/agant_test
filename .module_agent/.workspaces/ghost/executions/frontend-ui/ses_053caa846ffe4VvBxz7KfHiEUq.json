@@ -1,0 +1,18 @@
+[
+  {
+    "plan_id": "plan_d9141787-23ce-452a-b7ae-b2dcccfe63bb",
+    "plan": "评估管理界面优化",
+    "modified_files": [
+      "src/pages/evaluations/EvaluationResultList.tsx"
+    ],
+    "summary": "更新了 EvaluationResultList.tsx：使用 useEvaluationExecute hook，按钮标签改为\"返回\"",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_1c2f92ef-169c-4f6e-a0c9-946fd29865e2",
+    "plan": "EvaluationResultList.test.tsx：同步更新测试文件以适配组件拆分——将\"回退\"断言改为\"返回\"，将已迁移到 useEvaluationExecute hook 中的逻辑相关测试（executeEvaluation/generateEvalResult/getExecutionStatus/runToolCycle/toolLoopCount等断言）迁移到新测试文件或删除已失效断言",
+    "modified_files": [],
+    "summary": "力牧已接收新计划",
+    "errors": []
+  }
+]

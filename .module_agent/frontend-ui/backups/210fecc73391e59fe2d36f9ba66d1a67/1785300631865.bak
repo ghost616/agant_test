@@ -1,0 +1,449 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { Button, message, Modal, Popconfirm, Space, Spin, Table } from 'antd';
+import type { ColumnsType } from 'antd/es/table';
+import type { Evaluation, EvaluationResult } from '../../types/evaluation';
+import {
+  executeEvaluation,
+  getEvaluation,
+  getEvaluationResults,
+  getExecutionStatus,
+  createEvalSession,
+  generateEvalResult,
+  deleteEvaluationResult,
+} from '../../services/evaluation';
+import { agentChatStream, executeTools, getToolStatus, continueChatStream } from '../../services/session';
+import { executeBrowserTool } from '../../services/toolExecutor';
+
+function EvaluationResultList(): JSX.Element {
+  const navigate = useNavigate();
+  const { evaluationId } = useParams<{ evaluationId: string }>();
+  const [evaluation, setEvaluation] = useState<Evaluation | null>(null);
+  const [dataSource, setDataSource] = useState<EvaluationResult[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [executing, setExecuting] = useState(false);
+  const [executionProgress, setExecutionProgress] = useState<string>('');
+  const [foregroundModalVisible, setForegroundModalVisible] = useState(false);
+  const [foregroundLog, setForegroundLog] = useState<string[]>([]);
+  const abortRef = useRef<AbortController | null>(null);
+  const executingRef = useRef(false);
+  const logContainerRef = useRef<HTMLDivElement>(null);
+
+  const fetchData = useCallback(async () => {
+    if (!evaluationId) return;
+    setLoading(true);
+    try {
+      const [ev, results] = await Promise.all([
+        getEvaluation(evaluationId),
+        getEvaluationResults(evaluationId),
+      ]);
+      setEvaluation(ev);
+      setDataSource(results);
+    } catch {
+      message.error('获取评估结果失败');
+    } finally {
+      setLoading(false);
+    }
+  }, [evaluationId]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  useEffect(() => {
+    if (logContainerRef.current) {
+      logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
+    }
+  }, [foregroundLog]);
+
+  const sleep = (ms: number): Promise<void> =>
+    new Promise((r) => setTimeout(r, ms));
+
+  const pollExecutionStatus = useCallback(
+    async (id: string): Promise<void> => {
+      while (executingRef.current) {
+        const status = await getExecutionStatus(id);
+        setExecutionProgress(
+          `进度: ${status.currentStep}/${status.totalSteps}`,
+        );
+        if (status.status === 'completed' || status.status === 'error') {
+          return;
+        }
+        await sleep(2000);
+      }
+    },
+    [],
+  );
+
+  const runToolCycle = useCallback(
+    async (
+      sessionId: string,
+      logLines: string[],
+      toolLoopCount: { current: number },
+      maxToolLoops: number,
+    ): Promise<void> => {
+      if (toolLoopCount.current >= maxToolLoops) {
+        logLines.push('[工具] 达到最大工具调用次数');
+        setForegroundLog([...logLines]);
+        return;
+      }
+      toolLoopCount.current++;
+
+      while (executingRef.current) {
+        const execResult = await executeTools(sessionId);
+        if (execResult.status === 'empty') return;
+
+        let currentResult = execResult;
+        logLines.push(`[工具] 执行: ${currentResult.toolName || currentResult.toolId || ''}`);
+        if (currentResult.arguments) {
+          logLines.push(`[工具] 参数: ${currentResult.arguments}`);
+        }
+        setForegroundLog([...logLines]);
+
+        if (!currentResult.toolId) {
+          throw new Error('工具 ID 为空');
+        }
+
+        const toolId: string = currentResult.toolId;
+        let pollComplete = false;
+        while (executingRef.current) {
+          const toolStatus = await getToolStatus(sessionId, toolId);
+          logLines.push(`[工具] 状态: ${toolStatus.status}`);
+          setForegroundLog([...logLines]);
+
+          if (toolStatus.status === 'done' || toolStatus.status === 'error') {
+            if (toolStatus.result) {
+              logLines.push(`[工具] 结果: ${toolStatus.result}`);
+              setForegroundLog([...logLines]);
+            }
+            if (toolStatus.hasMore) {
+              const nextExec = await executeTools(sessionId);
+              if (nextExec.status === 'empty') return;
+              logLines.push(
+                `[工具] 继续执行: ${nextExec.toolName || nextExec.toolId || ''}`,
+              );
+              setForegroundLog([...logLines]);
+              currentResult = nextExec;
+              continue;
+            }
+            pollComplete = true;
+            break;
+          }
+          if (toolStatus.toolConfig?.subToolType === 'BROWSER') {
+            await executeBrowserTool(sessionId, toolId, toolStatus);
+            await sleep(500);
+            continue;
+          }
+          await sleep(1000);
+        }
+
+        if (pollComplete) {
+          break;
+        }
+      }
+
+      return new Promise<void>((resolve, reject) => {
+        const controller = continueChatStream(sessionId, {
+          onDelta: (text) => {
+            const last = logLines[logLines.length - 1];
+            if (last?.startsWith('[AI]')) {
+              logLines[logLines.length - 1] = last + text;
+            } else {
+              logLines.push(`[AI] ${text}`);
+            }
+            setForegroundLog([...logLines]);
+          },
+          onReasoning: (text) => {
+            const last = logLines[logLines.length - 1];
+            if (last?.startsWith('[思考]')) {
+              logLines[logLines.length - 1] = last + text;
+            } else {
+              logLines.push(`[思考] ${text}`);
+            }
+            setForegroundLog([...logLines]);
+          },
+          onDone: async (moreToolCalls) => {
+            if (moreToolCalls) {
+              try {
+                await runToolCycle(sessionId, logLines, toolLoopCount, maxToolLoops);
+                resolve();
+              } catch (err) {
+                reject(err);
+              }
+            } else {
+              resolve();
+            }
+          },
+          onError: (err) => reject(err),
+        });
+        abortRef.current = controller;
+      });
+    },
+    [],
+  );
+
+  const sendForegroundMessage = useCallback(
+    async (
+      sessionId: string,
+      content: string,
+      logLines: string[],
+    ): Promise<void> => {
+      const toolLoopCount = { current: 0 };
+      const MAX_TOOL_LOOPS = 10;
+
+      return new Promise<void>((resolve, reject) => {
+        const controller = agentChatStream(
+          { sessionId, content },
+          {
+            onDelta: (text) => {
+              const last = logLines[logLines.length - 1];
+              if (last?.startsWith('[AI]')) {
+                logLines[logLines.length - 1] = last + text;
+              } else {
+                logLines.push(`[AI] ${text}`);
+              }
+              setForegroundLog([...logLines]);
+            },
+            onReasoning: (text) => {
+              const last = logLines[logLines.length - 1];
+              if (last?.startsWith('[思考]')) {
+                logLines[logLines.length - 1] = last + text;
+              } else {
+                logLines.push(`[思考] ${text}`);
+              }
+              setForegroundLog([...logLines]);
+            },
+            onDone: async (hasToolCalls) => {
+              if (hasToolCalls) {
+                try {
+                  await runToolCycle(sessionId, logLines, toolLoopCount, MAX_TOOL_LOOPS);
+                } catch (err) {
+                  reject(err);
+                  return;
+                }
+              }
+              resolve();
+            },
+            onError: (err) => reject(err),
+          },
+        );
+        abortRef.current = controller;
+      });
+    },
+    [runToolCycle],
+  );
+
+  const handleExecute = useCallback(async (): Promise<void> => {
+    if (!evaluationId || !evaluation) return;
+    setExecuting(true);
+    executingRef.current = true;
+    const executionType = evaluation.executionType || 'BACKGROUND';
+
+    try {
+      if (executionType === 'BACKGROUND') {
+        for (let i = 0; i < evaluation.executionCount; i++) {
+          if (!executingRef.current) break;
+          setExecutionProgress(`执行中(第 ${i + 1}/${evaluation.executionCount} 次)...`);
+          await executeEvaluation(evaluationId);
+          await pollExecutionStatus(evaluationId);
+        }
+        message.success('后台执行完成');
+      } else {
+        setForegroundLog([]);
+        setForegroundModalVisible(true);
+        const logLines: string[] = [];
+
+        for (let i = 0; i < evaluation.executionCount; i++) {
+          if (!executingRef.current) break;
+          logLines.push(`\n========== 第 ${i + 1}/${evaluation.executionCount} 次执行 ==========`);
+          setForegroundLog([...logLines]);
+
+          logLines.push('正在创建评估会话...');
+          setForegroundLog([...logLines]);
+
+          const evalSession = await createEvalSession(evaluationId);
+          logLines.push(`会话已创建: ${evalSession.sessionId}`);
+          logLines.push(`待处理消息数: ${evalSession.userMessages.length}`);
+          setForegroundLog([...logLines]);
+
+          for (let j = 0; j < evalSession.userMessages.length; j++) {
+            if (!executingRef.current) break;
+            const msg = evalSession.userMessages[j];
+            logLines.push(`\n--- 消息 ${j + 1}/${evalSession.userMessages.length} ---`);
+            logLines.push(`[用户] ${msg}`);
+            setForegroundLog([...logLines]);
+
+            await sendForegroundMessage(evalSession.sessionId, msg, logLines);
+          }
+
+          if (!executingRef.current) break;
+
+          logLines.push('\n正在生成评估结果...');
+          setForegroundLog([...logLines]);
+          await generateEvalResult(evaluationId, evalSession.sessionId);
+          logLines.push('评估结果已生成');
+          setForegroundLog([...logLines]);
+        }
+
+        if (executingRef.current) {
+          message.success('前台执行完成');
+        }
+      }
+    } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        return;
+      }
+      message.error('执行失败: ' + (err instanceof Error ? err.message : String(err)));
+    } finally {
+      setExecuting(false);
+      executingRef.current = false;
+      setExecutionProgress('');
+      if (evaluationId) {
+        await fetchData();
+      }
+      if (executionType !== 'BACKGROUND') {
+        await sleep(1500);
+        setForegroundModalVisible(false);
+      }
+    }
+  }, [evaluationId, evaluation, pollExecutionStatus, sendForegroundMessage]);
+
+  const handleCancelForeground = (): void => {
+    if (abortRef.current) {
+      abortRef.current.abort();
+    }
+    executingRef.current = false;
+    setExecuting(false);
+    setForegroundModalVisible(false);
+  };
+
+  const columns: ColumnsType<EvaluationResult> = [
+    {
+      title: 'ID',
+      dataIndex: 'id',
+      width: 200,
+      ellipsis: true,
+    },
+    {
+      title: '会话ID',
+      dataIndex: 'evaluationSessionId',
+      width: 200,
+      ellipsis: true,
+    },
+    {
+      title: 'Token消耗',
+      dataIndex: 'totalTokenUsed',
+      width: 120,
+      render: (val: string) => val || '-',
+    },
+    {
+      title: '创建时间',
+      dataIndex: 'createTime',
+      width: 180,
+    },
+    {
+      title: '操作',
+      key: 'actions',
+      width: 180,
+      render: (_: unknown, record: EvaluationResult) => (
+        <Space>
+          <Button type="link" size="small" onClick={() => navigate(`/evaluations/results/${record.id}`)}>
+            查看结果
+          </Button>
+          <Popconfirm
+            title="确认删除"
+            description="确定要删除该评估结果吗？"
+            onConfirm={async () => {
+              try {
+                await deleteEvaluationResult(record.id);
+                message.success('删除成功');
+                await fetchData();
+              } catch {
+                message.error('删除失败');
+              }
+            }}
+          >
+            <Button type="link" size="small" danger>
+              删除
+            </Button>
+          </Popconfirm>
+        </Space>
+      ),
+    },
+  ];
+
+  return (
+    <div>
+      <h3 style={{ marginBottom: 16 }}>
+        评估名称：{evaluation?.name || '-'}
+      </h3>
+      <Space style={{ marginBottom: 16 }}>
+        <Button
+          onClick={() =>
+            navigate(
+              evaluation?.agentEvalId
+                ? `/evaluations/${evaluation.agentEvalId}/items`
+                : '/evaluations',
+            )
+          }
+        >
+          回退
+        </Button>
+        <Button
+          type="primary"
+          onClick={handleExecute}
+          loading={executing}
+          disabled={executing}
+        >
+          执行
+        </Button>
+        {executionProgress && (
+          <span style={{ color: '#888' }}>{executionProgress}</span>
+        )}
+      </Space>
+
+      <Table<EvaluationResult>
+        rowKey="id"
+        columns={columns}
+        dataSource={dataSource}
+        loading={loading}
+        pagination={false}
+        scroll={{ x: 900 }}
+      />
+
+      <Modal
+        title="前台执行"
+        open={foregroundModalVisible}
+        onCancel={handleCancelForeground}
+        footer={
+          <Button danger onClick={handleCancelForeground}>
+            停止执行
+          </Button>
+        }
+        width={700}
+      >
+        <Spin spinning={executing}>
+          <div
+            ref={logContainerRef}
+            style={{
+              background: '#1e1e1e',
+              color: '#d4d4d4',
+              padding: 12,
+              borderRadius: 4,
+              maxHeight: 400,
+              overflow: 'auto',
+              fontFamily: 'monospace',
+              fontSize: 13,
+            }}
+          >
+            {foregroundLog.map((line, i) => (
+              <div key={i}>{line}</div>
+            ))}
+          </div>
+        </Spin>
+      </Modal>
+    </div>
+  );
+}
+
+export default EvaluationResultList;

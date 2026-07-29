@@ -32,5 +32,7 @@
   "src/pages/evaluations/AgentEvaluationList.tsx": "cdca5b15ba11a34ac0595261476033b2",
   "src\\pages\\evaluations\\EvaluationList.tsx": "0dae68c5bc2162b68b32fad6bbd2365e",
   "src\\services\\evaluation.ts": "88a4b9fec7fc2da684ac5789ba16b2e1",
-  "src\\pages\\evaluations\\EvaluationResultList.tsx": "e20c95556773e2ee24f1804bc6aa95ff"
+  "src\\pages\\evaluations\\EvaluationResultList.tsx": "e20c95556773e2ee24f1804bc6aa95ff",
+  "src/pages/evaluations/EvaluationResultDetail.tsx": "47553231eca909f6937205fb0b999d29",
+  "src/pages/evaluations/__tests__/EvaluationResultList.test.tsx": "3a7b161c878a77d3889f6e450d18ddb0"
 }

@@ -89,3 +89,5 @@
 [2026-07-29T03:43:13.694Z] [session: ses_05408468dffe345eD28Y9IEpH1] EvaluationResultList.tsx handleExecute 循环执行改造：BACKGROUND 模式按 executionCount 循环 executeEvaluation+pollExecutionStatus 并显示第 i/N 次进度；FOREGROUND 模式按 executionCount 循环完整流程（创建会话→发送消息→生成结果）并显示第 i/N 次进度
 [2026-07-29T04:00:27.461Z] [session: ses_053f9307affevAL6x1cpBIKtiW] EvaluationResultList.tsx: 操作列新增删除按钮(Popconfirm+deleteEvaluationResult API); 前台执行日志容器whiteSpace改为nowrap; 添加logContainerRef实现自动滚动到底部; handleExecute finally中前台执行完成后延迟1.5s自动关闭弹窗。evaluation.ts: 新增deleteEvaluationResult(id) API, 调用DELETE /api/evaluations/results/{id}
 [2026-07-29T04:17:03.790Z] [session: ses_053e92360ffeCQXxW9AE7Id4tR] EvaluationResultList.tsx: 将 foregroundLog.join('\n') 替换为 foregroundLog.map 逐行渲染 <div whiteSpace:'nowrap'>, 使每条日志独立一行且不换行
+[2026-07-29T04:52:03.537Z] [session: ses_053caa846ffe4VvBxz7KfHiEUq] EvaluationResultList.tsx: 按钮标签"回退"改为"返回"；抽取执行逻辑到独立 hook useEvaluationExecute；EvaluationResultDetail.tsx: catch 块添加 message.error('加载评估结果失败')
+[2026-07-29T05:05:20.165Z] [session: ses_053caa846ffe4VvBxz7KfHiEUq] EvaluationResultList.test.tsx: 移除已迁移到 hook 的测试断言，按钮"回退"→"返回"；新建 useEvaluationExecute.test.tsx 承接 hook 相关测试

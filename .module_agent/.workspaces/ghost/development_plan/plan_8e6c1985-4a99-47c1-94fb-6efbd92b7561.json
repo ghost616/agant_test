@@ -1,0 +1,22 @@
+{
+  "plan_id": "plan_8e6c1985-4a99-47c1-94fb-6efbd92b7561",
+  "module_name": "",
+  "development_plan": "README补充智能体评估功能流程说明",
+  "session_id": "",
+  "modified_files": [
+    "pom.xml",
+    "package.json",
+    "vite.config.ts",
+    "tsconfig.json",
+    "src/main.tsx",
+    "src/App.tsx",
+    "src/services/api.ts",
+    "src/types/common.ts",
+    "src/index.css",
+    "build.bat",
+    "dev.bat",
+    "README.md",
+    ".vscode/settings.json",
+    "platform-app/data/agent_platform.db"
+  ]
+}

@@ -112,6 +112,14 @@
     {
       "path": "src/pages/evaluations/EvaluationResultDetail.tsx",
       "description": "评估结果详情页面组件，从路由参数获取 resultId，展示评估会话历史消息（复用消息角色图标+气泡样式）和评估结果（react-markdown+remark-gfm 渲染），返回按钮导航回评估结果列表"
+    },
+    {
+      "path": "src/pages/evaluations/hooks/useEvaluationExecute.ts",
+      "description": "评估执行核心逻辑 hook，封装 runToolCycle/sendForegroundMessage/execute 等方法及 executing/executionProgress/foregroundModalVisible/foregroundLog/foregroundLogRef/handleCancelForeground 状态"
+    },
+    {
+      "path": "src/pages/evaluations/__tests__/useEvaluationExecute.test.tsx",
+      "description": "useEvaluationExecute hook 的静态源代码分析测试，验证导入依赖、导出签名和执行逻辑覆盖"
     }
   ]
 }

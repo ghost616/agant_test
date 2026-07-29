@@ -1,0 +1,5 @@
+{
+  "lizhu_session_id": "ses_053c88cd7ffelyMCxqdSMEoUo5",
+  "content": "## 测试报告\n\n### 测试结果\n\n| 文件 | 测试数 | 通过 |\n|------|--------|------|\n| `EvaluationResultList.test.tsx` | 14 | ✅ |\n| `useEvaluationExecute.test.tsx` | 33 | ✅ |\n| **总计** | **47** | **✅ 全部通过** |\n\n### 运行信息\n- 工具：vitest v4.1.9\n- 耗时：3.38s\n- 环境：jsdom\n",
+  "timestamp": "2026-07-29T05:05:40.634Z"
+}

@@ -48,3 +48,4 @@
 [2026-07-05T08:25:21.992Z] [session: ses_0ceac0ac8ffeKT5xilWo2W5RXN] [2026-07-05] [session: ses_0ceac0ac8ffeKT5xilWo2W5RXN] 修复 -pl 对 spring-boot:run 不生效：改用 mvn install -pl agent-base -DskipTests -q && mvn spring-boot:run -f platform-app/pom.xml 两步方案
 [2026-07-20T09:02:19.858Z] [session: ses_0813d6edaffez6ARCMyY6X4Np1] [2026-07-20] README.md 功能模块节 5 处更新：①工具管理行追加 MCP HTTP 认证方式说明；②HOOK 管理行替换为 Spring 自动发现加载描述；③智能体执行引擎行追加 sendmessage 跨会话通信框架说明；④子会话执行后新增「三域会话授权」行；⑤「三域会话授权」后新增「组件注册表」行。变量管理段追加 SSE 推送说明。
 [2026-07-27T00:56:29.005Z] [session: ses_05eeda818ffeUMBfL7xhOW79t2] [2026-07-27] README.md: ① 工具类型表新增 CUSTOM 行；② 工具类型表后新增「浏览器工具」章节，说明 BROWSER 浏览器工具执行原理；③ 功能模块「工具注册与管理」条目补充 CUSTOM 和 BROWSER 工具类型描述
+[2026-07-29T04:44:32.514Z] [session: ses_053cff8f9ffeMI3Klv1kEOHQis] README.md: 功能模块新增智能体评估管理条目、新增智能体评估流程章节、项目结构 src/pages/ 下补充 evaluations/ 目录
