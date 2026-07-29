@@ -8,128 +8,32 @@
     "test_passed": false
   },
   {
-    "plan_id": "plan_8e6c1985-4a99-47c1-94fb-6efbd92b7561",
-    "plan_summary": "审查README评估功能说明",
+    "plan_id": "plan_302c527e-c066-4f62-beef-e8537b2485f3",
+    "plan_summary": "评估结果百分制/工具顺序/完整性规则",
     "starter_session_id": "ses_0546ce96effeOAGfgp2FRTza6c",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": false
-  },
-  {
-    "plan_id": "plan_d9141787-23ce-452a-b7ae-b2dcccfe63bb",
-    "plan_summary": "审查三项修复",
-    "starter_session_id": "ses_0546ce96effeOAGfgp2FRTza6c",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": false
-  },
-  {
-    "plan_id": "plan_1c2f92ef-169c-4f6e-a0c9-946fd29865e2",
-    "plan_summary": "审查测试文件修复",
-    "starter_session_id": "ses_0546ce96effeOAGfgp2FRTza6c",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": false
-  },
-  {
-    "plan_id": "plan_2547d6dc-7514-4cd9-813b-0f927faef484",
-    "plan_summary": "审查基准会话补充",
-    "starter_session_id": "ses_0546ce96effeOAGfgp2FRTza6c",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": false
-  },
-  {
-    "plan_id": "plan_d49c3fea-53b4-4514-9fa2-cacb6bddf108",
-    "plan_summary": "审查状态比较大小写修复",
-    "starter_session_id": "ses_0546ce96effeOAGfgp2FRTza6c",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": false
-  },
-  {
-    "plan_id": "plan_0fee16cb-453c-48fa-832b-7710e80e68a0",
-    "plan_summary": "审查子会话流程实现",
-    "starter_session_id": "ses_0546ce96effeOAGfgp2FRTza6c",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": false
-  },
-  {
-    "plan_id": "plan_15d28b96-82e0-4e17-b798-ea24f5cbf97c",
-    "plan_summary": "审查failed状态处理",
-    "starter_session_id": "ses_0546ce96effeOAGfgp2FRTza6c",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": false
-  },
-  {
-    "plan_id": "plan_638932af-6bfa-41d9-ae8b-5726e8628f82",
-    "plan_summary": "审查failed状态处理",
-    "starter_session_id": "ses_0546ce96effeOAGfgp2FRTza6c",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": false
-  },
-  {
-    "plan_id": "plan_7481079d-1032-4874-8e93-9d799abbd5f7",
-    "plan_summary": "审查CHILD技能过滤",
-    "starter_session_id": "ses_0546ce96effeOAGfgp2FRTza6c",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": false
-  },
-  {
-    "plan_id": "plan_be15fdd7-42c5-4acf-9750-0f708fd3bca7",
-    "plan_summary": "审查文件路径简化",
-    "starter_session_id": "ses_0546ce96effeOAGfgp2FRTza6c",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": false
-  },
-  {
-    "plan_id": "plan_a8f99222-3e19-4265-99e2-5d250ebe9df8",
-    "plan_summary": "ToolDataProvider 新增 SkillToolInfo record，getSkillToolIds 返回 List<SkillToolInfo>，ToolManager 适配新结构",
-    "starter_session_id": "ses_052d9ca4bffemYRhMpsA2Tsm6U",
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
   },
   {
-    "plan_id": "plan_a3064c1a-514e-4878-b57d-c7e14ce60303",
-    "plan_summary": "DefaultToolDataProvider getSkillToolIds 返回 List<SkillToolInfo>",
-    "starter_session_id": "ses_052d9ca4bffemYRhMpsA2Tsm6U",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": true
-  },
-  {
-    "plan_id": "plan_68cc01a4-0730-435f-9e8e-27d0836dde53",
-    "plan_summary": "审查CHILD工具过滤",
+    "plan_id": "plan_85123e10-dbfa-44fa-9c9f-bc5991b3d82c",
+    "plan_summary": "审查评估规则",
     "starter_session_id": "ses_0546ce96effeOAGfgp2FRTza6c",
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": false
   },
   {
-    "plan_id": "plan_e85d3227-91eb-4cb4-aeef-9118dea48eca",
-    "plan_summary": "审查tracker错误记录",
+    "plan_id": "plan_11d28612-ddc9-45fa-9c83-d7b573300fbe",
+    "plan_summary": "审查测试修复",
     "starter_session_id": "ses_0546ce96effeOAGfgp2FRTza6c",
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": false
   },
   {
-    "plan_id": "plan_ae6f0887-2b28-435d-9caa-c3ba06b98162",
-    "plan_summary": "审查done替代failed",
-    "starter_session_id": "ses_0546ce96effeOAGfgp2FRTza6c",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": false
-  },
-  {
-    "plan_id": "plan_6b40e764-1b3f-4b47-9433-1f052e16302c",
-    "plan_summary": "审查setExecuting+setDone",
+    "plan_id": "plan_fe5a685c-7727-42ba-b55d-23ca77b789a3",
+    "plan_summary": "审查测试删除",
     "starter_session_id": "ses_0546ce96effeOAGfgp2FRTza6c",
     "code_reviewed": true,
     "plan_completed": true,

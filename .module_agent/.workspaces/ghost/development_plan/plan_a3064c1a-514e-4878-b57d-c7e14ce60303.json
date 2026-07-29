@@ -1,9 +1,0 @@
-{
-  "plan_id": "plan_a3064c1a-514e-4878-b57d-c7e14ce60303",
-  "module_name": "platform-app",
-  "development_plan": "DefaultToolDataProvider.java：getSkillToolIds 方法返回值改为 List<ToolDataProvider.SkillToolInfo>，构建包含每个 skill 的 skillId、sessionAuth 和关联的 toolIds 列表",
-  "session_id": "ses_052d60c21ffe0poBeVWlsovMKX",
-  "modified_files": [
-    "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultToolDataProvider.java"
-  ]
-}

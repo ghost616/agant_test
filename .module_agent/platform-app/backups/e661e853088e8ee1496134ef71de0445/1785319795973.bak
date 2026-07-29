@@ -89,7 +89,9 @@ public class EvaluationResultGenerateService {
         systemContent.append("## 基准会话消息\n");
         if (benchmarkMessages != null && !benchmarkMessages.isEmpty()) {
             for (MessageDataProvider.MessageDTO msg : benchmarkMessages) {
-                appendMessage(systemContent, msg);
+                String role = msg.role() != null ? msg.role() : "unknown";
+                String content = msg.content() != null ? msg.content() : "";
+                systemContent.append("【").append(role).append("】: ").append(content).append("\n");
             }
         } else {
             systemContent.append("（无基准消息）\n");
@@ -98,25 +100,15 @@ public class EvaluationResultGenerateService {
         systemContent.append("\n## 执行会话消息\n");
         if (executionMessages != null && !executionMessages.isEmpty()) {
             for (MessageDataProvider.MessageDTO msg : executionMessages) {
-                appendMessage(systemContent, msg);
+                String role = msg.role() != null ? msg.role() : "unknown";
+                String content = msg.content() != null ? msg.content() : "";
+                systemContent.append("【").append(role).append("】: ").append(content).append("\n");
             }
         } else {
             systemContent.append("（无执行消息）\n");
         }
 
-        systemContent.append("""
-
-                ## 评分规则
-                采用百分制（0-100分），按以下维度评分：
-
-                1. 相关性（0-25分）：回复是否针对用户问题，是否偏离主题
-                2. 准确性（0-35分）：回复内容是否正确，工具调用的类型和参数须与基准会话完全一致
-                3. 完整性（0-40分）：是否完整回答了所有问题点；**因工具调用错误导致未获得答案时，此项为 0 分**
-
-                ## 评分要求
-                - 输出格式：[总分] 总得分，[相关性] 得分及说明，[准确性] 得分及说明，[完整性] 得分及说明
-                - 改进建议：列出主要差距点
-                """);
+        systemContent.append("\n请基于以上对比，对执行会话的回复质量进行评估，包括回复的相关性、准确性、完整性等方面，并给出评分和改进建议。");
 
         messages.add(Message.builder()
                 .role("system")
@@ -129,24 +121,5 @@ public class EvaluationResultGenerateService {
                 .build());
 
         return messages;
-    }
-
-    private void appendMessage(StringBuilder sb, MessageDataProvider.MessageDTO msg) {
-        String role = msg.role() != null ? msg.role() : "unknown";
-        String content = msg.content() != null ? msg.content() : "";
-        sb.append("【").append(role).append("】: ").append(content).append("\n");
-
-        if (msg.toolCalls() != null && !msg.toolCalls().isEmpty()) {
-            for (int i = 0; i < msg.toolCalls().size(); i++) {
-                MessageDataProvider.ToolCallData tc = msg.toolCalls().get(i);
-                sb.append("  [工具调用 ").append(i + 1).append("] ")
-                        .append("名称=").append(tc.toolCallName())
-                        .append(", 参数=").append(tc.toolCallArguments())
-                        .append("\n");
-            }
-        }
-        if (msg.toolResult() != null && !msg.toolResult().isEmpty()) {
-            sb.append("  [工具结果]: ").append(msg.toolResult()).append("\n");
-        }
     }
 }

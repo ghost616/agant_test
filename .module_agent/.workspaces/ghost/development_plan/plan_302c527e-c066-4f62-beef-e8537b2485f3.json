@@ -1,0 +1,9 @@
+{
+  "plan_id": "plan_302c527e-c066-4f62-beef-e8537b2485f3",
+  "module_name": "platform-app",
+  "development_plan": "EvaluationResultGenerateService.java buildJudgeMessages 方法：修改系统提示词，添加（1）百分制评分规则（0-100分）；（2）准确性评估中工具调用顺序必须一致；（3）因工具调用错误导致未获得答案时完整性为0分",
+  "session_id": "ses_052a61474ffeHtMX1KbncAFX0J",
+  "modified_files": [
+    "platform-app/src/main/java/com/ghost616/platform/service/evaluation/EvaluationResultGenerateService.java"
+  ]
+}

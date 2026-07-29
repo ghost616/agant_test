@@ -2,6 +2,7 @@ package com.ghost616.platform.service.evaluation;
 
 import com.ghost616.agentbase.dto.model.ChatRequest;
 import com.ghost616.agentbase.dto.model.ChatResponse;
+import com.ghost616.agentbase.dto.model.Message;
 import com.ghost616.agentbase.dto.model.ModelConfigData;
 import com.ghost616.agentbase.enums.ErrorCode;
 import com.ghost616.agentbase.exception.BusinessException;
@@ -29,6 +30,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
+import java.lang.reflect.Method;
+
 @ExtendWith(MockitoExtension.class)
 class EvaluationResultGenerateServiceTest {
 
@@ -54,6 +57,8 @@ class EvaluationResultGenerateServiceTest {
 
     @Captor
     private ArgumentCaptor<EvaluationResult> resultCaptor;
+    @Captor
+    private ArgumentCaptor<ChatRequest> chatRequestCaptor;
 
     @BeforeEach
     void setUp() {
@@ -76,6 +81,49 @@ class EvaluationResultGenerateServiceTest {
                 "1", "sessionId", role, content,
                 null, null, null, null, null, null, null, null
         );
+    }
+
+    private MessageDataProvider.MessageDTO createMessageWithToolCalls(String role, String content,
+                                                                       List<MessageDataProvider.ToolCallData> toolCalls) {
+        return new MessageDataProvider.MessageDTO(
+                "1", "sessionId", role, content,
+                null, null, null, null, null, toolCalls, null, null
+        );
+    }
+
+    private MessageDataProvider.MessageDTO createMessageWithToolResult(String role, String content,
+                                                                        String toolResult) {
+        return new MessageDataProvider.MessageDTO(
+                "1", "sessionId", role, content,
+                null, null, null, null, toolResult, null, null, null
+        );
+    }
+
+    private MessageDataProvider.MessageDTO createMessageWithToolCallsAndResult(String role, String content,
+                                                                                List<MessageDataProvider.ToolCallData> toolCalls,
+                                                                                String toolResult) {
+        return new MessageDataProvider.MessageDTO(
+                "1", "sessionId", role, content,
+                null, null, null, null, toolResult, toolCalls, null, null
+        );
+    }
+
+    private String invokeBuildJudgeMessages(List<MessageDataProvider.MessageDTO> benchmark,
+                                             List<MessageDataProvider.MessageDTO> execution) throws Exception {
+        Method method = EvaluationResultGenerateService.class.getDeclaredMethod(
+                "buildJudgeMessages", List.class, List.class);
+        method.setAccessible(true);
+        List<Message> messages = (List<Message>) method.invoke(service, benchmark, execution);
+        return messages.get(0).getContent();
+    }
+
+    private String invokeAppendMessage(MessageDataProvider.MessageDTO msg) throws Exception {
+        Method method = EvaluationResultGenerateService.class.getDeclaredMethod(
+                "appendMessage", StringBuilder.class, MessageDataProvider.MessageDTO.class);
+        method.setAccessible(true);
+        StringBuilder sb = new StringBuilder();
+        method.invoke(service, sb, msg);
+        return sb.toString();
     }
 
     @Nested
@@ -135,6 +183,210 @@ class EvaluationResultGenerateServiceTest {
             BusinessException ex = assertThrows(BusinessException.class,
                     () -> service.generate(EVALUATION_ID, EXECUTION_SESSION_ID));
             assertEquals(ErrorCode.MODEL_NOT_FOUND, ex.getErrorCode());
+        }
+
+        @Test
+        void systemPrompt_containsPercentScoring() throws Exception {
+            Evaluation evaluation = createEvaluation(BENCHMARK_SESSION_ID);
+            when(evaluationMapper.selectById(EVALUATION_ID)).thenReturn(evaluation);
+            when(messageDataProvider.getMessages(String.valueOf(BENCHMARK_SESSION_ID)))
+                    .thenReturn(List.of(createMessage("user", "hello")));
+            when(messageDataProvider.getMessages(String.valueOf(EXECUTION_SESSION_ID)))
+                    .thenReturn(List.of(createMessage("assistant", "hi")));
+            ModelConfigData configData = new ModelConfigData("id", "key", "url", "model", 0.5, 100, "platform");
+            when(chatDataProvider.getModelConfig(String.valueOf(MODEL_ID))).thenReturn(configData);
+            when(modelInvokerManager.getInvoker(configData)).thenReturn(modelInvoker);
+            ChatResponse response = new ChatResponse();
+            response.setContent("ok");
+            when(modelInvoker.invoke(chatRequestCaptor.capture())).thenReturn(response);
+
+            service.generate(EVALUATION_ID, EXECUTION_SESSION_ID);
+
+            String systemContent = chatRequestCaptor.getValue().getMessages().get(0).getContent();
+            assertTrue(systemContent.contains("百分制（0-100分）"));
+            assertTrue(systemContent.contains("相关性（0-25分）"));
+            assertTrue(systemContent.contains("准确性（0-35分）"));
+            assertTrue(systemContent.contains("完整性（0-40分）"));
+        }
+
+        @Test
+        void systemPrompt_containsToolErrorCompletenessZero() throws Exception {
+            Evaluation evaluation = createEvaluation(BENCHMARK_SESSION_ID);
+            when(evaluationMapper.selectById(EVALUATION_ID)).thenReturn(evaluation);
+            when(messageDataProvider.getMessages(String.valueOf(BENCHMARK_SESSION_ID)))
+                    .thenReturn(List.of(createMessage("user", "hello")));
+            when(messageDataProvider.getMessages(String.valueOf(EXECUTION_SESSION_ID)))
+                    .thenReturn(List.of(createMessage("assistant", "hi")));
+            ModelConfigData configData = new ModelConfigData("id", "key", "url", "model", 0.5, 100, "platform");
+            when(chatDataProvider.getModelConfig(String.valueOf(MODEL_ID))).thenReturn(configData);
+            when(modelInvokerManager.getInvoker(configData)).thenReturn(modelInvoker);
+            ChatResponse response = new ChatResponse();
+            response.setContent("ok");
+            when(modelInvoker.invoke(chatRequestCaptor.capture())).thenReturn(response);
+
+            service.generate(EVALUATION_ID, EXECUTION_SESSION_ID);
+
+            String systemContent = chatRequestCaptor.getValue().getMessages().get(0).getContent();
+            assertTrue(systemContent.contains("因工具调用错误导致未获得答案时，此项为 0 分"));
+        }
+
+        @Test
+        void messagesWithToolCalls_shouldIncludeInPrompt() throws Exception {
+            Evaluation evaluation = createEvaluation(BENCHMARK_SESSION_ID);
+            when(evaluationMapper.selectById(EVALUATION_ID)).thenReturn(evaluation);
+            List<MessageDataProvider.ToolCallData> toolCalls = List.of(
+                    new MessageDataProvider.ToolCallData("tc1", "getWeather", "{\"loc\":\"Beijing\"}")
+            );
+            when(messageDataProvider.getMessages(String.valueOf(BENCHMARK_SESSION_ID)))
+                    .thenReturn(List.of(createMessageWithToolCalls("assistant", "let me check", toolCalls)));
+            when(messageDataProvider.getMessages(String.valueOf(EXECUTION_SESSION_ID)))
+                    .thenReturn(List.of(createMessage("user", "thanks")));
+            ModelConfigData configData = new ModelConfigData("id", "key", "url", "model", 0.5, 100, "platform");
+            when(chatDataProvider.getModelConfig(String.valueOf(MODEL_ID))).thenReturn(configData);
+            when(modelInvokerManager.getInvoker(configData)).thenReturn(modelInvoker);
+            ChatResponse response = new ChatResponse();
+            response.setContent("ok");
+            when(modelInvoker.invoke(chatRequestCaptor.capture())).thenReturn(response);
+
+            service.generate(EVALUATION_ID, EXECUTION_SESSION_ID);
+
+            String systemContent = chatRequestCaptor.getValue().getMessages().get(0).getContent();
+            assertTrue(systemContent.contains("工具调用"));
+            assertTrue(systemContent.contains("getWeather"));
+            assertTrue(systemContent.contains("Beijing"));
+        }
+
+        @Test
+        void messagesWithToolResult_shouldIncludeInPrompt() throws Exception {
+            Evaluation evaluation = createEvaluation(BENCHMARK_SESSION_ID);
+            when(evaluationMapper.selectById(EVALUATION_ID)).thenReturn(evaluation);
+            when(messageDataProvider.getMessages(String.valueOf(BENCHMARK_SESSION_ID)))
+                    .thenReturn(List.of(createMessage("user", "weather?")));
+            when(messageDataProvider.getMessages(String.valueOf(EXECUTION_SESSION_ID)))
+                    .thenReturn(List.of(createMessageWithToolResult("tool", "response", "{\"temp\":25}")));
+            ModelConfigData configData = new ModelConfigData("id", "key", "url", "model", 0.5, 100, "platform");
+            when(chatDataProvider.getModelConfig(String.valueOf(MODEL_ID))).thenReturn(configData);
+            when(modelInvokerManager.getInvoker(configData)).thenReturn(modelInvoker);
+            ChatResponse response = new ChatResponse();
+            response.setContent("ok");
+            when(modelInvoker.invoke(chatRequestCaptor.capture())).thenReturn(response);
+
+            service.generate(EVALUATION_ID, EXECUTION_SESSION_ID);
+
+            String systemContent = chatRequestCaptor.getValue().getMessages().get(0).getContent();
+            assertTrue(systemContent.contains("工具结果"));
+            assertTrue(systemContent.contains("temp"));
+        }
+
+        @Test
+        void modelInvokeThrows_shouldThrow() {
+            Evaluation evaluation = createEvaluation(BENCHMARK_SESSION_ID);
+            when(evaluationMapper.selectById(EVALUATION_ID)).thenReturn(evaluation);
+            when(messageDataProvider.getMessages(String.valueOf(BENCHMARK_SESSION_ID)))
+                    .thenReturn(List.of(createMessage("user", "hello")));
+            when(messageDataProvider.getMessages(String.valueOf(EXECUTION_SESSION_ID)))
+                    .thenReturn(List.of(createMessage("assistant", "hi")));
+            ModelConfigData configData = new ModelConfigData("id", "key", "url", "model", 0.5, 100, "platform");
+            when(chatDataProvider.getModelConfig(String.valueOf(MODEL_ID))).thenReturn(configData);
+            when(modelInvokerManager.getInvoker(configData)).thenReturn(modelInvoker);
+            when(modelInvoker.invoke(any(ChatRequest.class))).thenThrow(new RuntimeException("API error"));
+
+            BusinessException ex = assertThrows(BusinessException.class,
+                    () -> service.generate(EVALUATION_ID, EXECUTION_SESSION_ID));
+            assertEquals(ErrorCode.EVALUATION_RESULT_GENERATE_ERROR, ex.getErrorCode());
+        }
+    }
+
+    @Nested
+    class BuildJudgeMessagesTests {
+
+        @Test
+        void nullBenchmarkMessages_shouldHandleGracefully() throws Exception {
+            String result = invokeBuildJudgeMessages(null, List.of(createMessage("user", "hi")));
+            assertTrue(result.contains("无基准消息"));
+            assertFalse(result.contains("无执行消息"));
+        }
+
+        @Test
+        void nullExecutionMessages_shouldHandleGracefully() throws Exception {
+            String result = invokeBuildJudgeMessages(List.of(createMessage("user", "hi")), null);
+            assertTrue(result.contains("无执行消息"));
+        }
+
+        @Test
+        void emptyMessages_shouldHandleGracefully() throws Exception {
+            String result = invokeBuildJudgeMessages(List.of(), List.of());
+            assertTrue(result.contains("无基准消息"));
+            assertTrue(result.contains("无执行消息"));
+        }
+
+        @Test
+        void percentScoringRules_arePresentInSystemPrompt() throws Exception {
+            String result = invokeBuildJudgeMessages(List.of(createMessage("user", "hi")),
+                    List.of(createMessage("assistant", "hello")));
+            assertTrue(result.contains("百分制（0-100分）"));
+            assertTrue(result.contains("相关性（0-25分）"));
+            assertTrue(result.contains("准确性（0-35分）"));
+            assertTrue(result.contains("完整性（0-40分）"));
+        }
+
+        @Test
+        void toolCallTypeAndParamConsistency_mentionedInAccuracyRule() throws Exception {
+            String result = invokeBuildJudgeMessages(List.of(createMessage("user", "hi")),
+                    List.of(createMessage("assistant", "hello")));
+            assertTrue(result.contains("工具调用的类型和参数须与基准会话完全一致"), "准确性维度应提及工具调用类型和参数一致性");
+        }
+
+        @Test
+        void toolErrorCompletenessZero_mentionedInCompletenessRule() throws Exception {
+            String result = invokeBuildJudgeMessages(List.of(createMessage("user", "hi")),
+                    List.of(createMessage("assistant", "hello")));
+            assertTrue(result.contains("因工具调用错误导致未获得答案时，此项为 0 分"));
+        }
+
+        @Test
+        void appendMessage_withToolCalls_includesToolCallInfo() throws Exception {
+            List<MessageDataProvider.ToolCallData> toolCalls = List.of(
+                    new MessageDataProvider.ToolCallData("tc1", "getWeather", "{\"loc\":\"Beijing\"}"),
+                    new MessageDataProvider.ToolCallData("tc2", "getTime", "{\"tz\":\"UTC\"}")
+            );
+            MessageDataProvider.MessageDTO msg = createMessageWithToolCalls("assistant", "checking...", toolCalls);
+            String result = invokeAppendMessage(msg);
+            assertTrue(result.contains("工具调用 1"));
+            assertTrue(result.contains("工具调用 2"));
+            assertTrue(result.contains("getWeather"));
+            assertTrue(result.contains("getTime"));
+        }
+
+        @Test
+        void appendMessage_withToolResult_includesResultInfo() throws Exception {
+            MessageDataProvider.MessageDTO msg = createMessageWithToolResult("tool", "{\"temp\":25}", "成功获取数据");
+            String result = invokeAppendMessage(msg);
+            assertTrue(result.contains("工具结果"));
+            assertTrue(result.contains("成功获取数据"));
+        }
+
+        @Test
+        void appendMessage_withoutToolCallsOrResult_noExtraOutput() throws Exception {
+            MessageDataProvider.MessageDTO msg = createMessage("user", "plain text");
+            String result = invokeAppendMessage(msg);
+            assertFalse(result.contains("工具调用"));
+            assertFalse(result.contains("工具结果"));
+        }
+
+        @Test
+        void appendMessage_withNullRole_usesUnknown() throws Exception {
+            MessageDataProvider.MessageDTO msg = createMessage(null, "test content");
+            String result = invokeAppendMessage(msg);
+            assertTrue(result.contains("【unknown】"));
+        }
+
+        @Test
+        void appendMessage_withNullContent_usesEmpty() throws Exception {
+            MessageDataProvider.MessageDTO msg = createMessage("user", null);
+            String result = invokeAppendMessage(msg);
+            assertTrue(result.contains("【user】: "));
+            assertFalse(result.contains("null"));
         }
     }
 }
