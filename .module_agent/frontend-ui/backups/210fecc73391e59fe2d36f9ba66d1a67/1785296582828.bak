@@ -213,51 +213,39 @@ function EvaluationResultList(): JSX.Element {
 
     try {
       if (executionType === 'BACKGROUND') {
-        for (let i = 0; i < evaluation.executionCount; i++) {
-          if (!executingRef.current) break;
-          setExecutionProgress(`执行中(第 ${i + 1}/${evaluation.executionCount} 次)...`);
-          await executeEvaluation(evaluationId);
-          await pollExecutionStatus(evaluationId);
-        }
+        setExecutionProgress('正在启动后台执行...');
+        await executeEvaluation(evaluationId);
+        setExecutionProgress('后台执行中...');
+        await pollExecutionStatus(evaluationId);
         message.success('后台执行完成');
       } else {
         setForegroundLog([]);
         setForegroundModalVisible(true);
         const logLines: string[] = [];
+        logLines.push('正在创建评估会话...');
+        setForegroundLog([...logLines]);
 
-        for (let i = 0; i < evaluation.executionCount; i++) {
+        const evalSession = await createEvalSession(evaluationId);
+        logLines.push(`会话已创建: ${evalSession.sessionId}`);
+        logLines.push(`待处理消息数: ${evalSession.userMessages.length}`);
+        setForegroundLog([...logLines]);
+
+        for (let i = 0; i < evalSession.userMessages.length; i++) {
           if (!executingRef.current) break;
-          logLines.push(`\n========== 第 ${i + 1}/${evaluation.executionCount} 次执行 ==========`);
+          const msg = evalSession.userMessages[i];
+          logLines.push(`\n--- 消息 ${i + 1}/${evalSession.userMessages.length} ---`);
+          logLines.push(`[用户] ${msg}`);
           setForegroundLog([...logLines]);
 
-          logLines.push('正在创建评估会话...');
-          setForegroundLog([...logLines]);
+          await sendForegroundMessage(evalSession.sessionId, msg, logLines);
+        }
 
-          const evalSession = await createEvalSession(evaluationId);
-          logLines.push(`会话已创建: ${evalSession.sessionId}`);
-          logLines.push(`待处理消息数: ${evalSession.userMessages.length}`);
-          setForegroundLog([...logLines]);
-
-          for (let j = 0; j < evalSession.userMessages.length; j++) {
-            if (!executingRef.current) break;
-            const msg = evalSession.userMessages[j];
-            logLines.push(`\n--- 消息 ${j + 1}/${evalSession.userMessages.length} ---`);
-            logLines.push(`[用户] ${msg}`);
-            setForegroundLog([...logLines]);
-
-            await sendForegroundMessage(evalSession.sessionId, msg, logLines);
-          }
-
-          if (!executingRef.current) break;
-
+        if (executingRef.current) {
           logLines.push('\n正在生成评估结果...');
           setForegroundLog([...logLines]);
           await generateEvalResult(evaluationId, evalSession.sessionId);
           logLines.push('评估结果已生成');
           setForegroundLog([...logLines]);
-        }
-
-        if (executingRef.current) {
           message.success('前台执行完成');
         }
       }

@@ -100,6 +100,26 @@ describe('EvaluationResultList 执行逻辑', () => {
     const source = readFileSync(resolve(__dirname, '../EvaluationResultList.tsx'), 'utf-8');
     expect(source).toContain('fetchData');
   });
+
+  it('BACKGROUND 模式应按 executionCount 循环执行', () => {
+    const source = readFileSync(resolve(__dirname, '../EvaluationResultList.tsx'), 'utf-8');
+    expect(source).toContain('for (let i = 0; i < evaluation.executionCount; i++)');
+  });
+
+  it('BACKGROUND 模式每次循环应显示第 i/N 次进度', () => {
+    const source = readFileSync(resolve(__dirname, '../EvaluationResultList.tsx'), 'utf-8');
+    expect(source).toContain('执行中(第 ${i + 1}/${evaluation.executionCount} 次)...');
+  });
+
+  it('FOREGROUND 模式应按 executionCount 循环执行', () => {
+    const source = readFileSync(resolve(__dirname, '../EvaluationResultList.tsx'), 'utf-8');
+    expect(source).toContain('for (let i = 0; i < evaluation.executionCount; i++)');
+  });
+
+  it('FOREGROUND 模式每次循环应显示第 i/N 次分隔', () => {
+    const source = readFileSync(resolve(__dirname, '../EvaluationResultList.tsx'), 'utf-8');
+    expect(source).toContain('========== 第 ${i + 1}/${evaluation.executionCount} 次执行 ==========');
+  });
 });
 
 describe('EvaluationResultList runToolCycle', () => {

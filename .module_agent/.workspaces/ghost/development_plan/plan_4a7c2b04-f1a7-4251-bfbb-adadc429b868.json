@@ -1,7 +1,7 @@
 {
-  "plan_id": "plan_85116860-84d4-4830-aad3-a76757aab803",
+  "plan_id": "plan_4a7c2b04-f1a7-4251-bfbb-adadc429b868",
   "module_name": "",
-  "development_plan": "评估结果列表页去掉摘要列和修改按钮，添加查看结果按钮；新增评估结果详情页展示对话消息和 Markdown 结果",
+  "development_plan": "评估执行按 executionCount 循环多次执行，BACKGROUND/FOREGROUND 模式均支持",
   "session_id": "",
   "modified_files": [
     "src/services/model.ts",
