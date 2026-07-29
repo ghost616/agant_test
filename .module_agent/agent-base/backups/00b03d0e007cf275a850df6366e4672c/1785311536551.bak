@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghost616.agentbase.dto.skill.SkillConfigDTO;
-import com.ghost616.agentbase.enums.SessionAuthType;
 import com.ghost616.agentbase.service.agent.AgentExecutionContext;
 import lombok.extern.slf4j.Slf4j;
 
@@ -54,9 +53,6 @@ public class LoadSkillsSystemTool implements SystemTool {
             List<SkillConfigDTO> availableSkills = ctx.getSkills();
             Set<String> availableNames = new HashSet<>();
             for (SkillConfigDTO skill : availableSkills) {
-                if (ctx.isMainSession() && skill.getSessionAuth() == SessionAuthType.CHILD) {
-                    continue;
-                }
                 availableNames.add(skill.getName());
             }
 

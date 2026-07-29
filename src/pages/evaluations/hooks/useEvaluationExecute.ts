@@ -7,7 +7,7 @@ import {
   createEvalSession,
   generateEvalResult,
 } from '../../../services/evaluation';
-import { agentChatStream, executeTools, getToolStatus, continueChatStream } from '../../../services/session';
+import { agentChatStream, completeSubSession, continueChatStream, executeTools, getSubSessionData, getToolStatus } from '../../../services/session';
 import { executeBrowserTool } from '../../../services/toolExecutor';
 
 const sleep = (ms: number): Promise<void> =>
@@ -43,10 +43,157 @@ export function useEvaluationExecute(): {
         setExecutionProgress(
           `进度: ${status.currentStep}/${status.totalSteps}`,
         );
-        if (status.status === 'completed' || status.status === 'error') {
+        if (status.status.toUpperCase() === 'COMPLETED' || status.status.toUpperCase() === 'ERROR') {
           return;
         }
         await sleep(2000);
+      }
+    },
+    [],
+  );
+
+  const handleSubSessionFlow = useCallback(
+    async (sessionId: string, toolId: string, logLines: string[]): Promise<void> => {
+      logLines.push('[子会话] 开始子会话流程...');
+      setForegroundLog([...logLines]);
+
+      try {
+        const data = await getSubSessionData(sessionId);
+        if (!data) {
+          logLines.push('[子会话] 获取子会话数据失败');
+          setForegroundLog([...logLines]);
+          return;
+        }
+
+        const childId = data.childSessionId;
+        logLines.push(`[子会话] 子会话已创建: ${childId}`);
+        logLines.push(`[子会话] 用户消息: ${data.userMessage}`);
+        setForegroundLog([...logLines]);
+
+        const sendSubMessage = (content: string): Promise<boolean> =>
+          new Promise((resolve) => {
+            const controller = agentChatStream(
+              { sessionId: childId, content, thinking: data.thinking },
+              {
+                onDelta: (text) => {
+                  const last = logLines[logLines.length - 1];
+                  if (last?.startsWith('[子会话AI]')) {
+                    logLines[logLines.length - 1] = last + text;
+                  } else {
+                    logLines.push(`[子会话AI] ${text}`);
+                  }
+                  setForegroundLog([...logLines]);
+                },
+                onReasoning: (text) => {
+                  const last = logLines[logLines.length - 1];
+                  if (last?.startsWith('[子会话思考]')) {
+                    logLines[logLines.length - 1] = last + text;
+                  } else {
+                    logLines.push(`[子会话思考] ${text}`);
+                  }
+                  setForegroundLog([...logLines]);
+                },
+                onDone: (hasToolCalls) => resolve(hasToolCalls),
+                onError: () => resolve(false),
+              },
+            );
+            abortRef.current = controller;
+          });
+
+        const continueSubChat = (): Promise<boolean> =>
+          new Promise((resolve) => {
+            const controller = continueChatStream(childId, {
+              onDelta: (text) => {
+                const last = logLines[logLines.length - 1];
+                if (last?.startsWith('[子会话AI]')) {
+                  logLines[logLines.length - 1] = last + text;
+                } else {
+                  logLines.push(`[子会话AI] ${text}`);
+                }
+                setForegroundLog([...logLines]);
+              },
+              onReasoning: (text) => {
+                const last = logLines[logLines.length - 1];
+                if (last?.startsWith('[子会话思考]')) {
+                  logLines[logLines.length - 1] = last + text;
+                } else {
+                  logLines.push(`[子会话思考] ${text}`);
+                }
+                setForegroundLog([...logLines]);
+              },
+              onDone: (hasToolCalls) => resolve(hasToolCalls),
+              onError: () => resolve(false),
+            });
+            abortRef.current = controller;
+          });
+
+        const pollSubToolStatus = async (sid: string, tid: string): Promise<boolean> => {
+          while (executingRef.current) {
+            await sleep(1000);
+            const status = await getToolStatus(sid, tid);
+            logLines.push(`[子会话工具] 状态: ${status.status}`);
+            setForegroundLog([...logLines]);
+
+            if (status.status === 'done') {
+              if (status.result) {
+                logLines.push(`[子会话工具] 结果: ${status.result}`);
+                setForegroundLog([...logLines]);
+              }
+              return true;
+            }
+            if (status.status === 'error') {
+              logLines.push(`[子会话工具] 执行失败: ${status.result || '未知错误'}`);
+              setForegroundLog([...logLines]);
+              return false;
+            }
+            if (status.status === 'idle') continue;
+            if (status.toolConfig?.subToolType === 'BROWSER') {
+              await executeBrowserTool(sid, tid, status);
+              await sleep(500);
+              continue;
+            }
+          }
+          return false;
+        };
+
+        const runSubTools = async (): Promise<boolean> => {
+          while (executingRef.current) {
+            const execResult = await executeTools(childId);
+            if (execResult.status === 'empty') return true;
+            if (execResult.status === 'failed') {
+              logLines.push('[子会话工具] 工具执行失败');
+              setForegroundLog([...logLines]);
+              return false;
+            }
+
+            logLines.push(`[子会话工具] 执行: ${execResult.toolName || execResult.toolId || ''}`);
+            if (execResult.arguments) {
+              logLines.push(`[子会话工具] 参数: ${execResult.arguments}`);
+            }
+            setForegroundLog([...logLines]);
+
+            if (!execResult.toolId) return true;
+
+            const succeeded = await pollSubToolStatus(childId, execResult.toolId);
+            if (!succeeded) return false;
+          }
+          return false;
+        };
+
+        let hasToolCalls = await sendSubMessage(data.userMessage);
+        while (hasToolCalls && executingRef.current) {
+          const ok = await runSubTools();
+          if (!ok) break;
+          hasToolCalls = await continueSubChat();
+        }
+
+        await completeSubSession(sessionId);
+        logLines.push('[子会话] 子会话流程完成');
+        setForegroundLog([...logLines]);
+      } catch {
+        logLines.push('[子会话] 子会话流程执行失败');
+        setForegroundLog([...logLines]);
+        message.error('子会话流程执行失败');
       }
     },
     [],
@@ -69,6 +216,11 @@ export function useEvaluationExecute(): {
       while (executingRef.current) {
         const execResult = await executeTools(sessionId);
         if (execResult.status === 'empty') return;
+        if (execResult.status === 'failed') {
+          logLines.push('[工具] 工具执行失败');
+          setForegroundLog([...logLines]);
+          return;
+        }
 
         let currentResult = execResult;
         logLines.push(`[工具] 执行: ${currentResult.toolName || currentResult.toolId || ''}`);
@@ -88,7 +240,12 @@ export function useEvaluationExecute(): {
           logLines.push(`[工具] 状态: ${toolStatus.status}`);
           setForegroundLog([...logLines]);
 
-          if (toolStatus.status === 'done' || toolStatus.status === 'error') {
+          if (toolStatus.needsSubSessionFlow) {
+            await handleSubSessionFlow(sessionId, toolId, logLines);
+            continue;
+          }
+
+          if (toolStatus.status === 'done' || toolStatus.status === 'error' || toolStatus.status === 'failed') {
             if (toolStatus.result) {
               logLines.push(`[工具] 结果: ${toolStatus.result}`);
               setForegroundLog([...logLines]);

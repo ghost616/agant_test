@@ -45,6 +45,12 @@ describe('useEvaluationExecute 导入', () => {
     const source = readFileSync(hookPath, 'utf-8');
     expect(source).toContain('executeBrowserTool');
   });
+
+  it('应导入 getSubSessionData 和 completeSubSession', () => {
+    const source = readFileSync(hookPath, 'utf-8');
+    expect(source).toContain('getSubSessionData');
+    expect(source).toContain('completeSubSession');
+  });
 });
 
 describe('useEvaluationExecute 导出', () => {
@@ -99,8 +105,8 @@ describe('useEvaluationExecute 执行逻辑', () => {
 
   it('BACKGROUND 模式轮询应检查 completed 和 error 状态', () => {
     const source = readFileSync(hookPath, 'utf-8');
-    expect(source).toContain("status.status === 'completed'");
-    expect(source).toContain("status.status === 'error'");
+    expect(source).toContain("status.status.toUpperCase() === 'COMPLETED'");
+    expect(source).toContain("status.status.toUpperCase() === 'ERROR'");
   });
 
   it('FOREGROUND 模式应创建会话然后逐条发送消息', () => {
@@ -169,6 +175,47 @@ describe('useEvaluationExecute runToolCycle', () => {
     expect(source).toContain('executeTools(sessionId)');
     expect(source).toContain('getToolStatus(');
     expect(source).toContain('continueChatStream(');
+  });
+});
+
+describe('useEvaluationExecute handleSubSessionFlow', () => {
+  it('应存在 handleSubSessionFlow 函数', () => {
+    const source = readFileSync(hookPath, 'utf-8');
+    expect(source).toContain('handleSubSessionFlow');
+  });
+
+  it('应检测 toolStatus.needsSubSessionFlow 并调用 handleSubSessionFlow', () => {
+    const source = readFileSync(hookPath, 'utf-8');
+    expect(source).toContain('toolStatus.needsSubSessionFlow');
+    expect(source).toContain('handleSubSessionFlow(sessionId, toolId, logLines)');
+  });
+
+  it('handleSubSessionFlow 应调用 getSubSessionData 获取子会话数据', () => {
+    const source = readFileSync(hookPath, 'utf-8');
+    expect(source).toContain('getSubSessionData(sessionId)');
+  });
+
+  it('handleSubSessionFlow 应使用子会话 childId 调用 agentChatStream', () => {
+    const source = readFileSync(hookPath, 'utf-8');
+    expect(source).toContain('childId');
+    expect(source).toContain('agentChatStream(');
+  });
+
+  it('handleSubSessionFlow 应包含子会话工具轮询 pollSubToolStatus', () => {
+    const source = readFileSync(hookPath, 'utf-8');
+    expect(source).toContain('pollSubToolStatus');
+    expect(source).toContain('getToolStatus(');
+  });
+
+  it('handleSubSessionFlow 应调用 completeSubSession 完成子会话', () => {
+    const source = readFileSync(hookPath, 'utf-8');
+    expect(source).toContain('completeSubSession(sessionId)');
+  });
+
+  it('handleSubSessionFlow 应循环 sendMessage → runSubTools → continueSubChat', () => {
+    const source = readFileSync(hookPath, 'utf-8');
+    expect(source).toContain('let hasToolCalls = await sendSubMessage(data.userMessage)');
+    expect(source).toContain('hasToolCalls = await continueSubChat()');
   });
 });
 

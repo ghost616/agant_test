@@ -38,5 +38,45 @@
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": false
+  },
+  {
+    "plan_id": "plan_d49c3fea-53b4-4514-9fa2-cacb6bddf108",
+    "plan_summary": "审查状态比较大小写修复",
+    "starter_session_id": "ses_0546ce96effeOAGfgp2FRTza6c",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": false
+  },
+  {
+    "plan_id": "plan_0fee16cb-453c-48fa-832b-7710e80e68a0",
+    "plan_summary": "审查子会话流程实现",
+    "starter_session_id": "ses_0546ce96effeOAGfgp2FRTza6c",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": false
+  },
+  {
+    "plan_id": "plan_15d28b96-82e0-4e17-b798-ea24f5cbf97c",
+    "plan_summary": "审查failed状态处理",
+    "starter_session_id": "ses_0546ce96effeOAGfgp2FRTza6c",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": false
+  },
+  {
+    "plan_id": "plan_638932af-6bfa-41d9-ae8b-5726e8628f82",
+    "plan_summary": "审查failed状态处理",
+    "starter_session_id": "ses_0546ce96effeOAGfgp2FRTza6c",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": false
+  },
+  {
+    "plan_id": "plan_7481079d-1032-4874-8e93-9d799abbd5f7",
+    "plan_summary": "审查CHILD技能过滤",
+    "starter_session_id": "ses_0546ce96effeOAGfgp2FRTza6c",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": false
   }
 ]

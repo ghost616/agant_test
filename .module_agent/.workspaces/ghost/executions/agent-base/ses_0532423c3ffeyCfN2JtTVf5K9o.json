@@ -1,0 +1,11 @@
+[
+  {
+    "plan_id": "plan_7481079d-1032-4874-8e93-9d799abbd5f7",
+    "plan": "LoadSkillsSystemTool.java execute 方法中 availableNames 构建时过滤 CHILD 技能",
+    "modified_files": [
+      "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/LoadSkillsSystemTool.java"
+    ],
+    "summary": "LoadSkillsSystemTool.execute 方法中构建 availableNames 时增加过滤：当 ctx.isMainSession() 为 true 且 skill.getSessionAuth() == SessionAuthType.CHILD 时，跳过该技能不加入 availableNames。该模式与 ChatService.java 中已有的过滤逻辑一致。mvn compile 通过。",
+    "errors": []
+  }
+]
