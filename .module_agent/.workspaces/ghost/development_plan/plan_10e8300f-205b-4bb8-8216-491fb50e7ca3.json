@@ -1,7 +1,7 @@
 {
-  "plan_id": "plan_4a7c2b04-f1a7-4251-bfbb-adadc429b868",
+  "plan_id": "plan_10e8300f-205b-4bb8-8216-491fb50e7ca3",
   "module_name": "",
-  "development_plan": "评估执行按 executionCount 循环多次执行，BACKGROUND/FOREGROUND 模式均支持",
+  "development_plan": "修复sendForegroundMessage的delta追加逻辑",
   "session_id": "",
   "modified_files": [
     "src/services/model.ts",

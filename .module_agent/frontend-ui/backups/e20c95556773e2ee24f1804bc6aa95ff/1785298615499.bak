@@ -145,21 +145,11 @@ function EvaluationResultList(): JSX.Element {
       return new Promise<void>((resolve, reject) => {
         const controller = continueChatStream(sessionId, {
           onDelta: (text) => {
-            const last = logLines[logLines.length - 1];
-            if (last?.startsWith('[AI]')) {
-              logLines[logLines.length - 1] = last + text;
-            } else {
-              logLines.push(`[AI] ${text}`);
-            }
+            logLines.push(`[AI] ${text}`);
             setForegroundLog([...logLines]);
           },
           onReasoning: (text) => {
-            const last = logLines[logLines.length - 1];
-            if (last?.startsWith('[思考]')) {
-              logLines[logLines.length - 1] = last + text;
-            } else {
-              logLines.push(`[思考] ${text}`);
-            }
+            logLines.push(`[思考] ${text}`);
             setForegroundLog([...logLines]);
           },
           onDone: async (moreToolCalls) => {
@@ -196,21 +186,11 @@ function EvaluationResultList(): JSX.Element {
           { sessionId, content },
           {
             onDelta: (text) => {
-              const last = logLines[logLines.length - 1];
-              if (last?.startsWith('[AI]')) {
-                logLines[logLines.length - 1] = last + text;
-              } else {
-                logLines.push(`[AI] ${text}`);
-              }
+              logLines.push(`[AI] ${text}`);
               setForegroundLog([...logLines]);
             },
             onReasoning: (text) => {
-              const last = logLines[logLines.length - 1];
-              if (last?.startsWith('[思考]')) {
-                logLines[logLines.length - 1] = last + text;
-              } else {
-                logLines.push(`[思考] ${text}`);
-              }
+              logLines.push(`[思考] ${text}`);
               setForegroundLog([...logLines]);
             },
             onDone: async (hasToolCalls) => {
@@ -434,11 +414,10 @@ function EvaluationResultList(): JSX.Element {
               overflow: 'auto',
               fontFamily: 'monospace',
               fontSize: 13,
+              whiteSpace: 'nowrap',
             }}
           >
-            {foregroundLog.map((line, i) => (
-              <div key={i}>{line}</div>
-            ))}
+            {foregroundLog.join('\n')}
           </div>
         </Spin>
       </Modal>

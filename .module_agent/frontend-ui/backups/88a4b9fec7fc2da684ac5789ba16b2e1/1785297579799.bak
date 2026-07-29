@@ -88,7 +88,3 @@ export async function generateEvalResult(
 ): Promise<void> {
   await api.post(`/evaluations/${id}/session/${sessionId}/generate`);
 }
-
-export async function deleteEvaluationResult(id: string): Promise<void> {
-  await api.delete(`/evaluations/results/${id}`);
-}

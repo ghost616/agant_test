@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Button, message, Modal, Popconfirm, Space, Spin, Table } from 'antd';
+import { Button, message, Modal, Space, Spin, Table } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import type { Evaluation, EvaluationResult } from '../../types/evaluation';
 import {
@@ -10,7 +10,6 @@ import {
   getExecutionStatus,
   createEvalSession,
   generateEvalResult,
-  deleteEvaluationResult,
 } from '../../services/evaluation';
 import { agentChatStream, executeTools, getToolStatus, continueChatStream } from '../../services/session';
 import { executeBrowserTool } from '../../services/toolExecutor';
@@ -27,7 +26,6 @@ function EvaluationResultList(): JSX.Element {
   const [foregroundLog, setForegroundLog] = useState<string[]>([]);
   const abortRef = useRef<AbortController | null>(null);
   const executingRef = useRef(false);
-  const logContainerRef = useRef<HTMLDivElement>(null);
 
   const fetchData = useCallback(async () => {
     if (!evaluationId) return;
@@ -49,12 +47,6 @@ function EvaluationResultList(): JSX.Element {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
-
-  useEffect(() => {
-    if (logContainerRef.current) {
-      logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
-    }
-  }, [foregroundLog]);
 
   const sleep = (ms: number): Promise<void> =>
     new Promise((r) => setTimeout(r, ms));
@@ -145,21 +137,11 @@ function EvaluationResultList(): JSX.Element {
       return new Promise<void>((resolve, reject) => {
         const controller = continueChatStream(sessionId, {
           onDelta: (text) => {
-            const last = logLines[logLines.length - 1];
-            if (last?.startsWith('[AI]')) {
-              logLines[logLines.length - 1] = last + text;
-            } else {
-              logLines.push(`[AI] ${text}`);
-            }
+            logLines.push(`[AI] ${text}`);
             setForegroundLog([...logLines]);
           },
           onReasoning: (text) => {
-            const last = logLines[logLines.length - 1];
-            if (last?.startsWith('[思考]')) {
-              logLines[logLines.length - 1] = last + text;
-            } else {
-              logLines.push(`[思考] ${text}`);
-            }
+            logLines.push(`[思考] ${text}`);
             setForegroundLog([...logLines]);
           },
           onDone: async (moreToolCalls) => {
@@ -196,21 +178,11 @@ function EvaluationResultList(): JSX.Element {
           { sessionId, content },
           {
             onDelta: (text) => {
-              const last = logLines[logLines.length - 1];
-              if (last?.startsWith('[AI]')) {
-                logLines[logLines.length - 1] = last + text;
-              } else {
-                logLines.push(`[AI] ${text}`);
-              }
+              logLines.push(`[AI] ${text}`);
               setForegroundLog([...logLines]);
             },
             onReasoning: (text) => {
-              const last = logLines[logLines.length - 1];
-              if (last?.startsWith('[思考]')) {
-                logLines[logLines.length - 1] = last + text;
-              } else {
-                logLines.push(`[思考] ${text}`);
-              }
+              logLines.push(`[思考] ${text}`);
               setForegroundLog([...logLines]);
             },
             onDone: async (hasToolCalls) => {
@@ -301,10 +273,6 @@ function EvaluationResultList(): JSX.Element {
       if (evaluationId) {
         await fetchData();
       }
-      if (executionType !== 'BACKGROUND') {
-        await sleep(1500);
-        setForegroundModalVisible(false);
-      }
     }
   }, [evaluationId, evaluation, pollExecutionStatus, sendForegroundMessage]);
 
@@ -344,30 +312,11 @@ function EvaluationResultList(): JSX.Element {
     {
       title: '操作',
       key: 'actions',
-      width: 180,
+      width: 100,
       render: (_: unknown, record: EvaluationResult) => (
-        <Space>
-          <Button type="link" size="small" onClick={() => navigate(`/evaluations/results/${record.id}`)}>
-            查看结果
-          </Button>
-          <Popconfirm
-            title="确认删除"
-            description="确定要删除该评估结果吗？"
-            onConfirm={async () => {
-              try {
-                await deleteEvaluationResult(record.id);
-                message.success('删除成功');
-                await fetchData();
-              } catch {
-                message.error('删除失败');
-              }
-            }}
-          >
-            <Button type="link" size="small" danger>
-              删除
-            </Button>
-          </Popconfirm>
-        </Space>
+        <Button type="link" size="small" onClick={() => navigate(`/evaluations/results/${record.id}`)}>
+          查看结果
+        </Button>
       ),
     },
   ];
@@ -424,7 +373,6 @@ function EvaluationResultList(): JSX.Element {
       >
         <Spin spinning={executing}>
           <div
-            ref={logContainerRef}
             style={{
               background: '#1e1e1e',
               color: '#d4d4d4',
@@ -434,11 +382,10 @@ function EvaluationResultList(): JSX.Element {
               overflow: 'auto',
               fontFamily: 'monospace',
               fontSize: 13,
+              whiteSpace: 'pre-wrap',
             }}
           >
-            {foregroundLog.map((line, i) => (
-              <div key={i}>{line}</div>
-            ))}
+            {foregroundLog.join('\n')}
           </div>
         </Spin>
       </Modal>

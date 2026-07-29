@@ -252,35 +252,6 @@ public class EvaluationServiceImpl implements EvaluationService {
     }
 
     @Override
-    public void deleteResult(Long resultId) {
-        EvaluationResult entity = evaluationResultMapper.selectById(resultId);
-        if (entity == null) {
-            throw new BusinessException(ErrorCode.EVALUATION_RESULT_NOT_FOUND);
-        }
-
-        Long sessionId = entity.getEvaluationSessionId();
-
-        sessionVariableMapper.delete(new LambdaQueryWrapper<SessionVariable>()
-                .eq(SessionVariable::getSessionId, sessionId));
-        sessionToolMapper.delete(new LambdaQueryWrapper<SessionTool>()
-                .eq(SessionTool::getSessionId, sessionId));
-        sessionSkillMapper.delete(new LambdaQueryWrapper<SessionSkill>()
-                .eq(SessionSkill::getSessionId, sessionId));
-
-        LambdaQueryWrapper<Message> msgWrapper = new LambdaQueryWrapper<>();
-        msgWrapper.eq(Message::getSessionId, sessionId);
-        List<Message> messages = messageMapper.selectList(msgWrapper);
-        if (!messages.isEmpty()) {
-            List<Long> messageIds = messages.stream().map(Message::getId).toList();
-            messageToolCallMapper.deleteByMessageIds(messageIds);
-            messageMapper.delete(msgWrapper);
-        }
-
-        sessionMapper.deleteById(sessionId);
-        evaluationResultMapper.deleteById(resultId);
-    }
-
-    @Override
     public List<EvaluationResultDTO> listResults(Long evaluationId) {
         LambdaQueryWrapper<EvaluationResult> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(EvaluationResult::getEvaluationId, evaluationId);

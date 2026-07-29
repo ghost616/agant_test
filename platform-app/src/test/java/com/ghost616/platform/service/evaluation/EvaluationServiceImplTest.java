@@ -22,6 +22,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -161,6 +162,71 @@ class EvaluationServiceImplTest {
 
             BusinessException ex = assertThrows(BusinessException.class,
                     () -> service.getResultById(RESULT_ID));
+            assertEquals(ErrorCode.EVALUATION_RESULT_NOT_FOUND, ex.getErrorCode());
+        }
+    }
+
+    @Nested
+    class DeleteResultTests {
+
+        private static final Long RESULT_ID = 800L;
+        private static final Long SESSION_ID_LOCAL = 900L;
+        private static final Long MESSAGE_ID_1 = 1000L;
+        private static final Long MESSAGE_ID_2 = 1001L;
+
+        @Test
+        void resultExistsWithMessages_shouldDeleteAllCascadedData() {
+            EvaluationResult result = new EvaluationResult();
+            result.setId(RESULT_ID);
+            result.setEvaluationSessionId(SESSION_ID_LOCAL);
+            when(evaluationResultMapper.selectById(RESULT_ID)).thenReturn(result);
+
+            Message msg1 = new Message();
+            msg1.setId(MESSAGE_ID_1);
+            msg1.setSessionId(SESSION_ID_LOCAL);
+            Message msg2 = new Message();
+            msg2.setId(MESSAGE_ID_2);
+            msg2.setSessionId(SESSION_ID_LOCAL);
+            when(messageMapper.selectList(any())).thenReturn(List.of(msg1, msg2));
+
+            service.deleteResult(RESULT_ID);
+
+            verify(sessionVariableMapper).delete(any());
+            verify(sessionToolMapper).delete(any());
+            verify(sessionSkillMapper).delete(any());
+            verify(messageMapper).selectList(any());
+            verify(messageToolCallMapper).deleteByMessageIds(List.of(MESSAGE_ID_1, MESSAGE_ID_2));
+            verify(messageMapper).delete(any());
+            verify(sessionMapper).deleteById(SESSION_ID_LOCAL);
+            verify(evaluationResultMapper).deleteById(RESULT_ID);
+        }
+
+        @Test
+        void resultExistsWithoutMessages_shouldSkipMessageToolCallDeletion() {
+            EvaluationResult result = new EvaluationResult();
+            result.setId(RESULT_ID);
+            result.setEvaluationSessionId(SESSION_ID_LOCAL);
+            when(evaluationResultMapper.selectById(RESULT_ID)).thenReturn(result);
+            when(messageMapper.selectList(any())).thenReturn(List.of());
+
+            service.deleteResult(RESULT_ID);
+
+            verify(sessionVariableMapper).delete(any());
+            verify(sessionToolMapper).delete(any());
+            verify(sessionSkillMapper).delete(any());
+            verify(messageMapper).selectList(any());
+            verify(messageToolCallMapper, never()).deleteByMessageIds(anyList());
+            verify(messageMapper, never()).delete(any());
+            verify(sessionMapper).deleteById(SESSION_ID_LOCAL);
+            verify(evaluationResultMapper).deleteById(RESULT_ID);
+        }
+
+        @Test
+        void resultNotFound_shouldThrowBusinessException() {
+            when(evaluationResultMapper.selectById(RESULT_ID)).thenReturn(null);
+
+            BusinessException ex = assertThrows(BusinessException.class,
+                    () -> service.deleteResult(RESULT_ID));
             assertEquals(ErrorCode.EVALUATION_RESULT_NOT_FOUND, ex.getErrorCode());
         }
     }

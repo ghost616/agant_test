@@ -49,6 +49,17 @@ class EvaluationControllerTest {
     }
 
     @Test
+    void deleteResult_shouldReturnSuccess() {
+        doNothing().when(evaluationService).deleteResult(800L);
+
+        ApiResponse<Void> response = controller.deleteResult(800L);
+
+        assertTrue(response.isSuccess());
+        assertNull(response.getData());
+        verify(evaluationService).deleteResult(800L);
+    }
+
+    @Test
     void getResultById_shouldReturnApiResponseWithSuccessWhenResultFound() {
         EvaluationResultDTO dto = EvaluationResultDTO.builder()
                 .id(1L)

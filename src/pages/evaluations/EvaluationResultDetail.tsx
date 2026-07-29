@@ -94,6 +94,27 @@ function EvaluationResultDetail(): JSX.Element {
     );
   };
 
+  const renderReasoning = (reasoning: string): JSX.Element => (
+    <div
+      style={{
+        background: '#252525',
+        borderLeft: '3px solid #ffd700',
+        borderRadius: 4,
+        padding: '8px 12px',
+        marginBottom: 8,
+      }}
+    >
+      <Typography.Text
+        style={{ color: '#ffd700', fontSize: 12, marginBottom: 4, display: 'block' }}
+      >
+        思考过程
+      </Typography.Text>
+      <div style={{ color: '#aaa', fontSize: 13, lineHeight: 1.7 }}>
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>{reasoning}</ReactMarkdown>
+      </div>
+    </div>
+  );
+
   const renderMessage = (msg: ChatMessage, idx: number): JSX.Element => {
     const isUser = msg.role === 'user';
     return (
@@ -107,6 +128,7 @@ function EvaluationResultDetail(): JSX.Element {
       >
         <div style={{ maxWidth: '75%' }}>
           {renderRoleHeader(msg.role)}
+          {msg.reasoning && renderReasoning(msg.reasoning)}
           {msg.content.trim() && (
             <div style={BUBBLE_STYLES[msg.role]}>
               <div style={{ color: '#d4d4d4', fontSize: 14, lineHeight: 1.8 }}>

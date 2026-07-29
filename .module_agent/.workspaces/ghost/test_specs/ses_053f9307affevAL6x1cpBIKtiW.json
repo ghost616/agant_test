@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_053f9307affevAL6x1cpBIKtiW",
+  "content": "## 待测试功能\n\n### 1. deleteEvaluationResult API 单元测试\n- 文件：`src/services/evaluation.ts`（新增函数 `deleteEvaluationResult`）\n- 测试文件：`src/services/__tests__/evaluation.test.ts`\n- 测试项：\n  - 应调用 `DELETE /evaluations/results/{id}` 并返回 Promise<void>\n  - 应正确处理不同的 id 参数\n  - 应在 API 失败时抛出错误\n\n### 2. EvaluationResultList.tsx 编译检查\n- 文件：`src/pages/evaluations/EvaluationResultList.tsx`\n- 新增功能：操作列删除按钮（Popconfirm）、whiteSpace 改为 nowrap、logContainerRef 自动滚动、执行完成后自动关闭弹窗\n- 需确保 TypeScript 编译通过\n\n### 涉及的代码文件\n- `src/services/evaluation.ts`（92-94行）\n- `src/pages/evaluations/EvaluationResultList.tsx`",
+  "timestamp": "2026-07-29T04:00:41.180Z"
+}

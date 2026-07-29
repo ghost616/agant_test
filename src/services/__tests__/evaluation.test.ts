@@ -20,6 +20,7 @@ import {
   createEvalSession,
   generateEvalResult,
   getEvaluationResult,
+  deleteEvaluationResult,
 } from '../evaluation';
 
 describe('executeEvaluation', () => {
@@ -166,5 +167,32 @@ describe('getEvaluationResult', () => {
   it('应在 API 失败时抛出错误', async () => {
     mockGet.mockRejectedValueOnce(new Error('Network Error'));
     await expect(getEvaluationResult('result-1')).rejects.toThrow('Network Error');
+  });
+});
+
+describe('deleteEvaluationResult', () => {
+  beforeEach(() => {
+    mockDelete.mockReset();
+  });
+
+  it('应调用 DELETE /evaluations/results/{id} 并返回 Promise<void>', async () => {
+    mockDelete.mockResolvedValueOnce(undefined);
+    await deleteEvaluationResult('result-1');
+    expect(mockDelete).toHaveBeenCalledWith('/evaluations/results/result-1');
+  });
+
+  it('应正确处理不同 id 参数', async () => {
+    mockDelete.mockResolvedValueOnce(undefined);
+    await deleteEvaluationResult('id-a');
+    expect(mockDelete).toHaveBeenCalledWith('/evaluations/results/id-a');
+
+    mockDelete.mockResolvedValueOnce(undefined);
+    await deleteEvaluationResult('id-b');
+    expect(mockDelete).toHaveBeenCalledWith('/evaluations/results/id-b');
+  });
+
+  it('应在 API 失败时抛出错误', async () => {
+    mockDelete.mockRejectedValueOnce(new Error('Network Error'));
+    await expect(deleteEvaluationResult('result-1')).rejects.toThrow('Network Error');
   });
 });

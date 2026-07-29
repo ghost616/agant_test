@@ -1,0 +1,47 @@
+[
+  {
+    "plan_id": "plan_4c3f4521-9f5c-4e5b-a195-f132e12428ef",
+    "plan": "将 EvaluationResultList.tsx 中日志渲染方式从 join('\\n') 改为逐行 div 渲染",
+    "modified_files": [
+      "src/pages/evaluations/EvaluationResultList.tsx"
+    ],
+    "summary": "EvaluationResultList.tsx: 将 foregroundLog.join('\\n') 替换为 foregroundLog.map 逐行渲染 `div style={{ whiteSpace: 'nowrap' }}`，使每条日志独立一行且不换行。纯 UI 渲染改动，不影响业务逻辑，无需测试。",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_0bea0097-63a8-4088-b5ee-282cbd95137a",
+    "plan": "移除日志容器和逐行 div 上的 whiteSpace: 'nowrap'，恢复文本正常换行",
+    "modified_files": [
+      "src/pages/evaluations/EvaluationResultList.tsx"
+    ],
+    "summary": "EvaluationResultList.tsx: 移除容器 div 第417行的 whiteSpace: 'nowrap' 以及逐行渲染 div 中的 whiteSpace: 'nowrap'，恢复文本正常换行行为。纯 UI 样式改动，无需测试。",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_55039243-4e35-4a91-be1e-ba1fbf29ca94",
+    "plan": "onDelta/onReasoning 流式文本追加到同前缀行末尾而非新建行",
+    "modified_files": [
+      "src/pages/evaluations/EvaluationResultList.tsx"
+    ],
+    "summary": "EvaluationResultList.tsx: runToolCycle 和 sendForegroundMessage 的 onDelta/onReasoning 回调中，将 logLines.push 改为判断最后一行是否以 [AI]/[思考] 开头，若是则追加内容到该行末尾，否则 push 新行。同一流式消息的文本保持在一行内，无逻辑变更，无需测试。",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_10e8300f-205b-4bb8-8216-491fb50e7ca3",
+    "plan": "sendForegroundMessage onDelta/onReasoning 改为同行追加语义",
+    "modified_files": [
+      "src/pages/evaluations/EvaluationResultList.tsx"
+    ],
+    "summary": "EvaluationResultList.tsx: sendForegroundMessage 的 onDelta/onReasoning 改为同行追加逻辑，与 runToolCycle 保持一致。纯 UI 渲染改动，无需测试。",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_242453b9-a480-4242-95b0-ff8ccdf294be",
+    "plan": "EvaluationResultDetail.tsx 添加思考过程渲染区域",
+    "modified_files": [
+      "src/pages/evaluations/EvaluationResultDetail.tsx"
+    ],
+    "summary": "EvaluationResultDetail.tsx: 新增 renderReasoning 函数，在消息气泡上方以深色背景 #252525 + 金色左边框 #ffd700 渲染思考过程区域（含\"思考过程\"金色标签 + ReactMarkdown），与 AgentChat 页面样式一致。纯 UI 渲染改动，无需测试。",
+    "errors": []
+  }
+]
