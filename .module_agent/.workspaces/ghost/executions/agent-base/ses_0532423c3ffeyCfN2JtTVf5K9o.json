@@ -14,5 +14,33 @@
     "modified_files": [],
     "summary": "力牧已接收新计划",
     "errors": []
+  },
+  {
+    "plan_id": "plan_68cc01a4-0730-435f-9e8e-27d0836dde53",
+    "plan": "ToolManager.java getSessionTools(sessionId, expandChildMcp) 方法末尾 return 前添加过滤：若 !isSubSession(id) 则从 result 中移除 sessionAuth 为 CHILD 的 ToolSessionObject",
+    "modified_files": [],
+    "summary": "力牧已接收新计划",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_e85d3227-91eb-4cb4-aeef-9118dea48eca",
+    "plan": "ToolExecutionService.java 第92-97行：invoker为null时，poll队列后先调用 toolExecutionTracker.setFailed(sessionId, toolCallId, \"工具调用器不存在\") 记录错误状态，再返回 ToolExecutionResult(\"failed\", ...)",
+    "modified_files": [],
+    "summary": "力牧已接收新计划",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_ae6f0887-2b28-435d-9caa-c3ba06b98162",
+    "plan": "ToolExecutionService.java 第92-97行：invoker为null时，poll队列后将 toolExecutionTracker.setFailed 改为 setDone(sessionId, toolCallId, errorResult)，返回 \"executing\" 状态（非 \"failed\"），使前端 getToolStatus 轮询到 done 后自然处理",
+    "modified_files": [],
+    "summary": "力牧已接收新计划",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_6b40e764-1b3f-4b47-9433-1f052e16302c",
+    "plan": "ToolExecutionService.java 第96行：在 toolExecutionTracker.setDone 前先调用 toolExecutionTracker.setExecuting(sessionId, toolCallId, toolCallName, toolCallArguments, hasMore)，确保 tracker 中有记录",
+    "modified_files": [],
+    "summary": "力牧已接收新计划",
+    "errors": []
   }
 ]

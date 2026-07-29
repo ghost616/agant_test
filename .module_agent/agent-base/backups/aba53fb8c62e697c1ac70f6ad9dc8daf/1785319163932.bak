@@ -93,7 +93,6 @@ public class ToolExecutionService {
             toolCallQueueManager.poll(sessionId);
             boolean hasMore = toolCallQueueManager.hasPending(sessionId);
             String errorResult = "{\"status\":\"error\",\"errMsg\":\"工具调用器不存在\"}";
-            toolExecutionTracker.setExecuting(sessionId, peekData.toolCallId(), peekToolCallName, peekData.toolCallArguments(), hasMore);
             toolExecutionTracker.setDone(sessionId, peekData.toolCallId(), errorResult);
             return new ToolExecutionResult("executing", peekData.toolCallId(), peekToolCallName,
                     peekData.toolCallArguments(), hasMore, null);

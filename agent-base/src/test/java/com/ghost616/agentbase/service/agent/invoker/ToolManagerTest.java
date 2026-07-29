@@ -68,9 +68,7 @@ class ToolManagerTest {
 
         List<ToolManager.ToolSessionObject> result = toolManager.getSessionTools(sessionId, false);
 
-        assertEquals(1, result.size());
-        assertEquals(SessionAuthType.CHILD, result.get(0).toolConfig().getSessionAuth());
-        assertEquals(SessionAuthType.ALL, dto.getSessionAuth());
+        assertEquals(0, result.size(), "父会话应过滤掉 sessionAuth=CHILD 的工具");
     }
 
     @Test
@@ -98,7 +96,7 @@ class ToolManagerTest {
     }
 
     @Test
-    void 父会话MCP工具ALL时产生PARENT展开副本和一份CHILD原始配置() {
+    void 父会话MCP工具ALL时产生PARENT展开副本并过滤CHILD原始配置() {
         String sessionId = "300";
         ToolConfigDTO originalConfig = ToolConfigDTO.builder()
                 .id("3").name("mcp-all").toolType(ToolType.MCP_HTTP).implPath("http://localhost/mcp")
@@ -116,18 +114,12 @@ class ToolManagerTest {
 
         List<ToolManager.ToolSessionObject> result = toolManager.getSessionTools(sessionId, false);
 
-        assertEquals(2, result.size());
+        assertEquals(1, result.size(), "父会话应过滤掉 sessionAuth=CHILD 的副本");
         // result[0]: PARENT copy of expanded McpExpandedToolDTO
         assertEquals(SessionAuthType.PARENT, result.get(0).toolConfig().getSessionAuth());
         assertTrue(result.get(0).toolConfig() instanceof McpExpandedToolDTO);
         assertEquals("mcp-all_tool1", result.get(0).toolConfig().getName());
         assertNotNull(result.get(0).invoker());
-        // result[1]: single CHILD copy of original raw config
-        assertEquals(SessionAuthType.CHILD, result.get(1).toolConfig().getSessionAuth());
-        assertFalse(result.get(1).toolConfig() instanceof McpExpandedToolDTO);
-        assertEquals("mcp-all", result.get(1).toolConfig().getName());
-        assertNull(result.get(1).invoker());
-        assertSame(result.get(1).toolConfig(), result.get(1).mcpOriginalConfig());
     }
 
     @Test
@@ -177,8 +169,8 @@ class ToolManagerTest {
 
         // java-tool: PARENT from SessionToolInfo
         // mcp-cfg_toolA: PARENT (isMcpTool)
-        // mcp-cfg: CHILD (one raw copy for ALL)
-        assertEquals(3, result.size());
+        // mcp-cfg: CHILD copy removed by parent session filter
+        assertEquals(2, result.size(), "父会话应过滤掉 sessionAuth=CHILD 的副本");
         // result[0]: java-tool, non-MCP, uses info.sessionAuth=PARENT
         assertEquals(SessionAuthType.PARENT, result.get(0).toolConfig().getSessionAuth());
         assertFalse(result.get(0).toolConfig() instanceof McpExpandedToolDTO);
@@ -187,12 +179,6 @@ class ToolManagerTest {
         assertEquals(SessionAuthType.PARENT, result.get(1).toolConfig().getSessionAuth());
         assertTrue(result.get(1).toolConfig() instanceof McpExpandedToolDTO);
         assertEquals("mcp-cfg_toolA", result.get(1).toolConfig().getName());
-        // result[2]: mcp-cfg, CHILD copy of raw config (not expanded)
-        assertEquals(SessionAuthType.CHILD, result.get(2).toolConfig().getSessionAuth());
-        assertFalse(result.get(2).toolConfig() instanceof McpExpandedToolDTO);
-        assertEquals("mcp-cfg", result.get(2).toolConfig().getName());
-        assertNull(result.get(2).invoker());
-        assertSame(result.get(2).toolConfig(), result.get(2).mcpOriginalConfig());
     }
 
     @Test

@@ -92,11 +92,8 @@ public class ToolExecutionService {
         if (invoker == null) {
             toolCallQueueManager.poll(sessionId);
             boolean hasMore = toolCallQueueManager.hasPending(sessionId);
-            String errorResult = "{\"status\":\"error\",\"errMsg\":\"工具调用器不存在\"}";
-            toolExecutionTracker.setExecuting(sessionId, peekData.toolCallId(), peekToolCallName, peekData.toolCallArguments(), hasMore);
-            toolExecutionTracker.setDone(sessionId, peekData.toolCallId(), errorResult);
-            return new ToolExecutionResult("executing", peekData.toolCallId(), peekToolCallName,
-                    peekData.toolCallArguments(), hasMore, null);
+            return new ToolExecutionResult("failed", peekData.toolCallId(), peekToolCallName,
+                    peekData.toolCallArguments(), hasMore, "工具调用器不存在");
         }
 
         MessageDataProvider.ToolCallData toolCall = toolCallQueueManager.poll(sessionId);

@@ -126,9 +126,6 @@ public class ToolManager {
                 }
                 result = processed;
             }
-            if (!isSubSession(id)) {
-                result.removeIf(tso -> tso.toolConfig().getSessionAuth() == SessionAuthType.CHILD);
-            }
             return result;
         });
     }

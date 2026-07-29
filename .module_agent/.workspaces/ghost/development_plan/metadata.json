@@ -102,5 +102,37 @@
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
+  },
+  {
+    "plan_id": "plan_68cc01a4-0730-435f-9e8e-27d0836dde53",
+    "plan_summary": "审查CHILD工具过滤",
+    "starter_session_id": "ses_0546ce96effeOAGfgp2FRTza6c",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": false
+  },
+  {
+    "plan_id": "plan_e85d3227-91eb-4cb4-aeef-9118dea48eca",
+    "plan_summary": "审查tracker错误记录",
+    "starter_session_id": "ses_0546ce96effeOAGfgp2FRTza6c",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": false
+  },
+  {
+    "plan_id": "plan_ae6f0887-2b28-435d-9caa-c3ba06b98162",
+    "plan_summary": "审查done替代failed",
+    "starter_session_id": "ses_0546ce96effeOAGfgp2FRTza6c",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": false
+  },
+  {
+    "plan_id": "plan_6b40e764-1b3f-4b47-9433-1f052e16302c",
+    "plan_summary": "审查setExecuting+setDone",
+    "starter_session_id": "ses_0546ce96effeOAGfgp2FRTza6c",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": false
   }
 ]

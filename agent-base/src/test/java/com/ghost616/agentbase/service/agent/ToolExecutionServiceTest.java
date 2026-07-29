@@ -163,11 +163,11 @@ class ToolExecutionServiceTest {
 
         verify(toolCallQueueManager).poll(sessionId);
         verify(toolCallQueueManager).hasPending(sessionId);
-        assertEquals("failed", result.status());
+        assertEquals("executing", result.status());
         assertEquals("tid3", result.toolId());
         assertEquals("{}", result.arguments());
         assertFalse(result.hasMore());
-        assertEquals("工具调用器不存在", result.message());
+        assertNull(result.message());
     }
 
     @Test
@@ -182,8 +182,8 @@ class ToolExecutionServiceTest {
 
         verify(toolCallQueueManager).poll(sessionId);
         assertTrue(result.hasMore());
-        assertEquals("failed", result.status());
-        assertEquals("工具调用器不存在", result.message());
+        assertEquals("executing", result.status());
+        assertNull(result.message());
     }
 
     @Test
@@ -197,7 +197,7 @@ class ToolExecutionServiceTest {
         ToolExecutionService.ToolExecutionResult result = toolExecutionService.executeTool(sessionId);
 
         assertFalse(result.hasMore());
-        assertEquals("failed", result.status());
+        assertEquals("executing", result.status());
     }
 
     @Test
