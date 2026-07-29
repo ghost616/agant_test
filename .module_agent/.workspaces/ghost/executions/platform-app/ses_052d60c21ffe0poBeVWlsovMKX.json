@@ -1,0 +1,11 @@
+[
+  {
+    "plan_id": "plan_a3064c1a-514e-4878-b57d-c7e14ce60303",
+    "plan": "DefaultToolDataProvider.getSkillToolIds 返回值改为 List<ToolDataProvider.SkillToolInfo>",
+    "modified_files": [
+      "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultToolDataProvider.java"
+    ],
+    "summary": "DefaultToolDataProvider.getSkillToolIds 任务已评估",
+    "errors": []
+  }
+]

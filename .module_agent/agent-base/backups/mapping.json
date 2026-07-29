@@ -58,5 +58,6 @@
   "agent-base/src/test/java/com/ghost616/agentbase/service/agent/AgentMessageProxyTest.java": "0e68d8592efb279466356628160f7243",
   "agent-base/src/test/java/com/ghost616/agentbase/service/agent/ChatServiceFilteringTest.java": "32350ba8888c066c06df1744229aff29",
   "agent-base/src/test/java/com/ghost616/agentbase/service/agent/ChatServiceNoLoadSkillsTest.java": "39fb745c3599104fcf4f8cbd9789c033",
-  "agent-base/src/test/java/com/ghost616/agentbase/service/agent/ChatServiceTest.java": "e736a7bff1a978f30dce2ff51a8d8167"
+  "agent-base/src/test/java/com/ghost616/agentbase/service/agent/ChatServiceTest.java": "e736a7bff1a978f30dce2ff51a8d8167",
+  "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultToolDataProvider.java": "c53bf8bb104ce2454e9d19485eb0e988"
 }

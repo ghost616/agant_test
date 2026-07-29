@@ -1,0 +1,11 @@
+[
+  {
+    "plan_id": "plan_a8f99222-3e19-4265-99e2-5d250ebe9df8",
+    "plan": "更新 ToolManager 使用 SkillToolInfo 结构",
+    "modified_files": [
+      "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/ToolManager.java"
+    ],
+    "summary": "完成了 ToolManager.java 更新：缓存类型改为 List<SkillToolInfo>，resolveSkillToolByName 使用新结构，主会话跳过 CHILD 技能工具",
+    "errors": []
+  }
+]

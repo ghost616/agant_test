@@ -7,5 +7,12 @@
     ],
     "summary": "LoadSkillsSystemTool.execute 方法中构建 availableNames 时增加过滤：当 ctx.isMainSession() 为 true 且 skill.getSessionAuth() == SessionAuthType.CHILD 时，跳过该技能不加入 availableNames。该模式与 ChatService.java 中已有的过滤逻辑一致。mvn compile 通过。",
     "errors": []
+  },
+  {
+    "plan_id": "plan_be15fdd7-42c5-4acf-9750-0f708fd3bca7",
+    "plan": "TypeScriptToolInvoker.java 和 PythonToolInvoker.java：移除 sessionDir 目录创建/删除逻辑，输入文件改为 scriptDir.resolve(ctx.getSessionId().toString() + \".json\")，只做 Files.writeString 写入和 finally 中 Files.deleteIfExists 清理",
+    "modified_files": [],
+    "summary": "力牧已接收新计划",
+    "errors": []
   }
 ]

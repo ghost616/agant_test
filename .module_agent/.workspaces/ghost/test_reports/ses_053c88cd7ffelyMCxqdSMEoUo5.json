@@ -1,5 +1,5 @@
 {
   "lizhu_session_id": "ses_053c88cd7ffelyMCxqdSMEoUo5",
-  "content": "## 测试报告\n\n### 测试结果\n\n| 测试类型 | 结果 |\n|---------|------|\n| 编译测试（mvn compile） | ✅ 通过 |\n\n### 变更验证\n- `LoadSkillsSystemTool.java` lines 57-59: `ctx.isMainSession() && skill.getSessionAuth() == SessionAuthType.CHILD` 条件判断编译通过\n- `SessionAuthType` import 正确，`isMainSession()` 方法调用无误\n",
-  "timestamp": "2026-07-29T07:52:59.692Z"
+  "content": "## 测试报告\n\n### 测试结果\n\n| 测试类型 | 结果 |\n|---------|------|\n| 编译测试（mvn compile） | ✅ 通过 |\n| 单元测试 | ✅ 通过 |\n\n### 单元测试详情\n\n| 测试类 | 数 | 结果 |\n|--------|---|------|\n| `ToolManagerTest` (ToolManager.resolveSkillToolByName) | 13 | ✅ 全部通过 |\n| `DefaultToolDataProviderTest` (getSkillToolIds) | 7 | ✅ 全部通过 |\n\n### 变更验证\n1. `ToolDataProvider.getSkillToolIds` 返回类型改为 `List<SkillToolInfo>` — 编译/测试通过\n2. `DefaultToolDataProvider.getSkillToolIds` 按 skillId 分组携带 SessionAuthType — 7 项测试覆盖子会话/主会话/空数据场景\n3. `ToolManager.resolveSkillToolByName` 主会话跳过 CHILD 技能 — 13 项测试覆盖主会话/子会话匹配行为\n",
+  "timestamp": "2026-07-29T09:16:37.726Z"
 }

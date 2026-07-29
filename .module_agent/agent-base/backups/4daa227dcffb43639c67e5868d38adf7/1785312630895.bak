@@ -18,26 +18,25 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
-public class PythonToolInvoker implements ToolInvoker {
+public class TypeScriptToolInvoker implements ToolInvoker {
 
     private static final long TIMEOUT_SECONDS = 30;
-    private static final String RUNNER_FILE_NAME = "_runner.py";
+    private static final String RUNNER_FILE_NAME = "_runner.ts";
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     private final String implPath;
-    private final boolean python3Available;
-    private final boolean pythonAvailable;
+    private final boolean bunAvailable;
+    private final boolean nodeAvailable;
 
-    public PythonToolInvoker(String scriptPath) {
+    public TypeScriptToolInvoker(String scriptPath) {
         this.implPath = scriptPath;
-        this.python3Available = isCommandAvailable("python3");
-        this.pythonAvailable = isCommandAvailable("python");
-        if (!python3Available && !pythonAvailable) {
+        this.bunAvailable = isCommandAvailable("bun");
+        this.nodeAvailable = isCommandAvailable("node");
+        if (!bunAvailable && !nodeAvailable) {
             throw new BusinessException(ErrorCode.TOOL_RUNTIME_NOT_FOUND,
-                    "python 和 python3 运行时均不可用，请安装 Python 3.10+");
+                    "bun 和 node 运行时均不可用，请安装 bun（https://bun.sh）或 node（https://nodejs.org）");
         }
-        log.debug("Python运行时检测: python3={}, python={}, implPath={}",
-                python3Available, pythonAvailable, implPath);
+        log.debug("脚本运行时检测: bun={}, node={}, implPath={}", bunAvailable, nodeAvailable, implPath);
     }
 
     private static boolean isWindows() {
@@ -80,8 +79,10 @@ public class PythonToolInvoker implements ToolInvoker {
         List<String> command = new ArrayList<>(resolveRuntime());
         command.add(runnerPath.toString());
 
-        Path inputFile = scriptDir.resolve(ctx.getSessionId().toString() + ".json");
+        Path sessionDir = scriptDir.resolve(ctx.getSessionId().toString());
+        Path inputFile = sessionDir.resolve("_input.json");
         try {
+            Files.createDirectories(sessionDir);
             Files.writeString(inputFile, jsonParams, StandardCharsets.UTF_8);
             command.add(inputFile.toString());
 
@@ -125,6 +126,7 @@ public class PythonToolInvoker implements ToolInvoker {
         } finally {
             try {
                 Files.deleteIfExists(inputFile);
+                Files.deleteIfExists(sessionDir);
             } catch (Exception ignored) {
             }
         }
@@ -167,20 +169,20 @@ public class PythonToolInvoker implements ToolInvoker {
     }
 
     private List<String> resolveRuntime() {
-        if (python3Available) {
+        if (bunAvailable) {
             if (isWindows()) {
-                return List.of("cmd", "/c", "python3");
+                return List.of("cmd", "/c", "bun");
             }
-            return List.of("python3");
+            return List.of("bun");
         }
-        if (pythonAvailable) {
+        if (nodeAvailable) {
             if (isWindows()) {
-                return List.of("cmd", "/c", "python");
+                return List.of("cmd", "/c", "npx", "tsx");
             }
-            return List.of("python");
+            return List.of("npx", "tsx");
         }
         throw new BusinessException(ErrorCode.TOOL_RUNTIME_NOT_FOUND,
-                "python 和 python3 运行时均不可用");
+                "bun 和 node 运行时均不可用");
     }
 
     private Path resolvePath(AgentExecutionContext ctx) {
@@ -215,10 +217,10 @@ public class PythonToolInvoker implements ToolInvoker {
     }
 
     private static String loadRunnerTemplate() {
-        try (InputStream in = PythonToolInvoker.class.getResourceAsStream("/agent/_runner.py")) {
+        try (InputStream in = TypeScriptToolInvoker.class.getResourceAsStream("/agent/_runner.ts")) {
             if (in == null) {
                 throw new BusinessException(ErrorCode.TOOL_INVOKE_ERROR,
-                        "未找到桥接文件模板: /agent/_runner.py");
+                        "未找到桥接文件模板: /agent/_runner.ts");
             }
             return new String(in.readAllBytes(), StandardCharsets.UTF_8);
         } catch (BusinessException e) {

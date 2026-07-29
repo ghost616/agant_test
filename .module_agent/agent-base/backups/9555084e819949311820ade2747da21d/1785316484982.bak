@@ -28,7 +28,7 @@ public class ToolManager {
 
     private final ConcurrentHashMap<String, List<ToolSessionObject>> sessionToolCache = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, ToolSessionObject> toolCache = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<String, List<ToolDataProvider.SkillToolInfo>> sessionSkillToolIdsCache = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, List<String>> sessionSkillToolIdsCache = new ConcurrentHashMap<>();
     private volatile boolean initialized;
 
     public ToolManager(AgentComponentRegistry registry) {
@@ -132,32 +132,25 @@ public class ToolManager {
 
     private ToolInvoker resolveSkillToolByName(String sessionId, String toolName) {
         ensureInitialized();
-        List<ToolDataProvider.SkillToolInfo> skills = sessionSkillToolIdsCache.computeIfAbsent(sessionId,
+        List<String> toolIds = sessionSkillToolIdsCache.computeIfAbsent(sessionId,
                 dataProvider::getSkillToolIds);
 
-        if (skills.isEmpty()) {
+        if (toolIds.isEmpty()) {
             return null;
         }
 
-        AgentContextManager.AgentSessionContext ctx = agentContextManager.get(sessionId);
-        for (ToolDataProvider.SkillToolInfo skill : skills) {
-            if (ctx != null && ctx.context().isMainSession() && skill.sessionAuth() == SessionAuthType.CHILD) {
-                continue;
-            }
-            for (String toolId : skill.toolIds()) {
-                ToolSessionObject tso = toolCache.computeIfAbsent(toolId,
-                        id -> buildToolSessionObject(dataProvider.getToolById(id)));
-                ToolConfigDTO dto = tso.toolConfig();
-                if (!tso.mcpExpandedTools().isEmpty()) {
-                    for (int i = 0; i < tso.mcpExpandedTools().size(); i++) {
-                        if (tso.mcpExpandedTools().get(i).getName().equals(toolName)) {
-                            return tso.mcpExpandedInvokers().get(i);
-                        }
+        for (String toolId : toolIds) {
+            ToolSessionObject tso = toolCache.computeIfAbsent(toolId,
+                    id -> buildToolSessionObject(dataProvider.getToolById(id)));
+            ToolConfigDTO dto = tso.toolConfig();
+            if (!tso.mcpExpandedTools().isEmpty()) {
+                for (int i = 0; i < tso.mcpExpandedTools().size(); i++) {
+                    if (tso.mcpExpandedTools().get(i).getName().equals(toolName)) {
+                        return tso.mcpExpandedInvokers().get(i);
                     }
                 }
-                if (dto.getName().equals(toolName)) {
-                    return tso.invoker();
-                }
+            } if (dto.getName().equals(toolName)) {
+                return tso.invoker();
             }
         }
 

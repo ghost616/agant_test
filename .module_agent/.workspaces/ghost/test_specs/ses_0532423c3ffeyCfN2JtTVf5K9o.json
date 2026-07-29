@@ -1,5 +1,5 @@
 {
   "session_id": "ses_0532423c3ffeyCfN2JtTVf5K9o",
-  "content": "# LoadSkillsSystemTool.java 待测试功能\n\n## 涉及的代码文件\n- `agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/LoadSkillsSystemTool.java`\n\n## 需要测试的功能\n1. **availableNames 构建过滤**：`execute` 方法中构建 `availableNames` 时，当 `ctx.isMainSession()` 为 true（父会话）且 `skill.getSessionAuth() == SessionAuthType.CHILD` 时，跳过该技能不加入 `availableNames`，使父会话无法加载子会话专用的技能。\n2. **非父会话行为不变**：当 `ctx.isMainSession()` 为 false（子会话）时，所有技能正常加入 `availableNames`，不受 sessionAuth 影响。\n3. **编译检查**：确保新增的 `SessionAuthType` import 和条件判断编译通过。",
-  "timestamp": "2026-07-29T07:52:35.127Z"
+  "content": "# TypeScriptToolInvoker 和 PythonToolInvoker 待测试功能\n\n## 涉及的代码文件\n- `agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/TypeScriptToolInvoker.java`\n- `agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/PythonToolInvoker.java`\n\n## 需要测试的功能\n1. **移除 sessionDir 目录创建/删除逻辑**：两个 Invoker 的 execute 方法中不再创建 `sessionDir` 目录，输入文件路径改为 `scriptDir.resolve(ctx.getSessionId().toString() + \".json\")`。\n2. **finally 清理**：finally 块中仅对输入文件执行 `Files.deleteIfExists(inputFile)` 清理，不再删除 sessionDir。\n3. **编译检查**：确保移除的变量和 import 不导致编译错误。",
+  "timestamp": "2026-07-29T08:10:42.535Z"
 }

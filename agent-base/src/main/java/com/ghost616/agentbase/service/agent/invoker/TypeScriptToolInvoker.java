@@ -79,10 +79,8 @@ public class TypeScriptToolInvoker implements ToolInvoker {
         List<String> command = new ArrayList<>(resolveRuntime());
         command.add(runnerPath.toString());
 
-        Path sessionDir = scriptDir.resolve(ctx.getSessionId().toString());
-        Path inputFile = sessionDir.resolve("_input.json");
+        Path inputFile = scriptDir.resolve(ctx.getSessionId().toString() + ".json");
         try {
-            Files.createDirectories(sessionDir);
             Files.writeString(inputFile, jsonParams, StandardCharsets.UTF_8);
             command.add(inputFile.toString());
 
@@ -126,7 +124,6 @@ public class TypeScriptToolInvoker implements ToolInvoker {
         } finally {
             try {
                 Files.deleteIfExists(inputFile);
-                Files.deleteIfExists(sessionDir);
             } catch (Exception ignored) {
             }
         }

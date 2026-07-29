@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_052d985caffemMgoY9DcZ7faIH",
+  "content": "## 待测试功能\n\n### 1. ToolDataProvider.getSkillToolIds 返回类型变更\n- **文件**: `agent-base/src/main/java/com/ghost616/agentbase/service/agent/ToolDataProvider.java`\n- **变更**: 新增 `SkillToolInfo` record，`getSkillToolIds` 返回类型从 `List<String>` 改为 `List<SkillToolInfo>`\n- **可测功能**: 接口兼容性\n\n### 2. DefaultToolDataProvider.getSkillToolIds 实现更新\n- **文件**: `platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultToolDataProvider.java`\n- **变更**: 改为按 skillId 分组并携带 `SessionAuthType` 返回 `List<SkillToolInfo>`\n- **可测功能**: \n  - 子会话场景：按 SessionSkill 的 sessionAuth 分组返回\n  - 主会话场景：按 AgentSkill 的 sessionAuth 分组返回\n  - 空数据场景：session 为 null、无关联技能、无关联工具时均返回空列表\n\n### 3. ToolManager.resolveSkillToolByName 使用 SkillToolInfo\n- **文件**: `agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/ToolManager.java`\n- **变更**: 遍历 `List<SkillToolInfo>`，主会话中 `sessionAuth==CHILD` 的技能工具被跳过\n- **可测功能**: \n  - 主会话时 CHILD 技能的工具不应被匹配到\n  - 主会话时非 CHILD 技能的工具应正常匹配\n  - 子会话时 CHILD 技能的工具应正常匹配\n  - 空工具列表时返回 null\n\n### 4. 编译测试\n- 所有 3 个文件变更后应能通过 Maven 编译（`mvn compile`）\n",
+  "timestamp": "2026-07-29T09:15:17.186Z"
+}
