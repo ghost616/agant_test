@@ -20,7 +20,6 @@ import SkillList from './pages/skills/SkillList';
 import AgentEvaluationList from './pages/evaluations/AgentEvaluationList';
 import EvaluationList from './pages/evaluations/EvaluationList';
 import EvaluationResultList from './pages/evaluations/EvaluationResultList';
-import EvaluationResultDetail from './pages/evaluations/EvaluationResultDetail';
 
 const { Header, Sider, Content } = Layout;
 
@@ -117,7 +116,6 @@ function App() {
             <Route path="/evaluations" element={<AgentEvaluationList />} />
             <Route path="/evaluations/:agentEvalId/items" element={<EvaluationList />} />
             <Route path="/evaluations/items/:evaluationId/results" element={<EvaluationResultList />} />
-            <Route path="/evaluations/results/:resultId" element={<EvaluationResultDetail />} />
           </Routes>
         </Content>
       </Layout>

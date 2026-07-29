@@ -33,12 +33,6 @@ public class EvaluationController {
         return ApiResponse.success(result);
     }
 
-    @GetMapping("/results/{resultId}")
-    public ApiResponse<EvaluationResultDTO> getResultById(@PathVariable Long resultId) {
-        EvaluationResultDTO result = evaluationService.getResultById(resultId);
-        return ApiResponse.success(result);
-    }
-
     @GetMapping("/{id}/results")
     public ApiResponse<List<EvaluationResultDTO>> listResults(@PathVariable Long id) {
         List<EvaluationResultDTO> result = evaluationService.listResults(id);

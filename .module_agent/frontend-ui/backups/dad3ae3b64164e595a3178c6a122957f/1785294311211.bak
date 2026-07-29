@@ -77,11 +77,6 @@ export async function createEvalSession(
   return res.data.data;
 }
 
-export async function getEvaluationResult(id: string): Promise<EvaluationResult> {
-  const res = await api.get<ApiResponse<EvaluationResult>>(`/evaluations/results/${id}`);
-  return res.data.data;
-}
-
 export async function generateEvalResult(
   id: string,
   sessionId: string,

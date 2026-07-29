@@ -96,10 +96,9 @@ function EvaluationResultList(): JSX.Element {
           throw new Error('工具 ID 为空');
         }
 
-        const toolId: string = currentResult.toolId;
         let pollComplete = false;
         while (executingRef.current) {
-          const toolStatus = await getToolStatus(sessionId, toolId);
+          const toolStatus = await getToolStatus(sessionId, currentResult.toolId);
           logLines.push(`[工具] 状态: ${toolStatus.status}`);
           setForegroundLog([...logLines]);
 
@@ -122,7 +121,7 @@ function EvaluationResultList(): JSX.Element {
             break;
           }
           if (toolStatus.toolConfig?.subToolType === 'BROWSER') {
-            await executeBrowserTool(sessionId, toolId, toolStatus);
+            await executeBrowserTool(sessionId, currentResult.toolId, toolStatus);
             await sleep(500);
             continue;
           }
@@ -293,6 +292,12 @@ function EvaluationResultList(): JSX.Element {
       render: (val: string) => val || '-',
     },
     {
+      title: '结果摘要',
+      dataIndex: 'result',
+      width: 300,
+      ellipsis: true,
+    },
+    {
       title: '创建时间',
       dataIndex: 'createTime',
       width: 180,
@@ -301,9 +306,9 @@ function EvaluationResultList(): JSX.Element {
       title: '操作',
       key: 'actions',
       width: 100,
-      render: (_: unknown, record: EvaluationResult) => (
-        <Button type="link" size="small" onClick={() => navigate(`/evaluations/results/${record.id}`)}>
-          查看结果
+      render: () => (
+        <Button type="link" size="small" onClick={() => message.info('功能开发中')}>
+          修改
         </Button>
       ),
     },
@@ -345,7 +350,7 @@ function EvaluationResultList(): JSX.Element {
         dataSource={dataSource}
         loading={loading}
         pagination={false}
-        scroll={{ x: 900 }}
+        scroll={{ x: 1200 }}
       />
 
       <Modal

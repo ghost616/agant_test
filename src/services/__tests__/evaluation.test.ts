@@ -19,6 +19,7 @@ import {
   getExecutionStatus,
   createEvalSession,
   generateEvalResult,
+  getEvaluationResult,
 } from '../evaluation';
 
 describe('executeEvaluation', () => {
@@ -53,11 +54,11 @@ describe('getExecutionStatus', () => {
     mockGet.mockReset();
   });
 
-  it('应调用 GET /evaluations/{id}/status 并返回状态', async () => {
+  it('应调用 GET /evaluations/{id}/execute/status 并返回状态', async () => {
     const fakeStatus = { status: 'running', currentStep: 1, totalSteps: 5 };
     mockGet.mockResolvedValueOnce({ data: { data: fakeStatus } });
     const result = await getExecutionStatus('eval-123');
-    expect(mockGet).toHaveBeenCalledWith('/evaluations/eval-123/status');
+    expect(mockGet).toHaveBeenCalledWith('/evaluations/eval-123/execute/status');
     expect(result).toEqual(fakeStatus);
   });
 
@@ -117,20 +118,53 @@ describe('generateEvalResult', () => {
     mockPost.mockReset();
   });
 
-  it('应调用 POST /evaluations/{id}/results/{sessionId} 并返回 Promise<void>', async () => {
+  it('应调用 POST /evaluations/{id}/session/{sessionId}/generate 并返回 Promise<void>', async () => {
     mockPost.mockResolvedValueOnce(undefined);
     await generateEvalResult('eval-123', 'session-456');
-    expect(mockPost).toHaveBeenCalledWith('/evaluations/eval-123/results/session-456');
+    expect(mockPost).toHaveBeenCalledWith('/evaluations/eval-123/session/session-456/generate');
   });
 
   it('应正确处理不同参数组合', async () => {
     mockPost.mockResolvedValueOnce(undefined);
     await generateEvalResult('eval-a', 'session-b');
-    expect(mockPost).toHaveBeenCalledWith('/evaluations/eval-a/results/session-b');
+    expect(mockPost).toHaveBeenCalledWith('/evaluations/eval-a/session/session-b/generate');
   });
 
   it('应在 API 失败时抛出错误', async () => {
     mockPost.mockRejectedValueOnce(new Error('Network Error'));
     await expect(generateEvalResult('eval-123', 'session-456')).rejects.toThrow('Network Error');
+  });
+});
+
+describe('getEvaluationResult', () => {
+  beforeEach(() => {
+    mockGet.mockReset();
+  });
+
+  it('应调用 GET /evaluations/results/{resultId} 并返回评估结果', async () => {
+    const fakeResult = { id: 'result-1', evaluationId: 'eval-1', evaluationSessionId: 'session-1', result: '测试结果', totalTokenUsed: '1000' };
+    mockGet.mockResolvedValueOnce({ data: { data: fakeResult } });
+    const result = await getEvaluationResult('result-1');
+    expect(mockGet).toHaveBeenCalledWith('/evaluations/results/result-1');
+    expect(result).toEqual(fakeResult);
+  });
+
+  it('应正确处理不同 resultId', async () => {
+    const fakeResult = { id: 'result-2', evaluationId: 'eval-2', evaluationSessionId: 'session-2' };
+    mockGet.mockResolvedValueOnce({ data: { data: fakeResult } });
+    const result = await getEvaluationResult('result-2');
+    expect(result.id).toBe('result-2');
+  });
+
+  it('应处理无 result 字段的情况', async () => {
+    const fakeResult = { id: 'result-3', evaluationId: 'eval-3', evaluationSessionId: 'session-3' };
+    mockGet.mockResolvedValueOnce({ data: { data: fakeResult } });
+    const result = await getEvaluationResult('result-3');
+    expect(result.result).toBeUndefined();
+  });
+
+  it('应在 API 失败时抛出错误', async () => {
+    mockGet.mockRejectedValueOnce(new Error('Network Error'));
+    await expect(getEvaluationResult('result-1')).rejects.toThrow('Network Error');
   });
 });

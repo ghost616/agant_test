@@ -8,11 +8,19 @@
     "test_passed": false
   },
   {
-    "plan_id": "plan_0ceab77b-855f-49d7-8a15-78ba54995ed1",
-    "plan_summary": "修复测试文件构造器参数不匹配编译错误",
-    "starter_session_id": "ses_05854abcbffems5Ks5nqCAgxDH",
-    "code_reviewed": false,
+    "plan_id": "plan_85116860-84d4-4830-aad3-a76757aab803",
+    "plan_summary": "审查评估结果页面改造的代码质量和功能完整性",
+    "starter_session_id": "ses_0546ce96effeOAGfgp2FRTza6c",
+    "code_reviewed": true,
     "plan_completed": true,
-    "test_passed": true
+    "test_passed": false
+  },
+  {
+    "plan_id": "plan_e611a2bc-8f23-4fc3-93d1-309314fb71de",
+    "plan_summary": "审查后端评估结果查询接口的代码质量",
+    "starter_session_id": "ses_0546ce96effeOAGfgp2FRTza6c",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": false
   }
 ]

@@ -148,9 +148,14 @@ describe('EvaluationResultList catch 异常分支', () => {
 });
 
 describe('EvaluationResultList 表格', () => {
-  it('应包含结果摘要列', () => {
+  it('应包含 ID 列', () => {
     const source = readFileSync(resolve(__dirname, '../EvaluationResultList.tsx'), 'utf-8');
-    expect(source).toContain('结果摘要');
+    expect(source).toContain("title: 'ID'");
+  });
+
+  it('应包含会话 ID 列', () => {
+    const source = readFileSync(resolve(__dirname, '../EvaluationResultList.tsx'), 'utf-8');
+    expect(source).toContain('会话ID');
   });
 
   it('应包含 Token 消耗列', () => {
@@ -161,6 +166,17 @@ describe('EvaluationResultList 表格', () => {
   it('应包含创建时间列', () => {
     const source = readFileSync(resolve(__dirname, '../EvaluationResultList.tsx'), 'utf-8');
     expect(source).toContain('创建时间');
+  });
+
+  it('应包含操作列', () => {
+    const source = readFileSync(resolve(__dirname, '../EvaluationResultList.tsx'), 'utf-8');
+    expect(source).toContain("key: 'actions'");
+  });
+
+  it('操作列应包含查看结果按钮并导航到详情页', () => {
+    const source = readFileSync(resolve(__dirname, '../EvaluationResultList.tsx'), 'utf-8');
+    expect(source).toContain('查看结果');
+    expect(source).toContain('navigate(`/evaluations/results/${record.id}`)');
   });
 
   it('应包含执行进度显示', () => {

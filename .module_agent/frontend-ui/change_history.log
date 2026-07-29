@@ -85,3 +85,4 @@
 - 提取 runToolCycle 独立函数消除初始工具调用与递归调用的代码重复
 - catch 块区分 DOMException AbortError（用户取消）与实际异常，取消不弹错误提示
 [2026-07-28T11:39:37.522Z] [session: ses_0577acb85ffe7S7zQd4753XrYJ] EvaluationResultList.tsx: runToolCycle 轮询中增加 BROWSER 分支，检测 toolStatus.toolConfig?.subToolType === 'BROWSER' 时复用 toolExecutor/toolManager/getToolScript 执行客户端浏览器工具（与 AgentChat.tsx executeBrowserTool 逻辑一致）
+[2026-07-29T03:05:46.199Z] [session: ses_0542b2474ffe7RPEicz3pxbgaC] 2026-07-29: 评估结果详情页面新增 — EvaluationResultList.tsx 移除结果摘要列、操作列按钮改为"查看结果"导航到 /evaluations/results/:resultId；新增 EvaluationResultDetail.tsx（展示会话历史消息+react-markdown渲染评估结果）；evaluation.ts 新增 getEvaluationResult API；App.tsx 注册 /evaluations/results/:resultId 路由

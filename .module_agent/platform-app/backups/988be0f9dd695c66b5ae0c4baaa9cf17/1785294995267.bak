@@ -242,16 +242,6 @@ public class EvaluationServiceImpl implements EvaluationService {
     }
 
     @Override
-    public EvaluationResultDTO getResultById(Long resultId) {
-        EvaluationResult entity = evaluationResultMapper.selectById(resultId);
-        if (entity == null) {
-            throw new BusinessException(ErrorCode.EVALUATION_RESULT_NOT_FOUND);
-        }
-        Session session = sessionMapper.selectById(entity.getEvaluationSessionId());
-        return toResultDTO(entity, session);
-    }
-
-    @Override
     public List<EvaluationResultDTO> listResults(Long evaluationId) {
         LambdaQueryWrapper<EvaluationResult> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(EvaluationResult::getEvaluationId, evaluationId);

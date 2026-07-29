@@ -6,6 +6,7 @@ import com.ghost616.agentbase.enums.SessionAuthType;
 import com.ghost616.agentbase.exception.BusinessException;
 import com.ghost616.platform.dto.evaluation.EvaluationCreateRequest;
 import com.ghost616.platform.dto.evaluation.EvaluationDTO;
+import com.ghost616.platform.dto.evaluation.EvaluationResultDTO;
 import com.ghost616.platform.entity.*;
 import com.ghost616.platform.repository.*;
 import org.junit.jupiter.api.BeforeEach;
@@ -101,6 +102,67 @@ class EvaluationServiceImplTest {
         config.setName("test-agent");
         config.setSystemPrompt("You are a test agent");
         return config;
+    }
+
+    @Nested
+    class GetResultByIdTests {
+
+        private static final Long RESULT_ID = 500L;
+        private static final Long SESSION_ID_LOCAL = 600L;
+        private static final Long EVALUATION_ID = 700L;
+
+        @Test
+        void resultExistsWithSession_shouldReturnDTOWithTotalTokenUsed() {
+            EvaluationResult entity = new EvaluationResult();
+            entity.setId(RESULT_ID);
+            entity.setEvaluationId(EVALUATION_ID);
+            entity.setEvaluationSessionId(SESSION_ID_LOCAL);
+            entity.setResult("test result");
+            entity.setExecutionStatus("COMPLETED");
+            when(evaluationResultMapper.selectById(RESULT_ID)).thenReturn(entity);
+
+            Session session = new Session();
+            session.setId(SESSION_ID_LOCAL);
+            session.setTotalTokenUsed(5000L);
+            when(sessionMapper.selectById(SESSION_ID_LOCAL)).thenReturn(session);
+
+            EvaluationResultDTO dto = service.getResultById(RESULT_ID);
+
+            assertNotNull(dto);
+            assertEquals(RESULT_ID, dto.getId());
+            assertEquals(EVALUATION_ID, dto.getEvaluationId());
+            assertEquals(SESSION_ID_LOCAL, dto.getEvaluationSessionId());
+            assertEquals("test result", dto.getResult());
+            assertEquals(5000L, dto.getTotalTokenUsed());
+            assertEquals("COMPLETED", dto.getExecutionStatus());
+        }
+
+        @Test
+        void resultExistsWithoutSession_shouldReturnDTOWithTotalTokenUsedNull() {
+            EvaluationResult entity = new EvaluationResult();
+            entity.setId(RESULT_ID);
+            entity.setEvaluationId(EVALUATION_ID);
+            entity.setEvaluationSessionId(SESSION_ID_LOCAL);
+            entity.setResult("test result");
+            when(evaluationResultMapper.selectById(RESULT_ID)).thenReturn(entity);
+            when(sessionMapper.selectById(SESSION_ID_LOCAL)).thenReturn(null);
+
+            EvaluationResultDTO dto = service.getResultById(RESULT_ID);
+
+            assertNotNull(dto);
+            assertEquals(RESULT_ID, dto.getId());
+            assertEquals(SESSION_ID_LOCAL, dto.getEvaluationSessionId());
+            assertNull(dto.getTotalTokenUsed());
+        }
+
+        @Test
+        void resultNotFound_shouldThrow() {
+            when(evaluationResultMapper.selectById(RESULT_ID)).thenReturn(null);
+
+            BusinessException ex = assertThrows(BusinessException.class,
+                    () -> service.getResultById(RESULT_ID));
+            assertEquals(ErrorCode.EVALUATION_RESULT_NOT_FOUND, ex.getErrorCode());
+        }
     }
 
     @Nested

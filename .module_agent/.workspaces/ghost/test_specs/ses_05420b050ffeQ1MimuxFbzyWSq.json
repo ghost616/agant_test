@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_05420b050ffeQ1MimuxFbzyWSq",
+  "content": "## 待测试功能\n\n### 1. EvaluationService.getResultById(Long resultId)\n- 文件：`platform-app/src/main/java/com/ghost616/platform/service/evaluation/EvaluationServiceImpl.java`\n- 当 resultId 对应的 EvaluationResult 存在时，返回正确的 EvaluationResultDTO\n- 当 resultId 对应的 EvaluationResult 不存在时，抛出 `BusinessException(ErrorCode.EVALUATION_RESULT_NOT_FOUND)`\n- 当关联 Session 存在时，DTO 中 totalTokenUsed 正确填充\n- 当关联 Session 不存在时，DTO 中 totalTokenUsed 为 null\n\n### 2. EvaluationController GET /api/evaluations/results/{resultId}\n- 文件：`platform-app/src/main/java/com/ghost616/platform/controller/EvaluationController.java`\n- 返回 200 和 EvaluationResultDTO\n",
+  "timestamp": "2026-07-29T03:17:01.546Z"
+}

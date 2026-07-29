@@ -108,6 +108,10 @@
     {
       "path": "src/pages/evaluations/AgentEvaluationList.tsx",
       "description": "智能体评估列表页面组件，包含评估列表展示（名称/描述/智能体/创建时间/操作）、新增/编辑 Modal（name/description/agentId 含智能体选择下拉）、删除 Popconfirm、跳转评估项页面"
+    },
+    {
+      "path": "src/pages/evaluations/EvaluationResultDetail.tsx",
+      "description": "评估结果详情页面组件，从路由参数获取 resultId，展示评估会话历史消息（复用消息角色图标+气泡样式）和评估结果（react-markdown+remark-gfm 渲染），返回按钮导航回评估结果列表"
     }
   ]
 }

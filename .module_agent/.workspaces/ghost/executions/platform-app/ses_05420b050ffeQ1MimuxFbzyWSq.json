@@ -1,0 +1,9 @@
+[
+  {
+    "plan_id": "plan_e611a2bc-8f23-4fc3-93d1-309314fb71de",
+    "plan": "1. EvaluationController.java：新增 GET /api/evaluations/results/{resultId} 接口\n2. EvaluationService.java：接口新增 getResultById(Long resultId) 方法\n3. EvaluationServiceImpl.java：实现 getResultById，根据 ID 查询 EvaluationResult 并转为 DTO",
+    "modified_files": [],
+    "summary": "力牧已启动",
+    "errors": []
+  }
+]

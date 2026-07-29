@@ -1,0 +1,14 @@
+[
+  {
+    "plan_id": "plan_85116860-84d4-4830-aad3-a76757aab803",
+    "plan": "1. EvaluationResultList.tsx：移除「结果摘要」列，操作列将「修改」改为「查看结果」并导航到 /evaluations/results/:resultId\n2. 新增 getEvaluationResult API\n3. 新建 EvaluationResultDetail.tsx，路由 /evaluations/results/:resultId\n4. App.tsx 注册新路由",
+    "modified_files": [
+      "src/services/evaluation.ts",
+      "src/pages/evaluations/EvaluationResultList.tsx",
+      "src/pages/evaluations/EvaluationResultDetail.tsx",
+      "src/App.tsx"
+    ],
+    "summary": "评估结果详情查看任务已启动",
+    "errors": []
+  }
+]

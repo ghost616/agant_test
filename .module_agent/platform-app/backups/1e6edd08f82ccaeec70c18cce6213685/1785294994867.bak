@@ -20,6 +20,4 @@ public interface EvaluationService {
     void delete(Long id);
 
     List<EvaluationResultDTO> listResults(Long evaluationId);
-
-    EvaluationResultDTO getResultById(Long resultId);
 }
