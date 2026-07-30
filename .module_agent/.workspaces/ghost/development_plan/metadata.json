@@ -6,37 +6,5 @@
     "code_reviewed": true,
     "plan_completed": false,
     "test_passed": false
-  },
-  {
-    "plan_id": "plan_302c527e-c066-4f62-beef-e8537b2485f3",
-    "plan_summary": "评估结果百分制/工具顺序/完整性规则",
-    "starter_session_id": "ses_0546ce96effeOAGfgp2FRTza6c",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": true
-  },
-  {
-    "plan_id": "plan_85123e10-dbfa-44fa-9c9f-bc5991b3d82c",
-    "plan_summary": "审查评估规则",
-    "starter_session_id": "ses_0546ce96effeOAGfgp2FRTza6c",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": false
-  },
-  {
-    "plan_id": "plan_11d28612-ddc9-45fa-9c83-d7b573300fbe",
-    "plan_summary": "审查测试修复",
-    "starter_session_id": "ses_0546ce96effeOAGfgp2FRTza6c",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": false
-  },
-  {
-    "plan_id": "plan_fe5a685c-7727-42ba-b55d-23ca77b789a3",
-    "plan_summary": "审查测试删除",
-    "starter_session_id": "ses_0546ce96effeOAGfgp2FRTza6c",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": false
   }
 ]

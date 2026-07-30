@@ -47,7 +47,6 @@ public class DefaultMessageDataProvider implements MessageDataProvider {
 
         LambdaQueryWrapper<Message> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Message::getSessionId, sid)
-                .eq(Message::getRollback, false)
                 .orderByDesc(Message::getSequenceNum)
                 .last("LIMIT 1");
         Message lastMessage = messageMapper.selectOne(wrapper);
@@ -95,7 +94,7 @@ public class DefaultMessageDataProvider implements MessageDataProvider {
         Long sid = IdConverter.parse(sessionId);
         LambdaQueryWrapper<Message> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Message::getSessionId, sid)
-                .eq(Message::getRollback, false)
+                .eq(Message::getRollback, 0)
                 .orderByAsc(Message::getSequenceNum);
         List<Message> messages = messageMapper.selectList(wrapper);
 
@@ -133,7 +132,6 @@ public class DefaultMessageDataProvider implements MessageDataProvider {
         Long sid = IdConverter.parse(sessionId);
         LambdaQueryWrapper<Message> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Message::getSessionId, sid)
-                .eq(Message::getRollback, false)
                 .eq(Message::getRole, "user")
                 .orderByDesc(Message::getSequenceNum)
                 .last("LIMIT 1");
@@ -146,7 +144,6 @@ public class DefaultMessageDataProvider implements MessageDataProvider {
 
         LambdaQueryWrapper<Message> idWrapper = new LambdaQueryWrapper<>();
         idWrapper.eq(Message::getSessionId, sid)
-                .eq(Message::getRollback, false)
                 .ge(Message::getSequenceNum, sequenceNum);
         List<Message> messagesToDelete = messageMapper.selectList(idWrapper);
         List<Long> messageIds = messagesToDelete.stream()

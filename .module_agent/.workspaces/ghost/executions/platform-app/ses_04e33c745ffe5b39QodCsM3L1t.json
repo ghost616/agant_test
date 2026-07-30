@@ -1,0 +1,33 @@
+[
+  {
+    "plan_id": "plan_27e02c26-7c08-4033-a39e-6de14d0631af",
+    "plan": "1. 修改 EvaluationResultGenerateService.buildJudgeMessages() 评分规则文本\n2. 修复 DefaultMessageDataProvider：saveMessage() 和 rollbackToLastUserMessage() 添加 rollback=0 过滤",
+    "modified_files": [
+      "platform-app/src/main/java/com/ghost616/platform/service/evaluation/EvaluationResultGenerateService.java",
+      "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultMessageDataProvider.java"
+    ],
+    "summary": "已完成 EvaluationResultGenerateService.java 评分规则更新 + DefaultMessageDataProvider.java 两处回滚过滤条件添加",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_10740b45-b12c-49fa-967e-398c184ed179",
+    "plan": "1. Boolean类型修复：.eq(rollback,0)→.eq(rollback,false)；2. messagesToDelete查询添加rollback=false过滤；3. 评分规则外置到scoring-rules.txt",
+    "modified_files": [
+      "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultMessageDataProvider.java",
+      "platform-app/src/main/java/com/ghost616/platform/service/evaluation/EvaluationResultGenerateService.java",
+      "platform-app/src/main/resources/evaluation/scoring-rules.txt"
+    ],
+    "summary": "三项修改完成：Boolean 类型一致化、messagesToDelete 补充 rollback 过滤、评分规则外置化",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_963e4363-4a8b-491d-bf26-d47a2962303a",
+    "plan": "统一 Boolean 比较 + ClassPathResource 读取静态化",
+    "modified_files": [
+      "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultMessageDataProvider.java",
+      "platform-app/src/main/java/com/ghost616/platform/service/evaluation/EvaluationResultGenerateService.java"
+    ],
+    "summary": "完成两项修改：1) DefaultMessageDataProvider.getMessages() 中 rollback 比较从 0 改为 false，全文件统一 Boolean 类型；2) EvaluationResultGenerateService 将评分规则文件读取从每次方法调用改为静态初始化块一次加载，buildJudgeMessages() 直接引用 SCORING_RULES 常量。编译检查 + 21 项单元测试全部通过。",
+    "errors": []
+  }
+]

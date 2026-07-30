@@ -232,6 +232,10 @@
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/evaluation/AsyncEvaluationExecutor.java",
       "description": "异步评估执行器（独立 @Component），被 EvaluationExecutionService 注入后调用，确保 @Async 通过 Spring AOP 代理生效。执行 AgentMessageProxy 逐条用户消息、工具调用，完成后调用 EvaluationResultGenerateService"
+    },
+    {
+      "path": "platform-app/src/main/resources/evaluation/scoring-rules.txt",
+      "description": "评估评分规则文本，被 EvaluationResultGenerateService.buildJudgeMessages() 读取作为系统提示的一部分"
     }
   ]
 }

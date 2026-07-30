@@ -18,10 +18,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import org.springframework.core.io.ClassPathResource;
-
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,17 +25,6 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class EvaluationResultGenerateService {
-
-    private static final String SCORING_RULES;
-
-    static {
-        try {
-            ClassPathResource resource = new ClassPathResource("evaluation/scoring-rules.txt");
-            SCORING_RULES = new String(resource.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            throw new RuntimeException("读取评分规则文件失败", e);
-        }
-    }
 
     private final EvaluationMapper evaluationMapper;
     private final EvaluationResultMapper evaluationResultMapper;
@@ -119,7 +104,19 @@ public class EvaluationResultGenerateService {
             systemContent.append("（无执行消息）\n");
         }
 
-        systemContent.append("\n\n").append(SCORING_RULES);
+        systemContent.append("""
+
+                ## 评分规则
+                采用百分制（0-100分），按以下维度评分：
+
+                1. 相关性（0-25分）：回复是否针对用户问题，是否偏离主题
+                2. 准确性（0-35分）：回复内容是否正确，工具调用的类型和参数须与基准会话完全一致
+                3. 完整性（0-40分）：是否完整回答了所有问题点；**因工具调用错误导致未获得答案时，此项为 0 分**
+
+                ## 评分要求
+                - 输出格式：[总分] 总得分，[相关性] 得分及说明，[准确性] 得分及说明，[完整性] 得分及说明
+                - 改进建议：列出主要差距点
+                """);
 
         messages.add(Message.builder()
                 .role("system")
