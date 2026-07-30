@@ -180,27 +180,34 @@ public class ChatService {
         }
 
         if (context.isMainSession()) {
-            List<ToolConfigDTO> childAvailableTools = new ArrayList<>();
+            List<ToolConfigDTO> childOnlyTools = new ArrayList<>();
+            List<ToolConfigDTO> allAuthTools = new ArrayList<>();
             for (ToolConfigDTO t : context.getTools()) {
                 SessionAuthType auth = t.getSessionAuth();
-                if (auth == null || auth == SessionAuthType.ALL || auth == SessionAuthType.CHILD) {
-                    childAvailableTools.add(t);
+                if (auth == SessionAuthType.CHILD) {
+                    childOnlyTools.add(t);
+                } else if (auth == null || auth == SessionAuthType.ALL) {
+                    allAuthTools.add(t);
                 }
             }
-            List<SkillConfigDTO> childAvailableSkills = new ArrayList<>();
+            List<SkillConfigDTO> childOnlySkills = new ArrayList<>();
+            List<SkillConfigDTO> allAuthSkills = new ArrayList<>();
             if (skills != null) {
                 for (SkillConfigDTO s : skills) {
                     SessionAuthType auth = s.getSessionAuth();
-                    if (auth == null || auth == SessionAuthType.ALL || auth == SessionAuthType.CHILD) {
-                        childAvailableSkills.add(s);
+                    if (auth == SessionAuthType.CHILD) {
+                        childOnlySkills.add(s);
+                    } else if (auth == null || auth == SessionAuthType.ALL) {
+                        allAuthSkills.add(s);
                     }
                 }
             }
-            if (!childAvailableTools.isEmpty() || !childAvailableSkills.isEmpty()) {
+            if (!childOnlyTools.isEmpty() || !allAuthTools.isEmpty() || !childOnlySkills.isEmpty() || !allAuthSkills.isEmpty()) {
                 StringBuilder sb = new StringBuilder();
-                if (!childAvailableTools.isEmpty()) {
-                    sb.append("子会话可使用以下工具：\n");
-                    for (ToolConfigDTO t : childAvailableTools) {
+                sb.append("以下为子会话相关的工具/技能权限说明。标注【仅子会话可用】的项不可在当前会话直接调用，需通过子会话使用。标注【均可用】的项当前会话可直接调用。\n");
+                if (!childOnlyTools.isEmpty()) {
+                    sb.append("\n【仅子会话可用】工具：\n");
+                    for (ToolConfigDTO t : childOnlyTools) {
                         sb.append("- ").append(t.getName());
                         if (t.getDescription() != null && !t.getDescription().isEmpty()) {
                             sb.append(": ").append(t.getDescription());
@@ -208,12 +215,19 @@ public class ChatService {
                         sb.append("\n");
                     }
                 }
-                if (!childAvailableSkills.isEmpty()) {
-                    if (!childAvailableTools.isEmpty()) {
+                if (!allAuthTools.isEmpty()) {
+                    sb.append("\n【均可用】工具：\n");
+                    for (ToolConfigDTO t : allAuthTools) {
+                        sb.append("- ").append(t.getName());
+                        if (t.getDescription() != null && !t.getDescription().isEmpty()) {
+                            sb.append(": ").append(t.getDescription());
+                        }
                         sb.append("\n");
                     }
-                    sb.append("子会话可使用以下技能：\n");
-                    for (SkillConfigDTO s : childAvailableSkills) {
+                }
+                if (!childOnlySkills.isEmpty()) {
+                    sb.append("\n【仅子会话可用】技能：\n");
+                    for (SkillConfigDTO s : childOnlySkills) {
                         sb.append("- ").append(s.getName());
                         if (s.getDescription() != null && !s.getDescription().isEmpty()) {
                             sb.append(": ").append(s.getDescription());
@@ -221,6 +235,17 @@ public class ChatService {
                         sb.append("\n");
                     }
                 }
+                if (!allAuthSkills.isEmpty()) {
+                    sb.append("\n【均可用】技能：\n");
+                    for (SkillConfigDTO s : allAuthSkills) {
+                        sb.append("- ").append(s.getName());
+                        if (s.getDescription() != null && !s.getDescription().isEmpty()) {
+                            sb.append(": ").append(s.getDescription());
+                        }
+                        sb.append("\n");
+                    }
+                }
+                sb.append("\n如需使用上述子会话工具/技能，请调用 _sys_create_child_session 开启子会话执行任务");
                 messages.add(Message.builder()
                         .role("system")
                         .content(sb.toString())

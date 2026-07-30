@@ -8,7 +8,6 @@ import com.ghost616.agentbase.dto.skill.SkillConfigDTO;
 import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
 import com.ghost616.agentbase.enums.SessionAuthType;
 import com.ghost616.agentbase.service.agent.invoker.SystemToolManager;
-import com.ghost616.agentbase.service.agent.invoker.HookManager;
 import com.ghost616.agentbase.service.model.invoker.ModelInvoker;
 import com.ghost616.agentbase.service.model.invoker.ModelInvokerManager;
 import org.junit.jupiter.api.BeforeEach;
@@ -45,8 +44,6 @@ class ChatServiceFilteringTest {
     @Mock
     private SystemToolManager systemToolManager;
     @Mock
-    private HookManager hookManager;
-    @Mock
     private ModelInvoker modelInvoker;
     @Mock
     private SessionManager.MessageSaveBuilder msgBuilder;
@@ -69,7 +66,6 @@ class ChatServiceFilteringTest {
         registry.setModelInvokerManager(modelInvokerManager);
         registry.setSystemToolManager(systemToolManager);
         registry.setChatDataProvider(chatDataProvider);
-        registry.setHookManager(hookManager);
         chatService = new ChatService(registry);
     }
 
@@ -327,14 +323,12 @@ class ChatServiceFilteringTest {
     }
 
     @Nested
-    @DisplayName("Section 3: 子会话能力提示合并（第182-229行）")
+    @DisplayName("Section 3: 子会话能力提示合并（第200-247行）")
     class ChildSessionCapabilitiesMergeTest {
 
-        private static final String CAP_SEARCH = "以下为子会话相关的工具/技能权限说明";
-
         @Test
-        @DisplayName("只有子会话工具时：按 CHILD/ALL 分组展示，不含技能区")
-        void onlyTools_shouldGroupByAuth() {
+        @DisplayName("只有子会话工具时：只生成工具消息，不含技能消息")
+        void onlyTools_shouldGenerateToolsMessage() {
             ToolConfigDTO childTool = ToolConfigDTO.builder()
                     .name("child_tool").sessionAuth(SessionAuthType.CHILD).description("for child").build();
             ToolConfigDTO allTool = ToolConfigDTO.builder()
@@ -346,20 +340,18 @@ class ChatServiceFilteringTest {
                     List.of(childTool, allTool, nullTool), null, null, null);
             var captured = executeChat("1", harness);
 
-            String capsContent = findMessageByContent(getSystemMessages(captured), CAP_SEARCH);
+            String capsContent = findMessageByContent(getSystemMessages(captured), "子会话可");
             assertNotNull(capsContent, "应有子会话能力消息");
-            assertTrue(capsContent.contains("【仅子会话可用】工具"), "应有 CHILD 工具分区");
-            assertTrue(capsContent.contains("【均可用】工具"), "应有 ALL 工具分区");
+            assertTrue(capsContent.contains("子会话可使用以下工具"));
             assertTrue(capsContent.contains("child_tool"));
             assertTrue(capsContent.contains("all_tool"));
             assertTrue(capsContent.contains("null_tool"));
-            assertFalse(capsContent.contains("【仅子会话可用】技能"), "不应含 CHILD 技能分区");
-            assertFalse(capsContent.contains("【均可用】技能"), "不应含 ALL 技能分区");
+            assertFalse(capsContent.contains("子会话可使用以下技能"));
         }
 
         @Test
-        @DisplayName("只有子会话技能时：按 CHILD/ALL 分组展示，不含工具区")
-        void onlySkills_shouldGroupByAuth() {
+        @DisplayName("只有子会话技能时：只生成技能消息，不含工具消息")
+        void onlySkills_shouldGenerateSkillsMessage() {
             SkillConfigDTO childSkill = SkillConfigDTO.builder()
                     .name("child_skill").sessionAuth(SessionAuthType.CHILD).description("for child").build();
             SkillConfigDTO allSkill = SkillConfigDTO.builder()
@@ -371,20 +363,18 @@ class ChatServiceFilteringTest {
                     List.of(childSkill, allSkill, nullSkill), null, null);
             var captured = executeChat("1", harness);
 
-            String capsContent = findMessageByContent(getSystemMessages(captured), CAP_SEARCH);
+            String capsContent = findMessageByContent(getSystemMessages(captured), "子会话可");
             assertNotNull(capsContent);
-            assertTrue(capsContent.contains("【仅子会话可用】技能"), "应有 CHILD 技能分区");
-            assertTrue(capsContent.contains("【均可用】技能"), "应有 ALL 技能分区");
+            assertTrue(capsContent.contains("子会话可使用以下技能"));
             assertTrue(capsContent.contains("child_skill"));
             assertTrue(capsContent.contains("all_skill"));
             assertTrue(capsContent.contains("null_skill"));
-            assertFalse(capsContent.contains("【仅子会话可用】工具"), "不应含 CHILD 工具分区");
-            assertFalse(capsContent.contains("【均可用】工具"), "不应含 ALL 工具分区");
+            assertFalse(capsContent.contains("子会话可使用以下工具"));
         }
 
         @Test
-        @DisplayName("同时存在工具和技能时：合并为单一消息，工具分区在前技能分区在后")
-        void bothToolsAndSkills_shouldMergeToolsBeforeSkills() {
+        @DisplayName("同时存在工具和技能时：合并为单一消息，先工具后技能，中间有空行分隔")
+        void bothToolsAndSkills_shouldMergeWithBlankLine() {
             ToolConfigDTO childTool = ToolConfigDTO.builder()
                     .name("child_tool").sessionAuth(SessionAuthType.CHILD).build();
             SkillConfigDTO childSkill = SkillConfigDTO.builder()
@@ -396,17 +386,22 @@ class ChatServiceFilteringTest {
 
             var sysMsgs = getSystemMessages(captured);
             long capsMsgCount = sysMsgs.stream()
-                    .filter(m -> m.getContent().contains(CAP_SEARCH))
+                    .filter(m -> m.getContent().contains("子会话可"))
                     .count();
             assertEquals(1, capsMsgCount, "子会话能力提示应合并为一条消息");
 
-            String capsContent = findMessageByContent(sysMsgs, CAP_SEARCH);
+            String capsContent = findMessageByContent(sysMsgs, "子会话可");
             assertNotNull(capsContent);
-            int toolsIdx = capsContent.indexOf("【仅子会话可用】工具");
-            int skillsIdx = capsContent.indexOf("【仅子会话可用】技能");
-            assertTrue(toolsIdx < skillsIdx, "工具分区应出现在技能分区之前");
-            assertTrue(capsContent.contains("如需使用上述子会话工具/技能，请调用 _sys_create_child_session"),
-                    "末尾应有调用提示");
+            assertTrue(capsContent.contains("子会话可使用以下工具"));
+            assertTrue(capsContent.contains("子会话可使用以下技能"));
+
+            int toolsIdx = capsContent.indexOf("子会话可使用以下工具");
+            int skillsIdx = capsContent.indexOf("子会话可使用以下技能");
+            assertTrue(toolsIdx < skillsIdx, "工具应出现在技能之前");
+
+            String between = capsContent.substring(toolsIdx + "子会话可使用以下工具".length(), skillsIdx);
+            assertTrue(between.contains("\n\n") || between.trim().isEmpty(),
+                    "工具和技能之间应有空行分隔");
         }
 
         @Test
@@ -415,13 +410,13 @@ class ChatServiceFilteringTest {
             var harness = new TestHarness("1", "sys_prompt", List.of(), List.of(), null, null);
             var captured = executeChat("1", harness);
 
-            String capsContent = findMessageByContent(getSystemMessages(captured), CAP_SEARCH);
+            String capsContent = findMessageByContent(getSystemMessages(captured), "子会话可");
             assertNull(capsContent, "不应有子会话能力消息");
         }
 
         @Test
-        @DisplayName("CHILD 技能归入仅子会话分区，ALL/null 归入均可用分区，PARENT 不出现")
-        void childSessionSkills_shouldGroupByAuthAndExcludeParent() {
+        @DisplayName("子会话技能取 sessionAuth 为 null/ALL/CHILD 的（不应含 PARENT）")
+        void childSessionSkills_shouldIncludeNullAllChild() {
             ToolConfigDTO tool = ToolConfigDTO.builder()
                     .name("child_tool").sessionAuth(SessionAuthType.CHILD).build();
             SkillConfigDTO childSkill = SkillConfigDTO.builder()
@@ -437,14 +432,12 @@ class ChatServiceFilteringTest {
                     List.of(childSkill, allSkill, nullSkill, parentSkill), null, null);
             var captured = executeChat("1", harness);
 
-            String capsContent = findMessageByContent(getSystemMessages(captured), CAP_SEARCH);
+            String capsContent = findMessageByContent(getSystemMessages(captured), "子会话可");
             assertNotNull(capsContent);
-            assertTrue(capsContent.contains("child_skill"), "CHILD 技能应包含");
-            assertTrue(capsContent.contains("all_skill"), "ALL 技能应包含");
-            assertTrue(capsContent.contains("null_skill"), "null 权限技能应包含");
-            assertFalse(capsContent.contains("parent_skill"), "PARENT 技能不应包含");
-            assertTrue(capsContent.contains("【仅子会话可用】技能"), "CHILD 技能在仅子会话分区");
-            assertTrue(capsContent.contains("【均可用】技能"), "ALL/null 技能在均可用分区");
+            assertTrue(capsContent.contains("child_skill"), "子会话应包含 CHILD 技能");
+            assertTrue(capsContent.contains("all_skill"), "子会话应包含 ALL 技能");
+            assertTrue(capsContent.contains("null_skill"), "子会话应包含 null 权限技能");
+            assertFalse(capsContent.contains("parent_skill"), "子会话不应包含 PARENT 技能");
         }
 
         @Test
@@ -459,7 +452,7 @@ class ChatServiceFilteringTest {
                     List.of(childTool), List.of(childSkill), null, "99");
             var captured = executeChat("1", harness);
 
-            String capsContent = findMessageByContent(getSystemMessages(captured), CAP_SEARCH);
+            String capsContent = findMessageByContent(getSystemMessages(captured), "子会话可");
             assertNull(capsContent, "子会话自身不应生成子会话能力消息");
         }
     }

@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_04e092319ffeuD5wyMZjEBwtr4",
+  "content": "## 待测试功能\n\n### 变更概述\n修改 ChatService.java 中 isMainSession 分支（约182-229行）的子会话工具/技能提示语：\n\n1. 标题从\"子会话可使用以下工具/技能\"改为\"以下工具/技能仅供子会话使用，当前会话不可直接调用\"\n2. 工具列表按 SessionAuthType 分组展示：CHILD 类型标注\"【仅子会话可用】\"，ALL/null 类型标注\"【子会话和当前会话均可用】\"\n3. 技能列表同理分组展示\n4. 末尾追加提示\"如需使用上述子会话工具/技能，请调用 _sys_create_child_session 开启子会话执行任务\"\n\n### 涉及的文件\n- agent-base/src/main/java/com/ghost616/agentbase/service/agent/ChatService.java\n- agent-base/src/test/java/com/ghost616/agentbase/service/agent/ChatServiceFilteringTest.java\n\n### 需要测试的测试类\n- ChatServiceFilteringTest.ChildSessionCapabilitiesMergeTest（共6个测试用例）\n",
+  "timestamp": "2026-07-30T07:40:45.189Z"
+}
