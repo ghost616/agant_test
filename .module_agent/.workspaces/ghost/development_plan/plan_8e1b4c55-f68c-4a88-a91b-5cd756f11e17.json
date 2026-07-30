@@ -1,7 +1,7 @@
 {
-  "plan_id": "plan_c4fc6bf8-0936-4122-bc07-386c38628456",
+  "plan_id": "plan_8e1b4c55-f68c-4a88-a91b-5cd756f11e17",
   "module_name": "",
-  "development_plan": "EvaluationExecutionService 重构：提取 getBenchmarkUserMessages() 私有方法，创建 ExecutionSessionContext record，修改 createExecutionSession 返回类型，Controller 移除重复查询",
+  "development_plan": "EvaluationServiceImpl create() 和 update() 的名称唯一性校验添加 agentEvalId 限制",
   "session_id": "",
   "modified_files": [
     "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultMessageDataProvider.java",

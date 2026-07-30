@@ -8,24 +8,8 @@
     "test_passed": false
   },
   {
-    "plan_id": "plan_3824059b-a014-414c-b0a0-508979b04251",
-    "plan_summary": "审查评估流程rollback过滤",
-    "starter_session_id": "ses_04e79173dffeTA3dLmJLx410S6",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": false
-  },
-  {
-    "plan_id": "plan_c4fc6bf8-0936-4122-bc07-386c38628456",
-    "plan_summary": "审查重构：提取公共方法消除三处重复查询",
-    "starter_session_id": "ses_04e79173dffeTA3dLmJLx410S6",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": false
-  },
-  {
-    "plan_id": "plan_f4f0b5fb-4752-4e58-8e7f-42be99199c6a",
-    "plan_summary": "审查：去掉改进建议，输出格式改为表格",
+    "plan_id": "plan_8e1b4c55-f68c-4a88-a91b-5cd756f11e17",
+    "plan_summary": "审查：评估名称校验改为agentEvalId内唯一",
     "starter_session_id": "ses_04e79173dffeTA3dLmJLx410S6",
     "code_reviewed": true,
     "plan_completed": true,

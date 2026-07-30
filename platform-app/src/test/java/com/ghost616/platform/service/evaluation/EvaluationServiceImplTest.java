@@ -7,6 +7,7 @@ import com.ghost616.agentbase.exception.BusinessException;
 import com.ghost616.platform.dto.evaluation.EvaluationCreateRequest;
 import com.ghost616.platform.dto.evaluation.EvaluationDTO;
 import com.ghost616.platform.dto.evaluation.EvaluationResultDTO;
+import com.ghost616.platform.dto.evaluation.EvaluationUpdateRequest;
 import com.ghost616.platform.entity.*;
 import com.ghost616.platform.repository.*;
 import org.junit.jupiter.api.BeforeEach;
@@ -61,7 +62,6 @@ class EvaluationServiceImplTest {
     private ArgumentCaptor<SessionTool> sessionToolCaptor;
     @Captor
     private ArgumentCaptor<SessionSkill> sessionSkillCaptor;
-
     private static final Long SESSION_ID = 100L;
     private static final Long AGENT_ID = 50L;
     private static final Long AGENT_EVAL_ID = 10L;
@@ -103,6 +103,101 @@ class EvaluationServiceImplTest {
         config.setName("test-agent");
         config.setSystemPrompt("You are a test agent");
         return config;
+    }
+
+    @Nested
+    class UpdateTests {
+
+        private static final Long EVALUATION_ID = 200L;
+        private static final Long OTHER_AGENT_EVAL_ID = 20L;
+
+        private Evaluation existingEntity() {
+            Evaluation entity = new Evaluation();
+            entity.setId(EVALUATION_ID);
+            entity.setName("original-name");
+            entity.setDescription("original desc");
+            entity.setModelId(MODEL_ID);
+            entity.setExecutionCount(1);
+            entity.setAgentEvalId(AGENT_EVAL_ID);
+            entity.setAgentId(AGENT_ID);
+            entity.setExecutionType("BACKGROUND");
+            return entity;
+        }
+
+        @Test
+        void changeNameToDuplicateInSameAgentEvalId_shouldThrow() {
+            Evaluation entity = existingEntity();
+            when(evaluationMapper.selectById(EVALUATION_ID)).thenReturn(entity);
+            when(evaluationMapper.selectCount(any())).thenReturn(1L);
+
+            EvaluationUpdateRequest request = new EvaluationUpdateRequest();
+            request.setName("duplicate-name");
+
+            BusinessException ex = assertThrows(BusinessException.class,
+                    () -> service.update(EVALUATION_ID, request));
+            assertEquals(ErrorCode.EVALUATION_ALREADY_EXISTS, ex.getErrorCode());
+        }
+
+        @Test
+        void changeNameNoDuplicate_shouldUpdateName() {
+            Evaluation entity = existingEntity();
+            when(evaluationMapper.selectById(EVALUATION_ID)).thenReturn(entity);
+            when(evaluationMapper.selectCount(any())).thenReturn(0L);
+
+            EvaluationUpdateRequest request = new EvaluationUpdateRequest();
+            request.setName("new-name");
+
+            EvaluationDTO result = service.update(EVALUATION_ID, request);
+
+            verify(evaluationMapper).updateById(any(Evaluation.class));
+            assertEquals("new-name", result.getName());
+        }
+
+        @Test
+        void nameNotChanged_shouldSkipUniquenessCheck() {
+            Evaluation entity = existingEntity();
+            when(evaluationMapper.selectById(EVALUATION_ID)).thenReturn(entity);
+
+            EvaluationUpdateRequest request = new EvaluationUpdateRequest();
+            request.setName("original-name");
+
+            service.update(EVALUATION_ID, request);
+
+            verify(evaluationMapper, never()).selectCount(any());
+            verify(evaluationMapper).updateById(any(Evaluation.class));
+        }
+
+        @Test
+        void updateAllFields_shouldSucceed() {
+            Evaluation entity = existingEntity();
+            when(evaluationMapper.selectById(EVALUATION_ID)).thenReturn(entity);
+            when(evaluationMapper.selectCount(any())).thenReturn(0L);
+
+            EvaluationUpdateRequest request = new EvaluationUpdateRequest();
+            request.setName("new-name");
+            request.setDescription("new desc");
+            request.setModelId(99L);
+            request.setExecutionCount(5);
+            request.setExecutionType("ONLINE");
+
+            EvaluationDTO result = service.update(EVALUATION_ID, request);
+
+            assertNotNull(result);
+            assertEquals("new-name", result.getName());
+            verify(evaluationMapper).updateById(any(Evaluation.class));
+        }
+
+        @Test
+        void entityNotFound_shouldThrow() {
+            when(evaluationMapper.selectById(EVALUATION_ID)).thenReturn(null);
+
+            EvaluationUpdateRequest request = new EvaluationUpdateRequest();
+            request.setName("new-name");
+
+            BusinessException ex = assertThrows(BusinessException.class,
+                    () -> service.update(EVALUATION_ID, request));
+            assertEquals(ErrorCode.EVALUATION_NOT_FOUND, ex.getErrorCode());
+        }
     }
 
     @Nested
@@ -240,6 +335,32 @@ class EvaluationServiceImplTest {
             EvaluationCreateRequest request = createRequest();
             BusinessException ex = assertThrows(BusinessException.class, () -> service.create(request));
             assertEquals(ErrorCode.EVALUATION_ALREADY_EXISTS, ex.getErrorCode());
+        }
+
+        @Test
+        void duplicateNameDifferentAgentEvalId_shouldSucceed() {
+            when(evaluationMapper.selectCount(any())).thenReturn(0L);
+            AgentEvaluation agentEval = createAgentEval();
+            when(agentEvaluationMapper.selectById(AGENT_EVAL_ID)).thenReturn(agentEval);
+            when(agentConfigMapper.selectById(AGENT_ID)).thenReturn(null);
+            doAnswer(inv -> {
+                Session s = inv.getArgument(0);
+                s.setId(SESSION_ID);
+                return null;
+            }).when(sessionMapper).insert(any(Session.class));
+            when(agentToolMapper.selectList(any())).thenReturn(List.of());
+            when(agentSkillMapper.selectList(any())).thenReturn(List.of());
+            doAnswer(inv -> {
+                Evaluation e = inv.getArgument(0);
+                e.setId(999L);
+                return null;
+            }).when(evaluationMapper).insert(any(Evaluation.class));
+
+            EvaluationCreateRequest request = createRequest();
+            EvaluationDTO result = service.create(request);
+
+            assertNotNull(result);
+            verify(evaluationMapper).selectCount(any());
         }
 
         @Test

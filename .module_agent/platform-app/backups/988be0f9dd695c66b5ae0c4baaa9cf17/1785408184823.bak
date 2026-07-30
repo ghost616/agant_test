@@ -80,8 +80,7 @@ public class EvaluationServiceImpl implements EvaluationService {
     @Transactional
     public EvaluationDTO create(EvaluationCreateRequest request) {
         LambdaQueryWrapper<Evaluation> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(Evaluation::getName, request.getName())
-                .eq(Evaluation::getAgentEvalId, request.getAgentEvalId());
+        wrapper.eq(Evaluation::getName, request.getName());
         if (evaluationMapper.selectCount(wrapper) > 0) {
             throw new BusinessException(ErrorCode.EVALUATION_ALREADY_EXISTS);
         }
@@ -154,8 +153,7 @@ public class EvaluationServiceImpl implements EvaluationService {
         if (request.getName() != null) {
             if (!request.getName().equals(entity.getName())) {
                 LambdaQueryWrapper<Evaluation> wrapper = new LambdaQueryWrapper<>();
-                wrapper.eq(Evaluation::getName, request.getName())
-                        .eq(Evaluation::getAgentEvalId, entity.getAgentEvalId());
+                wrapper.eq(Evaluation::getName, request.getName());
                 if (evaluationMapper.selectCount(wrapper) > 0) {
                     throw new BusinessException(ErrorCode.EVALUATION_ALREADY_EXISTS);
                 }

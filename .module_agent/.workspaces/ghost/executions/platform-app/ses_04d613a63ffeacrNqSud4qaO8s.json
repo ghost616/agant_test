@@ -1,0 +1,11 @@
+[
+  {
+    "plan_id": "plan_8e1b4c55-f68c-4a88-a91b-5cd756f11e17",
+    "plan": "修改 EvaluationServiceImpl.java 中名称唯一性校验",
+    "modified_files": [
+      "platform-app/src/main/java/com/ghost616/platform/service/evaluation/EvaluationServiceImpl.java"
+    ],
+    "summary": "名称唯一性校验修改任务已启动：将 EvaluationServiceImpl.java 中 create() 和 update() 的名检查从全局唯一改为 agentEvalId 范围内唯一",
+    "errors": []
+  }
+]
