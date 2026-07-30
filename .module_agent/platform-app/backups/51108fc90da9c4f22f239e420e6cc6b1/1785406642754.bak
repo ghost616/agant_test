@@ -276,9 +276,8 @@ class EvaluationExecutionServiceTest {
                 return null;
             }).when(sessionMapper).insert(any(Session.class));
 
-            EvaluationExecutionService.ExecutionSessionContext result = service.createExecutionSession(EVALUATION_ID);
-            assertEquals(EXECUTION_SESSION_ID, result.sessionId());
-            assertEquals(1, result.userMessages().size());
+            Long result = service.createExecutionSession(EVALUATION_ID);
+            assertEquals(EXECUTION_SESSION_ID, result);
         }
 
         @Test
@@ -306,9 +305,8 @@ class EvaluationExecutionServiceTest {
                 return null;
             }).when(sessionMapper).insert(any(Session.class));
 
-            EvaluationExecutionService.ExecutionSessionContext result = service.createExecutionSession(EVALUATION_ID);
-            assertEquals(EXECUTION_SESSION_ID, result.sessionId());
-            assertEquals(1, result.userMessages().size());
+            Long result = service.createExecutionSession(EVALUATION_ID);
+            assertEquals(EXECUTION_SESSION_ID, result);
         }
 
         @Test
@@ -324,9 +322,8 @@ class EvaluationExecutionServiceTest {
                 return null;
             }).when(sessionMapper).insert(any(Session.class));
 
-            EvaluationExecutionService.ExecutionSessionContext result = service.createExecutionSession(EVALUATION_ID);
-            assertEquals(EXECUTION_SESSION_ID, result.sessionId());
-            assertEquals(1, result.userMessages().size());
+            Long result = service.createExecutionSession(EVALUATION_ID);
+            assertEquals(EXECUTION_SESSION_ID, result);
         }
     }
 

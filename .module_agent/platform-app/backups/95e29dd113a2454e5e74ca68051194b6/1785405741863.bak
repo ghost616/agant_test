@@ -27,8 +27,6 @@ import java.util.concurrent.ConcurrentHashMap;
 @RequiredArgsConstructor
 public class EvaluationExecutionService {
 
-    public record ExecutionSessionContext(Long sessionId, List<MessageDataProvider.MessageDTO> userMessages) {}
-
     private static final long STATUS_TTL_MS = 3_600_000;
 
     private final EvaluationMapper evaluationMapper;
@@ -53,7 +51,15 @@ public class EvaluationExecutionService {
             throw new BusinessException(ErrorCode.EVALUATION_NOT_FOUND);
         }
 
-        List<MessageDataProvider.MessageDTO> userMessages = getBenchmarkUserMessages(benchmarkSessionId);
+        List<MessageDataProvider.MessageDTO> benchmarkMessages = messageDataProvider.getMessages(
+                String.valueOf(benchmarkSessionId));
+        List<MessageDataProvider.MessageDTO> userMessages = benchmarkMessages.stream()
+                .filter(m -> "user".equals(m.role()))
+                .toList();
+
+        if (userMessages.isEmpty()) {
+            throw new BusinessException(ErrorCode.EVALUATION_BENCHMARK_NO_USER_MESSAGE);
+        }
 
         Session executionSession = copyBenchmarkSession(benchmarkSessionId);
 
@@ -82,7 +88,7 @@ public class EvaluationExecutionService {
         return dto;
     }
 
-    public ExecutionSessionContext createExecutionSession(Evaluation evaluation) {
+    public Long createExecutionSession(Evaluation evaluation) {
         if (evaluation == null) {
             throw new BusinessException(ErrorCode.EVALUATION_NOT_FOUND);
         }
@@ -92,13 +98,21 @@ public class EvaluationExecutionService {
             throw new BusinessException(ErrorCode.EVALUATION_NOT_FOUND);
         }
 
-        List<MessageDataProvider.MessageDTO> userMessages = getBenchmarkUserMessages(benchmarkSessionId);
+        List<MessageDataProvider.MessageDTO> benchmarkMessages = messageDataProvider.getMessages(
+                String.valueOf(benchmarkSessionId));
+        List<MessageDataProvider.MessageDTO> userMessages = benchmarkMessages.stream()
+                .filter(m -> "user".equals(m.role()))
+                .toList();
+
+        if (userMessages.isEmpty()) {
+            throw new BusinessException(ErrorCode.EVALUATION_BENCHMARK_NO_USER_MESSAGE);
+        }
 
         Session executionSession = copyBenchmarkSession(benchmarkSessionId);
-        return new ExecutionSessionContext(executionSession.getId(), userMessages);
+        return executionSession.getId();
     }
 
-    public ExecutionSessionContext createExecutionSession(Long evaluationId) {
+    public Long createExecutionSession(Long evaluationId) {
         Evaluation evaluation = evaluationMapper.selectById(evaluationId);
         return createExecutionSession(evaluation);
     }
@@ -117,19 +131,6 @@ public class EvaluationExecutionService {
             }
             return false;
         });
-    }
-
-    private List<MessageDataProvider.MessageDTO> getBenchmarkUserMessages(Long benchmarkSessionId) {
-        List<MessageDataProvider.MessageDTO> benchmarkMessages = messageDataProvider.getMessages(
-                String.valueOf(benchmarkSessionId));
-        List<MessageDataProvider.MessageDTO> userMessages = benchmarkMessages.stream()
-                .filter(m -> "user".equals(m.role()))
-                .filter(m -> m.rollback() == null || !m.rollback())
-                .toList();
-        if (userMessages.isEmpty()) {
-            throw new BusinessException(ErrorCode.EVALUATION_BENCHMARK_NO_USER_MESSAGE);
-        }
-        return userMessages;
     }
 
     private Session copyBenchmarkSession(Long benchmarkSessionId) {

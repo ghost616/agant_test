@@ -1,0 +1,33 @@
+[
+  {
+    "plan_id": "plan_3824059b-a014-414c-b0a0-508979b04251",
+    "plan": "评估模块 rollback 过滤",
+    "modified_files": [
+      "platform-app/src/main/java/com/ghost616/platform/service/evaluation/EvaluationExecutionService.java",
+      "platform-app/src/main/java/com/ghost616/platform/controller/EvaluationSessionController.java"
+    ],
+    "summary": "rollback 显式过滤已完成。EvaluationExecutionService.execute()、createExecutionSession()、EvaluationSessionController.createSession() 三处均已追加 rollback 过滤。新增 12 个测试用例，全部 23 个测试通过。",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_c4fc6bf8-0936-4122-bc07-386c38628456",
+    "plan": "EvaluationExecutionService 重构",
+    "modified_files": [
+      "platform-app/src/main/java/com/ghost616/platform/service/evaluation/EvaluationExecutionService.java",
+      "platform-app/src/main/java/com/ghost616/platform/controller/EvaluationSessionController.java",
+      "platform-app/src/test/java/com/ghost616/platform/service/evaluation/EvaluationExecutionServiceTest.java",
+      "platform-app/src/test/java/com/ghost616/platform/controller/EvaluationSessionControllerTest.java"
+    ],
+    "summary": "EvaluationExecutionService 重构完成：提取私有方法 getBenchmarkUserMessages() 封装 getMessages + user过滤 + rollback过滤 + 非空验证；创建内部 record ExecutionSessionContext(sessionId, userMessages)；createExecutionSession(Evaluation/Long) 返回类型由 Long 改为 ExecutionSessionContext；execute() 和 createExecutionSession() 统一调用 getBenchmarkUserMessages() 消除重复。EvaluationSessionController.createSession() 移除重复的 messageDataProvider.getMessages() 查询，直接使用 ExecutionSessionContext 中的 userMessages 数据。",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_f4f0b5fb-4752-4e58-8e7f-42be99199c6a",
+    "plan": "评分规则格式调整",
+    "modified_files": [
+      "platform-app/src/main/resources/evaluation/scoring-rules.txt"
+    ],
+    "summary": "scoring-rules.txt 中的输出格式从内联文本改为 Markdown 表格，并移除\"改进建议\"行。无逻辑变更，无需测试。",
+    "errors": []
+  }
+]

@@ -1,5 +1,6 @@
 package com.ghost616.platform.controller;
 
+import com.ghost616.agentbase.service.agent.MessageDataProvider;
 import com.ghost616.platform.dto.ApiResponse;
 import com.ghost616.platform.dto.evaluation.EvaluationSessionCreateResponse;
 import com.ghost616.platform.entity.Evaluation;
@@ -23,6 +24,7 @@ public class EvaluationSessionController {
 
     private final EvaluationExecutionService evaluationExecutionService;
     private final EvaluationMapper evaluationMapper;
+    private final MessageDataProvider messageDataProvider;
 
     @PostMapping("/{id}/session")
     public ApiResponse<EvaluationSessionCreateResponse> createSession(@PathVariable Long id) {
@@ -31,14 +33,17 @@ public class EvaluationSessionController {
             throw new BusinessException(ErrorCode.EVALUATION_NOT_FOUND);
         }
 
-        EvaluationExecutionService.ExecutionSessionContext context = evaluationExecutionService.createExecutionSession(evaluation);
+        Long executionSessionId = evaluationExecutionService.createExecutionSession(evaluation);
 
-        List<String> userMessages = context.userMessages().stream()
+        List<MessageDataProvider.MessageDTO> benchmarkMessages = messageDataProvider.getMessages(
+                String.valueOf(evaluation.getBenchmarkSessionId()));
+        List<String> userMessages = benchmarkMessages.stream()
+                .filter(m -> "user".equals(m.role()))
                 .map(m -> m.content() != null ? m.content() : "")
                 .toList();
 
         EvaluationSessionCreateResponse response = EvaluationSessionCreateResponse.builder()
-                .sessionId(context.sessionId())
+                .sessionId(executionSessionId)
                 .userMessages(userMessages)
                 .build();
 
