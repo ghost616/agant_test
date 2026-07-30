@@ -8,16 +8,8 @@
     "test_passed": false
   },
   {
-    "plan_id": "plan_8c19e39c-7a4c-433d-928f-abde4c5954cb",
-    "plan_summary": "审查ChatService子会话工具/技能提示语优化",
-    "starter_session_id": "ses_04e79173dffeTA3dLmJLx410S6",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": false
-  },
-  {
-    "plan_id": "plan_fef51d5c-bc26-4fe9-a97a-294f46a7fe16",
-    "plan_summary": "修复ChatService提示语语义矛盾 + 标签简化",
+    "plan_id": "plan_fe36f15d-5903-49c1-bc6d-62d4d4c8da5e",
+    "plan_summary": "审查ToolManager CHILD过滤从getSessionTools移到getInvoker",
     "starter_session_id": "ses_04e79173dffeTA3dLmJLx410S6",
     "code_reviewed": true,
     "plan_completed": true,

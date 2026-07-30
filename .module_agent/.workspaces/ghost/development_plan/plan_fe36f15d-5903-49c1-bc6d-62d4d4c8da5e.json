@@ -1,7 +1,7 @@
 {
-  "plan_id": "plan_fef51d5c-bc26-4fe9-a97a-294f46a7fe16",
+  "plan_id": "plan_fe36f15d-5903-49c1-bc6d-62d4d4c8da5e",
   "module_name": "",
-  "development_plan": "ChatService.java line 207 提示语从\"仅供子会话使用\"改为\"权限说明\"避免与\"均可用\"分组矛盾，分组标签从\"子会话和当前会话均可用\"简化为\"均可用\"",
+  "development_plan": "ToolManager.java：移除getSessionTools中主会话的CHILD过滤，改为在getInvoker中按sessionAuth过滤",
   "session_id": "",
   "modified_files": [
     "agent-base/src/main/java/com/ghost616/agentbase/service/agent/AgentExecutionContext.java",
@@ -86,7 +86,6 @@
     "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/HookData.java",
     "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/ToolHookContext.java",
     "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/HookManager.java",
-    "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/CustomToolInvoker.java",
-    "agent-base/src/test/java/com/ghost616/agentbase/service/agent/ChatServiceFilteringTest.java"
+    "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/CustomToolInvoker.java"
   ]
 }

@@ -54,11 +54,9 @@ public class ToolManager {
 
     public ToolInvoker getInvoker(String sessionId, String toolName) {
         ensureInitialized();
-        boolean subSession = isSubSession(sessionId);
-        List<ToolSessionObject> sessionTools = getSessionTools(sessionId, subSession);
+        List<ToolSessionObject> sessionTools = getSessionTools(sessionId, isSubSession(sessionId));
         ToolInvoker invoker = sessionTools.stream()
                 .filter(tso -> tso.toolConfig().getName().equals(toolName))
-                .filter(tso -> subSession || tso.toolConfig().getSessionAuth() != SessionAuthType.CHILD)
                 .map(ToolSessionObject::invoker)
                 .findFirst()
                 .orElse(null);
@@ -127,6 +125,9 @@ public class ToolManager {
                             tso.mcpOriginalConfig(), List.of(), List.of()));
                 }
                 result = processed;
+            }
+            if (!isSubSession(id)) {
+                result.removeIf(tso -> tso.toolConfig().getSessionAuth() == SessionAuthType.CHILD);
             }
             return result;
         });

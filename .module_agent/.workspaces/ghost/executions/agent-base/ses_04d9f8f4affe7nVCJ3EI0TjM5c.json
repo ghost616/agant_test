@@ -1,0 +1,12 @@
+[
+  {
+    "plan_id": "plan_fe36f15d-5903-49c1-bc6d-62d4d4c8da5e",
+    "plan": "修改 ToolManager.java 的 getSessionTools/getInvoker 方法",
+    "modified_files": [
+      "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/ToolManager.java",
+      "agent-base/src/test/java/com/ghost616/agentbase/service/agent/invoker/ToolManagerTest.java"
+    ],
+    "summary": "已完成 ToolManager.java 的两处修改及对应测试更新",
+    "errors": []
+  }
+]

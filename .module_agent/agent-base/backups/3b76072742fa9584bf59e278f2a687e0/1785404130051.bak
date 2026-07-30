@@ -6,7 +6,6 @@ import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
 import com.ghost616.agentbase.enums.SessionAuthType;
 import com.ghost616.agentbase.enums.ToolType;
 import com.ghost616.agentbase.service.agent.AgentContextManager;
-import com.ghost616.agentbase.service.agent.AgentExecutionContext;
 import com.ghost616.agentbase.service.agent.ToolDataProvider;
 import com.ghost616.agentbase.service.agent.ToolDataProvider.SessionToolInfo;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,7 +26,6 @@ class ToolManagerTest {
     private ToolManager toolManager;
     private ToolDataProvider dataProvider;
     private AgentComponentRegistry registry;
-    private AgentContextManager agentContextManager;
     private ConcurrentHashMap<String, ToolManager.ToolSessionObject> toolCache;
 
     @BeforeEach
@@ -35,8 +33,7 @@ class ToolManagerTest {
         registry = mock(AgentComponentRegistry.class);
         dataProvider = mock(ToolDataProvider.class);
         when(registry.getToolDataProvider()).thenReturn(dataProvider);
-        agentContextManager = mock(AgentContextManager.class);
-        when(registry.getAgentContextManager()).thenReturn(agentContextManager);
+        when(registry.getAgentContextManager()).thenReturn(mock(AgentContextManager.class));
 
         toolManager = new ToolManager(registry);
 
@@ -71,8 +68,7 @@ class ToolManagerTest {
 
         List<ToolManager.ToolSessionObject> result = toolManager.getSessionTools(sessionId, false);
 
-        assertEquals(1, result.size(), "getSessionTools 返回完整工具列表，不再过滤 CHILD");
-        assertEquals(SessionAuthType.CHILD, result.get(0).toolConfig().getSessionAuth());
+        assertEquals(0, result.size(), "父会话应过滤掉 sessionAuth=CHILD 的工具");
     }
 
     @Test
@@ -100,7 +96,7 @@ class ToolManagerTest {
     }
 
     @Test
-    void 父会话MCP工具ALL时产生PARENT展开副本和CHILD原始配置() {
+    void 父会话MCP工具ALL时产生PARENT展开副本并过滤CHILD原始配置() {
         String sessionId = "300";
         ToolConfigDTO originalConfig = ToolConfigDTO.builder()
                 .id("3").name("mcp-all").toolType(ToolType.MCP_HTTP).implPath("http://localhost/mcp")
@@ -118,17 +114,12 @@ class ToolManagerTest {
 
         List<ToolManager.ToolSessionObject> result = toolManager.getSessionTools(sessionId, false);
 
-        assertEquals(2, result.size(), "getSessionTools 返回完整工具列表，含 PARENT 展开和 CHILD 原始配置");
+        assertEquals(1, result.size(), "父会话应过滤掉 sessionAuth=CHILD 的副本");
         // result[0]: PARENT copy of expanded McpExpandedToolDTO
         assertEquals(SessionAuthType.PARENT, result.get(0).toolConfig().getSessionAuth());
         assertTrue(result.get(0).toolConfig() instanceof McpExpandedToolDTO);
         assertEquals("mcp-all_tool1", result.get(0).toolConfig().getName());
         assertNotNull(result.get(0).invoker());
-        // result[1]: CHILD copy of original config
-        assertEquals(SessionAuthType.CHILD, result.get(1).toolConfig().getSessionAuth());
-        assertFalse(result.get(1).toolConfig() instanceof McpExpandedToolDTO);
-        assertEquals("mcp-all", result.get(1).toolConfig().getName());
-        assertNull(result.get(1).invoker());
     }
 
     @Test
@@ -178,8 +169,8 @@ class ToolManagerTest {
 
         // java-tool: PARENT from SessionToolInfo
         // mcp-cfg_toolA: PARENT (isMcpTool)
-        // mcp-cfg: CHILD copy, now preserved
-        assertEquals(3, result.size(), "getSessionTools 返回完整工具列表，含 CHILD 副本");
+        // mcp-cfg: CHILD copy removed by parent session filter
+        assertEquals(2, result.size(), "父会话应过滤掉 sessionAuth=CHILD 的副本");
         // result[0]: java-tool, non-MCP, uses info.sessionAuth=PARENT
         assertEquals(SessionAuthType.PARENT, result.get(0).toolConfig().getSessionAuth());
         assertFalse(result.get(0).toolConfig() instanceof McpExpandedToolDTO);
@@ -188,11 +179,6 @@ class ToolManagerTest {
         assertEquals(SessionAuthType.PARENT, result.get(1).toolConfig().getSessionAuth());
         assertTrue(result.get(1).toolConfig() instanceof McpExpandedToolDTO);
         assertEquals("mcp-cfg_toolA", result.get(1).toolConfig().getName());
-        // result[2]: mcp-cfg, CHILD copy
-        assertEquals(SessionAuthType.CHILD, result.get(2).toolConfig().getSessionAuth());
-        assertFalse(result.get(2).toolConfig() instanceof McpExpandedToolDTO);
-        assertEquals("mcp-cfg", result.get(2).toolConfig().getName());
-        assertNull(result.get(2).invoker());
     }
 
     @Test
@@ -326,64 +312,5 @@ class ToolManagerTest {
         assertEquals("tool-beta", result.getName());
         assertEquals("102", result.getId());
         assertEquals(ToolType.PYTHON, result.getToolType());
-    }
-
-    @Test
-    void 主会话获取CHILD工具invoker应返回null() {
-        String sessionId = "getInvoker-main-session";
-        ToolConfigDTO dto = ToolConfigDTO.builder()
-                .id("child-inv-1").name("child-tool").toolType(ToolType.JAVA).implPath("com.test.Child")
-                .sessionAuth(SessionAuthType.CHILD).build();
-        ToolInvoker invoker = mock(ToolInvoker.class);
-        toolCache.put("child-inv-1", new ToolManager.ToolSessionObject(dto, invoker, null, List.of(), List.of()));
-
-        when(dataProvider.getSessionToolIds(sessionId))
-                .thenReturn(List.of(new SessionToolInfo("child-inv-1", SessionAuthType.CHILD)));
-
-        ToolInvoker result = toolManager.getInvoker(sessionId, "child-tool");
-
-        assertNull(result);
-    }
-
-    @Test
-    void 子会话获取CHILD工具invoker应返回invoker() {
-        String sessionId = "getInvoker-sub-session";
-        ToolConfigDTO dto = ToolConfigDTO.builder()
-                .id("child-inv-2").name("child-tool-2").toolType(ToolType.JAVA).implPath("com.test.Child2")
-                .sessionAuth(SessionAuthType.CHILD).build();
-        ToolInvoker invoker = mock(ToolInvoker.class);
-        toolCache.put("child-inv-2", new ToolManager.ToolSessionObject(dto, invoker, null, List.of(), List.of()));
-
-        when(dataProvider.getSessionToolIds(sessionId))
-                .thenReturn(List.of(new SessionToolInfo("child-inv-2", SessionAuthType.CHILD)));
-
-        AgentContextManager.AgentSessionContext mockCtx = mock(AgentContextManager.AgentSessionContext.class);
-        AgentExecutionContext mockExecCtx = mock(AgentExecutionContext.class);
-        when(mockCtx.context()).thenReturn(mockExecCtx);
-        when(mockExecCtx.isMainSession()).thenReturn(false);
-        when(agentContextManager.get(sessionId)).thenReturn(mockCtx);
-
-        ToolInvoker result = toolManager.getInvoker(sessionId, "child-tool-2");
-
-        assertNotNull(result);
-        assertSame(invoker, result);
-    }
-
-    @Test
-    void 主会话获取非CHILD工具invoker行为不变() {
-        String sessionId = "getInvoker-main-session-2";
-        ToolConfigDTO dto = ToolConfigDTO.builder()
-                .id("normal-inv-1").name("normal-tool").toolType(ToolType.JAVA).implPath("com.test.Normal")
-                .sessionAuth(SessionAuthType.ALL).build();
-        ToolInvoker invoker = mock(ToolInvoker.class);
-        toolCache.put("normal-inv-1", new ToolManager.ToolSessionObject(dto, invoker, null, List.of(), List.of()));
-
-        when(dataProvider.getSessionToolIds(sessionId))
-                .thenReturn(List.of(new SessionToolInfo("normal-inv-1", SessionAuthType.PARENT)));
-
-        ToolInvoker result = toolManager.getInvoker(sessionId, "normal-tool");
-
-        assertNotNull(result);
-        assertSame(invoker, result);
     }
 }
