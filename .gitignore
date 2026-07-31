@@ -4,3 +4,4 @@ node_modules
 target
 .maven
 *.log
+.lizhu_env
