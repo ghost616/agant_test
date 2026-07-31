@@ -24,4 +24,8 @@ public interface EvaluationService {
     EvaluationResultDTO getResultById(Long resultId);
 
     void deleteResult(Long resultId);
+
+    void batchDeleteResults(List<Long> resultIds);
+
+    void clearResults(Long evaluationId);
 }

@@ -74,4 +74,16 @@ public class EvaluationController {
         evaluationService.deleteResult(resultId);
         return ApiResponse.success(null);
     }
+
+    @PostMapping("/results/batch-delete")
+    public ApiResponse<Void> batchDeleteResults(@RequestBody List<Long> resultIds) {
+        evaluationService.batchDeleteResults(resultIds);
+        return ApiResponse.success(null);
+    }
+
+    @DeleteMapping("/{evaluationId}/results")
+    public ApiResponse<Void> clearResults(@PathVariable Long evaluationId) {
+        evaluationService.clearResults(evaluationId);
+        return ApiResponse.success(null);
+    }
 }

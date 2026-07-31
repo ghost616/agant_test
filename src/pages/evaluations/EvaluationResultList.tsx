@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { Key } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button, message, Modal, Popconfirm, Space, Spin, Table, Tag } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
@@ -8,6 +9,8 @@ import {
   getEvaluation,
   getEvaluationResults,
   deleteEvaluationResult,
+  batchDeleteEvaluationResults,
+  clearEvaluationResults,
 } from '../../services/evaluation';
 import { listModels } from '../../services/model';
 import { useEvaluationExecute } from './hooks/useEvaluationExecute';
@@ -19,6 +22,7 @@ function EvaluationResultList(): JSX.Element {
   const [dataSource, setDataSource] = useState<EvaluationResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [models, setModels] = useState<ModelConfig[]>([]);
+  const [selectedRowKeys, setSelectedRowKeys] = useState<Key[]>([]);
 
   const {
     execute,
@@ -57,6 +61,46 @@ function EvaluationResultList(): JSX.Element {
     if (!evaluationId || !evaluation) return;
     await execute(evaluationId, evaluation, fetchData);
   }, [evaluationId, evaluation, execute, fetchData]);
+
+  const handleBatchDelete = useCallback((): void => {
+    if (selectedRowKeys.length === 0) return;
+    Modal.confirm({
+      title: '批量删除',
+      content: `确定要删除选中的 ${selectedRowKeys.length} 条评估结果吗？`,
+      okText: '删除',
+      okButtonProps: { danger: true },
+      onOk: async (): Promise<void> => {
+        try {
+          await batchDeleteEvaluationResults(selectedRowKeys.map(String));
+          message.success('批量删除成功');
+          setSelectedRowKeys([]);
+          await fetchData();
+        } catch {
+          message.error('批量删除失败');
+        }
+      },
+    });
+  }, [selectedRowKeys, fetchData]);
+
+  const handleClear = useCallback((): void => {
+    if (!evaluationId) return;
+    Modal.confirm({
+      title: '清空结果',
+      content: '确定要清空该评估下的所有评估结果吗？',
+      okText: '清空',
+      okButtonProps: { danger: true },
+      onOk: async (): Promise<void> => {
+        try {
+          await clearEvaluationResults(evaluationId);
+          message.success('清空成功');
+          setSelectedRowKeys([]);
+          await fetchData();
+        } catch {
+          message.error('清空失败');
+        }
+      },
+    });
+  }, [evaluationId, fetchData]);
 
   const modelMap = useMemo(() => {
     const map: Record<string, string> = {};
@@ -172,6 +216,16 @@ function EvaluationResultList(): JSX.Element {
         >
           执行
         </Button>
+        <Button
+          danger
+          disabled={selectedRowKeys.length === 0}
+          onClick={handleBatchDelete}
+        >
+          批量删除
+        </Button>
+        <Button danger onClick={handleClear}>
+          清空
+        </Button>
         {executionProgress && (
           <span style={{ color: '#888' }}>{executionProgress}</span>
         )}
@@ -184,6 +238,10 @@ function EvaluationResultList(): JSX.Element {
         loading={loading}
         pagination={false}
         scroll={{ x: 1200 }}
+        rowSelection={{
+          selectedRowKeys,
+          onChange: (keys) => setSelectedRowKeys(keys),
+        }}
       />
 
       <Modal

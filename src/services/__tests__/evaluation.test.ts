@@ -22,6 +22,8 @@ import {
   getGenerateStatus,
   getEvaluationResult,
   deleteEvaluationResult,
+  batchDeleteEvaluationResults,
+  clearEvaluationResults,
 } from '../evaluation';
 
 describe('executeEvaluation', () => {
@@ -228,5 +230,66 @@ describe('deleteEvaluationResult', () => {
   it('应在 API 失败时抛出错误', async () => {
     mockDelete.mockRejectedValueOnce(new Error('Network Error'));
     await expect(deleteEvaluationResult('result-1')).rejects.toThrow('Network Error');
+  });
+});
+
+describe('batchDeleteEvaluationResults', () => {
+  beforeEach(() => {
+    mockPost.mockReset();
+  });
+
+  it('应调用 POST /evaluations/results/batch-delete 并传 ids 裸数组', async () => {
+    mockPost.mockResolvedValueOnce(undefined);
+    await batchDeleteEvaluationResults(['result-1', 'result-2']);
+    expect(mockPost).toHaveBeenCalledWith('/evaluations/results/batch-delete', [
+      'result-1',
+      'result-2',
+    ]);
+  });
+
+  it('应正确传递单个 id 的数组', async () => {
+    mockPost.mockResolvedValueOnce(undefined);
+    await batchDeleteEvaluationResults(['result-a']);
+    expect(mockPost).toHaveBeenCalledWith('/evaluations/results/batch-delete', [
+      'result-a',
+    ]);
+  });
+
+  it('应支持空数组传入', async () => {
+    mockPost.mockResolvedValueOnce(undefined);
+    await batchDeleteEvaluationResults([]);
+    expect(mockPost).toHaveBeenCalledWith('/evaluations/results/batch-delete', []);
+  });
+
+  it('应在 API 失败时抛出错误', async () => {
+    mockPost.mockRejectedValueOnce(new Error('Network Error'));
+    await expect(batchDeleteEvaluationResults(['result-1'])).rejects.toThrow('Network Error');
+  });
+});
+
+describe('clearEvaluationResults', () => {
+  beforeEach(() => {
+    mockDelete.mockReset();
+  });
+
+  it('应调用 DELETE /evaluations/{evaluationId}/results 并返回 Promise<void>', async () => {
+    mockDelete.mockResolvedValueOnce(undefined);
+    await clearEvaluationResults('eval-123');
+    expect(mockDelete).toHaveBeenCalledWith('/evaluations/eval-123/results');
+  });
+
+  it('应正确处理不同 evaluationId', async () => {
+    mockDelete.mockResolvedValueOnce(undefined);
+    await clearEvaluationResults('eval-a');
+    expect(mockDelete).toHaveBeenCalledWith('/evaluations/eval-a/results');
+
+    mockDelete.mockResolvedValueOnce(undefined);
+    await clearEvaluationResults('eval-b');
+    expect(mockDelete).toHaveBeenCalledWith('/evaluations/eval-b/results');
+  });
+
+  it('应在 API 失败时抛出错误', async () => {
+    mockDelete.mockRejectedValueOnce(new Error('Network Error'));
+    await expect(clearEvaluationResults('eval-123')).rejects.toThrow('Network Error');
   });
 });

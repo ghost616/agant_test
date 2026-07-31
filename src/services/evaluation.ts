@@ -103,3 +103,11 @@ export async function getGenerateStatus(
 export async function deleteEvaluationResult(id: string): Promise<void> {
   await api.delete(`/evaluations/results/${id}`);
 }
+
+export async function batchDeleteEvaluationResults(ids: string[]): Promise<void> {
+  await api.post('/evaluations/results/batch-delete', ids);
+}
+
+export async function clearEvaluationResults(evaluationId: string): Promise<void> {
+  await api.delete(`/evaluations/${evaluationId}/results`);
+}

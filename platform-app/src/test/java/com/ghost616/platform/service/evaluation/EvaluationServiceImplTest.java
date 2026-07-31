@@ -335,6 +335,99 @@ class EvaluationServiceImplTest {
     }
 
     @Nested
+    class BatchDeleteResultsTests {
+
+        private static final Long RESULT_ID_1 = 1100L;
+        private static final Long RESULT_ID_2 = 1101L;
+        private static final Long SESSION_ID_LOCAL_1 = 1200L;
+        private static final Long SESSION_ID_LOCAL_2 = 1201L;
+
+        private EvaluationResult result(Long id, Long sessionId) {
+            EvaluationResult r = new EvaluationResult();
+            r.setId(id);
+            r.setEvaluationSessionId(sessionId);
+            return r;
+        }
+
+        @Test
+        void emptyList_shouldDoNothing() {
+            service.batchDeleteResults(List.of());
+
+            verify(evaluationResultMapper, never()).deleteById(any());
+            verify(sessionMapper, never()).deleteById(any());
+        }
+
+        @Test
+        void nullList_shouldDoNothing() {
+            service.batchDeleteResults(null);
+
+            verify(evaluationResultMapper, never()).deleteById(any());
+            verify(sessionMapper, never()).deleteById(any());
+        }
+
+        @Test
+        void multipleIds_shouldDeleteAllResultsWithCascade() {
+            when(evaluationResultMapper.selectById(RESULT_ID_1)).thenReturn(result(RESULT_ID_1, SESSION_ID_LOCAL_1));
+            when(evaluationResultMapper.selectById(RESULT_ID_2)).thenReturn(result(RESULT_ID_2, SESSION_ID_LOCAL_2));
+            when(messageMapper.selectList(any())).thenReturn(List.of());
+
+            service.batchDeleteResults(List.of(RESULT_ID_1, RESULT_ID_2));
+
+            verify(sessionVariableMapper, times(2)).delete(any());
+            verify(sessionToolMapper, times(2)).delete(any());
+            verify(sessionSkillMapper, times(2)).delete(any());
+            verify(sessionMapper).deleteById(SESSION_ID_LOCAL_1);
+            verify(sessionMapper).deleteById(SESSION_ID_LOCAL_2);
+            verify(evaluationResultMapper).deleteById(RESULT_ID_1);
+            verify(evaluationResultMapper).deleteById(RESULT_ID_2);
+        }
+    }
+
+    @Nested
+    class ClearResultsTests {
+
+        private static final Long EVALUATION_ID_LOCAL = 1300L;
+        private static final Long RESULT_ID_1 = 1400L;
+        private static final Long RESULT_ID_2 = 1401L;
+        private static final Long SESSION_ID_LOCAL_1 = 1500L;
+        private static final Long SESSION_ID_LOCAL_2 = 1501L;
+
+        private EvaluationResult result(Long id, Long sessionId) {
+            EvaluationResult r = new EvaluationResult();
+            r.setId(id);
+            r.setEvaluationSessionId(sessionId);
+            return r;
+        }
+
+        @Test
+        void withResults_shouldDeleteAllResultsWithCascade() {
+            when(evaluationResultMapper.selectList(any()))
+                    .thenReturn(List.of(result(RESULT_ID_1, SESSION_ID_LOCAL_1), result(RESULT_ID_2, SESSION_ID_LOCAL_2)));
+            when(evaluationResultMapper.selectById(RESULT_ID_1)).thenReturn(result(RESULT_ID_1, SESSION_ID_LOCAL_1));
+            when(evaluationResultMapper.selectById(RESULT_ID_2)).thenReturn(result(RESULT_ID_2, SESSION_ID_LOCAL_2));
+            when(messageMapper.selectList(any())).thenReturn(List.of());
+
+            service.clearResults(EVALUATION_ID_LOCAL);
+
+            verify(evaluationResultMapper).selectList(any());
+            verify(sessionMapper).deleteById(SESSION_ID_LOCAL_1);
+            verify(sessionMapper).deleteById(SESSION_ID_LOCAL_2);
+            verify(evaluationResultMapper).deleteById(RESULT_ID_1);
+            verify(evaluationResultMapper).deleteById(RESULT_ID_2);
+        }
+
+        @Test
+        void noResults_shouldDoNothing() {
+            when(evaluationResultMapper.selectList(any())).thenReturn(List.of());
+
+            service.clearResults(EVALUATION_ID_LOCAL);
+
+            verify(sessionMapper, never()).deleteById(any());
+            verify(evaluationResultMapper, never()).deleteById(any());
+        }
+    }
+
+    @Nested
     class CreateTests {
 
         @Test

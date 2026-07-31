@@ -20,6 +20,7 @@ import {
   createEvaluation,
   updateEvaluation,
   deleteEvaluation,
+  clearEvaluationResults,
 } from '../../services/evaluation';
 import { listModels } from '../../services/model';
 
@@ -95,6 +96,22 @@ function EvaluationList(): JSX.Element {
     } catch {
       message.error('删除失败');
     }
+  };
+
+  const handleClearResults = (record: Evaluation): void => {
+    Modal.confirm({
+      title: '清空结果',
+      content: '确定要清空该评估下的所有评估结果吗？',
+      onOk: async () => {
+        try {
+          await clearEvaluationResults(record.id);
+          message.success('清空成功');
+          fetchList();
+        } catch {
+          message.error('清空失败');
+        }
+      },
+    });
   };
 
   const handleModalOk = async (): Promise<void> => {
@@ -207,6 +224,9 @@ function EvaluationList(): JSX.Element {
               基准会话
             </Button>
           )}
+          <Button type="link" size="small" danger onClick={() => handleClearResults(record)}>
+            清空结果
+          </Button>
           <Popconfirm
             title="确定删除该评估？"
             onConfirm={() => handleDelete(record)}

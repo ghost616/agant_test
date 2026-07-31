@@ -114,3 +114,103 @@ describe('EvaluationResultList 表格', () => {
     expect(source).toContain('executionProgress');
   });
 });
+
+describe('EvaluationResultList 多选与批量删除', () => {
+  it('应导入 batchDeleteEvaluationResults', () => {
+    const source = readFileSync(resolve(__dirname, '../EvaluationResultList.tsx'), 'utf-8');
+    expect(source).toContain('batchDeleteEvaluationResults');
+  });
+
+  it('Table 应配置 rowSelection 多选', () => {
+    const source = readFileSync(resolve(__dirname, '../EvaluationResultList.tsx'), 'utf-8');
+    expect(source).toContain('rowSelection');
+    expect(source).toContain('selectedRowKeys');
+    expect(source).toContain('onChange');
+  });
+
+  it('应使用 useState 管理 selectedRowKeys', () => {
+    const source = readFileSync(resolve(__dirname, '../EvaluationResultList.tsx'), 'utf-8');
+    expect(source).toContain("const [selectedRowKeys, setSelectedRowKeys] = useState<Key[]>([])");
+  });
+
+  it('批量删除按钮未勾选任何行时应 disabled', () => {
+    const source = readFileSync(resolve(__dirname, '../EvaluationResultList.tsx'), 'utf-8');
+    const buttonBlock = source.match(/danger\s+disabled=\{selectedRowKeys\.length === 0\}[\s\S]*?批量删除/s);
+    expect(buttonBlock).not.toBeNull();
+  });
+
+  it('点击批量删除应触发 Modal.confirm 二次确认', () => {
+    const source = readFileSync(resolve(__dirname, '../EvaluationResultList.tsx'), 'utf-8');
+    const handleBlock = source.match(/const handleBatchDelete[\s\S]*?}, \[selectedRowKeys, fetchData\]\);/);
+    expect(handleBlock).not.toBeNull();
+    if (handleBlock) {
+      expect(handleBlock[0]).toContain('Modal.confirm');
+      expect(handleBlock[0]).toContain("title: '批量删除'");
+    }
+  });
+
+  it('确认后应调用 batchDeleteEvaluationResults(selectedRowKeys.map(String))', () => {
+    const source = readFileSync(resolve(__dirname, '../EvaluationResultList.tsx'), 'utf-8');
+    expect(source).toContain('batchDeleteEvaluationResults(selectedRowKeys.map(String))');
+  });
+
+  it('批量删除成功后应 message.success + 清空选中 + fetchData 刷新', () => {
+    const source = readFileSync(resolve(__dirname, '../EvaluationResultList.tsx'), 'utf-8');
+    const handleBlock = source.match(/const handleBatchDelete[\s\S]*?}, \[selectedRowKeys, fetchData\]\);/);
+    expect(handleBlock).not.toBeNull();
+    if (handleBlock) {
+      expect(handleBlock[0]).toContain("message.success('批量删除成功')");
+      expect(handleBlock[0]).toContain('setSelectedRowKeys([])');
+      expect(handleBlock[0]).toContain('await fetchData()');
+    }
+  });
+
+  it('批量删除失败时应 message.error', () => {
+    const source = readFileSync(resolve(__dirname, '../EvaluationResultList.tsx'), 'utf-8');
+    expect(source).toContain("message.error('批量删除失败')");
+  });
+});
+
+describe('EvaluationResultList 清空功能', () => {
+  it('应导入 clearEvaluationResults', () => {
+    const source = readFileSync(resolve(__dirname, '../EvaluationResultList.tsx'), 'utf-8');
+    expect(source).toContain('clearEvaluationResults');
+  });
+
+  it('清空按钮应始终可点（不设置 disabled）', () => {
+    const source = readFileSync(resolve(__dirname, '../EvaluationResultList.tsx'), 'utf-8');
+    const buttonBlock = source.match(/<Button danger onClick=\{handleClear\}>[\s\S]*?清空/s);
+    expect(buttonBlock).not.toBeNull();
+  });
+
+  it('点击清空应触发 Modal.confirm 二次确认', () => {
+    const source = readFileSync(resolve(__dirname, '../EvaluationResultList.tsx'), 'utf-8');
+    const handleBlock = source.match(/const handleClear[\s\S]*?}, \[evaluationId, fetchData\]\);/);
+    expect(handleBlock).not.toBeNull();
+    if (handleBlock) {
+      expect(handleBlock[0]).toContain('Modal.confirm');
+      expect(handleBlock[0]).toContain("title: '清空结果'");
+    }
+  });
+
+  it('确认后应调用 clearEvaluationResults(evaluationId)', () => {
+    const source = readFileSync(resolve(__dirname, '../EvaluationResultList.tsx'), 'utf-8');
+    expect(source).toContain('clearEvaluationResults(evaluationId)');
+  });
+
+  it('清空成功后应 message.success + 清空选中 + fetchData 刷新', () => {
+    const source = readFileSync(resolve(__dirname, '../EvaluationResultList.tsx'), 'utf-8');
+    const handleBlock = source.match(/const handleClear[\s\S]*?}, \[evaluationId, fetchData\]\);/);
+    expect(handleBlock).not.toBeNull();
+    if (handleBlock) {
+      expect(handleBlock[0]).toContain("message.success('清空成功')");
+      expect(handleBlock[0]).toContain('setSelectedRowKeys([])');
+      expect(handleBlock[0]).toContain('await fetchData()');
+    }
+  });
+
+  it('清空失败时应 message.error', () => {
+    const source = readFileSync(resolve(__dirname, '../EvaluationResultList.tsx'), 'utf-8');
+    expect(source).toContain("message.error('清空失败')");
+  });
+});

@@ -283,6 +283,29 @@ public class EvaluationServiceImpl implements EvaluationService {
     }
 
     @Override
+    @Transactional
+    public void batchDeleteResults(List<Long> resultIds) {
+        if (resultIds == null || resultIds.isEmpty()) {
+            return;
+        }
+        for (Long resultId : resultIds) {
+            deleteResult(resultId);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void clearResults(Long evaluationId) {
+        LambdaQueryWrapper<EvaluationResult> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(EvaluationResult::getEvaluationId, evaluationId);
+        List<Long> resultIds = evaluationResultMapper.selectList(wrapper)
+                .stream()
+                .map(EvaluationResult::getId)
+                .toList();
+        batchDeleteResults(resultIds);
+    }
+
+    @Override
     public List<EvaluationResultDTO> listResults(Long evaluationId) {
         LambdaQueryWrapper<EvaluationResult> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(EvaluationResult::getEvaluationId, evaluationId);

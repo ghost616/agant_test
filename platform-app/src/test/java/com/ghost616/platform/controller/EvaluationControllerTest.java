@@ -11,6 +11,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -57,6 +59,28 @@ class EvaluationControllerTest {
         assertTrue(response.isSuccess());
         assertNull(response.getData());
         verify(evaluationService).deleteResult(800L);
+    }
+
+    @Test
+    void batchDeleteResults_shouldReturnSuccess() {
+        doNothing().when(evaluationService).batchDeleteResults(List.of(800L, 801L));
+
+        ApiResponse<Void> response = controller.batchDeleteResults(List.of(800L, 801L));
+
+        assertTrue(response.isSuccess());
+        assertNull(response.getData());
+        verify(evaluationService).batchDeleteResults(List.of(800L, 801L));
+    }
+
+    @Test
+    void clearResults_shouldReturnSuccess() {
+        doNothing().when(evaluationService).clearResults(700L);
+
+        ApiResponse<Void> response = controller.clearResults(700L);
+
+        assertTrue(response.isSuccess());
+        assertNull(response.getData());
+        verify(evaluationService).clearResults(700L);
     }
 
     @Test
