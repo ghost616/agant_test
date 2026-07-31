@@ -91,7 +91,7 @@
     },
     {
       "path": "src/pages/evaluations/EvaluationList.tsx",
-      "description": "评估项列表页面组件，从路由参数获取 agentEvalId，表格含名称/描述/智能体 agentName/执行次数/模型/创建时间/操作列，新增/编辑 Modal（name/description/agentEvalId 只读/modelId/executionCount），删除 Popconfirm，返回按钮导航回智能体评估页"
+      "description": "评估项列表页面组件，从路由参数获取 agentEvalId，表格含名称/描述/智能体 agentName/执行次数/模型/创建时间/操作列，新增/编辑 Modal（name/description/agentEvalId 只读/modelId/executionCount），删除 Popconfirm，操作列含清空结果按钮（Modal.confirm 二次确认后调用 clearEvaluationResults 清空该评估下所有结果，成功提示并刷新列表、失败提示），返回按钮导航回智能体评估页"
     },
     {
       "path": "src/pages/evaluations/EvaluationResultList.tsx",

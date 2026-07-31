@@ -116,3 +116,7 @@ platform-app 模块包含以下功能：
 - 评估前台会话控制器(EvaluationSessionController)：POST /api/evaluations/{id}/session（复制基准会话→返回执行会话ID+user消息列表）、POST /api/evaluations/{id}/session/{sessionId}/generate（接收评估ID和会话ID，调用结果生成服务）
 - PlatformApplication 添加 @EnableAsync 注解，支持异步任务执行
 - 审查修复：asyncExecute 提取到独立 @Component AsyncEvaluationExecutor 解决 @Async 自调用问题；executionStatusMap 增加 TTL(1h) + @Scheduled 清理机制；createExecutionSession 新增 Evaluation 参数重载避免重复查询
+- EvaluationResultDTO 新增 modelId(Long, @JsonSerialize ToStringSerializer) 和 finalScore(Integer) 字段
+- EvaluationResultGenerateService 生成评估结果后，调用同一模型从评估结果文本中提取最终评分数字（构建 prompt 要求仅返回数字），将提取的 finalScore 和 Evaluation.modelId 写入 EvaluationResult
+- EvaluationServiceImpl.toResultDTO 映射 EvaluationResult 的 modelId 和 finalScore 字段到 DTO
+- 评估结果删除增强：EvaluationService 新增 batchDeleteResults（@Transactional，循环调用 deleteResult 级联清理 session/message/messageToolCall/sessionVariable/sessionTool/sessionSkill）与 clearResults（按 evaluationId 查询全部 resultId 后批量删除）；EvaluationController 新增 POST /api/evaluations/results/batch-delete（@RequestBody List<Long> 批量删除）和 DELETE /api/evaluations/{evaluationId}/results（清空该评估所有结果）

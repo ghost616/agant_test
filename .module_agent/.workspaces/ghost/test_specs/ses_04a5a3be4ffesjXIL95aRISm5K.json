@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_04a5a3be4ffesjXIL95aRISm5K",
+  "content": "## 待测试功能\n\n### 1. 服务层（src/services/evaluation.ts）\n- 新增 getGenerateStatus(id, sessionId) API：调用 GET /evaluations/{id}/session/{sessionId}/generate/status，返回 GenerateStatusResponse { status, currentStep?, totalSteps? }\n- GenerateStatusResponse 类型定义在 src/types/evaluation.ts\n\n### 2. Hook（src/pages/evaluations/hooks/useEvaluationExecute.ts）\n- 新增 pollGenerateStatus(id, sessionId) 轮询函数（参考 pollExecutionStatus 模式）：\n  - 循环调用 getGenerateStatus，更新 executionProgress 为\"生成进度: x/y\"\n  - 状态为 COMPLETED 或 FAILED 时返回，否则 sleep(2000) 继续轮询\n  - 受 executingRef.current 控制\n- FOREGROUND 分支：await generateEvalResult(...) 后调用 await pollGenerateStatus(evaluationId, evalSession.sessionId) 再输出\"评估结果已生成\"\n- execute 依赖数组包含 pollGenerateStatus\n\n### 3. 测试文件\n- src/services/__tests__/evaluation.test.ts：新增 getGenerateStatus 相关 4 个用例（正确 URL、completed、failed、API 失败抛错）\n- src/pages/evaluations/__tests__/useEvaluationExecute.test.tsx：新增 getGenerateStatus 导入、pollGenerateStatus 调用、COMPLETED/FAILED 状态检查用例",
+  "timestamp": "2026-07-31T01:49:09.125Z"
+}

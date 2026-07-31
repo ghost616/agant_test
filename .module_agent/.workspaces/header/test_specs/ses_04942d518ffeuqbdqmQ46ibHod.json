@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_04942d518ffeuqbdqmQ46ibHod",
+  "content": "## 待测试功能\n\n修改文件：src/pages/evaluations/EvaluationList.tsx\n\n1. 操作列新增\"清空结果\"按钮（danger 类型），位于\"删除\"按钮之前，始终可点击\n2. 新增 handleClearResults 处理函数：点击后弹 Modal.confirm 二次确认（title=\"清空结果\"，content=\"确定要清空该评估下的所有评估结果吗？\"）\n3. 确认后调用 clearEvaluationResults(record.id)（从 src/services/evaluation.ts 导入，该函数已存在）\n4. 清空成功后 message.success 提示并刷新列表（fetchList），失败时 message.error 提示\n\n依赖文件（仅验证存在性，无需修改）：src/services/evaluation.ts（已导出 clearEvaluationResults，DELETE /api/evaluations/{evaluationId}/results）\n\n需要验证：\n- 编译/类型检查通过（TypeScript + Vite 项目）\n- 组件渲染不报错，操作列按钮结构与预期一致",
+  "timestamp": "2026-07-31T05:55:12.292Z"
+}

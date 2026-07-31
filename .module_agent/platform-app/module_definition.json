@@ -167,15 +167,15 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/evaluation/EvaluationService.java",
-      "description": "评估业务服务接口，定义 list(getById/create/update/delete/listResults 六个方法的契约，list 方法支持 agentEvalId 可选参数过滤"
+      "description": "评估业务服务接口，定义评估 CRUD（list/getById/create/update/delete）、结果列表查询（listResults）、结果单条查询（getResultById）、结果删除（deleteResult/batchDeleteResults）与结果清空（clearResults）方法的契约，list 方法支持 agentEvalId 可选参数过滤"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/evaluation/EvaluationServiceImpl.java",
-      "description": "EvaluationService 实现类，提供 CRUD 操作 + EvaluationResult 查询；create 时 executionType 默认 BACKGROUND，update 条件更新，toDTO 映射 executionType"
+      "description": "EvaluationService 实现类，提供评估 CRUD 操作 + EvaluationResult 查询/删除；create 时 executionType 默认 BACKGROUND，update 条件更新，toDTO 映射 executionType；deleteResult 级联清理执行会话相关数据，batchDeleteResults 批量级联删除结果（@Transactional），clearResults 按 evaluationId 查询全部 resultId 后批量删除"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/controller/EvaluationController.java",
-      "description": "评估 REST 控制器，路径 /api/evaluations，提供完整的 CRUD 五个接口、/{id}/results 结果列表查询共六个端点，list 端点支持 agentEvalId 查询参数过滤"
+      "description": "评估 REST 控制器，路径 /api/evaluations，提供完整 CRUD 接口、结果列表查询（GET /{id}/results）、结果单条查询（GET /results/{resultId}）、结果删除（DELETE /results/{resultId}）、结果批量删除（POST /results/batch-delete）与结果清空（DELETE /{evaluationId}/results）端点，list 端点支持 agentEvalId 查询参数过滤"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/dto/evaluation/EvaluationResultDTO.java",

@@ -19,7 +19,7 @@
 - **SessionVariable**：会话变量实体，映射 session_variable 表
 - **SessionSkill**：会话技能关联实体
 - **Evaluation**：评估配置实体，继承 BaseEntity，映射 evaluation 表，含 name/description/benchmarkSessionId/executionCount/modelId/agentEvalId/agentId/executionType
-- **EvaluationResult**：评估结果实体，继承 BaseEntity，映射 evaluation_result 表，含 evaluationId/evaluationSessionId/result
+- **EvaluationResult**：评估结果实体，继承 BaseEntity，映射 evaluation_result 表，含 evaluationId/evaluationSessionId/result/modelId/finalScore
 
 枚举位于 `com.ghost616.platform.enums` 包：
 - **SubToolType**：子工具类型枚举（BROWSER），@EnumValue 标记 code 字段

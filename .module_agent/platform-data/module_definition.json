@@ -131,7 +131,7 @@
     },
     {
       "path": "platform-data/src/main/java/com/ghost616/platform/entity/EvaluationResult.java",
-      "description": "评估结果实体，继承 BaseEntity，映射 evaluation_result 表；字段：evaluationId（评估配置ID）、evaluationSessionId（评估执行会话ID）、result（评估结果内容）、executionStatus（执行状态，PENDING/RUNNING/COMPLETED/FAILED，默认 PENDING）"
+      "description": "评估结果实体，继承 BaseEntity，映射 evaluation_result 表；字段：evaluationId（评估配置ID）、evaluationSessionId（评估执行会话ID）、result（评估结果内容）、executionStatus（执行状态，PENDING/RUNNING/COMPLETED/FAILED，默认 PENDING）、modelId（关联模型ID）、finalScore（最终评分）"
     },
     {
       "path": "platform-data/src/main/java/com/ghost616/platform/repository/EvaluationMapper.java",

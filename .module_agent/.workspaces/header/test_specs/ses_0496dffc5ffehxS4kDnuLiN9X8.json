@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_0496dffc5ffehxS4kDnuLiN9X8",
+  "content": "## 待测试功能（E2E 选择器二次修复回归）\n\n背景：antd Button 对恰好两个汉字的按钮自动插入空格（autoInsertSpaceInButton 默认开启），实际 DOM 渲染文本为\"清 空\"，因此纯文本子串匹配（无论有无空格）都不稳健。\n\n二次修复方案：将 4 处清空按钮选择器改为正则匹配 `page.locator('button', { hasText: /清\\s*空/ })`（行 127、142、155、166），同时兼容 antd 渲染的\"清 空\"与源码\"清空\"两种文本。\n\n涉及文件：\n- e2e/EvaluationResultList.spec.ts\n\n验证点：\n1. E2E 测试 EvaluationResultList.spec.ts 全部 9 个用例通过（批量删除 disabled/可点击/确认/成功/失败，清空可点/确认/成功/失败）\n2. 文件中无残留 'has-text(\"清 空\")' 或 'has-text(\"清空\")' 字面量选择器",
+  "timestamp": "2026-07-31T05:38:50.535Z"
+}

@@ -6,13 +6,5 @@
     "code_reviewed": true,
     "plan_completed": false,
     "test_passed": false
-  },
-  {
-    "plan_id": "plan_8e1b4c55-f68c-4a88-a91b-5cd756f11e17",
-    "plan_summary": "审查：评估名称校验改为agentEvalId内唯一",
-    "starter_session_id": "ses_04e79173dffeTA3dLmJLx410S6",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": false
   }
 ]
