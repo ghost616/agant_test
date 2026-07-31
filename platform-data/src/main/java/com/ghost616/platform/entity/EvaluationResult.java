@@ -21,4 +21,10 @@ public class EvaluationResult extends BaseEntity {
 
     @TableField("execution_status")
     private String executionStatus = "PENDING";
+
+    @TableField("model_id")
+    private Long modelId;
+
+    @TableField("final_score")
+    private Integer finalScore;
 }

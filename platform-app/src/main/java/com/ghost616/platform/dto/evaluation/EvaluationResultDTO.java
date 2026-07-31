@@ -31,5 +31,10 @@ public class EvaluationResultDTO {
 
     private String executionStatus;
 
+    @JsonSerialize(using = ToStringSerializer.class)
+    private Long modelId;
+
+    private Integer finalScore;
+
     private LocalDateTime createTime;
 }

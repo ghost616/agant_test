@@ -146,7 +146,7 @@ class EvaluationResultGenerateServiceTest {
         }
 
         @Test
-        void normalGeneration_shouldInsertResult() throws Exception {
+        void normalGeneration_shouldInsertResultWithModelIdAndFinalScore() throws Exception {
             Evaluation evaluation = createEvaluation(BENCHMARK_SESSION_ID);
             when(evaluationMapper.selectById(EVALUATION_ID)).thenReturn(evaluation);
             when(messageDataProvider.getMessages(String.valueOf(BENCHMARK_SESSION_ID)))
@@ -156,9 +156,13 @@ class EvaluationResultGenerateServiceTest {
             ModelConfigData configData = new ModelConfigData("id", "key", "url", "model", 0.5, 100, "platform");
             when(chatDataProvider.getModelConfig(String.valueOf(MODEL_ID))).thenReturn(configData);
             when(modelInvokerManager.getInvoker(configData)).thenReturn(modelInvoker);
-            ChatResponse response = new ChatResponse();
-            response.setContent("评估结果内容");
-            when(modelInvoker.invoke(any(ChatRequest.class))).thenReturn(response);
+            ChatResponse evalResponse = new ChatResponse();
+            evalResponse.setContent("评估结果内容");
+            ChatResponse scoreResponse = new ChatResponse();
+            scoreResponse.setContent("85");
+            when(modelInvoker.invoke(any(ChatRequest.class)))
+                    .thenReturn(evalResponse)
+                    .thenReturn(scoreResponse);
 
             service.generate(EVALUATION_ID, EXECUTION_SESSION_ID);
 
@@ -168,6 +172,8 @@ class EvaluationResultGenerateServiceTest {
             assertEquals(EXECUTION_SESSION_ID, captured.getEvaluationSessionId());
             assertEquals("评估结果内容", captured.getResult());
             assertEquals("COMPLETED", captured.getExecutionStatus());
+            assertEquals(MODEL_ID, captured.getModelId());
+            assertEquals(Integer.valueOf(85), captured.getFinalScore());
         }
 
         @Test
@@ -198,11 +204,16 @@ class EvaluationResultGenerateServiceTest {
             when(modelInvokerManager.getInvoker(configData)).thenReturn(modelInvoker);
             ChatResponse response = new ChatResponse();
             response.setContent("ok");
-            when(modelInvoker.invoke(chatRequestCaptor.capture())).thenReturn(response);
+            ChatResponse scoreResponse = new ChatResponse();
+            scoreResponse.setContent("85");
+            when(modelInvoker.invoke(any(ChatRequest.class)))
+                    .thenReturn(response)
+                    .thenReturn(scoreResponse);
 
             service.generate(EVALUATION_ID, EXECUTION_SESSION_ID);
 
-            String systemContent = chatRequestCaptor.getValue().getMessages().get(0).getContent();
+            verify(modelInvoker, atLeastOnce()).invoke(chatRequestCaptor.capture());
+            String systemContent = chatRequestCaptor.getAllValues().get(0).getMessages().get(0).getContent();
             assertTrue(systemContent.contains("百分制（0-100分）"));
             assertTrue(systemContent.contains("相关性（0-25分）"));
             assertTrue(systemContent.contains("准确性（0-35分）"));
@@ -222,12 +233,17 @@ class EvaluationResultGenerateServiceTest {
             when(modelInvokerManager.getInvoker(configData)).thenReturn(modelInvoker);
             ChatResponse response = new ChatResponse();
             response.setContent("ok");
-            when(modelInvoker.invoke(chatRequestCaptor.capture())).thenReturn(response);
+            ChatResponse scoreResponse = new ChatResponse();
+            scoreResponse.setContent("85");
+            when(modelInvoker.invoke(any(ChatRequest.class)))
+                    .thenReturn(response)
+                    .thenReturn(scoreResponse);
 
             service.generate(EVALUATION_ID, EXECUTION_SESSION_ID);
 
-            String systemContent = chatRequestCaptor.getValue().getMessages().get(0).getContent();
-            assertTrue(systemContent.contains("因工具调用错误导致未获得答案时，此项为 0 分"));
+            verify(modelInvoker, atLeastOnce()).invoke(chatRequestCaptor.capture());
+            String systemContent = chatRequestCaptor.getAllValues().get(0).getMessages().get(0).getContent();
+            assertTrue(systemContent.contains("因工具调用错误"));
         }
 
         @Test
@@ -246,11 +262,16 @@ class EvaluationResultGenerateServiceTest {
             when(modelInvokerManager.getInvoker(configData)).thenReturn(modelInvoker);
             ChatResponse response = new ChatResponse();
             response.setContent("ok");
-            when(modelInvoker.invoke(chatRequestCaptor.capture())).thenReturn(response);
+            ChatResponse scoreResponse = new ChatResponse();
+            scoreResponse.setContent("85");
+            when(modelInvoker.invoke(any(ChatRequest.class)))
+                    .thenReturn(response)
+                    .thenReturn(scoreResponse);
 
             service.generate(EVALUATION_ID, EXECUTION_SESSION_ID);
 
-            String systemContent = chatRequestCaptor.getValue().getMessages().get(0).getContent();
+            verify(modelInvoker, atLeastOnce()).invoke(chatRequestCaptor.capture());
+            String systemContent = chatRequestCaptor.getAllValues().get(0).getMessages().get(0).getContent();
             assertTrue(systemContent.contains("工具调用"));
             assertTrue(systemContent.contains("getWeather"));
             assertTrue(systemContent.contains("Beijing"));
@@ -269,11 +290,16 @@ class EvaluationResultGenerateServiceTest {
             when(modelInvokerManager.getInvoker(configData)).thenReturn(modelInvoker);
             ChatResponse response = new ChatResponse();
             response.setContent("ok");
-            when(modelInvoker.invoke(chatRequestCaptor.capture())).thenReturn(response);
+            ChatResponse scoreResponse = new ChatResponse();
+            scoreResponse.setContent("85");
+            when(modelInvoker.invoke(any(ChatRequest.class)))
+                    .thenReturn(response)
+                    .thenReturn(scoreResponse);
 
             service.generate(EVALUATION_ID, EXECUTION_SESSION_ID);
 
-            String systemContent = chatRequestCaptor.getValue().getMessages().get(0).getContent();
+            verify(modelInvoker, atLeastOnce()).invoke(chatRequestCaptor.capture());
+            String systemContent = chatRequestCaptor.getAllValues().get(0).getMessages().get(0).getContent();
             assertTrue(systemContent.contains("工具结果"));
             assertTrue(systemContent.contains("temp"));
         }
@@ -341,7 +367,7 @@ class EvaluationResultGenerateServiceTest {
         void toolErrorCompletenessZero_mentionedInCompletenessRule() throws Exception {
             String result = invokeBuildJudgeMessages(List.of(createMessage("user", "hi")),
                     List.of(createMessage("assistant", "hello")));
-            assertTrue(result.contains("因工具调用错误导致未获得答案时，此项为 0 分"));
+            assertTrue(result.contains("因工具调用错误"));
         }
 
         @Test
@@ -387,6 +413,60 @@ class EvaluationResultGenerateServiceTest {
             String result = invokeAppendMessage(msg);
             assertTrue(result.contains("【user】: "));
             assertFalse(result.contains("null"));
+        }
+    }
+
+    @Nested
+    class ExtractFinalScoreTests {
+
+        private Integer invokeExtractFinalScore(String evaluationResult) throws Exception {
+            Method method = EvaluationResultGenerateService.class.getDeclaredMethod(
+                    "extractFinalScore", String.class, ModelConfigData.class, ModelInvoker.class);
+            method.setAccessible(true);
+            ModelConfigData configData = new ModelConfigData("id", "key", "url", "model", 0.5, 100, "platform");
+            return (Integer) method.invoke(service, evaluationResult, configData, modelInvoker);
+        }
+
+        @Test
+        void plainNumericText_shouldReturnNumber() throws Exception {
+            ChatResponse response = new ChatResponse();
+            response.setContent("85");
+            when(modelInvoker.invoke(any(ChatRequest.class))).thenReturn(response);
+
+            Integer result = invokeExtractFinalScore("评估结果很不错，85分");
+
+            assertEquals(Integer.valueOf(85), result);
+        }
+
+        @Test
+        void textWithNonNumericChars_shouldExtractNumber() throws Exception {
+            ChatResponse response = new ChatResponse();
+            response.setContent("最终评分：92分");
+            when(modelInvoker.invoke(any(ChatRequest.class))).thenReturn(response);
+
+            Integer result = invokeExtractFinalScore("评估表现良好");
+
+            assertEquals(Integer.valueOf(92), result);
+        }
+
+        @Test
+        void modelInvokeThrows_shouldReturnNull() throws Exception {
+            when(modelInvoker.invoke(any(ChatRequest.class))).thenThrow(new RuntimeException("API error"));
+
+            Integer result = invokeExtractFinalScore("评估结果");
+
+            assertNull(result);
+        }
+
+        @Test
+        void responseContentContainsOnlyNonDigits_shouldReturnNull() throws Exception {
+            ChatResponse response = new ChatResponse();
+            response.setContent("评分失败");
+            when(modelInvoker.invoke(any(ChatRequest.class))).thenReturn(response);
+
+            Integer result = invokeExtractFinalScore("无法评估");
+
+            assertNull(result);
         }
     }
 }

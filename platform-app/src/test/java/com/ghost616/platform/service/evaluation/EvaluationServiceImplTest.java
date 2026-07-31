@@ -215,6 +215,8 @@ class EvaluationServiceImplTest {
             entity.setEvaluationSessionId(SESSION_ID_LOCAL);
             entity.setResult("test result");
             entity.setExecutionStatus("COMPLETED");
+            entity.setModelId(42L);
+            entity.setFinalScore(88);
             when(evaluationResultMapper.selectById(RESULT_ID)).thenReturn(entity);
 
             Session session = new Session();
@@ -231,6 +233,8 @@ class EvaluationServiceImplTest {
             assertEquals("test result", dto.getResult());
             assertEquals(5000L, dto.getTotalTokenUsed());
             assertEquals("COMPLETED", dto.getExecutionStatus());
+            assertEquals(42L, dto.getModelId());
+            assertEquals(Integer.valueOf(88), dto.getFinalScore());
         }
 
         @Test
@@ -240,6 +244,8 @@ class EvaluationServiceImplTest {
             entity.setEvaluationId(EVALUATION_ID);
             entity.setEvaluationSessionId(SESSION_ID_LOCAL);
             entity.setResult("test result");
+            entity.setModelId(99L);
+            entity.setFinalScore(75);
             when(evaluationResultMapper.selectById(RESULT_ID)).thenReturn(entity);
             when(sessionMapper.selectById(SESSION_ID_LOCAL)).thenReturn(null);
 
@@ -249,6 +255,8 @@ class EvaluationServiceImplTest {
             assertEquals(RESULT_ID, dto.getId());
             assertEquals(SESSION_ID_LOCAL, dto.getEvaluationSessionId());
             assertNull(dto.getTotalTokenUsed());
+            assertEquals(99L, dto.getModelId());
+            assertEquals(Integer.valueOf(75), dto.getFinalScore());
         }
 
         @Test

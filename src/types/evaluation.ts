@@ -37,6 +37,8 @@ export interface EvaluationResult {
   result?: string;
   totalTokenUsed?: string;
   executionStatus?: string;
+  modelId?: string;
+  finalScore?: number;
   createTime?: string;
 }
 

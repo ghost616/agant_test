@@ -86,11 +86,15 @@ public class EvaluationResultGenerateService {
 
         String resultContent = response != null ? response.getContent() : "";
 
+        Integer finalScore = extractFinalScore(resultContent, configData, invoker);
+
         EvaluationResult evaluationResult = new EvaluationResult();
         evaluationResult.setEvaluationId(evaluationId);
         evaluationResult.setEvaluationSessionId(executionSessionId);
         evaluationResult.setResult(resultContent);
         evaluationResult.setExecutionStatus("COMPLETED");
+        evaluationResult.setModelId(evaluation.getModelId());
+        evaluationResult.setFinalScore(finalScore);
         evaluationResultMapper.insert(evaluationResult);
     }
 
@@ -132,6 +136,27 @@ public class EvaluationResultGenerateService {
                 .build());
 
         return messages;
+    }
+
+    private Integer extractFinalScore(String evaluationResult, ModelConfigData configData, ModelInvoker invoker) {
+        try {
+            Message scorePrompt = Message.builder()
+                    .role("user")
+                    .content("以下是评估结果文本，请仅返回一个数字（0-100之间的整数），表示最终评分：\n\n" + evaluationResult)
+                    .build();
+
+            ChatRequest scoreRequest = ChatRequest.builder()
+                    .messages(List.of(scorePrompt))
+                    .build();
+
+            ChatResponse scoreResponse = invoker.invoke(scoreRequest);
+            String scoreStr = scoreResponse != null ? scoreResponse.getContent().trim() : "";
+
+            return Integer.parseInt(scoreStr.replaceAll("[^0-9\\-]", ""));
+        } catch (Exception e) {
+            log.warn("提取最终评分失败, evaluationResult={}", evaluationResult, e);
+            return null;
+        }
     }
 
     private void appendMessage(StringBuilder sb, MessageDataProvider.MessageDTO msg) {

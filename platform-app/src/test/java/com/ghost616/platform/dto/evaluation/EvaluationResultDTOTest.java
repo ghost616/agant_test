@@ -23,6 +23,8 @@ class EvaluationResultDTOTest {
                 .result("评估结果")
                 .totalTokenUsed(500L)
                 .executionStatus("COMPLETED")
+                .modelId(42L)
+                .finalScore(85)
                 .createTime(now)
                 .build();
 
@@ -32,6 +34,8 @@ class EvaluationResultDTOTest {
         assertEquals("评估结果", dto.getResult());
         assertEquals(500L, dto.getTotalTokenUsed());
         assertEquals("COMPLETED", dto.getExecutionStatus());
+        assertEquals(42L, dto.getModelId());
+        assertEquals(Integer.valueOf(85), dto.getFinalScore());
         assertEquals(now, dto.getCreateTime());
     }
 
@@ -44,19 +48,23 @@ class EvaluationResultDTOTest {
         assertNull(dto.getResult());
         assertNull(dto.getTotalTokenUsed());
         assertNull(dto.getExecutionStatus());
+        assertNull(dto.getModelId());
+        assertNull(dto.getFinalScore());
         assertNull(dto.getCreateTime());
     }
 
     @Test
     void allArgsConstructorShouldSetAllFields() {
         LocalDateTime now = LocalDateTime.now();
-        EvaluationResultDTO dto = new EvaluationResultDTO(1L, 10L, 100L, "result", 500L, "DONE", now);
+        EvaluationResultDTO dto = new EvaluationResultDTO(1L, 10L, 100L, "result", 500L, "DONE", 42L, 85, now);
         assertEquals(1L, dto.getId());
         assertEquals(10L, dto.getEvaluationId());
         assertEquals(100L, dto.getEvaluationSessionId());
         assertEquals("result", dto.getResult());
         assertEquals(500L, dto.getTotalTokenUsed());
         assertEquals("DONE", dto.getExecutionStatus());
+        assertEquals(42L, dto.getModelId());
+        assertEquals(Integer.valueOf(85), dto.getFinalScore());
         assertEquals(now, dto.getCreateTime());
     }
 
@@ -69,6 +77,8 @@ class EvaluationResultDTOTest {
         dto.setResult("new result");
         dto.setTotalTokenUsed(1000L);
         dto.setExecutionStatus("FAILED");
+        dto.setModelId(99L);
+        dto.setFinalScore(77);
 
         assertEquals(2L, dto.getId());
         assertEquals(20L, dto.getEvaluationId());
@@ -76,6 +86,8 @@ class EvaluationResultDTOTest {
         assertEquals("new result", dto.getResult());
         assertEquals(1000L, dto.getTotalTokenUsed());
         assertEquals("FAILED", dto.getExecutionStatus());
+        assertEquals(99L, dto.getModelId());
+        assertEquals(Integer.valueOf(77), dto.getFinalScore());
     }
 
     @Test
@@ -87,6 +99,8 @@ class EvaluationResultDTOTest {
                 .result("测试结果")
                 .totalTokenUsed(500L)
                 .executionStatus("COMPLETED")
+                .modelId(42L)
+                .finalScore(85)
                 .build();
 
         String json = objectMapper.writeValueAsString(dto);
@@ -94,6 +108,8 @@ class EvaluationResultDTOTest {
         assertTrue(json.contains("\"evaluationId\":\"10\""));
         assertTrue(json.contains("\"evaluationSessionId\":\"100\""));
         assertTrue(json.contains("\"totalTokenUsed\":\"500\""));
+        assertTrue(json.contains("\"modelId\":\"42\""));
+        assertTrue(json.contains("\"finalScore\":85"));
         assertTrue(json.contains("\"result\":\"测试结果\""));
         assertTrue(json.contains("\"executionStatus\":\"COMPLETED\""));
     }
@@ -101,8 +117,8 @@ class EvaluationResultDTOTest {
     @Test
     void equalsAndHashCode() {
         LocalDateTime now = LocalDateTime.now();
-        EvaluationResultDTO dto1 = new EvaluationResultDTO(1L, 10L, 100L, "r", 500L, "OK", now);
-        EvaluationResultDTO dto2 = new EvaluationResultDTO(1L, 10L, 100L, "r", 500L, "OK", now);
+        EvaluationResultDTO dto1 = new EvaluationResultDTO(1L, 10L, 100L, "r", 500L, "OK", 42L, 85, now);
+        EvaluationResultDTO dto2 = new EvaluationResultDTO(1L, 10L, 100L, "r", 500L, "OK", 42L, 85, now);
         assertEquals(dto1, dto2);
         assertEquals(dto1.hashCode(), dto2.hashCode());
     }

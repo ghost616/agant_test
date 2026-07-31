@@ -1,13 +1,15 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Button, message, Modal, Popconfirm, Space, Spin, Table } from 'antd';
+import { Button, message, Modal, Popconfirm, Space, Spin, Table, Tag } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import type { Evaluation, EvaluationResult } from '../../types/evaluation';
+import type { ModelConfig } from '../../types/model';
 import {
   getEvaluation,
   getEvaluationResults,
   deleteEvaluationResult,
 } from '../../services/evaluation';
+import { listModels } from '../../services/model';
 import { useEvaluationExecute } from './hooks/useEvaluationExecute';
 
 function EvaluationResultList(): JSX.Element {
@@ -16,6 +18,7 @@ function EvaluationResultList(): JSX.Element {
   const [evaluation, setEvaluation] = useState<Evaluation | null>(null);
   const [dataSource, setDataSource] = useState<EvaluationResult[]>([]);
   const [loading, setLoading] = useState(false);
+  const [models, setModels] = useState<ModelConfig[]>([]);
 
   const {
     execute,
@@ -31,12 +34,14 @@ function EvaluationResultList(): JSX.Element {
     if (!evaluationId) return;
     setLoading(true);
     try {
-      const [ev, results] = await Promise.all([
+      const [ev, results, modelList] = await Promise.all([
         getEvaluation(evaluationId),
         getEvaluationResults(evaluationId),
+        listModels({}),
       ]);
       setEvaluation(ev);
       setDataSource(results);
+      setModels(modelList);
     } catch {
       message.error('获取评估结果失败');
     } finally {
@@ -52,6 +57,27 @@ function EvaluationResultList(): JSX.Element {
     if (!evaluationId || !evaluation) return;
     await execute(evaluationId, evaluation, fetchData);
   }, [evaluationId, evaluation, execute, fetchData]);
+
+  const modelMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    models.forEach((m) => { map[m.id] = m.name; });
+    return map;
+  }, [models]);
+
+  const renderScore = (score?: number): React.ReactNode => {
+    if (score === undefined || score === null) return '-';
+    let color: string;
+    if (score < 60) {
+      color = 'red';
+    } else if (score < 80) {
+      color = 'orange';
+    } else if (score < 100) {
+      color = 'blue';
+    } else {
+      color = 'green';
+    }
+    return <Tag color={color}>{score}</Tag>;
+  };
 
   const columns: ColumnsType<EvaluationResult> = [
     {
@@ -71,6 +97,19 @@ function EvaluationResultList(): JSX.Element {
       dataIndex: 'totalTokenUsed',
       width: 120,
       render: (val: string) => val || '-',
+    },
+    {
+      title: '模型',
+      dataIndex: 'modelId',
+      width: 140,
+      ellipsis: true,
+      render: (val: string) => (val ? (modelMap[val] || val) : '-'),
+    },
+    {
+      title: '最终评分',
+      dataIndex: 'finalScore',
+      width: 120,
+      render: (_: unknown, record: EvaluationResult) => renderScore(record.finalScore),
     },
     {
       title: '创建时间',
@@ -144,7 +183,7 @@ function EvaluationResultList(): JSX.Element {
         dataSource={dataSource}
         loading={loading}
         pagination={false}
-        scroll={{ x: 900 }}
+        scroll={{ x: 1200 }}
       />
 
       <Modal

@@ -60,6 +60,39 @@ describe('EvaluationResultList 表格', () => {
     expect(source).toContain('Token消耗');
   });
 
+  it('应包含模型列', () => {
+    const source = readFileSync(resolve(__dirname, '../EvaluationResultList.tsx'), 'utf-8');
+    expect(source).toContain("title: '模型'");
+  });
+
+  it('应包含最终评分列', () => {
+    const source = readFileSync(resolve(__dirname, '../EvaluationResultList.tsx'), 'utf-8');
+    expect(source).toContain("title: '最终评分'");
+  });
+
+  it('最终评分配色: 60以下红色', () => {
+    const source = readFileSync(resolve(__dirname, '../EvaluationResultList.tsx'), 'utf-8');
+    expect(source).toContain("score < 60");
+    expect(source).toContain("color = 'red'");
+  });
+
+  it('最终评分配色: 60至80以下橙色', () => {
+    const source = readFileSync(resolve(__dirname, '../EvaluationResultList.tsx'), 'utf-8');
+    expect(source).toContain("score < 80");
+    expect(source).toContain("color = 'orange'");
+  });
+
+  it('最终评分配色: 80至100以下蓝色', () => {
+    const source = readFileSync(resolve(__dirname, '../EvaluationResultList.tsx'), 'utf-8');
+    expect(source).toContain("score < 100");
+    expect(source).toContain("color = 'blue'");
+  });
+
+  it('最终评分配色: 100绿色', () => {
+    const source = readFileSync(resolve(__dirname, '../EvaluationResultList.tsx'), 'utf-8');
+    expect(source).toContain("color = 'green'");
+  });
+
   it('应包含创建时间列', () => {
     const source = readFileSync(resolve(__dirname, '../EvaluationResultList.tsx'), 'utf-8');
     expect(source).toContain('创建时间');
