@@ -43,6 +43,7 @@ execute 方法签名由 execute(AgentExecutionContext, ChatChunk) 改为 execute
 ## ModelConfigData
 
 ModelConfigData record（com.ghost616.agentbase.dto.model.ModelConfigData），包含字段：String id, String apiKey, String baseUrl, String modelName, Double temperature, Integer maxTokens, String platformType, String requestType。requestType 表示模型请求类型（如 "responses" 走 Responses API），可为 null，ChatService 依据该字段分发调用流程。
+新增实例方法 isResponsesType()：委托 RequestType.isResponses(requestType) 判断当前模型配置是否走 Responses 系列请求（responses / responses_stateless 均返回 true）。
 ## ModelInvokerFactory
 
 ModelInvokerFactory 接口（com.ghost616.agentbase.service.model.invoker.ModelInvokerFactory），定义 createInvoker(ModelConfigData) 方法，返回 ModelInvoker。用于解耦 ModelInvokerManager 与具体 invoker 创建逻辑。
@@ -51,7 +52,7 @@ ModelInvokerFactory 接口（com.ghost616.agentbase.service.model.invoker.ModelI
 从 platform-app 迁移而来。已去掉 @Component/@RequiredArgsConstructor 及 RestClient.Builder/WebClient.Builder 字段，改为构造函数注入 ModelInvokerFactory。createInvoker 委托给 factory.createInvoker(config)。getInvoker 参数改为 ModelConfigData，通过 config.id() 缓存。提供 register/evict/clear/cacheSize/getInvokerById 方法。
 ## ChatService
 
-ChatService 聊天服务，非 Spring 组件。构造函数接收 AgentComponentRegistry，通过 registry 延迟获取 AgentContextManager/SessionManager/ModelInvokerManager/SystemToolManager/ChatDataProvider。chat(ChatRequest) 为入口路由方法：先构建会话上下文、保存用户消息、更新模型 ID、获取 ModelConfigData 并触发 SESSION_START HOOK，再根据 configData.requestType() 三路分发：requestType=="responses" 走 chatViaResponses()（有状态），requestType=="responses_stateless" 走 chatViaResponsesStateless()（无状态），其余走 chatViaChatCompletions()。
+ChatService 聊天服务，非 Spring 组件。构造函数接收 AgentComponentRegistry，通过 registry 延迟获取 AgentContextManager/SessionManager/ModelInvokerManager/SystemToolManager/ChatDataProvider。chat(ChatRequest) 为入口路由方法：先构建会话上下文、保存用户消息、更新模型 ID、获取 ModelConfigData 并触发 SESSION_START HOOK，再基于 RequestType 枚举对 configData.requestType() 显式三路分发：RESPONSES 走 chatViaResponses()（有状态）、RESPONSES_STATELESS 走 chatViaResponsesStateless()（无状态）、COMPLETIONS/null/其他 走 chatViaChatCompletions()。
 
 chatViaChatCompletions() 承载原 chat() 核心逻辑（构建 system 消息、拼接历史、调用 invoker.invokeStream）。
 
@@ -189,3 +190,6 @@ ToolDataProvider（com.ghost616.agentbase.service.agent.ToolDataProvider），�
 ## 对话模型请求/响应 DTO
 
 对话模型请求 DTO（com.ghost616.agentbase.dto.model.ChatRequest），承载发送给模型服务的请求：messages（对话消息）、tools（工具定义）、temperature、maxTokens、model、thinking、previousResponseId（上一轮响应 ID，Responses API 多轮续接）、instructions（系统级指令，Responses API 下存放 system prompt 与动态技能提示词）。对话响应 DTO（com.ghost616.agentbase.dto.model.ChatResponse）新增 responseId 字段，为模型返回的响应 ID，供下一轮续接时作为 previousResponseId 使用。流式片段 ChatChunk 新增 responseId 字段，由 OpenAIResponsesInvoker 在解析 response.completed 事件时从 response.id 写入，ChatService.toSseStream 捕获后存入会话上下文 lastResponseId 供有状态续接。
+## 模型请求类型
+
+RequestType 枚举（com.ghost616.agentbase.enums.RequestType），定义模型请求分发方式。包含 RESPONSES("responses", "Responses（有状态）")、RESPONSES_STATELESS("responses_stateless", "Responses（无状态）")、COMPLETIONS("completions", "Chat Completions") 三个值，提供 getCode()/getDescription() 方法及静态 isResponses(String code) 判断（仅对 responses 与 responses_stateless 返回 true，排除 completions）。ModelConfigData.isResponsesType() 委托该方法。

@@ -17,5 +17,6 @@
   "agent-integration/src/main/java/com/ghost616/agentinteg/tool/BrowserToolCallback.java": "9cb2e7b1e1bbba4bb0f2cdef1919a168",
   "platform-app/src/main/java/com/ghost616/platform/service/browser/BrowserToolCallbackImpl.java": "60eb060a7fca8eb2e82f8029beb2604d",
   "agent-integration\\src\\main\\java\\com\\ghost616\\agentinteg\\tool\\SubSessionCallbackSystemTool.java": "124b85718139b6728e43dbcf90e3bd4a",
-  "agent-integration/src/main/java/com/ghost616/agentinteg/model/invoker/OpenAIResponsesInvoker.java": "0477a2e4da55ad446a9f5487d482c6cf"
+  "agent-integration/src/main/java/com/ghost616/agentinteg/model/invoker/OpenAIResponsesInvoker.java": "0477a2e4da55ad446a9f5487d482c6cf",
+  "agent-integration/src/test/java/com/ghost616/agentinteg/model/invoker/OpenAIResponsesInvokerTest.java": "1877aebdfcf8632447e27d45e70be424"
 }

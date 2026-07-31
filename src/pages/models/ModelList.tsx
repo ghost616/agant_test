@@ -17,6 +17,7 @@ import {
 import type { ColumnsType } from 'antd/es/table';
 import type { CommonStatus, PlatformType } from '../../types/common';
 import type { ModelConfig, ModelFormData, PlatformConfig } from '../../types/model';
+import { RequestType } from '../../types/model';
 import {
   createModel,
   deleteModel,
@@ -44,8 +45,9 @@ const PLATFORM_TYPE_OPTIONS = Object.entries(PLATFORM_TYPE_LABELS).map(([value, 
 
 const REQUEST_TYPE_OPTIONS = [
   { value: '', label: '默认（Chat Completions）' },
-  { value: 'responses', label: 'Responses（有状态）' },
-  { value: 'responses_stateless', label: 'Responses（无状态）' },
+  { value: RequestType.COMPLETIONS.code, label: 'Chat Completions' },
+  { value: RequestType.RESPONSES.code, label: 'Responses（有状态）' },
+  { value: RequestType.RESPONSES_STATELESS.code, label: 'Responses（无状态）' },
 ];
 
 const RESPONSES_SUPPORTED: PlatformType[] = [

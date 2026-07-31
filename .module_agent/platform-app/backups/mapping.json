@@ -76,5 +76,6 @@
   "platform-app/src/test/java/com/ghost616/platform/service/evaluation/EvaluationResultGenerateServiceTest.java": "ec6fc2d075bddc4e05a833ca0eba59d0",
   "platform-app/src/main/java/com/ghost616/platform/dto/model/ModelConfigDTO.java": "cf99a7e47d446bd8c19e8a705ae0d1ea",
   "platform-app/src/main/java/com/ghost616/platform/dto/model/ModelCreateRequest.java": "10c4722a21cd18e36d9d9acb877f7bad",
-  "platform-app/src/main/java/com/ghost616/platform/dto/model/ModelUpdateRequest.java": "340d36d39c9894fed559839ae8fb2af8"
+  "platform-app/src/main/java/com/ghost616/platform/dto/model/ModelUpdateRequest.java": "340d36d39c9894fed559839ae8fb2af8",
+  "platform-app/src/test/java/com/ghost616/platform/service/model/ModelConfigServiceImplRequestTypeTest.java": "7240658397e9553c6ee4ce2c4dafa0f6"
 }

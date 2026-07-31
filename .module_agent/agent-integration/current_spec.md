@@ -57,3 +57,6 @@
 - **AzureResponsesInvoker**：Azure OpenAI 平台 Responses API 调用器，继承 OpenAIResponsesInvoker；覆写 buildResponsesUrl=mountResponsesResourceUrl 使用 Azure 部署资源路径 + api-version，invoke/invokeStream/verify 使用 api-key header 认证
 - **CustomResponsesInvoker**：自定义平台 Responses API 调用器，继承 OpenAIResponsesInvoker，无额外覆写
 - **DefaultModelInvokerFactory**：createInvoker() 先判断 requestType（responses/responses_stateless）再按 platformType 路由到对应 ResponsesInvoker（OPENAI/DEEPSEEK/KIMI/VOLCENGINE/AZURE/CUSTOM），否则走原 switch 返回 Chat Completions Invoker；ANTHROPIC/OLLAMA 不参与 Responses 路由，保持原分支不变
+## 工厂与组装
+
+- **DefaultModelInvokerFactory**：createInvoker() else 分支显式判断 RequestType.COMPLETIONS.getCode()（"completions"）或平台不支持 responses 时返回 Chat Completions Invoker，保留兜底返回；requestType 判断使用 RequestType.isResponses(requestType) 与 RequestType.COMPLETIONS.getCode() 并列枚举方式

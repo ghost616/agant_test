@@ -9,6 +9,7 @@ import com.ghost616.agentbase.dto.model.ToolDefinition;
 import com.ghost616.agentbase.dto.skill.SkillConfigDTO;
 import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
 import com.ghost616.agentbase.enums.HookPhase;
+import com.ghost616.agentbase.enums.RequestType;
 import com.ghost616.agentbase.service.agent.invoker.HookData;
 import com.ghost616.agentbase.service.agent.invoker.HookManager;
 import com.ghost616.agentbase.service.agent.invoker.LoadSkillsSystemTool;
@@ -140,7 +141,7 @@ class ChatServiceResponsesTest {
 
         ChatRequest apiRequest = ChatRequest.builder().sessionId(sessionId).content("hello").build();
         com.ghost616.agentbase.dto.model.ChatRequest captured =
-                executeChat(apiRequest, harness, "responses", Flux.empty());
+                executeChat(apiRequest, harness, RequestType.RESPONSES.getCode(), Flux.empty());
 
         assertTrue(getSystemMessages(captured).isEmpty(), "input 中不应包含 system 角色消息");
         assertTrue(captured.getMessages().stream().anyMatch(m -> "user".equals(m.getRole())),
@@ -166,7 +167,7 @@ class ChatServiceResponsesTest {
 
         ChatRequest apiRequest = ChatRequest.builder().sessionId(sessionId).content("hello").build();
         com.ghost616.agentbase.dto.model.ChatRequest captured =
-                executeChat(apiRequest, harness, "responses", Flux.empty());
+                executeChat(apiRequest, harness, RequestType.RESPONSES.getCode(), Flux.empty());
 
         assertNotNull(captured.getInstructions());
         assertTrue(captured.getInstructions().contains("SYSTEM_PROMPT_TEXT"),
@@ -191,7 +192,7 @@ class ChatServiceResponsesTest {
 
         ChatRequest apiRequest = ChatRequest.builder().sessionId(sessionId).content("hello").build();
         com.ghost616.agentbase.dto.model.ChatRequest captured =
-                executeChat(apiRequest, harness, "responses", Flux.empty());
+                executeChat(apiRequest, harness, RequestType.RESPONSES.getCode(), Flux.empty());
 
         assertTrue(captured.getInstructions().contains("可用的技能"),
                 "instructions 应包含可用技能列表提示");
@@ -210,7 +211,7 @@ class ChatServiceResponsesTest {
                 .previousResponseId("resp_123")
                 .build();
         com.ghost616.agentbase.dto.model.ChatRequest captured =
-                executeChat(apiRequest, harness, "responses", Flux.empty());
+                executeChat(apiRequest, harness, RequestType.RESPONSES.getCode(), Flux.empty());
 
         assertEquals("resp_123", captured.getPreviousResponseId());
     }
@@ -226,7 +227,7 @@ class ChatServiceResponsesTest {
 
         ChatRequest apiRequest = ChatRequest.builder().sessionId(sessionId).content("hello").build();
         com.ghost616.agentbase.dto.model.ChatRequest captured =
-                executeChat(apiRequest, harness, "responses", Flux.empty());
+                executeChat(apiRequest, harness, RequestType.RESPONSES.getCode(), Flux.empty());
 
         List<String> toolNames = captured.getTools() != null
                 ? captured.getTools().stream().map(ToolDefinition::getName).toList() : List.of();
@@ -244,7 +245,7 @@ class ChatServiceResponsesTest {
         ChatChunk chunk = ChatChunk.builder().delta("hi").finishReason("stop").build();
 
         ChatRequest apiRequest = ChatRequest.builder().sessionId(sessionId).content("hello").build();
-        executeChat(apiRequest, harness, "responses", Flux.just(chunk));
+        executeChat(apiRequest, harness, RequestType.RESPONSES.getCode(), Flux.just(chunk));
 
         verify(hookManager).triggerSessionHooks(sessionId, HookPhase.BEFORE_MESSAGE_SEND,
                 harness.context, new HookData(chunk));
@@ -280,7 +281,7 @@ class ChatServiceResponsesTest {
                 .content(ChatService.TOOL_CONTINUE_MARKER)
                 .build();
         com.ghost616.agentbase.dto.model.ChatRequest captured =
-                executeChat(apiRequest, harness, "responses", Flux.empty());
+                executeChat(apiRequest, harness, RequestType.RESPONSES.getCode(), Flux.empty());
 
         List<String> roles = captured.getMessages().stream().map(Message::getRole).toList();
         List<String> contents = captured.getMessages().stream().map(Message::getContent).toList();
@@ -302,7 +303,7 @@ class ChatServiceResponsesTest {
                 .previousResponseId("api_resp")
                 .build();
         com.ghost616.agentbase.dto.model.ChatRequest captured =
-                executeChat(apiRequest, harness, "responses", Flux.empty());
+                executeChat(apiRequest, harness, RequestType.RESPONSES.getCode(), Flux.empty());
 
         assertEquals("ctx_resp", captured.getPreviousResponseId(),
                 "lastResponseId 非空时应优先使用会话上下文值");
@@ -317,7 +318,7 @@ class ChatServiceResponsesTest {
         ChatChunk chunk = ChatChunk.builder().delta("hi").responseId("r1").build();
 
         ChatRequest apiRequest = ChatRequest.builder().sessionId(sessionId).content("hello").build();
-        executeChat(apiRequest, harness, "responses", Flux.just(chunk));
+        executeChat(apiRequest, harness, RequestType.RESPONSES.getCode(), Flux.just(chunk));
 
         assertEquals("r1", harness.context.getLastResponseId(),
                 "流式过程中应捕获 responseId 写入会话上下文");
@@ -343,7 +344,7 @@ class ChatServiceResponsesTest {
                 .previousResponseId("api_resp")
                 .build();
         com.ghost616.agentbase.dto.model.ChatRequest captured =
-                executeChat(apiRequest, harness, "responses_stateless", Flux.empty());
+                executeChat(apiRequest, harness, RequestType.RESPONSES_STATELESS.getCode(), Flux.empty());
 
         assertNull(captured.getPreviousResponseId(),
                 "无状态分支不应传 previousResponseId");
@@ -366,6 +367,25 @@ class ChatServiceResponsesTest {
                 .build();
         com.ghost616.agentbase.dto.model.ChatRequest captured =
                 executeChat(apiRequest, harness, "openai", Flux.empty());
+
+        assertEquals(1, getSystemMessages(captured).size(), "chat completions 分支应含 system 消息");
+        assertNull(captured.getInstructions());
+        assertNull(captured.getPreviousResponseId());
+    }
+
+    @Test
+    @DisplayName("requestType=completions 时，走 chat completions 分支：messages 含 system 消息，无 instructions")
+    void completions_走chatCompletions含system消息() {
+        TestHarness harness = new TestHarness("sys_prompt", List.of(), List.of(), null, List.of());
+        when(systemToolManager.getToolDefinitions()).thenReturn(List.of());
+
+        ChatRequest apiRequest = ChatRequest.builder()
+                .sessionId(sessionId)
+                .content("hello")
+                .previousResponseId("resp_123")
+                .build();
+        com.ghost616.agentbase.dto.model.ChatRequest captured =
+                executeChat(apiRequest, harness, RequestType.COMPLETIONS.getCode(), Flux.empty());
 
         assertEquals(1, getSystemMessages(captured).size(), "chat completions 分支应含 system 消息");
         assertNull(captured.getInstructions());

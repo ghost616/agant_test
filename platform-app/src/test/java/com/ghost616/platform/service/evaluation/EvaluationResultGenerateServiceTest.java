@@ -5,6 +5,7 @@ import com.ghost616.agentbase.dto.model.ChatResponse;
 import com.ghost616.agentbase.dto.model.Message;
 import com.ghost616.agentbase.dto.model.ModelConfigData;
 import com.ghost616.agentbase.enums.ErrorCode;
+import com.ghost616.agentbase.enums.RequestType;
 import com.ghost616.agentbase.exception.BusinessException;
 import com.ghost616.agentbase.service.agent.ChatDataProvider;
 import com.ghost616.agentbase.service.agent.MessageDataProvider;
@@ -153,7 +154,8 @@ class EvaluationResultGenerateServiceTest {
                     .thenReturn(List.of(createMessage("user", "hello")));
             when(messageDataProvider.getMessages(String.valueOf(EXECUTION_SESSION_ID)))
                     .thenReturn(List.of(createMessage("assistant", "hi there")));
-            ModelConfigData configData = new ModelConfigData("id", "key", "url", "model", 0.5, 100, "platform", null);
+            ModelConfigData configData = new ModelConfigData("id", "key", "url", "model", 0.5, 100, "platform",
+                    RequestType.COMPLETIONS.getCode());
             when(chatDataProvider.getModelConfig(String.valueOf(MODEL_ID))).thenReturn(configData);
             when(modelInvokerManager.getInvoker(configData)).thenReturn(modelInvoker);
             ChatResponse evalResponse = new ChatResponse();
@@ -199,7 +201,8 @@ class EvaluationResultGenerateServiceTest {
                     .thenReturn(List.of(createMessage("user", "hello")));
             when(messageDataProvider.getMessages(String.valueOf(EXECUTION_SESSION_ID)))
                     .thenReturn(List.of(createMessage("assistant", "hi")));
-            ModelConfigData configData = new ModelConfigData("id", "key", "url", "model", 0.5, 100, "platform", null);
+            ModelConfigData configData = new ModelConfigData("id", "key", "url", "model", 0.5, 100, "platform",
+                    RequestType.COMPLETIONS.getCode());
             when(chatDataProvider.getModelConfig(String.valueOf(MODEL_ID))).thenReturn(configData);
             when(modelInvokerManager.getInvoker(configData)).thenReturn(modelInvoker);
             ChatResponse response = new ChatResponse();
@@ -228,7 +231,8 @@ class EvaluationResultGenerateServiceTest {
                     .thenReturn(List.of(createMessage("user", "hello")));
             when(messageDataProvider.getMessages(String.valueOf(EXECUTION_SESSION_ID)))
                     .thenReturn(List.of(createMessage("assistant", "hi")));
-            ModelConfigData configData = new ModelConfigData("id", "key", "url", "model", 0.5, 100, "platform", null);
+            ModelConfigData configData = new ModelConfigData("id", "key", "url", "model", 0.5, 100, "platform",
+                    RequestType.COMPLETIONS.getCode());
             when(chatDataProvider.getModelConfig(String.valueOf(MODEL_ID))).thenReturn(configData);
             when(modelInvokerManager.getInvoker(configData)).thenReturn(modelInvoker);
             ChatResponse response = new ChatResponse();
@@ -257,7 +261,8 @@ class EvaluationResultGenerateServiceTest {
                     .thenReturn(List.of(createMessageWithToolCalls("assistant", "let me check", toolCalls)));
             when(messageDataProvider.getMessages(String.valueOf(EXECUTION_SESSION_ID)))
                     .thenReturn(List.of(createMessage("user", "thanks")));
-            ModelConfigData configData = new ModelConfigData("id", "key", "url", "model", 0.5, 100, "platform", null);
+            ModelConfigData configData = new ModelConfigData("id", "key", "url", "model", 0.5, 100, "platform",
+                    RequestType.COMPLETIONS.getCode());
             when(chatDataProvider.getModelConfig(String.valueOf(MODEL_ID))).thenReturn(configData);
             when(modelInvokerManager.getInvoker(configData)).thenReturn(modelInvoker);
             ChatResponse response = new ChatResponse();
@@ -285,7 +290,8 @@ class EvaluationResultGenerateServiceTest {
                     .thenReturn(List.of(createMessage("user", "weather?")));
             when(messageDataProvider.getMessages(String.valueOf(EXECUTION_SESSION_ID)))
                     .thenReturn(List.of(createMessageWithToolResult("tool", "response", "{\"temp\":25}")));
-            ModelConfigData configData = new ModelConfigData("id", "key", "url", "model", 0.5, 100, "platform", null);
+            ModelConfigData configData = new ModelConfigData("id", "key", "url", "model", 0.5, 100, "platform",
+                    RequestType.COMPLETIONS.getCode());
             when(chatDataProvider.getModelConfig(String.valueOf(MODEL_ID))).thenReturn(configData);
             when(modelInvokerManager.getInvoker(configData)).thenReturn(modelInvoker);
             ChatResponse response = new ChatResponse();
@@ -312,7 +318,8 @@ class EvaluationResultGenerateServiceTest {
                     .thenReturn(List.of(createMessage("user", "hello")));
             when(messageDataProvider.getMessages(String.valueOf(EXECUTION_SESSION_ID)))
                     .thenReturn(List.of(createMessage("assistant", "hi")));
-            ModelConfigData configData = new ModelConfigData("id", "key", "url", "model", 0.5, 100, "platform", null);
+            ModelConfigData configData = new ModelConfigData("id", "key", "url", "model", 0.5, 100, "platform",
+                    RequestType.COMPLETIONS.getCode());
             when(chatDataProvider.getModelConfig(String.valueOf(MODEL_ID))).thenReturn(configData);
             when(modelInvokerManager.getInvoker(configData)).thenReturn(modelInvoker);
             when(modelInvoker.invoke(any(ChatRequest.class))).thenThrow(new RuntimeException("API error"));
@@ -320,6 +327,86 @@ class EvaluationResultGenerateServiceTest {
             BusinessException ex = assertThrows(BusinessException.class,
                     () -> service.generate(EVALUATION_ID, EXECUTION_SESSION_ID));
             assertEquals(ErrorCode.EVALUATION_RESULT_GENERATE_ERROR, ex.getErrorCode());
+        }
+
+        @Test
+        void responsesRequestType_shouldPutJudgeContentInInstructionsAndOnlyUserMessageInMessages() throws Exception {
+            Evaluation evaluation = createEvaluation(BENCHMARK_SESSION_ID);
+            when(evaluationMapper.selectById(EVALUATION_ID)).thenReturn(evaluation);
+            when(messageDataProvider.getMessages(String.valueOf(BENCHMARK_SESSION_ID)))
+                    .thenReturn(List.of(createMessage("user", "hello")));
+            when(messageDataProvider.getMessages(String.valueOf(EXECUTION_SESSION_ID)))
+                    .thenReturn(List.of(createMessage("assistant", "hi there")));
+            ModelConfigData configData = new ModelConfigData("id", "key", "url", "model", 0.5, 100, "platform",
+                    RequestType.RESPONSES.getCode());
+            when(chatDataProvider.getModelConfig(String.valueOf(MODEL_ID))).thenReturn(configData);
+            when(modelInvokerManager.getInvoker(configData)).thenReturn(modelInvoker);
+            ChatResponse evalResponse = new ChatResponse();
+            evalResponse.setContent("评估结果内容");
+            ChatResponse scoreResponse = new ChatResponse();
+            scoreResponse.setContent("85");
+            when(modelInvoker.invoke(any(ChatRequest.class)))
+                    .thenReturn(evalResponse)
+                    .thenReturn(scoreResponse);
+
+            service.generate(EVALUATION_ID, EXECUTION_SESSION_ID);
+
+            verify(modelInvoker, atLeastOnce()).invoke(chatRequestCaptor.capture());
+            ChatRequest firstRequest = chatRequestCaptor.getAllValues().get(0);
+            assertNotNull(firstRequest.getInstructions());
+            assertTrue(firstRequest.getInstructions().contains("百分制（0-100分）"), "instructions 应包含评分规则");
+            assertTrue(firstRequest.getInstructions().contains("【user】: hello"), "instructions 应包含基准会话消息");
+            assertTrue(firstRequest.getInstructions().contains("【assistant】: hi there"), "instructions 应包含执行会话消息");
+            assertEquals(1, firstRequest.getMessages().size(), "messages 只应包含 user prompt");
+            assertEquals("user", firstRequest.getMessages().get(0).getRole());
+            assertEquals("请对执行会话的回复质量进行评估。", firstRequest.getMessages().get(0).getContent());
+        }
+
+        @Test
+        void responsesStatelessRequestType_shouldPutJudgeContentInInstructionsAndOnlyUserMessageInMessages() throws Exception {
+            Evaluation evaluation = createEvaluation(BENCHMARK_SESSION_ID);
+            when(evaluationMapper.selectById(EVALUATION_ID)).thenReturn(evaluation);
+            when(messageDataProvider.getMessages(String.valueOf(BENCHMARK_SESSION_ID)))
+                    .thenReturn(List.of(createMessage("user", "hello")));
+            when(messageDataProvider.getMessages(String.valueOf(EXECUTION_SESSION_ID)))
+                    .thenReturn(List.of(createMessage("assistant", "hi there")));
+            ModelConfigData configData = new ModelConfigData("id", "key", "url", "model", 0.5, 100, "platform",
+                    RequestType.RESPONSES_STATELESS.getCode());
+            when(chatDataProvider.getModelConfig(String.valueOf(MODEL_ID))).thenReturn(configData);
+            when(modelInvokerManager.getInvoker(configData)).thenReturn(modelInvoker);
+            ChatResponse evalResponse = new ChatResponse();
+            evalResponse.setContent("评估结果内容");
+            ChatResponse scoreResponse = new ChatResponse();
+            scoreResponse.setContent("85");
+            when(modelInvoker.invoke(any(ChatRequest.class)))
+                    .thenReturn(evalResponse)
+                    .thenReturn(scoreResponse);
+
+            service.generate(EVALUATION_ID, EXECUTION_SESSION_ID);
+
+            verify(modelInvoker, atLeastOnce()).invoke(chatRequestCaptor.capture());
+            ChatRequest firstRequest = chatRequestCaptor.getAllValues().get(0);
+            assertNotNull(firstRequest.getInstructions());
+            assertTrue(firstRequest.getInstructions().contains("百分制（0-100分）"));
+            assertEquals(1, firstRequest.getMessages().size(), "messages 只应包含 user prompt");
+            assertEquals("请对执行会话的回复质量进行评估。", firstRequest.getMessages().get(0).getContent());
+        }
+
+        @Test
+        void unsupportedRequestType_shouldThrowModelUnsupported() {
+            Evaluation evaluation = createEvaluation(BENCHMARK_SESSION_ID);
+            when(evaluationMapper.selectById(EVALUATION_ID)).thenReturn(evaluation);
+            when(messageDataProvider.getMessages(String.valueOf(BENCHMARK_SESSION_ID)))
+                    .thenReturn(List.of(createMessage("user", "hello")));
+            when(messageDataProvider.getMessages(String.valueOf(EXECUTION_SESSION_ID)))
+                    .thenReturn(List.of(createMessage("assistant", "hi there")));
+            ModelConfigData configData = new ModelConfigData("id", "key", "url", "model", 0.5, 100, "platform", "unknown");
+            when(chatDataProvider.getModelConfig(String.valueOf(MODEL_ID))).thenReturn(configData);
+            when(modelInvokerManager.getInvoker(configData)).thenReturn(modelInvoker);
+
+            BusinessException ex = assertThrows(BusinessException.class,
+                    () -> service.generate(EVALUATION_ID, EXECUTION_SESSION_ID));
+            assertEquals(ErrorCode.MODEL_UNSUPPORTED, ex.getErrorCode());
         }
     }
 
@@ -423,7 +510,8 @@ class EvaluationResultGenerateServiceTest {
             Method method = EvaluationResultGenerateService.class.getDeclaredMethod(
                     "extractFinalScore", String.class, ModelConfigData.class, ModelInvoker.class);
             method.setAccessible(true);
-            ModelConfigData configData = new ModelConfigData("id", "key", "url", "model", 0.5, 100, "platform", null);
+            ModelConfigData configData = new ModelConfigData("id", "key", "url", "model", 0.5, 100, "platform",
+                    RequestType.COMPLETIONS.getCode());
             return (Integer) method.invoke(service, evaluationResult, configData, modelInvoker);
         }
 

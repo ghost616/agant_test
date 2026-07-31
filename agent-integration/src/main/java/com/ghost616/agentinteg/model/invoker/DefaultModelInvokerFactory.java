@@ -1,6 +1,7 @@
 package com.ghost616.agentinteg.model.invoker;
 
 import com.ghost616.agentbase.dto.model.ModelConfigData;
+import com.ghost616.agentbase.enums.RequestType;
 import com.ghost616.agentbase.service.model.invoker.ModelInvoker;
 import com.ghost616.agentbase.service.model.invoker.ModelInvokerFactory;
 import lombok.RequiredArgsConstructor;
@@ -16,9 +17,11 @@ public class DefaultModelInvokerFactory implements ModelInvokerFactory {
     @Override
     public ModelInvoker createInvoker(ModelConfigData config) {
         String requestType = config.requestType();
-        boolean responsesRequest = "responses".equals(requestType) || "responses_stateless".equals(requestType);
-        if (responsesRequest && supportsResponses(config.platformType())) {
+        if (RequestType.isResponses(requestType) && supportsResponses(config.platformType())) {
             return createResponsesInvoker(config);
+        }
+        if (RequestType.COMPLETIONS.getCode().equals(requestType) || !supportsResponses(config.platformType())) {
+            return createChatCompletionsInvoker(config);
         }
         return createChatCompletionsInvoker(config);
     }

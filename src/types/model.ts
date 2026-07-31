@@ -1,5 +1,12 @@
 import type { CommonStatus, PlatformType } from './common';
 
+/** 请求类型枚举，code 对应后端 RequestType 枚举的 code 值 */
+export const RequestType = {
+  COMPLETIONS: { code: 'completions', description: 'Chat Completions' },
+  RESPONSES: { code: 'responses', description: 'Responses（有状态）' },
+  RESPONSES_STATELESS: { code: 'responses_stateless', description: 'Responses（无状态）' },
+} as const;
+
 export interface PlatformConfig {
   platformType: PlatformType;
   defaultBaseUrl: string;

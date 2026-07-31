@@ -1,5 +1,6 @@
 package com.ghost616.platform.service.model;
 
+import com.ghost616.agentbase.enums.RequestType;
 import com.ghost616.agentbase.service.model.invoker.ModelInvokerManager;
 import com.ghost616.agentinteg.model.PlatformType;
 import com.ghost616.platform.dto.model.ModelConfigDTO;
@@ -48,13 +49,13 @@ class ModelConfigServiceImplRequestTypeTest {
     void create_应持久化并映射requestType() {
         when(modelConfigMapper.selectCount(any())).thenReturn(0L);
 
-        ModelConfigDTO result = service.create(createRequest("responses"));
+        ModelConfigDTO result = service.create(createRequest(RequestType.RESPONSES.getCode()));
 
         ArgumentCaptor<ModelConfig> captor = ArgumentCaptor.forClass(ModelConfig.class);
         verify(modelConfigMapper).insert(captor.capture());
-        assertEquals("responses", captor.getValue().getRequestType(),
+        assertEquals(RequestType.RESPONSES.getCode(), captor.getValue().getRequestType(),
                 "插入实体的 requestType 应为 responses");
-        assertEquals("responses", result.getRequestType(),
+        assertEquals(RequestType.RESPONSES.getCode(), result.getRequestType(),
                 "返回 DTO 的 requestType 应为 responses");
     }
 
@@ -67,14 +68,14 @@ class ModelConfigServiceImplRequestTypeTest {
         when(modelConfigMapper.selectById(1L)).thenReturn(existing);
 
         ModelUpdateRequest request = ModelUpdateRequest.builder()
-                .requestType("responses")
+                .requestType(RequestType.RESPONSES.getCode())
                 .build();
         ModelConfigDTO result = service.update(1L, request);
 
         verify(modelConfigMapper).updateById(existing);
-        assertEquals("responses", existing.getRequestType(),
+        assertEquals(RequestType.RESPONSES.getCode(), existing.getRequestType(),
                 "实体 requestType 应更新为 responses");
-        assertEquals("responses", result.getRequestType());
+        assertEquals(RequestType.RESPONSES.getCode(), result.getRequestType());
         verify(modelInvokerManager).evict("1");
     }
 
@@ -99,11 +100,11 @@ class ModelConfigServiceImplRequestTypeTest {
     void getById_应映射requestType() {
         ModelConfig entity = new ModelConfig();
         entity.setId(1L);
-        entity.setRequestType("responses");
+        entity.setRequestType(RequestType.RESPONSES.getCode());
         when(modelConfigMapper.selectById(1L)).thenReturn(entity);
 
         ModelConfigDTO result = service.getById(1L);
 
-        assertEquals("responses", result.getRequestType());
+        assertEquals(RequestType.RESPONSES.getCode(), result.getRequestType());
     }
 }

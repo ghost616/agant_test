@@ -1,0 +1,12 @@
+[
+  {
+    "plan_id": "plan_092b5e78-fc37-4a41-860c-6a2452ba1530",
+    "plan": "EvaluationResultGenerateService.generate() 根据 requestType 分流构建 ChatRequest",
+    "modified_files": [
+      "platform-app/src/main/java/com/ghost616/platform/service/evaluation/EvaluationResultGenerateService.java",
+      "platform-app/src/test/java/com/ghost616/platform/service/evaluation/EvaluationResultGenerateServiceTest.java"
+    ],
+    "summary": "离朱测试通过：编译 1/1、单元 26/26。requestType=responses/responses_stateless 走 instructions 分支，其他情况保持原逻辑",
+    "errors": []
+  }
+]

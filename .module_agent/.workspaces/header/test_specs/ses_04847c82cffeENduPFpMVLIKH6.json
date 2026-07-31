@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_04847c82cffeENduPFpMVLIKH6",
+  "content": "本次变更涉及 platform-app 模块：\n\n1. com.ghost616.platform.service.evaluation.EvaluationResultGenerateService.buildChatRequest() 的 else 分支改为显式 COMPLETIONS 判断：\n   - `RequestType.isResponses(requestType)` 命中时走 instructions 分支（行为不变）\n   - 新增显式分支 `RequestType.COMPLETIONS.getCode().equals(requestType) || requestType == null || requestType.isEmpty()` 走原 buildJudgeMessages（system+user）逻辑\n   - 其他未知 requestType 值改为抛 BusinessException(ErrorCode.MODEL_UNSUPPORTED)\n\n2. EvaluationResultGenerateServiceTest 更新：\n   - 原 `new ModelConfigData(..., \"platform\", null)` 的 7 处 requestType 参数改为 `RequestType.COMPLETIONS.getCode()`\n   - 新增 unsupportedRequestType_shouldThrowModelUnsupported 测试：requestType=\"unknown\" 时 generate 抛 MODEL_UNSUPPORTED\n\n涉及文件：\n- platform-app/src/main/java/com/ghost616/platform/service/evaluation/EvaluationResultGenerateService.java\n- platform-app/src/test/java/com/ghost616/platform/service/evaluation/EvaluationResultGenerateServiceTest.java\n\n需要验证：platform-app 模块 Maven 编译通过；EvaluationResultGenerateServiceTest（含新增 unsupported 用例）及相关既有测试回归通过。",
+  "timestamp": "2026-07-31T10:54:44.973Z"
+}

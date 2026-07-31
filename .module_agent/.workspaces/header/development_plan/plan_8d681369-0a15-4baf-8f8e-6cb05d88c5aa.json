@@ -1,0 +1,14 @@
+{
+  "plan_id": "plan_8d681369-0a15-4baf-8f8e-6cb05d88c5aa",
+  "module_name": "agent-base",
+  "development_plan": "1. 新建 com.ghost616.agentbase.enums.RequestType 枚举，包含 RESPONSES(\"responses\", \"Responses（有状态）\") 和 RESPONSES_STATELESS(\"responses_stateless\", \"Responses（无状态）\") 两个值，提供 getCode()/getDescription() 方法和静态 isResponses(String code) 判断方法。\n2. ModelConfigData record 添加实例方法 isResponsesType() 委托 RequestType.isResponses()\n3. ChatService.chat() 路由中 3 处字符串比较替换为 RequestType 枚举判断\n4. 更新 ChatServiceResponsesTest 等相关测试",
+  "session_id": "ses_048570316ffeUGTpnVVyyv9mq1",
+  "modified_files": [
+    "agent-base/src/main/java/com/ghost616/agentbase/enums/RequestType.java",
+    "agent-base/src/main/java/com/ghost616/agentbase/dto/model/ModelConfigData.java",
+    "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ChatService.java",
+    "agent-base/src/test/java/com/ghost616/agentbase/service/agent/ChatServiceResponsesTest.java",
+    "agent-base/src/test/java/com/ghost616/agentbase/enums/RequestTypeTest.java",
+    "agent-base/src/test/java/com/ghost616/agentbase/dto/model/ModelConfigDataTest.java"
+  ]
+}

@@ -10,6 +10,7 @@ import com.ghost616.agentbase.dto.model.ToolDefinition;
 import com.ghost616.agentbase.dto.model.UsageInfo;
 import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
 import com.ghost616.agentbase.dto.model.ModelConfigData;
+import com.ghost616.agentbase.enums.RequestType;
 import com.ghost616.agentbase.service.model.invoker.ModelInvoker;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -229,12 +230,12 @@ class OpenAIResponsesInvokerTest {
                 RestClient.builder(), WebClient.builder());
 
         ModelConfigData responsesConfig = new ModelConfigData(
-                "1", "key", "url", "model", 0.7, 2048, "OPENAI", "responses");
+                "1", "key", "url", "model", 0.7, 2048, "OPENAI", RequestType.RESPONSES.getCode());
         ModelInvoker invoker1 = factory.createInvoker(responsesConfig);
         assertTrue(invoker1 instanceof OpenAIResponsesInvoker);
 
         ModelConfigData statelessConfig = new ModelConfigData(
-                "1", "key", "url", "model", 0.7, 2048, "OPENAI", "responses_stateless");
+                "1", "key", "url", "model", 0.7, 2048, "OPENAI", RequestType.RESPONSES_STATELESS.getCode());
         ModelInvoker invoker2 = factory.createInvoker(statelessConfig);
         assertTrue(invoker2 instanceof OpenAIResponsesInvoker);
     }
@@ -245,7 +246,7 @@ class OpenAIResponsesInvokerTest {
                 RestClient.builder(), WebClient.builder());
 
         ModelConfigData chatConfig = new ModelConfigData(
-                "1", "key", "url", "model", 0.7, 2048, "OPENAI", "chat_completions");
+                "1", "key", "url", "model", 0.7, 2048, "OPENAI", RequestType.COMPLETIONS.getCode());
         ModelInvoker invoker1 = factory.createInvoker(chatConfig);
         assertTrue(invoker1 instanceof OpenAIInvoker);
 
@@ -260,17 +261,17 @@ class OpenAIResponsesInvokerTest {
         DefaultModelInvokerFactory factory = new DefaultModelInvokerFactory(
                 RestClient.builder(), WebClient.builder());
 
-        assertTrue(factory.createInvoker(platformConfig("OPENAI", "responses"))
+        assertTrue(factory.createInvoker(platformConfig("OPENAI", RequestType.RESPONSES.getCode()))
                 instanceof OpenAIResponsesInvoker);
-        assertTrue(factory.createInvoker(platformConfig("DEEPSEEK", "responses"))
+        assertTrue(factory.createInvoker(platformConfig("DEEPSEEK", RequestType.RESPONSES.getCode()))
                 instanceof DeepSeekResponsesInvoker);
-        assertTrue(factory.createInvoker(platformConfig("KIMI", "responses"))
+        assertTrue(factory.createInvoker(platformConfig("KIMI", RequestType.RESPONSES.getCode()))
                 instanceof KimiResponsesInvoker);
-        assertTrue(factory.createInvoker(platformConfig("VOLCENGINE", "responses_stateless"))
+        assertTrue(factory.createInvoker(platformConfig("VOLCENGINE", RequestType.RESPONSES_STATELESS.getCode()))
                 instanceof VolcEngineResponsesInvoker);
-        assertTrue(factory.createInvoker(platformConfig("AZURE", "responses"))
+        assertTrue(factory.createInvoker(platformConfig("AZURE", RequestType.RESPONSES.getCode()))
                 instanceof AzureResponsesInvoker);
-        assertTrue(factory.createInvoker(platformConfig("CUSTOM", "responses_stateless"))
+        assertTrue(factory.createInvoker(platformConfig("CUSTOM", RequestType.RESPONSES_STATELESS.getCode()))
                 instanceof CustomResponsesInvoker);
     }
 
@@ -279,19 +280,19 @@ class OpenAIResponsesInvokerTest {
         DefaultModelInvokerFactory factory = new DefaultModelInvokerFactory(
                 RestClient.builder(), WebClient.builder());
 
-        assertTrue(factory.createInvoker(platformConfig("DEEPSEEK", "chat_completions"))
+        assertTrue(factory.createInvoker(platformConfig("DEEPSEEK", RequestType.COMPLETIONS.getCode()))
                 instanceof DeepSeekInvoker);
         assertTrue(factory.createInvoker(platformConfig("KIMI", null))
                 instanceof KimiInvoker);
-        assertTrue(factory.createInvoker(platformConfig("VOLCENGINE", "chat_completions"))
+        assertTrue(factory.createInvoker(platformConfig("VOLCENGINE", RequestType.COMPLETIONS.getCode()))
                 instanceof VolcEngineInvoker);
         assertTrue(factory.createInvoker(platformConfig("AZURE", null))
                 instanceof AzureInvoker);
-        assertTrue(factory.createInvoker(platformConfig("CUSTOM", "chat_completions"))
+        assertTrue(factory.createInvoker(platformConfig("CUSTOM", RequestType.COMPLETIONS.getCode()))
                 instanceof CustomInvoker);
-        assertTrue(factory.createInvoker(platformConfig("ANTHROPIC", "responses"))
+        assertTrue(factory.createInvoker(platformConfig("ANTHROPIC", RequestType.RESPONSES.getCode()))
                 instanceof AnthropicInvoker);
-        assertTrue(factory.createInvoker(platformConfig("OLLAMA", "responses"))
+        assertTrue(factory.createInvoker(platformConfig("OLLAMA", RequestType.RESPONSES.getCode()))
                 instanceof OllamaInvoker);
     }
 

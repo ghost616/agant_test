@@ -1,0 +1,10 @@
+{
+  "plan_id": "plan_4a4d5248-9391-4eda-9bae-f9775dfea6e0",
+  "module_name": "agent-integration",
+  "development_plan": "DefaultModelInvokerFactory.createInvoker() 中 \"responses\".equals(requestType) || \"responses_stateless\".equals(requestType) 替换为 RequestType.isResponses(requestType) 枚举方法判断；更新 OpenAIResponsesInvokerTest 等相关测试中的字符串替换为 RequestType 枚举值",
+  "session_id": "ses_04847b5a9ffehCrOwp3B978CY2",
+  "modified_files": [
+    "agent-integration/src/main/java/com/ghost616/agentinteg/model/invoker/DefaultModelInvokerFactory.java",
+    "agent-integration/src/test/java/com/ghost616/agentinteg/model/invoker/OpenAIResponsesInvokerTest.java"
+  ]
+}

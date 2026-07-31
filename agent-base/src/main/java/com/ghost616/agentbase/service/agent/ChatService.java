@@ -31,6 +31,7 @@ import com.ghost616.agentbase.dto.skill.SkillConfigDTO;
 import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
 import com.ghost616.agentbase.enums.ErrorCode;
 import com.ghost616.agentbase.enums.HookPhase;
+import com.ghost616.agentbase.enums.RequestType;
 import com.ghost616.agentbase.enums.SessionAuthType;
 import com.ghost616.agentbase.exception.BusinessException;
 import com.ghost616.agentbase.service.agent.invoker.HistoryQuerySystemTool;
@@ -115,10 +116,11 @@ public class ChatService {
         hookManager.triggerSessionHooks(sessionId, HookPhase.SESSION_START, context, new HookData((ChatChunk) null));
         hookManager.triggerHooks(HookPhase.SESSION_START, context, new HookData((ChatChunk) null));
 
-        if ("responses".equals(configData.requestType())) {
+        String requestType = configData.requestType();
+        if (RequestType.RESPONSES.getCode().equals(requestType)) {
             return chatViaResponses(request, context, contextMutator, sessionId, configData);
         }
-        if ("responses_stateless".equals(configData.requestType())) {
+        if (RequestType.RESPONSES_STATELESS.getCode().equals(requestType)) {
             return chatViaResponsesStateless(request, context, contextMutator, sessionId, configData);
         }
         return chatViaChatCompletions(request, context, contextMutator, sessionId, configData);

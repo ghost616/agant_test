@@ -1,0 +1,28 @@
+[
+  {
+    "plan_id": "plan_8d681369-0a15-4baf-8f8e-6cb05d88c5aa",
+    "plan": "新建 RequestType 枚举并重构 ChatService 路由与测试",
+    "modified_files": [
+      "agent-base/src/main/java/com/ghost616/agentbase/enums/RequestType.java",
+      "agent-base/src/main/java/com/ghost616/agentbase/dto/model/ModelConfigData.java",
+      "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ChatService.java",
+      "agent-base/src/test/java/com/ghost616/agentbase/service/agent/ChatServiceResponsesTest.java",
+      "agent-base/src/test/java/com/ghost616/agentbase/enums/RequestTypeTest.java",
+      "agent-base/src/test/java/com/ghost616/agentbase/dto/model/ModelConfigDataTest.java"
+    ],
+    "summary": "已完成代码修改：新建 RequestType 枚举、ModelConfigData 新增 isResponsesType() 委托、ChatService 路由改为 RequestType 枚举判断、更新 ChatServiceResponsesTest 使用枚举常量、新增 RequestTypeTest 与 ModelConfigDataTest",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_22fc3df8-0cda-4839-bc4a-57cf8e3f76b9",
+    "plan": "RequestType 新增 COMPLETIONS 枚举值并改为显式三路路由",
+    "modified_files": [
+      "agent-base/src/main/java/com/ghost616/agentbase/enums/RequestType.java",
+      "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ChatService.java",
+      "agent-base/src/test/java/com/ghost616/agentbase/service/agent/ChatServiceResponsesTest.java",
+      "agent-base/src/test/java/com/ghost616/agentbase/enums/RequestTypeTest.java"
+    ],
+    "summary": "任务已启动：RequestType 新增 COMPLETIONS(\"completions\", \"Chat Completions\")，isResponses 仍只判断 RESPONSES/RESPONSES_STATELESS；ChatService 路由改显式三路判断；更新 ChatServiceResponsesTest 与 RequestTypeTest",
+    "errors": []
+  }
+]

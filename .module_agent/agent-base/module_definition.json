@@ -83,7 +83,7 @@
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/dto/model/ModelConfigData.java",
-      "description": "模型配置数据 record，包含 id/apiKey/baseUrl/modelName/temperature/maxTokens/platformType 字段"
+      "description": "模型配置数据 record，包含 id/apiKey/baseUrl/modelName/temperature/maxTokens/platformType/requestType 字段，提供 isResponsesType() 方法委托 RequestType.isResponses 判断是否走 Responses 系列请求。"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ChatDataProvider.java",
@@ -95,7 +95,7 @@
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ChatService.java",
-      "description": "聊天服务核心类。持有 HookManager 实例，refreshHooks/triggerHooks/triggerSessionHooks/executePostHooks 全部委托给 hookManager。提供 setHookManager(HookManager) setter 支持外部注入共享实例。移除了原有的 systemHooks/systemPostHooks/regularPhaseHooks 字段及私有方法。在 SESSION_START/BEFORE_MESSAGE_SEND/AFTER_MESSAGE_RECEIVE 三处 triggerHooks 调用前增加 triggerSessionHooks 调用。"
+      "description": "聊天服务核心类。持有 HookManager 实例，refreshHooks/triggerHooks/triggerSessionHooks/executePostHooks 全部委托给 hookManager。提供 setHookManager(HookManager) setter 支持外部注入共享实例。移除了原有的 systemHooks/systemPostHooks/regularPhaseHooks 字段及私有方法。在 SESSION_START/BEFORE_MESSAGE_SEND/AFTER_MESSAGE_RECEIVE 三处 triggerHooks 调用前增加 triggerSessionHooks 调用。chat() 入口路由基于 RequestType 枚举对 configData.requestType() 显式三路分发：RESPONSES→chatViaResponses()（有状态）、RESPONSES_STATELESS→chatViaResponsesStateless()（无状态）、COMPLETIONS/null/其他→chatViaChatCompletions()。"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/ContextSerializer.java",
@@ -332,6 +332,18 @@
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/CustomToolInvoker.java",
       "description": "自定义工具调用器抽象基类，实现 ToolInvoker 接口，持有 protected final ToolConfigDTO toolConfig 属性通过构造函数注入，供外部继承实现 execute 方法"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/enums/RequestType.java",
+      "description": "模型请求类型枚举，定义模型请求分发方式。包含 RESPONSES(\"responses\", \"Responses（有状态）\")、RESPONSES_STATELESS(\"responses_stateless\", \"Responses（无状态）\")、COMPLETIONS(\"completions\", \"Chat Completions\") 三个值，提供 getCode()/getDescription() 方法及静态 isResponses(String code) 判断（仅对 responses 与 responses_stateless 返回 true，排除 completions）。供 ModelConfigData.isResponsesType() 与 ChatService 路由使用。"
+    },
+    {
+      "path": "agent-base/src/test/java/com/ghost616/agentbase/enums/RequestTypeTest.java",
+      "description": "RequestType 枚举单元测试，覆盖两个枚举值的 getCode/getDescription 及静态 isResponses 方法各分支（responses/responses_stateless 返回 true，其他值/null 返回 false）。"
+    },
+    {
+      "path": "agent-base/src/test/java/com/ghost616/agentbase/dto/model/ModelConfigDataTest.java",
+      "description": "ModelConfigData.isResponsesType() 委托逻辑单元测试，覆盖 responses/responses_stateless 返回 true、其他值/null 返回 false。"
     }
   ]
 }

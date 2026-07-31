@@ -5,6 +5,7 @@ import com.ghost616.agentbase.dto.model.ChatResponse;
 import com.ghost616.agentbase.dto.model.Message;
 import com.ghost616.agentbase.dto.model.ModelConfigData;
 import com.ghost616.agentbase.enums.ErrorCode;
+import com.ghost616.agentbase.enums.RequestType;
 import com.ghost616.agentbase.exception.BusinessException;
 import com.ghost616.agentbase.service.agent.ChatDataProvider;
 import com.ghost616.agentbase.service.agent.MessageDataProvider;
@@ -63,8 +64,6 @@ public class EvaluationResultGenerateService {
         List<MessageDataProvider.MessageDTO> executionMessages = messageDataProvider.getMessages(
                 String.valueOf(executionSessionId));
 
-        List<Message> judgeMessages = buildJudgeMessages(benchmarkMessages, executionMessages);
-
         ModelConfigData configData = chatDataProvider.getModelConfig(String.valueOf(evaluation.getModelId()));
         if (configData == null) {
             throw new BusinessException(ErrorCode.MODEL_NOT_FOUND);
@@ -72,9 +71,7 @@ public class EvaluationResultGenerateService {
 
         ModelInvoker invoker = modelInvokerManager.getInvoker(configData);
 
-        ChatRequest chatRequest = ChatRequest.builder()
-                .messages(judgeMessages)
-                .build();
+        ChatRequest chatRequest = buildChatRequest(benchmarkMessages, executionMessages, configData);
 
         ChatResponse response;
         try {
@@ -98,10 +95,46 @@ public class EvaluationResultGenerateService {
         evaluationResultMapper.insert(evaluationResult);
     }
 
+    private ChatRequest buildChatRequest(List<MessageDataProvider.MessageDTO> benchmarkMessages,
+                                         List<MessageDataProvider.MessageDTO> executionMessages,
+                                         ModelConfigData configData) {
+        String requestType = configData.requestType();
+        if (RequestType.isResponses(requestType)) {
+            return ChatRequest.builder()
+                    .instructions(buildJudgeSystemContent(benchmarkMessages, executionMessages))
+                    .messages(List.of(Message.builder()
+                            .role("user")
+                            .content("请对执行会话的回复质量进行评估。")
+                            .build()))
+                    .build();
+        }
+        if (RequestType.COMPLETIONS.getCode().equals(requestType) || requestType == null || requestType.isEmpty()) {
+            return ChatRequest.builder()
+                    .messages(buildJudgeMessages(benchmarkMessages, executionMessages))
+                    .build();
+        }
+        throw new BusinessException(ErrorCode.MODEL_UNSUPPORTED);
+    }
+
     private List<Message> buildJudgeMessages(List<MessageDataProvider.MessageDTO> benchmarkMessages,
                                               List<MessageDataProvider.MessageDTO> executionMessages) {
         List<Message> messages = new ArrayList<>();
 
+        messages.add(Message.builder()
+                .role("system")
+                .content(buildJudgeSystemContent(benchmarkMessages, executionMessages))
+                .build());
+
+        messages.add(Message.builder()
+                .role("user")
+                .content("请对执行会话的回复质量进行评估。")
+                .build());
+
+        return messages;
+    }
+
+    private String buildJudgeSystemContent(List<MessageDataProvider.MessageDTO> benchmarkMessages,
+                                           List<MessageDataProvider.MessageDTO> executionMessages) {
         StringBuilder systemContent = new StringBuilder();
         systemContent.append("你是一个评估助手，需要对比基准会话和执行会话的对话内容，评估执行会话的回复质量。\n\n");
 
@@ -125,17 +158,7 @@ public class EvaluationResultGenerateService {
 
         systemContent.append("\n\n").append(SCORING_RULES);
 
-        messages.add(Message.builder()
-                .role("system")
-                .content(systemContent.toString())
-                .build());
-
-        messages.add(Message.builder()
-                .role("user")
-                .content("请对执行会话的回复质量进行评估。")
-                .build());
-
-        return messages;
+        return systemContent.toString();
     }
 
     private Integer extractFinalScore(String evaluationResult, ModelConfigData configData, ModelInvoker invoker) {

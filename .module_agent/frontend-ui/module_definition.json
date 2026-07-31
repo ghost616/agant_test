@@ -7,7 +7,7 @@
     },
     {
       "path": "src/pages/models/ModelList.tsx",
-      "description": "模型列表页面组件，包含模型列表展示、搜索筛选、状态切换、编辑删除等操作。定义 PLATFORM_TYPE_LABELS 映射表。离朱在 2026-07-21 新增 KIMI'Kimi' 和 VOLCENGINE'火山引擎' 映射。2026-07-31 新增 REQUEST_TYPE_OPTIONS/RESPONSES_SUPPORTED 常量、requestType 表单 Select（仅 RESPONSES_SUPPORTED 平台显示）与请求类型表格列。"
+      "description": "模型列表页面组件，包含模型列表展示、搜索筛选、状态切换、编辑删除等操作。定义 PLATFORM_TYPE_LABELS 映射表。离朱在 2026-07-21 新增 KIMI'Kimi' 和 VOLCENGINE'火山引擎' 映射。2026-07-31 新增 REQUEST_TYPE_OPTIONS/RESPONSES_SUPPORTED 常量、requestType 表单 Select（仅 RESPONSES_SUPPORTED 平台显示）与请求类型表格列，REQUEST_TYPE_OPTIONS 的 value 使用 RequestType 枚举 code 值（RequestType.RESPONSES.code / RequestType.RESPONSES_STATELESS.code）。"
     },
     {
       "path": "src/pages/models/ModelTest.tsx",
@@ -123,7 +123,7 @@
     },
     {
       "path": "src/types/model.ts",
-      "description": "模型模块 TypeScript 类型定义：PlatformConfig（平台默认配置）、ModelConfig（模型配置，含 id/name/platformType/apiKey/baseUrl/modelName/temperature/maxTokens/status/description/requestType/createTime/updateTime）、ModelFormData 表单数据类型（Omit 派生）、ChatRequest/ChatResponse/ChatChunk/Message/ToolCall 等对话消息与流式数据结构"
+      "description": "模型模块 TypeScript 类型定义：PlatformConfig（平台默认配置）、ModelConfig（模型配置，含 id/name/platformType/apiKey/baseUrl/modelName/temperature/maxTokens/status/description/requestType/createTime/updateTime）、ModelFormData 表单数据类型（Omit 派生）、ChatRequest/ChatResponse/ChatChunk/Message/ToolCall 等对话消息与流式数据结构。RequestType 常量枚举（RESPONSES/RESPONSES_STATELESS，各含 code/description，code 对应后端 RequestType 枚举）"
     }
   ]
 }

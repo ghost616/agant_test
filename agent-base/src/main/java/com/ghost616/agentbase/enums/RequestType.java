@@ -1,0 +1,34 @@
+package com.ghost616.agentbase.enums;
+
+import com.baomidou.mybatisplus.annotation.EnumValue;
+
+/**
+ * 模型请求类型枚举，定义模型的请求分发方式。
+ */
+public enum RequestType {
+
+    RESPONSES("responses", "Responses（有状态）"),
+    RESPONSES_STATELESS("responses_stateless", "Responses（无状态）"),
+    COMPLETIONS("completions", "Chat Completions");
+
+    @EnumValue
+    private final String code;
+    private final String description;
+
+    RequestType(String code, String description) {
+        this.code = code;
+        this.description = description;
+    }
+
+    public String getCode() {
+        return code;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public static boolean isResponses(String code) {
+        return RESPONSES.code.equals(code) || RESPONSES_STATELESS.code.equals(code);
+    }
+}

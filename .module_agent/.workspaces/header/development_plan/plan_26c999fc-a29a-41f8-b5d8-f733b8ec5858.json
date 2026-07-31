@@ -1,0 +1,11 @@
+{
+  "plan_id": "plan_26c999fc-a29a-41f8-b5d8-f733b8ec5858",
+  "module_name": "platform-app",
+  "development_plan": "EvaluationResultGenerateService.buildChatRequest() 中 \"responses\".equals(requestType) || \"responses_stateless\".equals(requestType) 替换为 RequestType.isResponses(requestType)；更新 EvaluationResultGenerateServiceTest 和 ModelConfigServiceImplRequestTypeTest 中字符串为 RequestType 枚举值",
+  "session_id": "ses_04847c82cffeENduPFpMVLIKH6",
+  "modified_files": [
+    "platform-app/src/main/java/com/ghost616/platform/service/evaluation/EvaluationResultGenerateService.java",
+    "platform-app/src/test/java/com/ghost616/platform/service/evaluation/EvaluationResultGenerateServiceTest.java",
+    "platform-app/src/test/java/com/ghost616/platform/service/model/ModelConfigServiceImplRequestTypeTest.java"
+  ]
+}
