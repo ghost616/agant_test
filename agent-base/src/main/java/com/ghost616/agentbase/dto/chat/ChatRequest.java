@@ -21,4 +21,7 @@ public class ChatRequest {
     private String modelId;
 
     private Boolean thinking;
+
+    /** 上一轮响应的 ID（Responses API 多轮续接时透传给模型请求） */
+    private String previousResponseId;
 }

@@ -42,7 +42,7 @@ execute 方法签名由 execute(AgentExecutionContext, ChatChunk) 改为 execute
 非 Spring 组件（已去掉 @Component），保留 @Slf4j。构造函数改为接收 AgentComponentRegistry，通过 registry.getToolExecutionProvider() 获取 ToolExecutionProvider，所有 Map 操作（setExecuting/setDone/setFailed/clear/getCurrentExecution/getAndClearResults）委派给 provider。内部 record ToolExecutionStatus（status/toolId/toolName/arguments）和 ToolResult（toolId/toolName/arguments/result）保持不变。
 ## ModelConfigData
 
-ModelConfigData record（com.ghost616.agentbase.dto.model.ModelConfigData），包含字段：String id, String apiKey, String baseUrl, String modelName, Double temperature, Integer maxTokens, String platformType。
+ModelConfigData record（com.ghost616.agentbase.dto.model.ModelConfigData），包含字段：String id, String apiKey, String baseUrl, String modelName, Double temperature, Integer maxTokens, String platformType, String requestType。requestType 表示模型请求类型（如 "responses" 走 Responses API），可为 null，ChatService 依据该字段分发调用流程。
 ## ModelInvokerFactory
 
 ModelInvokerFactory 接口（com.ghost616.agentbase.service.model.invoker.ModelInvokerFactory），定义 createInvoker(ModelConfigData) 方法，返回 ModelInvoker。用于解耦 ModelInvokerManager 与具体 invoker 创建逻辑。
@@ -51,14 +51,21 @@ ModelInvokerFactory 接口（com.ghost616.agentbase.service.model.invoker.ModelI
 从 platform-app 迁移而来。已去掉 @Component/@RequiredArgsConstructor 及 RestClient.Builder/WebClient.Builder 字段，改为构造函数注入 ModelInvokerFactory。createInvoker 委托给 factory.createInvoker(config)。getInvoker 参数改为 ModelConfigData，通过 config.id() 缓存。提供 register/evict/clear/cacheSize/getInvokerById 方法。
 ## ChatService
 
-ChatService 聊天服务，非 Spring 组件。构造函数改为接收 AgentComponentRegistry，通过 registry 延迟获取 AgentContextManager/SessionManager/ModelInvokerManager/SystemToolManager/ChatDataProvider。chat(ChatRequest) 方法构建消息上下文与工具列表，调用 ModelInvoker 流式推理，通过 HOOK 机制在 SESSION_START/BEFORE_MESSAGE_SEND/AFTER_MESSAGE_RECEIVE 阶段拦截处理。内部包含 parseLoadedSkills 解析已加载技能、foldMessageGroups 按 recentMessageCount 折叠历史消息。refreshHooks() 可重复调用，每次调用前清空 systemHooks/systemPostHooks/regularPhaseHooks 再重新加载。
-新增 setHookManager(HookManager) setter 方法，支持外部注入共享 HookManager 实例替换默认创建的单例。
+ChatService 聊天服务，非 Spring 组件。构造函数接收 AgentComponentRegistry，通过 registry 延迟获取 AgentContextManager/SessionManager/ModelInvokerManager/SystemToolManager/ChatDataProvider。chat(ChatRequest) 为入口路由方法：先构建会话上下文、保存用户消息、更新模型 ID、获取 ModelConfigData 并触发 SESSION_START HOOK，再根据 configData.requestType() 三路分发：requestType=="responses" 走 chatViaResponses()（有状态），requestType=="responses_stateless" 走 chatViaResponsesStateless()（无状态），其余走 chatViaChatCompletions()。
+
+chatViaChatCompletions() 承载原 chat() 核心逻辑（构建 system 消息、拼接历史、调用 invoker.invokeStream）。
+
+chatViaResponses()（有状态）：previousResponseId 优先取自会话上下文 lastResponseId（AgentExecutionContext.lastResponseId，由流式 response.completed 携带的 responseId 写入），lastResponseId 为 null 时回退到 API 请求的 previousResponseId；input 只传增量消息（从最后一个 user 角色历史条目起，即本轮 user + 返回的 assistant/tool），不重复发送此前各轮的 assistant 消息。
+
+chatViaResponsesStateless()（无状态）：不传 previousResponseId，input 传全量历史 messages（不含 system role），与 chat completions 全量一致。
+
+两条 responses 流程均将 system prompt 与动态技能提示词拼入 ChatRequest.instructions 字段，input 不含 system role。三路流程共用 buildContextSystemInfo（构建技能/子会话 system 消息及 filteredLoadedSkills）、buildToolDefinitions（工具列表构建）、buildInstructions、buildMessageFromEntry、buildFullMessages/buildIncrementalMessages、filterAndFold、toSseStream（流式 SSE + HOOK 拦截 + 捕获 chunk.responseId 写入 context.lastResponseId）。foldMessageGroups 按 recentMessageCount 折叠历史消息（支持无 system 前缀输入）。
 ## ChatDataProvider
 
 聊天数据提供者接口（com.ghost616.agentbase.service.agent.ChatDataProvider），定义四个方法：getModelConfig(String modelId) 按 ID 获取 ModelConfigData、updateSessionModelId(String sessionId, String modelId) 更新会话的模型 ID、getHooks() 获取所有已注册的 HookInvoker、getHooks(String sessionId) 按会话 ID 获取对应的 HookInvoker 列表。用于解耦 ChatService 与具体数据访问层。
 ## ChatRequest
 
-聊天请求 DTO（com.ghost616.agentbase.dto.chat.ChatRequest），从 platform-app 迁移而来，改包名为 com.ghost616.agentbase.dto.chat。包含字段：sessionId（必填）、content（必填）、modelId（可选）、thinking（可选）。
+聊天请求 DTO（com.ghost616.agentbase.dto.chat.ChatRequest），从 platform-app 迁移而来，改包名为 com.ghost616.agentbase.dto.chat。包含字段：sessionId（必填）、content（必填）、modelId（可选）、thinking（可选）、previousResponseId（可选，Responses API 多轮续接时透传给模型请求）。
 ## AgentContextManager
 
 AgentContextManager（非 @Component，通过 @Bean 注册）：注入 ContextDataProvider/SessionManager/ToolManager，管理会话上下文缓存 ConcurrentHashMap<String, AgentSessionContext>；提供 build(sessionId) 实例方法返回 Builder 内部类（支持 modelIdOverride 链式调用），Builder.build() 通过 cache.computeIfAbsent 使用 dataProvider 查询 agent/session 数据、toolManager 加载工具、sessionManager 获取历史消息，并在加载 skills 后遍历每条 SkillConfigDTO 的 skillTools，对 MCP_HTTP 类型工具调用 toolManager.expandMcpTools() 展开为 McpExpandedToolDTO 列表替换原始 DTO；保留 get/remove/addHistoryEntry 方法。
@@ -179,3 +186,6 @@ CustomToolInvoker（com.ghost616.agentbase.service.agent.invoker.CustomToolInvok
 ## ToolDataProvider
 
 ToolDataProvider（com.ghost616.agentbase.service.agent.ToolDataProvider），工具数据提供者接口，定义 getSessionToolIds/getToolById/getSkillToolIds/getCustomInvoker 方法。getSkillToolIds 返回类型从 List<String> 改为 List<SkillToolInfo>，SkillToolInfo 为内部 record（skillId/sessionAuth/toolIds），按技能分组并携带授权类型。getCustomInvoker(ToolConfigDTO) 返回 CustomToolInvoker，替代原 CustomToolInvokerProvider 接口能力。
+## 对话模型请求/响应 DTO
+
+对话模型请求 DTO（com.ghost616.agentbase.dto.model.ChatRequest），承载发送给模型服务的请求：messages（对话消息）、tools（工具定义）、temperature、maxTokens、model、thinking、previousResponseId（上一轮响应 ID，Responses API 多轮续接）、instructions（系统级指令，Responses API 下存放 system prompt 与动态技能提示词）。对话响应 DTO（com.ghost616.agentbase.dto.model.ChatResponse）新增 responseId 字段，为模型返回的响应 ID，供下一轮续接时作为 previousResponseId 使用。流式片段 ChatChunk 新增 responseId 字段，由 OpenAIResponsesInvoker 在解析 response.completed 事件时从 response.id 写入，ChatService.toSseStream 捕获后存入会话上下文 lastResponseId 供有状态续接。

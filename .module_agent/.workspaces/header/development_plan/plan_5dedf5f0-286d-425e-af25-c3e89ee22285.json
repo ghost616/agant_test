@@ -1,0 +1,10 @@
+{
+  "plan_id": "plan_5dedf5f0-286d-425e-af25-c3e89ee22285",
+  "module_name": "agent-integration",
+  "development_plan": "DefaultModelInvokerFactory.createInvoker() 新增分支：platformType=\"OPENAI\" 且 requestType=\"responses_stateless\" 时同样返回 OpenAIResponsesInvoker（与 \"responses\" 共用同一个 Invoker 类）",
+  "session_id": "ses_048c8f0cbffexvUf6ZoqVNLpOb",
+  "modified_files": [
+    "agent-integration/src/main/java/com/ghost616/agentinteg/model/invoker/DefaultModelInvokerFactory.java",
+    "agent-integration/src/test/java/com/ghost616/agentinteg/model/invoker/OpenAIResponsesInvokerTest.java"
+  ]
+}

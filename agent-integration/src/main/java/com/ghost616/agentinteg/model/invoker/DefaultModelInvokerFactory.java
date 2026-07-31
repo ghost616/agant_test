@@ -15,6 +15,41 @@ public class DefaultModelInvokerFactory implements ModelInvokerFactory {
 
     @Override
     public ModelInvoker createInvoker(ModelConfigData config) {
+        String requestType = config.requestType();
+        boolean responsesRequest = "responses".equals(requestType) || "responses_stateless".equals(requestType);
+        if (responsesRequest && supportsResponses(config.platformType())) {
+            return createResponsesInvoker(config);
+        }
+        return createChatCompletionsInvoker(config);
+    }
+
+    private boolean supportsResponses(String platformType) {
+        return switch (platformType) {
+            case "OPENAI", "DEEPSEEK", "KIMI", "VOLCENGINE", "AZURE", "CUSTOM" -> true;
+            default -> false;
+        };
+    }
+
+    private ModelInvoker createResponsesInvoker(ModelConfigData config) {
+        return switch (config.platformType()) {
+            case "OPENAI" -> new OpenAIResponsesInvoker(config.apiKey(), config.baseUrl(), config.modelName(),
+                    config.temperature(), config.maxTokens(), restClientBuilder, webClientBuilder);
+            case "DEEPSEEK" -> new DeepSeekResponsesInvoker(config.apiKey(), config.baseUrl(), config.modelName(),
+                    config.temperature(), config.maxTokens(), restClientBuilder, webClientBuilder);
+            case "KIMI" -> new KimiResponsesInvoker(config.apiKey(), config.baseUrl(), config.modelName(),
+                    config.temperature(), config.maxTokens(), restClientBuilder, webClientBuilder);
+            case "VOLCENGINE" -> new VolcEngineResponsesInvoker(config.apiKey(), config.baseUrl(), config.modelName(),
+                    config.temperature(), config.maxTokens(), restClientBuilder, webClientBuilder);
+            case "AZURE" -> new AzureResponsesInvoker(config.apiKey(), config.baseUrl(), config.modelName(),
+                    config.temperature(), config.maxTokens(), restClientBuilder, webClientBuilder);
+            case "CUSTOM" -> new CustomResponsesInvoker(config.apiKey(), config.baseUrl(), config.modelName(),
+                    config.temperature(), config.maxTokens(), restClientBuilder, webClientBuilder);
+            default -> throw new IllegalArgumentException(
+                    "Unsupported responses platform type: " + config.platformType());
+        };
+    }
+
+    private ModelInvoker createChatCompletionsInvoker(ModelConfigData config) {
         return switch (config.platformType()) {
             case "OPENAI" -> new OpenAIInvoker(config.apiKey(), config.baseUrl(), config.modelName(),
                     config.temperature(), config.maxTokens(), restClientBuilder, webClientBuilder);

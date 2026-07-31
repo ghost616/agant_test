@@ -33,4 +33,10 @@ public class ChatRequest {
 
     /** 是否启用思考模式 */
     private Boolean thinking;
+
+    /** 上一轮响应的 ID（Responses API 多轮续接时使用） */
+    private String previousResponseId;
+
+    /** 系统级指令（Responses API 下存放 system prompt 与动态技能提示词） */
+    private String instructions;
 }

@@ -83,7 +83,7 @@ class ChatServiceTest {
         when(context.getTools()).thenReturn(java.util.Collections.emptyList());
         when(context.isMainSession()).thenReturn(false);
         when(systemToolManager.getToolDefinitions()).thenReturn(java.util.Collections.emptyList());
-        when(chatDataProvider.getModelConfig(any())).thenReturn(new ModelConfigData("1", "key", "url", "model", 0.7, 4096, "openai"));
+        when(chatDataProvider.getModelConfig(any())).thenReturn(new ModelConfigData("1", "key", "url", "model", 0.7, 4096, "openai", null));
         when(modelInvokerManager.getInvoker(any())).thenReturn(modelInvoker);
         when(modelInvoker.invokeStream(any())).thenReturn(Flux.empty());
 
@@ -109,7 +109,7 @@ class ChatServiceTest {
         when(context.getTools()).thenReturn(java.util.Collections.emptyList());
         when(context.isMainSession()).thenReturn(false);
         when(systemToolManager.getToolDefinitions()).thenReturn(java.util.Collections.emptyList());
-        when(chatDataProvider.getModelConfig(any())).thenReturn(new ModelConfigData("1", "key", "url", "model", 0.7, 4096, "openai"));
+        when(chatDataProvider.getModelConfig(any())).thenReturn(new ModelConfigData("1", "key", "url", "model", 0.7, 4096, "openai", null));
         when(modelInvokerManager.getInvoker(any())).thenReturn(modelInvoker);
         com.ghost616.agentbase.dto.model.ChatChunk chunk = com.ghost616.agentbase.dto.model.ChatChunk.builder().delta("hi").build();
         when(modelInvoker.invokeStream(any())).thenReturn(Flux.just(chunk));
@@ -136,7 +136,7 @@ class ChatServiceTest {
         when(context.getTools()).thenReturn(java.util.Collections.emptyList());
         when(context.isMainSession()).thenReturn(false);
         when(systemToolManager.getToolDefinitions()).thenReturn(java.util.Collections.emptyList());
-        when(chatDataProvider.getModelConfig(any())).thenReturn(new ModelConfigData("1", "key", "url", "model", 0.7, 4096, "openai"));
+        when(chatDataProvider.getModelConfig(any())).thenReturn(new ModelConfigData("1", "key", "url", "model", 0.7, 4096, "openai", null));
         when(modelInvokerManager.getInvoker(any())).thenReturn(modelInvoker);
         com.ghost616.agentbase.dto.model.ChatChunk chunk = com.ghost616.agentbase.dto.model.ChatChunk.builder().delta("hi").finishReason("stop").build();
         when(modelInvoker.invokeStream(any())).thenReturn(Flux.just(chunk));

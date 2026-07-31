@@ -153,7 +153,7 @@ class EvaluationResultGenerateServiceTest {
                     .thenReturn(List.of(createMessage("user", "hello")));
             when(messageDataProvider.getMessages(String.valueOf(EXECUTION_SESSION_ID)))
                     .thenReturn(List.of(createMessage("assistant", "hi there")));
-            ModelConfigData configData = new ModelConfigData("id", "key", "url", "model", 0.5, 100, "platform");
+            ModelConfigData configData = new ModelConfigData("id", "key", "url", "model", 0.5, 100, "platform", null);
             when(chatDataProvider.getModelConfig(String.valueOf(MODEL_ID))).thenReturn(configData);
             when(modelInvokerManager.getInvoker(configData)).thenReturn(modelInvoker);
             ChatResponse evalResponse = new ChatResponse();
@@ -199,7 +199,7 @@ class EvaluationResultGenerateServiceTest {
                     .thenReturn(List.of(createMessage("user", "hello")));
             when(messageDataProvider.getMessages(String.valueOf(EXECUTION_SESSION_ID)))
                     .thenReturn(List.of(createMessage("assistant", "hi")));
-            ModelConfigData configData = new ModelConfigData("id", "key", "url", "model", 0.5, 100, "platform");
+            ModelConfigData configData = new ModelConfigData("id", "key", "url", "model", 0.5, 100, "platform", null);
             when(chatDataProvider.getModelConfig(String.valueOf(MODEL_ID))).thenReturn(configData);
             when(modelInvokerManager.getInvoker(configData)).thenReturn(modelInvoker);
             ChatResponse response = new ChatResponse();
@@ -228,7 +228,7 @@ class EvaluationResultGenerateServiceTest {
                     .thenReturn(List.of(createMessage("user", "hello")));
             when(messageDataProvider.getMessages(String.valueOf(EXECUTION_SESSION_ID)))
                     .thenReturn(List.of(createMessage("assistant", "hi")));
-            ModelConfigData configData = new ModelConfigData("id", "key", "url", "model", 0.5, 100, "platform");
+            ModelConfigData configData = new ModelConfigData("id", "key", "url", "model", 0.5, 100, "platform", null);
             when(chatDataProvider.getModelConfig(String.valueOf(MODEL_ID))).thenReturn(configData);
             when(modelInvokerManager.getInvoker(configData)).thenReturn(modelInvoker);
             ChatResponse response = new ChatResponse();
@@ -257,7 +257,7 @@ class EvaluationResultGenerateServiceTest {
                     .thenReturn(List.of(createMessageWithToolCalls("assistant", "let me check", toolCalls)));
             when(messageDataProvider.getMessages(String.valueOf(EXECUTION_SESSION_ID)))
                     .thenReturn(List.of(createMessage("user", "thanks")));
-            ModelConfigData configData = new ModelConfigData("id", "key", "url", "model", 0.5, 100, "platform");
+            ModelConfigData configData = new ModelConfigData("id", "key", "url", "model", 0.5, 100, "platform", null);
             when(chatDataProvider.getModelConfig(String.valueOf(MODEL_ID))).thenReturn(configData);
             when(modelInvokerManager.getInvoker(configData)).thenReturn(modelInvoker);
             ChatResponse response = new ChatResponse();
@@ -285,7 +285,7 @@ class EvaluationResultGenerateServiceTest {
                     .thenReturn(List.of(createMessage("user", "weather?")));
             when(messageDataProvider.getMessages(String.valueOf(EXECUTION_SESSION_ID)))
                     .thenReturn(List.of(createMessageWithToolResult("tool", "response", "{\"temp\":25}")));
-            ModelConfigData configData = new ModelConfigData("id", "key", "url", "model", 0.5, 100, "platform");
+            ModelConfigData configData = new ModelConfigData("id", "key", "url", "model", 0.5, 100, "platform", null);
             when(chatDataProvider.getModelConfig(String.valueOf(MODEL_ID))).thenReturn(configData);
             when(modelInvokerManager.getInvoker(configData)).thenReturn(modelInvoker);
             ChatResponse response = new ChatResponse();
@@ -312,7 +312,7 @@ class EvaluationResultGenerateServiceTest {
                     .thenReturn(List.of(createMessage("user", "hello")));
             when(messageDataProvider.getMessages(String.valueOf(EXECUTION_SESSION_ID)))
                     .thenReturn(List.of(createMessage("assistant", "hi")));
-            ModelConfigData configData = new ModelConfigData("id", "key", "url", "model", 0.5, 100, "platform");
+            ModelConfigData configData = new ModelConfigData("id", "key", "url", "model", 0.5, 100, "platform", null);
             when(chatDataProvider.getModelConfig(String.valueOf(MODEL_ID))).thenReturn(configData);
             when(modelInvokerManager.getInvoker(configData)).thenReturn(modelInvoker);
             when(modelInvoker.invoke(any(ChatRequest.class))).thenThrow(new RuntimeException("API error"));
@@ -423,7 +423,7 @@ class EvaluationResultGenerateServiceTest {
             Method method = EvaluationResultGenerateService.class.getDeclaredMethod(
                     "extractFinalScore", String.class, ModelConfigData.class, ModelInvoker.class);
             method.setAccessible(true);
-            ModelConfigData configData = new ModelConfigData("id", "key", "url", "model", 0.5, 100, "platform");
+            ModelConfigData configData = new ModelConfigData("id", "key", "url", "model", 0.5, 100, "platform", null);
             return (Integer) method.invoke(service, evaluationResult, configData, modelInvoker);
         }
 

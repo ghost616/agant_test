@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_0488dbb9cffenD9j1VRgvbmNxd",
+  "content": "## 待测试功能\n\n模型配置新增 requestType 字段（前端 UI 变更，仅涉及 TypeScript/React 代码）：\n\n1. **src/types/model.ts**：ModelConfig 接口新增 `requestType?: string` 字段；ModelFormData 经 Omit 派生自动包含该字段。\n\n2. **src/pages/models/ModelList.tsx**：\n   - 新增 REQUEST_TYPE_OPTIONS 常量（'' → 默认（Chat Completions）、'responses' → Responses（有状态）、'responses_stateless' → Responses（无状态））\n   - 新增 RESPONSES_SUPPORTED 常量（OPENAI/DEEPSEEK/KIMI/VOLCENGINE/AZURE/CUSTOM）\n   - 表单新增 requestType Select 表单项（hidden 由 isResponsesSupported 控制，仅当 watchedPlatformType 在 RESPONSES_SUPPORTED 中时显示，initialValue=''）\n   - handleEdit 编辑回填包含 requestType（空值回填 ''）\n   - 表格新增\"请求类型\"列，显示 requestType 对应的中文标签（空值显示\"默认（Chat Completions）\"）\n\n## 测试类型\n\n- 编译测试：TypeScript 类型检查 + Vite 构建需通过（npm run build / tsc）\n- 单元测试（可选）：如存在 ModelList 相关测试则验证，无强制要求\n\n## 涉及文件\n\n- src/types/model.ts\n- src/pages/models/ModelList.tsx",
+  "timestamp": "2026-07-31T09:13:29.859Z"
+}

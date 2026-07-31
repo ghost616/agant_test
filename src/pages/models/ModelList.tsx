@@ -42,6 +42,21 @@ const PLATFORM_TYPE_OPTIONS = Object.entries(PLATFORM_TYPE_LABELS).map(([value, 
   label,
 }));
 
+const REQUEST_TYPE_OPTIONS = [
+  { value: '', label: '默认（Chat Completions）' },
+  { value: 'responses', label: 'Responses（有状态）' },
+  { value: 'responses_stateless', label: 'Responses（无状态）' },
+];
+
+const RESPONSES_SUPPORTED: PlatformType[] = [
+  'OPENAI',
+  'DEEPSEEK',
+  'KIMI',
+  'VOLCENGINE',
+  'AZURE',
+  'CUSTOM',
+];
+
 const STATUS_LABELS: Record<CommonStatus, string> = {
   ENABLED: '启用',
   DISABLED: '禁用',
@@ -86,6 +101,8 @@ function ModelList(): JSX.Element {
       : [];
   const isModelNameSelect = modelNameSelectOptions.length > 0;
   const isCustom = watchedPlatformType === 'CUSTOM';
+  const isResponsesSupported =
+    !!watchedPlatformType && RESPONSES_SUPPORTED.includes(watchedPlatformType);
 
   useEffect(() => {
     if (editingModel) return;
@@ -147,6 +164,7 @@ function ModelList(): JSX.Element {
       temperature: editingModel.temperature,
       maxTokens: editingModel.maxTokens,
       description: editingModel.description,
+      requestType: editingModel.requestType ?? '',
     });
   }, [editingModel, modalVisible, form]);
 
@@ -212,6 +230,16 @@ function ModelList(): JSX.Element {
       dataIndex: 'platformType',
       width: 120,
       render: (value: PlatformType) => PLATFORM_TYPE_LABELS[value] || value,
+    },
+    {
+      title: '请求类型',
+      dataIndex: 'requestType',
+      width: 160,
+      render: (value?: string) => {
+        if (!value) return '默认（Chat Completions）';
+        const option = REQUEST_TYPE_OPTIONS.find((o) => o.value === value);
+        return option ? option.label : value;
+      },
     },
     {
       title: '模型名称',
@@ -319,7 +347,7 @@ function ModelList(): JSX.Element {
         dataSource={dataSource}
         loading={loading}
         pagination={false}
-        scroll={{ x: 1100 }}
+        scroll={{ x: 1260 }}
       />
 
       <Modal
@@ -345,6 +373,14 @@ function ModelList(): JSX.Element {
             rules={[{ required: true, message: '请选择平台类型' }]}
           >
             <Select options={PLATFORM_TYPE_OPTIONS} placeholder="请选择平台类型" />
+          </Form.Item>
+          <Form.Item
+            name="requestType"
+            label="请求类型"
+            hidden={!isResponsesSupported}
+            initialValue=""
+          >
+            <Select options={REQUEST_TYPE_OPTIONS} placeholder="请选择请求类型" />
           </Form.Item>
           <Form.Item name="apiKey" label="API Key">
             <Input.Password placeholder="请输入 API Key" />

@@ -115,6 +115,21 @@ public class ChatService {
         hookManager.triggerSessionHooks(sessionId, HookPhase.SESSION_START, context, new HookData((ChatChunk) null));
         hookManager.triggerHooks(HookPhase.SESSION_START, context, new HookData((ChatChunk) null));
 
+        if ("responses".equals(configData.requestType())) {
+            return chatViaResponses(request, context, contextMutator, sessionId, configData);
+        }
+        if ("responses_stateless".equals(configData.requestType())) {
+            return chatViaResponsesStateless(request, context, contextMutator, sessionId, configData);
+        }
+        return chatViaChatCompletions(request, context, contextMutator, sessionId, configData);
+    }
+
+    private Flux<ServerSentEvent<ChatChunk>> chatViaChatCompletions(
+            ChatRequest request,
+            AgentExecutionContext context,
+            AgentExecutionContext.AgentContextMutator contextMutator,
+            String sessionId,
+            ModelConfigData configData) {
         List<Message> messages = new ArrayList<>();
         messages.add(Message.builder()
                 .role("system")
@@ -122,9 +137,178 @@ public class ChatService {
                 .build());
 
         List<ToolDefinition> toolDefinitions = systemToolManager.getToolDefinitions();
+        ContextSystemInfo systemInfo = buildContextSystemInfo(context, toolDefinitions);
+        messages.addAll(systemInfo.systemMessages());
+
+        for (AgentExecutionContext.HistoryEntry entry : context.getHistory()) {
+            messages.add(buildMessageFromEntry(entry));
+        }
+
+        messages = filterAndFold(messages, context);
+
+        ModelInvoker invoker = modelInvokerManager.getInvoker(configData);
+
+        List<ToolDefinition> tools = buildToolDefinitions(context, invoker, toolDefinitions, systemInfo.filteredLoadedSkills());
+
+        com.ghost616.agentbase.dto.model.ChatRequest chatRequest =
+                com.ghost616.agentbase.dto.model.ChatRequest.builder()
+                        .messages(messages)
+                        .tools(tools)
+                        .thinking(request.getThinking())
+                        .build();
+
+        Flux<ChatChunk> stream = invoker.invokeStream(chatRequest);
+
+        return toSseStream(stream, context, contextMutator, sessionId);
+    }
+
+    private Flux<ServerSentEvent<ChatChunk>> chatViaResponses(
+            ChatRequest request,
+            AgentExecutionContext context,
+            AgentExecutionContext.AgentContextMutator contextMutator,
+            String sessionId,
+            ModelConfigData configData) {
+        List<ToolDefinition> toolDefinitions = systemToolManager.getToolDefinitions();
+        ContextSystemInfo systemInfo = buildContextSystemInfo(context, toolDefinitions);
+
+        String instructions = buildInstructions(context, systemInfo);
+
+        List<Message> input = buildIncrementalMessages(context);
+        input = filterAndFold(input, context);
+
+        ModelInvoker invoker = modelInvokerManager.getInvoker(configData);
+
+        List<ToolDefinition> tools = buildToolDefinitions(context, invoker, toolDefinitions, systemInfo.filteredLoadedSkills());
+
+        String previousResponseId = context.getLastResponseId() != null
+                ? context.getLastResponseId()
+                : request.getPreviousResponseId();
+
+        com.ghost616.agentbase.dto.model.ChatRequest chatRequest =
+                com.ghost616.agentbase.dto.model.ChatRequest.builder()
+                        .messages(input)
+                        .instructions(instructions)
+                        .previousResponseId(previousResponseId)
+                        .tools(tools)
+                        .thinking(request.getThinking())
+                        .build();
+
+        Flux<ChatChunk> stream = invoker.invokeStream(chatRequest);
+
+        return toSseStream(stream, context, contextMutator, sessionId);
+    }
+
+    private Flux<ServerSentEvent<ChatChunk>> chatViaResponsesStateless(
+            ChatRequest request,
+            AgentExecutionContext context,
+            AgentExecutionContext.AgentContextMutator contextMutator,
+            String sessionId,
+            ModelConfigData configData) {
+        List<ToolDefinition> toolDefinitions = systemToolManager.getToolDefinitions();
+        ContextSystemInfo systemInfo = buildContextSystemInfo(context, toolDefinitions);
+
+        String instructions = buildInstructions(context, systemInfo);
+
+        List<Message> input = buildFullMessages(context);
+        input = filterAndFold(input, context);
+
+        ModelInvoker invoker = modelInvokerManager.getInvoker(configData);
+
+        List<ToolDefinition> tools = buildToolDefinitions(context, invoker, toolDefinitions, systemInfo.filteredLoadedSkills());
+
+        com.ghost616.agentbase.dto.model.ChatRequest chatRequest =
+                com.ghost616.agentbase.dto.model.ChatRequest.builder()
+                        .messages(input)
+                        .instructions(instructions)
+                        .tools(tools)
+                        .thinking(request.getThinking())
+                        .build();
+
+        Flux<ChatChunk> stream = invoker.invokeStream(chatRequest);
+
+        return toSseStream(stream, context, contextMutator, sessionId);
+    }
+
+    private String buildInstructions(AgentExecutionContext context, ContextSystemInfo systemInfo) {
+        StringBuilder instructions = new StringBuilder();
+        String systemPrompt = context.getSystemPrompt();
+        if (systemPrompt != null) {
+            instructions.append(systemPrompt);
+        }
+        for (Message systemMessage : systemInfo.systemMessages()) {
+            String content = systemMessage.getContent();
+            if (content != null && !content.isEmpty()) {
+                if (instructions.length() > 0) {
+                    instructions.append("\n\n");
+                }
+                instructions.append(content);
+            }
+        }
+        return instructions.toString();
+    }
+
+    private Message buildMessageFromEntry(AgentExecutionContext.HistoryEntry entry) {
+        Message.MessageBuilder builder = Message.builder()
+                .role(entry.role())
+                .content(entry.content());
+        if (entry.toolCalls() != null && !entry.toolCalls().isEmpty()) {
+            builder.toolCalls(entry.toolCalls());
+        }
+        if (entry.reasoning() != null && !entry.reasoning().isEmpty()
+                && entry.toolCalls() != null && !entry.toolCalls().isEmpty()) {
+            builder.reasoning(entry.reasoning());
+        }
+        if (entry.toolCallId() != null) {
+            builder.toolCallId(entry.toolCallId());
+        }
+        return builder.build();
+    }
+
+    private List<Message> buildFullMessages(AgentExecutionContext context) {
+        List<Message> input = new ArrayList<>();
+        for (AgentExecutionContext.HistoryEntry entry : context.getHistory()) {
+            if ("system".equals(entry.role())) {
+                continue;
+            }
+            input.add(buildMessageFromEntry(entry));
+        }
+        return input;
+    }
+
+    private List<Message> buildIncrementalMessages(AgentExecutionContext context) {
+        List<AgentExecutionContext.HistoryEntry> history = context.getHistory();
+        int startIndex = 0;
+        for (int i = history.size() - 1; i >= 0; i--) {
+            if ("user".equals(history.get(i).role())) {
+                startIndex = i;
+                break;
+            }
+        }
+        List<Message> input = new ArrayList<>();
+        for (int i = startIndex; i < history.size(); i++) {
+            AgentExecutionContext.HistoryEntry entry = history.get(i);
+            if ("system".equals(entry.role())) {
+                continue;
+            }
+            input.add(buildMessageFromEntry(entry));
+        }
+        return input;
+    }
+
+    private List<Message> filterAndFold(List<Message> messages, AgentExecutionContext context) {
+        messages = messages.stream()
+                .filter(m -> (m.getContent() != null && !m.getContent().isEmpty()) || (m.getToolCalls() != null && !m.getToolCalls().isEmpty()))
+                .collect(Collectors.toList());
+        return foldMessageGroups(messages, context);
+    }
+
+    private ContextSystemInfo buildContextSystemInfo(AgentExecutionContext context, List<ToolDefinition> toolDefinitions) {
+        List<Message> systemMessages = new ArrayList<>();
         List<SkillConfigDTO> skills = context.getSkills();
         boolean hasLoadSkillsTool = toolDefinitions.stream()
                 .anyMatch(def -> LoadSkillsSystemTool.FULL_TOOL_NAME.equals(def.getName()));
+
+        List<SkillConfigDTO> filteredLoadedSkills = new ArrayList<>();
 
         if (hasLoadSkillsTool) {
             List<SkillConfigDTO> availableSkills = new ArrayList<>();
@@ -147,15 +331,12 @@ public class ChatService {
                     sb.append("\n");
                 }
                 sb.append("\n请使用 ").append(LoadSkillsSystemTool.FULL_TOOL_NAME).append(" 系统工具加载所需技能。加载后，该技能的关联工具将变为可用，届时再调用具体工具。禁止直接以技能名称作为工具调用。");
-                messages.add(Message.builder()
+                systemMessages.add(Message.builder()
                         .role("system")
                         .content(sb.toString())
                         .build());
             }
-        }
 
-        List<SkillConfigDTO> filteredLoadedSkills = new ArrayList<>();
-        if (hasLoadSkillsTool) {
             List<SkillConfigDTO> loadedSkills = parseLoadedSkills(context, skills);
             for (SkillConfigDTO skill : loadedSkills) {
                 if (context.isMainSession() && skill.getSessionAuth() == SessionAuthType.CHILD) {
@@ -172,7 +353,7 @@ public class ChatService {
                         sb.append(skill.getPrompt()).append("\n\n");
                     }
                 }
-                messages.add(Message.builder()
+                systemMessages.add(Message.builder()
                         .role("system")
                         .content(sb.toString())
                         .build());
@@ -246,37 +427,21 @@ public class ChatService {
                     }
                 }
                 sb.append("\n如需使用上述子会话工具/技能，请调用 _sys_create_child_session 开启子会话执行任务");
-                messages.add(Message.builder()
+                systemMessages.add(Message.builder()
                         .role("system")
                         .content(sb.toString())
                         .build());
             }
         }
 
-        for (AgentExecutionContext.HistoryEntry entry : context.getHistory()) {
-            Message.MessageBuilder builder = Message.builder()
-                    .role(entry.role())
-                    .content(entry.content());
-            if (entry.toolCalls() != null && !entry.toolCalls().isEmpty()) {
-                builder.toolCalls(entry.toolCalls());
-            }
-            if (entry.reasoning() != null && !entry.reasoning().isEmpty()
-                    && entry.toolCalls() != null && !entry.toolCalls().isEmpty()) {
-                builder.reasoning(entry.reasoning());
-            }
-            if (entry.toolCallId() != null) {
-                builder.toolCallId(entry.toolCallId());
-            }
-            messages.add(builder.build());
-        }
+        return new ContextSystemInfo(systemMessages, filteredLoadedSkills);
+    }
 
-        messages = messages.stream()
-                .filter(m -> (m.getContent() != null && !m.getContent().isEmpty()) || (m.getToolCalls() != null && !m.getToolCalls().isEmpty()))
-                .collect(Collectors.toList());
-        messages = foldMessageGroups(messages, context);
-
-        ModelInvoker invoker = modelInvokerManager.getInvoker(configData);
-
+    private List<ToolDefinition> buildToolDefinitions(
+            AgentExecutionContext context,
+            ModelInvoker invoker,
+            List<ToolDefinition> toolDefinitions,
+            List<SkillConfigDTO> filteredLoadedSkills) {
         Map<String, ToolDefinition> toolMap = new LinkedHashMap<>();
         for (ToolConfigDTO t : context.getTools()) {
             if (context.isMainSession() && SessionAuthType.CHILD == t.getSessionAuth()) {
@@ -299,24 +464,24 @@ public class ChatService {
                 }
             }
         }
-        List<ToolDefinition> tools = new ArrayList<>(toolMap.values());
+        return new ArrayList<>(toolMap.values());
+    }
 
-        com.ghost616.agentbase.dto.model.ChatRequest chatRequest =
-                com.ghost616.agentbase.dto.model.ChatRequest.builder()
-                        .messages(messages)
-                        .tools(tools)
-                        .thinking(request.getThinking())
-                        .build();
-
+    private Flux<ServerSentEvent<ChatChunk>> toSseStream(
+            Flux<ChatChunk> stream,
+            AgentExecutionContext context,
+            AgentExecutionContext.AgentContextMutator contextMutator,
+            String sessionId) {
         AtomicBoolean hasToolCalls = new AtomicBoolean(false);
-
-        Flux<ChatChunk> stream = invoker.invokeStream(chatRequest);
 
         return stream
                 .takeWhile(chunk -> !context.isStopped())
                 .doOnNext(chunk -> {
                     if (chunk.getToolCalls() != null && !chunk.getToolCalls().isEmpty()) {
                         hasToolCalls.set(true);
+                    }
+                    if (chunk.getResponseId() != null) {
+                        context.setLastResponseId(chunk.getResponseId());
                     }
                     if (chunk.getFinishReason() != null) {
                         chunk.setHasToolCalls(hasToolCalls.get());
@@ -375,8 +540,15 @@ public class ChatService {
         Set<Integer> expandedIndices = parseExpandedIndices(
                 context.getConversationVariable(HistoryQuerySystemTool.VAR_NAME));
 
+        List<Message> prefix = new ArrayList<>();
+        int startIndex = 0;
+        while (startIndex < messages.size() && "system".equals(messages.get(startIndex).getRole())) {
+            prefix.add(messages.get(startIndex));
+            startIndex++;
+        }
+
         List<List<Message>> groups = new ArrayList<>();
-        int i = 1;
+        int i = startIndex;
         while (i < messages.size()) {
             int groupStart = i;
             i++;
@@ -396,8 +568,7 @@ public class ChatService {
 
         int foldEnd = groups.size() - recentCount;
 
-        List<Message> result = new ArrayList<>();
-        result.add(messages.get(0));
+        List<Message> result = new ArrayList<>(prefix);
 
         for (int g = 0; g < groups.size(); g++) {
             if (g < foldEnd && !expandedIndices.contains(g)) {
@@ -427,5 +598,8 @@ public class ChatService {
             log.debug("解析 _sys_his_msgs_index 失败: {}", jsonStr, e);
             return Collections.emptySet();
         }
+    }
+
+    private record ContextSystemInfo(List<Message> systemMessages, List<SkillConfigDTO> filteredLoadedSkills) {
     }
 }

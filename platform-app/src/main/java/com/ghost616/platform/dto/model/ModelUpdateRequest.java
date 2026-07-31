@@ -28,6 +28,8 @@ public class ModelUpdateRequest {
 
     private String modelName;
 
+    private String requestType;
+
     @Min(value = 0, message = "温度参数最小为0.0")
     @Max(value = 2, message = "温度参数最大为2.0")
     private Double temperature;

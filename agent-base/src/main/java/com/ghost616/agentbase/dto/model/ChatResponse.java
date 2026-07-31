@@ -27,4 +27,7 @@ public class ChatResponse {
 
     /** 结束原因（stop/length/tool_calls 等） */
     private String finishReason;
+
+    /** 响应 ID（Responses API 返回值，供下一轮续接使用） */
+    private String responseId;
 }

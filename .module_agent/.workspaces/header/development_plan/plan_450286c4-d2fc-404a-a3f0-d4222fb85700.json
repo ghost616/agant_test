@@ -1,0 +1,14 @@
+{
+  "plan_id": "plan_450286c4-d2fc-404a-a3f0-d4222fb85700",
+  "module_name": "platform-app",
+  "development_plan": "1. ModelConfigDTO 新增 String requestType 字段\n2. ModelCreateRequest 新增 String requestType 字段\n3. ModelUpdateRequest 新增 String requestType 字段\n4. ModelConfigController 中所有构造 ModelConfigData 的地方（4处）传入 requestType：config.getRequestType()\n5. DefaultChatDataProvider.getModelConfig() 中构造 ModelConfigData 时传入 entity.getRequestType()",
+  "session_id": "ses_048c90960ffeWHClCSI7LN3y24",
+  "modified_files": [
+    "platform-app/src/main/java/com/ghost616/platform/dto/model/ModelConfigDTO.java",
+    "platform-app/src/main/java/com/ghost616/platform/dto/model/ModelCreateRequest.java",
+    "platform-app/src/main/java/com/ghost616/platform/dto/model/ModelUpdateRequest.java",
+    "platform-app/src/main/java/com/ghost616/platform/controller/ModelConfigController.java",
+    "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultChatDataProvider.java",
+    "platform-app/src/main/java/com/ghost616/platform/service/model/ModelConfigServiceImpl.java"
+  ]
+}

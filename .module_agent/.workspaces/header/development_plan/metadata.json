@@ -16,5 +16,69 @@
     "plan_summary": "LLM 模型管理描述标注 DeepSeek 测试状态",
     "code_reviewed": false,
     "plan_completed": true
+  },
+  {
+    "plan_id": "plan_36375f86-17ee-4b50-bad4-f3a167d4294e",
+    "plan_summary": "ModelConfig 实体新增 requestType 字段及数据库迁移",
+    "starter_session_id": "ses_048da9954ffeKfv38xPiSh9jW8",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_27ac5e3c-5c80-4769-bd82-991c2eae7cc7",
+    "plan_summary": "ModelConfigData 新增 requestType 字段，ChatRequest/ChatResponse 新增字段，ChatService 改造为入口路由，更新所有构造调用点",
+    "starter_session_id": "ses_048da9954ffeKfv38xPiSh9jW8",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_450286c4-d2fc-404a-a3f0-d4222fb85700",
+    "plan_summary": "DTO/请求体新增 requestType，Controller 与 DataProvider 传入实际 requestType",
+    "starter_session_id": "ses_048da9954ffeKfv38xPiSh9jW8",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_7a74262e-33b8-454c-9860-30788e1a3d30",
+    "plan_summary": "新增 OpenAIResponsesInvoker（Responses API 支持），DefaultModelInvokerFactory 新增 responses 分发",
+    "starter_session_id": "ses_048da9954ffeKfv38xPiSh9jW8",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_5dedf5f0-286d-425e-af25-c3e89ee22285",
+    "plan_summary": "DefaultModelInvokerFactory 新增 responses_stateless 分支复用 OpenAIResponsesInvoker",
+    "starter_session_id": "ses_048da9954ffeKfv38xPiSh9jW8",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_9d0d728b-1d88-4f25-b42f-05f3831bc137",
+    "plan_summary": "ChatService 新增 responses_stateless 无状态路由，chatViaResponses 改造为增量+previousResponseId",
+    "starter_session_id": "ses_048da9954ffeKfv38xPiSh9jW8",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_0dc8c335-8623-4e0b-8511-56fa442eae7f",
+    "plan_summary": "前端 ModelConfig 类型与 ModelList 新增 requestType 字段、表单下拉与表格列",
+    "starter_session_id": "ses_048da9954ffeKfv38xPiSh9jW8",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_216c8feb-65fd-42f3-a6f9-d56176499995",
+    "plan_summary": "新建 5 个平台 Responses Invoker 子类，Factory 按平台路由到对应 ResponsesInvoker",
+    "starter_session_id": "ses_048da9954ffeKfv38xPiSh9jW8",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
   }
 ]

@@ -39,7 +39,8 @@ public class DefaultChatDataProvider implements ChatDataProvider {
                 entity.getModelName(),
                 entity.getTemperature(),
                 entity.getMaxTokens(),
-                entity.getPlatformType() != null ? entity.getPlatformType().name() : null
+                entity.getPlatformType() != null ? entity.getPlatformType().name() : null,
+                entity.getRequestType()
         );
     }
 

@@ -1,0 +1,33 @@
+[
+  {
+    "plan_id": "plan_27ac5e3c-5c80-4769-bd82-991c2eae7cc7",
+    "plan": "ChatService 路由分发改造",
+    "modified_files": [
+      "agent-base/src/main/java/com/ghost616/agentbase/dto/model/ModelConfigData.java",
+      "agent-base/src/main/java/com/ghost616/agentbase/dto/model/ChatRequest.java",
+      "agent-base/src/main/java/com/ghost616/agentbase/dto/model/ChatResponse.java",
+      "agent-base/src/main/java/com/ghost616/agentbase/dto/chat/ChatRequest.java",
+      "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ChatService.java",
+      "agent-base/src/test/java/com/ghost616/agentbase/service/agent/ChatServiceTest.java",
+      "agent-base/src/test/java/com/ghost616/agentbase/service/agent/ChatServiceFilteringTest.java",
+      "agent-base/src/test/java/com/ghost616/agentbase/service/agent/ChatServiceNoLoadSkillsTest.java",
+      "platform-app/src/main/java/com/ghost616/platform/controller/ModelConfigController.java",
+      "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultChatDataProvider.java",
+      "platform-app/src/test/java/com/ghost616/platform/service/evaluation/EvaluationResultGenerateServiceTest.java"
+    ],
+    "summary": "全部代码变更完成，离朱两轮测试确认：变更相关 66 项全通过 + 新增 ChatServiceResponsesTest 7/7，修复 ChatServiceNoLoadSkillsTest hookManager 初始化问题后 agent-base 全量 189/189 通过，编译 BUILD SUCCESS。剩余失败均为 HEAD 既有失败（platform-app ChatServiceTest/SchemaMigrationTest 等，与本次变更无关）。",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_9d0d728b-1d88-4f25-b42f-05f3831bc137",
+    "plan": "ChatService Responses 有状态/无状态路由改造",
+    "modified_files": [
+      "agent-base/src/main/java/com/ghost616/agentbase/dto/model/ChatChunk.java",
+      "agent-base/src/main/java/com/ghost616/agentbase/service/agent/AgentExecutionContext.java",
+      "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ChatService.java",
+      "agent-integration/src/main/java/com/ghost616/agentinteg/model/invoker/OpenAIResponsesInvoker.java"
+    ],
+    "summary": "已完成代码变更：chat() 三路路由、chatViaResponses 有状态（增量 input + session lastResponseId）、chatViaResponsesStateless 无状态（全量 input + 无 previousResponseId）、ChatChunk.responseId 字段、OpenAIResponsesInvoker 提取 response.id、AgentExecutionContext.lastResponseId 存储与捕获",
+    "errors": []
+  }
+]

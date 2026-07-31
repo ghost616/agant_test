@@ -26,4 +26,7 @@ public class ChatChunk {
     private Integer index;
 
     private UsageInfo usage;
+
+    /** 响应 ID（Responses API 流式事件 response.completed 携带，供有状态续接使用） */
+    private String responseId;
 }

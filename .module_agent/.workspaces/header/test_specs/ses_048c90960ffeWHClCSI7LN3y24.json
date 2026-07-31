@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_048c90960ffeWHClCSI7LN3y24",
+  "content": "## 待测试功能\n\n补充修复 ModelConfigServiceImpl 的 requestType 透传（本次变更）：\n\n1. create() 中新增 `entity.setRequestType(request.getRequestType())`\n2. update() 中新增 `if (request.getRequestType() != null) { entity.setRequestType(request.getRequestType()); }`\n3. toDTO() 中新增 `.requestType(entity.getRequestType())`\n\n文件: platform-app/src/main/java/com/ghost616/platform/service/model/ModelConfigServiceImpl.java\n\n验证点：\n- Java 编译通过（mvn test-compile -pl platform-app 或等价）\n- 已有单元测试全部通过\n",
+  "timestamp": "2026-07-31T08:26:46.666Z"
+}

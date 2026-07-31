@@ -68,6 +68,7 @@ public class ModelConfigServiceImpl implements ModelConfigService {
                 ? request.getBaseUrl()
                 : request.getPlatformType().getDefaultBaseUrl());
         entity.setModelName(request.getModelName());
+        entity.setRequestType(request.getRequestType());
         entity.setTemperature(request.getTemperature());
         entity.setMaxTokens(request.getMaxTokens());
         entity.setStatus(request.getStatus() != null ? request.getStatus() : CommonStatus.ENABLED);
@@ -101,6 +102,9 @@ public class ModelConfigServiceImpl implements ModelConfigService {
         }
         if (request.getModelName() != null) {
             entity.setModelName(request.getModelName());
+        }
+        if (request.getRequestType() != null) {
+            entity.setRequestType(request.getRequestType());
         }
         if (request.getTemperature() != null) {
             entity.setTemperature(request.getTemperature());
@@ -161,6 +165,7 @@ public class ModelConfigServiceImpl implements ModelConfigService {
                 .apiKey(entity.getApiKey())
                 .baseUrl(entity.getBaseUrl())
                 .modelName(entity.getModelName())
+                .requestType(entity.getRequestType())
                 .temperature(entity.getTemperature())
                 .maxTokens(entity.getMaxTokens())
                 .status(entity.getStatus())

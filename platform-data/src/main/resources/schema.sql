@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS model_config (
     api_key     VARCHAR(255),
     base_url    VARCHAR(512),
     model_name  VARCHAR(255),
+    request_type VARCHAR(32),
     temperature DOUBLE,
     max_tokens  INTEGER,
     status      VARCHAR(32),

@@ -27,7 +27,7 @@
     },
     {
       "path": "agent-integration/src/main/java/com/ghost616/agentinteg/model/invoker/DefaultModelInvokerFactory.java",
-      "description": "默认 ModelInvokerFactory 实现，根据平台类型（OPENAI/ANTHROPIC/AZURE/OLLAMA/KIMI/VOLCENGINE/DEEPSEEK/CUSTOM）创建对应的 Invoker 实例"
+      "description": "默认 ModelInvokerFactory 实现，先判断 requestType（responses/responses_stateless）再按 platformType 路由到对应 ResponsesInvoker（OPENAI/DEEPSEEK/KIMI/VOLCENGINE/AZURE/CUSTOM），否则走原 switch 返回 Chat Completions Invoker；ANTHROPIC/OLLAMA 保持原分支不变"
     },
     {
       "path": "agent-integration/src/main/java/com/ghost616/agentinteg/AgentAssembler.java",
@@ -72,6 +72,34 @@
     {
       "path": "agent-integration/src/main/resources/browser/browser_tool_executor.js",
       "description": "浏览器端 JS 工具执行引擎。HostBridge 对象封装四个主机委托方法（getAgentExecutionContext/passToolResult/putSessionVariable/putConversationVariable），方法缺失时抛出异常；AgentExecutionContext 对象定义（putSessionVariable/putConversationVariable 通过 HostBridge 委托服务器）；ToolFunction 工具函数定义；ToolManager 工具函数管理器（bind/add/remove/get/getAll/has）；ToolExecutor 执行器对象（getAgentExecutionContext 获取上下文、getToolResult 通过 toolName 调用 handler、passToolResult 回传结果、execute 主执行入口：获取上下文→执行→回传）"
+    },
+    {
+      "path": "agent-integration/src/main/java/com/ghost616/agentinteg/model/invoker/OpenAIResponsesInvoker.java",
+      "description": "OpenAI Responses API 模型调用器，实现 ModelInvoker 接口，使用 /v1/responses 端点。同步 invoke 使用 instructions+input 请求格式并解析 output 数组；流式 invokeStream 解析 SSE 事件（output_text.delta/function_call_arguments.delta/completed）；verify 使用 GET /v1/models；toToolDefinition 与 OpenAIInvoker 一致"
+    },
+    {
+      "path": "agent-integration/src/test/java/com/ghost616/agentinteg/model/invoker/OpenAIResponsesInvokerTest.java",
+      "description": "OpenAIResponsesInvoker 单元测试，覆盖 parseResponse（content/function_call/usage/responseId/finishReason）、buildRequestBody（instructions+input 格式、工具转换）、parseStreamEvent（三种 SSE 事件）、toToolDefinition 以及 DefaultModelInvokerFactory 对 OPENAI+responses 的分支判断"
+    },
+    {
+      "path": "agent-integration/src/main/java/com/ghost616/agentinteg/model/invoker/DeepSeekResponsesInvoker.java",
+      "description": "DeepSeek 平台 Responses API 模型调用器，继承 OpenAIResponsesInvoker，无额外覆写"
+    },
+    {
+      "path": "agent-integration/src/main/java/com/ghost616/agentinteg/model/invoker/KimiResponsesInvoker.java",
+      "description": "Kimi 平台 Responses API 模型调用器，继承 OpenAIResponsesInvoker；覆写 buildRequestBody 保留模型适配逻辑：K2_7_CODE 移除 reasoning，K3 将 thinking 映射为 reasoning effort=max"
+    },
+    {
+      "path": "agent-integration/src/main/java/com/ghost616/agentinteg/model/invoker/VolcEngineResponsesInvoker.java",
+      "description": "火山引擎平台 Responses API 模型调用器，继承 OpenAIResponsesInvoker，无额外覆写"
+    },
+    {
+      "path": "agent-integration/src/main/java/com/ghost616/agentinteg/model/invoker/AzureResponsesInvoker.java",
+      "description": "Azure OpenAI 平台 Responses API 模型调用器，继承 OpenAIResponsesInvoker；覆写 buildResponsesUrl=mountResponsesResourceUrl 使用 Azure 部署路径 + api-version，invoke/invokeStream/verify 改用 api-key header"
+    },
+    {
+      "path": "agent-integration/src/main/java/com/ghost616/agentinteg/model/invoker/CustomResponsesInvoker.java",
+      "description": "自定义平台 Responses API 模型调用器，继承 OpenAIResponsesInvoker，无额外覆写"
     }
   ]
 }

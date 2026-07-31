@@ -1,0 +1,16 @@
+[
+  {
+    "plan_id": "plan_450286c4-d2fc-404a-a3f0-d4222fb85700",
+    "plan": "model requestType 字段透传",
+    "modified_files": [
+      "platform-app/src/main/java/com/ghost616/platform/dto/model/ModelConfigDTO.java",
+      "platform-app/src/main/java/com/ghost616/platform/dto/model/ModelCreateRequest.java",
+      "platform-app/src/main/java/com/ghost616/platform/dto/model/ModelUpdateRequest.java",
+      "platform-app/src/main/java/com/ghost616/platform/controller/ModelConfigController.java",
+      "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultChatDataProvider.java",
+      "platform-app/src/main/java/com/ghost616/platform/service/model/ModelConfigServiceImpl.java"
+    ],
+    "summary": "执行总结：完成 model requestType 字段透传。1) ModelConfigDTO/ModelCreateRequest/ModelUpdateRequest 新增 String requestType 字段；2) ModelConfigController 4 处构造 ModelConfigData（verify/chat/chatStream/getInvokerInfo）第 8 参由 null 改为 config.getRequestType()；3) DefaultChatDataProvider.getModelConfig() 构造 ModelConfigData 时传入 entity.getRequestType()。依据离朱测试建议补充修复 ModelConfigServiceImpl：create() 新增 entity.setRequestType(request.getRequestType())，update() 新增 requestType 非空校验后 setRequestType，toDTO() 新增 .requestType(entity.getRequestType())，实现 requestType CRUD 端到端持久化与 DTO 返回。测试：离朱验证编译通过（mvn test-compile BUILD SUCCESS），新增 ModelConfigServiceImplRequestTypeTest 4/4 通过；platform-app 全量 450 测试中 10 失败+5 错误均为 HEAD 既有问题（ChatServiceTest/SchemaMigrationTest 等），与本次变更无关，未引入新失败。",
+    "errors": []
+  }
+]

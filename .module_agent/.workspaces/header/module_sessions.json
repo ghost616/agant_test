@@ -4,5 +4,20 @@
   ],
   "_checked": [
     "ses_0496e6104ffeoFHsmainry20Uz"
+  ],
+  "platform-data": [
+    "ses_048d9d6acffeb2Xm1AQN8SNfr7"
+  ],
+  "agent-base": [
+    "ses_048d97897ffem6h31d5cbee5WL"
+  ],
+  "platform-app": [
+    "ses_048c90960ffeWHClCSI7LN3y24"
+  ],
+  "agent-integration": [
+    "ses_048c8f0cbffexvUf6ZoqVNLpOb"
+  ],
+  "frontend-ui": [
+    "ses_0488dbb9cffenD9j1VRgvbmNxd"
   ]
 }

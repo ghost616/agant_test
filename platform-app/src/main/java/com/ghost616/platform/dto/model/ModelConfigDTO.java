@@ -26,6 +26,7 @@ public class ModelConfigDTO {
     private String apiKey;
     private String baseUrl;
     private String modelName;
+    private String requestType;
     private Double temperature;
     private Integer maxTokens;
     private CommonStatus status;

@@ -1,0 +1,36 @@
+[
+  {
+    "plan_id": "plan_7a74262e-33b8-454c-9860-30788e1a3d30",
+    "plan": "新增 OpenAIResponsesInvoker 并接入 DefaultModelInvokerFactory",
+    "modified_files": [
+      "agent-integration/src/main/java/com/ghost616/agentinteg/model/invoker/OpenAIResponsesInvoker.java"
+    ],
+    "summary": "根据离朱测试报告修复编译错误：parseStreamEvent 中 Mono.just 改为 Flux.just，移除不再使用的 Mono import；agent-base 全量 189 用例通过",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_5dedf5f0-286d-425e-af25-c3e89ee22285",
+    "plan": "工厂新增 responses_stateless 分支",
+    "modified_files": [
+      "agent-integration/src/main/java/com/ghost616/agentinteg/model/invoker/DefaultModelInvokerFactory.java",
+      "agent-integration/src/test/java/com/ghost616/agentinteg/model/invoker/OpenAIResponsesInvokerTest.java"
+    ],
+    "summary": "DefaultModelInvokerFactory 条件已扩展为 responses 或 responses_stateless 均返回 OpenAIResponsesInvoker；OpenAIResponsesInvokerTest 的工厂用例新增 responses_stateless 断言",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_216c8feb-65fd-42f3-a6f9-d56176499995",
+    "plan": "新增 5 个 Responses Invoker 子类并重构工厂路由",
+    "modified_files": [
+      "agent-integration/src/main/java/com/ghost616/agentinteg/model/invoker/DeepSeekResponsesInvoker.java",
+      "agent-integration/src/main/java/com/ghost616/agentinteg/model/invoker/KimiResponsesInvoker.java",
+      "agent-integration/src/main/java/com/ghost616/agentinteg/model/invoker/VolcEngineResponsesInvoker.java",
+      "agent-integration/src/main/java/com/ghost616/agentinteg/model/invoker/AzureResponsesInvoker.java",
+      "agent-integration/src/main/java/com/ghost616/agentinteg/model/invoker/CustomResponsesInvoker.java",
+      "agent-integration/src/main/java/com/ghost616/agentinteg/model/invoker/DefaultModelInvokerFactory.java",
+      "agent-integration/src/test/java/com/ghost616/agentinteg/model/invoker/OpenAIResponsesInvokerTest.java"
+    ],
+    "summary": "已创建 5 个 Responses Invoker 子类（DeepSeek/VolcEngine/Custom 无覆写；Kimi 覆写 buildRequestBody 适配模型 reasoning 映射；Azure 覆写 buildResponsesUrl= mountResponsesResourceUrl 及 invoke/invokeStream/verify 使用 api-key header）；DefaultModelInvokerFactory 重构为先判 requestType 再按 platformType 路由，ANTHROPIC/OLLAMA 保持原 switch 不变；测试补充工厂路由/Kimi reasoning/Azure URL 用例",
+    "errors": []
+  }
+]

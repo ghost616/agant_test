@@ -50,6 +50,9 @@ public class AgentExecutionContext {
     @Getter(AccessLevel.NONE)
     private final List<ChildSession> childSessions = new ArrayList<>();
 
+    /** 最近一次模型响应的 ID（Responses API 有状态续接时作为 previousResponseId） */
+    private String lastResponseId;
+
     public AgentExecutionContext(String sessionId, String agentId, String systemPrompt, String modelId,
                                   Integer recentMessageCount,
                                  List<HistoryEntry> history, List<ToolConfigDTO> tools,
@@ -176,6 +179,10 @@ public class AgentExecutionContext {
 
     public boolean isStopped() {
         return stopped.get();
+    }
+
+    public void setLastResponseId(String lastResponseId) {
+        this.lastResponseId = lastResponseId;
     }
 
     public record HistoryEntry(String role, String content, String reasoning, String toolCallId,

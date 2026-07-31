@@ -17,6 +17,7 @@ export interface ModelConfig {
   maxTokens: number;
   status: CommonStatus;
   description: string;
+  requestType?: string;
   createTime: string;
   updateTime: string;
 }

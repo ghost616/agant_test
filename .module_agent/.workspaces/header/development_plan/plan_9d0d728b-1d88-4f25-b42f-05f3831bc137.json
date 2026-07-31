@@ -1,0 +1,12 @@
+{
+  "plan_id": "plan_9d0d728b-1d88-4f25-b42f-05f3831bc137",
+  "module_name": "agent-base",
+  "development_plan": "1. ChatService.chat() 路由更新：requestType=\"responses\" 走 chatViaResponses()（有状态），requestType=\"responses_stateless\" 走 chatViaResponsesStateless()（无状态），其他走 chatViaChatCompletions()\n2. chatViaResponses()（有状态）：传入 ChatRequest.previousResponseId（从 session 取 lastResponseId），input 只传增量消息（本轮 user + 返回的 assistant/tool），instructions 拼入 system prompt + 动态 skill\n3. 新增 chatViaResponsesStateless()（无状态）：不传 previousResponseId，input 传全量历史 messages（和 chatViaChatCompletions 一样全量），instructions 拼入 system prompt + 动态 skill，input 不含 system role",
+  "session_id": "ses_048d97897ffem6h31d5cbee5WL",
+  "modified_files": [
+    "agent-base/src/main/java/com/ghost616/agentbase/dto/model/ChatChunk.java",
+    "agent-base/src/main/java/com/ghost616/agentbase/service/agent/AgentExecutionContext.java",
+    "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ChatService.java",
+    "agent-integration/src/main/java/com/ghost616/agentinteg/model/invoker/OpenAIResponsesInvoker.java"
+  ]
+}

@@ -27,7 +27,7 @@
     },
     {
       "path": "platform-data/src/main/java/com/ghost616/platform/entity/ModelConfig.java",
-      "description": "模型配置实体（name/platformType/apiKey/baseUrl/modelName/temperature/maxTokens/status/description）"
+      "description": "模型配置实体（name/platformType/apiKey/baseUrl/modelName/requestType/temperature/maxTokens/status/description），映射 model_config 表"
     },
     {
       "path": "platform-data/src/main/java/com/ghost616/platform/entity/ToolConfig.java",
@@ -123,7 +123,7 @@
     },
     {
       "path": "platform-data/src/main/java/com/ghost616/platform/config/SchemaMigration.java",
-      "description": "数据库 Schema 迁移组件，通过 ALTER TABLE 实现列增量迁移和 NULL 回填，确保新增列的兼容性；覆盖 agent_evaluation 表全字段及 evaluation 表 agent_eval_id/agent_id 迁移"
+      "description": "数据库 Schema 迁移组件，通过 ALTER TABLE 实现列增量迁移和 NULL 回填，确保新增列的兼容性；覆盖 agent_evaluation 表全字段、evaluation 表 agent_eval_id/agent_id/execution_type 及 model_config.request_type 迁移"
     },
     {
       "path": "platform-data/src/main/java/com/ghost616/platform/entity/Evaluation.java",

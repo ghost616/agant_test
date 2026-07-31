@@ -6,6 +6,7 @@ import com.ghost616.agentbase.dto.model.ModelConfigData;
 import com.ghost616.agentbase.dto.model.ToolDefinition;
 import com.ghost616.agentbase.dto.skill.SkillConfigDTO;
 import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
+import com.ghost616.agentbase.service.agent.invoker.HookManager;
 import com.ghost616.agentbase.service.agent.invoker.SystemToolManager;
 import com.ghost616.agentbase.service.model.invoker.ModelInvoker;
 import com.ghost616.agentbase.service.model.invoker.ModelInvokerManager;
@@ -47,6 +48,9 @@ class ChatServiceNoLoadSkillsTest {
     @Mock
     private SessionManager.MessageSaveBuilder msgBuilder;
 
+    @Mock
+    private HookManager hookManager;
+
     private AgentComponentRegistry registry;
     private ChatService chatService;
 
@@ -65,6 +69,7 @@ class ChatServiceNoLoadSkillsTest {
         registry.setModelInvokerManager(modelInvokerManager);
         registry.setSystemToolManager(systemToolManager);
         registry.setChatDataProvider(chatDataProvider);
+        registry.setHookManager(hookManager);
         chatService = new ChatService(registry);
     }
 
@@ -87,7 +92,7 @@ class ChatServiceNoLoadSkillsTest {
 
     private void mockChatInfrastructure() {
         lenient().when(chatDataProvider.getModelConfig(any())).thenReturn(
-                new ModelConfigData("1", "key", "url", "model", 0.7, 1000, "test"));
+                new ModelConfigData("1", "key", "url", "model", 0.7, 1000, "test", null));
         lenient().when(modelInvokerManager.getInvoker(any())).thenReturn(modelInvoker);
         lenient().when(modelInvoker.invokeStream(any())).thenReturn(Flux.empty());
         lenient().when(modelInvoker.toToolDefinition(any())).thenReturn(

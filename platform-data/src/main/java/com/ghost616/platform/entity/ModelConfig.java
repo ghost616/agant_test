@@ -24,6 +24,9 @@ public class ModelConfig extends BaseEntity {
 
     private String modelName;
 
+    @TableField("request_type")
+    private String requestType;
+
     private Double temperature;
 
     private Integer maxTokens;

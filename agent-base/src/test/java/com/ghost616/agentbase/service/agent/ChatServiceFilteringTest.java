@@ -92,7 +92,7 @@ class ChatServiceFilteringTest {
 
     private void mockChatInfrastructure() {
         lenient().when(chatDataProvider.getModelConfig(any())).thenReturn(
-                new ModelConfigData("1", "key", "url", "model", 0.7, 1000, "test"));
+                new ModelConfigData("1", "key", "url", "model", 0.7, 1000, "test", null));
         lenient().when(modelInvokerManager.getInvoker(any())).thenReturn(modelInvoker);
         lenient().when(modelInvoker.invokeStream(any())).thenReturn(Flux.empty());
         lenient().when(modelInvoker.toToolDefinition(any())).thenReturn(
