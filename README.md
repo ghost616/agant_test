@@ -144,6 +144,36 @@ build.bat
 
 8. **流式推送** — 整个对话过程通过 SSE 将增量内容、推理过程、工具调用指令、变量变更、完成状态实时推送到前端
 
+## Responses API
+
+### 概念说明
+
+Responses API 是新一代模型请求接口（`/v1/responses` 端点），请求结构从 Chat Completions 的 messages 列表调整为 `instructions` + `input`：系统提示词与技能说明作为 `instructions` 独立传递，对话消息放入 `input`，且服务端可维护会话状态，响应携带 `responseId` 供多轮续接。
+
+与 Chat Completions（`/v1/chat/completions`，每次请求需携带完整 messages 历史）相比，Responses API 支持两种模式：
+
+- **有状态（responses）** — 服务端保存对话状态，多轮对话通过 `previousResponseId` 引用上一轮响应，无需重复发送历史消息，`input` 仅需从最后一条 user 消息开始，可显著减少请求体体积与 token 消耗
+- **无状态（responses_stateless）** — 不依赖服务端会话状态，每次请求发送完整消息历史（`input` 为全量消息），模型独立处理每轮请求，适合无需跨轮续接的场景
+
+### 使用方式
+
+在模型配置中选择请求类型（RequestType 枚举：`RESPONSES` 有状态 / `RESPONSES_STATELESS` 无状态 / `COMPLETIONS` 传统 Chat Completions），智能体执行引擎依据该配置自动匹配对应的请求路径与模型调用器。
+
+有状态模式的多轮续接机制：引擎将会话最近一次模型响应携带的 `responseId` 记录为会话 `lastResponseId`，下一轮请求自动透传为 `previousResponseId`（会话级 `lastResponseId` 优先于 API 请求传入值）；流式过程中从 `response.completed` 事件捕获 `responseId` 写回会话上下文，从而实现无需重发历史的多轮续接。无状态模式不传 `previousResponseId`，每轮携带全量历史消息。
+
+### 支持平台
+
+已实现 6 个平台的 Responses API 模型调用器，均位于 agent-integration 模块 `model/invoker` 包下：
+
+| 平台 | 调用器 | 说明 |
+|------|--------|------|
+| OpenAI | OpenAIResponsesInvoker | 基础实现，`/v1/responses` 端点，Bearer 认证 |
+| DeepSeek | DeepSeekResponsesInvoker | 复用 OpenAI Responses 兼容实现 |
+| Kimi（月之暗面） | KimiResponsesInvoker | OpenAI 兼容实现，按模型微调 reasoning 参数 |
+| 火山引擎 | VolcEngineResponsesInvoker | 复用 OpenAI Responses 兼容实现 |
+| Azure | AzureResponsesInvoker | `/openai/deployments/{model}/responses?api-version=...` 端点，api-key 认证 |
+| 自定义 | CustomResponsesInvoker | 通用 OpenAI Responses 兼容端点 |
+
 ## 智能体评估流程
 
 1. **评估模板创建** — 选择被评估的智能体，配置评估模板的名称与描述，完成模板基本信息定义
