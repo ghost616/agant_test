@@ -1,11 +1,13 @@
 package com.ghost616.platform.controller;
 
 import com.ghost616.platform.dto.ApiResponse;
+import com.ghost616.platform.dto.evaluation.EvaluationExecutionStatusDTO;
 import com.ghost616.platform.dto.evaluation.EvaluationSessionCreateResponse;
 import com.ghost616.platform.entity.Evaluation;
 import com.ghost616.platform.repository.EvaluationMapper;
 import com.ghost616.platform.service.evaluation.EvaluationExecutionService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -46,8 +48,13 @@ public class EvaluationSessionController {
     }
 
     @PostMapping("/{id}/session/{sessionId}/generate")
-    public ApiResponse<Void> generateResult(@PathVariable Long id, @PathVariable Long sessionId) {
-        evaluationExecutionService.generateResult(id, sessionId);
-        return ApiResponse.success(null);
+    public ApiResponse<EvaluationExecutionStatusDTO> generateResult(@PathVariable Long id, @PathVariable Long sessionId) {
+        EvaluationExecutionStatusDTO status = evaluationExecutionService.generateResultAsync(id, sessionId);
+        return ApiResponse.success(status);
+    }
+
+    @GetMapping("/{id}/session/{sessionId}/generate/status")
+    public ApiResponse<EvaluationExecutionStatusDTO> generateStatus(@PathVariable Long id, @PathVariable Long sessionId) {
+        return ApiResponse.success(evaluationExecutionService.getGenerateStatus(id, sessionId));
     }
 }

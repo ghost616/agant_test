@@ -23,6 +23,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -337,6 +338,90 @@ class EvaluationExecutionServiceTest {
         void shouldDelegateToGenerateService() {
             service.generateResult(EVALUATION_ID, EXECUTION_SESSION_ID);
             verify(evaluationResultGenerateService).generate(EVALUATION_ID, EXECUTION_SESSION_ID);
+        }
+    }
+
+    @Nested
+    class GenerateResultAsyncTests {
+
+        @Test
+        void shouldReturnRunningStatusAndDelegateAsync() {
+            EvaluationExecutionStatusDTO result = service.generateResultAsync(EVALUATION_ID, EXECUTION_SESSION_ID);
+
+            assertNotNull(result);
+            assertEquals(EVALUATION_ID, result.getEvaluationId());
+            assertEquals(EXECUTION_SESSION_ID, result.getExecutionSessionId());
+            assertEquals("RUNNING", result.getStatus());
+            verify(asyncEvaluationExecutor).generateResultAsync(
+                    eq(EVALUATION_ID), eq(EXECUTION_SESSION_ID), anyMap());
+        }
+
+        @Test
+        void shouldStoreStatusInGenerateStatusMap() {
+            service.generateResultAsync(EVALUATION_ID, EXECUTION_SESSION_ID);
+
+            EvaluationExecutionStatusDTO stored = service.getGenerateStatus(EVALUATION_ID, EXECUTION_SESSION_ID);
+            assertNotNull(stored);
+            assertEquals(EVALUATION_ID, stored.getEvaluationId());
+            assertEquals(EXECUTION_SESSION_ID, stored.getExecutionSessionId());
+            assertEquals("RUNNING", stored.getStatus());
+        }
+    }
+
+    @Nested
+    class GetGenerateStatusTests {
+
+        @Test
+        void nonExistentStatus_shouldThrow() {
+            BusinessException ex = assertThrows(BusinessException.class,
+                    () -> service.getGenerateStatus(EVALUATION_ID, EXECUTION_SESSION_ID));
+            assertEquals(ErrorCode.EVALUATION_EXECUTION_STATUS_NOT_FOUND, ex.getErrorCode());
+        }
+
+        @Test
+        void existingStatus_shouldReturnStatusDTO() {
+            service.generateResultAsync(EVALUATION_ID, EXECUTION_SESSION_ID);
+
+            EvaluationExecutionStatusDTO result = service.getGenerateStatus(EVALUATION_ID, EXECUTION_SESSION_ID);
+            assertNotNull(result);
+            assertEquals(EVALUATION_ID, result.getEvaluationId());
+            assertEquals(EXECUTION_SESSION_ID, result.getExecutionSessionId());
+            assertEquals("RUNNING", result.getStatus());
+        }
+    }
+
+    @Nested
+    class CleanupStaleStatusesTests {
+
+        @Test
+        void staleGenerateStatus_shouldBeRemoved() throws Exception {
+            service.generateResultAsync(EVALUATION_ID, EXECUTION_SESSION_ID);
+
+            java.lang.reflect.Field timestampsField =
+                    EvaluationExecutionService.class.getDeclaredField("generateStatusTimestamps");
+            timestampsField.setAccessible(true);
+            @SuppressWarnings("unchecked")
+            java.util.Map<String, Long> timestamps =
+                    (java.util.Map<String, Long>) timestampsField.get(service);
+            String key = EVALUATION_ID + ":" + EXECUTION_SESSION_ID;
+            timestamps.put(key, System.currentTimeMillis() - 3_600_001L);
+
+            service.cleanupStaleStatuses();
+
+            BusinessException ex = assertThrows(BusinessException.class,
+                    () -> service.getGenerateStatus(EVALUATION_ID, EXECUTION_SESSION_ID));
+            assertEquals(ErrorCode.EVALUATION_EXECUTION_STATUS_NOT_FOUND, ex.getErrorCode());
+        }
+
+        @Test
+        void freshGenerateStatus_shouldBeKept() throws Exception {
+            service.generateResultAsync(EVALUATION_ID, EXECUTION_SESSION_ID);
+
+            service.cleanupStaleStatuses();
+
+            EvaluationExecutionStatusDTO result = service.getGenerateStatus(EVALUATION_ID, EXECUTION_SESSION_ID);
+            assertNotNull(result);
+            assertEquals("RUNNING", result.getStatus());
         }
     }
 

@@ -4,6 +4,7 @@ import com.ghost616.agentbase.enums.ErrorCode;
 import com.ghost616.agentbase.exception.BusinessException;
 import com.ghost616.agentbase.service.agent.MessageDataProvider;
 import com.ghost616.platform.dto.ApiResponse;
+import com.ghost616.platform.dto.evaluation.EvaluationExecutionStatusDTO;
 import com.ghost616.platform.dto.evaluation.EvaluationSessionCreateResponse;
 import com.ghost616.platform.entity.Evaluation;
 import com.ghost616.platform.repository.EvaluationMapper;
@@ -128,5 +129,55 @@ class EvaluationSessionControllerTest {
         assertEquals("keep me", response.getData().getUserMessages().get(0));
         assertEquals("rollback", response.getData().getUserMessages().get(1));
         assertEquals("keep me too", response.getData().getUserMessages().get(2));
+    }
+
+    @Test
+    void generateResult_shouldReturnRunningStatus() {
+        EvaluationExecutionStatusDTO status = EvaluationExecutionStatusDTO.builder()
+                .evaluationId(EVALUATION_ID)
+                .executionSessionId(EXECUTION_SESSION_ID)
+                .status("RUNNING")
+                .build();
+        when(evaluationExecutionService.generateResultAsync(EVALUATION_ID, EXECUTION_SESSION_ID))
+                .thenReturn(status);
+
+        ApiResponse<EvaluationExecutionStatusDTO> response =
+                controller.generateResult(EVALUATION_ID, EXECUTION_SESSION_ID);
+
+        assertTrue(response.isSuccess());
+        assertNotNull(response.getData());
+        assertEquals(EVALUATION_ID, response.getData().getEvaluationId());
+        assertEquals(EXECUTION_SESSION_ID, response.getData().getExecutionSessionId());
+        assertEquals("RUNNING", response.getData().getStatus());
+        verify(evaluationExecutionService).generateResultAsync(EVALUATION_ID, EXECUTION_SESSION_ID);
+    }
+
+    @Test
+    void generateStatus_shouldReturnCurrentStatus() {
+        EvaluationExecutionStatusDTO status = EvaluationExecutionStatusDTO.builder()
+                .evaluationId(EVALUATION_ID)
+                .executionSessionId(EXECUTION_SESSION_ID)
+                .status("COMPLETED")
+                .build();
+        when(evaluationExecutionService.getGenerateStatus(EVALUATION_ID, EXECUTION_SESSION_ID))
+                .thenReturn(status);
+
+        ApiResponse<EvaluationExecutionStatusDTO> response =
+                controller.generateStatus(EVALUATION_ID, EXECUTION_SESSION_ID);
+
+        assertTrue(response.isSuccess());
+        assertNotNull(response.getData());
+        assertEquals("COMPLETED", response.getData().getStatus());
+        verify(evaluationExecutionService).getGenerateStatus(EVALUATION_ID, EXECUTION_SESSION_ID);
+    }
+
+    @Test
+    void generateStatus_statusNotFound_shouldThrow() {
+        when(evaluationExecutionService.getGenerateStatus(EVALUATION_ID, EXECUTION_SESSION_ID))
+                .thenThrow(new BusinessException(ErrorCode.EVALUATION_EXECUTION_STATUS_NOT_FOUND));
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> controller.generateStatus(EVALUATION_ID, EXECUTION_SESSION_ID));
+        assertEquals(ErrorCode.EVALUATION_EXECUTION_STATUS_NOT_FOUND, ex.getErrorCode());
     }
 }

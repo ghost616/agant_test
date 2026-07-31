@@ -24,6 +24,31 @@ public class AsyncEvaluationExecutor {
     private final EvaluationResultGenerateService evaluationResultGenerateService;
 
     @Async
+    public void generateResultAsync(Long evaluationId, Long executionSessionId,
+                                    Map<String, EvaluationExecutionStatusDTO> generateStatusMap) {
+        String statusKey = evaluationId + ":" + executionSessionId;
+        try {
+            evaluationResultGenerateService.generate(evaluationId, executionSessionId);
+            generateStatusMap.put(statusKey, EvaluationExecutionStatusDTO.builder()
+                    .evaluationId(evaluationId)
+                    .executionSessionId(executionSessionId)
+                    .status("COMPLETED")
+                    .currentStep(1)
+                    .totalSteps(1)
+                    .build());
+        } catch (Exception e) {
+            log.error("评估结果生成异常, evaluationId={}, executionSessionId={}", evaluationId, executionSessionId, e);
+            generateStatusMap.put(statusKey, EvaluationExecutionStatusDTO.builder()
+                    .evaluationId(evaluationId)
+                    .executionSessionId(executionSessionId)
+                    .status("FAILED")
+                    .currentStep(1)
+                    .totalSteps(1)
+                    .build());
+        }
+    }
+
+    @Async
     public void executeAsync(Long evaluationId, Long executionSessionId,
                              List<MessageDataProvider.MessageDTO> userMessages,
                              Map<String, EvaluationExecutionStatusDTO> statusMap) {

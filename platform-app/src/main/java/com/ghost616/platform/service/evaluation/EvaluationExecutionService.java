@@ -42,6 +42,9 @@ public class EvaluationExecutionService {
     private final Map<String, EvaluationExecutionStatusDTO> executionStatusMap = new ConcurrentHashMap<>();
     private final Map<String, Long> statusTimestamps = new ConcurrentHashMap<>();
 
+    private final Map<String, EvaluationExecutionStatusDTO> generateStatusMap = new ConcurrentHashMap<>();
+    private final Map<String, Long> generateStatusTimestamps = new ConcurrentHashMap<>();
+
     public EvaluationExecutionStatusDTO execute(Long evaluationId) {
         Evaluation evaluation = evaluationMapper.selectById(evaluationId);
         if (evaluation == null) {
@@ -107,12 +110,43 @@ public class EvaluationExecutionService {
         evaluationResultGenerateService.generate(evaluationId, executionSessionId);
     }
 
+    public EvaluationExecutionStatusDTO generateResultAsync(Long evaluationId, Long executionSessionId) {
+        String statusKey = evaluationId + ":" + executionSessionId;
+        EvaluationExecutionStatusDTO statusDTO = EvaluationExecutionStatusDTO.builder()
+                .evaluationId(evaluationId)
+                .executionSessionId(executionSessionId)
+                .status("RUNNING")
+                .build();
+        generateStatusMap.put(statusKey, statusDTO);
+        generateStatusTimestamps.put(statusKey, System.currentTimeMillis());
+
+        asyncEvaluationExecutor.generateResultAsync(evaluationId, executionSessionId, generateStatusMap);
+
+        return statusDTO;
+    }
+
+    public EvaluationExecutionStatusDTO getGenerateStatus(Long evaluationId, Long executionSessionId) {
+        String statusKey = evaluationId + ":" + executionSessionId;
+        EvaluationExecutionStatusDTO dto = generateStatusMap.get(statusKey);
+        if (dto == null) {
+            throw new BusinessException(ErrorCode.EVALUATION_EXECUTION_STATUS_NOT_FOUND);
+        }
+        return dto;
+    }
+
     @Scheduled(fixedRate = 300_000)
     public void cleanupStaleStatuses() {
         long now = System.currentTimeMillis();
         statusTimestamps.entrySet().removeIf(entry -> {
             if (now - entry.getValue() > STATUS_TTL_MS) {
                 executionStatusMap.remove(entry.getKey());
+                return true;
+            }
+            return false;
+        });
+        generateStatusTimestamps.entrySet().removeIf(entry -> {
+            if (now - entry.getValue() > STATUS_TTL_MS) {
+                generateStatusMap.remove(entry.getKey());
                 return true;
             }
             return false;

@@ -48,6 +48,12 @@ export interface ExecutionStatusResponse {
   totalSteps: number;
 }
 
+export interface GenerateStatusResponse {
+  status: string;
+  currentStep?: number;
+  totalSteps?: number;
+}
+
 export interface EvalSessionCreateResponse {
   sessionId: string;
   userMessages: string[];

@@ -19,6 +19,7 @@ import {
   getExecutionStatus,
   createEvalSession,
   generateEvalResult,
+  getGenerateStatus,
   getEvaluationResult,
   deleteEvaluationResult,
 } from '../evaluation';
@@ -134,6 +135,39 @@ describe('generateEvalResult', () => {
   it('应在 API 失败时抛出错误', async () => {
     mockPost.mockRejectedValueOnce(new Error('Network Error'));
     await expect(generateEvalResult('eval-123', 'session-456')).rejects.toThrow('Network Error');
+  });
+});
+
+describe('getGenerateStatus', () => {
+  beforeEach(() => {
+    mockGet.mockReset();
+  });
+
+  it('应调用 GET /evaluations/{id}/session/{sessionId}/generate/status 并返回状态', async () => {
+    const fakeStatus = { status: 'running', currentStep: 1, totalSteps: 5 };
+    mockGet.mockResolvedValueOnce({ data: { data: fakeStatus } });
+    const result = await getGenerateStatus('eval-123', 'session-456');
+    expect(mockGet).toHaveBeenCalledWith('/evaluations/eval-123/session/session-456/generate/status');
+    expect(result).toEqual(fakeStatus);
+  });
+
+  it('应返回 completed 状态', async () => {
+    const fakeStatus = { status: 'completed', currentStep: 5, totalSteps: 5 };
+    mockGet.mockResolvedValueOnce({ data: { data: fakeStatus } });
+    const result = await getGenerateStatus('eval-123', 'session-456');
+    expect(result.status).toBe('completed');
+  });
+
+  it('应返回 failed 状态', async () => {
+    const fakeStatus = { status: 'failed', currentStep: 3, totalSteps: 5 };
+    mockGet.mockResolvedValueOnce({ data: { data: fakeStatus } });
+    const result = await getGenerateStatus('eval-123', 'session-456');
+    expect(result.status).toBe('failed');
+  });
+
+  it('应在 API 失败时抛出错误', async () => {
+    mockGet.mockRejectedValueOnce(new Error('Network Error'));
+    await expect(getGenerateStatus('eval-123', 'session-456')).rejects.toThrow('Network Error');
   });
 });
 

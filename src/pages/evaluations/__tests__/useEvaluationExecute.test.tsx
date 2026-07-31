@@ -25,6 +25,11 @@ describe('useEvaluationExecute 导入', () => {
     expect(source).toContain('generateEvalResult');
   });
 
+  it('应导入 getGenerateStatus', () => {
+    const source = readFileSync(hookPath, 'utf-8');
+    expect(source).toContain('getGenerateStatus');
+  });
+
   it('应导入 agentChatStream', () => {
     const source = readFileSync(hookPath, 'utf-8');
     expect(source).toContain('agentChatStream');
@@ -119,6 +124,17 @@ describe('useEvaluationExecute 执行逻辑', () => {
   it('FOREGROUND 模式最后应生成评估结果', () => {
     const source = readFileSync(hookPath, 'utf-8');
     expect(source).toContain('generateEvalResult(evaluationId, evalSession.sessionId)');
+  });
+
+  it('FOREGROUND 模式生成结果后应轮询 getGenerateStatus', () => {
+    const source = readFileSync(hookPath, 'utf-8');
+    expect(source).toContain('pollGenerateStatus(evaluationId, evalSession.sessionId)');
+  });
+
+  it('pollGenerateStatus 应检查 completed 和 failed 状态', () => {
+    const source = readFileSync(hookPath, 'utf-8');
+    expect(source).toContain("status.status.toUpperCase() === 'COMPLETED'");
+    expect(source).toContain("status.status.toUpperCase() === 'FAILED'");
   });
 
   it('BACKGROUND 模式应按 executionCount 循环执行', () => {

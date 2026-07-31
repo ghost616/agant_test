@@ -6,6 +6,7 @@ import type {
   EvaluationResult,
   ExecutionStatusResponse,
   EvalSessionCreateResponse,
+  GenerateStatusResponse,
 } from '../types/evaluation';
 import api from './api';
 
@@ -87,6 +88,16 @@ export async function generateEvalResult(
   sessionId: string,
 ): Promise<void> {
   await api.post(`/evaluations/${id}/session/${sessionId}/generate`);
+}
+
+export async function getGenerateStatus(
+  id: string,
+  sessionId: string,
+): Promise<GenerateStatusResponse> {
+  const res = await api.get<ApiResponse<GenerateStatusResponse>>(
+    `/evaluations/${id}/session/${sessionId}/generate/status`,
+  );
+  return res.data.data;
 }
 
 export async function deleteEvaluationResult(id: string): Promise<void> {

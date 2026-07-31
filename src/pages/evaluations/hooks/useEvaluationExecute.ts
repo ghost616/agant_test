@@ -6,6 +6,7 @@ import {
   getExecutionStatus,
   createEvalSession,
   generateEvalResult,
+  getGenerateStatus,
 } from '../../../services/evaluation';
 import { agentChatStream, completeSubSession, continueChatStream, executeTools, getSubSessionData, getToolStatus } from '../../../services/session';
 import { executeBrowserTool } from '../../../services/toolExecutor';
@@ -44,6 +45,20 @@ export function useEvaluationExecute(): {
           `进度: ${status.currentStep}/${status.totalSteps}`,
         );
         if (status.status.toUpperCase() === 'COMPLETED' || status.status.toUpperCase() === 'ERROR') {
+          return;
+        }
+        await sleep(2000);
+      }
+    },
+    [],
+  );
+
+  const pollGenerateStatus = useCallback(
+    async (id: string, sessionId: string): Promise<void> => {
+      while (executingRef.current) {
+        const status = await getGenerateStatus(id, sessionId);
+        setExecutionProgress(`生成进度: ${status.currentStep ?? '-'}/${status.totalSteps ?? '-'}`);
+        if (status.status.toUpperCase() === 'COMPLETED' || status.status.toUpperCase() === 'FAILED') {
           return;
         }
         await sleep(2000);
@@ -420,6 +435,7 @@ export function useEvaluationExecute(): {
             logLines.push('\n正在生成评估结果...');
             setForegroundLog([...logLines]);
             await generateEvalResult(evaluationId, evalSession.sessionId);
+            await pollGenerateStatus(evaluationId, evalSession.sessionId);
             logLines.push('评估结果已生成');
             setForegroundLog([...logLines]);
           }
@@ -446,7 +462,7 @@ export function useEvaluationExecute(): {
         }
       }
     },
-    [pollExecutionStatus, sendForegroundMessage],
+    [pollExecutionStatus, pollGenerateStatus, sendForegroundMessage],
   );
 
   const handleCancelForeground = (): void => {
