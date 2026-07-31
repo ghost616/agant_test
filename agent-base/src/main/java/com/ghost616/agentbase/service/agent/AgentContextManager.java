@@ -155,6 +155,9 @@ public class AgentContextManager {
 
             injectVariableCallbacks(mutator, sessionId, parentSessionId, parentCtx);
             mutator.setMessageSender(registry.getMessageSender());
+            if (ctxData.lastResponseId() != null && !ctxData.lastResponseId().isEmpty()) {
+                mutator.setLastResponseId(ctxData.lastResponseId());
+            }
 
             return new AgentSessionContext(context, mutator, new AtomicBoolean(false));
         }

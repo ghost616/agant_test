@@ -483,7 +483,7 @@ public class ChatService {
                         hasToolCalls.set(true);
                     }
                     if (chunk.getResponseId() != null) {
-                        context.setLastResponseId(chunk.getResponseId());
+                        contextMutator.setLastResponseId(chunk.getResponseId());
                     }
                     if (chunk.getFinishReason() != null) {
                         chunk.setHasToolCalls(hasToolCalls.get());

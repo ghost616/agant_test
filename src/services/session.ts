@@ -18,6 +18,19 @@ export async function getSession(id: string): Promise<Session> {
   return res.data.data;
 }
 
+export interface SessionContextBasic {
+  sessionId: string;
+  agentId: string;
+  modelId: string;
+  lastResponseId?: string;
+  parentSessionId?: string;
+}
+
+export async function getSessionContextBasic(sessionId: string): Promise<SessionContextBasic> {
+  const res = await api.get<ApiResponse<SessionContextBasic>>(`/context/${sessionId}/basic`);
+  return res.data.data;
+}
+
 export async function deleteSession(id: string): Promise<void> {
   await api.delete(`/sessions/${id}`);
 }
@@ -35,6 +48,7 @@ export async function getSessionMessages(sessionId: string): Promise<SessionMess
 interface ChatChunk {
   delta?: string;
   reasoning?: string;
+  responseId?: string;
   finishReason?: string;
   hasToolCalls?: boolean;
 }
@@ -42,6 +56,7 @@ interface ChatChunk {
 interface StreamCallbacks {
   onDelta: (text: string) => void;
   onReasoning: (text: string) => void;
+  onResponseId?: (id: string) => void;
   onDone: (hasToolCalls: boolean) => void;
   onError: (err: Error) => void;
 }
@@ -97,6 +112,9 @@ async function processSSEStream(
         if (chunk.reasoning) {
           callbacks.onReasoning(chunk.reasoning);
         }
+        if (chunk.responseId) {
+          callbacks.onResponseId?.(chunk.responseId);
+        }
         if (chunk.delta) {
           callbacks.onDelta(chunk.delta);
         }
@@ -107,7 +125,13 @@ async function processSSEStream(
   }
 }
 export function agentChatStream(
-  params: { sessionId: string; content: string; modelId?: string; thinking?: boolean },
+  params: {
+    sessionId: string;
+    content: string;
+    modelId?: string;
+    thinking?: boolean;
+    previousResponseId?: string;
+  },
   callbacks: StreamCallbacks,
 ): AbortController {
   const controller = new AbortController();

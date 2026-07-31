@@ -11,10 +11,13 @@ public interface ContextDataProvider {
                             Integer recentMessageCount, List<SkillConfigDTO> skills,
                             Map<String, String> sessionVariables,
                             String parentSessionId,
-                            List<AgentExecutionContext.ChildSession> childSessions) {
+                            List<AgentExecutionContext.ChildSession> childSessions,
+                            String lastResponseId) {
     }
 
     AgentContextData loadAgentContext(String sessionId);
+
+    void updateLastResponseId(String sessionId, String lastResponseId);
 
     void saveSessionVariable(String sessionId, String key, String value);
 

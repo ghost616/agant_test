@@ -2,10 +2,13 @@ package com.ghost616.platform.controller;
 
 import com.ghost616.agentbase.service.agent.AgentContextManager;
 import com.ghost616.agentbase.service.agent.AgentExecutionContext;
+import com.ghost616.platform.dto.AgentContextBasicDTO;
 import com.ghost616.platform.dto.AgentContextDTO;
 import com.ghost616.platform.dto.ApiResponse;
 import com.ghost616.platform.dto.context.ConversationVariableRequest;
 import com.ghost616.platform.dto.context.SessionVariableRequest;
+import com.ghost616.platform.entity.Session;
+import com.ghost616.platform.repository.SessionMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -26,6 +29,9 @@ class AgentContextControllerTest {
     @Mock
     private AgentContextManager agentContextManager;
 
+    @Mock
+    private SessionMapper sessionMapper;
+
     @InjectMocks
     private AgentContextController controller;
 
@@ -45,6 +51,7 @@ class AgentContextControllerTest {
         when(ctx.getTools()).thenReturn(List.of());
         when(ctx.getSkills()).thenReturn(List.of());
         when(ctx.getProjectDir()).thenReturn("/project");
+        when(ctx.getLastResponseId()).thenReturn("resp_001");
         when(ctx.getSessionVariableKeys()).thenReturn(Set.of());
         when(ctx.getConversationVariableKeys()).thenReturn(Set.of());
 
@@ -59,6 +66,7 @@ class AgentContextControllerTest {
         assertEquals(200L, dto.getModelId());
         assertNull(dto.getParentSessionId());
         assertEquals(10, dto.getRecentMessageCount());
+        assertEquals("resp_001", dto.getLastResponseId());
     }
 
     @Test
@@ -132,6 +140,38 @@ class AgentContextControllerTest {
         when(agentContextManager.get("999")).thenReturn(null);
 
         ApiResponse<AgentContextDTO> response = controller.getContext(999L);
+
+        assertFalse(response.isSuccess());
+        assertEquals("CONTEXT-001", response.getCode());
+    }
+
+    @Test
+    void getContextBasic_shouldReturnBasicFields() {
+        Session session = new Session();
+        session.setId(1L);
+        session.setAgentId(100L);
+        session.setModelId(200L);
+        session.setLastResponseId("resp_001");
+        session.setParentSessionId(null);
+        when(sessionMapper.selectById(1L)).thenReturn(session);
+
+        ApiResponse<AgentContextBasicDTO> response = controller.getContextBasic(1L);
+
+        assertTrue(response.isSuccess());
+        AgentContextBasicDTO dto = response.getData();
+        assertNotNull(dto);
+        assertEquals(1L, dto.getSessionId());
+        assertEquals(100L, dto.getAgentId());
+        assertEquals(200L, dto.getModelId());
+        assertEquals("resp_001", dto.getLastResponseId());
+        assertNull(dto.getParentSessionId());
+    }
+
+    @Test
+    void getContextBasic_shouldReturnErrorWhenSessionNotFound() {
+        when(sessionMapper.selectById(999L)).thenReturn(null);
+
+        ApiResponse<AgentContextBasicDTO> response = controller.getContextBasic(999L);
 
         assertFalse(response.isSuccess());
         assertEquals("CONTEXT-001", response.getCode());

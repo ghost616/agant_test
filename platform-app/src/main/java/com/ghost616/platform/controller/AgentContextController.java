@@ -2,10 +2,13 @@ package com.ghost616.platform.controller;
 
 import com.ghost616.agentbase.service.agent.AgentContextManager;
 import com.ghost616.agentbase.service.agent.AgentExecutionContext;
+import com.ghost616.platform.dto.AgentContextBasicDTO;
 import com.ghost616.platform.dto.AgentContextDTO;
 import com.ghost616.platform.dto.ApiResponse;
 import com.ghost616.platform.dto.context.ConversationVariableRequest;
 import com.ghost616.platform.dto.context.SessionVariableRequest;
+import com.ghost616.platform.entity.Session;
+import com.ghost616.platform.repository.SessionMapper;
 import com.ghost616.platform.util.IdConverter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +28,7 @@ import java.util.List;
 public class AgentContextController {
 
     private final AgentContextManager agentContextManager;
+    private final SessionMapper sessionMapper;
 
     @GetMapping("/{sessionId}")
     public ApiResponse<AgentContextDTO> getContext(@PathVariable Long sessionId) {
@@ -45,11 +49,27 @@ public class AgentContextController {
         dto.setTools(ctx.getTools());
         dto.setSkills(ctx.getSkills());
         dto.setProjectDir(ctx.getProjectDir());
+        dto.setLastResponseId(ctx.getLastResponseId());
         dto.setSessionVariables(ctx.getSessionVariableKeys().stream()
                 .collect(java.util.stream.Collectors.toMap(k -> k, ctx::getSessionVariable)));
         dto.setConversationVariables(ctx.getConversationVariableKeys().stream()
                 .collect(java.util.stream.Collectors.toMap(k -> k, ctx::getConversationVariable)));
 
+        return ApiResponse.success(dto);
+    }
+
+    @GetMapping("/{sessionId}/basic")
+    public ApiResponse<AgentContextBasicDTO> getContextBasic(@PathVariable Long sessionId) {
+        Session session = sessionMapper.selectById(sessionId);
+        if (session == null) {
+            return ApiResponse.fail("CONTEXT-001", "Session not found: " + sessionId);
+        }
+        AgentContextBasicDTO dto = new AgentContextBasicDTO();
+        dto.setSessionId(session.getId());
+        dto.setAgentId(session.getAgentId());
+        dto.setModelId(session.getModelId());
+        dto.setLastResponseId(session.getLastResponseId());
+        dto.setParentSessionId(session.getParentSessionId());
         return ApiResponse.success(dto);
     }
 

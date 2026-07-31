@@ -17,6 +17,7 @@ import {
   continueChatStream,
   executeTools,
   getSession,
+  getSessionContextBasic,
   getSessionMessages,
   getSubSessionData,
   getToolStatus,
@@ -92,6 +93,7 @@ function AgentChat(): JSX.Element {
   const toolAbortRef = useRef(false);
   const hasResponseRef = useRef(false);
   const calledRef = useRef(false);
+  const responseIdRef = useRef<string | null>(null);
   const executeToolLoopRef = useRef<() => Promise<void>>();
   const handleSubSessionFlowRef = useRef<(toolId: string) => Promise<void>>();
   const toolCallCounts = useRef<Map<string, number>>(new Map());
@@ -211,6 +213,14 @@ function AgentChat(): JSX.Element {
   useEffect(() => {
     if (!sessionId || calledRef.current) return;
     calledRef.current = true;
+
+    getSessionContextBasic(sessionId)
+      .then((ctx) => {
+        if (ctx.lastResponseId) {
+          responseIdRef.current = ctx.lastResponseId;
+        }
+      })
+      .catch(() => {});
 
     loadHistory();
   }, [sessionId, loadHistory]);
@@ -688,6 +698,10 @@ function AgentChat(): JSX.Element {
   const handleSend = useCallback(() => {
     if (!inputValue.trim() || loading) return;
 
+    const currentModel = modelList.find((m) => String(m.id) === String(modelId));
+    const isResponsesStateful = currentModel?.requestType === 'responses';
+    const previousResponseId = isResponsesStateful ? responseIdRef.current || undefined : undefined;
+
     const userMsg: ChatMessage = { role: 'user', content: inputValue };
     setMessages((prev) => [...prev, userMsg]);
     setInputValue('');
@@ -699,7 +713,7 @@ function AgentChat(): JSX.Element {
     toolAbortRef.current = false;
 
     abortRef.current = agentChatStream(
-      { sessionId, content: inputValue, modelId, thinking },
+      { sessionId, content: inputValue, modelId, thinking, previousResponseId },
       {
         onDelta: (text: string) => {
           hasResponseRef.current = true;
@@ -708,6 +722,9 @@ function AgentChat(): JSX.Element {
         onReasoning: (text: string) => {
           hasResponseRef.current = true;
           setCurrentReasoning((prev) => prev + text);
+        },
+        onResponseId: (id: string) => {
+          responseIdRef.current = id;
         },
         onDone: (hasToolCalls: boolean) => {
           setCurrentResponse((prev) => {
@@ -743,7 +760,7 @@ function AgentChat(): JSX.Element {
         },
       },
     );
-  }, [inputValue, loading, sessionId, modelId, thinking]);
+  }, [inputValue, loading, sessionId, modelId, thinking, modelList]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {

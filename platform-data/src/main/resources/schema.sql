@@ -43,6 +43,7 @@ CREATE TABLE IF NOT EXISTS session (
     description      VARCHAR(500),
     thinking         TINYINT(1),
     total_token_used BIGINT,
+    last_response_id VARCHAR(50),
     is_evaluation    TINYINT(1) DEFAULT 0,
     create_time      TIMESTAMP,
     update_time      TIMESTAMP,

@@ -56,6 +56,7 @@ public class SchemaMigration implements ApplicationRunner {
                 new Migration("tool_config", "sub_tool_type", "VARCHAR(32)", null),
                 new Migration("tool_config", "tool_script", "TEXT", null),
                 new Migration("session", "is_evaluation", "TINYINT(1)", "0"),
+                new Migration("session", "last_response_id", "VARCHAR(50)", null),
                 new Migration("evaluation", "id", "BIGINT", null),
                 new Migration("evaluation", "name", "VARCHAR(255)", null),
                 new Migration("evaluation", "description", "TEXT", null),

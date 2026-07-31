@@ -93,7 +93,7 @@ public class DefaultContextDataProvider implements ContextDataProvider {
 
             return new AgentContextData(null, session.getSystemPrompt(), IdConverter.toString(session.getModelId()),
                     recentMessageCount, skills, sessionVariables,
-                    IdConverter.toString(session.getParentSessionId()), null);
+                    IdConverter.toString(session.getParentSessionId()), null, session.getLastResponseId());
         }
 
         Long agentId = session.getAgentId();
@@ -113,7 +113,18 @@ public class DefaultContextDataProvider implements ContextDataProvider {
                 .toList();
 
         return new AgentContextData(IdConverter.toString(agentId), systemPrompt, IdConverter.toString(defaultModelId), recentMessageCount, skills, sessionVariables,
-                null, childSessions);
+                null, childSessions, session.getLastResponseId());
+    }
+
+    @Override
+    public void updateLastResponseId(String sessionId, String lastResponseId) {
+        Long sid = IdConverter.parse(sessionId);
+        Session session = sessionMapper.selectById(sid);
+        if (session == null) {
+            return;
+        }
+        session.setLastResponseId(lastResponseId);
+        sessionMapper.updateById(session);
     }
 
     private List<SkillConfigDTO> loadSkillsInternal(Long agentId) {

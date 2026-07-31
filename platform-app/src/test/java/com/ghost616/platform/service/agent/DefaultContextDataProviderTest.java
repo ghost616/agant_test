@@ -381,6 +381,82 @@ class DefaultContextDataProviderTest {
     }
 
     @Test
+    void loadAgentContext_普通会话_lastResponseId正确填充() {
+        Session session = new Session();
+        session.setId(11L);
+        session.setIsChild(false);
+        session.setAgentId(10L);
+        session.setLastResponseId("resp_111");
+        when(sessionMapper.selectById(11L)).thenReturn(session);
+        AgentConfig agentConfig = new AgentConfig();
+        agentConfig.setRecentMessageCount(10);
+        when(agentConfigMapper.selectById(10L)).thenReturn(agentConfig);
+        when(agentSkillMapper.selectList(any())).thenReturn(List.of());
+        when(sessionVariableMapper.selectList(any())).thenReturn(List.of());
+        when(sessionMapper.selectList(any())).thenReturn(List.of());
+
+        AgentContextData result = provider.loadAgentContext("11");
+
+        assertEquals("resp_111", result.lastResponseId());
+    }
+
+    @Test
+    void loadAgentContext_普通会话_lastResponseId为null时返回null() {
+        Session session = new Session();
+        session.setId(12L);
+        session.setIsChild(false);
+        session.setAgentId(10L);
+        when(sessionMapper.selectById(12L)).thenReturn(session);
+        AgentConfig agentConfig = new AgentConfig();
+        agentConfig.setRecentMessageCount(10);
+        when(agentConfigMapper.selectById(10L)).thenReturn(agentConfig);
+        when(agentSkillMapper.selectList(any())).thenReturn(List.of());
+        when(sessionVariableMapper.selectList(any())).thenReturn(List.of());
+        when(sessionMapper.selectList(any())).thenReturn(List.of());
+
+        AgentContextData result = provider.loadAgentContext("12");
+
+        assertNull(result.lastResponseId());
+    }
+
+    @Test
+    void loadAgentContext_子会话_lastResponseId正确填充() {
+        Session childSession = new Session();
+        childSession.setId(13L);
+        childSession.setIsChild(true);
+        childSession.setParentSessionId(1L);
+        childSession.setLastResponseId("resp_131");
+        when(sessionMapper.selectById(13L)).thenReturn(childSession);
+        when(sessionSkillMapper.selectList(any())).thenReturn(List.of());
+        when(sessionVariableMapper.selectList(any())).thenReturn(List.of());
+
+        AgentContextData result = provider.loadAgentContext("13");
+
+        assertEquals("resp_131", result.lastResponseId());
+    }
+
+    @Test
+    void updateLastResponseId_会话存在_更新lastResponseId() {
+        Session session = new Session();
+        session.setId(1L);
+        when(sessionMapper.selectById(1L)).thenReturn(session);
+
+        provider.updateLastResponseId("1", "resp_001");
+
+        assertEquals("resp_001", session.getLastResponseId());
+        verify(sessionMapper).updateById(session);
+    }
+
+    @Test
+    void updateLastResponseId_会话不存在_不执行更新() {
+        when(sessionMapper.selectById(999L)).thenReturn(null);
+
+        provider.updateLastResponseId("999", "resp_001");
+
+        verify(sessionMapper, never()).updateById(any(Session.class));
+    }
+
+    @Test
     void getLatestMessages_委托调用MessageDataProvider并返回结果() {
         String sessionId = "100";
         MessageDataProvider.MessageDTO msg1 = new MessageDataProvider.MessageDTO(

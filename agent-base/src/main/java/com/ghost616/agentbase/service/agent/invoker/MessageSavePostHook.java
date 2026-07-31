@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 
 import lombok.extern.slf4j.Slf4j;
 
+import com.ghost616.agentbase.core.AgentComponentRegistry;
 import com.ghost616.agentbase.dto.model.ChatChunk;
 import com.ghost616.agentbase.dto.model.ToolCall;
 import com.ghost616.agentbase.dto.model.ToolCallDelta;
@@ -15,6 +16,7 @@ import com.ghost616.agentbase.dto.model.UsageInfo;
 import com.ghost616.agentbase.enums.HookPhase;
 import com.ghost616.agentbase.service.agent.AgentContextManager;
 import com.ghost616.agentbase.service.agent.AgentExecutionContext;
+import com.ghost616.agentbase.service.agent.ContextDataProvider;
 import com.ghost616.agentbase.service.agent.MessageDataProvider;
 import com.ghost616.agentbase.service.agent.SessionManager;
 
@@ -22,14 +24,29 @@ import com.ghost616.agentbase.service.agent.SessionManager;
 @Slf4j
 public class MessageSavePostHook implements SystemPostHook {
 
+    private final AgentComponentRegistry registry;
+    private ContextDataProvider contextDataProvider;
     private SessionManager sessionManager;
     private AgentContextManager agentContextManager;
     private ToolCallQueueManager toolCallQueueManager;
+    private volatile boolean initialized;
 
-    public MessageSavePostHook(SessionManager sessionManager, AgentContextManager agentContextManager, ToolCallQueueManager toolCallQueueManager) {
-        this.sessionManager = sessionManager;
-        this.agentContextManager = agentContextManager;
-        this.toolCallQueueManager = toolCallQueueManager;
+    public MessageSavePostHook(AgentComponentRegistry registry) {
+        this.registry = registry;
+    }
+
+    private void ensureInitialized() {
+        if (!initialized) {
+            synchronized (this) {
+                if (!initialized) {
+                    contextDataProvider = registry.getContextDataProvider();
+                    sessionManager = registry.getSessionManager();
+                    agentContextManager = registry.getAgentContextManager();
+                    toolCallQueueManager = registry.getToolCallQueueManager();
+                    initialized = true;
+                }
+            }
+        }
     }
 
     private static class ToolAccumulator {
@@ -53,6 +70,7 @@ public class MessageSavePostHook implements SystemPostHook {
 
     @Override
     public void execute(AgentExecutionContext ctx, HookData data) {
+        ensureInitialized();
         ChatChunk chunk = data.getChatChunk();
         if (chunk == null) {
             return;
@@ -80,6 +98,10 @@ public class MessageSavePostHook implements SystemPostHook {
                     sessionId, content, reasoning,
                     toolCalls != null ? toolCalls.size() : 0);
             sessionManager.messageSave().sessionId(sessionId).role("assistant").content(content).reasoning(reasoning).toolCalls(toolCalls).usage(usage).save();
+            String lastResponseId = ctx.getLastResponseId();
+            if (lastResponseId != null && !lastResponseId.isEmpty()) {
+                contextDataProvider.updateLastResponseId(sessionId, lastResponseId);
+            }
             if (toolCalls != null && !toolCalls.isEmpty()) {
                 toolCallQueueManager.enqueue(sessionId, toolCalls);
             }

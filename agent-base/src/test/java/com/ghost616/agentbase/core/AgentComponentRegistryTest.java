@@ -1,8 +1,18 @@
 package com.ghost616.agentbase.core;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 
 class AgentComponentRegistryTest {
 
+    private AgentComponentRegistry registry;
+
+    @BeforeEach
+    void setUp() {
+        registry = new AgentComponentRegistry();
+    }
+
+    @Test
+    void contextLoads() {
+    }
 }

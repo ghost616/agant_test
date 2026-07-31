@@ -181,10 +181,6 @@ public class AgentExecutionContext {
         return stopped.get();
     }
 
-    public void setLastResponseId(String lastResponseId) {
-        this.lastResponseId = lastResponseId;
-    }
-
     public record HistoryEntry(String role, String content, String reasoning, String toolCallId,
                                int sequenceNum, LocalDateTime createTime, List<ToolCall> toolCalls,
                                UsageInfo usage) {
@@ -332,6 +328,10 @@ public class AgentExecutionContext {
 
         public void resetStopped() {
             context.stopped.set(false);
+        }
+
+        public void setLastResponseId(String lastResponseId) {
+            context.lastResponseId = lastResponseId;
         }
 
         public String createChildSession(String sessionName, String description, String modelId,

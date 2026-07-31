@@ -294,7 +294,7 @@ class ChatServiceResponsesTest {
     @DisplayName("requestType=responses 时，会话 lastResponseId 优先于 API 请求 previousResponseId")
     void responses_lastResponseId优先于API请求() {
         TestHarness harness = new TestHarness("sys_prompt", List.of(), List.of(), null, List.of());
-        harness.context.setLastResponseId("ctx_resp");
+        harness.mutator.setLastResponseId("ctx_resp");
         when(systemToolManager.getToolDefinitions()).thenReturn(List.of());
 
         ChatRequest apiRequest = ChatRequest.builder()

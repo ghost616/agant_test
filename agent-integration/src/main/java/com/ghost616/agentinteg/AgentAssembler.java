@@ -186,8 +186,7 @@ public class AgentAssembler {
             if (messageSavePostHook == null) {
                 synchronized (this) {
                     if (messageSavePostHook == null) {
-                        messageSavePostHook = new MessageSavePostHook(
-                                registry.getSessionManager(), registry.getAgentContextManager(), registry.getToolCallQueueManager());
+                        messageSavePostHook = new MessageSavePostHook(registry);
                     }
                 }
             }

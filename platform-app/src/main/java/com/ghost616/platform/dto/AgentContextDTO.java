@@ -23,6 +23,7 @@ public class AgentContextDTO {
     private List<ToolConfigDTO> tools;
     private List<SkillConfigDTO> skills;
     private String projectDir;
+    private String lastResponseId;
     private Map<String, String> sessionVariables;
     private Map<String, String> conversationVariables;
 
