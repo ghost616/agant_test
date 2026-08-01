@@ -4,6 +4,15 @@
     "ses_04402b052ffeDiisK9kokhgigG"
   ],
   "agent-base": [
-    "ses_042edccf7ffe8M6aTnc0aneXFV"
+    "ses_042a49443ffesiyIfs2Gf5YDrk"
+  ],
+  "agent-integration": [
+    "ses_0429bdf16ffeZ221zfZfFleZKV"
+  ],
+  "platform-app": [
+    "ses_0429bc34bffe7PPWsAVlTmgv7E"
+  ],
+  "frontend-ui": [
+    "ses_0429bafcdffeMpLXx2JT5xc72u"
   ]
 }

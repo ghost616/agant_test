@@ -7,6 +7,7 @@ import com.ghost616.agentbase.enums.ErrorCode;
 import com.ghost616.agentbase.exception.BusinessException;
 import com.ghost616.platform.repository.MessageMapper;
 import com.ghost616.platform.repository.MessageToolCallMapper;
+import com.ghost616.agentbase.dto.model.ToolInfo;
 import com.ghost616.agentbase.dto.model.UsageInfo;
 import com.ghost616.agentbase.service.agent.MessageDataProvider;
 import com.ghost616.agentbase.service.agent.MessageDataProvider.ToolCallData;
@@ -37,7 +38,7 @@ public class DefaultMessageDataProvider implements MessageDataProvider {
 
     @Override
     public String saveMessage(String sessionId, String role, String content, String reasoning,
-                               String toolCallId, String toolResult, List<ToolCallData> toolCalls,
+                               ToolInfo toolInfo, String toolResult, List<ToolCallData> toolCalls,
                                UsageInfo usage, List<WebSearchCallData> webSearchCall, List<CustomToolCallData> customToolCall) {
         Long sid = IdConverter.parse(sessionId);
         Message message = new Message();
@@ -45,7 +46,7 @@ public class DefaultMessageDataProvider implements MessageDataProvider {
         message.setRole(role);
         message.setContent(content);
         message.setReasoning(reasoning);
-        message.setToolCallId(toolCallId);
+        message.setToolCallId(toolInfo != null ? toolInfo.toolCallId() : null);
         message.setToolResult(toolResult);
 
         LambdaQueryWrapper<Message> wrapper = new LambdaQueryWrapper<>();
@@ -80,6 +81,14 @@ public class DefaultMessageDataProvider implements MessageDataProvider {
         Long messageId = message.getId();
 
         List<MessageToolCall> batchToolCalls = new ArrayList<>();
+        if (toolInfo != null && toolInfo.toolCallId() != null && !toolInfo.toolCallId().isEmpty()) {
+            MessageToolCall mtc = new MessageToolCall();
+            mtc.setMessageId(messageId);
+            mtc.setToolCallId(toolInfo.toolCallId());
+            mtc.setToolCallName(toolInfo.toolName());
+            mtc.setType("tool_result");
+            batchToolCalls.add(mtc);
+        }
         if (toolCalls != null) {
             for (ToolCallData tc : toolCalls) {
                 MessageToolCall mtc = new MessageToolCall();
@@ -160,6 +169,8 @@ public class DefaultMessageDataProvider implements MessageDataProvider {
                         }
                         customToolCallDataList.add(data);
                     }
+                } else if ("tool_result".equals(type)) {
+                    continue;
                 } else {
                     toolCallDataList.add(new ToolCallData(tc.getToolCallId(), tc.getToolCallName(),
                             tc.getToolCallArguments(), type));
@@ -177,7 +188,7 @@ public class DefaultMessageDataProvider implements MessageDataProvider {
             }
             result.add(new MessageDTO(
                     IdConverter.toString(msg.getId()), IdConverter.toString(msg.getSessionId()), msg.getRole(), msg.getContent(),
-                    msg.getReasoning(), msg.getToolCallId(), msg.getSequenceNum(),
+                    msg.getReasoning(), buildToolInfo(msg, toolCalls), msg.getSequenceNum(),
                     msg.getCreateTime(), msg.getToolResult(), toolCallDataList, usageInfo,
                     msg.getRollback(), webSearchCallDataList, customToolCallDataList));
         }
@@ -242,5 +253,18 @@ public class DefaultMessageDataProvider implements MessageDataProvider {
             log.warn("反序列化 customToolCall 失败", e);
             return null;
         }
+    }
+
+    private ToolInfo buildToolInfo(Message msg, List<MessageToolCall> toolCalls) {
+        String toolCallId = msg.getToolCallId();
+        if (toolCallId == null || toolCallId.isEmpty()) {
+            return null;
+        }
+        for (MessageToolCall tc : toolCalls) {
+            if (toolCallId.equals(tc.getToolCallId())) {
+                return new ToolInfo(tc.getToolCallId(), tc.getToolCallName());
+            }
+        }
+        return new ToolInfo(toolCallId, null);
     }
 }

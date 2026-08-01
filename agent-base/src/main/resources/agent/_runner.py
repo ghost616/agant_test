@@ -17,7 +17,7 @@ class HistoryEntry:
         self.role = data.get("role", "")
         self.content = data.get("content")
         self.reasoning = data.get("reasoning")
-        self.tool_call_id = data.get("toolCallId")
+        self.tool_info = data.get("toolInfo")
         self.sequence_num = data.get("sequenceNum", 0)
         self.create_time = data.get("createTime")
         tool_calls_data = data.get("toolCalls")

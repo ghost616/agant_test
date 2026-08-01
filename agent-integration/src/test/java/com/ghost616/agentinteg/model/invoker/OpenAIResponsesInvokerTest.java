@@ -7,6 +7,7 @@ import com.ghost616.agentbase.dto.model.Message;
 import com.ghost616.agentbase.dto.model.ToolCall;
 import com.ghost616.agentbase.dto.model.ToolCallDelta;
 import com.ghost616.agentbase.dto.model.ToolDefinition;
+import com.ghost616.agentbase.dto.model.ToolInfo;
 import com.ghost616.agentbase.dto.model.UsageInfo;
 import com.ghost616.agentbase.dto.model.WebSearchCall;
 import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
@@ -99,7 +100,7 @@ class OpenAIResponsesInvokerTest {
                 .toolCalls(List.of(ToolCall.builder()
                         .id("fc_9").name("add").arguments("{\"a\":1}").build()))
                 .build());
-        messages.add(Message.builder().role("tool").toolCallId("fc_9").content("2").build());
+        messages.add(Message.builder().role("tool").toolInfo(new ToolInfo("fc_9", "add")).content("2").build());
 
         ChatRequest request = ChatRequest.builder()
                 .model("gpt-4o")

@@ -3,7 +3,7 @@
   "files": [
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultMessageDataProvider.java",
-      "description": "默认消息数据提供者实现，负责消息的持久化存储、查询和软回滚，实现 agent-base 的 MessageDataProvider 接口。saveMessage 将三种类型的工具调用统一构建进一个 List<MessageToolCall>：function 工具调用行（读 toolCallId/toolCallName/toolCallArguments/type）、webSearchCall 行（type=web_search_call，web_search_call 列存单条 WebSearchCallData 的 JSON）、customToolCall 行（type=custom_tool_call，custom_tool_call 列存单条 CustomToolCallData 的 JSON），合并后通过注入的 MessageToolCallService.saveBatch 一次批量插入，减少数据库交互次数；getMessages 从 MessageToolCall 表读取各行，按 type 分类反序列化：web_search_call 行聚合为 List<WebSearchCallData>、custom_tool_call 行聚合为 List<CustomToolCallData> 填充 MessageDTO，其余行按普通工具调用处理（读 type 构建 ToolCallData）；提供 rollbackToLastUserMessage 软回滚能力"
+      "description": "默认消息数据提供者实现，负责消息的持久化存储、查询和软回滚，实现 agent-base 的 MessageDataProvider 接口。saveMessage 第 5 参为 ToolInfo toolInfo（toolCallId/toolName），将其持久化为 type=tool_result 的 MessageToolCall 行，并在 message 表 tool_call_id 列记录 toolCallId；同时将三种类型的工具调用统一构建进一个 List<MessageToolCall>：function 工具调用行（读 toolCallId/toolCallName/toolCallArguments/type）、webSearchCall 行（type=web_search_call，web_search_call 列存单条 WebSearchCallData 的 JSON）、customToolCall 行（type=custom_tool_call，custom_tool_call 列存单条 CustomToolCallData 的 JSON），合并后通过注入的 MessageToolCallService.saveBatch 一次批量插入；getMessages 从 MessageToolCall 表读取各行，按 type 分类反序列化：web_search_call 行聚合为 List<WebSearchCallData>、custom_tool_call 行聚合为 List<CustomToolCallData>，tool_result 行不进入 toolCalls 列表，并通过匹配 message.tool_call_id 与 MessageToolCall 行构造 ToolInfo 填充 MessageDTO.toolInfo，其余行按普通工具调用处理（读 type 构建 ToolCallData）；提供 rollbackToLastUserMessage 软回滚能力"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultContextDataProvider.java",
@@ -115,7 +115,7 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/dto/AgentContextDTO.java",
-      "description": "AgentExecutionContext 上下文数据传输对象，包含 sessionId/agentId/systemPrompt/modelId/parentSessionId/recentMessageCount/history/tools/skills/projectDir/lastResponseId/sessionVariables/conversationVariables 字段及 HistoryEntryDTO 内部类"
+      "description": "AgentExecutionContext 上下文数据传输对象，包含 sessionId/agentId/systemPrompt/modelId/parentSessionId/recentMessageCount/history/tools/skills/projectDir/lastResponseId/sessionVariables/conversationVariables 字段及 HistoryEntryDTO 内部类；HistoryEntryDTO 含 role/content/reasoning/toolInfo(ToolInfo)/sequenceNum/createTime/toolCalls/usage 字段"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/controller/AgentContextController.java",

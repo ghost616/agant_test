@@ -1,6 +1,7 @@
 package com.ghost616.agentbase.service.agent;
 
 import com.ghost616.agentbase.core.AgentComponentRegistry;
+import com.ghost616.agentbase.dto.model.ToolInfo;
 import com.ghost616.agentbase.enums.ErrorCode;
 import com.ghost616.agentbase.exception.BusinessException;
 import org.junit.jupiter.api.BeforeEach;
@@ -78,20 +79,20 @@ class SessionManagerTest {
         var toolCalls = java.util.List.of(
                 new MessageDataProvider.ToolCallData("tc1", "getWeather", "{}"));
         when(dataProvider.saveMessage("1", "assistant", "response", "thinking...",
-                "tc1", "result_ok", toolCalls, null, null, null)).thenReturn("200");
+                new ToolInfo("tc1", "getWeather"), "result_ok", toolCalls, null, null, null)).thenReturn("200");
 
         String result = sessionManager.messageSave()
                 .sessionId("1")
                 .role("assistant")
                 .content("response")
                 .reasoning("thinking...")
-                .toolCallId("tc1")
+                .toolInfo(new ToolInfo("tc1", "getWeather"))
                 .toolResult("result_ok")
                 .toolCalls(toolCalls)
                 .save();
 
         assertEquals("200", result);
         verify(dataProvider).saveMessage("1", "assistant", "response", "thinking...",
-                "tc1", "result_ok", toolCalls, null, null, null);
+                new ToolInfo("tc1", "getWeather"), "result_ok", toolCalls, null, null, null);
     }
 }

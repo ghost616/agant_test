@@ -1,6 +1,7 @@
 package com.ghost616.platform.dto;
 
 import com.ghost616.agentbase.dto.model.ToolCall;
+import com.ghost616.agentbase.dto.model.ToolInfo;
 import com.ghost616.agentbase.dto.model.UsageInfo;
 import com.ghost616.agentbase.dto.skill.SkillConfigDTO;
 import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
@@ -32,7 +33,7 @@ public class AgentContextDTO {
         private String role;
         private String content;
         private String reasoning;
-        private String toolCallId;
+        private ToolInfo toolInfo;
         private int sequenceNum;
         private LocalDateTime createTime;
         private List<ToolCall> toolCalls;

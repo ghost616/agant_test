@@ -101,7 +101,7 @@ public class AgentContextController {
             dto.setRole(entry.role());
             dto.setContent(entry.content());
             dto.setReasoning(entry.reasoning());
-            dto.setToolCallId(entry.toolCallId());
+            dto.setToolInfo(entry.toolInfo());
             dto.setSequenceNum(entry.sequenceNum());
             dto.setCreateTime(entry.createTime());
             dto.setToolCalls(entry.toolCalls());

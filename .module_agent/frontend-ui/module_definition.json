@@ -39,7 +39,7 @@
     },
     {
       "path": "src/types/session.ts",
-      "description": "会话相关 TypeScript 类型定义：Session、CreateSessionParams、ToolCallData、SessionMessage、SubSessionData 接口，Session 包含 totalTokenUsed 可选字段；新增 WebSearchResult/WebSearchCall 接口，SessionMessage 新增 webSearchCall 可选字段（数组 WebSearchCall[]，web 搜索引用，每项含标题/链接/摘要）"
+      "description": "会话相关 TypeScript 类型定义：Session、CreateSessionParams、ToolCallData、ToolInfo、SessionMessage、SubSessionData 接口；Session 包含 totalTokenUsed 可选字段；新增 WebSearchResult/WebSearchCall 接口，SessionMessage 新增 webSearchCall 可选字段（数组 WebSearchCall[]，web 搜索引用，每项含标题/链接/摘要）；新增 ToolInfo 接口（toolCallId/toolName），SessionMessage 的 toolCallId 字段改为 toolInfo 可选字段（ToolInfo 对象）"
     },
     {
       "path": "src/services/session.ts",

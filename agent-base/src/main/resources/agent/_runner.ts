@@ -12,7 +12,7 @@ export interface HistoryEntry {
     role: string;
     content?: string;
     reasoning?: string;
-    toolCallId?: string;
+    toolInfo?: { toolCallId?: string; toolName?: string };
     sequenceNum: number;
     createTime?: string;
     toolCalls?: ToolCall[];

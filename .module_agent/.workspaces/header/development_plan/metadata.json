@@ -18,19 +18,43 @@
     "plan_completed": true
   },
   {
-    "plan_id": "plan_f015b5ad-1fb4-4cc9-bdc5-c84a561d8500",
-    "plan_summary": "审查 BuiltinToolInvoker + $前缀工具执行",
-    "starter_session_id": "ses_04813b347ffeRf5NxMcjuQclxs",
+    "plan_id": "plan_8e7d56c6-fd2f-4ecf-9c20-96cd4d74ae49",
+    "plan_summary": "agent-base: ToolInfo 类型重构",
+    "starter_session_id": "ses_042a4e5feffe7QMIr7qrssYZ0c",
     "code_reviewed": true,
     "plan_completed": true,
-    "test_passed": false
+    "test_passed": true
   },
   {
-    "plan_id": "plan_78150ae2-f805-4278-a791-361f1f7ff833",
-    "plan_summary": "审查 ChatCompletions builtinTools",
-    "starter_session_id": "ses_04813b347ffeRf5NxMcjuQclxs",
+    "plan_id": "plan_c177fa70-c7bc-447d-b036-ecf1529fcfe5",
+    "plan_summary": "agent-integration: ToolInfo 适配",
+    "starter_session_id": "ses_042a4e5feffe7QMIr7qrssYZ0c",
     "code_reviewed": true,
     "plan_completed": true,
-    "test_passed": false
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_2e8643f7-53ef-433b-bc02-5f28f1829bc6",
+    "plan_summary": "platform-app: ToolInfo 适配",
+    "starter_session_id": "ses_042a4e5feffe7QMIr7qrssYZ0c",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_0776ccb9-c2a9-4338-83a2-ba16bcb90571",
+    "plan_summary": "frontend-ui: ToolInfo 适配",
+    "starter_session_id": "ses_042a4e5feffe7QMIr7qrssYZ0c",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_77e11a70-161a-48ea-b2e3-c636dba74d75",
+    "plan_summary": "agent-integration 修复 tool_call_id 映射缺失",
+    "starter_session_id": "ses_042a4e5feffe7QMIr7qrssYZ0c",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
   }
 ]

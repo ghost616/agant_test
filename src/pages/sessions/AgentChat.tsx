@@ -28,7 +28,7 @@ import {
 } from '../../services/session';
 import { executeBrowserTool } from '../../services/toolExecutor';
 import { listModels } from '../../services/model';
-import type { Session, SessionMessage, WebSearchCall } from '../../types/session';
+import type { Session, SessionMessage, ToolInfo, WebSearchCall } from '../../types/session';
 import type { ModelConfig } from '../../types/model';
 
 type MessageRole = 'user' | 'assistant' | 'tool' | 'system';
@@ -38,6 +38,7 @@ interface ChatMessage {
   content: string;
   reasoning?: string;
   toolResult?: string;
+  toolInfo?: ToolInfo;
   webSearchCall?: WebSearchCall[];
 }
 
@@ -148,7 +149,8 @@ function AgentChat(): JSX.Element {
         if (msg.role === 'tool' && msg.toolResult) {
           try {
             const tr = JSON.parse(msg.toolResult);
-            content = `**工具: ${tr.toolName}**\n\n**参数:**\n\`\`\`json\n${tr.arguments}\n\`\`\`\n\n**执行结果:**\n${tr.result}`;
+            const toolName = msg.toolInfo?.toolName || tr.toolName;
+            content = `**工具: ${toolName}**\n\n**参数:**\n\`\`\`json\n${tr.arguments}\n\`\`\`\n\n**执行结果:**\n${tr.result}`;
           } catch {
             // keep original content
           }
@@ -160,6 +162,7 @@ function AgentChat(): JSX.Element {
           content,
           reasoning: msg.reasoning || undefined,
           toolResult: msg.toolResult || undefined,
+          toolInfo: msg.toolInfo || undefined,
           webSearchCall: msg.webSearchCall || undefined,
         };
       });
@@ -192,7 +195,8 @@ function AgentChat(): JSX.Element {
         if (msg.role === 'tool' && msg.toolResult) {
           try {
             const tr = JSON.parse(msg.toolResult);
-            content = `**工具: ${tr.toolName}**\n\n**参数:**\n\`\`\`json\n${tr.arguments}\n\`\`\`\n\n**执行结果:**\n${tr.result}`;
+            const toolName = msg.toolInfo?.toolName || tr.toolName;
+            content = `**工具: ${toolName}**\n\n**参数:**\n\`\`\`json\n${tr.arguments}\n\`\`\`\n\n**执行结果:**\n${tr.result}`;
           } catch {
             // keep original content
           }
@@ -204,6 +208,7 @@ function AgentChat(): JSX.Element {
           content,
           reasoning: msg.reasoning || undefined,
           toolResult: msg.toolResult || undefined,
+          toolInfo: msg.toolInfo || undefined,
           webSearchCall: msg.webSearchCall || undefined,
         };
       });
@@ -875,6 +880,18 @@ function AgentChat(): JSX.Element {
           {renderRoleHeader(msg.role)}
           {msg.reasoning && renderReasoning(msg.reasoning)}
           {msg.webSearchCall && msg.webSearchCall.length > 0 && renderWebSearchCall(msg.webSearchCall)}
+          {msg.toolInfo && msg.role === 'tool' && (
+            <div style={{ marginBottom: 4 }}>
+              <Typography.Text style={{ color: '#d7ba7d', fontSize: 12 }}>
+                {msg.toolInfo.toolName}
+              </Typography.Text>
+              {msg.toolInfo.toolCallId && (
+                <Typography.Text style={{ color: '#888', fontSize: 11, marginLeft: 8 }}>
+                  {msg.toolInfo.toolCallId}
+                </Typography.Text>
+              )}
+            </div>
+          )}
           {msg.content.trim() && (
             <div style={BUBBLE_STYLES[msg.role]} className="agent-chat-markdown">
               <div style={{ color: '#d4d4d4', fontSize: 14, lineHeight: 1.8 }}>

@@ -217,7 +217,7 @@ public class OpenAIResponsesInvoker implements ModelInvoker {
             if ("tool".equals(msg.getRole())) {
                 Map<String, Object> output = new LinkedHashMap<>();
                 output.put("type", "function_call_output");
-                output.put("call_id", msg.getToolCallId());
+                output.put("call_id", msg.getToolInfo() != null ? msg.getToolInfo().toolCallId() : null);
                 output.put("output", msg.getContent());
                 result.add(output);
                 continue;

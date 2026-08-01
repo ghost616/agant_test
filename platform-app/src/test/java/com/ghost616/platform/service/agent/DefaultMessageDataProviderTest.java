@@ -1,6 +1,7 @@
 package com.ghost616.platform.service.agent;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.ghost616.agentbase.dto.model.ToolInfo;
 import com.ghost616.agentbase.dto.model.UsageInfo;
 import com.ghost616.agentbase.exception.BusinessException;
 import com.ghost616.agentbase.service.agent.MessageDataProvider.MessageDTO;
@@ -99,7 +100,8 @@ class DefaultMessageDataProviderTest {
                 new ToolCallData("tc2", "func2", "{\"key\":\"val\"}")
         );
 
-        provider.saveMessage("1", "assistant", "response", "thinking...", "call-1", null, toolCalls, null, null, null);
+        provider.saveMessage("1", "assistant", "response", "thinking...",
+                new ToolInfo("call-1", "tool1"), null, toolCalls, null, null, null);
 
         verify(messageMapper).insert(messageCaptor.capture());
         assertEquals("assistant", messageCaptor.getValue().getRole());
@@ -110,14 +112,17 @@ class DefaultMessageDataProviderTest {
 
         verify(messageToolCallService, times(1)).saveBatch(batchCaptor.capture());
         List<MessageToolCall> capturedToolCalls = batchCaptor.getValue();
-        assertEquals(2, capturedToolCalls.size());
-        assertEquals("tc1", capturedToolCalls.get(0).getToolCallId());
-        assertEquals("func1", capturedToolCalls.get(0).getToolCallName());
-        assertEquals("{}", capturedToolCalls.get(0).getToolCallArguments());
-        assertEquals("function", capturedToolCalls.get(0).getType());
-        assertEquals("tc2", capturedToolCalls.get(1).getToolCallId());
-        assertEquals("func2", capturedToolCalls.get(1).getToolCallName());
+        assertEquals(3, capturedToolCalls.size());
+        assertEquals("tool_result", capturedToolCalls.get(0).getType());
+        assertEquals("call-1", capturedToolCalls.get(0).getToolCallId());
+        assertEquals("tool1", capturedToolCalls.get(0).getToolCallName());
+        assertEquals("tc1", capturedToolCalls.get(1).getToolCallId());
+        assertEquals("func1", capturedToolCalls.get(1).getToolCallName());
+        assertEquals("{}", capturedToolCalls.get(1).getToolCallArguments());
         assertEquals("function", capturedToolCalls.get(1).getType());
+        assertEquals("tc2", capturedToolCalls.get(2).getToolCallId());
+        assertEquals("func2", capturedToolCalls.get(2).getToolCallName());
+        assertEquals("function", capturedToolCalls.get(2).getType());
         verify(sessionMapper, never()).addTotalTokenUsed(anyLong(), anyLong());
     }
 
@@ -183,7 +188,9 @@ class DefaultMessageDataProviderTest {
         assertEquals("assistant", dto.role());
         assertEquals("response", dto.content());
         assertEquals("reason", dto.reasoning());
-        assertEquals("tc-id", dto.toolCallId());
+        assertNotNull(dto.toolInfo());
+        assertEquals("tc-id", dto.toolInfo().toolCallId());
+        assertNull(dto.toolInfo().toolName());
         assertEquals(1, dto.sequenceNum());
         assertEquals(msg.getCreateTime(), dto.createTime());
         assertEquals("result", dto.toolResult());
@@ -739,5 +746,114 @@ class DefaultMessageDataProviderTest {
         MessageDTO dto = result.get(0);
         assertNull(dto.customToolCall());
         assertTrue(dto.toolCalls().isEmpty());
+    }
+
+    @Test
+    void saveMessage_有toolInfo_写入tool_result行() {
+        when(messageMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(null);
+        when(messageMapper.insert(any(Message.class))).thenAnswer(invocation -> {
+            Message msg = invocation.getArgument(0);
+            msg.setId(2000L);
+            return 1;
+        });
+
+        provider.saveMessage("1", "tool", "{\"temp\":25}",
+                null, new ToolInfo("call-9", "getWeather"), "{\"status\":\"success\"}", null, null, null, null);
+
+        verify(messageMapper).insert(messageCaptor.capture());
+        assertEquals("call-9", messageCaptor.getValue().getToolCallId());
+
+        verify(messageToolCallService, times(1)).saveBatch(batchCaptor.capture());
+        List<MessageToolCall> capturedList = batchCaptor.getValue();
+        assertEquals(1, capturedList.size());
+        assertEquals("tool_result", capturedList.get(0).getType());
+        assertEquals("call-9", capturedList.get(0).getToolCallId());
+        assertEquals("getWeather", capturedList.get(0).getToolCallName());
+    }
+
+    @Test
+    void saveMessage_toolInfo为null_不写入tool_result行() {
+        when(messageMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(null);
+        when(messageMapper.insert(any(Message.class))).thenAnswer(invocation -> {
+            Message msg = invocation.getArgument(0);
+            msg.setId(2001L);
+            return 1;
+        });
+
+        provider.saveMessage("1", "tool", "result", null, null, null, null, null, null, null);
+
+        verify(messageMapper).insert(messageCaptor.capture());
+        assertNull(messageCaptor.getValue().getToolCallId());
+        verify(messageToolCallService, never()).saveBatch(anyList());
+    }
+
+    @Test
+    void getMessages_有tool_result行_从MessageToolCall构造ToolInfo() {
+        Message msg = new Message();
+        msg.setId(1L);
+        msg.setSessionId(10L);
+        msg.setRole("tool");
+        msg.setContent("{\"temp\":25}");
+        msg.setToolCallId("call-9");
+        msg.setSequenceNum(2);
+        msg.setCreateTime(LocalDateTime.now());
+        msg.setToolResult("{\"status\":\"success\"}");
+        when(messageMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Collections.singletonList(msg));
+
+        MessageToolCall toolResultMtc = new MessageToolCall();
+        toolResultMtc.setType("tool_result");
+        toolResultMtc.setToolCallId("call-9");
+        toolResultMtc.setToolCallName("getWeather");
+        when(messageToolCallMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Collections.singletonList(toolResultMtc));
+
+        List<MessageDTO> result = provider.getMessages("10");
+
+        MessageDTO dto = result.get(0);
+        assertNotNull(dto.toolInfo());
+        assertEquals("call-9", dto.toolInfo().toolCallId());
+        assertEquals("getWeather", dto.toolInfo().toolName());
+        assertTrue(dto.toolCalls().isEmpty());
+    }
+
+    @Test
+    void getMessages_无匹配toolCallId_构造仅含toolCallId的ToolInfo() {
+        Message msg = new Message();
+        msg.setId(1L);
+        msg.setSessionId(10L);
+        msg.setRole("tool");
+        msg.setContent("result");
+        msg.setToolCallId("legacy-id");
+        msg.setSequenceNum(2);
+        msg.setCreateTime(LocalDateTime.now());
+        when(messageMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Collections.singletonList(msg));
+
+        MessageToolCall mtc = new MessageToolCall();
+        mtc.setToolCallId("other-id");
+        mtc.setToolCallName("otherFunc");
+        when(messageToolCallMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Collections.singletonList(mtc));
+
+        List<MessageDTO> result = provider.getMessages("10");
+
+        MessageDTO dto = result.get(0);
+        assertNotNull(dto.toolInfo());
+        assertEquals("legacy-id", dto.toolInfo().toolCallId());
+        assertNull(dto.toolInfo().toolName());
+    }
+
+    @Test
+    void getMessages_无toolCallId_toolInfo为null() {
+        Message msg = new Message();
+        msg.setId(1L);
+        msg.setSessionId(10L);
+        msg.setRole("user");
+        msg.setContent("hi");
+        msg.setSequenceNum(1);
+        msg.setCreateTime(LocalDateTime.now());
+        when(messageMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Collections.singletonList(msg));
+        when(messageToolCallMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Collections.emptyList());
+
+        List<MessageDTO> result = provider.getMessages("10");
+
+        assertNull(result.get(0).toolInfo());
     }
 }

@@ -25,8 +25,8 @@ public class Message {
     /** 工具调用列表（assistant 消息中的 tool_calls） */
     private List<ToolCall> toolCalls;
 
-    /** 工具调用 ID（tool 角色消息回传用） */
-    private String toolCallId;
+    /** 工具调用信息（tool 角色消息回传用） */
+    private ToolInfo toolInfo;
 
     /** 推理/思考内容（DeepSeek thinking 模式等） */
     private String reasoning;

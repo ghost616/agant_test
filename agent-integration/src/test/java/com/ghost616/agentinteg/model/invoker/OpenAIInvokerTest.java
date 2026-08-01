@@ -1,6 +1,8 @@
 package com.ghost616.agentinteg.model.invoker;
 
 import com.ghost616.agentbase.dto.model.ChatChunk;
+import com.ghost616.agentbase.dto.model.Message;
+import com.ghost616.agentbase.dto.model.ToolInfo;
 import com.ghost616.agentbase.dto.model.UsageInfo;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -8,6 +10,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.reactive.function.client.WebClient;
+
+import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -117,5 +122,72 @@ class OpenAIInvokerTest {
 
         assertNotNull(chunk);
         assertNull(chunk.getUsage());
+    }
+
+    @Test
+    void buildMessagesToolRoleMapsToolCallIdAndName() {
+        Message toolMsg = Message.builder()
+                .role("tool")
+                .content("result")
+                .toolInfo(new ToolInfo("call_1", "getWeather"))
+                .build();
+
+        List<Map<String, Object>> result = invoker.buildMessages(List.of(toolMsg));
+
+        assertEquals(1, result.size());
+        Map<String, Object> m = result.get(0);
+        assertEquals("tool", m.get("role"));
+        assertEquals("result", m.get("content"));
+        assertEquals("call_1", m.get("tool_call_id"));
+        assertEquals("getWeather", m.get("name"));
+    }
+
+    @Test
+    void buildMessagesToolRoleWithNullToolNameOmitsName() {
+        Message toolMsg = Message.builder()
+                .role("tool")
+                .content("result")
+                .toolInfo(new ToolInfo("call_2", null))
+                .build();
+
+        List<Map<String, Object>> result = invoker.buildMessages(List.of(toolMsg));
+
+        assertEquals(1, result.size());
+        Map<String, Object> m = result.get(0);
+        assertEquals("tool", m.get("role"));
+        assertEquals("call_2", m.get("tool_call_id"));
+        assertFalse(m.containsKey("name"));
+    }
+
+    @Test
+    void buildMessagesToolRoleWithNullToolInfoOmitsBoth() {
+        Message toolMsg = Message.builder()
+                .role("tool")
+                .content("result")
+                .build();
+
+        List<Map<String, Object>> result = invoker.buildMessages(List.of(toolMsg));
+
+        assertEquals(1, result.size());
+        Map<String, Object> m = result.get(0);
+        assertEquals("tool", m.get("role"));
+        assertFalse(m.containsKey("tool_call_id"));
+        assertFalse(m.containsKey("name"));
+    }
+
+    @Test
+    void buildMessagesNonToolRoleHasNoNameField() {
+        Message userMsg = Message.builder()
+                .role("user")
+                .content("hello")
+                .build();
+
+        List<Map<String, Object>> result = invoker.buildMessages(List.of(userMsg));
+
+        assertEquals(1, result.size());
+        Map<String, Object> m = result.get(0);
+        assertEquals("user", m.get("role"));
+        assertFalse(m.containsKey("name"));
+        assertFalse(m.containsKey("tool_call_id"));
     }
 }

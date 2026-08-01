@@ -127,7 +127,7 @@ public class SessionController {
                 .role(lastAssistantMsg.role())
                 .content(lastAssistantMsg.content())
                 .reasoning(lastAssistantMsg.reasoning())
-                .toolCallId(lastAssistantMsg.toolCallId())
+                .toolInfo(lastAssistantMsg.toolInfo())
                 .toolCalls(toolCalls)
                 .build();
         data.getMessageResult().complete(message);

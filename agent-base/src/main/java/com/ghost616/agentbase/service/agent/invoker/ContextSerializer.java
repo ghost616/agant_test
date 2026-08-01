@@ -36,7 +36,12 @@ public final class ContextSerializer {
                 entryNode.put("role", entry.role());
                 entryNode.put("content", entry.content());
                 entryNode.put("reasoning", entry.reasoning());
-                entryNode.put("toolCallId", entry.toolCallId());
+                if (entry.toolInfo() != null) {
+                    ObjectNode toolInfoNode = MAPPER.createObjectNode();
+                    toolInfoNode.put("toolCallId", entry.toolInfo().toolCallId());
+                    toolInfoNode.put("toolName", entry.toolInfo().toolName());
+                    entryNode.set("toolInfo", toolInfoNode);
+                }
                 entryNode.put("sequenceNum", entry.sequenceNum());
                 entryNode.put("createTime", entry.createTime() != null ? entry.createTime().toString() : null);
                 if (entry.toolCalls() != null) {

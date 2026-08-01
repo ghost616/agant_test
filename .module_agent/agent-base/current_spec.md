@@ -230,3 +230,17 @@ SessionDataProvider（com.ghost616.agentbase.service.agent.SessionDataProvider�
 支持模型侧内置工具（如 $web_search 等以 $ 前缀标记的工具名）的透传执行。BuiltinToolInvoker（com.ghost616.agentbase.service.agent.invoker）实现 ToolInvoker 接口，execute(ctx, arguments) 直接返回 arguments 字符串，不做实际执行逻辑。
 
 ToolExecutionService.executeTool 在 invoker==null 分支新增判断：当 peekToolCallName 以 "$" 开头时，使用 new BuiltinToolInvoker() 作为调用器，不再返回"工具调用器不存在"错误。
+## 工具调用信息链路
+
+工具调用标识统一由 ToolInfo record（com.ghost616.agentbase.dto.model.ToolInfo，字段 toolCallId/toolName）承载，取代原先的单一 String toolCallId 字段。涉及位置：
+- dto.model.Message：删除 String toolCallId 字段，新增 ToolInfo toolInfo（tool 角色消息回传用）
+- AgentExecutionContext.HistoryEntry：第 4 参由 String toolCallId 改为 ToolInfo toolInfo
+- MessageDataProvider.saveMessage 签名与 MessageDTO record：String toolCallId 改为 ToolInfo toolInfo
+- SessionManager.MessageSaveBuilder：toolCallId(String) 链式方法改为 toolInfo(ToolInfo)，save() 透传
+- ChatService.buildMessageFromEntry：从 entry.toolInfo() 构建 Message.toolInfo
+- ToolExecutionService.continueAfterTools：保存 tool 角色消息与构造 HistoryEntry 时使用 new ToolInfo(r.toolId(), r.toolName())
+- AgentContextManager.convertMessagesToHistory：直接透传 msg.toolInfo()
+- ContextSerializer：HistoryEntry 序列化时将 ToolInfo 输出为含 toolCallId/toolName 的 toolInfo 对象节点
+- 桥接脚本：_runner.ts HistoryEntry 接口 toolInfo?: {toolCallId, toolName}；_runner.py HistoryEntry 由 tool_call_id 改为 self.tool_info = data.get("toolInfo")
+
+测试：agent-base 编译通过（test-compile BUILD SUCCESS），全量单测 219/219 通过，_runner.py/_runner.ts 语法校验通过。跨模块影响：agent-integration 的 OpenAIInvoker/AnthropicInvoker/OpenAIResponsesInvoker 使用 Message.getToolCallId()，platform-app 的 DefaultMessageDataProvider/AgentContextController/SessionController 引用旧签名，需各自模块同步。

@@ -6,6 +6,7 @@ import com.ghost616.agentbase.dto.model.ChatChunk;
 import com.ghost616.agentbase.dto.model.Message;
 import com.ghost616.agentbase.dto.model.ModelConfigData;
 import com.ghost616.agentbase.dto.model.ToolDefinition;
+import com.ghost616.agentbase.dto.model.ToolInfo;
 import com.ghost616.agentbase.dto.skill.SkillConfigDTO;
 import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
 import com.ghost616.agentbase.enums.HookPhase;
@@ -274,7 +275,7 @@ class ChatServiceResponsesTest {
         history.add(new AgentExecutionContext.HistoryEntry(
                 "assistant", "a2", null, null, 4, java.time.LocalDateTime.now(), List.of(), null, null, null));
         history.add(new AgentExecutionContext.HistoryEntry(
-                "tool", "r2", null, "tc1", 5, java.time.LocalDateTime.now(), List.of(), null, null, null));
+                "tool", "r2", null, new ToolInfo("tc1", "testTool"), 5, java.time.LocalDateTime.now(), List.of(), null, null, null));
 
         TestHarness harness = new TestHarness("sys_prompt", List.of(), List.of(), null, history);
         when(systemToolManager.getToolDefinitions()).thenReturn(List.of());

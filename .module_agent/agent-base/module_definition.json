@@ -3,7 +3,7 @@
   "files": [
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/AgentExecutionContext.java",
-      "description": "Agent 执行上下文。lastResponseId 字段保持 @Getter 无直接 setter，通过内部 AgentContextMutator.setLastResponseId() 修改（由 AgentContextManager.doBuild 构造时注入或 ChatService.toSseStream 流式捕获）。HistoryEntry record 含 List<WebSearchCall> webSearchCall 与 List<CustomToolCall> customToolCall 字段（引用独立 DTO 类）。内部 AgentContextMutator 各方法在变更后通过 messageSender.send() 发送 HistoryMessage/VariableMessage/ChildCreateSession/ChildMessageEvent 等事件消息。"
+      "description": "Agent 执行上下文。HistoryEntry record 第 4 参为 ToolInfo toolInfo 字段（含 toolCallId/toolName），另含 List<WebSearchCall> webSearchCall 与 List<CustomToolCall> customToolCall 字段（引用独立 DTO 类）。lastResponseId 字段保持 @Getter 无直接 setter，通过内部 AgentContextMutator.setLastResponseId() 修改（由 AgentContextManager.doBuild 构造时注入或 ChatService.toSseStream 流式捕获）。内部 AgentContextMutator 各方法在变更后通过 messageSender.send() 发送 HistoryMessage/VariableMessage/ChildCreateSession/ChildMessageEvent 等事件消息。"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/ToolInvoker.java",
@@ -15,7 +15,7 @@
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/SessionManager.java",
-      "description": "会话管理组件，提供消息保存（MessageSaveBuilder 支持 usage 链式方法）、历史消息查询和回退功能。"
+      "description": "会话管理组件，提供消息保存（MessageSaveBuilder 支持 ToolInfo toolInfo 与 UsageInfo usage 链式方法，save() 透传给 dataProvider.saveMessage）、历史消息查询和回退功能。"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/AgentContextBuilder.java",
@@ -23,7 +23,7 @@
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/AgentContextManager.java",
-      "description": "管理会话上下文缓存 ConcurrentHashMap<String, AgentSessionContext>；doBuild 构造 AgentExecutionContext 后，若 ctxData.lastResponseId() 非空则通过 mutator.setLastResponseId() 注入会话最近响应 ID。提供 build/get/remove/addHistoryEntry 方法及 4 个刷新方法（refreshHistory/refreshSessionVariables/refreshConversationVariables/refreshChildSessions），含 sendUserMessage 消息持久化与 AgentMessageProxy 代理委托。convertMessagesToHistory 通过 toWebSearchCall/toCustomToolCall 私有方法将 MessageDTO 的 List<WebSearchCallData>/List<CustomToolCallData> 转为独立类 List<WebSearchCall>/List<CustomToolCall>。"
+      "description": "管理会话上下文缓存 ConcurrentHashMap<String, AgentSessionContext>；doBuild 构造 AgentExecutionContext 后，若 ctxData.lastResponseId() 非空则通过 mutator.setLastResponseId() 注入会话最近响应 ID。提供 build/get/remove/addHistoryEntry 方法及 4 个刷新方法（refreshHistory/refreshSessionVariables/refreshConversationVariables/refreshChildSessions），含 sendUserMessage 消息持久化与 AgentMessageProxy 代理委托。convertMessagesToHistory 将 MessageDTO 的 ToolInfo toolInfo 直接传入 HistoryEntry，并通过 toWebSearchCall/toCustomToolCall 私有方法将 List<WebSearchCallData>/List<CustomToolCallData> 转为独立类 List<WebSearchCall>/List<CustomToolCall>。"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/SystemTool.java",
@@ -51,7 +51,7 @@
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/MessageDataProvider.java",
-      "description": "消息数据提供者接口，定义 saveMessage（含 UsageInfo usage、List&lt;WebSearchCallData&gt; webSearchCall、List&lt;CustomToolCallData&gt; customToolCall 参数）/getMessages/rollbackToLastUserMessage 及 MessageDTO（含 UsageInfo usage、webSearchCall、customToolCall 三个 List 字段）、ToolCallData（含 type 字段默认 function，保留 3 参构造器）、WebSearchCallData/WebSearchResultData/CustomToolCallData 等 record"
+      "description": "消息数据提供者接口，定义 saveMessage（含 ToolInfo toolInfo、UsageInfo usage、List<WebSearchCallData> webSearchCall、List<CustomToolCallData> customToolCall 参数）/getMessages/rollbackToLastUserMessage 及 MessageDTO（含 ToolInfo toolInfo、UsageInfo usage、webSearchCall、customToolCall 三个 List 字段）、ToolCallData（含 type 字段默认 function，保留 3 参构造器）、WebSearchCallData/WebSearchResultData/CustomToolCallData 等 record"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ToolDataProvider.java",
@@ -75,7 +75,7 @@
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/MessageSavePostHook.java",
-      "description": "消息保存后置 HOOK 实现，在 AFTER_MESSAGE_RECEIVE 阶段处理流式消息持久化。构造函数注入 AgentComponentRegistry，execute 开头惰性初始化 contextDataProvider/sessionManager/agentContextManager/toolCallQueueManager 四个字段；从 HookData 获取 ChatChunk 再提取 UsageInfo 透传到消息保存和历史记录；累积流式 webSearchCall/customToolCall（独立类 WebSearchCall/CustomToolCall）到 SessionBuffer，stop 分支将累积列表整体转为 List<WebSearchCallData>/List<CustomToolCallData> 传入 messageSave 与 HistoryEntry；finishReason=stop 且 ctx.lastResponseId 非空时调用 contextDataProvider.updateLastResponseId(sessionId, lastResponseId) 持久化会话最近响应 ID。"
+      "description": "消息保存后置 HOOK 实现，在 AFTER_MESSAGE_RECEIVE 阶段处理流式消息持久化。构造函数注入 AgentComponentRegistry，execute 开头惰性初始化 contextDataProvider/sessionManager/agentContextManager/toolCallQueueManager 四个字段；从 HookData 获取 ChatChunk 再提取 UsageInfo 透传到消息保存和历史记录；累积流式 webSearchCall/customToolCall（独立类 WebSearchCall/CustomToolCall）到 SessionBuffer，stop 分支将累积列表整体转为 List<WebSearchCallData>/List<CustomToolCallData> 传入 messageSave 与 HistoryEntry（assistant 消息 ToolInfo 传 null）；finishReason=stop 且 ctx.lastResponseId 非空时调用 contextDataProvider.updateLastResponseId(sessionId, lastResponseId) 持久化会话最近响应 ID。"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ToolExecutionTracker.java",
@@ -95,11 +95,11 @@
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ChatService.java",
-      "description": "ChatService 聊天服务，非 Spring 组件。构造函数接收 AgentComponentRegistry，通过 registry 延迟获取 AgentContextManager/SessionManager/ModelInvokerManager/SystemToolManager/ToolManager/ChatDataProvider。chat(ChatRequest) 为入口路由方法，基于 RequestType 三路分发：RESPONSES 走 chatViaResponses（有状态）、RESPONSES_STATELESS 走 chatViaResponsesStateless（无状态）、COMPLETIONS/null/其他 走 chatViaChatCompletions。chatViaResponses/chatViaResponsesStateless 构建模型 ChatRequest 时通过 toolManager.getBuiltinTools(configData.id()) 设置 builtinTools。"
+      "description": "ChatService 聊天服务，非 Spring 组件。构造函数接收 AgentComponentRegistry，通过 registry 延迟获取 AgentContextManager/SessionManager/ModelInvokerManager/SystemToolManager/ToolManager/ChatDataProvider。chat(ChatRequest) 为入口路由方法，基于 RequestType 三路分发：RESPONSES 走 chatViaResponses（有状态）、RESPONSES_STATELESS 走 chatViaResponsesStateless（无状态）、COMPLETIONS/null/其他 走 chatViaChatCompletions。chatViaResponses/chatViaResponsesStateless 构建模型 ChatRequest 时通过 toolManager.getBuiltinTools(configData.id()) 设置 builtinTools。buildMessageFromEntry 将 HistoryEntry 的 ToolInfo toolInfo 透传到 Message 构建器。"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/ContextSerializer.java",
-      "description": "上下文序列化器，序列化 AgentExecutionContext 和 arguments 至 JSON 供各 Invoker 共享使用"
+      "description": "上下文序列化器，序列化 AgentExecutionContext 和 arguments 至 JSON 供各 Invoker 共享使用。HistoryEntry 序列化时将 ToolInfo 输出为含 toolCallId/toolName 的 toolInfo 对象节点。"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/HistoryQuerySystemTool.java",
@@ -163,7 +163,7 @@
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/dto/model/Message.java",
-      "description": "对话消息 DTO"
+      "description": "对话消息 DTO，含 role/content/toolCalls/ToolInfo toolInfo/reasoning 字段。toolInfo 承载 tool 角色消息回传的工具调用 ID 与工具名。"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/dto/model/ToolCall.java",
@@ -243,7 +243,7 @@
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ToolExecutionService.java",
-      "description": "工具执行服务。持有 HookManager 实例，triggerHooks/triggerSessionHooks/executePostHooks 委托给 hookManager。提供 setHookManager(HookManager) setter 支持外部注入共享实例。移除了原有的 chatDataProvider/systemHooks/systemPostHooks/regularPhaseHooks 字段及 refreshHooks/triggerHooks/executePostHooks 方法。在 BEFORE_TOOL_CALL/AFTER_TOOL_CALL 两处 triggerHooks 调用前增加 triggerSessionHooks 调用。"
+      "description": "工具执行服务。持有 HookManager 实例，triggerHooks/triggerSessionHooks/executePostHooks 委托给 hookManager。提供 setHookManager(HookManager) setter 支持外部注入共享实例。移除了原有的 chatDataProvider/systemHooks/systemPostHooks/regularPhaseHooks 字段及 refreshHooks/triggerHooks/executePostHooks 方法。在 BEFORE_TOOL_CALL/AFTER_TOOL_CALL 两处 triggerHooks 调用前增加 triggerSessionHooks 调用。continueAfterTools 中保存 tool 角色消息与构造 HistoryEntry 时使用 new ToolInfo(r.toolId(), r.toolName()) 传入工具调用信息。"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/util/JsonMapper.java",
@@ -267,11 +267,11 @@
     },
     {
       "path": "agent-base/src/main/resources/agent/_runner.py",
-      "description": "Python 工具运行桥接脚本，作为 PythonToolInvoker 的自动生成 bridge 文件。定义了 ToolCall、HistoryEntry、ToolInfo、SkillInfo、VariableProxy、AgentExecutionContext、ExecuteInput 等数据类，通过 CLI 参数接收输入文件路径，解析 JSON 输入上下文后动态导入 index 模块并调用 execute(context, arguments)，执行后输出 result、sessionVariables 和 conversationVariables 的变更结果。"
+      "description": "Python 工具运行桥接脚本，作为 PythonToolInvoker 的自动生成 bridge 文件。定义了 ToolCall、HistoryEntry（tool_info 从 toolInfo 读取 toolCallId/toolName 对象）、ToolInfo、SkillInfo、VariableProxy、AgentExecutionContext、ExecuteInput 等数据类，通过 CLI 参数接收输入文件路径，解析 JSON 输入上下文后动态导入 index 模块并调用 execute(context, arguments)，执行后输出 result、sessionVariables 和 conversationVariables 的变更结果。"
     },
     {
       "path": "agent-base/src/main/resources/agent/_runner.ts",
-      "description": "TypeScript 工具运行桥接脚本，作为 TypeScriptToolInvoker 的自动生成 bridge 文件。定义了 ToolCall、HistoryEntry、ToolInfo、SkillInfo、AgentExecutionContext、ExecuteInput、VariableChanges 等接口和 createVariableProxy 代理工厂函数，通过 CLI 参数读取输入 JSON 文件，动态导入 index 模块并调用 execute(context, arguments)，输出 result 和变量变更结果。"
+      "description": "TypeScript 工具运行桥接脚本，作为 TypeScriptToolInvoker 的自动生成 bridge 文件。定义了 ToolCall、HistoryEntry（toolInfo 为 {toolCallId, toolName} 对象）、ToolInfo、SkillInfo、AgentExecutionContext、ExecuteInput、VariableChanges 等接口和 createVariableProxy 代理工厂函数，通过 CLI 参数读取输入 JSON 文件，动态导入 index 模块并调用 execute(context, arguments)，输出 result 和变量变更结果。"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/sendmessage/MessageDefinition.java",
@@ -376,6 +376,10 @@
     {
       "path": "agent-base/src/test/java/com/ghost616/agentbase/service/agent/ToolExecutionServiceTest.java",
       "description": "ToolExecutionService 单元测试，覆盖 executeTool 工具调用执行全流程，含工具名以 $ 开头 invoker==null 时使用 BuiltinToolInvoker 透传 arguments、非 $ 前缀仍走错误分支等用例。"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/dto/model/ToolInfo.java",
+      "description": "工具调用信息 DTO（record，字段 toolCallId/toolName），用于 tool 角色消息回传与工具调用标识信息，取代原 Message/HistoryEntry/MessageDTO 中单一 toolCallId String 字段。"
     }
   ]
 }

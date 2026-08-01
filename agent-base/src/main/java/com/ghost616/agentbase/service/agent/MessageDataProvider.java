@@ -3,12 +3,13 @@ package com.ghost616.agentbase.service.agent;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.ghost616.agentbase.dto.model.ToolInfo;
 import com.ghost616.agentbase.dto.model.UsageInfo;
 
 public interface MessageDataProvider {
 
     String saveMessage(String sessionId, String role, String content, String reasoning,
-                       String toolCallId, String toolResult, List<ToolCallData> toolCalls,
+                       ToolInfo toolInfo, String toolResult, List<ToolCallData> toolCalls,
                        UsageInfo usage, List<WebSearchCallData> webSearchCall, List<CustomToolCallData> customToolCall);
 
     List<MessageDTO> getMessages(String sessionId);
@@ -32,7 +33,7 @@ public interface MessageDataProvider {
     }
 
     record MessageDTO(String id, String sessionId, String role, String content, String reasoning,
-                      String toolCallId, Integer sequenceNum, LocalDateTime createTime,
+                      ToolInfo toolInfo, Integer sequenceNum, LocalDateTime createTime,
                       String toolResult, List<ToolCallData> toolCalls, UsageInfo usage,
                       Boolean rollback, List<WebSearchCallData> webSearchCall, List<CustomToolCallData> customToolCall) {
     }

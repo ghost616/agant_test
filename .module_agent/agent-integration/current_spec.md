@@ -59,3 +59,6 @@
 ## 工厂与组装
 
 - **DefaultModelInvokerFactory**：createInvoker() else 分支显式判断 RequestType.COMPLETIONS.getCode()（"completions"）或平台不支持 responses 时返回 Chat Completions Invoker，保留兜底返回；requestType 判断使用 RequestType.isResponses(requestType) 与 RequestType.COMPLETIONS.getCode() 并列枚举方式
+## 模型调用器（ModelInvoker 实现）
+
+- **OpenAIInvoker.buildMessages**：tool 角色消息在 toolInfo 非空时写入 tool_call_id（取自 msg.getToolInfo().toolCallId()），name 仅在 toolName 非空时写入；toolInfo 为 null 时不写任何工具字段。KimiInvoker/VolcEngineInvoker/DeepSeekInvoker 继承该实现

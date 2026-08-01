@@ -4,6 +4,7 @@ import com.ghost616.agentbase.core.AgentComponentRegistry;
 import com.ghost616.agentbase.dto.chat.ChatRequest;
 import com.ghost616.agentbase.util.JsonMapper;
 import com.ghost616.agentbase.dto.model.ChatChunk;
+import com.ghost616.agentbase.dto.model.ToolInfo;
 import com.ghost616.agentbase.enums.HookPhase;
 import com.ghost616.agentbase.service.agent.invoker.BuiltinToolInvoker;
 import com.ghost616.agentbase.service.agent.invoker.HookData;
@@ -192,7 +193,7 @@ public class ToolExecutionService {
                 toolResultMap.put("result", r.result());
                 String toolResultJson = JsonMapper.MAPPER.writeValueAsString(toolResultMap);
                 sessionManager.messageSave().sessionId(sessionId).role("tool")
-                        .content(r.result()).toolCallId(r.toolId()).toolResult(toolResultJson).save();
+                        .content(r.result()).toolInfo(new ToolInfo(r.toolId(), r.toolName())).toolResult(toolResultJson).save();
             } catch (Exception e) {
                 log.error("sessionId={} 构建 toolResult JSON 失败", sessionId, e);
             }
@@ -201,7 +202,7 @@ public class ToolExecutionService {
         if (!results.isEmpty()) {
             for (ToolExecutionTracker.ToolResult r : results) {
                 AgentExecutionContext.HistoryEntry entry = new AgentExecutionContext.HistoryEntry(
-                        "tool", r.result(), null, r.toolId(),
+                        "tool", r.result(), null, new ToolInfo(r.toolId(), r.toolName()),
                         0, LocalDateTime.now(), Collections.emptyList(),
                         null, null, null);
                 agentContextManager.addHistoryEntry(sessionId, entry);

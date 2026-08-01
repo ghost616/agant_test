@@ -1,5 +1,6 @@
 package com.ghost616.platform.controller;
 
+import com.ghost616.agentbase.dto.model.ToolInfo;
 import com.ghost616.agentbase.service.agent.AgentContextManager;
 import com.ghost616.agentbase.service.agent.AgentExecutionContext;
 import com.ghost616.platform.dto.AgentContextBasicDTO;
@@ -77,7 +78,7 @@ class AgentContextControllerTest {
         when(sessionCtx.context()).thenReturn(ctx);
 
         AgentExecutionContext.HistoryEntry entry = new AgentExecutionContext.HistoryEntry(
-                "user", "hello", null, "call-1", 1,
+                "user", "hello", null, new ToolInfo("call-1", "getWeather"), 1,
                 LocalDateTime.of(2026, 7, 24, 12, 0), List.of(), null, null, null);
         when(ctx.getHistory()).thenReturn(List.of(entry));
         when(ctx.getSessionVariableKeys()).thenReturn(Set.of());

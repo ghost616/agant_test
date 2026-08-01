@@ -3,6 +3,7 @@ package com.ghost616.agentbase.service.agent;
 import com.ghost616.agentbase.core.AgentComponentRegistry;
 import com.ghost616.agentbase.dto.chat.ChatRequest;
 import com.ghost616.agentbase.dto.model.ChatChunk;
+import com.ghost616.agentbase.dto.model.ToolInfo;
 import com.ghost616.agentbase.enums.HookPhase;
 import com.ghost616.agentbase.service.agent.invoker.BuiltinToolInvoker;
 import com.ghost616.agentbase.service.agent.invoker.HookData;
@@ -385,7 +386,7 @@ class ToolExecutionServiceTest {
         when(saveBuilder.sessionId(any())).thenReturn(saveBuilder);
         when(saveBuilder.role(any())).thenReturn(saveBuilder);
         when(saveBuilder.content(any())).thenReturn(saveBuilder);
-        when(saveBuilder.toolCallId(any())).thenReturn(saveBuilder);
+        when(saveBuilder.toolInfo(any())).thenReturn(saveBuilder);
         when(saveBuilder.toolResult(any())).thenReturn(saveBuilder);
         when(saveBuilder.save()).thenReturn("100");
         when(sessionManager.messageSave()).thenReturn(saveBuilder);
@@ -399,7 +400,7 @@ class ToolExecutionServiceTest {
         verify(saveBuilder).sessionId(sessionId);
         verify(saveBuilder).role("tool");
         verify(saveBuilder).content("result_ok");
-        verify(saveBuilder).toolCallId("tid10");
+        verify(saveBuilder).toolInfo(new ToolInfo("tid10", "doneTool"));
         ArgumentCaptor<String> toolResultCaptor = ArgumentCaptor.forClass(String.class);
         verify(saveBuilder).toolResult(toolResultCaptor.capture());
         String capturedResult = toolResultCaptor.getValue();

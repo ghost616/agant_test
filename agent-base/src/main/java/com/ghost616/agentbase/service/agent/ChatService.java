@@ -266,8 +266,8 @@ public class ChatService {
                 && entry.toolCalls() != null && !entry.toolCalls().isEmpty()) {
             builder.reasoning(entry.reasoning());
         }
-        if (entry.toolCallId() != null) {
-            builder.toolCallId(entry.toolCallId());
+        if (entry.toolInfo() != null) {
+            builder.toolInfo(entry.toolInfo());
         }
         return builder.build();
     }

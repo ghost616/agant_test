@@ -242,7 +242,7 @@ public class AgentContextManager {
                 toolCalls = Collections.emptyList();
             }
             history.add(new AgentExecutionContext.HistoryEntry(
-                    msg.role(), msg.content(), msg.reasoning(), msg.toolCallId(),
+                    msg.role(), msg.content(), msg.reasoning(), msg.toolInfo(),
                     msg.sequenceNum(), msg.createTime(), Collections.unmodifiableList(toolCalls),
                     msg.usage(), toWebSearchCall(msg.webSearchCall()), toCustomToolCall(msg.customToolCall())));
         }

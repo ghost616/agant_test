@@ -24,6 +24,11 @@ export interface ToolCallData {
   toolCallArguments: string;
 }
 
+export interface ToolInfo {
+  toolCallId: string;
+  toolName: string;
+}
+
 export interface WebSearchResult {
   title: string;
   url: string;
@@ -43,7 +48,7 @@ export interface SessionMessage {
   content: string;
   reasoning?: string;
   toolResult?: string;
-  toolCallId?: string;
+  toolInfo?: ToolInfo;
   sequenceNum: number;
   createTime: string;
   toolCalls?: ToolCallData[];

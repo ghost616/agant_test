@@ -3,6 +3,7 @@ package com.ghost616.agentbase.service.agent;
 import com.ghost616.agentbase.dto.model.CustomToolCall;
 import com.ghost616.agentbase.dto.model.Message;
 import com.ghost616.agentbase.dto.model.ToolCall;
+import com.ghost616.agentbase.dto.model.ToolInfo;
 import com.ghost616.agentbase.dto.model.UsageInfo;
 import com.ghost616.agentbase.dto.model.WebSearchCall;
 import com.ghost616.agentbase.dto.skill.SkillConfigDTO;
@@ -183,7 +184,7 @@ public class AgentExecutionContext {
         return stopped.get();
     }
 
-    public record HistoryEntry(String role, String content, String reasoning, String toolCallId,
+    public record HistoryEntry(String role, String content, String reasoning, ToolInfo toolInfo,
                                int sequenceNum, LocalDateTime createTime, List<ToolCall> toolCalls,
                                UsageInfo usage, List<WebSearchCall> webSearchCall,
                                List<CustomToolCall> customToolCall) {

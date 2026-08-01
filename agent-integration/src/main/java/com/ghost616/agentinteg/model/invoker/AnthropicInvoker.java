@@ -277,7 +277,7 @@ public class AnthropicInvoker implements ModelInvoker {
                 List<Map<String, Object>> content = new ArrayList<>();
                 Map<String, Object> toolResult = new LinkedHashMap<>();
                 toolResult.put("type", "tool_result");
-                toolResult.put("tool_use_id", msg.getToolCallId());
+                toolResult.put("tool_use_id", msg.getToolInfo() != null ? msg.getToolInfo().toolCallId() : null);
                 toolResult.put("content", msg.getContent() != null ? msg.getContent() : "");
                 content.add(toolResult);
                 userMsg.put("content", content);
