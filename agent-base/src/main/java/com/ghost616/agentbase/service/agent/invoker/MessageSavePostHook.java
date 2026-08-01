@@ -11,9 +11,11 @@ import lombok.extern.slf4j.Slf4j;
 
 import com.ghost616.agentbase.core.AgentComponentRegistry;
 import com.ghost616.agentbase.dto.model.ChatChunk;
+import com.ghost616.agentbase.dto.model.CustomToolCall;
 import com.ghost616.agentbase.dto.model.ToolCall;
 import com.ghost616.agentbase.dto.model.ToolCallDelta;
 import com.ghost616.agentbase.dto.model.UsageInfo;
+import com.ghost616.agentbase.dto.model.WebSearchCall;
 import com.ghost616.agentbase.enums.HookPhase;
 import com.ghost616.agentbase.service.agent.AgentContextManager;
 import com.ghost616.agentbase.service.agent.AgentExecutionContext;
@@ -60,8 +62,8 @@ public class MessageSavePostHook implements SystemPostHook {
         final StringBuilder contentBuffer = new StringBuilder();
         final StringBuilder reasoningBuffer = new StringBuilder();
         final ConcurrentHashMap<String, ToolAccumulator> toolCallBuffers = new ConcurrentHashMap<>();
-        final List<ChatChunk.WebSearchCall> webSearchCalls = new ArrayList<>();
-        final List<ChatChunk.CustomToolCall> customToolCalls = new ArrayList<>();
+        final List<WebSearchCall> webSearchCalls = new ArrayList<>();
+        final List<CustomToolCall> customToolCalls = new ArrayList<>();
     }
 
     private final ConcurrentHashMap<String, SessionBuffer> buffers = new ConcurrentHashMap<>();
@@ -186,7 +188,7 @@ public class MessageSavePostHook implements SystemPostHook {
         }
     }
 
-    private MessageDataProvider.WebSearchCallData toWebSearchCallData(ChatChunk.WebSearchCall call) {
+    private MessageDataProvider.WebSearchCallData toWebSearchCallData(WebSearchCall call) {
         if (call == null) {
             return null;
         }
@@ -199,7 +201,7 @@ public class MessageSavePostHook implements SystemPostHook {
         return new MessageDataProvider.WebSearchCallData(call.getItemId(), call.getOutputIndex(), results);
     }
 
-    private MessageDataProvider.CustomToolCallData toCustomToolCallData(ChatChunk.CustomToolCall call) {
+    private MessageDataProvider.CustomToolCallData toCustomToolCallData(CustomToolCall call) {
         if (call == null) {
             return null;
         }

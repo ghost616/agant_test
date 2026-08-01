@@ -18,11 +18,13 @@ import reactor.core.publisher.Flux;
 import com.ghost616.agentbase.dto.model.ChatChunk;
 import com.ghost616.agentbase.dto.model.ChatRequest;
 import com.ghost616.agentbase.dto.model.ChatResponse;
+import com.ghost616.agentbase.dto.model.CustomToolCall;
 import com.ghost616.agentbase.dto.model.Message;
 import com.ghost616.agentbase.dto.model.ToolCall;
 import com.ghost616.agentbase.dto.model.ToolCallDelta;
 import com.ghost616.agentbase.dto.model.ToolDefinition;
 import com.ghost616.agentbase.dto.model.UsageInfo;
+import com.ghost616.agentbase.dto.model.WebSearchCall;
 import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
 import com.ghost616.agentbase.enums.ErrorCode;
 import com.ghost616.agentbase.exception.BusinessException;
@@ -365,8 +367,8 @@ public class OpenAIResponsesInvoker implements ModelInvoker {
                 }
                 case "response.custom_tool_call.in_progress",
                         "response.custom_tool_call.done" -> {
-                    ChatChunk.CustomToolCall.CustomToolCallBuilder customToolCallBuilder =
-                            ChatChunk.CustomToolCall.builder()
+                    CustomToolCall.CustomToolCallBuilder customToolCallBuilder =
+                            CustomToolCall.builder()
                                     .itemId(root.path("item_id").asText(null));
                     if (root.has("output_index")) {
                         customToolCallBuilder.outputIndex(root.get("output_index").asInt());
@@ -381,8 +383,8 @@ public class OpenAIResponsesInvoker implements ModelInvoker {
                 case "response.web_search_call.in_progress",
                         "response.web_search_call.searching",
                         "response.web_search_call.completed" -> {
-                    ChatChunk.WebSearchCall.WebSearchCallBuilder webSearchBuilder =
-                            ChatChunk.WebSearchCall.builder()
+                    WebSearchCall.WebSearchCallBuilder webSearchBuilder =
+                            WebSearchCall.builder()
                                     .itemId(root.path("item_id").asText(null));
                     if (root.has("output_index")) {
                         webSearchBuilder.outputIndex(root.get("output_index").asInt());
@@ -425,12 +427,12 @@ public class OpenAIResponsesInvoker implements ModelInvoker {
         }
     }
 
-    private List<ChatChunk.WebSearchCall.WebSearchResult> parseWebSearchResults(JsonNode root) {
-        List<ChatChunk.WebSearchCall.WebSearchResult> results = new ArrayList<>();
+    private List<WebSearchCall.WebSearchResult> parseWebSearchResults(JsonNode root) {
+        List<WebSearchCall.WebSearchResult> results = new ArrayList<>();
         JsonNode resultsNode = root.get("results");
         if (resultsNode != null && resultsNode.isArray()) {
             for (JsonNode item : resultsNode) {
-                results.add(ChatChunk.WebSearchCall.WebSearchResult.builder()
+                results.add(WebSearchCall.WebSearchResult.builder()
                         .title(item.path("name").asText(null))
                         .url(item.path("url").asText(null))
                         .snippet(item.path("description").asText(null))

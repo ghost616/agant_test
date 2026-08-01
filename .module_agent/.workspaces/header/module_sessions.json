@@ -2,21 +2,10 @@
   "_checked": [
     "ses_0496e6104ffeoFHsmainry20Uz"
   ],
-  "agent-integration": [
-    "ses_044f685a5ffekkaZr5tyOShNVE",
-    "ses_044a80b56ffetmIo6eG9kUqt2y"
-  ],
-  "platform-data": [
-    "ses_044c86882ffeTtEDLLTdmS1Ao1"
-  ],
   "agent-base": [
-    "ses_044c82d20ffeYj9ov1LK7Bgoy7"
+    "ses_044027387ffe1O07VWlmjcfx9w"
   ],
-  "frontend-ui": [
-    "ses_044c815d7ffezfsFx1ICs3CoHk"
-  ],
-  "platform-app": [
-    "ses_044a7f5a4ffeyMH1a5FhhbpsK3",
-    "ses_0443ae4e4ffeTBJpQqoq4oCl6Z"
+  "agent-integration": [
+    "ses_043fddf87ffe7J42MeX0UIJizY"
   ]
 }

@@ -1,10 +1,11 @@
 package com.ghost616.agentbase.service.agent;
 
 import com.ghost616.agentbase.core.AgentComponentRegistry;
-import com.ghost616.agentbase.dto.model.ChatChunk;
+import com.ghost616.agentbase.dto.model.CustomToolCall;
 import com.ghost616.agentbase.dto.model.Message;
 import com.ghost616.agentbase.dto.model.ToolCall;
 import com.ghost616.agentbase.dto.model.UsageInfo;
+import com.ghost616.agentbase.dto.model.WebSearchCall;
 import com.ghost616.agentbase.dto.skill.SkillConfigDTO;
 import com.ghost616.agentbase.dto.tool.McpExpandedToolDTO;
 import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
@@ -248,7 +249,7 @@ public class AgentContextManager {
         return history;
     }
 
-    private List<ChatChunk.WebSearchCall> toWebSearchCall(List<MessageDataProvider.WebSearchCallData> dataList) {
+    private List<WebSearchCall> toWebSearchCall(List<MessageDataProvider.WebSearchCallData> dataList) {
         if (dataList == null) {
             return null;
         }
@@ -257,17 +258,17 @@ public class AgentContextManager {
                     if (data == null) {
                         return null;
                     }
-                    List<ChatChunk.WebSearchCall.WebSearchResult> results = null;
+                    List<WebSearchCall.WebSearchResult> results = null;
                     if (data.results() != null) {
                         results = data.results().stream()
-                                .map(r -> ChatChunk.WebSearchCall.WebSearchResult.builder()
+                                .map(r -> WebSearchCall.WebSearchResult.builder()
                                         .title(r.title())
                                         .url(r.url())
                                         .snippet(r.snippet())
                                         .build())
                                 .toList();
                     }
-                    return ChatChunk.WebSearchCall.builder()
+                    return WebSearchCall.builder()
                             .itemId(data.itemId())
                             .outputIndex(data.outputIndex())
                             .results(results)
@@ -276,7 +277,7 @@ public class AgentContextManager {
                 .toList();
     }
 
-    private List<ChatChunk.CustomToolCall> toCustomToolCall(List<MessageDataProvider.CustomToolCallData> dataList) {
+    private List<CustomToolCall> toCustomToolCall(List<MessageDataProvider.CustomToolCallData> dataList) {
         if (dataList == null) {
             return null;
         }
@@ -285,7 +286,7 @@ public class AgentContextManager {
                     if (data == null) {
                         return null;
                     }
-                    return ChatChunk.CustomToolCall.builder()
+                    return CustomToolCall.builder()
                             .itemId(data.itemId())
                             .outputIndex(data.outputIndex())
                             .input(data.input())

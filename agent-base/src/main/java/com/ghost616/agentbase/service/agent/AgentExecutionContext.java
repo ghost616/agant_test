@@ -1,9 +1,10 @@
 package com.ghost616.agentbase.service.agent;
 
-import com.ghost616.agentbase.dto.model.ChatChunk;
+import com.ghost616.agentbase.dto.model.CustomToolCall;
 import com.ghost616.agentbase.dto.model.Message;
 import com.ghost616.agentbase.dto.model.ToolCall;
 import com.ghost616.agentbase.dto.model.UsageInfo;
+import com.ghost616.agentbase.dto.model.WebSearchCall;
 import com.ghost616.agentbase.dto.skill.SkillConfigDTO;
 import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
 import com.ghost616.agentbase.sendmessage.ChildCreateSession;
@@ -184,8 +185,8 @@ public class AgentExecutionContext {
 
     public record HistoryEntry(String role, String content, String reasoning, String toolCallId,
                                int sequenceNum, LocalDateTime createTime, List<ToolCall> toolCalls,
-                               UsageInfo usage, List<ChatChunk.WebSearchCall> webSearchCall,
-                               List<ChatChunk.CustomToolCall> customToolCall) {
+                               UsageInfo usage, List<WebSearchCall> webSearchCall,
+                               List<CustomToolCall> customToolCall) {
     }
 
     public static class AgentContextMutator {

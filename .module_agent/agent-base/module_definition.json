@@ -3,7 +3,7 @@
   "files": [
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/AgentExecutionContext.java",
-      "description": "Agent 执行上下文。lastResponseId 字段保持 @Getter 无直接 setter，通过内部 AgentContextMutator.setLastResponseId() 修改（由 AgentContextManager.doBuild 构造时注入或 ChatService.toSseStream 流式捕获）。HistoryEntry record 含 List&lt;ChatChunk.WebSearchCall&gt; webSearchCall 与 List&lt;ChatChunk.CustomToolCall&gt; customToolCall 字段（复用 ChatChunk 内部类）。内部 AgentContextMutator 各方法在变更后通过 messageSender.send() 发送 HistoryMessage/VariableMessage/ChildCreateSession/ChildMessageEvent 等事件消息。"
+      "description": "Agent 执行上下文。lastResponseId 字段保持 @Getter 无直接 setter，通过内部 AgentContextMutator.setLastResponseId() 修改（由 AgentContextManager.doBuild 构造时注入或 ChatService.toSseStream 流式捕获）。HistoryEntry record 含 List<WebSearchCall> webSearchCall 与 List<CustomToolCall> customToolCall 字段（引用独立 DTO 类）。内部 AgentContextMutator 各方法在变更后通过 messageSender.send() 发送 HistoryMessage/VariableMessage/ChildCreateSession/ChildMessageEvent 等事件消息。"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/ToolInvoker.java",
@@ -23,7 +23,7 @@
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/AgentContextManager.java",
-      "description": "管理会话上下文缓存 ConcurrentHashMap<String, AgentSessionContext>；doBuild 构造 AgentExecutionContext 后，若 ctxData.lastResponseId() 非空则通过 mutator.setLastResponseId() 注入会话最近响应 ID。提供 build/get/remove/addHistoryEntry 方法及 4 个刷新方法（refreshHistory/refreshSessionVariables/refreshConversationVariables/refreshChildSessions），含 sendUserMessage 消息持久化与 AgentMessageProxy 代理委托。"
+      "description": "管理会话上下文缓存 ConcurrentHashMap<String, AgentSessionContext>；doBuild 构造 AgentExecutionContext 后，若 ctxData.lastResponseId() 非空则通过 mutator.setLastResponseId() 注入会话最近响应 ID。提供 build/get/remove/addHistoryEntry 方法及 4 个刷新方法（refreshHistory/refreshSessionVariables/refreshConversationVariables/refreshChildSessions），含 sendUserMessage 消息持久化与 AgentMessageProxy 代理委托。convertMessagesToHistory 通过 toWebSearchCall/toCustomToolCall 私有方法将 MessageDTO 的 List<WebSearchCallData>/List<CustomToolCallData> 转为独立类 List<WebSearchCall>/List<CustomToolCall>。"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/SystemTool.java",
@@ -75,7 +75,7 @@
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/MessageSavePostHook.java",
-      "description": "消息保存后置 HOOK 实现，在 AFTER_MESSAGE_RECEIVE 阶段处理流式消息持久化。构造函数注入 AgentComponentRegistry，execute 开头惰性初始化 contextDataProvider/sessionManager/agentContextManager/toolCallQueueManager 四个字段；从 HookData 获取 ChatChunk 再提取 UsageInfo 透传到消息保存和历史记录；累积流式 webSearchCall/customToolCall 到 SessionBuffer，stop 分支将累积列表整体转为 List&lt;WebSearchCallData&gt;/List&lt;CustomToolCallData&gt; 传入 messageSave 与 HistoryEntry；finishReason=stop 且 ctx.lastResponseId 非空时调用 contextDataProvider.updateLastResponseId(sessionId, lastResponseId) 持久化会话最近响应 ID。"
+      "description": "消息保存后置 HOOK 实现，在 AFTER_MESSAGE_RECEIVE 阶段处理流式消息持久化。构造函数注入 AgentComponentRegistry，execute 开头惰性初始化 contextDataProvider/sessionManager/agentContextManager/toolCallQueueManager 四个字段；从 HookData 获取 ChatChunk 再提取 UsageInfo 透传到消息保存和历史记录；累积流式 webSearchCall/customToolCall（独立类 WebSearchCall/CustomToolCall）到 SessionBuffer，stop 分支将累积列表整体转为 List<WebSearchCallData>/List<CustomToolCallData> 传入 messageSave 与 HistoryEntry；finishReason=stop 且 ctx.lastResponseId 非空时调用 contextDataProvider.updateLastResponseId(sessionId, lastResponseId) 持久化会话最近响应 ID。"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ToolExecutionTracker.java",
@@ -151,7 +151,7 @@
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/dto/model/ChatChunk.java",
-      "description": "流式对话片段 DTO，含 delta/reasoning/toolCalls/finishReason/hasToolCalls/index/usage/responseId 字段；新增 WebSearchCall 与 CustomToolCall 两个静态内部类及 webSearchCall/customToolCall 字段（Responses API output item，分别携带网络搜索调用与自定义工具调用的 itemId/outputIndex 等信息）"
+      "description": "流式对话片段 DTO，含 delta/reasoning/toolCalls/finishReason/hasToolCalls/index/usage/responseId 字段；webSearchCall/customToolCall 字段引用独立类 WebSearchCall/CustomToolCall（Responses API output item，分别携带网络搜索调用与自定义工具调用的 itemId/outputIndex 等信息）"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/dto/model/ChatRequest.java",
@@ -356,6 +356,14 @@
     {
       "path": "agent-base/src/test/java/com/ghost616/agentbase/core/AgentComponentRegistryTest.java",
       "description": "AgentComponentRegistry 单元测试，覆盖 getSessionDataProvider 已注册时返回实例、未注册时抛出 IllegalStateException。"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/dto/model/WebSearchCall.java",
+      "description": "网络搜索调用独立 DTO 类（com.ghost616.agentbase.dto.model），字段 itemId/outputIndex/results（List<WebSearchResult>），内部类 WebSearchResult 含 title/url/snippet。由原 ChatChunk 静态内部类抽取为独立类，供 ChatChunk.webSearchCall、AgentExecutionContext.HistoryEntry、MessageSavePostHook、AgentContextManager 引用。"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/dto/model/CustomToolCall.java",
+      "description": "自定义工具调用独立 DTO 类（com.ghost616.agentbase.dto.model），字段 itemId/outputIndex/input/output。由原 ChatChunk 静态内部类抽取为独立类，供 ChatChunk.customToolCall、AgentExecutionContext.HistoryEntry、MessageSavePostHook、AgentContextManager 引用。"
     }
   ]
 }

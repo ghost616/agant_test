@@ -18,107 +18,19 @@
     "plan_completed": true
   },
   {
-    "plan_id": "plan_e942d5ba-4443-474f-9f11-df98ea590f4a",
-    "plan_summary": "审查web_search内置工具支持",
-    "starter_session_id": "ses_04813b347ffeRf5NxMcjuQclxs",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": false
-  },
-  {
-    "plan_id": "plan_6fdc31d5-9271-4685-9663-0697528a9757",
-    "plan_summary": "platform-data: MessageToolCall实体新增type/webSearchCall/customToolCall字段并更新schema.sql与SchemaMigration",
-    "starter_session_id": "ses_044d4c1efffemVRSWL4K19nVIR",
+    "plan_id": "plan_34505997-2967-4215-85ef-e9b7c03e9611",
+    "plan_summary": "agent-base：抽取 WebSearchCall/CustomToolCall 为独立类并更新引用",
+    "starter_session_id": "ses_04402b052ffeDiisK9kokhgigG",
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
   },
   {
-    "plan_id": "plan_8e139137-9054-4f02-b1fd-0b1e76d18555",
-    "plan_summary": "agent-base: 新增内置工具(webSearchCall/customToolCall)字段到ChatRequest/ChatChunk/MessageDataProvider/AgentExecutionContext/MessageSavePostHook",
-    "starter_session_id": "ses_044d4c1efffemVRSWL4K19nVIR",
+    "plan_id": "plan_538fdd1e-e00c-44fe-8e8c-09426cc7ce2f",
+    "plan_summary": "agent-integration：OpenAIResponsesInvoker 引用新的独立 WebSearchCall/CustomToolCall 类",
+    "starter_session_id": "ses_04402b052ffeDiisK9kokhgigG",
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
-  },
-  {
-    "plan_id": "plan_3bff2639-8863-448e-b665-d6c3c63a8a6a",
-    "plan_summary": "frontend-ui: ChatChunk/SessionMessage新增webSearchCall/customToolCall字段并在AgentChat展示搜索结果引用",
-    "starter_session_id": "ses_044d4c1efffemVRSWL4K19nVIR",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": true
-  },
-  {
-    "plan_id": "plan_4bda5d4c-73ee-4756-9092-66d5facfe321",
-    "plan_summary": "agent-integration: OpenAIResponsesInvoker新增builtinTools合并与web_search_call流式事件解析",
-    "starter_session_id": "ses_044d4c1efffemVRSWL4K19nVIR",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": true
-  },
-  {
-    "plan_id": "plan_78106fc0-eaa9-47be-8041-2ac2f3092509",
-    "plan_summary": "platform-app: DefaultMessageDataProvider写入/读取webSearchCall/customToolCall字段并同步测试",
-    "starter_session_id": "ses_044d4c1efffemVRSWL4K19nVIR",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": true
-  },
-  {
-    "plan_id": "plan_be88af64-089d-45b2-aef0-c30f246deca6",
-    "plan_summary": "审查 reasoning_text 和 custom_tool_call 事件处理",
-    "starter_session_id": "ses_04813b347ffeRf5NxMcjuQclxs",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": false
-  },
-  {
-    "plan_id": "plan_f4ed2a9c-febf-40e4-a352-d42188ba5948",
-    "plan_summary": "agent-base: HistoryEntry/MessageDataProvider/MessageDTO webSearchCall/customToolCall 单值改 List",
-    "starter_session_id": "ses_044d4c1efffemVRSWL4K19nVIR",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": true
-  },
-  {
-    "plan_id": "plan_a188049e-483d-49ed-b9c8-9690433182a5",
-    "plan_summary": "frontend-ui: SessionMessage.webSearchCall 改数组并遍历展示多个搜索结果",
-    "starter_session_id": "ses_044d4c1efffemVRSWL4K19nVIR",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": true
-  },
-  {
-    "plan_id": "plan_b755c6f7-eae9-4845-bc43-d08af576f676",
-    "plan_summary": "platform-app: DefaultMessageDataProvider webSearchCall/customToolCall List 序列化与反序列化",
-    "starter_session_id": "ses_044d4c1efffemVRSWL4K19nVIR",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": true
-  },
-  {
-    "plan_id": "plan_d2617f78-c176-43ec-af04-e07b720ac3e5",
-    "plan_summary": "审查循环保存 webSearchCall/customToolCall",
-    "starter_session_id": "ses_04813b347ffeRf5NxMcjuQclxs",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": false
-  },
-  {
-    "plan_id": "plan_08cb5541-96c3-4d56-9794-aa73b6fb28aa",
-    "plan_summary": "审查 saveBatch 批量插入",
-    "starter_session_id": "ses_04813b347ffeRf5NxMcjuQclxs",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": false
-  },
-  {
-    "plan_id": "plan_5faaf941-0cee-44c5-bbdb-6c37e47b14a2",
-    "plan_summary": "审查 toolCalls 批量插入",
-    "starter_session_id": "ses_04813b347ffeRf5NxMcjuQclxs",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": false
   }
 ]

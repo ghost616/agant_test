@@ -202,7 +202,8 @@ ToolDataProvider（com.ghost616.agentbase.service.agent.ToolDataProvider），�
 对话模型请求 DTO（com.ghost616.agentbase.dto.model.ChatRequest），承载发送给模型服务的请求：messages（对话消息）、tools（工具定义）、temperature、maxTokens、model、thinking、previousResponseId（上一轮响应 ID，Responses API 多轮续接）、instructions（系统级指令，Responses API 下存放 system prompt 与动态技能提示词）。对话响应 DTO（com.ghost616.agentbase.dto.model.ChatResponse）新增 responseId 字段，为模型返回的响应 ID，供下一轮续接时作为 previousResponseId 使用。流式片段 ChatChunk 新增 responseId 字段，由 OpenAIResponsesInvoker 在解析 response.completed 事件时从 response.id 写入，ChatService.toSseStream 捕获后存入会话上下文 lastResponseId 供有状态续接。
 
 - dto.model.ChatRequest 新增 List<Map&lt;String, Object&gt;> builtinTools 字段（内置工具列表，如 web_search，每项为工具配置键值对）
-- ChatChunk 新增 WebSearchCall 静态内部类（itemId/outputIndex/results，results 为 List 每项含 title/url/snippet）和 CustomToolCall 静态内部类（itemId/outputIndex/input/output），并新增 webSearchCall、customToolCall 两个字段
+- ChatChunk 新增 webSearchCall、customToolCall 两个字段，分别引用独立类 WebSearchCall（itemId/outputIndex/results，results 为 List 每项含 title/url/snippet）和 CustomToolCall（itemId/outputIndex/input/output）
+- WebSearchCall（含内部类 WebSearchResult：title/url/snippet）与 CustomToolCall 已由原 ChatChunk 静态内部类抽取为独立 DTO 类（com.ghost616.agentbase.dto.model），供 ChatChunk、AgentExecutionContext.HistoryEntry、MessageSavePostHook、AgentContextManager 共同引用
 ## 模型请求类型
 
 RequestType 枚举（com.ghost616.agentbase.enums.RequestType），定义模型请求分发方式。包含 RESPONSES("responses", "Responses（有状态）")、RESPONSES_STATELESS("responses_stateless", "Responses（无状态）")、COMPLETIONS("completions", "Chat Completions") 三个值，提供 getCode()/getDescription() 方法及静态 isResponses(String code) 判断（仅对 responses 与 responses_stateless 返回 true，排除 completions）。ModelConfigData.isResponsesType() 委托该方法。
