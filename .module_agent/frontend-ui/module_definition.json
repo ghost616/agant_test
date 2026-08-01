@@ -39,11 +39,11 @@
     },
     {
       "path": "src/types/session.ts",
-      "description": "会话相关 TypeScript 类型定义：Session、CreateSessionParams、ToolCallData、SessionMessage、SubSessionData 接口，Session 包含 totalTokenUsed 可选字段"
+      "description": "会话相关 TypeScript 类型定义：Session、CreateSessionParams、ToolCallData、SessionMessage、SubSessionData 接口，Session 包含 totalTokenUsed 可选字段；新增 WebSearchResult/WebSearchCall 接口，SessionMessage 新增 webSearchCall 可选字段（数组 WebSearchCall[]，web 搜索引用，每项含标题/链接/摘要）"
     },
     {
       "path": "src/services/session.ts",
-      "description": "会话相关 API 封装，包括列表/创建/获取/删除会话、获取子会话列表（listChildSessions）、获取历史消息、SSE 流式聊天（agentChatStream/continueChatStream）、工具执行（executeTools/getToolStatus）、工具执行状态轮询（pollToolStatus）、回滚会话（rollbackSession）、停止 AI 回复（stopChat）、子会话回调工具（getSubSessionData/completeSubSession）以及 SubSessionData 类型定义；ExecuteToolsResult 和 ToolStatusResult 接口新增 needsSubSessionFlow 可选字段"
+      "description": "会话相关 API 封装，包括列表/创建/获取/删除会话、获取子会话列表（listChildSessions）、获取历史消息、SSE 流式聊天（agentChatStream/continueChatStream）、工具执行（executeTools/getToolStatus）、工具执行状态轮询（pollToolStatus）、回滚会话（rollbackSession）、停止 AI 回复（stopChat）、子会话回调工具（getSubSessionData/completeSubSession）以及 SubSessionData 类型定义；ExecuteToolsResult 和 ToolStatusResult 接口新增 needsSubSessionFlow 可选字段；ChatChunk 接口新增 responseId/webSearchCall/customToolCall 字段（webSearchCall 为 WebSearchCall[] 数组）、StreamCallbacks 新增 onResponseId/onWebSearchCall 回调（processSSEStream 解析 chunk.responseId 与 chunk.webSearchCall 数组并回调）、agentChatStream 新增 previousResponseId 参数（Responses 有状态模式多轮续接透传）；新增 SessionContextBasic 类型与 getSessionContextBasic API（GET /api/context/{sessionId}/basic 获取会话上下文基础信息含 lastResponseId）"
     },
     {
       "path": "src/pages/sessions/SessionList.tsx",
@@ -51,7 +51,7 @@
     },
     {
       "path": "src/pages/sessions/AgentChat.tsx",
-      "description": "智能体对话页面：loadHistory 提取为独立 useCallback 供回滚复用；底部按钮区新增回滚按钮（loading/toolExecuting 时禁用），调用 rollbackSession+loadHistory 刷新；renderMessage 仅 content 非空时渲染气泡；onDone 回调条件扩展为检查 content 或 reasoning 任一非空；工具气泡补充 arguments JSON 参数显示；loadHistory 中 tool 角色且 toolResult 非空时解析 JSON 格式化为完整工具执行结果 markdown 作为 content；新增主会话/子会话列表 Tab 切换，子会话支持只读查看消息（Tabs + 子会话 Table + 只读消息视图）；子会话驱动流程（独立 Modal/独立状态/流式渲染/工具执行循环/完成后 completeSubSession+继续主会话）；子会话列表区域新增刷新按钮（ReloadOutlined）；pollToolStatus 检测 status.needsSubSessionFlow 时调用 handleSubSessionFlow 启动子会话流程后继续轮询；executeToolLoop 移除 _sys_callback_sub_session 硬编码检测，所有工具统一走显示工具消息 + pollToolStatus 流程"
+      "description": "智能体对话页面：loadHistory 提取为独立 useCallback 供回滚复用；底部按钮区新增回滚按钮（loading/toolExecuting 时禁用），调用 rollbackSession+loadHistory 刷新；renderMessage 仅 content 非空时渲染气泡；onDone 回调条件扩展为检查 content 或 reasoning 任一非空；工具气泡补充 arguments JSON 参数显示；loadHistory 中 tool 角色且 toolResult 非空时解析 JSON 格式化为完整工具执行结果 markdown 作为 content；新增主会话/子会话列表 Tab 切换，子会话支持只读查看消息（Tabs + 子会话 Table + 只读消息视图）；子会话驱动流程（独立 Modal/独立状态/流式渲染/工具执行循环/完成后 completeSubSession+继续主会话）；子会话列表区域新增刷新按钮（ReloadOutlined）；pollToolStatus 检测 status.needsSubSessionFlow 时调用 handleSubSessionFlow 启动子会话流程后继续轮询；executeToolLoop 移除 _sys_callback_sub_session 硬编码检测，所有工具统一走显示工具消息 + pollToolStatus 流程；Responses 有状态模式支持：页面挂载时调用 getSessionContextBasic 获取 lastResponseId 初始化 responseIdRef，根据当前模型 requestType==='responses' 判断有状态模式，agentChatStream onResponseId 回调更新 ref，发送消息时透传 previousResponseId（Completions/responses_stateless 不传）；实时对话接收 onWebSearchCall 回调（WebSearchCall[] 数组）并遍历展示多个搜索结果引用（标题+链接+摘要），handleSend 与 executeToolLoop continueChatStream 均支持，onDone 时附加 webSearchCall 数组到 assistant 消息，加载历史消息从 SessionMessage.webSearchCall 数组渲染已持久化的搜索结果"
     },
     {
       "path": "src/components/JsonEditor.tsx",

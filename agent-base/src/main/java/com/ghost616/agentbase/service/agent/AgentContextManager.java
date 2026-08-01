@@ -1,6 +1,7 @@
 package com.ghost616.agentbase.service.agent;
 
 import com.ghost616.agentbase.core.AgentComponentRegistry;
+import com.ghost616.agentbase.dto.model.ChatChunk;
 import com.ghost616.agentbase.dto.model.Message;
 import com.ghost616.agentbase.dto.model.ToolCall;
 import com.ghost616.agentbase.dto.model.UsageInfo;
@@ -242,9 +243,56 @@ public class AgentContextManager {
             history.add(new AgentExecutionContext.HistoryEntry(
                     msg.role(), msg.content(), msg.reasoning(), msg.toolCallId(),
                     msg.sequenceNum(), msg.createTime(), Collections.unmodifiableList(toolCalls),
-                    msg.usage()));
+                    msg.usage(), toWebSearchCall(msg.webSearchCall()), toCustomToolCall(msg.customToolCall())));
         }
         return history;
+    }
+
+    private List<ChatChunk.WebSearchCall> toWebSearchCall(List<MessageDataProvider.WebSearchCallData> dataList) {
+        if (dataList == null) {
+            return null;
+        }
+        return dataList.stream()
+                .map(data -> {
+                    if (data == null) {
+                        return null;
+                    }
+                    List<ChatChunk.WebSearchCall.WebSearchResult> results = null;
+                    if (data.results() != null) {
+                        results = data.results().stream()
+                                .map(r -> ChatChunk.WebSearchCall.WebSearchResult.builder()
+                                        .title(r.title())
+                                        .url(r.url())
+                                        .snippet(r.snippet())
+                                        .build())
+                                .toList();
+                    }
+                    return ChatChunk.WebSearchCall.builder()
+                            .itemId(data.itemId())
+                            .outputIndex(data.outputIndex())
+                            .results(results)
+                            .build();
+                })
+                .toList();
+    }
+
+    private List<ChatChunk.CustomToolCall> toCustomToolCall(List<MessageDataProvider.CustomToolCallData> dataList) {
+        if (dataList == null) {
+            return null;
+        }
+        return dataList.stream()
+                .map(data -> {
+                    if (data == null) {
+                        return null;
+                    }
+                    return ChatChunk.CustomToolCall.builder()
+                            .itemId(data.itemId())
+                            .outputIndex(data.outputIndex())
+                            .input(data.input())
+                            .output(data.output())
+                            .build();
+                })
+                .toList();
     }
 
     public void refreshHistory(String sessionId) {

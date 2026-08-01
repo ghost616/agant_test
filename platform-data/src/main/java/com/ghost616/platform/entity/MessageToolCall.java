@@ -27,4 +27,13 @@ public class MessageToolCall {
 
     @TableField("tool_call_arguments")
     private String toolCallArguments;
+
+    @TableField("type")
+    private String type = "function";
+
+    @TableField("web_search_call")
+    private String webSearchCall;
+
+    @TableField("custom_tool_call")
+    private String customToolCall;
 }

@@ -46,17 +46,16 @@
 - **BrowserToolInvoker**：继承 CustomToolInvoker 的自定义工具调用器。构造函数注入 BrowserToolCallback 回调，execute() 从 AgentExecutionContext 获取 sessionId、从 ToolConfigDTO 获取 toolId/toolName，将参数 JSON 传递给回调执行；提供 loadJsContent() 方法从 classpath 加载 browser_tool_executor.js、getJsContent() 返回缓存的 JS 内容
 - **browser_tool_executor.js**：JS 工具执行引擎，定义 AgentExecutionContext 对象、ToolFunction 工具函数定义、ToolManager 工具函数管理器（按 toolName 绑定/添加/移除/get）、四个工具执行函数：getAgentExecutionContext 获取上下文、getToolResult 从管理器获取工具执行结果、passToolResult 回传结果给宿主、execute 主执行入口
 
-- **OpenAIResponsesInvoker**：OpenAI Responses API 模型调用器，实现 ModelInvoker 接口，使用 /v1/responses 端点。同步 invoke 使用 instructions+input 请求格式，解析 output 数组提取 message content（output_text）与 function_call 到 ChatResponse（含 responseId 供多轮续接）；流式 invokeStream 解析 SSE 事件：response.output_text.delta→delta、response.function_call_arguments.delta→toolCalls（index+arguments）、response.completed→finishReason+usage；verify() 使用 GET /v1/models；toToolDefinition() 与 OpenAIInvoker 一致。input 消息转换：system 跳过、user/assistant 普通文本、assistant 工具调用转为 content 中的 function_call 部件、tool 角色转为 function_call_output
-- **DefaultModelInvokerFactory**：createInvoker() 新增判断，当 platformType=OPENAI 且 requestType=responses 时返回 OpenAIResponsesInvoker，其余情况走原 switch 分支
+- **OpenAIResponsesInvoker**：OpenAI Responses API 模型调用器，实现 ModelInvoker 接口，使用 /v1/responses 端点。同步 invoke 使用 instructions+input 请求格式，解析 output 数组提取 message content（output_text）与 function_call 到 ChatResponse（含 responseId 供多轮续接）；流式 invokeStream 解析 SSE 事件：response.output_text.delta→delta、response.function_call_arguments.delta→toolCalls（index+arguments）、response.web_search_call.in_progress/searching/completed→webSearchCall（completed 时从 results 数组解析 title/url/snippet）、response.completed→finishReason+usage；verify() 使用 GET /v1/models；toToolDefinition() 与 OpenAIInvoker 一致。input 消息转换：system 跳过、user/assistant 普通文本、assistant 工具调用转为 content 中的 function_call 部件、tool 角色转为 function_call_output
+- **OpenAIResponsesInvoker.buildBuiltinTools(ChatRequest)**：受保护方法从 request.builtinTools 读取内置工具列表（未传或为空返回空列表，请求不传则不启用）；buildRequestBody() 在 buildTools(request.getTools()) 之后将内置工具合并到 tools 数组，仅当 tools 非空时写入 body；子类（DeepSeek/Kimi/VolcEngine/Azure/Custom）不覆写该方法，统一由父类处理
 
-- **DefaultModelInvokerFactory**：createInvoker() 分支判断，当 platformType=OPENAI 且 requestType 为 responses 或 responses_stateless 时返回 OpenAIResponsesInvoker，其余情况走原 switch 分支
-
+- **DefaultModelInvokerFactory**：createInvoker() 先判断 requestType（responses/responses_stateless）再按 platformType 路由到对应 ResponsesInvoker（OPENAI/DEEPSEEK/KIMI/VOLCENGINE/AZURE/CUSTOM），否则走原 switch 返回 Chat Completions Invoker；ANTHROPIC/OLLAMA 不参与 Responses 路由，保持原分支不变
 - **DeepSeekResponsesInvoker**：DeepSeek 平台 Responses API 调用器，继承 OpenAIResponsesInvoker，无额外覆写
 - **KimiResponsesInvoker**：Kimi 平台 Responses API 调用器，继承 OpenAIResponsesInvoker；覆写 buildRequestBody 保留模型适配逻辑：K2_7_CODE 模型移除 reasoning，K3 模型将 thinking 映射为 reasoning（effort=max）
 - **VolcEngineResponsesInvoker**：火山引擎平台 Responses API 调用器，继承 OpenAIResponsesInvoker，无额外覆写
 - **AzureResponsesInvoker**：Azure OpenAI 平台 Responses API 调用器，继承 OpenAIResponsesInvoker；覆写 buildResponsesUrl=mountResponsesResourceUrl 使用 Azure 部署资源路径 + api-version，invoke/invokeStream/verify 使用 api-key header 认证
 - **CustomResponsesInvoker**：自定义平台 Responses API 调用器，继承 OpenAIResponsesInvoker，无额外覆写
-- **DefaultModelInvokerFactory**：createInvoker() 先判断 requestType（responses/responses_stateless）再按 platformType 路由到对应 ResponsesInvoker（OPENAI/DEEPSEEK/KIMI/VOLCENGINE/AZURE/CUSTOM），否则走原 switch 返回 Chat Completions Invoker；ANTHROPIC/OLLAMA 不参与 Responses 路由，保持原分支不变
+- **OpenAIResponsesInvoker.parseStreamEvent 新增事件**：response.reasoning_text.delta 解析 delta 写入 ChatChunk.reasoning；response.custom_tool_call.in_progress/done 解析 item_id/output_index/input 构建 ChatChunk.CustomToolCall 写入 customToolCall
 ## 工厂与组装
 
 - **DefaultModelInvokerFactory**：createInvoker() else 分支显式判断 RequestType.COMPLETIONS.getCode()（"completions"）或平台不支持 responses 时返回 Chat Completions Invoker，保留兜底返回；requestType 判断使用 RequestType.isResponses(requestType) 与 RequestType.COMPLETIONS.getCode() 并列枚举方式

@@ -109,6 +109,7 @@ class OpenAIResponsesInvokerTest {
                         .name("t1").description("d1")
                         .parameters(Map.of("type", "object"))
                         .build()))
+                .builtinTools(List.of(Map.of("type", "web_search")))
                 .thinking(true)
                 .build();
 
@@ -144,11 +145,42 @@ class OpenAIResponsesInvokerTest {
 
         List<?> tools = (List<?>) body.get("tools");
         assertNotNull(tools);
-        assertEquals(1, tools.size());
+        assertEquals(2, tools.size());
         Map<?, ?> tool = (Map<?, ?>) tools.get(0);
         assertEquals("function", tool.get("type"));
         assertEquals("t1", tool.get("name"));
         assertEquals("d1", tool.get("description"));
+        Map<?, ?> builtin = (Map<?, ?>) tools.get(1);
+        assertEquals("web_search", builtin.get("type"));
+    }
+
+    @Test
+    void buildRequestBodyMergesBuiltinToolsWhenNoCustomTools() {
+        ChatRequest request = ChatRequest.builder()
+                .model("gpt-4o")
+                .messages(List.of(Message.builder().role("user").content("hi").build()))
+                .builtinTools(List.of(Map.of("type", "web_search")))
+                .build();
+
+        Map<String, Object> body = invoker.buildRequestBody(request, false);
+
+        List<?> tools = (List<?>) body.get("tools");
+        assertNotNull(tools);
+        assertEquals(1, tools.size());
+        Map<?, ?> builtin = (Map<?, ?>) tools.get(0);
+        assertEquals("web_search", builtin.get("type"));
+    }
+
+    @Test
+    void buildRequestBodyOmitsToolsWhenNoneConfigured() {
+        ChatRequest request = ChatRequest.builder()
+                .model("gpt-4o")
+                .messages(List.of(Message.builder().role("user").content("hi").build()))
+                .build();
+
+        Map<String, Object> body = invoker.buildRequestBody(request, false);
+
+        assertFalse(body.containsKey("tools"));
     }
 
     @Test
@@ -195,6 +227,86 @@ class OpenAIResponsesInvokerTest {
         assertEquals(1, chunk.getUsage().getPromptTokens());
         assertEquals(2, chunk.getUsage().getCompletionTokens());
         assertEquals(3, chunk.getUsage().getTotalTokens());
+    }
+
+    @Test
+    void parseStreamEventWebSearchCallInProgress() {
+        String event = "{\"type\":\"response.web_search_call.in_progress\",\"item_id\":\"ws_1\","
+                + "\"output_index\":0}";
+
+        ChatChunk chunk = invoker.parseStreamEvent(event).blockFirst();
+
+        assertNotNull(chunk);
+        assertNotNull(chunk.getWebSearchCall());
+        assertEquals("ws_1", chunk.getWebSearchCall().getItemId());
+        assertEquals(Integer.valueOf(0), chunk.getWebSearchCall().getOutputIndex());
+        assertNull(chunk.getWebSearchCall().getResults());
+    }
+
+    @Test
+    void parseStreamEventWebSearchCallSearching() {
+        String event = "{\"type\":\"response.web_search_call.searching\",\"item_id\":\"ws_1\","
+                + "\"output_index\":0,\"query\":\"weather\"}";
+
+        ChatChunk chunk = invoker.parseStreamEvent(event).blockFirst();
+
+        assertNotNull(chunk);
+        assertNotNull(chunk.getWebSearchCall());
+        assertEquals("ws_1", chunk.getWebSearchCall().getItemId());
+        assertNull(chunk.getWebSearchCall().getResults());
+    }
+
+    @Test
+    void parseStreamEventWebSearchCallCompletedExtractsResults() {
+        String event = "{\"type\":\"response.web_search_call.completed\",\"item_id\":\"ws_1\","
+                + "\"output_index\":0,\"results\":["
+                + "{\"name\":\"Weather Report\",\"url\":\"https://example.com/weather\","
+                + "\"description\":\"Current weather conditions\"},"
+                + "{\"name\":\"Forecast\",\"url\":\"https://example.com/forecast\","
+                + "\"description\":\"7-day outlook\"}]}";
+
+        ChatChunk chunk = invoker.parseStreamEvent(event).blockFirst();
+
+        assertNotNull(chunk);
+        assertNotNull(chunk.getWebSearchCall());
+        assertEquals("ws_1", chunk.getWebSearchCall().getItemId());
+        assertEquals(Integer.valueOf(0), chunk.getWebSearchCall().getOutputIndex());
+        assertNotNull(chunk.getWebSearchCall().getResults());
+        assertEquals(2, chunk.getWebSearchCall().getResults().size());
+        ChatChunk.WebSearchCall.WebSearchResult first = chunk.getWebSearchCall().getResults().get(0);
+        assertEquals("Weather Report", first.getTitle());
+        assertEquals("https://example.com/weather", first.getUrl());
+        assertEquals("Current weather conditions", first.getSnippet());
+        ChatChunk.WebSearchCall.WebSearchResult second = chunk.getWebSearchCall().getResults().get(1);
+        assertEquals("Forecast", second.getTitle());
+        assertEquals("https://example.com/forecast", second.getUrl());
+        assertEquals("7-day outlook", second.getSnippet());
+    }
+
+    @Test
+    void parseStreamEventReasoningTextDelta() {
+        String event = "{\"type\":\"response.reasoning_text.delta\",\"item_id\":\"i1\","
+                + "\"output_index\":0,\"delta\":\"think\"}";
+
+        ChatChunk chunk = invoker.parseStreamEvent(event).blockFirst();
+
+        assertNotNull(chunk);
+        assertEquals("think", chunk.getReasoning());
+        assertNull(chunk.getDelta());
+    }
+
+    @Test
+    void parseStreamEventCustomToolCallDone() {
+        String event = "{\"type\":\"response.custom_tool_call.done\",\"item_id\":\"ct_1\","
+                + "\"output_index\":1,\"input\":\"{\\\"a\\\":1}\"}";
+
+        ChatChunk chunk = invoker.parseStreamEvent(event).blockFirst();
+
+        assertNotNull(chunk);
+        assertNotNull(chunk.getCustomToolCall());
+        assertEquals("ct_1", chunk.getCustomToolCall().getItemId());
+        assertEquals(Integer.valueOf(1), chunk.getCustomToolCall().getOutputIndex());
+        assertEquals("{\"a\":1}", chunk.getCustomToolCall().getInput());
     }
 
     @Test

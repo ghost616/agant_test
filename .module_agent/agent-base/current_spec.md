@@ -18,7 +18,7 @@ createInvoker 方法 CUSTOM 分支：当 toolConfig.getToolType() 为 CUSTOM 时
 ToolExecutionProvider 接口（com.ghost616.agentbase.service.agent.ToolExecutionProvider），定义工具调用队列和执行追踪的统一契约。包含 enqueue/poll/peek/hasPending/clearQueue 五个队列方法与 updateExecution/clearTracking/getCurrentExecution/getAndClearResults 四个执行追踪方法。返回类型引用 ToolExecutionTracker.ToolExecutionStatus 和 ToolExecutionTracker.ToolResult 内部 record。平台实现类 DefaultToolExecutionProvider（com.ghost616.platform.service.agent）内部持有队列 ConcurrentHashMap 和追踪 ConcurrentHashMap，承担原 ToolCallQueueManager 和 ToolExecutionTracker 的 Map 存储职责。
 ## AgentComponentRegistry
 
-AgentComponentRegistry（com.ghost616.agentbase.core.AgentComponentRegistry），中央组件注册表，非 Spring 组件。持有所有 Provider/Manager 组件的 @Setter 注入字段，包含 contextDataProvider/messageDataProvider/toolDataProvider/chatDataProvider/modelInvokerDataProvider/systemToolProvider/modelInvokerFactory/toolManager/toolCallQueueManager/systemToolManager/sessionManager/agentContextManager/modelInvokerManager/toolExecutionTracker/toolExecutionProvider/messageSender。每个 getter 方法通过 requireInitialized 守卫确保组件已初始化后返回，messageSender 可为 null。
+AgentComponentRegistry（com.ghost616.agentbase.core.AgentComponentRegistry），中央组件注册表，非 Spring 组件。持有所有 Provider/Manager 组件的 @Setter 注入字段，包含 contextDataProvider/messageDataProvider/toolDataProvider/chatDataProvider/modelInvokerDataProvider/systemToolProvider/modelInvokerFactory/toolManager/toolCallQueueManager/systemToolManager/sessionManager/agentContextManager/modelInvokerManager/toolExecutionTracker/toolExecutionProvider/messageSender/hookManager。每个 getter 方法通过 requireInitialized 守卫确保组件已初始化后返回，messageSender 可为 null。lastResponseId 持久化已于 2026-07-31 由 SessionDataProvider 迁移至 ContextDataProvider（sessionDataProvider 字段与 getSessionDataProvider() 已移除）。
 ## HookInvoker / SystemHook / SystemPostHook
 
 
@@ -35,8 +35,11 @@ execute 方法签名由 execute(AgentExecutionContext, ChatChunk) 改为 execute
 
 ## MessageSavePostHook
 
-从 platform-app 迁移而来。消息保存后置 HOOK，在 AFTER_MESSAGE_RECEIVE 阶段缓存流式块，收到 finishReason=stop 时拼装消息调用 sessionManager.save() 持久化，并通过 toolCallQueueManager.enqueue() 入队工具调用。已去掉 @Component/@RequiredArgsConstructor，改为显式构造函数注入 SessionManager/AgentContextManager/ToolCallQueueManager。
+从 platform-app 迁移而来。消息保存后置 HOOK，在 AFTER_MESSAGE_RECEIVE 阶段缓存流式块，收到 finishReason=stop 时拼装消息调用 sessionManager.messageSave() 持久化，并通过 toolCallQueueManager.enqueue() 入队工具调用。已去掉 @Component/@RequiredArgsConstructor，构造函数改为注入 AgentComponentRegistry，execute 开头惰性初始化 contextDataProvider/sessionManager/agentContextManager/toolCallQueueManager 四个字段（registry.getContextDataProvider()/getSessionManager()/getAgentContextManager()/getToolCallQueueManager()）。
 - finishReason=stop 时从 chunk.getUsage() 获取 UsageInfo，通过 .usage(usage) 传入 messageSave 链，同时传入 HistoryEntry 构造器
+- finishReason=stop 分支中，ctx.getLastResponseId() 非空时调用 contextDataProvider.updateLastResponseId(sessionId, lastResponseId) 持久化会话最近响应 ID（仅当非空才写入）
+- SessionBuffer 新增 List&lt;ChatChunk.WebSearchCall&gt; webSearchCalls 和 List&lt;ChatChunk.CustomToolCall&gt; customToolCalls 两个累积字段；非 stop 分支中 chunk.getWebSearchCall()/getCustomToolCall() 非空时累积到对应列表
+- finishReason=stop 分支中将累积列表整体通过 toWebSearchCallData/toCustomToolCallData 私有方法转为 List&lt;MessageDataProvider.WebSearchCallData&gt;/List&lt;MessageDataProvider.CustomToolCallData&gt;，经 .webSearchCall()/.customToolCall() 链传入 messageSave，并将累积列表（空时传 Collections.emptyList()）传入 HistoryEntry 构造器
 ## ToolExecutionTracker
 
 非 Spring 组件（已去掉 @Component），保留 @Slf4j。构造函数改为接收 AgentComponentRegistry，通过 registry.getToolExecutionProvider() 获取 ToolExecutionProvider，所有 Map 操作（setExecuting/setDone/setFailed/clear/getCurrentExecution/getAndClearResults）委派给 provider。内部 record ToolExecutionStatus（status/toolId/toolName/arguments）和 ToolResult（toolId/toolName/arguments/result）保持不变。
@@ -69,7 +72,7 @@ chatViaResponsesStateless()（无状态）：不传 previousResponseId，input �
 聊天请求 DTO（com.ghost616.agentbase.dto.chat.ChatRequest），从 platform-app 迁移而来，改包名为 com.ghost616.agentbase.dto.chat。包含字段：sessionId（必填）、content（必填）、modelId（可选）、thinking（可选）、previousResponseId（可选，Responses API 多轮续接时透传给模型请求）。
 ## AgentContextManager
 
-AgentContextManager（非 @Component，通过 @Bean 注册）：注入 ContextDataProvider/SessionManager/ToolManager，管理会话上下文缓存 ConcurrentHashMap<String, AgentSessionContext>；提供 build(sessionId) 实例方法返回 Builder 内部类（支持 modelIdOverride 链式调用），Builder.build() 通过 cache.computeIfAbsent 使用 dataProvider 查询 agent/session 数据、toolManager 加载工具、sessionManager 获取历史消息，并在加载 skills 后遍历每条 SkillConfigDTO 的 skillTools，对 MCP_HTTP 类型工具调用 toolManager.expandMcpTools() 展开为 McpExpandedToolDTO 列表替换原始 DTO；保留 get/remove/addHistoryEntry 方法。
+AgentContextManager（非 @Component，通过 @Bean 注册）：注入 ContextDataProvider/SessionManager/ToolManager，管理会话上下文缓存 ConcurrentHashMap&lt;String, AgentSessionContext&gt;；提供 build(sessionId) 实例方法返回 Builder 内部类（支持 modelIdOverride 链式调用），Builder.build() 通过 cache.computeIfAbsent 使用 dataProvider 查询 agent/session 数据、toolManager 加载工具、sessionManager 获取历史消息，并在加载 skills 后遍历每条 SkillConfigDTO 的 skillTools，对 MCP_HTTP 类型工具调用 toolManager.expandMcpTools() 展开为 McpExpandedToolDTO 列表替换原始 DTO；保留 get/remove/addHistoryEntry 方法。
 sendUserMessage 方法签名改为 Message 返回类型，透传给 AgentContextMutator 回调；方法体实现消息持久化（通过 sessionManager.messageSave()）并返回 Message 对象。
 sendUserMessage 方法签名改为 Message 返回类型，通过 setter 注入 AgentMessageProxy 并委托给 proxy.sendUserMessage()；proxy 为 null 时回退为旧的直接保存 + 返回简单 Message。
 Builder.doBuild() 在遍历 skills 展开 skillTools 的循环中，对每个加入 expandedTools 的 ToolConfigDTO 设置 sessionAuth = SessionAuthType.PARENT；MCP_HTTP 展开得到的 McpExpandedToolDTO 列表也逐个设置 sessionAuth = PARENT，使 skill 下的工具授权统一为父会话使用。
@@ -78,7 +81,7 @@ Builder.doBuild() 在遍历 skills 展开 skillTools 的循环中，对每个加
 - refreshSessionVariables(String sessionId)：调用 dataProvider.getLatestSessionVariables()，通过 mutator.refreshSessionVariables() 更新
 - refreshConversationVariables(String sessionId)：调用 dataProvider.getLatestConversationVariables()，通过 mutator.refreshConversationVariables() 更新
 - refreshChildSessions(String sessionId)：调用 dataProvider.getLatestChildSessions()，通过 mutator.refreshChildSessions() 更新
-- convertMessagesToHistory(List<MessageDTO>) 从 doBuild 中提取的私有方法，复用消息转 HistoryEntry 逻辑
+- convertMessagesToHistory(List&lt;MessageDTO&gt;) 从 doBuild 中提取的私有方法，复用消息转 HistoryEntry 逻辑
 - 所有刷新方法在缓存中无对应 sessionId 的上下文时静默返回
 
 ### AgentContextMutator 消息发送
@@ -89,6 +92,7 @@ AgentContextManager 提供 3 个 public handler 方法供外部系统在收到�
 
 ### 父子会话变量委托
 injectVariableCallbacks() 方法在子会话上下文中，将 sessionVarPutCallback/sessionVarRemoveCallback 直接指向父会话上下文的 putSessionVariable/removeSessionVariable，实现子会话变量读写直接委托给父会话，不经过 MessageSender。ConversationVariable 同理。
+- AgentExecutionContext.HistoryEntry record 新增 List&lt;ChatChunk.WebSearchCall&gt; webSearchCall 和 List&lt;ChatChunk.CustomToolCall&gt; customToolCall 字段（类型复用 ChatChunk 内部类）；convertMessagesToHistory 通过 toWebSearchCall/toCustomToolCall 私有方法将 MessageDTO 的 List&lt;WebSearchCallData&gt;/List&lt;CustomToolCallData&gt; 转为 ChatChunk List 后传入 HistoryEntry
 ## ToolExecutionService
 
 工具执行服务，非 Spring 组件。构造函数改为接收 (AgentComponentRegistry, ChatService)，通过 registry 延迟获取 ToolCallQueueManager/ToolManager/SystemToolManager/SessionManager/AgentContextManager/ToolExecutionTracker。提供三个核心方法：executeTool(String sessionId) 从队列获取下一个工具调用，解析调用器并异步执行；getToolStatus(String sessionId, String toolId) 查询当前工具执行状态（toolId 为必传参数）；continueAfterTools(String sessionId) 检查无工具在执行后，持久化工具结果、添加历史记录、清理队列和跟踪器，构造 TOOL_CONTINUE_MARKER 请求并调用 chatService.chat()。
@@ -108,12 +112,16 @@ ToolHookContext 数据载体（@Data @AllArgsConstructor @NoArgsConstructor）�
 
 会话管理组件，提供 MessageSaveBuilder 链式构建消息保存、getMessages 历史消息查询和 rollbackToLastUserMessage 回退功能。MessageSaveBuilder.save() 方法在调用 dataProvider.saveMessage() 前对 sessionId/role/content 进行非空校验，任一为 null 时抛出 BusinessException(ErrorCode.PARAM_INVALID)。
 - MessageSaveBuilder 新增 UsageInfo usage 字段和 .usage(UsageInfo) 链式方法，save() 时透传给 dataProvider.saveMessage() 的 usage 参数
+- 会话级 lastResponseId 持久化已于 2026-07-31 迁移至 ContextDataProvider，SessionDataProvider 相关委托方法（updateLastResponseId/getLastResponseId/updateSessionThinking）已移除
+- MessageSaveBuilder 新增 List&lt;MessageDataProvider.WebSearchCallData&gt; webSearchCall、List&lt;MessageDataProvider.CustomToolCallData&gt; customToolCall 字段与链式方法，save() 时透传给 dataProvider.saveMessage()
 ## ConfigurableToolInvoker
 
 ConfigurableToolInvoker 接口，继承 ToolInvoker，定义 setToolConfig(ToolConfigDTO) 方法。JavaToolInvoker 在加载工具实例后检测是否实现了该接口，若是则自动注入 ToolConfigDTO。
 ## ContextDataProvider
 
 上下文数据提供者接口，定义 agent 配置、技能、会话变量等数据查询方法，以及子会话创建方法 createChildSession。
+- AgentContextData record 新增 String lastResponseId 字段（最后一个参数），承载会话最近一次模型响应 ID（Responses API 有状态续接时作为 previousResponseId），由 loadAgentContext 从持久层填充，AgentContextManager.doBuild 注入上下文
+- 新增 updateLastResponseId(String sessionId, String lastResponseId) 方法，持久化会话最近响应 ID，由 MessageSavePostHook 在消息保存完成后调用
 - createChildSession 方法参数 agentName 重命名为 sessionName
 - getLatestMessages(String sessionId) → List<MessageDTO>：获取会话全部消息
 - getLatestSessionVariables(String sessionId) → Map<String, String>：获取全部会话变量
@@ -168,6 +176,8 @@ ChildMessageEvent 消息类，继承 SessionMessage，messageName=CHILD_MESSAGE�
 ## MessageDataProvider
 
 消息数据提供者接口（com.ghost616.agentbase.service.agent.MessageDataProvider），定义消息保存、查询、回退方法。内部 record MessageDTO 包含字段：String id, String sessionId, String role, String content, String reasoning, String toolCallId, Integer sequenceNum, LocalDateTime createTime, String toolResult, List&lt;ToolCallData&gt; toolCalls, UsageInfo usage, Boolean rollback（默认 null）。内部 record ToolCallData 包含字段：String toolCallId, String toolCallName, String toolCallArguments。
+- ToolCallData record 新增 String type 字段（默认 "function"，保留 3 参构造器以兼容旧调用）；新增 WebSearchCallData（itemId/outputIndex/results，results 为 List&lt;WebSearchResultData&gt;，每项含 title/url/snippet）和 CustomToolCallData（itemId/outputIndex/input/output）两个 record
+- saveMessage 签名新增 List&lt;WebSearchCallData&gt; webSearchCall、List&lt;CustomToolCallData&gt; customToolCall 两个参数（置于 usage 之后）；MessageDTO record 末尾新增 webSearchCall、customToolCall 两个 List 字段
 ## SessionVariableSystemTool / ConversationVariableSystemTool
 
 两个系统工具类，实现 SystemTool 接口，用于在会话过程中管理变量。
@@ -190,6 +200,18 @@ ToolDataProvider（com.ghost616.agentbase.service.agent.ToolDataProvider），�
 ## 对话模型请求/响应 DTO
 
 对话模型请求 DTO（com.ghost616.agentbase.dto.model.ChatRequest），承载发送给模型服务的请求：messages（对话消息）、tools（工具定义）、temperature、maxTokens、model、thinking、previousResponseId（上一轮响应 ID，Responses API 多轮续接）、instructions（系统级指令，Responses API 下存放 system prompt 与动态技能提示词）。对话响应 DTO（com.ghost616.agentbase.dto.model.ChatResponse）新增 responseId 字段，为模型返回的响应 ID，供下一轮续接时作为 previousResponseId 使用。流式片段 ChatChunk 新增 responseId 字段，由 OpenAIResponsesInvoker 在解析 response.completed 事件时从 response.id 写入，ChatService.toSseStream 捕获后存入会话上下文 lastResponseId 供有状态续接。
+
+- dto.model.ChatRequest 新增 List<Map&lt;String, Object&gt;> builtinTools 字段（内置工具列表，如 web_search，每项为工具配置键值对）
+- ChatChunk 新增 WebSearchCall 静态内部类（itemId/outputIndex/results，results 为 List 每项含 title/url/snippet）和 CustomToolCall 静态内部类（itemId/outputIndex/input/output），并新增 webSearchCall、customToolCall 两个字段
 ## 模型请求类型
 
 RequestType 枚举（com.ghost616.agentbase.enums.RequestType），定义模型请求分发方式。包含 RESPONSES("responses", "Responses（有状态）")、RESPONSES_STATELESS("responses_stateless", "Responses（无状态）")、COMPLETIONS("completions", "Chat Completions") 三个值，提供 getCode()/getDescription() 方法及静态 isResponses(String code) 判断（仅对 responses 与 responses_stateless 返回 true，排除 completions）。ModelConfigData.isResponsesType() 委托该方法。
+## 会话数据访问层
+
+会话数据访问层已于 2026-07-31 重构：SessionDataProvider 接口被删除，会话级 lastResponseId 的持久化与查询职责迁移至 ContextDataProvider（新增 updateLastResponseId 方法 + AgentContextData.lastResponseId 字段）。lastResponseId 由 AgentContextManager.doBuild 从 loadAgentContext 读取注入上下文（AgentContextMutator.setLastResponseId），流式过程中由 ChatService.toSseStream 通过 contextMutator.setLastResponseId 捕获 chunk.responseId，消息保存完成后由 MessageSavePostHook 通过 contextDataProvider.updateLastResponseId 写回持久层。原 SessionDataProvider 三个方法（updateLastResponseId/getLastResponseId/updateSessionThinking）已随接口删除。
+## 会话数据访问层
+
+SessionDataProvider（com.ghost616.agentbase.service.agent.SessionDataProvider），会话数据提供者接口，定义会话级数据的持久化与查询契约，供 SessionManager 懒加载引用，与平台具体数据访问层（platform-app 的 DefaultSessionDataProvider）解耦。包含三个方法：
+- updateLastResponseId(String sessionId, String lastResponseId)：更新会话最近一次模型响应 ID（Responses API 有状态续接时作为 previousResponseId）
+- getLastResponseId(String sessionId)：查询会话最近一次响应 ID，无则返回 null
+- updateSessionThinking(String sessionId, Boolean thinking)：更新会话思考模式开关

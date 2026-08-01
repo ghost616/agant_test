@@ -42,6 +42,8 @@ public class SessionManager {
         private String toolResult;
         private List<MessageDataProvider.ToolCallData> toolCalls;
         private UsageInfo usage;
+        private List<MessageDataProvider.WebSearchCallData> webSearchCall;
+        private List<MessageDataProvider.CustomToolCallData> customToolCall;
 
         private MessageSaveBuilder() {
         }
@@ -86,6 +88,16 @@ public class SessionManager {
             return this;
         }
 
+        public MessageSaveBuilder webSearchCall(List<MessageDataProvider.WebSearchCallData> webSearchCall) {
+            this.webSearchCall = webSearchCall;
+            return this;
+        }
+
+        public MessageSaveBuilder customToolCall(List<MessageDataProvider.CustomToolCallData> customToolCall) {
+            this.customToolCall = customToolCall;
+            return this;
+        }
+
         public String save() {
             if (sessionId == null) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "sessionId 不能为空");
@@ -97,7 +109,7 @@ public class SessionManager {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "content 不能为空");
             }
             return dataProvider.saveMessage(sessionId, role, content, reasoning,
-                    toolCallId, toolResult, toolCalls, usage);
+                    toolCallId, toolResult, toolCalls, usage, webSearchCall, customToolCall);
         }
     }
 

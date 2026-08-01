@@ -18,75 +18,107 @@
     "plan_completed": true
   },
   {
-    "plan_id": "plan_092b5e78-fc37-4a41-860c-6a2452ba1530",
-    "plan_summary": "按 requestType 分流构建评估 ChatRequest",
-    "starter_session_id": "ses_0492bd6adffecl3BRvfBI0ybZ3",
+    "plan_id": "plan_e942d5ba-4443-474f-9f11-df98ea590f4a",
+    "plan_summary": "审查web_search内置工具支持",
+    "starter_session_id": "ses_04813b347ffeRf5NxMcjuQclxs",
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": false
   },
   {
-    "plan_id": "plan_5da320c6-19e0-4d94-9dd4-5e73ee046a33",
-    "plan_summary": "前端 REQUEST_TYPE_OPTIONS 使用 RequestType 枚举 code 值",
-    "starter_session_id": "ses_048586f6effexxbXJLDJyr2CPJ",
+    "plan_id": "plan_6fdc31d5-9271-4685-9663-0697528a9757",
+    "plan_summary": "platform-data: MessageToolCall实体新增type/webSearchCall/customToolCall字段并更新schema.sql与SchemaMigration",
+    "starter_session_id": "ses_044d4c1efffemVRSWL4K19nVIR",
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
   },
   {
-    "plan_id": "plan_8d681369-0a15-4baf-8f8e-6cb05d88c5aa",
-    "plan_summary": "创建 RequestType 枚举并在 ChatService 中使用",
-    "starter_session_id": "ses_048586f6effexxbXJLDJyr2CPJ",
+    "plan_id": "plan_8e139137-9054-4f02-b1fd-0b1e76d18555",
+    "plan_summary": "agent-base: 新增内置工具(webSearchCall/customToolCall)字段到ChatRequest/ChatChunk/MessageDataProvider/AgentExecutionContext/MessageSavePostHook",
+    "starter_session_id": "ses_044d4c1efffemVRSWL4K19nVIR",
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
   },
   {
-    "plan_id": "plan_26c999fc-a29a-41f8-b5d8-f733b8ec5858",
-    "plan_summary": "EvaluationResultGenerateService 使用 RequestType 枚举判断",
-    "starter_session_id": "ses_048586f6effexxbXJLDJyr2CPJ",
+    "plan_id": "plan_3bff2639-8863-448e-b665-d6c3c63a8a6a",
+    "plan_summary": "frontend-ui: ChatChunk/SessionMessage新增webSearchCall/customToolCall字段并在AgentChat展示搜索结果引用",
+    "starter_session_id": "ses_044d4c1efffemVRSWL4K19nVIR",
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
   },
   {
-    "plan_id": "plan_4a4d5248-9391-4eda-9bae-f9775dfea6e0",
-    "plan_summary": "DefaultModelInvokerFactory 使用 RequestType 枚举判断",
-    "starter_session_id": "ses_048586f6effexxbXJLDJyr2CPJ",
+    "plan_id": "plan_4bda5d4c-73ee-4756-9092-66d5facfe321",
+    "plan_summary": "agent-integration: OpenAIResponsesInvoker新增builtinTools合并与web_search_call流式事件解析",
+    "starter_session_id": "ses_044d4c1efffemVRSWL4K19nVIR",
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
   },
   {
-    "plan_id": "plan_af660052-aead-4b14-9f59-3de9ec439bd8",
-    "plan_summary": "前端 REQUEST_TYPE_OPTIONS 新增 COMPLETIONS 选项",
-    "starter_session_id": "ses_048586f6effexxbXJLDJyr2CPJ",
+    "plan_id": "plan_78106fc0-eaa9-47be-8041-2ac2f3092509",
+    "plan_summary": "platform-app: DefaultMessageDataProvider写入/读取webSearchCall/customToolCall字段并同步测试",
+    "starter_session_id": "ses_044d4c1efffemVRSWL4K19nVIR",
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
   },
   {
-    "plan_id": "plan_22fc3df8-0cda-4839-bc4a-57cf8e3f76b9",
-    "plan_summary": "RequestType 新增 COMPLETIONS 值并重构 ChatService 三路路由",
-    "starter_session_id": "ses_048586f6effexxbXJLDJyr2CPJ",
+    "plan_id": "plan_be88af64-089d-45b2-aef0-c30f246deca6",
+    "plan_summary": "审查 reasoning_text 和 custom_tool_call 事件处理",
+    "starter_session_id": "ses_04813b347ffeRf5NxMcjuQclxs",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": false
+  },
+  {
+    "plan_id": "plan_f4ed2a9c-febf-40e4-a352-d42188ba5948",
+    "plan_summary": "agent-base: HistoryEntry/MessageDataProvider/MessageDTO webSearchCall/customToolCall 单值改 List",
+    "starter_session_id": "ses_044d4c1efffemVRSWL4K19nVIR",
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
   },
   {
-    "plan_id": "plan_e5cd505e-6e0f-4b32-b970-545f0dc29323",
-    "plan_summary": "EvaluationResultGenerateService else 分支改为显式 COMPLETIONS 判断",
-    "starter_session_id": "ses_048586f6effexxbXJLDJyr2CPJ",
+    "plan_id": "plan_a188049e-483d-49ed-b9c8-9690433182a5",
+    "plan_summary": "frontend-ui: SessionMessage.webSearchCall 改数组并遍历展示多个搜索结果",
+    "starter_session_id": "ses_044d4c1efffemVRSWL4K19nVIR",
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
   },
   {
-    "plan_id": "plan_62748954-0859-41c1-b1a3-9e468b176bd3",
-    "plan_summary": "DefaultModelInvokerFactory else 分支改为显式 COMPLETIONS 判断",
-    "starter_session_id": "ses_048586f6effexxbXJLDJyr2CPJ",
+    "plan_id": "plan_b755c6f7-eae9-4845-bc43-d08af576f676",
+    "plan_summary": "platform-app: DefaultMessageDataProvider webSearchCall/customToolCall List 序列化与反序列化",
+    "starter_session_id": "ses_044d4c1efffemVRSWL4K19nVIR",
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
+  },
+  {
+    "plan_id": "plan_d2617f78-c176-43ec-af04-e07b720ac3e5",
+    "plan_summary": "审查循环保存 webSearchCall/customToolCall",
+    "starter_session_id": "ses_04813b347ffeRf5NxMcjuQclxs",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": false
+  },
+  {
+    "plan_id": "plan_08cb5541-96c3-4d56-9794-aa73b6fb28aa",
+    "plan_summary": "审查 saveBatch 批量插入",
+    "starter_session_id": "ses_04813b347ffeRf5NxMcjuQclxs",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": false
+  },
+  {
+    "plan_id": "plan_5faaf941-0cee-44c5-bbdb-6c37e47b14a2",
+    "plan_summary": "审查 toolCalls 批量插入",
+    "starter_session_id": "ses_04813b347ffeRf5NxMcjuQclxs",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": false
   }
 ]

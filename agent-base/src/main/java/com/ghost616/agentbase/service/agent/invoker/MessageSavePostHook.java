@@ -1,6 +1,7 @@
 package com.ghost616.agentbase.service.agent.invoker;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -59,6 +60,8 @@ public class MessageSavePostHook implements SystemPostHook {
         final StringBuilder contentBuffer = new StringBuilder();
         final StringBuilder reasoningBuffer = new StringBuilder();
         final ConcurrentHashMap<String, ToolAccumulator> toolCallBuffers = new ConcurrentHashMap<>();
+        final List<ChatChunk.WebSearchCall> webSearchCalls = new ArrayList<>();
+        final List<ChatChunk.CustomToolCall> customToolCalls = new ArrayList<>();
     }
 
     private final ConcurrentHashMap<String, SessionBuffer> buffers = new ConcurrentHashMap<>();
@@ -93,11 +96,19 @@ public class MessageSavePostHook implements SystemPostHook {
                                 a.arguments.toString()))
                         .collect(Collectors.toList());
             }
+            List<MessageDataProvider.WebSearchCallData> webSearchCallData = sb.webSearchCalls.isEmpty() ? null
+                    : sb.webSearchCalls.stream().map(this::toWebSearchCallData).collect(Collectors.toList());
+            List<MessageDataProvider.CustomToolCallData> customToolCallData = sb.customToolCalls.isEmpty() ? null
+                    : sb.customToolCalls.stream().map(this::toCustomToolCallData).collect(Collectors.toList());
             UsageInfo usage = chunk.getUsage();
-            log.debug("sessionId={} 保存消息, content={}, reasoning={}, toolCalls数量={}",
+            log.debug("sessionId={} 保存消息, content={}, reasoning={}, toolCalls数量={}, webSearchCall数量={}, customToolCall数量={}",
                     sessionId, content, reasoning,
-                    toolCalls != null ? toolCalls.size() : 0);
-            sessionManager.messageSave().sessionId(sessionId).role("assistant").content(content).reasoning(reasoning).toolCalls(toolCalls).usage(usage).save();
+                    toolCalls != null ? toolCalls.size() : 0,
+                    webSearchCallData != null ? webSearchCallData.size() : 0,
+                    customToolCallData != null ? customToolCallData.size() : 0);
+            sessionManager.messageSave().sessionId(sessionId).role("assistant").content(content).reasoning(reasoning)
+                    .toolCalls(toolCalls).usage(usage).webSearchCall(webSearchCallData)
+                    .customToolCall(customToolCallData).save();
             String lastResponseId = ctx.getLastResponseId();
             if (lastResponseId != null && !lastResponseId.isEmpty()) {
                 contextDataProvider.updateLastResponseId(sessionId, lastResponseId);
@@ -121,7 +132,9 @@ public class MessageSavePostHook implements SystemPostHook {
                             ctx.getHistory().size() + 1,
                             LocalDateTime.now(),
                             historyToolCalls != null ? Collections.unmodifiableList(historyToolCalls) : Collections.emptyList(),
-                            usage));
+                            usage,
+                            sb.webSearchCalls.isEmpty() ? Collections.emptyList() : Collections.unmodifiableList(sb.webSearchCalls),
+                            sb.customToolCalls.isEmpty() ? Collections.emptyList() : Collections.unmodifiableList(sb.customToolCalls)));
             return;
         }
 
@@ -131,6 +144,12 @@ public class MessageSavePostHook implements SystemPostHook {
         }
         if (chunk.getReasoning() != null) {
             sb.reasoningBuffer.append(chunk.getReasoning());
+        }
+        if (chunk.getWebSearchCall() != null) {
+            sb.webSearchCalls.add(chunk.getWebSearchCall());
+        }
+        if (chunk.getCustomToolCall() != null) {
+            sb.customToolCalls.add(chunk.getCustomToolCall());
         }
         List<ToolCallDelta> toolCalls = chunk.getToolCalls();
         if (toolCalls != null) {
@@ -165,5 +184,26 @@ public class MessageSavePostHook implements SystemPostHook {
                 }
             }
         }
+    }
+
+    private MessageDataProvider.WebSearchCallData toWebSearchCallData(ChatChunk.WebSearchCall call) {
+        if (call == null) {
+            return null;
+        }
+        List<MessageDataProvider.WebSearchResultData> results = null;
+        if (call.getResults() != null) {
+            results = call.getResults().stream()
+                    .map(r -> new MessageDataProvider.WebSearchResultData(r.getTitle(), r.getUrl(), r.getSnippet()))
+                    .collect(Collectors.toList());
+        }
+        return new MessageDataProvider.WebSearchCallData(call.getItemId(), call.getOutputIndex(), results);
+    }
+
+    private MessageDataProvider.CustomToolCallData toCustomToolCallData(ChatChunk.CustomToolCall call) {
+        if (call == null) {
+            return null;
+        }
+        return new MessageDataProvider.CustomToolCallData(
+                call.getItemId(), call.getOutputIndex(), call.getInput(), call.getOutput());
     }
 }

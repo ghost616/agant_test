@@ -5,6 +5,9 @@ import com.ghost616.agentbase.dto.model.UsageInfo;
 import com.ghost616.agentbase.exception.BusinessException;
 import com.ghost616.agentbase.service.agent.MessageDataProvider.MessageDTO;
 import com.ghost616.agentbase.service.agent.MessageDataProvider.ToolCallData;
+import com.ghost616.agentbase.service.agent.MessageDataProvider.CustomToolCallData;
+import com.ghost616.agentbase.service.agent.MessageDataProvider.WebSearchCallData;
+import com.ghost616.agentbase.service.agent.MessageDataProvider.WebSearchResultData;
 import com.ghost616.platform.entity.Message;
 import com.ghost616.platform.entity.MessageToolCall;
 import com.ghost616.platform.repository.MessageMapper;
@@ -37,19 +40,22 @@ class DefaultMessageDataProviderTest {
     private MessageToolCallMapper messageToolCallMapper;
 
     @Mock
+    private MessageToolCallService messageToolCallService;
+
+    @Mock
     private SessionMapper sessionMapper;
 
     @Captor
     private ArgumentCaptor<Message> messageCaptor;
 
     @Captor
-    private ArgumentCaptor<MessageToolCall> toolCallCaptor;
+    private ArgumentCaptor<List<MessageToolCall>> batchCaptor;
 
     private DefaultMessageDataProvider provider;
 
     @BeforeEach
     void setUp() {
-        provider = new DefaultMessageDataProvider(messageMapper, messageToolCallMapper, sessionMapper);
+        provider = new DefaultMessageDataProvider(messageMapper, messageToolCallMapper, messageToolCallService, sessionMapper);
     }
 
     @Test
@@ -63,7 +69,7 @@ class DefaultMessageDataProviderTest {
         when(sessionMapper.addTotalTokenUsed(anyLong(), anyLong())).thenReturn(1);
 
         UsageInfo usage = UsageInfo.builder().promptTokens(10).completionTokens(20).totalTokens(30).build();
-        String result = provider.saveMessage("1", "user", "hello", null, null, null, null, usage);
+        String result = provider.saveMessage("1", "user", "hello", null, null, null, null, usage, null, null);
 
         assertEquals("100", result);
         verify(messageMapper).insert(messageCaptor.capture());
@@ -75,6 +81,7 @@ class DefaultMessageDataProviderTest {
         assertNotNull(saved.getTokenUsage());
         assertTrue(saved.getTokenUsage().contains("\"totalTokens\":30"));
         verify(messageToolCallMapper, never()).insert(any(MessageToolCall.class));
+        verify(messageToolCallService, never()).saveBatch(anyList());
         verify(sessionMapper).addTotalTokenUsed(1L, 30L);
     }
 
@@ -92,7 +99,7 @@ class DefaultMessageDataProviderTest {
                 new ToolCallData("tc2", "func2", "{\"key\":\"val\"}")
         );
 
-        provider.saveMessage("1", "assistant", "response", "thinking...", "call-1", null, toolCalls, null);
+        provider.saveMessage("1", "assistant", "response", "thinking...", "call-1", null, toolCalls, null, null, null);
 
         verify(messageMapper).insert(messageCaptor.capture());
         assertEquals("assistant", messageCaptor.getValue().getRole());
@@ -101,13 +108,16 @@ class DefaultMessageDataProviderTest {
         assertEquals("call-1", messageCaptor.getValue().getToolCallId());
         assertNull(messageCaptor.getValue().getTokenUsage());
 
-        verify(messageToolCallMapper, times(2)).insert(toolCallCaptor.capture());
-        List<MessageToolCall> capturedToolCalls = toolCallCaptor.getAllValues();
+        verify(messageToolCallService, times(1)).saveBatch(batchCaptor.capture());
+        List<MessageToolCall> capturedToolCalls = batchCaptor.getValue();
+        assertEquals(2, capturedToolCalls.size());
         assertEquals("tc1", capturedToolCalls.get(0).getToolCallId());
         assertEquals("func1", capturedToolCalls.get(0).getToolCallName());
         assertEquals("{}", capturedToolCalls.get(0).getToolCallArguments());
+        assertEquals("function", capturedToolCalls.get(0).getType());
         assertEquals("tc2", capturedToolCalls.get(1).getToolCallId());
         assertEquals("func2", capturedToolCalls.get(1).getToolCallName());
+        assertEquals("function", capturedToolCalls.get(1).getType());
         verify(sessionMapper, never()).addTotalTokenUsed(anyLong(), anyLong());
     }
 
@@ -122,7 +132,7 @@ class DefaultMessageDataProviderTest {
             return 1;
         });
 
-        provider.saveMessage("1", "user", "next", null, null, null, null, null);
+        provider.saveMessage("1", "user", "next", null, null, null, null, null, null, null);
 
         verify(messageMapper).insert(messageCaptor.capture());
         assertEquals(6, messageCaptor.getValue().getSequenceNum());
@@ -137,10 +147,11 @@ class DefaultMessageDataProviderTest {
             return 1;
         });
 
-        provider.saveMessage("1", "user", "test", null, null, null, null, null);
+        provider.saveMessage("1", "user", "test", null, null, null, null, null, null, null);
 
         verify(messageMapper).insert(any(Message.class));
         verify(messageToolCallMapper, never()).insert(any(MessageToolCall.class));
+        verify(messageToolCallService, never()).saveBatch(anyList());
     }
 
     @Test
@@ -298,7 +309,7 @@ class DefaultMessageDataProviderTest {
         when(sessionMapper.addTotalTokenUsed(anyLong(), anyLong())).thenReturn(1);
 
         UsageInfo usage = UsageInfo.builder().promptTokens(5).completionTokens(15).totalTokens(20).build();
-        provider.saveMessage("1", "assistant", "reply", null, null, null, null, usage);
+        provider.saveMessage("1", "assistant", "reply", null, null, null, null, usage, null, null);
 
         verify(messageMapper).insert(messageCaptor.capture());
         Message saved = messageCaptor.getValue();
@@ -318,7 +329,7 @@ class DefaultMessageDataProviderTest {
             return 1;
         });
 
-        provider.saveMessage("1", "user", "no usage", null, null, null, null, null);
+        provider.saveMessage("1", "user", "no usage", null, null, null, null, null, null, null);
 
         verify(messageMapper).insert(messageCaptor.capture());
         assertNull(messageCaptor.getValue().getTokenUsage());
@@ -336,7 +347,7 @@ class DefaultMessageDataProviderTest {
         when(sessionMapper.addTotalTokenUsed(anyLong(), anyLong())).thenReturn(1);
 
         UsageInfo usage = UsageInfo.builder().promptTokens(8).completionTokens(12).totalTokens(null).build();
-        provider.saveMessage("1", "assistant", "fallback", null, null, null, null, usage);
+        provider.saveMessage("1", "assistant", "fallback", null, null, null, null, usage, null, null);
 
         verify(messageMapper).insert(messageCaptor.capture());
         assertNotNull(messageCaptor.getValue().getTokenUsage());
@@ -353,7 +364,7 @@ class DefaultMessageDataProviderTest {
         });
 
         UsageInfo usage = UsageInfo.builder().promptTokens(null).completionTokens(null).totalTokens(null).build();
-        provider.saveMessage("1", "assistant", "zero", null, null, null, null, usage);
+        provider.saveMessage("1", "assistant", "zero", null, null, null, null, usage, null, null);
 
         verify(messageMapper).insert(messageCaptor.capture());
         assertNotNull(messageCaptor.getValue().getTokenUsage());
@@ -370,7 +381,7 @@ class DefaultMessageDataProviderTest {
         });
 
         UsageInfo usage = UsageInfo.builder().promptTokens(0).completionTokens(0).totalTokens(0).build();
-        provider.saveMessage("1", "assistant", "zero tokens", null, null, null, null, usage);
+        provider.saveMessage("1", "assistant", "zero tokens", null, null, null, null, usage, null, null);
 
         verify(messageMapper).insert(messageCaptor.capture());
         assertNotNull(messageCaptor.getValue().getTokenUsage());
@@ -474,5 +485,259 @@ class DefaultMessageDataProviderTest {
         provider.rollbackToLastUserMessage("10");
 
         verify(sessionMapper, never()).addTotalTokenUsed(anyLong(), anyLong());
+    }
+
+    @Test
+    void saveMessage_有webSearchCall_写入webSearchCall行() {
+        when(messageMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(null);
+        when(messageMapper.insert(any(Message.class))).thenAnswer(invocation -> {
+            Message msg = invocation.getArgument(0);
+            msg.setId(1000L);
+            return 1;
+        });
+
+        List<WebSearchCallData> webSearchCall = Collections.singletonList(
+                new WebSearchCallData("item-1", 0,
+                        Collections.singletonList(new WebSearchResultData("title", "url", "snippet"))));
+
+        provider.saveMessage("1", "assistant", "searching", null, null, null, null, null, webSearchCall, null);
+
+        verify(messageToolCallService, times(1)).saveBatch(batchCaptor.capture());
+        List<MessageToolCall> capturedList = batchCaptor.getValue();
+        assertEquals(1, capturedList.size());
+        MessageToolCall captured = capturedList.get(0);
+        assertEquals("web_search_call", captured.getType());
+        assertNotNull(captured.getWebSearchCall());
+        assertTrue(captured.getWebSearchCall().startsWith("{"));
+        assertTrue(captured.getWebSearchCall().contains("\"itemId\":\"item-1\""));
+        assertTrue(captured.getWebSearchCall().endsWith("}"));
+    }
+
+    @Test
+    void saveMessage_webSearchCall多个元素_每个元素单独写入一行() {
+        when(messageMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(null);
+        when(messageMapper.insert(any(Message.class))).thenAnswer(invocation -> {
+            Message msg = invocation.getArgument(0);
+            msg.setId(1004L);
+            return 1;
+        });
+
+        List<WebSearchCallData> webSearchCall = Arrays.asList(
+                new WebSearchCallData("item-1", 0, Collections.emptyList()),
+                new WebSearchCallData("item-2", 1, Collections.emptyList()));
+
+        provider.saveMessage("1", "assistant", "search", null, null, null, null, null, webSearchCall, null);
+
+        verify(messageToolCallService, times(1)).saveBatch(batchCaptor.capture());
+        List<MessageToolCall> capturedList = batchCaptor.getValue();
+        assertEquals(2, capturedList.size());
+        assertEquals("web_search_call", capturedList.get(0).getType());
+        String json0 = capturedList.get(0).getWebSearchCall();
+        assertNotNull(json0);
+        assertTrue(json0.startsWith("{"));
+        assertTrue(json0.contains("\"itemId\":\"item-1\""));
+        assertFalse(json0.contains("\"itemId\":\"item-2\""));
+        assertEquals("web_search_call", capturedList.get(1).getType());
+        String json1 = capturedList.get(1).getWebSearchCall();
+        assertNotNull(json1);
+        assertTrue(json1.startsWith("{"));
+        assertTrue(json1.contains("\"itemId\":\"item-2\""));
+        assertFalse(json1.contains("\"itemId\":\"item-1\""));
+        assertTrue(json1.endsWith("}"));
+    }
+
+    @Test
+    void saveMessage_有customToolCall_写入customToolCall行() {
+        when(messageMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(null);
+        when(messageMapper.insert(any(Message.class))).thenAnswer(invocation -> {
+            Message msg = invocation.getArgument(0);
+            msg.setId(1001L);
+            return 1;
+        });
+
+        List<CustomToolCallData> customToolCall = Collections.singletonList(
+                new CustomToolCallData("item-2", 1, "{\"a\":1}", "{\"b\":2}"));
+
+        provider.saveMessage("1", "assistant", "custom", null, null, null, null, null, null, customToolCall);
+
+        verify(messageToolCallService, times(1)).saveBatch(batchCaptor.capture());
+        List<MessageToolCall> capturedList = batchCaptor.getValue();
+        assertEquals(1, capturedList.size());
+        MessageToolCall captured = capturedList.get(0);
+        assertEquals("custom_tool_call", captured.getType());
+        assertNotNull(captured.getCustomToolCall());
+        assertTrue(captured.getCustomToolCall().startsWith("{"));
+        assertTrue(captured.getCustomToolCall().contains("\"itemId\":\"item-2\""));
+        assertTrue(captured.getCustomToolCall().endsWith("}"));
+    }
+
+    @Test
+    void saveMessage_toolCall带type_写入type字段() {
+        when(messageMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(null);
+        when(messageMapper.insert(any(Message.class))).thenAnswer(invocation -> {
+            Message msg = invocation.getArgument(0);
+            msg.setId(1002L);
+            return 1;
+        });
+
+        List<ToolCallData> toolCalls = Collections.singletonList(
+                new ToolCallData("tc-x", "func-x", "{}", "web_search_call"));
+        provider.saveMessage("1", "assistant", "resp", null, null, null, toolCalls, null, null, null);
+
+        verify(messageToolCallService, times(1)).saveBatch(batchCaptor.capture());
+        List<MessageToolCall> capturedList = batchCaptor.getValue();
+        assertEquals(1, capturedList.size());
+        assertEquals("web_search_call", capturedList.get(0).getType());
+    }
+
+    @Test
+    void saveMessage_同时有toolCalls和webSearchCall_customToolCall_分别写入对应行() {
+        when(messageMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(null);
+        when(messageMapper.insert(any(Message.class))).thenAnswer(invocation -> {
+            Message msg = invocation.getArgument(0);
+            msg.setId(1003L);
+            return 1;
+        });
+
+        List<ToolCallData> toolCalls = Collections.singletonList(new ToolCallData("tc1", "func1", "{}"));
+        List<WebSearchCallData> webSearchCall = Collections.singletonList(
+                new WebSearchCallData("item-1", 0, Collections.emptyList()));
+        List<CustomToolCallData> customToolCall = Collections.singletonList(
+                new CustomToolCallData("item-2", 1, "in", "out"));
+
+        provider.saveMessage("1", "assistant", "multi", null, null, null, toolCalls, null,
+                webSearchCall, customToolCall);
+
+        verify(messageToolCallService, times(1)).saveBatch(batchCaptor.capture());
+        List<MessageToolCall> captured = batchCaptor.getValue();
+        assertEquals(3, captured.size());
+        assertEquals("function", captured.get(0).getType());
+        assertEquals("tc1", captured.get(0).getToolCallId());
+        assertEquals("web_search_call", captured.get(1).getType());
+        assertNotNull(captured.get(1).getWebSearchCall());
+        assertEquals("custom_tool_call", captured.get(2).getType());
+        assertNotNull(captured.get(2).getCustomToolCall());
+    }
+
+    @Test
+    void getMessages_有webSearchCall和customToolCall_反序列化到DTO() {
+        Message msg = new Message();
+        msg.setId(1L);
+        msg.setSessionId(10L);
+        msg.setRole("assistant");
+        msg.setContent("resp");
+        msg.setSequenceNum(1);
+        msg.setCreateTime(LocalDateTime.now());
+        when(messageMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Collections.singletonList(msg));
+
+        MessageToolCall webMtc1 = new MessageToolCall();
+        webMtc1.setType("web_search_call");
+        webMtc1.setWebSearchCall("{\"itemId\":\"item-1\",\"outputIndex\":0,\"results\":[{\"title\":\"t\",\"url\":\"u\",\"snippet\":\"s\"}]}");
+        MessageToolCall webMtc2 = new MessageToolCall();
+        webMtc2.setType("web_search_call");
+        webMtc2.setWebSearchCall("{\"itemId\":\"item-3\",\"outputIndex\":1,\"results\":[]}");
+        MessageToolCall customMtc = new MessageToolCall();
+        customMtc.setType("custom_tool_call");
+        customMtc.setCustomToolCall("{\"itemId\":\"item-2\",\"outputIndex\":1,\"input\":\"{\\\"a\\\":1}\",\"output\":\"{\\\"b\\\":2}\"}");
+        when(messageToolCallMapper.selectList(any(LambdaQueryWrapper.class)))
+                .thenReturn(Arrays.asList(webMtc1, customMtc, webMtc2));
+
+        List<MessageDTO> result = provider.getMessages("10");
+
+        assertEquals(1, result.size());
+        MessageDTO dto = result.get(0);
+        assertNotNull(dto.webSearchCall());
+        assertEquals(2, dto.webSearchCall().size());
+        assertEquals("item-1", dto.webSearchCall().get(0).itemId());
+        assertEquals(0, dto.webSearchCall().get(0).outputIndex());
+        assertEquals(1, dto.webSearchCall().get(0).results().size());
+        assertEquals("t", dto.webSearchCall().get(0).results().get(0).title());
+        assertEquals("u", dto.webSearchCall().get(0).results().get(0).url());
+        assertEquals("s", dto.webSearchCall().get(0).results().get(0).snippet());
+        assertEquals("item-3", dto.webSearchCall().get(1).itemId());
+        assertEquals(1, dto.webSearchCall().get(1).outputIndex());
+        assertTrue(dto.webSearchCall().get(1).results().isEmpty());
+        assertNotNull(dto.customToolCall());
+        assertEquals(1, dto.customToolCall().size());
+        assertEquals("item-2", dto.customToolCall().get(0).itemId());
+        assertEquals(1, dto.customToolCall().get(0).outputIndex());
+        assertEquals("{\"a\":1}", dto.customToolCall().get(0).input());
+        assertEquals("{\"b\":2}", dto.customToolCall().get(0).output());
+        assertTrue(dto.toolCalls().isEmpty());
+    }
+
+    @Test
+    void getMessages_toolCall带type_返回type() {
+        Message msg = new Message();
+        msg.setId(1L);
+        msg.setSessionId(10L);
+        msg.setRole("assistant");
+        msg.setContent("resp");
+        msg.setSequenceNum(1);
+        msg.setCreateTime(LocalDateTime.now());
+        when(messageMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Collections.singletonList(msg));
+
+        MessageToolCall mtc = new MessageToolCall();
+        mtc.setToolCallId("call-9");
+        mtc.setToolCallName("custom_func");
+        mtc.setToolCallArguments("{}");
+        mtc.setType("custom_tool_call");
+        when(messageToolCallMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Collections.singletonList(mtc));
+
+        List<MessageDTO> result = provider.getMessages("10");
+
+        MessageDTO dto = result.get(0);
+        assertEquals(1, dto.toolCalls().size());
+        assertEquals("call-9", dto.toolCalls().get(0).toolCallId());
+        assertEquals("custom_func", dto.toolCalls().get(0).toolCallName());
+        assertEquals("custom_tool_call", dto.toolCalls().get(0).type());
+        assertNull(dto.webSearchCall());
+        assertNull(dto.customToolCall());
+    }
+
+    @Test
+    void getMessages_webSearchCallJSON无效_返回null不抛异常() {
+        Message msg = new Message();
+        msg.setId(1L);
+        msg.setSessionId(10L);
+        msg.setRole("assistant");
+        msg.setContent("resp");
+        msg.setSequenceNum(1);
+        msg.setCreateTime(LocalDateTime.now());
+        when(messageMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Collections.singletonList(msg));
+
+        MessageToolCall webMtc = new MessageToolCall();
+        webMtc.setType("web_search_call");
+        webMtc.setWebSearchCall("{invalid");
+        when(messageToolCallMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Collections.singletonList(webMtc));
+
+        List<MessageDTO> result = provider.getMessages("10");
+
+        MessageDTO dto = result.get(0);
+        assertNull(dto.webSearchCall());
+        assertTrue(dto.toolCalls().isEmpty());
+    }
+
+    @Test
+    void getMessages_customToolCallJSON无效_返回null不抛异常() {
+        Message msg = new Message();
+        msg.setId(1L);
+        msg.setSessionId(10L);
+        msg.setRole("assistant");
+        msg.setContent("resp");
+        msg.setSequenceNum(1);
+        msg.setCreateTime(LocalDateTime.now());
+        when(messageMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Collections.singletonList(msg));
+
+        MessageToolCall customMtc = new MessageToolCall();
+        customMtc.setType("custom_tool_call");
+        customMtc.setCustomToolCall("{invalid");
+        when(messageToolCallMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Collections.singletonList(customMtc));
+
+        List<MessageDTO> result = provider.getMessages("10");
+
+        MessageDTO dto = result.get(0);
+        assertNull(dto.customToolCall());
+        assertTrue(dto.toolCalls().isEmpty());
     }
 }

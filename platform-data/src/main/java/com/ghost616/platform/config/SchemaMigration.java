@@ -86,7 +86,10 @@ public class SchemaMigration implements ApplicationRunner {
                 new Migration("evaluation", "agent_eval_id", "BIGINT", null),
                 new Migration("evaluation", "agent_id", "BIGINT", null),
                 new Migration("evaluation", "execution_type", "VARCHAR(32)", "'BACKGROUND'"),
-                new Migration("model_config", "request_type", "VARCHAR(32)", null)
+                new Migration("model_config", "request_type", "VARCHAR(32)", null),
+                new Migration("message_tool_call", "type", "VARCHAR(32)", "'function'"),
+                new Migration("message_tool_call", "web_search_call", "TEXT", null),
+                new Migration("message_tool_call", "custom_tool_call", "TEXT", null)
         );
 
         for (Migration migration : migrations) {

@@ -1,5 +1,5 @@
 import type { ApiResponse } from '../types/common';
-import type { Session, CreateSessionParams, SessionMessage } from '../types/session';
+import type { Session, CreateSessionParams, SessionMessage, WebSearchCall } from '../types/session';
 import api from './api';
 
 export async function listSessions(agentId?: string): Promise<Session[]> {
@@ -51,12 +51,15 @@ interface ChatChunk {
   responseId?: string;
   finishReason?: string;
   hasToolCalls?: boolean;
+  webSearchCall?: WebSearchCall[];
+  customToolCall?: Record<string, unknown>;
 }
 
 interface StreamCallbacks {
   onDelta: (text: string) => void;
   onReasoning: (text: string) => void;
   onResponseId?: (id: string) => void;
+  onWebSearchCall?: (calls: WebSearchCall[]) => void;
   onDone: (hasToolCalls: boolean) => void;
   onError: (err: Error) => void;
 }
@@ -114,6 +117,9 @@ async function processSSEStream(
         }
         if (chunk.responseId) {
           callbacks.onResponseId?.(chunk.responseId);
+        }
+        if (chunk.webSearchCall) {
+          callbacks.onWebSearchCall?.(chunk.webSearchCall);
         }
         if (chunk.delta) {
           callbacks.onDelta(chunk.delta);

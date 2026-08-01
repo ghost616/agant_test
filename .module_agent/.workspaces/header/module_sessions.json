@@ -1,21 +1,22 @@
 {
-  "framework": [
-    "ses_115f56b00ffeyZ9wIfiub0TY5N"
-  ],
   "_checked": [
     "ses_0496e6104ffeoFHsmainry20Uz"
   ],
-  "platform-app": [
-    "ses_048609fdbffe08toNwmKTExRi1",
-    "ses_04847c82cffeENduPFpMVLIKH6"
+  "agent-integration": [
+    "ses_044f685a5ffekkaZr5tyOShNVE",
+    "ses_044a80b56ffetmIo6eG9kUqt2y"
   ],
-  "frontend-ui": [
-    "ses_048571c8cffepW2SyL4SafRSo4"
+  "platform-data": [
+    "ses_044c86882ffeTtEDLLTdmS1Ao1"
   ],
   "agent-base": [
-    "ses_048570316ffeUGTpnVVyyv9mq1"
+    "ses_044c82d20ffeYj9ov1LK7Bgoy7"
   ],
-  "agent-integration": [
-    "ses_04847b5a9ffehCrOwp3B978CY2"
+  "frontend-ui": [
+    "ses_044c815d7ffezfsFx1ICs3CoHk"
+  ],
+  "platform-app": [
+    "ses_044a7f5a4ffeyMH1a5FhhbpsK3",
+    "ses_0443ae4e4ffeTBJpQqoq4oCl6Z"
   ]
 }

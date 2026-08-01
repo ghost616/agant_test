@@ -72,7 +72,10 @@ CREATE TABLE IF NOT EXISTS message_tool_call (
     message_id          BIGINT,
     tool_call_id        VARCHAR(100),
     tool_call_name      VARCHAR(100),
-    tool_call_arguments TEXT
+    tool_call_arguments TEXT,
+    type                VARCHAR(32) DEFAULT 'function',
+    web_search_call     TEXT,
+    custom_tool_call    TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_message_tool_call_message_id ON message_tool_call(message_id);
 CREATE INDEX IF NOT EXISTS idx_message_tool_call_tool_call_id ON message_tool_call(tool_call_id);

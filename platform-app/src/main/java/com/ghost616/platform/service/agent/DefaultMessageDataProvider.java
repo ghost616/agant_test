@@ -11,6 +11,8 @@ import com.ghost616.agentbase.dto.model.UsageInfo;
 import com.ghost616.agentbase.service.agent.MessageDataProvider;
 import com.ghost616.agentbase.service.agent.MessageDataProvider.ToolCallData;
 import com.ghost616.agentbase.service.agent.MessageDataProvider.MessageDTO;
+import com.ghost616.agentbase.service.agent.MessageDataProvider.WebSearchCallData;
+import com.ghost616.agentbase.service.agent.MessageDataProvider.CustomToolCallData;
 import com.ghost616.agentbase.util.JsonMapper;
 import com.ghost616.platform.repository.SessionMapper;
 import com.ghost616.platform.util.IdConverter;
@@ -30,12 +32,13 @@ public class DefaultMessageDataProvider implements MessageDataProvider {
 
     private final MessageMapper messageMapper;
     private final MessageToolCallMapper messageToolCallMapper;
+    private final MessageToolCallService messageToolCallService;
     private final SessionMapper sessionMapper;
 
     @Override
     public String saveMessage(String sessionId, String role, String content, String reasoning,
                                String toolCallId, String toolResult, List<ToolCallData> toolCalls,
-                               UsageInfo usage) {
+                               UsageInfo usage, List<WebSearchCallData> webSearchCall, List<CustomToolCallData> customToolCall) {
         Long sid = IdConverter.parse(sessionId);
         Message message = new Message();
         message.setSessionId(sid);
@@ -76,15 +79,44 @@ public class DefaultMessageDataProvider implements MessageDataProvider {
         messageMapper.insert(message);
         Long messageId = message.getId();
 
-        if (toolCalls != null && !toolCalls.isEmpty()) {
+        List<MessageToolCall> batchToolCalls = new ArrayList<>();
+        if (toolCalls != null) {
             for (ToolCallData tc : toolCalls) {
                 MessageToolCall mtc = new MessageToolCall();
                 mtc.setMessageId(messageId);
                 mtc.setToolCallId(tc.toolCallId());
                 mtc.setToolCallName(tc.toolCallName());
                 mtc.setToolCallArguments(tc.toolCallArguments());
-                messageToolCallMapper.insert(mtc);
+                mtc.setType(tc.type());
+                batchToolCalls.add(mtc);
             }
+        }
+        if (webSearchCall != null) {
+            for (WebSearchCallData data : webSearchCall) {
+                String json = toJson(data);
+                if (json != null) {
+                    MessageToolCall mtc = new MessageToolCall();
+                    mtc.setMessageId(messageId);
+                    mtc.setType("web_search_call");
+                    mtc.setWebSearchCall(json);
+                    batchToolCalls.add(mtc);
+                }
+            }
+        }
+        if (customToolCall != null) {
+            for (CustomToolCallData data : customToolCall) {
+                String json = toJson(data);
+                if (json != null) {
+                    MessageToolCall mtc = new MessageToolCall();
+                    mtc.setMessageId(messageId);
+                    mtc.setType("custom_tool_call");
+                    mtc.setCustomToolCall(json);
+                    batchToolCalls.add(mtc);
+                }
+            }
+        }
+        if (!batchToolCalls.isEmpty()) {
+            messageToolCallService.saveBatch(batchToolCalls);
         }
 
         return IdConverter.toString(messageId);
@@ -105,9 +137,34 @@ public class DefaultMessageDataProvider implements MessageDataProvider {
             tcWrapper.eq(MessageToolCall::getMessageId, msg.getId());
             List<MessageToolCall> toolCalls = messageToolCallMapper.selectList(tcWrapper);
 
-            List<ToolCallData> toolCallDataList = toolCalls.stream()
-                    .map(tc -> new ToolCallData(tc.getToolCallId(), tc.getToolCallName(), tc.getToolCallArguments()))
-                    .collect(Collectors.toList());
+            List<ToolCallData> toolCallDataList = new ArrayList<>();
+            List<WebSearchCallData> webSearchCallDataList = null;
+            List<CustomToolCallData> customToolCallDataList = null;
+            for (MessageToolCall tc : toolCalls) {
+                String type = tc.getType() != null ? tc.getType() : "function";
+                String webJson = tc.getWebSearchCall();
+                String customJson = tc.getCustomToolCall();
+                if ("web_search_call".equals(type) && webJson != null && !webJson.isEmpty()) {
+                    WebSearchCallData data = deserializeWebSearchCall(webJson);
+                    if (data != null) {
+                        if (webSearchCallDataList == null) {
+                            webSearchCallDataList = new ArrayList<>();
+                        }
+                        webSearchCallDataList.add(data);
+                    }
+                } else if ("custom_tool_call".equals(type) && customJson != null && !customJson.isEmpty()) {
+                    CustomToolCallData data = deserializeCustomToolCall(customJson);
+                    if (data != null) {
+                        if (customToolCallDataList == null) {
+                            customToolCallDataList = new ArrayList<>();
+                        }
+                        customToolCallDataList.add(data);
+                    }
+                } else {
+                    toolCallDataList.add(new ToolCallData(tc.getToolCallId(), tc.getToolCallName(),
+                            tc.getToolCallArguments(), type));
+                }
+            }
 
             UsageInfo usageInfo = null;
             String tokenUsageStr = msg.getTokenUsage();
@@ -122,7 +179,7 @@ public class DefaultMessageDataProvider implements MessageDataProvider {
                     IdConverter.toString(msg.getId()), IdConverter.toString(msg.getSessionId()), msg.getRole(), msg.getContent(),
                     msg.getReasoning(), msg.getToolCallId(), msg.getSequenceNum(),
                     msg.getCreateTime(), msg.getToolResult(), toolCallDataList, usageInfo,
-                    msg.getRollback()));
+                    msg.getRollback(), webSearchCallDataList, customToolCallDataList));
         }
 
         return result;
@@ -158,5 +215,32 @@ public class DefaultMessageDataProvider implements MessageDataProvider {
         }
 
         return messageMapper.rollbackBySessionIdAndGeSequenceNum(sid, sequenceNum);
+    }
+
+    private String toJson(Object obj) {
+        try {
+            return JsonMapper.MAPPER.writeValueAsString(obj);
+        } catch (Exception e) {
+            log.warn("序列化 webSearchCall/customToolCall 失败", e);
+            return null;
+        }
+    }
+
+    private WebSearchCallData deserializeWebSearchCall(String json) {
+        try {
+            return JsonMapper.MAPPER.readValue(json, WebSearchCallData.class);
+        } catch (Exception e) {
+            log.warn("反序列化 webSearchCall 失败", e);
+            return null;
+        }
+    }
+
+    private CustomToolCallData deserializeCustomToolCall(String json) {
+        try {
+            return JsonMapper.MAPPER.readValue(json, CustomToolCallData.class);
+        } catch (Exception e) {
+            log.warn("反序列化 customToolCall 失败", e);
+            return null;
+        }
     }
 }

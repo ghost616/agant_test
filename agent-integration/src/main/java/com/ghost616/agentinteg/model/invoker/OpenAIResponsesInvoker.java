@@ -183,8 +183,13 @@ public class OpenAIResponsesInvoker implements ModelInvoker {
         if (!input.isEmpty()) {
             body.put("input", input);
         }
+        List<Map<String, Object>> tools = new ArrayList<>();
         if (request.getTools() != null && !request.getTools().isEmpty()) {
-            body.put("tools", buildTools(request.getTools()));
+            tools.addAll(buildTools(request.getTools()));
+        }
+        tools.addAll(buildBuiltinTools(request));
+        if (!tools.isEmpty()) {
+            body.put("tools", tools);
         }
         if (Boolean.TRUE.equals(request.getThinking())) {
             body.put("reasoning", buildReasoning());
@@ -240,6 +245,15 @@ public class OpenAIResponsesInvoker implements ModelInvoker {
             }
             result.add(m);
         }
+        return result;
+    }
+
+    protected List<Map<String, Object>> buildBuiltinTools(ChatRequest request) {
+        List<Map<String, Object>> result = new ArrayList<>();
+        if (request.getBuiltinTools() == null || request.getBuiltinTools().isEmpty()) {
+            return result;
+        }
+        result.addAll(request.getBuiltinTools());
         return result;
     }
 
@@ -343,6 +357,41 @@ public class OpenAIResponsesInvoker implements ModelInvoker {
                         builder.hasToolCalls(true);
                     }
                 }
+                case "response.reasoning_text.delta" -> {
+                    String delta = root.path("delta").asText(null);
+                    if (delta != null) {
+                        builder.reasoning(delta);
+                    }
+                }
+                case "response.custom_tool_call.in_progress",
+                        "response.custom_tool_call.done" -> {
+                    ChatChunk.CustomToolCall.CustomToolCallBuilder customToolCallBuilder =
+                            ChatChunk.CustomToolCall.builder()
+                                    .itemId(root.path("item_id").asText(null));
+                    if (root.has("output_index")) {
+                        customToolCallBuilder.outputIndex(root.get("output_index").asInt());
+                    }
+                    JsonNode inputNode = root.get("input");
+                    if (inputNode != null && !inputNode.isNull()) {
+                        customToolCallBuilder.input(inputNode.isValueNode()
+                                ? inputNode.asText() : inputNode.toString());
+                    }
+                    builder.customToolCall(customToolCallBuilder.build());
+                }
+                case "response.web_search_call.in_progress",
+                        "response.web_search_call.searching",
+                        "response.web_search_call.completed" -> {
+                    ChatChunk.WebSearchCall.WebSearchCallBuilder webSearchBuilder =
+                            ChatChunk.WebSearchCall.builder()
+                                    .itemId(root.path("item_id").asText(null));
+                    if (root.has("output_index")) {
+                        webSearchBuilder.outputIndex(root.get("output_index").asInt());
+                    }
+                    if ("response.web_search_call.completed".equals(type)) {
+                        webSearchBuilder.results(parseWebSearchResults(root));
+                    }
+                    builder.webSearchCall(webSearchBuilder.build());
+                }
                 case "response.completed" -> {
                     JsonNode responseNode = root.get("response");
                     if (responseNode != null) {
@@ -374,6 +423,21 @@ public class OpenAIResponsesInvoker implements ModelInvoker {
             log.error("Failed to parse Responses stream event", e);
             return Flux.empty();
         }
+    }
+
+    private List<ChatChunk.WebSearchCall.WebSearchResult> parseWebSearchResults(JsonNode root) {
+        List<ChatChunk.WebSearchCall.WebSearchResult> results = new ArrayList<>();
+        JsonNode resultsNode = root.get("results");
+        if (resultsNode != null && resultsNode.isArray()) {
+            for (JsonNode item : resultsNode) {
+                results.add(ChatChunk.WebSearchCall.WebSearchResult.builder()
+                        .title(item.path("name").asText(null))
+                        .url(item.path("url").asText(null))
+                        .snippet(item.path("description").asText(null))
+                        .build());
+            }
+        }
+        return results;
     }
 
     private String mapFinishReason(String status) {

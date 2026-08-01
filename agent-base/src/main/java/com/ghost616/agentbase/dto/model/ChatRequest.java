@@ -1,6 +1,7 @@
 package com.ghost616.agentbase.dto.model;
 
 import java.util.List;
+import java.util.Map;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -39,4 +40,7 @@ public class ChatRequest {
 
     /** 系统级指令（Responses API 下存放 system prompt 与动态技能提示词） */
     private String instructions;
+
+    /** 内置工具列表（如 web_search），每项为工具配置键值对 */
+    private List<Map<String, Object>> builtinTools;
 }

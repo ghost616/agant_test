@@ -120,3 +120,9 @@ platform-app 模块包含以下功能：
 - EvaluationResultGenerateService 生成评估结果后，调用同一模型从评估结果文本中提取最终评分数字（构建 prompt 要求仅返回数字），将提取的 finalScore 和 Evaluation.modelId 写入 EvaluationResult
 - EvaluationServiceImpl.toResultDTO 映射 EvaluationResult 的 modelId 和 finalScore 字段到 DTO
 - 评估结果删除增强：EvaluationService 新增 batchDeleteResults（@Transactional，循环调用 deleteResult 级联清理 session/message/messageToolCall/sessionVariable/sessionTool/sessionSkill）与 clearResults（按 evaluationId 查询全部 resultId 后批量删除）；EvaluationController 新增 POST /api/evaluations/results/batch-delete（@RequestBody List<Long> 批量删除）和 DELETE /api/evaluations/{evaluationId}/results（清空该评估所有结果）
+## 会话管理
+
+- DefaultContextDataProvider 实现 ContextDataProvider.updateLastResponseId（更新 session 表 last_response_id）并在 loadAgentContext 的所有 AgentContextData 构造中透传 session.getLastResponseId()
+- 已删除 DefaultSessionDataProvider（SessionDataProvider 接口已从 agent-base 移除，lastResponseId 持久化能力迁移至 ContextDataProvider）
+- AgentContextDTO 新增 lastResponseId 字段；AgentContextController 在 getContext 中映射 ctx.getLastResponseId()
+- 新增 GET /api/context/{sessionId}/basic 轻量接口，返回 AgentContextBasicDTO（sessionId/agentId/modelId/lastResponseId/parentSessionId）

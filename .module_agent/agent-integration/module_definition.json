@@ -75,11 +75,11 @@
     },
     {
       "path": "agent-integration/src/main/java/com/ghost616/agentinteg/model/invoker/OpenAIResponsesInvoker.java",
-      "description": "OpenAI Responses API 模型调用器，实现 ModelInvoker 接口，使用 /v1/responses 端点。同步 invoke 使用 instructions+input 请求格式并解析 output 数组；流式 invokeStream 解析 SSE 事件（output_text.delta/function_call_arguments.delta/completed）；verify 使用 GET /v1/models；toToolDefinition 与 OpenAIInvoker 一致"
+      "description": "OpenAI Responses API 模型调用器，实现 ModelInvoker 接口，使用 /v1/responses 端点。同步 invoke 使用 instructions+input 请求格式并解析 output 数组；流式 invokeStream 解析 SSE 事件（output_text.delta/function_call_arguments.delta/reasoning_text.delta/custom_tool_call/web_search_call/completed）；verify 使用 GET /v1/models；toToolDefinition 与 OpenAIInvoker 一致；buildRequestBody 在自定义工具之后合并 buildBuiltinTools()（当前为 web_search 内置工具）到 tools 数组"
     },
     {
       "path": "agent-integration/src/test/java/com/ghost616/agentinteg/model/invoker/OpenAIResponsesInvokerTest.java",
-      "description": "OpenAIResponsesInvoker 单元测试，覆盖 parseResponse（content/function_call/usage/responseId/finishReason）、buildRequestBody（instructions+input 格式、工具转换）、parseStreamEvent（三种 SSE 事件）、toToolDefinition 以及 DefaultModelInvokerFactory 对 OPENAI+responses 的分支判断"
+      "description": "OpenAIResponsesInvoker 单元测试，覆盖 parseResponse（content/function_call/usage/responseId/finishReason）、buildRequestBody（instructions+input 格式、工具转换、内置工具 web_search 合并）、parseStreamEvent（output_text.delta/function_call_arguments.delta/reasoning_text.delta/custom_tool_call/web_search_call/completed 事件）、toToolDefinition 以及 DefaultModelInvokerFactory 对 OPENAI+responses 的分支判断"
     },
     {
       "path": "agent-integration/src/main/java/com/ghost616/agentinteg/model/invoker/DeepSeekResponsesInvoker.java",

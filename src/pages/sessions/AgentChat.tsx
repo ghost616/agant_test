@@ -28,7 +28,7 @@ import {
 } from '../../services/session';
 import { executeBrowserTool } from '../../services/toolExecutor';
 import { listModels } from '../../services/model';
-import type { Session, SessionMessage } from '../../types/session';
+import type { Session, SessionMessage, WebSearchCall } from '../../types/session';
 import type { ModelConfig } from '../../types/model';
 
 type MessageRole = 'user' | 'assistant' | 'tool' | 'system';
@@ -38,6 +38,7 @@ interface ChatMessage {
   content: string;
   reasoning?: string;
   toolResult?: string;
+  webSearchCall?: WebSearchCall[];
 }
 
 const ROLE_CONFIG: Record<MessageRole, { label: string; icon: JSX.Element; color: string }> = {
@@ -85,6 +86,7 @@ function AgentChat(): JSX.Element {
   const [historyLoading, setHistoryLoading] = useState(true);
   const [currentResponse, setCurrentResponse] = useState('');
   const [currentReasoning, setCurrentReasoning] = useState('');
+  const [currentWebSearchCall, setCurrentWebSearchCall] = useState<WebSearchCall[]>([]);
   const [thinking, setThinking] = useState(false);
   const [modelId, setModelId] = useState<string | undefined>(undefined);
   const [modelList, setModelList] = useState<ModelConfig[]>([]);
@@ -92,6 +94,7 @@ function AgentChat(): JSX.Element {
   const abortRef = useRef<AbortController | null>(null);
   const toolAbortRef = useRef(false);
   const hasResponseRef = useRef(false);
+  const webSearchCallRef = useRef<WebSearchCall[]>([]);
   const calledRef = useRef(false);
   const responseIdRef = useRef<string | null>(null);
   const executeToolLoopRef = useRef<() => Promise<void>>();
@@ -157,6 +160,7 @@ function AgentChat(): JSX.Element {
           content,
           reasoning: msg.reasoning || undefined,
           toolResult: msg.toolResult || undefined,
+          webSearchCall: msg.webSearchCall || undefined,
         };
       });
       setMessages(mapped);
@@ -200,6 +204,7 @@ function AgentChat(): JSX.Element {
           content,
           reasoning: msg.reasoning || undefined,
           toolResult: msg.toolResult || undefined,
+          webSearchCall: msg.webSearchCall || undefined,
         };
       });
       setViewingChildMessages(mapped);
@@ -557,7 +562,9 @@ function AgentChat(): JSX.Element {
       setToolExecuting(false);
       setCurrentResponse('');
       setCurrentReasoning('');
+      setCurrentWebSearchCall([]);
       hasResponseRef.current = false;
+      webSearchCallRef.current = [];
       abortRef.current = continueChatStream(
         sessionId,
         {
@@ -569,6 +576,10 @@ function AgentChat(): JSX.Element {
             hasResponseRef.current = true;
             setCurrentReasoning((prev) => prev + text);
           },
+          onWebSearchCall: (calls: WebSearchCall[]) => {
+            webSearchCallRef.current = calls;
+            setCurrentWebSearchCall(calls);
+          },
           onDone: (hasMoreTools) => {
             setCurrentResponse((prev) => {
               setCurrentReasoning((reasoning) => {
@@ -579,6 +590,7 @@ function AgentChat(): JSX.Element {
                       role: 'assistant',
                       content: prev,
                       reasoning: reasoning || undefined,
+                      webSearchCall: webSearchCallRef.current.length ? webSearchCallRef.current : undefined,
                     },
                   ]);
                 }
@@ -709,7 +721,9 @@ function AgentChat(): JSX.Element {
     setToolExecuting(false);
     setCurrentResponse('');
     setCurrentReasoning('');
+    setCurrentWebSearchCall([]);
     hasResponseRef.current = false;
+    webSearchCallRef.current = [];
     toolAbortRef.current = false;
 
     abortRef.current = agentChatStream(
@@ -726,6 +740,10 @@ function AgentChat(): JSX.Element {
         onResponseId: (id: string) => {
           responseIdRef.current = id;
         },
+        onWebSearchCall: (calls: WebSearchCall[]) => {
+          webSearchCallRef.current = calls;
+          setCurrentWebSearchCall(calls);
+        },
         onDone: (hasToolCalls: boolean) => {
           setCurrentResponse((prev) => {
             setCurrentReasoning((reasoning) => {
@@ -736,6 +754,7 @@ function AgentChat(): JSX.Element {
                     role: 'assistant',
                     content: prev,
                     reasoning: reasoning || undefined,
+                    webSearchCall: webSearchCallRef.current.length ? webSearchCallRef.current : undefined,
                   },
                 ]);
               }
@@ -806,6 +825,41 @@ function AgentChat(): JSX.Element {
     </div>
   );
 
+  const renderWebSearchCall = (calls: WebSearchCall[]): JSX.Element => (
+    <div
+      style={{
+        background: '#1e3a4f',
+        borderLeft: '3px solid #569cd6',
+        borderRadius: 4,
+        padding: '8px 12px',
+        marginBottom: 8,
+      }}
+    >
+      <Typography.Text style={{ color: '#9cdcfe', fontSize: 12, marginBottom: 4, display: 'block' }}>
+        搜索结果
+      </Typography.Text>
+      {calls.map((call, ci) => (
+        <div key={ci}>
+          {call.results.map((r, i) => (
+            <div key={i} style={{ marginBottom: 6 }}>
+              <a
+                href={r.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: '#569cd6', fontSize: 13 }}
+              >
+                {r.title}
+              </a>
+              <div style={{ color: '#aaa', fontSize: 12, lineHeight: 1.6, marginTop: 2 }}>
+                {r.snippet}
+              </div>
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+
   const renderMessage = (msg: ChatMessage, idx: number): JSX.Element => {
     const isUser = msg.role === 'user';
     return (
@@ -820,6 +874,7 @@ function AgentChat(): JSX.Element {
         <div style={{ maxWidth: '75%' }}>
           {renderRoleHeader(msg.role)}
           {msg.reasoning && renderReasoning(msg.reasoning)}
+          {msg.webSearchCall && msg.webSearchCall.length > 0 && renderWebSearchCall(msg.webSearchCall)}
           {msg.content.trim() && (
             <div style={BUBBLE_STYLES[msg.role]} className="agent-chat-markdown">
               <div style={{ color: '#d4d4d4', fontSize: 14, lineHeight: 1.8 }}>
@@ -942,6 +997,7 @@ function AgentChat(): JSX.Element {
             <div style={{ maxWidth: '75%' }}>
               {renderRoleHeader('assistant')}
               {currentReasoning && renderReasoning(currentReasoning)}
+              {currentWebSearchCall.length > 0 && renderWebSearchCall(currentWebSearchCall)}
               {currentResponse ? (
                 <div style={BUBBLE_STYLES.assistant} className="agent-chat-markdown">
                   <div style={{ color: '#d4d4d4', fontSize: 14, lineHeight: 1.8 }}>

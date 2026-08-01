@@ -131,10 +131,10 @@ class ChatServiceResponsesTest {
         List<AgentExecutionContext.HistoryEntry> history = new ArrayList<>();
         history.add(new AgentExecutionContext.HistoryEntry(
                 "system", "历史遗留系统消息", null, null, 1, java.time.LocalDateTime.now(),
-                List.of(), null));
+                List.of(), null, null, null));
         history.add(new AgentExecutionContext.HistoryEntry(
                 "user", "你好", null, null, 2, java.time.LocalDateTime.now(),
-                List.of(), null));
+                List.of(), null, null, null));
 
         TestHarness harness = new TestHarness("sys_prompt", List.of(), List.of(), null, history);
         when(systemToolManager.getToolDefinitions()).thenReturn(List.of());
@@ -263,15 +263,15 @@ class ChatServiceResponsesTest {
     void responses_有状态input仅从最后一个user到末尾() {
         List<AgentExecutionContext.HistoryEntry> history = new ArrayList<>();
         history.add(new AgentExecutionContext.HistoryEntry(
-                "user", "q1", null, null, 1, java.time.LocalDateTime.now(), List.of(), null));
+                "user", "q1", null, null, 1, java.time.LocalDateTime.now(), List.of(), null, null, null));
         history.add(new AgentExecutionContext.HistoryEntry(
-                "assistant", "a1", null, null, 2, java.time.LocalDateTime.now(), List.of(), null));
+                "assistant", "a1", null, null, 2, java.time.LocalDateTime.now(), List.of(), null, null, null));
         history.add(new AgentExecutionContext.HistoryEntry(
-                "user", "q2", null, null, 3, java.time.LocalDateTime.now(), List.of(), null));
+                "user", "q2", null, null, 3, java.time.LocalDateTime.now(), List.of(), null, null, null));
         history.add(new AgentExecutionContext.HistoryEntry(
-                "assistant", "a2", null, null, 4, java.time.LocalDateTime.now(), List.of(), null));
+                "assistant", "a2", null, null, 4, java.time.LocalDateTime.now(), List.of(), null, null, null));
         history.add(new AgentExecutionContext.HistoryEntry(
-                "tool", "r2", null, "tc1", 5, java.time.LocalDateTime.now(), List.of(), null));
+                "tool", "r2", null, "tc1", 5, java.time.LocalDateTime.now(), List.of(), null, null, null));
 
         TestHarness harness = new TestHarness("sys_prompt", List.of(), List.of(), null, history);
         when(systemToolManager.getToolDefinitions()).thenReturn(List.of());
@@ -329,11 +329,11 @@ class ChatServiceResponsesTest {
     void responsesStateless_全量input无previousResponseId() {
         List<AgentExecutionContext.HistoryEntry> history = new ArrayList<>();
         history.add(new AgentExecutionContext.HistoryEntry(
-                "system", "历史遗留系统消息", null, null, 1, java.time.LocalDateTime.now(), List.of(), null));
+                "system", "历史遗留系统消息", null, null, 1, java.time.LocalDateTime.now(), List.of(), null, null, null));
         history.add(new AgentExecutionContext.HistoryEntry(
-                "user", "q1", null, null, 2, java.time.LocalDateTime.now(), List.of(), null));
+                "user", "q1", null, null, 2, java.time.LocalDateTime.now(), List.of(), null, null, null));
         history.add(new AgentExecutionContext.HistoryEntry(
-                "assistant", "a1", null, null, 3, java.time.LocalDateTime.now(), List.of(), null));
+                "assistant", "a1", null, null, 3, java.time.LocalDateTime.now(), List.of(), null, null, null));
 
         TestHarness harness = new TestHarness("sys_prompt", List.of(), List.of(), null, history);
         when(systemToolManager.getToolDefinitions()).thenReturn(List.of());

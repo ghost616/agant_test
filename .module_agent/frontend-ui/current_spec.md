@@ -92,79 +92,10 @@
 - 表格列中 tools/skills 显示为 Tag 标签，颜色区分 sessionAuth 类型（blue/green/orange）
 ## 会话管理界面
 
-- 会话列表页面 `/sessions`，支持会话列表展示、新建会话、删除会话、继续会话
-- Table 列：标题、智能体名称、模型名称、创建时间、操作（继续会话 Button + 删除 Popconfirm）
-- 新建会话 Modal：选择智能体（Select，仅已启用）、选择模型（Select，仅已启用）、标题（可选 Input）
-- 创建成功后自动跳转 /sessions/:id/chat
-- 继续会话按钮跳转 /sessions/:id/chat
-- 删除使用 Popconfirm 确认
-- 智能体对话页面 `/sessions/:id/chat`：多轮对话，流式接收 AI 回复
-- 复用模型测试页布局：深色背景消息展示区 (#1e1e1e)、Input.TextArea 输入、Enter 发送 Shift+Enter 换行
-- 使用 react-markdown + remark-gfm 渲染回复，推理内容以金色边框区域展示
-- agentChatStream API：基于 fetch + ReadableStream 的 SSE 流式封装，调用 POST /api/chat，回调 onDelta/onReasoning/onDone/onError
-- 路由 /sessions 和 /sessions/:id/chat 已注册，侧边栏"会话管理"菜单项（MessageOutlined 图标）
-- API 服务封装：listSessions、createSession、deleteSession、agentChatStream
-- 对话页面加载时从后端 GET /api/sessions/${sessionId}/messages 获取历史消息并展示
-- 历史消息加载中显示 Spin 提示
-- 消息角色区分布局：user 消息居右（flex-end），assistant/tool/system 消息居左（flex-start）
-- 每种角色有专属图标和颜色标签：user(UserOutlined/#569cd6)、assistant(RobotOutlined/#4ec9b0)、tool(ToolOutlined/#d7ba7d)、system(InfoCircleOutlined/#9cdcfe)
-- 消息气泡样式：user 蓝色系(#1a3a5c)、assistant 深色(#2a2a2a)、tool 灰色(#3a3a3a)、system 深蓝(#2d3748)，最大宽度 75%
-- ChatMessage 接口 role 扩展为 'user' | 'assistant' | 'tool' | 'system'
-- 流式回复使用相同的居左+图标布局，保留推理内容金色边框样式
-- 新增 SessionMessage/ToolCallData 类型定义、getSessionMessages API 函数
-- 历史消息加载使用 calledRef 防止 StrictMode 重复调用
-- BUBBLE_STYLES 常量移除所有角色的 maxWidth 属性，避免与外层 wrapper 的 maxWidth: '75%' 双层叠加导致短消息气泡被额外压缩、文字异常换行
-
-- agentChatStream API 的 ChatChunk 接口新增 hasToolCalls 布尔字段
-- onDone 回调签名改为 `(hasToolCalls: boolean) => void`
-- SSE 解析循环中 `finishReason === 'stop'` 时将 `chunk.hasToolCalls` 传递给 onDone
-- 新增 executeTools(sessionId) API：POST /api/chat/{sessionId}/execute-tools，返回 { status, toolId, toolName, arguments, hasMore }
-- 新增 getToolStatus(sessionId) API：GET /api/chat/{sessionId}/tool-status，返回 { status, toolId, toolName, arguments, result?, hasMore? }
-- 新增 continueChatStream(sessionId, callbacks) API：POST /api/chat/{sessionId}/continue，返回 SSE 流，callbacks 结构与 agentChatStream 一致（含 hasToolCalls）
-- 对话页面集成工具调用流程：onDone 检测 hasToolCalls→executeTools 获取工具→轮询 getToolStatus（1s 间隔）→done 时以 role="tool" 气泡展示调用信息与结果→hasMore 继续下一工具→全部完成调用 continueChatStream 流式续接
-- 工具执行期间显示独立加载状态（"正在执行工具调用..."），区别于普通 SSE 流等待
-- 支持 AbortController 中止工具执行循环（toolAbortRef）
-
-- agentChatStream 与 continueChatStream 共同的 SSE 解析逻辑抽取为 processSSEStream 内部函数
-- ExecuteToolsResult 接口中 toolId/toolName/arguments 标记为可选字段
-- executeToolLoop 中 executeTools 返回 status='empty' 时跳过工具消息和 continueChat（直接终止等待）
-- pollToolStatus 移除 status==='completed' 死代码分支，新增 status==='idle' 分支继续轮询
-- continueChatStream 的 onDone 递归调用加 MAX_TOOL_LOOPS=10 保护，超过上限终止并提示
-- 每次新发送消息或工具流程正常结束时重置 toolLoopCount
-- AgentChat.tsx 流式数据为空不显示：handleSend 和 executeToolLoop 中 onDone 回调添加 content 非空检查（prev && prev.trim()），为空则跳过不添加 assistant 消息
-- 工具执行气泡补充 arguments 参数显示：工具开始执行气泡 content 加入 JSON 格式参数；工具完成/失败气泡同样补充参数显示
-- SessionMessage 接口新增 toolName 可选字段，历史消息加载映射时保留该字段
-- tool 角色消息渲染时在角色头下方显示工具名称（toolName），为空时显示空字符串
-- loadHistory 中历史消息映射：当 msg.role === 'tool' 且 msg.toolName 非空时，将 "**工具: {toolName}**\n\n" 拼接到 msg.content 前面，使历史工具消息的 toolName 像流式消息一样嵌入 content 中显示
-- SessionMessage 接口：toolName 字段替换为 toolResult（String，可选），存储工具执行结果的 JSON
-- ChatMessage 接口：toolName 替换为 toolResult
-- loadHistory 历史消息映射：tool 角色且 toolResult 非空时，解析 toolResult JSON 获取 toolName/arguments/result，格式化为完整工具执行结果 markdown 作为 content（替代之前仅拼接 toolName 前缀的逻辑）
-- 新增 rollbackSession API（POST /api/sessions/{sessionId}/rollback），用于后端回退会话
-- AgentChat 页面：loadHistory 从 useEffect 匿名函数提取为独立 useCallback 函数，供回滚按钮复用
-- AgentChat 页面底部按钮区新增"回滚"按钮：先调用 rollbackSession 触发后端回退，成功后调用 loadHistory 刷新消息列表；loading/toolExecuting 时按钮禁用
-- stopChat(sessionId): 调用 POST /api/chat/${sessionId}/stop 通知后端停止 AI 回复
-- 点击停止按钮时先调用 stopChat 通知后端（fire-and-forget，忽略错误），再中止本地 AbortController 请求
-- getToolStatus API 签名改为 (sessionId, toolId)，URL 添加 toolId 查询参数
-- pollToolStatus 增加 toolId 参数并传递给 getToolStatus
-- executeToolLoop 调用 pollToolStatus 时传入 execResult.toolId
-
-- Session 类型新增 parentSessionId（string?）、isChild（boolean?）字段
-- session 服务新增 listChildSessions(parentId) 方法，调用 GET /api/sessions/{id}/children
-- AgentChat 页面顶部添加 Tabs 组件，包含「主会话」和「子会话列表」两个 Tab
-- 「子会话列表」Tab：首次进入时调用 listChildSessions 加载子会话，以 Table 展示（标题、描述、创建时间），每条显示「查看会话」按钮
-- 点击「查看会话」：加载该子会话历史消息，只读展示消息列表，底部显示「返回子会话列表」按钮，不显示输入框/模型选择器/思考模式开关
-- 子会话列表为空时显示空状态提示「暂无子会话」
-- 新增子会话回调工具 `_sys_callback_sub_session` 支持：前端在 executeToolLoop 中检测该工具名，驱动独立子会话流程
-- session.ts 新增 SubSessionData 类型、getSubSessionData API（GET /sessions/{id}/sub-session-data）、completeSubSession API（POST /sessions/{id}/complete-sub-session）
-- AgentChat.tsx 在工具执行循环中识别 `_sys_callback_sub_session`，通过 Modal 打开独立子会话对话展示框（独立状态/流式渲染/工具执行循环），完成后调用 completeSubSession 解除后端阻塞并继续主会话
-- 子会话列表区域新增刷新按钮（ReloadOutlined），点击后调用 loadChildSessions 刷新子会话数据，加载中显示 loading 状态
-- ExecuteToolsResult 和 ToolStatusResult 接口新增 needsSubSessionFlow 可选字段
-- pollToolStatus 中检测 status.needsSubSessionFlow 时调用 handleSubSessionFlow 启动子会话流程后继续轮询
-- executeToolLoop 移除 _sys_callback_sub_session 硬编码检测，所有工具统一走显示工具消息 + pollToolStatus 流程
-- handleSubSessionFlow 在子会话完成后继续调用 pollToolStatus 正确轮询工具结果
-- handleSubSessionFlow 中 completeSubSession 后自动调用 setSubSessionModalVisible(false)，子会话完成时弹窗自动关闭
-- Session 接口新增 totalTokenUsed?: number 字段，跟踪 Token 消耗
-- 会话列表表格新增「Token 消耗」列，使用 toLocaleString() 格式化数字，空值显示 '-'
+- Web 搜索结果显示：ChatChunk 新增 webSearchCall 字段（WebSearchCall[] 数组，每项 { itemId, outputIndex, results: [{ title, url, snippet }] }）和 customToolCall 字段，StreamCallbacks 新增 onWebSearchCall 回调（(calls: WebSearchCall[]) => void），processSSEStream 解析 chunk.webSearchCall 数组并回调
+- SessionMessage 新增 webSearchCall 可选字段（WebSearchCall[] 数组），存储持久化的搜索结果引用
+- AgentChat 实时对话：handleSend 与 executeToolLoop continueChatStream 的流回调接收 onWebSearchCall，通过 currentWebSearchCall 数组状态在消息区域遍历展示多个搜索结果引用（标题链接+摘要），onDone 时将 webSearchCall 数组附加到 assistant 消息
+- AgentChat 历史消息加载：loadHistory/loadChildMessages 从 SessionMessage.webSearchCall 数组映射渲染已持久化的多个搜索结果引用
 ## 技能管理界面
 
 - 技能配置管理页面 `/skills`，支持技能列表展示、搜索筛选、新增/编辑/删除/启用禁用

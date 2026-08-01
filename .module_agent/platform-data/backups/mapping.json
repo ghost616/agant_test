@@ -6,5 +6,6 @@
   "platform-data/src/main/java/com/ghost616/platform/config/SchemaMigration.java": "9939b961cd1507607a587ab23bc5daac",
   "platform-data/src/main/java/com/ghost616/platform/entity/Evaluation.java": "561f8a7bec1f4dda2e7607219e9c40d8",
   "platform-data/src/main/java/com/ghost616/platform/entity/EvaluationResult.java": "a77897cf44256bef862a5772e0751fc7",
-  "platform-data/src/main/java/com/ghost616/platform/entity/ModelConfig.java": "c67f159a7fe4ce7590bc7e306d7f6f91"
+  "platform-data/src/main/java/com/ghost616/platform/entity/ModelConfig.java": "c67f159a7fe4ce7590bc7e306d7f6f91",
+  "platform-data/src/main/java/com/ghost616/platform/entity/MessageToolCall.java": "67ea2594b62abb502d8a03c99e84095b"
 }

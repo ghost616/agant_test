@@ -98,7 +98,7 @@ public class ChatService {
                     context.getHistory().size() + 1,
                     LocalDateTime.now(),
                     Collections.emptyList(),
-                    null);
+                    null, null, null);
             contextMutator.addHistoryEntry(userEntry);
         }
 

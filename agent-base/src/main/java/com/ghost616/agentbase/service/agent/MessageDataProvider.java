@@ -9,18 +9,31 @@ public interface MessageDataProvider {
 
     String saveMessage(String sessionId, String role, String content, String reasoning,
                        String toolCallId, String toolResult, List<ToolCallData> toolCalls,
-                       UsageInfo usage);
+                       UsageInfo usage, List<WebSearchCallData> webSearchCall, List<CustomToolCallData> customToolCall);
 
     List<MessageDTO> getMessages(String sessionId);
 
     int rollbackToLastUserMessage(String sessionId);
 
-    record ToolCallData(String toolCallId, String toolCallName, String toolCallArguments) {
+    record ToolCallData(String toolCallId, String toolCallName, String toolCallArguments, String type) {
+
+        public ToolCallData(String toolCallId, String toolCallName, String toolCallArguments) {
+            this(toolCallId, toolCallName, toolCallArguments, "function");
+        }
+    }
+
+    record WebSearchCallData(String itemId, Integer outputIndex, List<WebSearchResultData> results) {
+    }
+
+    record WebSearchResultData(String title, String url, String snippet) {
+    }
+
+    record CustomToolCallData(String itemId, Integer outputIndex, String input, String output) {
     }
 
     record MessageDTO(String id, String sessionId, String role, String content, String reasoning,
                       String toolCallId, Integer sequenceNum, LocalDateTime createTime,
                       String toolResult, List<ToolCallData> toolCalls, UsageInfo usage,
-                      Boolean rollback) {
+                      Boolean rollback, List<WebSearchCallData> webSearchCall, List<CustomToolCallData> customToolCall) {
     }
 }

@@ -3,11 +3,11 @@
   "files": [
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultMessageDataProvider.java",
-      "description": "默认消息数据提供者实现，负责消息的持久化存储、查询和软回滚，实现 agent-base 的 MessageDataProvider 接口"
+      "description": "默认消息数据提供者实现，负责消息的持久化存储、查询和软回滚，实现 agent-base 的 MessageDataProvider 接口。saveMessage 将三种类型的工具调用统一构建进一个 List<MessageToolCall>：function 工具调用行（读 toolCallId/toolCallName/toolCallArguments/type）、webSearchCall 行（type=web_search_call，web_search_call 列存单条 WebSearchCallData 的 JSON）、customToolCall 行（type=custom_tool_call，custom_tool_call 列存单条 CustomToolCallData 的 JSON），合并后通过注入的 MessageToolCallService.saveBatch 一次批量插入，减少数据库交互次数；getMessages 从 MessageToolCall 表读取各行，按 type 分类反序列化：web_search_call 行聚合为 List<WebSearchCallData>、custom_tool_call 行聚合为 List<CustomToolCallData> 填充 MessageDTO，其余行按普通工具调用处理（读 type 构建 ToolCallData）；提供 rollbackToLastUserMessage 软回滚能力"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultContextDataProvider.java",
-      "description": "ContextDataProvider 接口的默认实现。使用 MyBatis-Plus Mapper 从数据库查询会话、智能体配置、变量、技能、工具等数据组装 AgentContextData。提供会话变量增删、子会话创建功能。loadAgentContext 根据 isChild 分支处理：子会话从父会话继承 recentMessageCount 并填充 parentSessionId；普通会话查询子会话列表填充 childSessions。createChildSession 创建子会话时校验父会话/模型/工具/技能存在性，创建子会话并写入 SessionTool/SessionSkill 关联记录（含 sessionAuth 授权类型）。"
+      "description": "上下文数据提供者实现（ContextDataProvider），注入多个 Mapper 执行 DB 操作。loadAgentContext 加载会话上下文并填充 lastResponseId 字段；updateLastResponseId 更新会话的最近一次响应 ID；提供会话变量增删改查、子会话创建、getLatestMessages/getLatestSessionVariables/getLatestConversationVariables/getLatestChildSessions 方法。"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/controller/SessionController.java",
@@ -23,7 +23,7 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/config/AgentContextConfiguration.java",
-      "description": "Agent 上下文 Spring 配置类，声明 SystemToolProvider、DefaultChatDataProvider、ModelInvokerFactory、DefaultToolExecutionProvider、AgentAssembler、SessionManager、AgentContextManager、ToolManager、ModelInvokerManager、ChatService、ToolExecutionService 的 @Bean。内部组件由 agent-integration 的 Build 类创建后暴露。ChatService 通过 Build 内部调用 initHooks() 初始化钩子系统。agentAssembler 方法第 9 个参数传入 null（原 CustomToolInvokerProvider 已移除）。"
+      "description": "Agent 上下文 Spring 配置类，声明 SystemToolProvider、DefaultChatDataProvider、ModelInvokerFactory、DefaultToolExecutionProvider、AgentAssembler、SessionManager、AgentContextManager、ToolManager、ModelInvokerManager、ChatService、ToolExecutionService 的 @Bean。"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/ChatService.java",
@@ -115,11 +115,11 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/dto/AgentContextDTO.java",
-      "description": "AgentExecutionContext 上下文数据传输对象，包含 sessionId/agentId/systemPrompt/modelId/parentSessionId/recentMessageCount/history/tools/skills/projectDir/sessionVariables/conversationVariables 字段及 HistoryEntryDTO 内部类"
+      "description": "AgentExecutionContext 上下文数据传输对象，包含 sessionId/agentId/systemPrompt/modelId/parentSessionId/recentMessageCount/history/tools/skills/projectDir/lastResponseId/sessionVariables/conversationVariables 字段及 HistoryEntryDTO 内部类"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/controller/AgentContextController.java",
-      "description": "上下文 REST 控制器，提供 GET /api/context/{sessionId} 获取 AgentExecutionContext 内容、POST /api/context/{sessionId}/session-variable 和 POST /api/context/{sessionId}/conversation-variable 写入上下文变量的 HTTP API"
+      "description": "上下文 REST 控制器，提供 GET /api/context/{sessionId} 获取 AgentExecutionContext 内容、GET /api/context/{sessionId}/basic 获取会话基础信息（sessionId/agentId/modelId/lastResponseId/parentSessionId）、POST /api/context/{sessionId}/session-variable 和 POST /api/context/{sessionId}/conversation-variable 写入上下文变量的 HTTP API。注入 AgentContextManager 和 SessionMapper。"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/controller/BrowserToolController.java",
@@ -244,6 +244,18 @@
     {
       "path": "platform-app/src/test/java/com/ghost616/platform/service/model/ModelConfigServiceImplRequestTypeTest.java",
       "description": "ModelConfigServiceImpl requestType 字段单元测试：覆盖 create 持久化与映射、update 非空更新/空值保留、getById 映射，均使用 RequestType 枚举常量（RESPONSES.getCode()）断言"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/dto/AgentContextBasicDTO.java",
+      "description": "上下文基础信息轻量 DTO，包含 sessionId/agentId/modelId/lastResponseId/parentSessionId 基本字段，用于 /api/context/{sessionId}/basic 接口"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/MessageToolCallService.java",
+      "description": "MessageToolCall 服务接口（扩展 MyBatis-Plus IService<MessageToolCall>），提供 saveBatch 批量插入能力，供 DefaultMessageDataProvider 批量持久化 webSearchCall/customToolCall 数据行"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/MessageToolCallServiceImpl.java",
+      "description": "MessageToolCall 服务实现（@Service，继承 ServiceImpl<MessageToolCallMapper, MessageToolCall> 并实现 MessageToolCallService 接口），承载 MyBatis-Plus saveBatch 批量插入逻辑，减少逐条 insert 的数据库交互"
     }
   ]
 }
