@@ -18,16 +18,16 @@
     "plan_completed": true
   },
   {
-    "plan_id": "plan_452dfe7b-be16-493a-bf2a-13a2a4a378b6",
-    "plan_summary": "agent-base：新增 getBuiltinTools 方法（ToolDataProvider/ToolManager/ChatService）",
+    "plan_id": "plan_ec902960-8a93-4d05-85ae-f579f7384b69",
+    "plan_summary": "platform-app：DefaultToolDataProvider 支持 KIMI web_search 内置工具",
     "starter_session_id": "ses_04402b052ffeDiisK9kokhgigG",
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
   },
   {
-    "plan_id": "plan_fafd5c56-ce82-4b40-a509-6127623d5857",
-    "plan_summary": "platform-app：DefaultToolDataProvider 实现 getBuiltinTools",
+    "plan_id": "plan_50a71f09-1002-4d90-a104-3b94874cfacd",
+    "plan_summary": "agent-integration：KimiInvoker 合并 builtinTools 到请求体",
     "starter_session_id": "ses_04402b052ffeDiisK9kokhgigG",
     "code_reviewed": true,
     "plan_completed": true,

@@ -249,5 +249,58 @@ class DefaultToolDataProviderTest {
             assertTrue(result.isEmpty());
             verify(modelConfigMapper, never()).selectById(any());
         }
+
+        @Test
+        @DisplayName("KIMI + requestType 为 null 返回 builtin_function")
+        void kimiNullRequestType_shouldReturnBuiltinFunction() {
+            when(modelConfigMapper.selectById(4L))
+                    .thenReturn(createModelConfig(PlatformType.KIMI, null));
+
+            List<Map<String, Object>> result = provider.getBuiltinTools("4");
+
+            assertEquals(1, result.size());
+            assertEquals("builtin_function", result.get(0).get("type"));
+            assertEquals("$web_search",
+                    ((Map<?, ?>) result.get(0).get("function")).get("name"));
+        }
+
+        @Test
+        @DisplayName("KIMI + requestType 为空字符串返回 builtin_function")
+        void kimiEmptyRequestType_shouldReturnBuiltinFunction() {
+            when(modelConfigMapper.selectById(4L))
+                    .thenReturn(createModelConfig(PlatformType.KIMI, ""));
+
+            List<Map<String, Object>> result = provider.getBuiltinTools("4");
+
+            assertEquals(1, result.size());
+            assertEquals("builtin_function", result.get(0).get("type"));
+            assertEquals("$web_search",
+                    ((Map<?, ?>) result.get(0).get("function")).get("name"));
+        }
+
+        @Test
+        @DisplayName("KIMI + requestType 为 completions 返回 builtin_function")
+        void kimiCompletions_shouldReturnBuiltinFunction() {
+            when(modelConfigMapper.selectById(4L))
+                    .thenReturn(createModelConfig(PlatformType.KIMI, RequestType.COMPLETIONS.getCode()));
+
+            List<Map<String, Object>> result = provider.getBuiltinTools("4");
+
+            assertEquals(1, result.size());
+            assertEquals("builtin_function", result.get(0).get("type"));
+            assertEquals("$web_search",
+                    ((Map<?, ?>) result.get(0).get("function")).get("name"));
+        }
+
+        @Test
+        @DisplayName("KIMI + responses 返回空列表")
+        void kimiResponses_shouldReturnEmpty() {
+            when(modelConfigMapper.selectById(4L))
+                    .thenReturn(createModelConfig(PlatformType.KIMI, RequestType.RESPONSES.getCode()));
+
+            List<Map<String, Object>> result = provider.getBuiltinTools("4");
+
+            assertTrue(result.isEmpty());
+        }
     }
 }

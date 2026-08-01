@@ -1,5 +1,7 @@
 package com.ghost616.agentinteg.model.invoker;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.web.client.RestClient;
@@ -31,6 +33,16 @@ public class KimiInvoker extends OpenAIInvoker {
             if (Boolean.TRUE.equals(request.getThinking())) {
                 body.put("reasoning_effort", "max");
             }
+        }
+        List<Map<String, Object>> builtinTools = request.getBuiltinTools();
+        if (builtinTools != null && !builtinTools.isEmpty()) {
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> tools = (List<Map<String, Object>>) body.get("tools");
+            if (tools == null) {
+                tools = new ArrayList<>();
+                body.put("tools", tools);
+            }
+            tools.addAll(builtinTools);
         }
         return body;
     }

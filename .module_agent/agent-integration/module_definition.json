@@ -100,6 +100,10 @@
     {
       "path": "agent-integration/src/main/java/com/ghost616/agentinteg/model/invoker/CustomResponsesInvoker.java",
       "description": "自定义平台 Responses API 模型调用器，继承 OpenAIResponsesInvoker，无额外覆写"
+    },
+    {
+      "path": "agent-integration/src/test/java/com/ghost616/agentinteg/model/invoker/KimiInvokerTest.java",
+      "description": "KimiInvoker 单元测试，覆盖 buildRequestBody 内置工具合并逻辑：builtinTools 为 null/空时不新增 tools key、仅有内置工具时新建 tools key、自定义工具与内置工具并存时 addAll 合并、多个内置工具全部追加"
     }
   ]
 }

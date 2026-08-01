@@ -165,6 +165,13 @@ public class DefaultToolDataProvider implements ToolDataProvider {
         if (isOpenaiOrDeepseek && RequestType.isResponses(requestType)) {
             return List.of(Map.of("type", "web_search"));
         }
+        boolean isKimiDefault = requestType == null || requestType.isEmpty()
+                || RequestType.COMPLETIONS.getCode().equals(requestType);
+        if (platformType == PlatformType.KIMI && isKimiDefault) {
+            return List.of(Map.of(
+                    "type", "builtin_function",
+                    "function", Map.of("name", "$web_search")));
+        }
         return List.of();
     }
 
