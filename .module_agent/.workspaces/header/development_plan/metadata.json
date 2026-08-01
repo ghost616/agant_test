@@ -18,19 +18,19 @@
     "plan_completed": true
   },
   {
-    "plan_id": "plan_ec902960-8a93-4d05-85ae-f579f7384b69",
-    "plan_summary": "platform-app：DefaultToolDataProvider 支持 KIMI web_search 内置工具",
-    "starter_session_id": "ses_04402b052ffeDiisK9kokhgigG",
+    "plan_id": "plan_f015b5ad-1fb4-4cc9-bdc5-c84a561d8500",
+    "plan_summary": "审查 BuiltinToolInvoker + $前缀工具执行",
+    "starter_session_id": "ses_04813b347ffeRf5NxMcjuQclxs",
     "code_reviewed": true,
     "plan_completed": true,
-    "test_passed": true
+    "test_passed": false
   },
   {
-    "plan_id": "plan_50a71f09-1002-4d90-a104-3b94874cfacd",
-    "plan_summary": "agent-integration：KimiInvoker 合并 builtinTools 到请求体",
-    "starter_session_id": "ses_04402b052ffeDiisK9kokhgigG",
+    "plan_id": "plan_78150ae2-f805-4278-a791-361f1f7ff833",
+    "plan_summary": "审查 ChatCompletions builtinTools",
+    "starter_session_id": "ses_04813b347ffeRf5NxMcjuQclxs",
     "code_reviewed": true,
     "plan_completed": true,
-    "test_passed": true
+    "test_passed": false
   }
 ]

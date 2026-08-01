@@ -160,6 +160,7 @@ public class ChatService {
                         .messages(messages)
                         .tools(tools)
                         .thinking(request.getThinking())
+                        .builtinTools(toolManager.getBuiltinTools(configData.id()))
                         .build();
 
         Flux<ChatChunk> stream = invoker.invokeStream(chatRequest);

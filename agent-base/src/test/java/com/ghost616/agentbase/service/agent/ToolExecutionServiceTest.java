@@ -4,6 +4,7 @@ import com.ghost616.agentbase.core.AgentComponentRegistry;
 import com.ghost616.agentbase.dto.chat.ChatRequest;
 import com.ghost616.agentbase.dto.model.ChatChunk;
 import com.ghost616.agentbase.enums.HookPhase;
+import com.ghost616.agentbase.service.agent.invoker.BuiltinToolInvoker;
 import com.ghost616.agentbase.service.agent.invoker.HookData;
 import com.ghost616.agentbase.service.agent.invoker.HookManager;
 import com.ghost616.agentbase.service.agent.invoker.SystemTool;
@@ -198,6 +199,50 @@ class ToolExecutionServiceTest {
 
         assertFalse(result.hasMore());
         assertEquals("executing", result.status());
+    }
+
+    @Test
+    void executeTool_工具名以_$开头且invoker为null时使用BuiltinToolInvoker透传arguments() {
+        MessageDataProvider.ToolCallData peekData = new MessageDataProvider.ToolCallData("tid$1", "$builtinTool", "{\"key\":\"val\"}");
+        when(toolCallQueueManager.peek(sessionId)).thenReturn(peekData);
+        when(toolManager.getInvoker(sessionId, "$builtinTool")).thenReturn(null);
+
+        MessageDataProvider.ToolCallData pollData = new MessageDataProvider.ToolCallData("tid$1", "$builtinTool", "{\"key\":\"val\"}");
+        when(toolCallQueueManager.poll(sessionId)).thenReturn(pollData);
+        when(toolCallQueueManager.hasPending(sessionId)).thenReturn(false);
+        AgentContextManager.AgentSessionContext sessionCtx = mock(AgentContextManager.AgentSessionContext.class);
+        AgentExecutionContext context = mock(AgentExecutionContext.class);
+        when(sessionCtx.context()).thenReturn(context);
+        when(context.isStopped()).thenReturn(false);
+        when(agentContextManager.get(sessionId)).thenReturn(sessionCtx);
+
+        when(toolManager.execute(any(ToolInvoker.class), eq(context), eq("{\"key\":\"val\"}"))).thenAnswer(inv -> inv.getArgument(2));
+
+        ToolExecutionService.ToolExecutionResult result = toolExecutionService.executeTool(sessionId);
+
+        assertEquals("executing", result.status());
+        assertEquals("tid$1", result.toolId());
+        assertEquals("$builtinTool", result.toolName());
+        assertEquals("{\"key\":\"val\"}", result.arguments());
+        assertFalse(result.hasMore());
+
+        verify(toolManager, timeout(2000)).execute(any(BuiltinToolInvoker.class), eq(context), eq("{\"key\":\"val\"}"));
+        verify(toolExecutionTracker, timeout(2000)).setDone(eq(sessionId), eq("tid$1"), eq("{\"key\":\"val\"}"));
+    }
+
+    @Test
+    void executeTool_非_$前缀且invoker为null时写入工具调用器不存在错误() {
+        MessageDataProvider.ToolCallData peekData = new MessageDataProvider.ToolCallData("tidErr", "unknownTool", "{}");
+        when(toolCallQueueManager.peek(sessionId)).thenReturn(peekData);
+        when(toolManager.getInvoker(sessionId, "unknownTool")).thenReturn(null);
+        when(toolCallQueueManager.poll(sessionId)).thenReturn(peekData);
+        when(toolCallQueueManager.hasPending(sessionId)).thenReturn(false);
+
+        ToolExecutionService.ToolExecutionResult result = toolExecutionService.executeTool(sessionId);
+
+        assertEquals("executing", result.status());
+        verify(toolExecutionTracker).setDone(eq(sessionId), eq("tidErr"), eq("{\"status\":\"error\",\"errMsg\":\"工具调用器不存在\"}"));
+        verify(toolManager, never()).execute(any(), any(), any());
     }
 
     @Test

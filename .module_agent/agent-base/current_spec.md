@@ -67,6 +67,7 @@ chatViaResponsesStateless()（无状态）：不传 previousResponseId，input �
 
 两条 responses 流程均将 system prompt 与动态技能提示词拼入 ChatRequest.instructions 字段，input 不含 system role。三路流程共用 buildContextSystemInfo（构建技能/子会话 system 消息及 filteredLoadedSkills）、buildToolDefinitions（工具列表构建）、buildInstructions、buildMessageFromEntry、buildFullMessages/buildIncrementalMessages、filterAndFold、toSseStream（流式 SSE + HOOK 拦截 + 捕获 chunk.responseId 写入 context.lastResponseId）。foldMessageGroups 按 recentMessageCount 折叠历史消息（支持无 system 前缀输入）。
 新增 ToolManager toolManager 字段，ensureInitialized 中从 registry.getToolManager() 懒加载。chatViaResponses/chatViaResponsesStateless 构建模型 ChatRequest 前调用 toolManager.getBuiltinTools(configData.id()) 并设置 .builtinTools(...)，为 Responses 系列请求携带模型内置工具配置。
+chatViaChatCompletions 构建模型 ChatRequest 时同样调用 toolManager.getBuiltinTools(configData.id()) 并设置 .builtinTools(...)，与 Responses 系列流程保持一致。
 ## ChatDataProvider
 
 聊天数据提供者接口（com.ghost616.agentbase.service.agent.ChatDataProvider），定义四个方法：getModelConfig(String modelId) 按 ID 获取 ModelConfigData、updateSessionModelId(String sessionId, String modelId) 更新会话的模型 ID、getHooks() 获取所有已注册的 HookInvoker、getHooks(String sessionId) 按会话 ID 获取对应的 HookInvoker 列表。用于解耦 ChatService 与具体数据访问层。
@@ -222,3 +223,10 @@ SessionDataProvider（com.ghost616.agentbase.service.agent.SessionDataProvider�
 - updateLastResponseId(String sessionId, String lastResponseId)：更新会话最近一次模型响应 ID（Responses API 有状态续接时作为 previousResponseId）
 - getLastResponseId(String sessionId)：查询会话最近一次响应 ID，无则返回 null
 - updateSessionThinking(String sessionId, Boolean thinking)：更新会话思考模式开关
+## 内置工具执行
+
+## 内置工具执行
+
+支持模型侧内置工具（如 $web_search 等以 $ 前缀标记的工具名）的透传执行。BuiltinToolInvoker（com.ghost616.agentbase.service.agent.invoker）实现 ToolInvoker 接口，execute(ctx, arguments) 直接返回 arguments 字符串，不做实际执行逻辑。
+
+ToolExecutionService.executeTool 在 invoker==null 分支新增判断：当 peekToolCallName 以 "$" 开头时，使用 new BuiltinToolInvoker() 作为调用器，不再返回"工具调用器不存在"错误。

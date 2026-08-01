@@ -5,6 +5,7 @@ import com.ghost616.agentbase.dto.chat.ChatRequest;
 import com.ghost616.agentbase.util.JsonMapper;
 import com.ghost616.agentbase.dto.model.ChatChunk;
 import com.ghost616.agentbase.enums.HookPhase;
+import com.ghost616.agentbase.service.agent.invoker.BuiltinToolInvoker;
 import com.ghost616.agentbase.service.agent.invoker.HookData;
 import com.ghost616.agentbase.service.agent.invoker.HookManager;
 import com.ghost616.agentbase.service.agent.invoker.SystemToolManager;
@@ -90,13 +91,17 @@ public class ToolExecutionService {
         }
 
         if (invoker == null) {
-            toolCallQueueManager.poll(sessionId);
-            boolean hasMore = toolCallQueueManager.hasPending(sessionId);
-            String errorResult = "{\"status\":\"error\",\"errMsg\":\"工具调用器不存在\"}";
-            toolExecutionTracker.setExecuting(sessionId, peekData.toolCallId(), peekToolCallName, peekData.toolCallArguments(), hasMore);
-            toolExecutionTracker.setDone(sessionId, peekData.toolCallId(), errorResult);
-            return new ToolExecutionResult("executing", peekData.toolCallId(), peekToolCallName,
-                    peekData.toolCallArguments(), hasMore, null);
+            if (peekToolCallName.startsWith("$")) {
+                invoker = new BuiltinToolInvoker();
+            } else {
+                toolCallQueueManager.poll(sessionId);
+                boolean hasMore = toolCallQueueManager.hasPending(sessionId);
+                String errorResult = "{\"status\":\"error\",\"errMsg\":\"工具调用器不存在\"}";
+                toolExecutionTracker.setExecuting(sessionId, peekData.toolCallId(), peekToolCallName, peekData.toolCallArguments(), hasMore);
+                toolExecutionTracker.setDone(sessionId, peekData.toolCallId(), errorResult);
+                return new ToolExecutionResult("executing", peekData.toolCallId(), peekToolCallName,
+                        peekData.toolCallArguments(), hasMore, null);
+            }
         }
 
         MessageDataProvider.ToolCallData toolCall = toolCallQueueManager.poll(sessionId);

@@ -364,6 +364,18 @@
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/dto/model/CustomToolCall.java",
       "description": "自定义工具调用独立 DTO 类（com.ghost616.agentbase.dto.model），字段 itemId/outputIndex/input/output。由原 ChatChunk 静态内部类抽取为独立类，供 ChatChunk.customToolCall、AgentExecutionContext.HistoryEntry、MessageSavePostHook、AgentContextManager 引用。"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/BuiltinToolInvoker.java",
+      "description": "内置工具调用器，实现 ToolInvoker 接口。execute 方法直接返回 arguments 字符串，用于处理以 $ 前缀标记的内置工具调用（如模型侧内置工具 web_search 等），不做任何实际执行逻辑。"
+    },
+    {
+      "path": "agent-base/src/test/java/com/ghost616/agentbase/service/agent/invoker/BuiltinToolInvokerTest.java",
+      "description": "BuiltinToolInvoker 单元测试，覆盖 execute 直接透传 arguments、null 与空串边界、任意字符串原样返回共 4 个用例。"
+    },
+    {
+      "path": "agent-base/src/test/java/com/ghost616/agentbase/service/agent/ToolExecutionServiceTest.java",
+      "description": "ToolExecutionService 单元测试，覆盖 executeTool 工具调用执行全流程，含工具名以 $ 开头 invoker==null 时使用 BuiltinToolInvoker 透传 arguments、非 $ 前缀仍走错误分支等用例。"
     }
   ]
 }
