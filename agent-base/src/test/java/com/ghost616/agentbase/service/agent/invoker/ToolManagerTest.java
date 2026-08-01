@@ -16,6 +16,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -55,6 +56,19 @@ class ToolManagerTest {
     void expandMcpTools返回类型应为List_McpExpandedToolDTO() throws Exception {
         Method method = ToolManager.class.getDeclaredMethod("expandMcpTools", ToolConfigDTO.class);
         assertEquals(List.class, method.getReturnType());
+    }
+
+    @Test
+    void getBuiltinTools应委托dataProvider并传入modelId() {
+        List<Map<String, Object>> expected = List.of(Map.of("type", "web_search", "name", "web_search"));
+        when(dataProvider.getBuiltinTools("m1")).thenReturn(expected);
+
+        List<Map<String, Object>> result = toolManager.getBuiltinTools("m1");
+
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertEquals("web_search", result.get(0).get("name"));
+        verify(dataProvider).getBuiltinTools("m1");
     }
 
     @Test

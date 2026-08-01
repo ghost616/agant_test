@@ -7,6 +7,7 @@ import com.ghost616.agentbase.enums.HookPhase;
 import com.ghost616.agentbase.service.agent.invoker.HookData;
 import com.ghost616.agentbase.service.agent.invoker.HookManager;
 import com.ghost616.agentbase.service.agent.invoker.SystemToolManager;
+import com.ghost616.agentbase.service.agent.invoker.ToolManager;
 import com.ghost616.agentbase.service.model.invoker.ModelInvoker;
 import com.ghost616.agentbase.service.model.invoker.ModelInvokerManager;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,6 +34,8 @@ class ChatServiceTest {
     @Mock
     private SystemToolManager systemToolManager;
     @Mock
+    private ToolManager toolManager;
+    @Mock
     private ChatDataProvider chatDataProvider;
     @Mock
     private HookManager hookManager;
@@ -57,6 +60,7 @@ class ChatServiceTest {
         registry.setSessionManager(sessionManager);
         registry.setModelInvokerManager(modelInvokerManager);
         registry.setSystemToolManager(systemToolManager);
+        registry.setToolManager(toolManager);
         registry.setChatDataProvider(chatDataProvider);
         registry.setHookManager(hookManager);
         chatService = new ChatService(registry);

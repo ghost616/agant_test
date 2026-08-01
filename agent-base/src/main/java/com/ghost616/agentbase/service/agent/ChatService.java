@@ -37,6 +37,7 @@ import com.ghost616.agentbase.exception.BusinessException;
 import com.ghost616.agentbase.service.agent.invoker.HistoryQuerySystemTool;
 import com.ghost616.agentbase.service.agent.invoker.LoadSkillsSystemTool;
 import com.ghost616.agentbase.service.agent.invoker.SystemToolManager;
+import com.ghost616.agentbase.service.agent.invoker.ToolManager;
 import com.ghost616.agentbase.dto.model.ModelConfigData;
 import com.ghost616.agentbase.service.model.invoker.ModelInvoker;
 
@@ -50,6 +51,7 @@ public class ChatService {
     private SessionManager sessionManager;
     private ModelInvokerManager modelInvokerManager;
     private SystemToolManager systemToolManager;
+    private ToolManager toolManager;
     private ChatDataProvider chatDataProvider;
 
     private HookManager hookManager;
@@ -67,6 +69,7 @@ public class ChatService {
                     sessionManager = registry.getSessionManager();
                     modelInvokerManager = registry.getModelInvokerManager();
                     systemToolManager = registry.getSystemToolManager();
+                    toolManager = registry.getToolManager();
                     chatDataProvider = registry.getChatDataProvider();
                     hookManager = registry.getHookManager();
                     initialized = true;
@@ -193,6 +196,7 @@ public class ChatService {
                         .previousResponseId(previousResponseId)
                         .tools(tools)
                         .thinking(request.getThinking())
+                        .builtinTools(toolManager.getBuiltinTools(configData.id()))
                         .build();
 
         Flux<ChatChunk> stream = invoker.invokeStream(chatRequest);
@@ -224,6 +228,7 @@ public class ChatService {
                         .instructions(instructions)
                         .tools(tools)
                         .thinking(request.getThinking())
+                        .builtinTools(toolManager.getBuiltinTools(configData.id()))
                         .build();
 
         Flux<ChatChunk> stream = invoker.invokeStream(chatRequest);

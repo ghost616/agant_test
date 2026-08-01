@@ -2,13 +2,17 @@ package com.ghost616.platform.service.agent;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
+import com.ghost616.agentbase.enums.RequestType;
 import com.ghost616.agentbase.enums.SessionAuthType;
+import com.ghost616.agentinteg.model.PlatformType;
 import com.ghost616.platform.entity.AgentSkill;
+import com.ghost616.platform.entity.ModelConfig;
 import com.ghost616.platform.entity.Session;
 import com.ghost616.platform.entity.SessionSkill;
 import com.ghost616.platform.entity.SessionTool;
 import com.ghost616.platform.entity.SkillTool;
 import com.ghost616.platform.repository.AgentSkillMapper;
+import com.ghost616.platform.repository.ModelConfigMapper;
 import com.ghost616.platform.repository.SessionMapper;
 import com.ghost616.platform.repository.SessionSkillMapper;
 import com.ghost616.platform.repository.SessionToolMapper;
@@ -45,6 +49,7 @@ public class DefaultToolDataProvider implements ToolDataProvider {
     private final SessionSkillMapper sessionSkillMapper;
     private final ToolConfigService toolConfigService;
     private final BrowserToolCallback browserToolCallback;
+    private final ModelConfigMapper modelConfigMapper;
 
     @Override
     public List<SessionToolInfo> getSessionToolIds(String sessionId) {
@@ -142,6 +147,25 @@ public class DefaultToolDataProvider implements ToolDataProvider {
                     return new SkillToolInfo(IdConverter.toString(as.getSkillId()), as.getSessionAuth(), toolIds);
                 })
                 .toList();
+    }
+
+    @Override
+    public List<Map<String, Object>> getBuiltinTools(String modelId) {
+        Long mid = IdConverter.parse(modelId);
+        if (mid == null) {
+            return List.of();
+        }
+        ModelConfig modelConfig = modelConfigMapper.selectById(mid);
+        if (modelConfig == null) {
+            return List.of();
+        }
+        PlatformType platformType = modelConfig.getPlatformType();
+        String requestType = modelConfig.getRequestType();
+        boolean isOpenaiOrDeepseek = platformType == PlatformType.OPENAI || platformType == PlatformType.DEEPSEEK;
+        if (isOpenaiOrDeepseek && RequestType.isResponses(requestType)) {
+            return List.of(Map.of("type", "web_search"));
+        }
+        return List.of();
     }
 
 }

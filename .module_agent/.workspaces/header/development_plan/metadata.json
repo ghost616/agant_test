@@ -18,16 +18,16 @@
     "plan_completed": true
   },
   {
-    "plan_id": "plan_34505997-2967-4215-85ef-e9b7c03e9611",
-    "plan_summary": "agent-base：抽取 WebSearchCall/CustomToolCall 为独立类并更新引用",
+    "plan_id": "plan_452dfe7b-be16-493a-bf2a-13a2a4a378b6",
+    "plan_summary": "agent-base：新增 getBuiltinTools 方法（ToolDataProvider/ToolManager/ChatService）",
     "starter_session_id": "ses_04402b052ffeDiisK9kokhgigG",
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
   },
   {
-    "plan_id": "plan_538fdd1e-e00c-44fe-8e8c-09426cc7ce2f",
-    "plan_summary": "agent-integration：OpenAIResponsesInvoker 引用新的独立 WebSearchCall/CustomToolCall 类",
+    "plan_id": "plan_fafd5c56-ce82-4b40-a509-6127623d5857",
+    "plan_summary": "platform-app：DefaultToolDataProvider 实现 getBuiltinTools",
     "starter_session_id": "ses_04402b052ffeDiisK9kokhgigG",
     "code_reviewed": true,
     "plan_completed": true,

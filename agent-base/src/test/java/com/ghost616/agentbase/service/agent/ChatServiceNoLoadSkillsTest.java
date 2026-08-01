@@ -8,6 +8,7 @@ import com.ghost616.agentbase.dto.skill.SkillConfigDTO;
 import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
 import com.ghost616.agentbase.service.agent.invoker.HookManager;
 import com.ghost616.agentbase.service.agent.invoker.SystemToolManager;
+import com.ghost616.agentbase.service.agent.invoker.ToolManager;
 import com.ghost616.agentbase.service.model.invoker.ModelInvoker;
 import com.ghost616.agentbase.service.model.invoker.ModelInvokerManager;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,6 +45,8 @@ class ChatServiceNoLoadSkillsTest {
     @Mock
     private SystemToolManager systemToolManager;
     @Mock
+    private ToolManager toolManager;
+    @Mock
     private ModelInvoker modelInvoker;
     @Mock
     private SessionManager.MessageSaveBuilder msgBuilder;
@@ -68,6 +71,7 @@ class ChatServiceNoLoadSkillsTest {
         registry.setSessionManager(sessionManager);
         registry.setModelInvokerManager(modelInvokerManager);
         registry.setSystemToolManager(systemToolManager);
+        registry.setToolManager(toolManager);
         registry.setChatDataProvider(chatDataProvider);
         registry.setHookManager(hookManager);
         chatService = new ChatService(registry);

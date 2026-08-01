@@ -10,6 +10,8 @@ getSessionTools 父会话 CHILD 副本修正：当 info.sessionAuth()==ALL 时�
 createInvoker 方法新增 CUSTOM 分支：当 toolConfig.getToolType() 为 CUSTOM 时，从 AgentComponentRegistry 获取 CustomToolInvokerProvider 调用 getInvoker(toolConfig) 创建调用器；若 provider 为 null 则抛出 UnsupportedOperationException。
 
 createInvoker 方法 CUSTOM 分支：当 toolConfig.getToolType() 为 CUSTOM 时，从 dataProvider.getCustomInvoker(toolConfig) 获取 CustomToolInvoker 创建调用器；若返回 null 则抛出 UnsupportedOperationException。
+新增 public List<Map<String, Object>> getBuiltinTools(String modelId) 方法：ensureInitialized 后委托 dataProvider.getBuiltinTools(modelId) 返回内置工具列表，供 ChatService 在 Responses 系列流程构建模型请求时使用。
+
 ## ToolCallQueueManager
 
 构造函数改为接收 AgentComponentRegistry，移除内部 ConcurrentHashMap。通过 registry.getToolExecutionProvider() 获取 ToolExecutionProvider，enqueue/poll/peek/hasPending/clear 五个队列方法全部委派给 provider，public API 签名不变。
@@ -64,6 +66,7 @@ chatViaResponses()（有状态）：previousResponseId 优先取自会话上下�
 chatViaResponsesStateless()（无状态）：不传 previousResponseId，input 传全量历史 messages（不含 system role），与 chat completions 全量一致。
 
 两条 responses 流程均将 system prompt 与动态技能提示词拼入 ChatRequest.instructions 字段，input 不含 system role。三路流程共用 buildContextSystemInfo（构建技能/子会话 system 消息及 filteredLoadedSkills）、buildToolDefinitions（工具列表构建）、buildInstructions、buildMessageFromEntry、buildFullMessages/buildIncrementalMessages、filterAndFold、toSseStream（流式 SSE + HOOK 拦截 + 捕获 chunk.responseId 写入 context.lastResponseId）。foldMessageGroups 按 recentMessageCount 折叠历史消息（支持无 system 前缀输入）。
+新增 ToolManager toolManager 字段，ensureInitialized 中从 registry.getToolManager() 懒加载。chatViaResponses/chatViaResponsesStateless 构建模型 ChatRequest 前调用 toolManager.getBuiltinTools(configData.id()) 并设置 .builtinTools(...)，为 Responses 系列请求携带模型内置工具配置。
 ## ChatDataProvider
 
 聊天数据提供者接口（com.ghost616.agentbase.service.agent.ChatDataProvider），定义四个方法：getModelConfig(String modelId) 按 ID 获取 ModelConfigData、updateSessionModelId(String sessionId, String modelId) 更新会话的模型 ID、getHooks() 获取所有已注册的 HookInvoker、getHooks(String sessionId) 按会话 ID 获取对应的 HookInvoker 列表。用于解耦 ChatService 与具体数据访问层。
@@ -197,6 +200,9 @@ CustomToolInvoker（com.ghost616.agentbase.service.agent.invoker.CustomToolInvok
 ## ToolDataProvider
 
 ToolDataProvider（com.ghost616.agentbase.service.agent.ToolDataProvider），工具数据提供者接口，定义 getSessionToolIds/getToolById/getSkillToolIds/getCustomInvoker 方法。getSkillToolIds 返回类型从 List<String> 改为 List<SkillToolInfo>，SkillToolInfo 为内部 record（skillId/sessionAuth/toolIds），按技能分组并携带授权类型。getCustomInvoker(ToolConfigDTO) 返回 CustomToolInvoker，替代原 CustomToolInvokerProvider 接口能力。
+新增 getBuiltinTools(String modelId) 方法，返回 List<Map<String, Object>>（内置工具列表，如 web_search，每项为工具配置键值对），按模型 ID 查询模型侧内置工具配置。
+
+ToolDataProvider（com.ghost616.agentbase.service.agent.ToolDataProvider），工具数据提供者接口，定义 getSessionToolIds/getToolById/getSkillToolIds/getCustomInvoker/getBuiltinTools 方法。getSkillToolIds 返回类型从 List<String> 改为 List<SkillToolInfo>，SkillToolInfo 为内部 record（skillId/sessionAuth/toolIds），按技能分组并携带授权类型。getCustomInvoker(ToolConfigDTO) 返回 CustomToolInvoker，替代原 CustomToolInvokerProvider 接口能力。
 ## 对话模型请求/响应 DTO
 
 对话模型请求 DTO（com.ghost616.agentbase.dto.model.ChatRequest），承载发送给模型服务的请求：messages（对话消息）、tools（工具定义）、temperature、maxTokens、model、thinking、previousResponseId（上一轮响应 ID，Responses API 多轮续接）、instructions（系统级指令，Responses API 下存放 system prompt 与动态技能提示词）。对话响应 DTO（com.ghost616.agentbase.dto.model.ChatResponse）新增 responseId 字段，为模型返回的响应 ID，供下一轮续接时作为 previousResponseId 使用。流式片段 ChatChunk 新增 responseId 字段，由 OpenAIResponsesInvoker 在解析 response.completed 事件时从 response.id 写入，ChatService.toSseStream 捕获后存入会话上下文 lastResponseId 供有状态续接。

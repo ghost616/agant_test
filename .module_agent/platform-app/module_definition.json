@@ -79,7 +79,7 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultToolDataProvider.java",
-      "description": "默认工具数据提供者实现，实现 ToolDataProvider 接口，负责工具和技能工具查询，以及 getCustomInvoker 方法（抛出 UnsupportedOperationException）"
+      "description": "默认工具数据提供者实现，实现 ToolDataProvider 接口，负责工具和技能工具查询（getSessionToolIds/getToolById/getSkillToolIds），自定义工具调用器分发（getCustomInvoker，CUSTOM+BROWSER 返回 BrowserToolInvoker，其他抛 UnsupportedOperationException），以及内置工具查询（getBuiltinTools：根据模型配置的 platformType/requestType 判断是否返回 web_search）"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/systemtest/SystemTestSubSessionTool.java",

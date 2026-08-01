@@ -1,16 +1,20 @@
 package com.ghost616.platform.service.agent;
 
 import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
+import com.ghost616.agentbase.enums.RequestType;
 import com.ghost616.agentbase.enums.SessionAuthType;
 import com.ghost616.agentbase.enums.ToolType;
 import com.ghost616.agentbase.service.agent.invoker.CustomToolInvoker;
 import com.ghost616.agentbase.service.agent.ToolDataProvider.SessionToolInfo;
+import com.ghost616.agentinteg.model.PlatformType;
 import com.ghost616.agentinteg.tool.BrowserToolCallback;
 import com.ghost616.agentinteg.tool.BrowserToolInvoker;
 import com.ghost616.platform.dto.tool.ToolDetailDTO;
+import com.ghost616.platform.entity.ModelConfig;
 import com.ghost616.platform.entity.SessionTool;
 import com.ghost616.platform.enums.SubToolType;
 import com.ghost616.platform.repository.AgentSkillMapper;
+import com.ghost616.platform.repository.ModelConfigMapper;
 import com.ghost616.platform.repository.SessionMapper;
 import com.ghost616.platform.repository.SessionSkillMapper;
 import com.ghost616.platform.repository.SessionToolMapper;
@@ -25,6 +29,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -40,6 +45,7 @@ class DefaultToolDataProviderTest {
     @Mock private SessionSkillMapper sessionSkillMapper;
     @Mock private ToolConfigService toolConfigService;
     @Mock private BrowserToolCallback browserToolCallback;
+    @Mock private ModelConfigMapper modelConfigMapper;
 
     private DefaultToolDataProvider provider;
 
@@ -47,7 +53,7 @@ class DefaultToolDataProviderTest {
     void setUp() {
         provider = new DefaultToolDataProvider(sessionToolMapper, sessionMapper,
                 agentSkillMapper, skillToolMapper, sessionSkillMapper, toolConfigService,
-                browserToolCallback);
+                browserToolCallback, modelConfigMapper);
     }
 
     private SessionTool createSessionTool(Long toolId, SessionAuthType auth) {
@@ -55,6 +61,13 @@ class DefaultToolDataProviderTest {
         st.setToolId(toolId);
         st.setSessionAuth(auth);
         return st;
+    }
+
+    private ModelConfig createModelConfig(PlatformType platformType, String requestType) {
+        ModelConfig mc = new ModelConfig();
+        mc.setPlatformType(platformType);
+        mc.setRequestType(requestType);
+        return mc;
     }
 
     @Nested
@@ -165,6 +178,76 @@ class DefaultToolDataProviderTest {
 
             assertThrows(UnsupportedOperationException.class,
                     () -> provider.getCustomInvoker(config));
+        }
+    }
+
+    @Nested
+    @DisplayName("getBuiltinTools")
+    class GetBuiltinToolsTest {
+
+        @Test
+        @DisplayName("OPENAI + responses 返回 web_search")
+        void openaiResponses_shouldReturnWebSearch() {
+            when(modelConfigMapper.selectById(1L))
+                    .thenReturn(createModelConfig(PlatformType.OPENAI, RequestType.RESPONSES.getCode()));
+
+            List<Map<String, Object>> result = provider.getBuiltinTools("1");
+
+            assertEquals(1, result.size());
+            assertEquals("web_search", result.get(0).get("type"));
+        }
+
+        @Test
+        @DisplayName("DEEPSEEK + responses_stateless 返回 web_search")
+        void deepseekResponsesStateless_shouldReturnWebSearch() {
+            when(modelConfigMapper.selectById(2L))
+                    .thenReturn(createModelConfig(PlatformType.DEEPSEEK, RequestType.RESPONSES_STATELESS.getCode()));
+
+            List<Map<String, Object>> result = provider.getBuiltinTools("2");
+
+            assertEquals(1, result.size());
+            assertEquals("web_search", result.get(0).get("type"));
+        }
+
+        @Test
+        @DisplayName("OPENAI + completions 返回空列表")
+        void openaiCompletions_shouldReturnEmpty() {
+            when(modelConfigMapper.selectById(1L))
+                    .thenReturn(createModelConfig(PlatformType.OPENAI, RequestType.COMPLETIONS.getCode()));
+
+            List<Map<String, Object>> result = provider.getBuiltinTools("1");
+
+            assertTrue(result.isEmpty());
+        }
+
+        @Test
+        @DisplayName("ANTHROPIC + responses 返回空列表")
+        void anthropicResponses_shouldReturnEmpty() {
+            when(modelConfigMapper.selectById(3L))
+                    .thenReturn(createModelConfig(PlatformType.ANTHROPIC, RequestType.RESPONSES.getCode()));
+
+            List<Map<String, Object>> result = provider.getBuiltinTools("3");
+
+            assertTrue(result.isEmpty());
+        }
+
+        @Test
+        @DisplayName("模型不存在时返回空列表")
+        void modelNotFound_shouldReturnEmpty() {
+            when(modelConfigMapper.selectById(99L)).thenReturn(null);
+
+            List<Map<String, Object>> result = provider.getBuiltinTools("99");
+
+            assertTrue(result.isEmpty());
+        }
+
+        @Test
+        @DisplayName("modelId 为 null 时返回空列表且不查询数据库")
+        void nullModelId_shouldReturnEmpty() {
+            List<Map<String, Object>> result = provider.getBuiltinTools(null);
+
+            assertTrue(result.isEmpty());
+            verify(modelConfigMapper, never()).selectById(any());
         }
     }
 }

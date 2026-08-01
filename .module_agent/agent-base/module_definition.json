@@ -11,7 +11,7 @@
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/ToolManager.java",
-      "description": "工具调用管理器，负责工具缓存和调用器路由，createInvoker 支持 JAVA/TYPESCRIPT/PYTHON/MCP_HTTP/CUSTOM 五种类型，CUSTOM 分支通过 ToolDataProvider.getCustomInvoker 获取 CustomToolInvoker"
+      "description": "工具管理器，管理会话工具缓存（sessionToolCache/toolCache/sessionSkillToolIdsCache）与工具调用器创建/展开。提供 getSessionTools/getToolConfig/getInvoker/expandMcpTools/getBuiltinTools 等方法。getBuiltinTools(String modelId) ensureInitialized 后委托 dataProvider.getBuiltinTools(modelId) 返回内置工具列表。"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/SessionManager.java",
@@ -55,7 +55,7 @@
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ToolDataProvider.java",
-      "description": "工具数据提供者接口，定义 getSessionToolIds/getToolById/getSkillToolIds/getCustomInvoker 方法"
+      "description": "工具数据提供者接口，定义 getSessionToolIds/getToolById/getSkillToolIds/getCustomInvoker/getBuiltinTools 方法。SessionToolInfo/SkillToolInfo 为内部 record。getBuiltinTools(String modelId) 返回 List<Map<String, Object>> 内置工具列表（如 web_search），按模型 ID 查询模型侧内置工具配置，供 ToolManager 委托与 ChatService Responses 系列流程使用。"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/SystemToolProvider.java",
@@ -95,7 +95,7 @@
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ChatService.java",
-      "description": "聊天服务核心类。持有 HookManager 实例，refreshHooks/triggerHooks/triggerSessionHooks/executePostHooks 全部委托给 hookManager。chat() 入口路由基于 RequestType 枚举对 configData.requestType() 显式三路分发：RESPONSES→chatViaResponses()（有状态）、RESPONSES_STATELESS→chatViaResponsesStateless()（无状态）、COMPLETIONS/null/其他→chatViaChatCompletions()。toSseStream 流式处理中捕获 chunk.responseId 通过 contextMutator.setLastResponseId() 写入会话上下文。"
+      "description": "ChatService 聊天服务，非 Spring 组件。构造函数接收 AgentComponentRegistry，通过 registry 延迟获取 AgentContextManager/SessionManager/ModelInvokerManager/SystemToolManager/ToolManager/ChatDataProvider。chat(ChatRequest) 为入口路由方法，基于 RequestType 三路分发：RESPONSES 走 chatViaResponses（有状态）、RESPONSES_STATELESS 走 chatViaResponsesStateless（无状态）、COMPLETIONS/null/其他 走 chatViaChatCompletions。chatViaResponses/chatViaResponsesStateless 构建模型 ChatRequest 时通过 toolManager.getBuiltinTools(configData.id()) 设置 builtinTools。"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/ContextSerializer.java",

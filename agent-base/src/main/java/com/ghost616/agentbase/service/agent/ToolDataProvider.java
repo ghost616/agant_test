@@ -5,6 +5,7 @@ import com.ghost616.agentbase.enums.SessionAuthType;
 import com.ghost616.agentbase.service.agent.invoker.CustomToolInvoker;
 
 import java.util.List;
+import java.util.Map;
 
 public interface ToolDataProvider {
 
@@ -19,4 +20,6 @@ public interface ToolDataProvider {
     List<SkillToolInfo> getSkillToolIds(String sessionId);
 
     CustomToolInvoker getCustomInvoker(ToolConfigDTO toolConfig);
+
+    List<Map<String, Object>> getBuiltinTools(String modelId);
 }

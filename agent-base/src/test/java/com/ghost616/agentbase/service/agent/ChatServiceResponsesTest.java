@@ -14,6 +14,7 @@ import com.ghost616.agentbase.service.agent.invoker.HookData;
 import com.ghost616.agentbase.service.agent.invoker.HookManager;
 import com.ghost616.agentbase.service.agent.invoker.LoadSkillsSystemTool;
 import com.ghost616.agentbase.service.agent.invoker.SystemToolManager;
+import com.ghost616.agentbase.service.agent.invoker.ToolManager;
 import com.ghost616.agentbase.service.model.invoker.ModelInvoker;
 import com.ghost616.agentbase.service.model.invoker.ModelInvokerManager;
 import org.junit.jupiter.api.BeforeEach;
@@ -49,6 +50,8 @@ class ChatServiceResponsesTest {
     @Mock
     private SystemToolManager systemToolManager;
     @Mock
+    private ToolManager toolManager;
+    @Mock
     private HookManager hookManager;
     @Mock
     private ModelInvoker modelInvoker;
@@ -72,6 +75,7 @@ class ChatServiceResponsesTest {
         registry.setSessionManager(sessionManager);
         registry.setModelInvokerManager(modelInvokerManager);
         registry.setSystemToolManager(systemToolManager);
+        registry.setToolManager(toolManager);
         registry.setChatDataProvider(chatDataProvider);
         registry.setHookManager(hookManager);
         chatService = new ChatService(registry);
@@ -112,7 +116,6 @@ class ChatServiceResponsesTest {
                 ToolDefinition.builder().name("ctx_tool").build());
 
         chatService.chat(apiRequest).subscribe();
-
         ArgumentCaptor<com.ghost616.agentbase.dto.model.ChatRequest> captor =
                 ArgumentCaptor.forClass(com.ghost616.agentbase.dto.model.ChatRequest.class);
         verify(modelInvoker).invokeStream(captor.capture());
@@ -390,5 +393,42 @@ class ChatServiceResponsesTest {
         assertEquals(1, getSystemMessages(captured).size(), "chat completions 分支应含 system 消息");
         assertNull(captured.getInstructions());
         assertNull(captured.getPreviousResponseId());
+    }
+
+    @Test
+    @DisplayName("requestType=responses 时，模型请求 builtinTools 应从 toolManager 加载并设置")
+    void responses_builtinTools从toolManager加载() {
+        List<Map<String, Object>> builtinTools = List.of(Map.of("type", "web_search", "name", "web_search"));
+        when(toolManager.getBuiltinTools("1")).thenReturn(builtinTools);
+
+        TestHarness harness = new TestHarness("sys_prompt", List.of(), List.of(), null, List.of());
+        when(systemToolManager.getToolDefinitions()).thenReturn(List.of());
+
+        ChatRequest apiRequest = ChatRequest.builder().sessionId(sessionId).content("hello").build();
+        com.ghost616.agentbase.dto.model.ChatRequest captured =
+                executeChat(apiRequest, harness, RequestType.RESPONSES.getCode(), Flux.empty());
+
+        assertNotNull(captured.getBuiltinTools(), "builtinTools 不应为 null");
+        assertEquals(1, captured.getBuiltinTools().size());
+        assertEquals("web_search", captured.getBuiltinTools().get(0).get("name"));
+        verify(toolManager).getBuiltinTools("1");
+    }
+
+    @Test
+    @DisplayName("requestType=responses_stateless 时，模型请求 builtinTools 应从 toolManager 加载并设置")
+    void responsesStateless_builtinTools从toolManager加载() {
+        List<Map<String, Object>> builtinTools = List.of(Map.of("type", "web_search"));
+        when(toolManager.getBuiltinTools("1")).thenReturn(builtinTools);
+
+        TestHarness harness = new TestHarness("sys_prompt", List.of(), List.of(), null, List.of());
+        when(systemToolManager.getToolDefinitions()).thenReturn(List.of());
+
+        ChatRequest apiRequest = ChatRequest.builder().sessionId(sessionId).content("hello").build();
+        com.ghost616.agentbase.dto.model.ChatRequest captured =
+                executeChat(apiRequest, harness, RequestType.RESPONSES_STATELESS.getCode(), Flux.empty());
+
+        assertNotNull(captured.getBuiltinTools(), "builtinTools 不应为 null");
+        assertEquals(1, captured.getBuiltinTools().size());
+        verify(toolManager).getBuiltinTools("1");
     }
 }

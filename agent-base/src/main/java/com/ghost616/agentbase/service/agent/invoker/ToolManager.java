@@ -78,6 +78,11 @@ public class ToolManager {
                 .orElse(null);
     }
 
+    public List<Map<String, Object>> getBuiltinTools(String modelId) {
+        ensureInitialized();
+        return dataProvider.getBuiltinTools(modelId);
+    }
+
     public List<ToolSessionObject> getSessionTools(String sessionId) {
         return getSessionTools(sessionId, false);
     }
