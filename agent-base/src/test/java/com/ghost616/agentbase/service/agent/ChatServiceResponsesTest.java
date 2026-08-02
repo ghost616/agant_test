@@ -13,6 +13,7 @@ import com.ghost616.agentbase.enums.HookPhase;
 import com.ghost616.agentbase.enums.RequestType;
 import com.ghost616.agentbase.service.agent.invoker.HookData;
 import com.ghost616.agentbase.service.agent.invoker.HookManager;
+import com.ghost616.agentbase.service.agent.invoker.HistoryQuerySystemTool;
 import com.ghost616.agentbase.service.agent.invoker.LoadSkillsSystemTool;
 import com.ghost616.agentbase.service.agent.invoker.SystemToolManager;
 import com.ghost616.agentbase.service.agent.invoker.ToolManager;
@@ -97,6 +98,21 @@ class ChatServiceResponsesTest {
                     skills, mutator,
                     sessionVariables != null ? sessionVariables : new HashMap<>(),
                     new HashMap<>(), null, "", null);
+        }
+
+        TestHarness(String systemPrompt, List<ToolConfigDTO> tools,
+                    List<SkillConfigDTO> skills, Map<String, String> sessionVariables,
+                    Map<String, String> conversationVariables, Integer recentMessageCount,
+                    List<AgentExecutionContext.HistoryEntry> history) {
+            this.mutator = new AgentExecutionContext.AgentContextMutator();
+            this.context = new AgentExecutionContext(
+                    "1", "1", systemPrompt, "1", recentMessageCount,
+                    history != null ? new ArrayList<>(history) : new ArrayList<>(),
+                    tools != null ? new ArrayList<>(tools) : new ArrayList<>(),
+                    skills, mutator,
+                    sessionVariables != null ? sessionVariables : new HashMap<>(),
+                    conversationVariables != null ? conversationVariables : new HashMap<>(),
+                    null, "", null);
         }
     }
 
@@ -565,5 +581,115 @@ class ChatServiceResponsesTest {
         assertNotNull(captured.getBuiltinTools(), "builtinTools 不应为 null");
         assertEquals(1, captured.getBuiltinTools().size());
         verify(toolManager).getBuiltinTools("1");
+    }
+
+    private List<AgentExecutionContext.HistoryEntry> buildHistoryGroups(int fullGroups) {
+        List<AgentExecutionContext.HistoryEntry> history = new ArrayList<>();
+        for (int g = 0; g < fullGroups; g++) {
+            history.add(new AgentExecutionContext.HistoryEntry(
+                    "user", "q" + g, null, null, g * 2 + 1, java.time.LocalDateTime.now(),
+                    List.of(), null, null, null));
+            history.add(new AgentExecutionContext.HistoryEntry(
+                    "assistant", "a" + g, null, null, g * 2 + 2, java.time.LocalDateTime.now(),
+                    List.of(), null, null, null));
+        }
+        return history;
+    }
+
+    private int indexOfContent(List<String> contents, String keyword) {
+        for (int i = 0; i < contents.size(); i++) {
+            if (contents.get(i) != null && contents.get(i).contains(keyword)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    @Test
+    @DisplayName("requestType=openai 时，批量折叠 + 锚点展开 + loadedSkills 顺序为 loadedSkills < 锚点 < 当前 user")
+    void openai_批量折叠锚点展开与loadedSkills顺序() {
+        SkillConfigDTO loadedSkill = SkillConfigDTO.builder()
+                .name("loaded_skill")
+                .sessionAuth(null)
+                .prompt("SKILL_PROMPT")
+                .build();
+
+        Map<String, String> sessionVars = new HashMap<>();
+        sessionVars.put(LoadSkillsSystemTool.SESSION_KEY, "[\"loaded_skill\"]");
+
+        Map<String, String> convVars = new HashMap<>();
+        convVars.put(HistoryQuerySystemTool.VAR_NAME, "[2]");
+
+        List<AgentExecutionContext.HistoryEntry> history = buildHistoryGroups(12);
+        history.add(new AgentExecutionContext.HistoryEntry(
+                "user", "hello", null, null, 25, java.time.LocalDateTime.now(),
+                List.of(), null, null, null));
+
+        TestHarness harness = new TestHarness("sys_prompt", List.of(), List.of(loadedSkill),
+                sessionVars, convVars, 3, history);
+        when(systemToolManager.getToolDefinitions()).thenReturn(
+                List.of(ToolDefinition.builder().name(LoadSkillsSystemTool.FULL_TOOL_NAME).build()));
+
+        ChatRequest apiRequest = ChatRequest.builder()
+                .sessionId(sessionId)
+                .content(ChatService.TOOL_CONTINUE_MARKER)
+                .build();
+        com.ghost616.agentbase.dto.model.ChatRequest captured =
+                executeChat(apiRequest, harness, "openai", Flux.empty());
+
+        List<String> contents = captured.getMessages().stream().map(Message::getContent).toList();
+
+        long placeholderCount = contents.stream()
+                .filter(c -> c != null && c.contains("此为历史消息索引为"))
+                .count();
+        assertEquals(10, placeholderCount, "应批量折叠 10 组");
+
+        String loadedContent = contents.stream()
+                .filter(c -> c != null && c.contains("以下技能已加载"))
+                .findFirst().orElse(null);
+        assertNotNull(loadedContent, "应包含已加载技能消息");
+
+        String anchor = contents.stream()
+                .filter(c -> c != null && c.startsWith("【历史消息组2】"))
+                .findFirst().orElse(null);
+        assertNotNull(anchor, "应包含组2锚点展开消息");
+        assertTrue(anchor.contains("user: q2"), "锚点应包含 user 内容");
+        assertTrue(anchor.contains("assistant: a2"), "锚点应包含 assistant 内容");
+
+        int loadedIdx = indexOfContent(contents, "以下技能已加载");
+        int anchorIdx = indexOfContent(contents, "【历史消息组2】");
+        int lastUserIdx = contents.lastIndexOf("hello");
+        assertTrue(loadedIdx >= 0 && loadedIdx < anchorIdx,
+                "loadedSkills 应位于锚点展开之前");
+        assertTrue(anchorIdx < lastUserIdx,
+                "锚点展开应位于最后一条 user 消息之前");
+    }
+
+    @Test
+    @DisplayName("requestType=responses_stateless 时，instructions 应包含锚点展开内容")
+    void responsesStateless_instructions应包含锚点展开内容() {
+        Map<String, String> convVars = new HashMap<>();
+        convVars.put(HistoryQuerySystemTool.VAR_NAME, "[2]");
+
+        List<AgentExecutionContext.HistoryEntry> history = buildHistoryGroups(12);
+        history.add(new AgentExecutionContext.HistoryEntry(
+                "user", "hello", null, null, 25, java.time.LocalDateTime.now(),
+                List.of(), null, null, null));
+
+        TestHarness harness = new TestHarness("sys_prompt", List.of(), List.of(), null, convVars, 3, history);
+        when(systemToolManager.getToolDefinitions()).thenReturn(List.of());
+
+        ChatRequest apiRequest = ChatRequest.builder()
+                .sessionId(sessionId)
+                .content(ChatService.TOOL_CONTINUE_MARKER)
+                .build();
+        com.ghost616.agentbase.dto.model.ChatRequest captured =
+                executeChat(apiRequest, harness, RequestType.RESPONSES_STATELESS.getCode(), Flux.empty());
+
+        assertNotNull(captured.getInstructions());
+        assertTrue(captured.getInstructions().contains("【历史消息组2】"),
+                "instructions 应包含锚点展开消息");
+        assertTrue(captured.getInstructions().contains("user: q2"),
+                "instructions 应包含锚点组内容");
     }
 }

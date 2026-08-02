@@ -46,6 +46,9 @@ public class ChatService {
 
     public static final String TOOL_CONTINUE_MARKER = "[tool_continue]";
 
+    private static final int DEFAULT_FOLD_INTERVAL = 10;
+    private static final String HISTORY_GROUP_PREFIX = "【历史消息组";
+
     private final AgentComponentRegistry registry;
     private AgentContextManager agentContextManager;
     private SessionManager sessionManager;
@@ -149,8 +152,10 @@ public class ChatService {
             messages.add(buildMessageFromEntry(entry));
         }
 
-        messages = filterAndFold(messages, context);
+        FoldResult foldResult = filterAndFold(messages, context);
+        messages = foldResult.messages();
         messages = insertLoadedSkillMessages(messages, systemInfo.loadedSkillMessages());
+        messages = insertAnchorMessages(messages, foldResult.anchorMessages());
 
         ModelInvoker invoker = modelInvokerManager.getInvoker(configData);
 
@@ -178,10 +183,11 @@ public class ChatService {
         List<ToolDefinition> toolDefinitions = systemToolManager.getToolDefinitions();
         ContextSystemInfo systemInfo = buildContextSystemInfo(context, toolDefinitions);
 
-        String instructions = buildInstructions(context, systemInfo, systemInfo.loadedSkillMessages());
-
         List<Message> input = buildIncrementalMessages(context);
-        input = filterAndFold(input, context);
+        FoldResult foldResult = filterAndFold(input, context);
+        input = foldResult.messages();
+
+        String instructions = buildInstructions(context, systemInfo, systemInfo.loadedSkillMessages(), foldResult.anchorMessages());
 
         ModelInvoker invoker = modelInvokerManager.getInvoker(configData);
 
@@ -215,10 +221,11 @@ public class ChatService {
         List<ToolDefinition> toolDefinitions = systemToolManager.getToolDefinitions();
         ContextSystemInfo systemInfo = buildContextSystemInfo(context, toolDefinitions);
 
-        String instructions = buildInstructions(context, systemInfo, systemInfo.loadedSkillMessages());
-
         List<Message> input = buildFullMessages(context);
-        input = filterAndFold(input, context);
+        FoldResult foldResult = filterAndFold(input, context);
+        input = foldResult.messages();
+
+        String instructions = buildInstructions(context, systemInfo, systemInfo.loadedSkillMessages(), foldResult.anchorMessages());
 
         ModelInvoker invoker = modelInvokerManager.getInvoker(configData);
 
@@ -241,7 +248,8 @@ public class ChatService {
     private String buildInstructions(
             AgentExecutionContext context,
             ContextSystemInfo systemInfo,
-            List<Message> loadedSkillMessages) {
+            List<Message> loadedSkillMessages,
+            List<Message> anchorMessages) {
         StringBuilder instructions = new StringBuilder();
         String systemPrompt = context.getSystemPrompt();
         if (systemPrompt != null) {
@@ -258,6 +266,15 @@ public class ChatService {
         }
         for (Message skillMessage : loadedSkillMessages) {
             String content = skillMessage.getContent();
+            if (content != null && !content.isEmpty()) {
+                if (instructions.length() > 0) {
+                    instructions.append("\n\n");
+                }
+                instructions.append(content);
+            }
+        }
+        for (Message anchorMessage : anchorMessages) {
+            String content = anchorMessage.getContent();
             if (content != null && !content.isEmpty()) {
                 if (instructions.length() > 0) {
                     instructions.append("\n\n");
@@ -316,7 +333,7 @@ public class ChatService {
         return input;
     }
 
-    private List<Message> filterAndFold(List<Message> messages, AgentExecutionContext context) {
+    private FoldResult filterAndFold(List<Message> messages, AgentExecutionContext context) {
         messages = messages.stream()
                 .filter(m -> (m.getContent() != null && !m.getContent().isEmpty()) || (m.getToolCalls() != null && !m.getToolCalls().isEmpty()))
                 .collect(Collectors.toList());
@@ -464,19 +481,36 @@ public class ChatService {
             return messages;
         }
         List<Message> result = new ArrayList<>(messages);
-        int lastUserIndex = -1;
-        for (int i = result.size() - 1; i >= 0; i--) {
-            if ("user".equals(result.get(i).getRole())) {
-                lastUserIndex = i;
-                break;
-            }
-        }
-        if (lastUserIndex < 0) {
+        int insertIndex = findLastUserIndex(result);
+        if (insertIndex < 0) {
             result.addAll(loadedSkillMessages);
         } else {
-            result.addAll(lastUserIndex, loadedSkillMessages);
+            result.addAll(insertIndex, loadedSkillMessages);
         }
         return result;
+    }
+
+    private List<Message> insertAnchorMessages(List<Message> messages, List<Message> anchorMessages) {
+        if (anchorMessages == null || anchorMessages.isEmpty()) {
+            return messages;
+        }
+        List<Message> result = new ArrayList<>(messages);
+        int insertIndex = findLastUserIndex(result);
+        if (insertIndex < 0) {
+            result.addAll(anchorMessages);
+        } else {
+            result.addAll(insertIndex, anchorMessages);
+        }
+        return result;
+    }
+
+    private int findLastUserIndex(List<Message> messages) {
+        for (int i = messages.size() - 1; i >= 0; i--) {
+            if ("user".equals(messages.get(i).getRole())) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     private List<ToolDefinition> buildToolDefinitions(
@@ -573,10 +607,10 @@ public class ChatService {
         return result;
     }
 
-    private List<Message> foldMessageGroups(List<Message> messages, AgentExecutionContext context) {
+    private FoldResult foldMessageGroups(List<Message> messages, AgentExecutionContext context) {
         Integer recentCount = context.getRecentMessageCount();
         if (recentCount == null || recentCount <= 0) {
-            return messages;
+            return new FoldResult(messages, List.of());
         }
 
         Set<Integer> expandedIndices = parseExpandedIndices(
@@ -605,15 +639,18 @@ public class ChatService {
         }
 
         if (groups.size() <= recentCount) {
-            return messages;
+            return new FoldResult(messages, List.of());
         }
 
-        int foldEnd = groups.size() - recentCount;
+        int foldedCount = Math.max(0, (groups.size() - recentCount) / DEFAULT_FOLD_INTERVAL) * DEFAULT_FOLD_INTERVAL;
+        if (foldedCount == 0) {
+            return new FoldResult(messages, List.of());
+        }
 
         List<Message> result = new ArrayList<>(prefix);
 
         for (int g = 0; g < groups.size(); g++) {
-            if (g < foldEnd && !expandedIndices.contains(g)) {
+            if (g < foldedCount) {
                 List<Message> group = groups.get(g);
                 result.add(group.get(0));
                 result.add(Message.builder()
@@ -625,7 +662,49 @@ public class ChatService {
             }
         }
 
-        return result;
+        List<Message> anchorMessages = new ArrayList<>();
+        List<Integer> sortedIndices = new ArrayList<>(expandedIndices);
+        Collections.sort(sortedIndices);
+        for (int index : sortedIndices) {
+            if (index >= 0 && index < foldedCount) {
+                anchorMessages.add(buildHistoryGroupMessage(groups.get(index), index));
+            }
+        }
+
+        return new FoldResult(result, anchorMessages);
+    }
+
+    private Message buildHistoryGroupMessage(List<Message> group, int groupIndex) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(HISTORY_GROUP_PREFIX).append(groupIndex).append("】完整内容如下：\n");
+        for (Message message : group) {
+            sb.append(message.getRole()).append(": ")
+                    .append(message.getContent() != null ? message.getContent() : "")
+                    .append("\n");
+            if ("assistant".equals(message.getRole())
+                    && message.getReasoning() != null && !message.getReasoning().isEmpty()
+                    && message.getToolCalls() != null && !message.getToolCalls().isEmpty()) {
+                sb.append("reasoning: ").append(message.getReasoning()).append("\n");
+            }
+            if (message.getToolCalls() != null) {
+                for (ToolCall toolCall : message.getToolCalls()) {
+                    sb.append("tool_call: ").append(toolCall.getName())
+                            .append("(")
+                            .append(toolCall.getArguments() != null ? toolCall.getArguments() : "")
+                            .append(")\n");
+                }
+            }
+            if (message.getToolInfo() != null) {
+                sb.append("tool_result: ").append(message.getToolInfo().toolName())
+                        .append("(").append(message.getToolInfo().toolCallId())
+                        .append("): ").append(message.getContent() != null ? message.getContent() : "")
+                        .append("\n");
+            }
+        }
+        return Message.builder()
+                .role("system")
+                .content(sb.toString())
+                .build();
     }
 
     private Set<Integer> parseExpandedIndices(String jsonStr) {
@@ -646,5 +725,8 @@ public class ChatService {
             List<Message> systemMessages,
             List<SkillConfigDTO> filteredLoadedSkills,
             List<Message> loadedSkillMessages) {
+    }
+
+    private record FoldResult(List<Message> messages, List<Message> anchorMessages) {
     }
 }
