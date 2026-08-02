@@ -397,6 +397,140 @@ class ChatServiceResponsesTest {
     }
 
     @Test
+    @DisplayName("requestType=openai 时，已加载技能消息应插入到历史之后、最后一条 user 消息之前")
+    void openai_已加载技能消息插入到最后一个user之前() {
+        SkillConfigDTO loadedSkill = SkillConfigDTO.builder()
+                .name("loaded_skill")
+                .sessionAuth(null)
+                .prompt("SKILL_PROMPT")
+                .build();
+
+        Map<String, String> sessionVars = new HashMap<>();
+        sessionVars.put(LoadSkillsSystemTool.SESSION_KEY, "[\"loaded_skill\"]");
+
+        List<AgentExecutionContext.HistoryEntry> history = new ArrayList<>();
+        history.add(new AgentExecutionContext.HistoryEntry(
+                "user", "q1", null, null, 1, java.time.LocalDateTime.now(), List.of(), null, null, null));
+        history.add(new AgentExecutionContext.HistoryEntry(
+                "assistant", "a1", null, null, 2, java.time.LocalDateTime.now(), List.of(), null, null, null));
+
+        TestHarness harness = new TestHarness("sys_prompt", List.of(), List.of(loadedSkill), sessionVars, history);
+        when(systemToolManager.getToolDefinitions()).thenReturn(
+                List.of(ToolDefinition.builder().name(LoadSkillsSystemTool.FULL_TOOL_NAME).build()));
+
+        ChatRequest apiRequest = ChatRequest.builder().sessionId(sessionId).content("hello").build();
+        com.ghost616.agentbase.dto.model.ChatRequest captured =
+                executeChat(apiRequest, harness, "openai", Flux.empty());
+
+        List<String> contents = captured.getMessages().stream().map(Message::getContent).toList();
+        int loadedIdx = -1;
+        for (int i = 0; i < contents.size(); i++) {
+            if (contents.get(i) != null && contents.get(i).contains("以下技能已加载")) {
+                loadedIdx = i;
+                break;
+            }
+        }
+        int lastUserIdx = contents.lastIndexOf("hello");
+        int assistantIdx = contents.indexOf("a1");
+        assertTrue(loadedIdx >= 0, "chat completions 分支应包含已加载技能消息");
+        assertTrue(assistantIdx >= 0 && loadedIdx > assistantIdx,
+                "已加载技能消息应位于历史消息之后");
+        assertTrue(lastUserIdx > loadedIdx, "已加载技能消息应位于最后一条 user 消息之前");
+    }
+
+    @Test
+    @DisplayName("requestType=openai 时，无 user 消息时已加载技能消息应回退追加到列表末尾")
+    void openai_无user消息时已加载技能消息追加到末尾() {
+        SkillConfigDTO loadedSkill = SkillConfigDTO.builder()
+                .name("loaded_skill")
+                .sessionAuth(null)
+                .prompt("SKILL_PROMPT")
+                .build();
+
+        Map<String, String> sessionVars = new HashMap<>();
+        sessionVars.put(LoadSkillsSystemTool.SESSION_KEY, "[\"loaded_skill\"]");
+
+        List<AgentExecutionContext.HistoryEntry> history = new ArrayList<>();
+        history.add(new AgentExecutionContext.HistoryEntry(
+                "assistant", "a1", null, null, 1, java.time.LocalDateTime.now(), List.of(), null, null, null));
+        history.add(new AgentExecutionContext.HistoryEntry(
+                "tool", "r1", null, new ToolInfo("tc1", "testTool"), 2, java.time.LocalDateTime.now(), List.of(), null, null, null));
+
+        TestHarness harness = new TestHarness("sys_prompt", List.of(), List.of(loadedSkill), sessionVars, history);
+        when(systemToolManager.getToolDefinitions()).thenReturn(
+                List.of(ToolDefinition.builder().name(LoadSkillsSystemTool.FULL_TOOL_NAME).build()));
+
+        ChatRequest apiRequest = ChatRequest.builder()
+                .sessionId(sessionId)
+                .content(ChatService.TOOL_CONTINUE_MARKER)
+                .build();
+        com.ghost616.agentbase.dto.model.ChatRequest captured =
+                executeChat(apiRequest, harness, "openai", Flux.empty());
+
+        List<String> contents = captured.getMessages().stream().map(Message::getContent).toList();
+        assertFalse(contents.stream().anyMatch(c -> c != null && c.contains("hello")),
+                "tool_continue 请求不应新增 user 消息");
+        int loadedIdx = -1;
+        for (int i = 0; i < contents.size(); i++) {
+            if (contents.get(i) != null && contents.get(i).contains("以下技能已加载")) {
+                loadedIdx = i;
+                break;
+            }
+        }
+        assertTrue(loadedIdx >= 0, "应包含已加载技能消息");
+        assertEquals(contents.size() - 1, loadedIdx,
+                "无 user 消息时已加载技能消息应追加到列表末尾");
+    }
+
+    @Test
+    @DisplayName("requestType=openai 时，已加载技能消息不属于 system 前缀，仅由可用技能列表占据前缀")
+    void openai_已加载技能消息不进入系统前缀() {
+        SkillConfigDTO loadedSkill = SkillConfigDTO.builder()
+                .name("loaded_skill")
+                .sessionAuth(null)
+                .prompt("SKILL_PROMPT")
+                .build();
+
+        Map<String, String> sessionVars = new HashMap<>();
+        sessionVars.put(LoadSkillsSystemTool.SESSION_KEY, "[\"loaded_skill\"]");
+
+        List<AgentExecutionContext.HistoryEntry> history = new ArrayList<>();
+        history.add(new AgentExecutionContext.HistoryEntry(
+                "user", "q1", null, null, 1, java.time.LocalDateTime.now(), List.of(), null, null, null));
+
+        TestHarness harness = new TestHarness("sys_prompt", List.of(), List.of(loadedSkill), sessionVars, history);
+        when(systemToolManager.getToolDefinitions()).thenReturn(
+                List.of(ToolDefinition.builder().name(LoadSkillsSystemTool.FULL_TOOL_NAME).build()));
+
+        ChatRequest apiRequest = ChatRequest.builder().sessionId(sessionId).content("hello").build();
+        com.ghost616.agentbase.dto.model.ChatRequest captured =
+                executeChat(apiRequest, harness, "openai", Flux.empty());
+
+        List<String> contents = captured.getMessages().stream().map(Message::getContent).toList();
+        int loadedIdx = -1;
+        for (int i = 0; i < contents.size(); i++) {
+            if (contents.get(i) != null && contents.get(i).contains("以下技能已加载")) {
+                loadedIdx = i;
+                break;
+            }
+        }
+        int helloIdx = contents.lastIndexOf("hello");
+        int q1Idx = contents.indexOf("q1");
+        assertTrue(loadedIdx >= 0 && loadedIdx < helloIdx,
+                "已加载技能消息应插入在最后一条 user 消息之前，而非系统前缀");
+        assertTrue(loadedIdx > q1Idx,
+                "已加载技能消息应位于历史消息(q1)之后，而非系统前缀区");
+        boolean skillBeforeHistory = false;
+        for (int i = 0; i < q1Idx; i++) {
+            if (contents.get(i) != null && contents.get(i).contains("以下技能已加载")) {
+                skillBeforeHistory = true;
+                break;
+            }
+        }
+        assertFalse(skillBeforeHistory, "系统前缀区（历史消息之前）不应包含已加载技能消息");
+    }
+
+    @Test
     @DisplayName("requestType=responses 时，模型请求 builtinTools 应从 toolManager 加载并设置")
     void responses_builtinTools从toolManager加载() {
         List<Map<String, Object>> builtinTools = List.of(Map.of("type", "web_search", "name", "web_search"));

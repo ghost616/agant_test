@@ -150,6 +150,7 @@ public class ChatService {
         }
 
         messages = filterAndFold(messages, context);
+        messages = insertLoadedSkillMessages(messages, systemInfo.loadedSkillMessages());
 
         ModelInvoker invoker = modelInvokerManager.getInvoker(configData);
 
@@ -177,7 +178,7 @@ public class ChatService {
         List<ToolDefinition> toolDefinitions = systemToolManager.getToolDefinitions();
         ContextSystemInfo systemInfo = buildContextSystemInfo(context, toolDefinitions);
 
-        String instructions = buildInstructions(context, systemInfo);
+        String instructions = buildInstructions(context, systemInfo, systemInfo.loadedSkillMessages());
 
         List<Message> input = buildIncrementalMessages(context);
         input = filterAndFold(input, context);
@@ -214,7 +215,7 @@ public class ChatService {
         List<ToolDefinition> toolDefinitions = systemToolManager.getToolDefinitions();
         ContextSystemInfo systemInfo = buildContextSystemInfo(context, toolDefinitions);
 
-        String instructions = buildInstructions(context, systemInfo);
+        String instructions = buildInstructions(context, systemInfo, systemInfo.loadedSkillMessages());
 
         List<Message> input = buildFullMessages(context);
         input = filterAndFold(input, context);
@@ -237,7 +238,10 @@ public class ChatService {
         return toSseStream(stream, context, contextMutator, sessionId);
     }
 
-    private String buildInstructions(AgentExecutionContext context, ContextSystemInfo systemInfo) {
+    private String buildInstructions(
+            AgentExecutionContext context,
+            ContextSystemInfo systemInfo,
+            List<Message> loadedSkillMessages) {
         StringBuilder instructions = new StringBuilder();
         String systemPrompt = context.getSystemPrompt();
         if (systemPrompt != null) {
@@ -245,6 +249,15 @@ public class ChatService {
         }
         for (Message systemMessage : systemInfo.systemMessages()) {
             String content = systemMessage.getContent();
+            if (content != null && !content.isEmpty()) {
+                if (instructions.length() > 0) {
+                    instructions.append("\n\n");
+                }
+                instructions.append(content);
+            }
+        }
+        for (Message skillMessage : loadedSkillMessages) {
+            String content = skillMessage.getContent();
             if (content != null && !content.isEmpty()) {
                 if (instructions.length() > 0) {
                     instructions.append("\n\n");
@@ -312,6 +325,7 @@ public class ChatService {
 
     private ContextSystemInfo buildContextSystemInfo(AgentExecutionContext context, List<ToolDefinition> toolDefinitions) {
         List<Message> systemMessages = new ArrayList<>();
+        List<Message> loadedSkillMessages = new ArrayList<>();
         List<SkillConfigDTO> skills = context.getSkills();
         boolean hasLoadSkillsTool = toolDefinitions.stream()
                 .anyMatch(def -> LoadSkillsSystemTool.FULL_TOOL_NAME.equals(def.getName()));
@@ -361,7 +375,7 @@ public class ChatService {
                         sb.append(skill.getPrompt()).append("\n\n");
                     }
                 }
-                systemMessages.add(Message.builder()
+                loadedSkillMessages.add(Message.builder()
                         .role("system")
                         .content(sb.toString())
                         .build());
@@ -442,7 +456,27 @@ public class ChatService {
             }
         }
 
-        return new ContextSystemInfo(systemMessages, filteredLoadedSkills);
+        return new ContextSystemInfo(systemMessages, filteredLoadedSkills, loadedSkillMessages);
+    }
+
+    private List<Message> insertLoadedSkillMessages(List<Message> messages, List<Message> loadedSkillMessages) {
+        if (loadedSkillMessages == null || loadedSkillMessages.isEmpty()) {
+            return messages;
+        }
+        List<Message> result = new ArrayList<>(messages);
+        int lastUserIndex = -1;
+        for (int i = result.size() - 1; i >= 0; i--) {
+            if ("user".equals(result.get(i).getRole())) {
+                lastUserIndex = i;
+                break;
+            }
+        }
+        if (lastUserIndex < 0) {
+            result.addAll(loadedSkillMessages);
+        } else {
+            result.addAll(lastUserIndex, loadedSkillMessages);
+        }
+        return result;
     }
 
     private List<ToolDefinition> buildToolDefinitions(
@@ -608,6 +642,9 @@ public class ChatService {
         }
     }
 
-    private record ContextSystemInfo(List<Message> systemMessages, List<SkillConfigDTO> filteredLoadedSkills) {
+    private record ContextSystemInfo(
+            List<Message> systemMessages,
+            List<SkillConfigDTO> filteredLoadedSkills,
+            List<Message> loadedSkillMessages) {
     }
 }
