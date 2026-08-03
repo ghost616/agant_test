@@ -1,5 +1,0 @@
-{
-  "session_id": "ses_048d9d6acffeb2Xm1AQN8SNfr7",
-  "content": "## 待测试功能说明\n\n### 变更内容\n为 platform-data 模块的 ModelConfig 实体新增 request_type 字段及数据库迁移：\n\n1. **ModelConfig 实体新增字段**（`platform-data/src/main/java/com/ghost616/platform/entity/ModelConfig.java`）：新增 `@TableField(\"request_type\") private String requestType;` 字段，映射 model_config.request_type 列（VARCHAR(32)）。\n\n2. **schema.sql DDL 更新**（`platform-data/src/main/resources/schema.sql`）：model_config 表新增 `request_type VARCHAR(32)` 列（位于 model_name 之后）。\n\n3. **SchemaMigration 迁移条目**（`platform-data/src/main/java/com/ghost616/platform/config/SchemaMigration.java`）：migrations 列表新增 `new Migration(\"model_config\", \"request_type\", \"VARCHAR(32)\", null)`，生成 H2 兼容的 `ALTER TABLE \"model_config\" ADD COLUMN \"request_type\" VARCHAR(32)` 迁移语句。\n\n### 测试要求\n- 编译测试：确认 platform-data 模块 Java 代码编译通过（新增字段与迁移条目不引入编译错误）。\n",
-  "timestamp": "2026-07-31T07:50:02.680Z"
-}

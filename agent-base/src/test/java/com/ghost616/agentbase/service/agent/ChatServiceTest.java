@@ -265,8 +265,10 @@ class ChatServiceTest {
                 .filter(c -> c != null && c.startsWith("【历史消息组2】"))
                 .findFirst().orElse(null);
         assertNotNull(anchor, "应生成组2的锚点展开消息");
-        assertTrue(anchor.contains("user: q2"), "锚点应包含 user 内容");
-        assertTrue(anchor.contains("assistant: a2"), "锚点应包含 assistant 内容");
+        assertTrue(anchor.contains("\"role\":\"user\"") && anchor.contains("\"content\":\"q2\""),
+                "锚点应包含 user 内容");
+        assertTrue(anchor.contains("\"role\":\"assistant\"") && anchor.contains("\"content\":\"a2\""),
+                "锚点应包含 assistant 内容");
 
         int anchorIdx = -1;
         for (int i = 0; i < contents.size(); i++) {
@@ -320,8 +322,10 @@ class ChatServiceTest {
                 .filter(c -> c != null && c.startsWith("【历史消息组2】"))
                 .findFirst().orElse(null);
         assertNotNull(anchor, "应生成组2锚点展开消息");
-        assertTrue(anchor.contains("reasoning: reasoning_text"), "锚点应包含 assistant 推理内容");
-        assertTrue(anchor.contains("tool_call: get_weather({\"city\":\"sh\"})"), "锚点应包含工具名与参数");
-        assertTrue(anchor.contains("tool_result: get_weather(tc1): {\"temp\":25}"), "锚点应包含工具调用信息与结果");
+        assertTrue(anchor.contains("\"reasoning\":\"reasoning_text\""), "锚点应包含 assistant 推理内容");
+        assertTrue(anchor.contains("\"tool_calls\"") && anchor.contains("\"name\":\"get_weather\"")
+                && anchor.contains("city"), "锚点应包含工具名与参数");
+        assertTrue(anchor.contains("\"tool_info\"") && anchor.contains("\"id\":\"tc1\"")
+                && anchor.contains("temp"), "锚点应包含工具调用信息与结果");
     }
 }

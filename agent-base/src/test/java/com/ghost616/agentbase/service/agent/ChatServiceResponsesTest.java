@@ -653,8 +653,10 @@ class ChatServiceResponsesTest {
                 .filter(c -> c != null && c.startsWith("【历史消息组2】"))
                 .findFirst().orElse(null);
         assertNotNull(anchor, "应包含组2锚点展开消息");
-        assertTrue(anchor.contains("user: q2"), "锚点应包含 user 内容");
-        assertTrue(anchor.contains("assistant: a2"), "锚点应包含 assistant 内容");
+        assertTrue(anchor.contains("\"role\":\"user\"") && anchor.contains("\"content\":\"q2\""),
+                "锚点应包含 user 内容");
+        assertTrue(anchor.contains("\"role\":\"assistant\"") && anchor.contains("\"content\":\"a2\""),
+                "锚点应包含 assistant 内容");
 
         int loadedIdx = indexOfContent(contents, "以下技能已加载");
         int anchorIdx = indexOfContent(contents, "【历史消息组2】");
@@ -689,7 +691,8 @@ class ChatServiceResponsesTest {
         assertNotNull(captured.getInstructions());
         assertTrue(captured.getInstructions().contains("【历史消息组2】"),
                 "instructions 应包含锚点展开消息");
-        assertTrue(captured.getInstructions().contains("user: q2"),
+        assertTrue(captured.getInstructions().contains("\"role\":\"user\"")
+                        && captured.getInstructions().contains("\"content\":\"q2\""),
                 "instructions 应包含锚点组内容");
     }
 }

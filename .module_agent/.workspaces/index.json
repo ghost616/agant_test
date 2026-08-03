@@ -10,16 +10,6 @@
     }
   ],
   "bindings": {
-    "ses_05c7d6546ffeQBtKC0WS00c14r": "ghost",
-    "ses_059d6c56affeNpUe7ms6byjonJ": "ghost",
-    "ses_0595bc9cbffeVdCKxH7UBEtFNQ": "ghost",
-    "ses_058ca79daffeyoMVNE4CpTohyY": "ghost",
-    "ses_05854abcbffems5Ks5nqCAgxDH": "ghost",
-    "ses_0546ce96effeOAGfgp2FRTza6c": "ghost",
-    "ses_04e79173dffeTA3dLmJLx410S6": "ghost",
-    "ses_04a67192dffeU28Wyw2g51kn98": "ghost",
-    "ses_0497dbe16ffeVuhJK3PtIjZduG": "header",
-    "ses_0492bd6adffecl3BRvfBI0ybZ3": "header",
-    "ses_04813b347ffeRf5NxMcjuQclxs": "header"
+    "ses_03aed991fffeNylIOIT7KTfOPK": "header"
   }
 }

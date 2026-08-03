@@ -95,7 +95,7 @@
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ChatService.java",
-      "description": "ChatService 聊天服务，非 Spring 组件。构造函数接收 AgentComponentRegistry，通过 registry 延迟获取 AgentContextManager/SessionManager/ModelInvokerManager/SystemToolManager/ToolManager/ChatDataProvider。chat(ChatRequest) 为入口路由方法，基于 RequestType 三路分发：RESPONSES 走 chatViaResponses（有状态）、RESPONSES_STATELESS 走 chatViaResponsesStateless（无状态）、COMPLETIONS/null/其他 走 chatViaChatCompletions。chatViaResponses/chatViaResponsesStateless 构建模型 ChatRequest 时通过 toolManager.getBuiltinTools(configData.id()) 设置 builtinTools。buildMessageFromEntry 将 HistoryEntry 的 ToolInfo toolInfo 透传到 Message 构建器。"
+      "description": "ChatService 聊天服务，非 Spring 组件。构造函数接收 AgentComponentRegistry，通过 registry 延迟获取 AgentContextManager/SessionManager/ModelInvokerManager/SystemToolManager/ToolManager/ChatDataProvider。chat(ChatRequest) 为入口路由方法，基于 RequestType 三路分发：RESPONSES 走 chatViaResponses（有状态）、RESPONSES_STATELESS 走 chatViaResponsesStateless（无状态）、COMPLETIONS/null/其他 走 chatViaChatCompletions。buildContextSystemInfo 返回 ContextSystemInfo（systemMessages/filteredLoadedSkills/loadedSkillMessages 三字段），已加载技能 prompt 消息归入 loadedSkillMessages，systemMessages 仅含可用技能列表与子会话权限说明。foldMessageGroups/filterAndFold 返回 FoldResult(messages/anchorMessages)（提升 KV Cache 命中率）：按 user 边界分组、system 前缀单独提出；foldedCount=max(0,(groups.size()-recentCount)/DEFAULT_FOLD_INTERVAL)*DEFAULT_FOLD_INTERVAL，groups<=recentCount 或 foldedCount==0 时不折叠；旧区 0..foldedCount-1 折叠为 user 首条+占位 assistant「此为历史消息索引为N，如果想要展开请调用历史消息工具」，近端区完整展开；读取 _sys_his_msgs_index 对话变量，对 <foldedCount 的索引组装【历史消息组{N}】system 锚点消息独立放入 anchorMessages（buildHistoryGroupMessage），锚点补全 assistant 推理（reasoning 行，仅 toolCalls 非空时）、tool_call 名称(参数)、tool_result 名称(id):内容。chatViaChatCompletions 最终顺序：[SYSTEM 底座prompt][SYSTEM 系统信息][折叠区+近端区][SYSTEM loadedSkills][SYSTEM 锚点][USER 当前消息]：拆包 FoldResult 后先 insertLoadedSkillMessages（最后 user 前）再 insertAnchorMessages（最后 user 前）；两者共用 findLastUserIndex，无 user 时追加列表末尾。chatViaResponses/chatViaResponsesStateless 拆包 FoldResult 并将 anchorMessages 传入 buildInstructions（在 loadedSkillMessages 之后追加锚点内容），使 Responses 系列 instructions 也包含锚点。chatViaResponses/chatViaResponsesStateless 构建模型 ChatRequest 时通过 toolManager.getBuiltinTools(configData.id()) 设置 builtinTools。buildMessageFromEntry 将 HistoryEntry 的 ToolInfo toolInfo 透传到 Message 构建器。"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/ContextSerializer.java",
@@ -227,7 +227,7 @@
     },
     {
       "path": "agent-base/src/test/java/com/ghost616/agentbase/service/agent/ChatServiceTest.java",
-      "description": "ChatService 单元测试"
+      "description": "ChatService 单元测试：覆盖构造函数依赖注入、SESSION_START/BEFORE_MESSAGE_SEND/AFTER_MESSAGE_RECEIVE 各阶段 triggerSessionHooks 与 triggerHooks 调用；foldMessageGroups 批量折叠边界（组数内不折叠、不足 interval 不折叠、恰好 interval 折叠10组、超出多倍折叠20组）与锚点展开消息插入位置；以及锚点展开消息补全信息（assistant 推理 reasoning、tool_call 工具名与参数、tool_result 工具调用信息与结果）。"
     },
     {
       "path": "agent-base/src/test/java/com/ghost616/agentbase/service/agent/AgentContextManagerTest.java",
@@ -380,6 +380,14 @@
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/dto/model/ToolInfo.java",
       "description": "工具调用信息 DTO（record，字段 toolCallId/toolName），用于 tool 角色消息回传与工具调用标识信息，取代原 Message/HistoryEntry/MessageDTO 中单一 toolCallId String 字段。"
+    },
+    {
+      "path": "agent-base/src/test/java/com/ghost616/agentbase/service/agent/ChatServiceResponsesTest.java",
+      "description": "ChatService 单元测试（Responses 系列流程）：覆盖 chatViaResponses/chatViaResponsesStateless/chatViaChatCompletions 三路分发下的 instructions 拼接（systemPrompt/可用技能/已加载技能/锚点展开内容）、input 排除 system 角色、previousResponseId 透传、lastResponseId 优先、SSE 钩子、builtinTools 加载，已加载技能消息位置断言（历史之后、最后一条 user 之前、无 user 时追加末尾、不进入系统前缀区），以及批量折叠+锚点展开+loadedSkills 顺序（loadedSkills<锚点<当前 user）与 responses_stateless instructions 包含锚点内容。"
+    },
+    {
+      "path": "agent-base/src/test/java/com/ghost616/agentbase/service/agent/ChatServiceHistoryGroupJsonTest.java",
+      "description": "测试 ChatService.buildHistoryGroupMessage JSON 行输出格式：验证每条消息为一行独立 JSON（{role,content}），assistant 含推理+工具调用时输出 reasoning 与 tool_calls(name/arguments) 字段，tool 消息输出 tool_info(name/id) 字段，首行保留 HISTORY_GROUP_PREFIX 提示行"
     }
   ]
 }

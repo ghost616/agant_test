@@ -678,33 +678,52 @@ public class ChatService {
         StringBuilder sb = new StringBuilder();
         sb.append(HISTORY_GROUP_PREFIX).append(groupIndex).append("】完整内容如下：\n");
         for (Message message : group) {
-            sb.append(message.getRole()).append(": ")
-                    .append(message.getContent() != null ? message.getContent() : "")
-                    .append("\n");
-            if ("assistant".equals(message.getRole())
-                    && message.getReasoning() != null && !message.getReasoning().isEmpty()
-                    && message.getToolCalls() != null && !message.getToolCalls().isEmpty()) {
-                sb.append("reasoning: ").append(message.getReasoning()).append("\n");
-            }
-            if (message.getToolCalls() != null) {
-                for (ToolCall toolCall : message.getToolCalls()) {
-                    sb.append("tool_call: ").append(toolCall.getName())
-                            .append("(")
-                            .append(toolCall.getArguments() != null ? toolCall.getArguments() : "")
-                            .append(")\n");
-                }
-            }
-            if (message.getToolInfo() != null) {
-                sb.append("tool_result: ").append(message.getToolInfo().toolName())
-                        .append("(").append(message.getToolInfo().toolCallId())
-                        .append("): ").append(message.getContent() != null ? message.getContent() : "")
-                        .append("\n");
+            try {
+                sb.append(JsonMapper.MAPPER.writeValueAsString(toHistoryGroupJson(message))).append("\n");
+            } catch (Exception e) {
+                log.warn("序列化历史组消息失败: {}", e.getMessage());
             }
         }
         return Message.builder()
                 .role("system")
                 .content(sb.toString())
                 .build();
+    }
+
+    private Map<String, Object> toHistoryGroupJson(Message message) {
+        Map<String, Object> json = new LinkedHashMap<>();
+        json.put("role", message.getRole());
+        if (message.getContent() != null) {
+            json.put("content", message.getContent());
+        }
+        if ("assistant".equals(message.getRole())
+                && message.getReasoning() != null && !message.getReasoning().isEmpty()
+                && message.getToolCalls() != null && !message.getToolCalls().isEmpty()) {
+            json.put("reasoning", message.getReasoning());
+        }
+        if ("assistant".equals(message.getRole())
+                && message.getToolCalls() != null && !message.getToolCalls().isEmpty()) {
+            List<Map<String, Object>> toolCalls = new ArrayList<>();
+            for (ToolCall toolCall : message.getToolCalls()) {
+                Map<String, Object> callJson = new LinkedHashMap<>();
+                callJson.put("name", toolCall.getName());
+                if (toolCall.getId() != null) {
+                    callJson.put("id", toolCall.getId());
+                }
+                if (toolCall.getArguments() != null) {
+                    callJson.put("arguments", toolCall.getArguments());
+                }
+                toolCalls.add(callJson);
+            }
+            json.put("tool_calls", toolCalls);
+        }
+        if (message.getToolInfo() != null) {
+            Map<String, Object> toolInfo = new LinkedHashMap<>();
+            toolInfo.put("name", message.getToolInfo().toolName());
+            toolInfo.put("id", message.getToolInfo().toolCallId());
+            json.put("tool_info", toolInfo);
+        }
+        return json;
     }
 
     private Set<Integer> parseExpandedIndices(String jsonStr) {

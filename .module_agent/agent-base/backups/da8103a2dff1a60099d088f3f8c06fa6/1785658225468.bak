@@ -1,0 +1,695 @@
+package com.ghost616.agentbase.service.agent;
+
+import com.ghost616.agentbase.core.AgentComponentRegistry;
+import com.ghost616.agentbase.dto.chat.ChatRequest;
+import com.ghost616.agentbase.dto.model.ChatChunk;
+import com.ghost616.agentbase.dto.model.Message;
+import com.ghost616.agentbase.dto.model.ModelConfigData;
+import com.ghost616.agentbase.dto.model.ToolDefinition;
+import com.ghost616.agentbase.dto.model.ToolInfo;
+import com.ghost616.agentbase.dto.skill.SkillConfigDTO;
+import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
+import com.ghost616.agentbase.enums.HookPhase;
+import com.ghost616.agentbase.enums.RequestType;
+import com.ghost616.agentbase.service.agent.invoker.HookData;
+import com.ghost616.agentbase.service.agent.invoker.HookManager;
+import com.ghost616.agentbase.service.agent.invoker.HistoryQuerySystemTool;
+import com.ghost616.agentbase.service.agent.invoker.LoadSkillsSystemTool;
+import com.ghost616.agentbase.service.agent.invoker.SystemToolManager;
+import com.ghost616.agentbase.service.agent.invoker.ToolManager;
+import com.ghost616.agentbase.service.model.invoker.ModelInvoker;
+import com.ghost616.agentbase.service.model.invoker.ModelInvokerManager;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import reactor.core.publisher.Flux;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+class ChatServiceResponsesTest {
+
+    @Mock
+    private AgentContextManager agentContextManager;
+    @Mock
+    private SessionManager sessionManager;
+    @Mock
+    private ModelInvokerManager modelInvokerManager;
+    @Mock
+    private ChatDataProvider chatDataProvider;
+    @Mock
+    private SystemToolManager systemToolManager;
+    @Mock
+    private ToolManager toolManager;
+    @Mock
+    private HookManager hookManager;
+    @Mock
+    private ModelInvoker modelInvoker;
+    @Mock
+    private SessionManager.MessageSaveBuilder msgBuilder;
+
+    private AgentComponentRegistry registry;
+    private ChatService chatService;
+
+    private final String sessionId = "1";
+
+    @BeforeEach
+    void setUp() {
+        lenient().when(msgBuilder.sessionId(any())).thenReturn(msgBuilder);
+        lenient().when(msgBuilder.role(any())).thenReturn(msgBuilder);
+        lenient().when(msgBuilder.content(any())).thenReturn(msgBuilder);
+        lenient().when(sessionManager.messageSave()).thenReturn(msgBuilder);
+
+        registry = new AgentComponentRegistry();
+        registry.setAgentContextManager(agentContextManager);
+        registry.setSessionManager(sessionManager);
+        registry.setModelInvokerManager(modelInvokerManager);
+        registry.setSystemToolManager(systemToolManager);
+        registry.setToolManager(toolManager);
+        registry.setChatDataProvider(chatDataProvider);
+        registry.setHookManager(hookManager);
+        chatService = new ChatService(registry);
+    }
+
+    private static class TestHarness {
+        final AgentExecutionContext context;
+        final AgentExecutionContext.AgentContextMutator mutator;
+
+        TestHarness(String systemPrompt, List<ToolConfigDTO> tools,
+                    List<SkillConfigDTO> skills, Map<String, String> sessionVariables,
+                    List<AgentExecutionContext.HistoryEntry> history) {
+            this.mutator = new AgentExecutionContext.AgentContextMutator();
+            this.context = new AgentExecutionContext(
+                    "1", "1", systemPrompt, "1", null,
+                    history != null ? new ArrayList<>(history) : new ArrayList<>(),
+                    tools != null ? new ArrayList<>(tools) : new ArrayList<>(),
+                    skills, mutator,
+                    sessionVariables != null ? sessionVariables : new HashMap<>(),
+                    new HashMap<>(), null, "", null);
+        }
+
+        TestHarness(String systemPrompt, List<ToolConfigDTO> tools,
+                    List<SkillConfigDTO> skills, Map<String, String> sessionVariables,
+                    Map<String, String> conversationVariables, Integer recentMessageCount,
+                    List<AgentExecutionContext.HistoryEntry> history) {
+            this.mutator = new AgentExecutionContext.AgentContextMutator();
+            this.context = new AgentExecutionContext(
+                    "1", "1", systemPrompt, "1", recentMessageCount,
+                    history != null ? new ArrayList<>(history) : new ArrayList<>(),
+                    tools != null ? new ArrayList<>(tools) : new ArrayList<>(),
+                    skills, mutator,
+                    sessionVariables != null ? sessionVariables : new HashMap<>(),
+                    conversationVariables != null ? conversationVariables : new HashMap<>(),
+                    null, "", null);
+        }
+    }
+
+    private com.ghost616.agentbase.dto.model.ChatRequest executeChat(
+            ChatRequest apiRequest, TestHarness harness, String requestType, Flux<ChatChunk> stream) {
+        AgentContextManager.Builder builder = mock(AgentContextManager.Builder.class);
+        when(agentContextManager.build(sessionId)).thenReturn(builder);
+        when(builder.modelIdOverride(any())).thenReturn(builder);
+        when(builder.build()).thenReturn(
+                new AgentContextManager.AgentSessionContext(
+                        harness.context, harness.mutator, new AtomicBoolean(false)));
+
+        lenient().when(chatDataProvider.getModelConfig(any())).thenReturn(
+                new ModelConfigData("1", "key", "url", "model", 0.7, 4096, "openai", requestType));
+        lenient().when(modelInvokerManager.getInvoker(any())).thenReturn(modelInvoker);
+        lenient().when(modelInvoker.invokeStream(any())).thenReturn(stream);
+        lenient().when(modelInvoker.toToolDefinition(any())).thenReturn(
+                ToolDefinition.builder().name("ctx_tool").build());
+
+        chatService.chat(apiRequest).subscribe();
+        ArgumentCaptor<com.ghost616.agentbase.dto.model.ChatRequest> captor =
+                ArgumentCaptor.forClass(com.ghost616.agentbase.dto.model.ChatRequest.class);
+        verify(modelInvoker).invokeStream(captor.capture());
+        return captor.getValue();
+    }
+
+    private List<Message> getSystemMessages(com.ghost616.agentbase.dto.model.ChatRequest captured) {
+        return captured.getMessages().stream()
+                .filter(m -> "system".equals(m.getRole()))
+                .toList();
+    }
+
+    @Test
+    @DisplayName("requestType=responses 时，input 不应包含 system 角色消息，仅含 user/assistant")
+    void responses_input应排除system角色消息() {
+        List<AgentExecutionContext.HistoryEntry> history = new ArrayList<>();
+        history.add(new AgentExecutionContext.HistoryEntry(
+                "system", "历史遗留系统消息", null, null, 1, java.time.LocalDateTime.now(),
+                List.of(), null, null, null));
+        history.add(new AgentExecutionContext.HistoryEntry(
+                "user", "你好", null, null, 2, java.time.LocalDateTime.now(),
+                List.of(), null, null, null));
+
+        TestHarness harness = new TestHarness("sys_prompt", List.of(), List.of(), null, history);
+        when(systemToolManager.getToolDefinitions()).thenReturn(List.of());
+
+        ChatRequest apiRequest = ChatRequest.builder().sessionId(sessionId).content("hello").build();
+        com.ghost616.agentbase.dto.model.ChatRequest captured =
+                executeChat(apiRequest, harness, RequestType.RESPONSES.getCode(), Flux.empty());
+
+        assertTrue(getSystemMessages(captured).isEmpty(), "input 中不应包含 system 角色消息");
+        assertTrue(captured.getMessages().stream().anyMatch(m -> "user".equals(m.getRole())),
+                "input 应包含 user 消息");
+    }
+
+    @Test
+    @DisplayName("requestType=responses 时，instructions 应包含 systemPrompt 与已加载技能提示词")
+    void responses_instructions应包含systemPrompt与已加载技能提示词() {
+        SkillConfigDTO loadedSkill = SkillConfigDTO.builder()
+                .name("loaded_skill")
+                .sessionAuth(null)
+                .prompt("SKILL_PROMPT_TEXT")
+                .build();
+
+        Map<String, String> sessionVars = new HashMap<>();
+        sessionVars.put(LoadSkillsSystemTool.SESSION_KEY, "[\"loaded_skill\"]");
+
+        TestHarness harness = new TestHarness("SYSTEM_PROMPT_TEXT", List.of(),
+                List.of(loadedSkill), sessionVars, List.of());
+        when(systemToolManager.getToolDefinitions()).thenReturn(
+                List.of(ToolDefinition.builder().name(LoadSkillsSystemTool.FULL_TOOL_NAME).build()));
+
+        ChatRequest apiRequest = ChatRequest.builder().sessionId(sessionId).content("hello").build();
+        com.ghost616.agentbase.dto.model.ChatRequest captured =
+                executeChat(apiRequest, harness, RequestType.RESPONSES.getCode(), Flux.empty());
+
+        assertNotNull(captured.getInstructions());
+        assertTrue(captured.getInstructions().contains("SYSTEM_PROMPT_TEXT"),
+                "instructions 应包含 systemPrompt");
+        assertTrue(captured.getInstructions().contains("SKILL_PROMPT_TEXT"),
+                "instructions 应包含已加载技能提示词");
+    }
+
+    @Test
+    @DisplayName("requestType=responses 时，instructions 应包含可用技能列表")
+    void responses_instructions应包含可用技能列表() {
+        SkillConfigDTO availableSkill = SkillConfigDTO.builder()
+                .name("available_skill")
+                .sessionAuth(null)
+                .description("desc")
+                .build();
+
+        TestHarness harness = new TestHarness("sys_prompt", List.of(),
+                List.of(availableSkill), null, List.of());
+        when(systemToolManager.getToolDefinitions()).thenReturn(
+                List.of(ToolDefinition.builder().name(LoadSkillsSystemTool.FULL_TOOL_NAME).build()));
+
+        ChatRequest apiRequest = ChatRequest.builder().sessionId(sessionId).content("hello").build();
+        com.ghost616.agentbase.dto.model.ChatRequest captured =
+                executeChat(apiRequest, harness, RequestType.RESPONSES.getCode(), Flux.empty());
+
+        assertTrue(captured.getInstructions().contains("可用的技能"),
+                "instructions 应包含可用技能列表提示");
+        assertTrue(captured.getInstructions().contains("available_skill"));
+    }
+
+    @Test
+    @DisplayName("requestType=responses 时，previousResponseId 应从 API 请求透传到模型请求")
+    void responses_previousResponseId透传() {
+        TestHarness harness = new TestHarness("sys_prompt", List.of(), List.of(), null, List.of());
+        when(systemToolManager.getToolDefinitions()).thenReturn(List.of());
+
+        ChatRequest apiRequest = ChatRequest.builder()
+                .sessionId(sessionId)
+                .content("hello")
+                .previousResponseId("resp_123")
+                .build();
+        com.ghost616.agentbase.dto.model.ChatRequest captured =
+                executeChat(apiRequest, harness, RequestType.RESPONSES.getCode(), Flux.empty());
+
+        assertEquals("resp_123", captured.getPreviousResponseId());
+    }
+
+    @Test
+    @DisplayName("requestType=responses 时，工具列表合并上下文工具与系统工具")
+    void responses_工具列表合并上下文与系统工具() {
+        ToolConfigDTO ctxTool = ToolConfigDTO.builder().name("ctx_tool").build();
+        TestHarness harness = new TestHarness("sys_prompt", List.of(ctxTool), List.of(), null, List.of());
+        when(systemToolManager.getToolDefinitions()).thenReturn(
+                List.of(ToolDefinition.builder().name("sys_tool_a").build(),
+                        ToolDefinition.builder().name("sys_tool_b").build()));
+
+        ChatRequest apiRequest = ChatRequest.builder().sessionId(sessionId).content("hello").build();
+        com.ghost616.agentbase.dto.model.ChatRequest captured =
+                executeChat(apiRequest, harness, RequestType.RESPONSES.getCode(), Flux.empty());
+
+        List<String> toolNames = captured.getTools() != null
+                ? captured.getTools().stream().map(ToolDefinition::getName).toList() : List.of();
+        assertTrue(toolNames.contains("ctx_tool"));
+        assertTrue(toolNames.contains("sys_tool_a"));
+        assertTrue(toolNames.contains("sys_tool_b"));
+    }
+
+    @Test
+    @DisplayName("requestType=responses 时，SSE 流 BEFORE_MESSAGE_SEND 与 AFTER_MESSAGE_RECEIVE 钩子正常触发")
+    void responses_SSE钩子正常触发() {
+        TestHarness harness = new TestHarness("sys_prompt", List.of(), List.of(), null, List.of());
+        when(systemToolManager.getToolDefinitions()).thenReturn(List.of());
+
+        ChatChunk chunk = ChatChunk.builder().delta("hi").finishReason("stop").build();
+
+        ChatRequest apiRequest = ChatRequest.builder().sessionId(sessionId).content("hello").build();
+        executeChat(apiRequest, harness, RequestType.RESPONSES.getCode(), Flux.just(chunk));
+
+        verify(hookManager).triggerSessionHooks(sessionId, HookPhase.BEFORE_MESSAGE_SEND,
+                harness.context, new HookData(chunk));
+        verify(hookManager).triggerHooks(HookPhase.BEFORE_MESSAGE_SEND, harness.context, new HookData(chunk));
+
+        ChatChunk completeChunk = ChatChunk.builder().hasToolCalls(false).build();
+        verify(hookManager).triggerSessionHooks(sessionId, HookPhase.AFTER_MESSAGE_RECEIVE,
+                harness.context, new HookData(completeChunk));
+        verify(hookManager).triggerHooks(HookPhase.AFTER_MESSAGE_RECEIVE, harness.context,
+                new HookData(completeChunk));
+    }
+
+    @Test
+    @DisplayName("requestType=responses 时，有状态分支 input 仅从最后一个 user 条目到末尾")
+    void responses_有状态input仅从最后一个user到末尾() {
+        List<AgentExecutionContext.HistoryEntry> history = new ArrayList<>();
+        history.add(new AgentExecutionContext.HistoryEntry(
+                "user", "q1", null, null, 1, java.time.LocalDateTime.now(), List.of(), null, null, null));
+        history.add(new AgentExecutionContext.HistoryEntry(
+                "assistant", "a1", null, null, 2, java.time.LocalDateTime.now(), List.of(), null, null, null));
+        history.add(new AgentExecutionContext.HistoryEntry(
+                "user", "q2", null, null, 3, java.time.LocalDateTime.now(), List.of(), null, null, null));
+        history.add(new AgentExecutionContext.HistoryEntry(
+                "assistant", "a2", null, null, 4, java.time.LocalDateTime.now(), List.of(), null, null, null));
+        history.add(new AgentExecutionContext.HistoryEntry(
+                "tool", "r2", null, new ToolInfo("tc1", "testTool"), 5, java.time.LocalDateTime.now(), List.of(), null, null, null));
+
+        TestHarness harness = new TestHarness("sys_prompt", List.of(), List.of(), null, history);
+        when(systemToolManager.getToolDefinitions()).thenReturn(List.of());
+
+        ChatRequest apiRequest = ChatRequest.builder()
+                .sessionId(sessionId)
+                .content(ChatService.TOOL_CONTINUE_MARKER)
+                .build();
+        com.ghost616.agentbase.dto.model.ChatRequest captured =
+                executeChat(apiRequest, harness, RequestType.RESPONSES.getCode(), Flux.empty());
+
+        List<String> roles = captured.getMessages().stream().map(Message::getRole).toList();
+        List<String> contents = captured.getMessages().stream().map(Message::getContent).toList();
+        assertEquals(List.of("q2", "a2", "r2"), contents,
+                "input 应从最后一个 user(q2) 到末尾，排除此前 q1/a1");
+        assertFalse(roles.contains("system"));
+    }
+
+    @Test
+    @DisplayName("requestType=responses 时，会话 lastResponseId 优先于 API 请求 previousResponseId")
+    void responses_lastResponseId优先于API请求() {
+        TestHarness harness = new TestHarness("sys_prompt", List.of(), List.of(), null, List.of());
+        harness.mutator.setLastResponseId("ctx_resp");
+        when(systemToolManager.getToolDefinitions()).thenReturn(List.of());
+
+        ChatRequest apiRequest = ChatRequest.builder()
+                .sessionId(sessionId)
+                .content("hello")
+                .previousResponseId("api_resp")
+                .build();
+        com.ghost616.agentbase.dto.model.ChatRequest captured =
+                executeChat(apiRequest, harness, RequestType.RESPONSES.getCode(), Flux.empty());
+
+        assertEquals("ctx_resp", captured.getPreviousResponseId(),
+                "lastResponseId 非空时应优先使用会话上下文值");
+    }
+
+    @Test
+    @DisplayName("requestType=responses 时，流式 chunk.responseId 应写入会话 lastResponseId")
+    void responses_responseId捕获写入上下文() {
+        TestHarness harness = new TestHarness("sys_prompt", List.of(), List.of(), null, List.of());
+        when(systemToolManager.getToolDefinitions()).thenReturn(List.of());
+
+        ChatChunk chunk = ChatChunk.builder().delta("hi").responseId("r1").build();
+
+        ChatRequest apiRequest = ChatRequest.builder().sessionId(sessionId).content("hello").build();
+        executeChat(apiRequest, harness, RequestType.RESPONSES.getCode(), Flux.just(chunk));
+
+        assertEquals("r1", harness.context.getLastResponseId(),
+                "流式过程中应捕获 responseId 写入会话上下文");
+    }
+
+    @Test
+    @DisplayName("requestType=responses_stateless 时，input 为全量历史且 previousResponseId 为空")
+    void responsesStateless_全量input无previousResponseId() {
+        List<AgentExecutionContext.HistoryEntry> history = new ArrayList<>();
+        history.add(new AgentExecutionContext.HistoryEntry(
+                "system", "历史遗留系统消息", null, null, 1, java.time.LocalDateTime.now(), List.of(), null, null, null));
+        history.add(new AgentExecutionContext.HistoryEntry(
+                "user", "q1", null, null, 2, java.time.LocalDateTime.now(), List.of(), null, null, null));
+        history.add(new AgentExecutionContext.HistoryEntry(
+                "assistant", "a1", null, null, 3, java.time.LocalDateTime.now(), List.of(), null, null, null));
+
+        TestHarness harness = new TestHarness("sys_prompt", List.of(), List.of(), null, history);
+        when(systemToolManager.getToolDefinitions()).thenReturn(List.of());
+
+        ChatRequest apiRequest = ChatRequest.builder()
+                .sessionId(sessionId)
+                .content("hello")
+                .previousResponseId("api_resp")
+                .build();
+        com.ghost616.agentbase.dto.model.ChatRequest captured =
+                executeChat(apiRequest, harness, RequestType.RESPONSES_STATELESS.getCode(), Flux.empty());
+
+        assertNull(captured.getPreviousResponseId(),
+                "无状态分支不应传 previousResponseId");
+        List<String> contents = captured.getMessages().stream().map(Message::getContent).toList();
+        assertEquals(List.of("q1", "a1", "hello"), contents,
+                "无状态分支 input 应包含全量历史（不含 system），且含本轮 user");
+        assertTrue(getSystemMessages(captured).isEmpty(), "input 不应包含 system 角色消息");
+    }
+
+    @Test
+    @DisplayName("requestType=openai 时，走 chat completions 分支：messages 含 system 消息，无 instructions")
+    void openai_走chatCompletions含system消息() {
+        TestHarness harness = new TestHarness("sys_prompt", List.of(), List.of(), null, List.of());
+        when(systemToolManager.getToolDefinitions()).thenReturn(List.of());
+
+        ChatRequest apiRequest = ChatRequest.builder()
+                .sessionId(sessionId)
+                .content("hello")
+                .previousResponseId("resp_123")
+                .build();
+        com.ghost616.agentbase.dto.model.ChatRequest captured =
+                executeChat(apiRequest, harness, "openai", Flux.empty());
+
+        assertEquals(1, getSystemMessages(captured).size(), "chat completions 分支应含 system 消息");
+        assertNull(captured.getInstructions());
+        assertNull(captured.getPreviousResponseId());
+    }
+
+    @Test
+    @DisplayName("requestType=completions 时，走 chat completions 分支：messages 含 system 消息，无 instructions")
+    void completions_走chatCompletions含system消息() {
+        TestHarness harness = new TestHarness("sys_prompt", List.of(), List.of(), null, List.of());
+        when(systemToolManager.getToolDefinitions()).thenReturn(List.of());
+
+        ChatRequest apiRequest = ChatRequest.builder()
+                .sessionId(sessionId)
+                .content("hello")
+                .previousResponseId("resp_123")
+                .build();
+        com.ghost616.agentbase.dto.model.ChatRequest captured =
+                executeChat(apiRequest, harness, RequestType.COMPLETIONS.getCode(), Flux.empty());
+
+        assertEquals(1, getSystemMessages(captured).size(), "chat completions 分支应含 system 消息");
+        assertNull(captured.getInstructions());
+        assertNull(captured.getPreviousResponseId());
+    }
+
+    @Test
+    @DisplayName("requestType=openai 时，已加载技能消息应插入到历史之后、最后一条 user 消息之前")
+    void openai_已加载技能消息插入到最后一个user之前() {
+        SkillConfigDTO loadedSkill = SkillConfigDTO.builder()
+                .name("loaded_skill")
+                .sessionAuth(null)
+                .prompt("SKILL_PROMPT")
+                .build();
+
+        Map<String, String> sessionVars = new HashMap<>();
+        sessionVars.put(LoadSkillsSystemTool.SESSION_KEY, "[\"loaded_skill\"]");
+
+        List<AgentExecutionContext.HistoryEntry> history = new ArrayList<>();
+        history.add(new AgentExecutionContext.HistoryEntry(
+                "user", "q1", null, null, 1, java.time.LocalDateTime.now(), List.of(), null, null, null));
+        history.add(new AgentExecutionContext.HistoryEntry(
+                "assistant", "a1", null, null, 2, java.time.LocalDateTime.now(), List.of(), null, null, null));
+
+        TestHarness harness = new TestHarness("sys_prompt", List.of(), List.of(loadedSkill), sessionVars, history);
+        when(systemToolManager.getToolDefinitions()).thenReturn(
+                List.of(ToolDefinition.builder().name(LoadSkillsSystemTool.FULL_TOOL_NAME).build()));
+
+        ChatRequest apiRequest = ChatRequest.builder().sessionId(sessionId).content("hello").build();
+        com.ghost616.agentbase.dto.model.ChatRequest captured =
+                executeChat(apiRequest, harness, "openai", Flux.empty());
+
+        List<String> contents = captured.getMessages().stream().map(Message::getContent).toList();
+        int loadedIdx = -1;
+        for (int i = 0; i < contents.size(); i++) {
+            if (contents.get(i) != null && contents.get(i).contains("以下技能已加载")) {
+                loadedIdx = i;
+                break;
+            }
+        }
+        int lastUserIdx = contents.lastIndexOf("hello");
+        int assistantIdx = contents.indexOf("a1");
+        assertTrue(loadedIdx >= 0, "chat completions 分支应包含已加载技能消息");
+        assertTrue(assistantIdx >= 0 && loadedIdx > assistantIdx,
+                "已加载技能消息应位于历史消息之后");
+        assertTrue(lastUserIdx > loadedIdx, "已加载技能消息应位于最后一条 user 消息之前");
+    }
+
+    @Test
+    @DisplayName("requestType=openai 时，无 user 消息时已加载技能消息应回退追加到列表末尾")
+    void openai_无user消息时已加载技能消息追加到末尾() {
+        SkillConfigDTO loadedSkill = SkillConfigDTO.builder()
+                .name("loaded_skill")
+                .sessionAuth(null)
+                .prompt("SKILL_PROMPT")
+                .build();
+
+        Map<String, String> sessionVars = new HashMap<>();
+        sessionVars.put(LoadSkillsSystemTool.SESSION_KEY, "[\"loaded_skill\"]");
+
+        List<AgentExecutionContext.HistoryEntry> history = new ArrayList<>();
+        history.add(new AgentExecutionContext.HistoryEntry(
+                "assistant", "a1", null, null, 1, java.time.LocalDateTime.now(), List.of(), null, null, null));
+        history.add(new AgentExecutionContext.HistoryEntry(
+                "tool", "r1", null, new ToolInfo("tc1", "testTool"), 2, java.time.LocalDateTime.now(), List.of(), null, null, null));
+
+        TestHarness harness = new TestHarness("sys_prompt", List.of(), List.of(loadedSkill), sessionVars, history);
+        when(systemToolManager.getToolDefinitions()).thenReturn(
+                List.of(ToolDefinition.builder().name(LoadSkillsSystemTool.FULL_TOOL_NAME).build()));
+
+        ChatRequest apiRequest = ChatRequest.builder()
+                .sessionId(sessionId)
+                .content(ChatService.TOOL_CONTINUE_MARKER)
+                .build();
+        com.ghost616.agentbase.dto.model.ChatRequest captured =
+                executeChat(apiRequest, harness, "openai", Flux.empty());
+
+        List<String> contents = captured.getMessages().stream().map(Message::getContent).toList();
+        assertFalse(contents.stream().anyMatch(c -> c != null && c.contains("hello")),
+                "tool_continue 请求不应新增 user 消息");
+        int loadedIdx = -1;
+        for (int i = 0; i < contents.size(); i++) {
+            if (contents.get(i) != null && contents.get(i).contains("以下技能已加载")) {
+                loadedIdx = i;
+                break;
+            }
+        }
+        assertTrue(loadedIdx >= 0, "应包含已加载技能消息");
+        assertEquals(contents.size() - 1, loadedIdx,
+                "无 user 消息时已加载技能消息应追加到列表末尾");
+    }
+
+    @Test
+    @DisplayName("requestType=openai 时，已加载技能消息不属于 system 前缀，仅由可用技能列表占据前缀")
+    void openai_已加载技能消息不进入系统前缀() {
+        SkillConfigDTO loadedSkill = SkillConfigDTO.builder()
+                .name("loaded_skill")
+                .sessionAuth(null)
+                .prompt("SKILL_PROMPT")
+                .build();
+
+        Map<String, String> sessionVars = new HashMap<>();
+        sessionVars.put(LoadSkillsSystemTool.SESSION_KEY, "[\"loaded_skill\"]");
+
+        List<AgentExecutionContext.HistoryEntry> history = new ArrayList<>();
+        history.add(new AgentExecutionContext.HistoryEntry(
+                "user", "q1", null, null, 1, java.time.LocalDateTime.now(), List.of(), null, null, null));
+
+        TestHarness harness = new TestHarness("sys_prompt", List.of(), List.of(loadedSkill), sessionVars, history);
+        when(systemToolManager.getToolDefinitions()).thenReturn(
+                List.of(ToolDefinition.builder().name(LoadSkillsSystemTool.FULL_TOOL_NAME).build()));
+
+        ChatRequest apiRequest = ChatRequest.builder().sessionId(sessionId).content("hello").build();
+        com.ghost616.agentbase.dto.model.ChatRequest captured =
+                executeChat(apiRequest, harness, "openai", Flux.empty());
+
+        List<String> contents = captured.getMessages().stream().map(Message::getContent).toList();
+        int loadedIdx = -1;
+        for (int i = 0; i < contents.size(); i++) {
+            if (contents.get(i) != null && contents.get(i).contains("以下技能已加载")) {
+                loadedIdx = i;
+                break;
+            }
+        }
+        int helloIdx = contents.lastIndexOf("hello");
+        int q1Idx = contents.indexOf("q1");
+        assertTrue(loadedIdx >= 0 && loadedIdx < helloIdx,
+                "已加载技能消息应插入在最后一条 user 消息之前，而非系统前缀");
+        assertTrue(loadedIdx > q1Idx,
+                "已加载技能消息应位于历史消息(q1)之后，而非系统前缀区");
+        boolean skillBeforeHistory = false;
+        for (int i = 0; i < q1Idx; i++) {
+            if (contents.get(i) != null && contents.get(i).contains("以下技能已加载")) {
+                skillBeforeHistory = true;
+                break;
+            }
+        }
+        assertFalse(skillBeforeHistory, "系统前缀区（历史消息之前）不应包含已加载技能消息");
+    }
+
+    @Test
+    @DisplayName("requestType=responses 时，模型请求 builtinTools 应从 toolManager 加载并设置")
+    void responses_builtinTools从toolManager加载() {
+        List<Map<String, Object>> builtinTools = List.of(Map.of("type", "web_search", "name", "web_search"));
+        when(toolManager.getBuiltinTools("1")).thenReturn(builtinTools);
+
+        TestHarness harness = new TestHarness("sys_prompt", List.of(), List.of(), null, List.of());
+        when(systemToolManager.getToolDefinitions()).thenReturn(List.of());
+
+        ChatRequest apiRequest = ChatRequest.builder().sessionId(sessionId).content("hello").build();
+        com.ghost616.agentbase.dto.model.ChatRequest captured =
+                executeChat(apiRequest, harness, RequestType.RESPONSES.getCode(), Flux.empty());
+
+        assertNotNull(captured.getBuiltinTools(), "builtinTools 不应为 null");
+        assertEquals(1, captured.getBuiltinTools().size());
+        assertEquals("web_search", captured.getBuiltinTools().get(0).get("name"));
+        verify(toolManager).getBuiltinTools("1");
+    }
+
+    @Test
+    @DisplayName("requestType=responses_stateless 时，模型请求 builtinTools 应从 toolManager 加载并设置")
+    void responsesStateless_builtinTools从toolManager加载() {
+        List<Map<String, Object>> builtinTools = List.of(Map.of("type", "web_search"));
+        when(toolManager.getBuiltinTools("1")).thenReturn(builtinTools);
+
+        TestHarness harness = new TestHarness("sys_prompt", List.of(), List.of(), null, List.of());
+        when(systemToolManager.getToolDefinitions()).thenReturn(List.of());
+
+        ChatRequest apiRequest = ChatRequest.builder().sessionId(sessionId).content("hello").build();
+        com.ghost616.agentbase.dto.model.ChatRequest captured =
+                executeChat(apiRequest, harness, RequestType.RESPONSES_STATELESS.getCode(), Flux.empty());
+
+        assertNotNull(captured.getBuiltinTools(), "builtinTools 不应为 null");
+        assertEquals(1, captured.getBuiltinTools().size());
+        verify(toolManager).getBuiltinTools("1");
+    }
+
+    private List<AgentExecutionContext.HistoryEntry> buildHistoryGroups(int fullGroups) {
+        List<AgentExecutionContext.HistoryEntry> history = new ArrayList<>();
+        for (int g = 0; g < fullGroups; g++) {
+            history.add(new AgentExecutionContext.HistoryEntry(
+                    "user", "q" + g, null, null, g * 2 + 1, java.time.LocalDateTime.now(),
+                    List.of(), null, null, null));
+            history.add(new AgentExecutionContext.HistoryEntry(
+                    "assistant", "a" + g, null, null, g * 2 + 2, java.time.LocalDateTime.now(),
+                    List.of(), null, null, null));
+        }
+        return history;
+    }
+
+    private int indexOfContent(List<String> contents, String keyword) {
+        for (int i = 0; i < contents.size(); i++) {
+            if (contents.get(i) != null && contents.get(i).contains(keyword)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    @Test
+    @DisplayName("requestType=openai 时，批量折叠 + 锚点展开 + loadedSkills 顺序为 loadedSkills < 锚点 < 当前 user")
+    void openai_批量折叠锚点展开与loadedSkills顺序() {
+        SkillConfigDTO loadedSkill = SkillConfigDTO.builder()
+                .name("loaded_skill")
+                .sessionAuth(null)
+                .prompt("SKILL_PROMPT")
+                .build();
+
+        Map<String, String> sessionVars = new HashMap<>();
+        sessionVars.put(LoadSkillsSystemTool.SESSION_KEY, "[\"loaded_skill\"]");
+
+        Map<String, String> convVars = new HashMap<>();
+        convVars.put(HistoryQuerySystemTool.VAR_NAME, "[2]");
+
+        List<AgentExecutionContext.HistoryEntry> history = buildHistoryGroups(12);
+        history.add(new AgentExecutionContext.HistoryEntry(
+                "user", "hello", null, null, 25, java.time.LocalDateTime.now(),
+                List.of(), null, null, null));
+
+        TestHarness harness = new TestHarness("sys_prompt", List.of(), List.of(loadedSkill),
+                sessionVars, convVars, 3, history);
+        when(systemToolManager.getToolDefinitions()).thenReturn(
+                List.of(ToolDefinition.builder().name(LoadSkillsSystemTool.FULL_TOOL_NAME).build()));
+
+        ChatRequest apiRequest = ChatRequest.builder()
+                .sessionId(sessionId)
+                .content(ChatService.TOOL_CONTINUE_MARKER)
+                .build();
+        com.ghost616.agentbase.dto.model.ChatRequest captured =
+                executeChat(apiRequest, harness, "openai", Flux.empty());
+
+        List<String> contents = captured.getMessages().stream().map(Message::getContent).toList();
+
+        long placeholderCount = contents.stream()
+                .filter(c -> c != null && c.contains("此为历史消息索引为"))
+                .count();
+        assertEquals(10, placeholderCount, "应批量折叠 10 组");
+
+        String loadedContent = contents.stream()
+                .filter(c -> c != null && c.contains("以下技能已加载"))
+                .findFirst().orElse(null);
+        assertNotNull(loadedContent, "应包含已加载技能消息");
+
+        String anchor = contents.stream()
+                .filter(c -> c != null && c.startsWith("【历史消息组2】"))
+                .findFirst().orElse(null);
+        assertNotNull(anchor, "应包含组2锚点展开消息");
+        assertTrue(anchor.contains("user: q2"), "锚点应包含 user 内容");
+        assertTrue(anchor.contains("assistant: a2"), "锚点应包含 assistant 内容");
+
+        int loadedIdx = indexOfContent(contents, "以下技能已加载");
+        int anchorIdx = indexOfContent(contents, "【历史消息组2】");
+        int lastUserIdx = contents.lastIndexOf("hello");
+        assertTrue(loadedIdx >= 0 && loadedIdx < anchorIdx,
+                "loadedSkills 应位于锚点展开之前");
+        assertTrue(anchorIdx < lastUserIdx,
+                "锚点展开应位于最后一条 user 消息之前");
+    }
+
+    @Test
+    @DisplayName("requestType=responses_stateless 时，instructions 应包含锚点展开内容")
+    void responsesStateless_instructions应包含锚点展开内容() {
+        Map<String, String> convVars = new HashMap<>();
+        convVars.put(HistoryQuerySystemTool.VAR_NAME, "[2]");
+
+        List<AgentExecutionContext.HistoryEntry> history = buildHistoryGroups(12);
+        history.add(new AgentExecutionContext.HistoryEntry(
+                "user", "hello", null, null, 25, java.time.LocalDateTime.now(),
+                List.of(), null, null, null));
+
+        TestHarness harness = new TestHarness("sys_prompt", List.of(), List.of(), null, convVars, 3, history);
+        when(systemToolManager.getToolDefinitions()).thenReturn(List.of());
+
+        ChatRequest apiRequest = ChatRequest.builder()
+                .sessionId(sessionId)
+                .content(ChatService.TOOL_CONTINUE_MARKER)
+                .build();
+        com.ghost616.agentbase.dto.model.ChatRequest captured =
+                executeChat(apiRequest, harness, RequestType.RESPONSES_STATELESS.getCode(), Flux.empty());
+
+        assertNotNull(captured.getInstructions());
+        assertTrue(captured.getInstructions().contains("【历史消息组2】"),
+                "instructions 应包含锚点展开消息");
+        assertTrue(captured.getInstructions().contains("user: q2"),
+                "instructions 应包含锚点组内容");
+    }
+}
