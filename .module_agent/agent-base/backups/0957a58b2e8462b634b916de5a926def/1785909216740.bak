@@ -1,0 +1,22 @@
+package com.ghost616.agentbase.dto.model;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+/**
+ * 向量化请求 DTO。
+ */
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class EmbeddingRequest {
+
+    /** 模型标识 */
+    private String model;
+
+    /** 待向量化文本，支持 String 或 List&lt;String&gt; */
+    private Object input;
+}

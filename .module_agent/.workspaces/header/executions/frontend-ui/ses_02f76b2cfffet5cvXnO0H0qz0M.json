@@ -1,0 +1,12 @@
+[
+  {
+    "plan_id": "plan_6f4b5280-f1a2-4b59-bcd4-a363ce867b5e",
+    "plan": "1. src/types/common.ts 中 PlatformType 联合类型新增 'SILICONFLOW'\\n2. ModelList.tsx 添加 SiliconFlow 平台标签（PLATFORM_TYPE_LABELS 增加 SILICONFLOW: '硅基流动'），modelName 字段 SILICONFLOW 平台使用自由文本输入框（排除下拉选择逻辑）",
+    "modified_files": [
+      "src/types/common.ts",
+      "src/pages/models/ModelList.tsx"
+    ],
+    "summary": "完成 SILICONFLOW 平台支持前端改动：1) src/types/common.ts PlatformType 联合类型新增 'SILICONFLOW'；2) ModelList.tsx PLATFORM_TYPE_LABELS 新增 SILICONFLOW: '硅基流动'（与后端 PlatformType description 一致）；3) 新增 isSiliconFlow 判断，SILICONFLOW 平台 modelName 的 modelNameSelectOptions 恒为空，isModelNameSelect=false，从而始终使用自由文本输入框而非固定下拉列表，其他平台原有下拉逻辑不受影响。已按用户澄清选择\"仅 SILICONFLOW 用自由输入\"实现。尚未运行编译/测试验证。",
+    "errors": []
+  }
+]

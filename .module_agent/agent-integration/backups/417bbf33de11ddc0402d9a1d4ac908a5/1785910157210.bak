@@ -20,8 +20,6 @@ import reactor.core.publisher.Mono;
 import com.ghost616.agentbase.dto.model.ChatChunk;
 import com.ghost616.agentbase.dto.model.ChatRequest;
 import com.ghost616.agentbase.dto.model.ChatResponse;
-import com.ghost616.agentbase.dto.model.EmbeddingRequest;
-import com.ghost616.agentbase.dto.model.EmbeddingResponse;
 import com.ghost616.agentbase.dto.model.Message;
 import com.ghost616.agentbase.dto.model.ToolCall;
 import com.ghost616.agentbase.dto.model.ToolCallDelta;
@@ -126,32 +124,6 @@ public class OpenAIInvoker implements ModelInvoker {
     }
 
     @Override
-    public EmbeddingResponse embed(EmbeddingRequest request) {
-        try {
-            String url = buildEmbeddingsUrl();
-            Map<String, Object> requestBody = buildEmbeddingRequestBody(request);
-            RestClient restClient = restClientBuilder.baseUrl("").build();
-            String responseBody = restClient.post()
-                    .uri(url)
-                    .header("Authorization", "Bearer " + apiKey)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(requestBody)
-                    .retrieve()
-                    .body(String.class);
-            return parseEmbeddingResponse(responseBody);
-        } catch (HttpClientErrorException | HttpServerErrorException e) {
-            log.error("OpenAI embed HTTP error: status={}", e.getStatusCode().value());
-            throw new BusinessException(ErrorCode.MODEL_INVOKE_ERROR,
-                    "HTTP " + e.getStatusCode().value() + ": " + e.getResponseBodyAsString());
-        } catch (BusinessException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("OpenAI embed error", e);
-            throw new BusinessException(ErrorCode.MODEL_INVOKE_ERROR, e.getMessage());
-        }
-    }
-
-    @Override
     public boolean verify() {
         try {
             RestClient restClient = restClientBuilder.baseUrl("").build();
@@ -200,66 +172,6 @@ public class OpenAIInvoker implements ModelInvoker {
 
     protected String buildChatCompletionsUrl() {
         return baseUrl + "/chat/completions";
-    }
-
-    protected String buildEmbeddingsUrl() {
-        return baseUrl + "/embeddings";
-    }
-
-    protected Map<String, Object> buildEmbeddingRequestBody(EmbeddingRequest request) {
-        if (request.getInputList() == null && request.getInput() == null) {
-            throw new IllegalArgumentException("Embedding request must contain input or inputList");
-        }
-        Map<String, Object> body = new HashMap<>();
-        body.put("model", request.getModel() != null ? request.getModel() : modelName);
-        if (request.getInputList() != null) {
-            body.put("input", request.getInputList());
-        } else if (request.getInput() != null) {
-            body.put("input", request.getInput());
-        }
-        return body;
-    }
-
-    protected EmbeddingResponse parseEmbeddingResponse(String responseBody) {
-        try {
-            JsonNode root = objectMapper.readTree(responseBody);
-            EmbeddingResponse.EmbeddingResponseBuilder builder = EmbeddingResponse.builder();
-            JsonNode dataNode = root.get("data");
-            if (dataNode != null && dataNode.isArray()) {
-                List<EmbeddingResponse.EmbeddingItem> embeddings = new ArrayList<>();
-                for (JsonNode itemNode : dataNode) {
-                    List<Float> embedding = new ArrayList<>();
-                    JsonNode embeddingNode = itemNode.get("embedding");
-                    if (embeddingNode != null && embeddingNode.isArray()) {
-                        for (JsonNode valueNode : embeddingNode) {
-                            embedding.add((float) valueNode.asDouble());
-                        }
-                    }
-                    Integer index = itemNode.get("index") != null ? itemNode.get("index").asInt() : null;
-                    embeddings.add(EmbeddingResponse.EmbeddingItem.builder()
-                            .index(index)
-                            .embedding(embedding)
-                            .build());
-                }
-                builder.embeddings(embeddings);
-            }
-            JsonNode usageNode = root.get("usage");
-            if (usageNode != null) {
-                builder.usage(UsageInfo.builder()
-                        .promptTokens(usageNode.get("prompt_tokens") != null
-                                ? usageNode.get("prompt_tokens").asInt() : null)
-                        .completionTokens(usageNode.get("completion_tokens") != null
-                                ? usageNode.get("completion_tokens").asInt() : null)
-                        .totalTokens(usageNode.get("total_tokens") != null
-                                ? usageNode.get("total_tokens").asInt() : null)
-                        .build());
-            }
-            return builder.build();
-        } catch (Exception e) {
-            log.error("Failed to parse OpenAI embedding response", e);
-            throw new BusinessException(ErrorCode.MODEL_INVOKE_ERROR,
-                    "Failed to parse embedding response: " + e.getMessage());
-        }
     }
 
     protected Map<String, Object> buildRequestBody(ChatRequest request, boolean stream) {

@@ -45,6 +45,7 @@
 - 模型测试页新增推理内容展示区域：接收并累积 reasoningText，以深色背景 (#252525) + 金色左侧边框 (#ffd700) 区分于普通回复
 - 推理区域上方显示"思考过程"标签（金色小字），内容使用 ReactMarkdown 渲染
 - 发送/清空操作同步清除 reasoningText 和 hasReasoningRef；onReasoning 回调中设置 hasResponseRef=true（只有 reasoning 无 delta 也算有内容）
+- 2026-08-05 新增 SILICONFLOW 平台：PlatformType 联合类型含 'SILICONFLOW'；PLATFORM_TYPE_LABELS 含 SILICONFLOW: '硅基流动'；SILICONFLOW 平台 modelName 恒为自由文本输入框（isSiliconFlow 使 modelNameSelectOptions 为空），其余平台保留 modelNames 下拉逻辑
 ## 工具管理界面
 
 - 工具配置管理页面 `/tools`，支持工具列表展示、搜索筛选、新增/编辑/删除/启用禁用

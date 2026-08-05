@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_02f8dfab1ffeVD9aaYkNPGQOjx",
+  "content": "# agent-base EmbeddingRequest 字段拆分与 ModelInvoker.embed Javadoc 补充 测试说明\n\n## 变更内容\n1. EmbeddingRequest DTO：Object input 字段替换为 String input（待向量化的单个文本）与 List<String> inputList（待向量化的文本列表）两个字段，更新字段 Javadoc，新增 java.util.List import。\n2. ModelInvoker.embed() 默认方法：Javadoc 补充 @throws UnsupportedOperationException 说明（当前模型提供方不支持向量化调用时抛出），方法体不变。\n\n## 涉及代码文件\n- agent-base/src/main/java/com/ghost616/agentbase/dto/model/EmbeddingRequest.java\n- agent-base/src/main/java/com/ghost616/agentbase/service/model/invoker/ModelInvoker.java\n\n## 需要验证\n- 编译测试：agent-base 模块 mvn compile / test-compile 通过（Java 编译型语言变更）。\n- 编译测试：agent-integration 模块编译通过（ModelInvoker.embed 为 default 方法，实现类无需改动）。",
+  "timestamp": "2026-08-05T05:53:55.596Z"
+}

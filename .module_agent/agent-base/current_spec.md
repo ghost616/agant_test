@@ -249,3 +249,10 @@ ToolExecutionService.executeTool 在 invoker==null 分支新增判断：当 peek
 - 桥接脚本：_runner.ts HistoryEntry 接口 toolInfo?: {toolCallId, toolName}；_runner.py HistoryEntry 由 tool_call_id 改为 self.tool_info = data.get("toolInfo")
 
 测试：agent-base 编译通过（test-compile BUILD SUCCESS），全量单测 219/219 通过，_runner.py/_runner.ts 语法校验通过。跨模块影响：agent-integration 的 OpenAIInvoker/AnthropicInvoker/OpenAIResponsesInvoker 使用 Message.getToolCallId()，platform-app 的 DefaultMessageDataProvider/AgentContextController/SessionController 引用旧签名，需各自模块同步。
+## 向量化调用
+向量化请求 DTO（com.ghost616.agentbase.dto.model.EmbeddingRequest）：model（模型标识）+ input（待向量化的单个文本 String）+ inputList（待向量化的文本列表 List<String>），单条与批量分别由两个字段承载，不再使用 Object 混合类型。
+## 向量化调用
+
+ModelInvoker 接口新增 default 方法 EmbeddingResponse embed(EmbeddingRequest request)，用于同步调用模型生成文本向量，默认实现抛出 UnsupportedOperationException（不支持向量化的提供方无需实现），实现类可按需覆写。
+
+向量化请求 DTO（com.ghost616.agentbase.dto.model.EmbeddingRequest）：model（模型标识）+ input（待向量化文本，支持 String 或 List<String>，字段类型为 Object）。向量化响应 DTO（com.ghost616.agentbase.dto.model.EmbeddingResponse）：embeddings（List<EmbeddingItem>，内部类 EmbeddingItem 含 index + List<Float> embedding 浮点数组）+ usage（UsageInfo Token 用量）。均使用 Lombok @Data @Builder @NoArgsConstructor @AllArgsConstructor。

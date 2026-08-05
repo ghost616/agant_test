@@ -17,7 +17,6 @@ public enum PlatformType {
     DEEPSEEK("DEEPSEEK", "DeepSeek", "https://api.deepseek.com"),
     KIMI("KIMI", "Kimi 月之暗面", "https://api.moonshot.cn/v1"),
     VOLCENGINE("VOLCENGINE", "火山引擎", "https://ark.cn-beijing.volces.com/api/v3"),
-    SILICONFLOW("SILICONFLOW", "硅基流动", "https://api.siliconflow.cn/v1"),
     CUSTOM("CUSTOM", "自定义", "");
 
     @EnumValue
@@ -50,7 +49,6 @@ public enum PlatformType {
             case DEEPSEEK -> Arrays.stream(DeepSeekModel.values()).map(DeepSeekModel::getModelName).toList();
             case KIMI -> Arrays.stream(KimiModel.values()).map(KimiModel::getModelName).toList();
             case VOLCENGINE -> Arrays.stream(VolcEngineModel.values()).map(VolcEngineModel::getModelName).toList();
-            case SILICONFLOW -> Arrays.stream(SiliconFlowModel.values()).map(SiliconFlowModel::getModelName).toList();
             case AZURE, OLLAMA, CUSTOM -> List.of();
         };
     }

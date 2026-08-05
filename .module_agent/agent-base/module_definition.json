@@ -388,6 +388,14 @@
     {
       "path": "agent-base/src/test/java/com/ghost616/agentbase/service/agent/ChatServiceHistoryGroupJsonTest.java",
       "description": "测试 ChatService.buildHistoryGroupMessage JSON 行输出格式：验证每条消息为一行独立 JSON（{role,content}），assistant 含推理+工具调用时输出 reasoning 与 tool_calls(name/arguments) 字段，tool 消息输出 tool_info(name/id) 字段，首行保留 HISTORY_GROUP_PREFIX 提示行"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/dto/model/EmbeddingRequest.java",
+      "description": "向量化请求 DTO，包含 model（模型标识）、input（待向量化的单个文本 String）、inputList（待向量化的文本列表 List<String>）三个字段，使用 Lombok @Data @Builder @NoArgsConstructor @AllArgsConstructor"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/dto/model/EmbeddingResponse.java",
+      "description": "向量化响应 DTO，包含 embeddings（List<EmbeddingItem>，每项含 index 与 List<Float> embedding 浮点数组）与 usage（UsageInfo）两个字段，内部类 EmbeddingItem 为单个向量项，使用 Lombok @Data @Builder @NoArgsConstructor @AllArgsConstructor"
     }
   ]
 }

@@ -69,5 +69,7 @@
   "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/ContextSerializer.java": "1669e44aa02c7a15e798b6497a0a9135",
   "agent-base/src/main/resources/agent/_runner.ts": "c6c2ec36a557d5b97b9d51cbca1d468a",
   "agent-base/src/main/resources/agent/_runner.py": "b6f27eb37d7fbd73a02a27944b2a1978",
-  "agent-base/src/test/java/com/ghost616/agentbase/service/agent/ChatServiceHistoryGroupJsonTest.java": "662d1b002d94712f5751e963f1cb6081"
+  "agent-base/src/test/java/com/ghost616/agentbase/service/agent/ChatServiceHistoryGroupJsonTest.java": "662d1b002d94712f5751e963f1cb6081",
+  "agent-base/src/main/java/com/ghost616/agentbase/service/model/invoker/ModelInvoker.java": "bb510c2eb7eac9957c312a772a81b474",
+  "agent-base/src/main/java/com/ghost616/agentbase/dto/model/EmbeddingRequest.java": "0957a58b2e8462b634b916de5a926def"
 }

@@ -34,7 +34,6 @@ const PLATFORM_TYPE_LABELS: Record<PlatformType, string> = {
   OLLAMA: 'Ollama',
   KIMI: 'Kimi',
   VOLCENGINE: '火山引擎',
-  SILICONFLOW: '硅基流动',
   DEEPSEEK: 'DeepSeek',
   CUSTOM: '自定义',
 };
@@ -98,9 +97,8 @@ function ModelList(): JSX.Element {
   );
   const needsManualInput = !currentConfig?.defaultBaseUrl || !currentConfig?.modelNames?.length;
   const showBaseUrl = needsManualInput;
-  const isSiliconFlow = watchedPlatformType === 'SILICONFLOW';
   const modelNameSelectOptions =
-    !needsManualInput && !isSiliconFlow && currentConfig?.modelNames?.length
+    !needsManualInput && currentConfig?.modelNames?.length
       ? currentConfig.modelNames.map((n) => ({ value: n, label: n }))
       : [];
   const isModelNameSelect = modelNameSelectOptions.length > 0;

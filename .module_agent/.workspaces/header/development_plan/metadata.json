@@ -14,5 +14,53 @@
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": false
+  },
+  {
+    "plan_id": "plan_59c7ddce-7dd4-4c5e-8e02-b40a54478d63",
+    "plan_summary": "审查 agent-base 模块 embeddings 相关新增代码",
+    "starter_session_id": "ses_03aed991fffeNylIOIT7KTfOPK",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": false
+  },
+  {
+    "plan_id": "plan_02c65456-130d-433a-a839-a3d89866640c",
+    "plan_summary": "审查 EmbeddingRequest 拆分 + embed @throws 补充",
+    "starter_session_id": "ses_03aed991fffeNylIOIT7KTfOPK",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": false
+  },
+  {
+    "plan_id": "plan_6f4b5280-f1a2-4b59-bcd4-a363ce867b5e",
+    "plan_summary": "frontend-ui 新增 SILICONFLOW 平台类型支持",
+    "starter_session_id": "ses_02f777313ffemhGs55IzD1G4hZ",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_a36df255-2a43-43e0-8a5a-a75ca3c91f09",
+    "plan_summary": "agent-integration 新增 SiliconFlow 平台支持",
+    "starter_session_id": "ses_02f777313ffemhGs55IzD1G4hZ",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_be68c316-d419-4457-bded-688529c27bff",
+    "plan_summary": "platform-app 检测硬编码 PlatformType 结构并补充 SILICONFLOW",
+    "starter_session_id": "ses_02f777313ffemhGs55IzD1G4hZ",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_40eb2050-7023-444f-b502-76e5988662fe",
+    "plan_summary": "修复 agent-integration 审查缺陷（supportsResponses 与 embed 入参校验）",
+    "starter_session_id": "ses_02f777313ffemhGs55IzD1G4hZ",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
   }
 ]

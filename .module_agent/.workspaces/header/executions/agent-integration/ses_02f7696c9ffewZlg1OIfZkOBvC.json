@@ -1,0 +1,29 @@
+[
+  {
+    "plan_id": "plan_a36df255-2a43-43e0-8a5a-a75ca3c91f09",
+    "plan": "Embedding 与硅基流动支持",
+    "modified_files": [
+      "agent-integration/src/main/java/com/ghost616/agentinteg/model/invoker/OpenAIInvoker.java",
+      "agent-integration/src/main/java/com/ghost616/agentinteg/model/invoker/SiliconFlowInvoker.java",
+      "agent-integration/src/main/java/com/ghost616/agentinteg/model/PlatformType.java",
+      "agent-integration/src/main/java/com/ghost616/agentinteg/model/SiliconFlowModel.java",
+      "agent-integration/src/main/java/com/ghost616/agentinteg/model/invoker/DefaultModelInvokerFactory.java",
+      "agent-integration/src/test/java/com/ghost616/agentinteg/model/invoker/OpenAIInvokerTest.java",
+      "agent-integration/src/test/java/com/ghost616/agentinteg/model/invoker/SiliconFlowInvokerTest.java"
+    ],
+    "summary": "执行完成。测试 24/24 通过（编译+单元测试）。第一轮发现 buildEmbeddingRequestBody 中 input/inputList 优先级问题（input 优先但测试期望 inputList 优先），已修复为 inputList 优先，第二轮全部通过。",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_40eb2050-7023-444f-b502-76e5988662fe",
+    "plan": "修复皋陶审查 SiliconFlow 缺陷",
+    "modified_files": [
+      "agent-integration/src/main/java/com/ghost616/agentinteg/model/invoker/DefaultModelInvokerFactory.java",
+      "agent-integration/src/main/java/com/ghost616/agentinteg/model/invoker/OpenAIInvoker.java",
+      "agent-integration/src/test/java/com/ghost616/agentinteg/model/invoker/OpenAIInvokerTest.java",
+      "agent-integration/src/test/java/com/ghost616/agentinteg/model/invoker/SiliconFlowInvokerTest.java"
+    ],
+    "summary": "执行完成。两项缺陷修复已通过测试：supportsResponses() 移除 SILICONFLOW（落入 default false，SILICONFLOW 走 createChatCompletionsInvoker 分支）；buildEmbeddingRequestBody() 在 input/inputList 均为 null 时抛 IllegalArgumentException。测试 49/49 通过（编译 + OpenAIInvokerTest/SiliconFlowInvokerTest/OpenAIResponsesInvokerTest 单元测试），无回归。",
+    "errors": []
+  }
+]

@@ -1,6 +1,8 @@
 package com.ghost616.agentinteg.model.invoker;
 
 import com.ghost616.agentbase.dto.model.ChatChunk;
+import com.ghost616.agentbase.dto.model.EmbeddingRequest;
+import com.ghost616.agentbase.dto.model.EmbeddingResponse;
 import com.ghost616.agentbase.dto.model.Message;
 import com.ghost616.agentbase.dto.model.ToolInfo;
 import com.ghost616.agentbase.dto.model.UsageInfo;
@@ -189,5 +191,115 @@ class OpenAIInvokerTest {
         assertEquals("user", m.get("role"));
         assertFalse(m.containsKey("name"));
         assertFalse(m.containsKey("tool_call_id"));
+    }
+
+    @Test
+    void buildEmbeddingsUrlAppendsEmbeddingsPath() {
+        assertEquals("https://api.openai.com/embeddings", invoker.buildEmbeddingsUrl());
+    }
+
+    @Test
+    void buildEmbeddingRequestBodyWithSingleInput() {
+        EmbeddingRequest request = EmbeddingRequest.builder()
+                .model("text-embedding-3-small")
+                .input("hello world")
+                .build();
+
+        Map<String, Object> body = invoker.buildEmbeddingRequestBody(request);
+
+        assertEquals("text-embedding-3-small", body.get("model"));
+        assertEquals("hello world", body.get("input"));
+    }
+
+    @Test
+    void buildEmbeddingRequestBodyWithInputList() {
+        EmbeddingRequest request = EmbeddingRequest.builder()
+                .model("text-embedding-3-small")
+                .inputList(List.of("a", "b"))
+                .build();
+
+        Map<String, Object> body = invoker.buildEmbeddingRequestBody(request);
+
+        assertEquals("text-embedding-3-small", body.get("model"));
+        assertEquals(List.of("a", "b"), body.get("input"));
+    }
+
+    @Test
+    void buildEmbeddingRequestBodyInputListWinsOverInput() {
+        EmbeddingRequest request = EmbeddingRequest.builder()
+                .model("text-embedding-3-small")
+                .input("single")
+                .inputList(List.of("a", "b"))
+                .build();
+
+        Map<String, Object> body = invoker.buildEmbeddingRequestBody(request);
+
+        assertEquals(List.of("a", "b"), body.get("input"));
+    }
+
+    @Test
+    void buildEmbeddingRequestBodyFallsBackToDefaultModel() {
+        EmbeddingRequest request = EmbeddingRequest.builder()
+                .input("hello")
+                .build();
+
+        Map<String, Object> body = invoker.buildEmbeddingRequestBody(request);
+
+        assertEquals("gpt-4", body.get("model"));
+        assertEquals("hello", body.get("input"));
+    }
+
+    @Test
+    void buildEmbeddingRequestBodyWithNullInputThrows() {
+        EmbeddingRequest request = EmbeddingRequest.builder()
+                .model("text-embedding-3-small")
+                .build();
+
+        assertThrows(IllegalArgumentException.class, () -> invoker.buildEmbeddingRequestBody(request));
+    }
+
+    @Test
+    void parseEmbeddingResponseExtractsEmbeddingsAndUsage() {
+        String json = "{"
+                + "\"data\":["
+                + "{\"index\":0,\"embedding\":[0.1,0.2,0.3]},"
+                + "{\"index\":1,\"embedding\":[0.4,0.5]}"
+                + "],"
+                + "\"usage\":{\"prompt_tokens\":2,\"completion_tokens\":0,\"total_tokens\":2}"
+                + "}";
+
+        EmbeddingResponse response = invoker.parseEmbeddingResponse(json);
+
+        assertNotNull(response);
+        assertNotNull(response.getEmbeddings());
+        assertEquals(2, response.getEmbeddings().size());
+        EmbeddingResponse.EmbeddingItem first = response.getEmbeddings().get(0);
+        assertEquals(Integer.valueOf(0), first.getIndex());
+        assertNotNull(first.getEmbedding());
+        assertEquals(3, first.getEmbedding().size());
+        assertEquals(0.1f, first.getEmbedding().get(0), 0.0001f);
+        assertEquals(0.3f, first.getEmbedding().get(2), 0.0001f);
+        assertEquals(Integer.valueOf(1), response.getEmbeddings().get(1).getIndex());
+        assertNotNull(response.getUsage());
+        assertEquals(2, response.getUsage().getPromptTokens());
+        assertEquals(0, response.getUsage().getCompletionTokens());
+        assertEquals(2, response.getUsage().getTotalTokens());
+    }
+
+    @Test
+    void parseEmbeddingResponseEmptyData() {
+        String json = "{\"data\":[],\"usage\":{\"prompt_tokens\":0,\"completion_tokens\":0,\"total_tokens\":0}}";
+
+        EmbeddingResponse response = invoker.parseEmbeddingResponse(json);
+
+        assertNotNull(response);
+        assertNotNull(response.getEmbeddings());
+        assertTrue(response.getEmbeddings().isEmpty());
+        assertNotNull(response.getUsage());
+    }
+
+    @Test
+    void parseEmbeddingResponseMalformedJsonThrows() {
+        assertThrows(Exception.class, () -> invoker.parseEmbeddingResponse("{invalid"));
     }
 }

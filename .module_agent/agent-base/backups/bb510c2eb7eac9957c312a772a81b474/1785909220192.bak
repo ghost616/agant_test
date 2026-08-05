@@ -36,7 +36,6 @@ public interface ModelInvoker {
      *
      * @param request 向量化请求
      * @return 向量化响应
-     * @throws UnsupportedOperationException 当前模型提供方不支持向量化调用时抛出
      */
     default EmbeddingResponse embed(EmbeddingRequest request) {
         throw new UnsupportedOperationException("当前模型提供方不支持向量化调用");

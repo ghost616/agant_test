@@ -58,7 +58,7 @@
 - **OpenAIResponsesInvoker.parseStreamEvent 新增事件**：response.reasoning_text.delta 解析 delta 写入 ChatChunk.reasoning；response.custom_tool_call.in_progress/done 解析 item_id/output_index/input 构建 ChatChunk.CustomToolCall 写入 customToolCall
 ## 工厂与组装
 
-- **DefaultModelInvokerFactory**：createInvoker() else 分支显式判断 RequestType.COMPLETIONS.getCode()（"completions"）或平台不支持 responses 时返回 Chat Completions Invoker，保留兜底返回；requestType 判断使用 RequestType.isResponses(requestType) 与 RequestType.COMPLETIONS.getCode() 并列枚举方式
+- **DefaultModelInvokerFactory**：根据平台类型（OPENAI/ANTHROPIC/AZURE/OLLAMA/KIMI/VOLCENGINE/DEEPSEEK/CUSTOM/SILICONFLOW）创建对应 Invoker；createChatCompletionsInvoker 新增 SILICONFLOW case 分支创建 SiliconFlowInvoker；supportsResponses 中不包含 SILICONFLOW（SILICONFLOW 仅支持 chat-completions，不支持 Responses API，与前端 RESPONSES_SUPPORTED 保持一致）
 ## 模型调用器（ModelInvoker 实现）
 
-- **OpenAIInvoker.buildMessages**：tool 角色消息在 toolInfo 非空时写入 tool_call_id（取自 msg.getToolInfo().toolCallId()），name 仅在 toolName 非空时写入；toolInfo 为 null 时不写任何工具字段。KimiInvoker/VolcEngineInvoker/DeepSeekInvoker 继承该实现
+- **OpenAIInvoker**：新增 embed(EmbeddingRequest) 方法，调用 baseUrl+/embeddings 接口，请求体构建 model + input/inputList（inputList 优先；input 与 inputList 均为 null 时抛出 IllegalArgumentException），解析响应返回 EmbeddingResponse（embeddings 列表与 usage），错误处理遵循 invoke() 模式；新增 buildEmbeddingsUrl/buildEmbeddingRequestBody/parseEmbeddingResponse 受保护方法

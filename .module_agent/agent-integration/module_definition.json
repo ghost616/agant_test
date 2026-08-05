@@ -104,6 +104,18 @@
     {
       "path": "agent-integration/src/test/java/com/ghost616/agentinteg/model/invoker/KimiInvokerTest.java",
       "description": "KimiInvoker 单元测试，覆盖 buildRequestBody 内置工具合并逻辑：builtinTools 为 null/空时不新增 tools key、仅有内置工具时新建 tools key、自定义工具与内置工具并存时 addAll 合并、多个内置工具全部追加"
+    },
+    {
+      "path": "agent-integration/src/main/java/com/ghost616/agentinteg/model/invoker/SiliconFlowInvoker.java",
+      "description": "硅基流动平台模型调用器，继承 OpenAIInvoker，构造函数透传参数，无覆盖方法"
+    },
+    {
+      "path": "agent-integration/src/main/java/com/ghost616/agentinteg/model/SiliconFlowModel.java",
+      "description": "硅基流动平台默认模型名称枚举（DeepSeek-V3/Qwen2.5-7B/72B/bge-m3）"
+    },
+    {
+      "path": "agent-integration/src/test/java/com/ghost616/agentinteg/model/invoker/SiliconFlowInvokerTest.java",
+      "description": "SiliconFlowInvoker 单元测试：验证继承 embed 支持、embeddings URL、工厂 SILICONFLOW 路由、PlatformType.SILICONFLOW 默认值、SiliconFlowModel 名称"
     }
   ]
 }

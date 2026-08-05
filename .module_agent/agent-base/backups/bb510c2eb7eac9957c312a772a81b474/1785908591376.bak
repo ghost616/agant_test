@@ -3,8 +3,6 @@ package com.ghost616.agentbase.service.model.invoker;
 import com.ghost616.agentbase.dto.model.ChatChunk;
 import com.ghost616.agentbase.dto.model.ChatRequest;
 import com.ghost616.agentbase.dto.model.ChatResponse;
-import com.ghost616.agentbase.dto.model.EmbeddingRequest;
-import com.ghost616.agentbase.dto.model.EmbeddingResponse;
 import com.ghost616.agentbase.dto.model.ToolDefinition;
 import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
 import com.ghost616.agentbase.service.agent.invoker.ToolDefinitionConverter;
@@ -30,17 +28,6 @@ public interface ModelInvoker {
      * @return 流式对话片段
      */
     Flux<ChatChunk> invokeStream(ChatRequest request);
-
-    /**
-     * 同步调用模型生成文本向量。
-     *
-     * @param request 向量化请求
-     * @return 向量化响应
-     * @throws UnsupportedOperationException 当前模型提供方不支持向量化调用时抛出
-     */
-    default EmbeddingResponse embed(EmbeddingRequest request) {
-        throw new UnsupportedOperationException("当前模型提供方不支持向量化调用");
-    }
 
     /**
      * 连通性验证。

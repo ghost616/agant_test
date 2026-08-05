@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_02f76b2cfffet5cvXnO0H0qz0M",
+  "content": "# SILICONFLOW 平台支持前端改动测试说明\n\n## 背景\nfrontend-ui 模块已新增 SILICONFLOW 平台支持：\n1. src/types/common.ts 中 PlatformType 联合类型新增 'SILICONFLOW'\n2. src/pages/models/ModelList.tsx：\n   - PLATFORM_TYPE_LABELS 新增 SILICONFLOW: '硅基流动'\n   - modelName 字段在 SILICONFLOW 平台下使用自由文本输入框（新增 isSiliconFlow 判断，使 modelNameSelectOptions 为空、isModelNameSelect=false），其他平台保留原有下拉选择逻辑\n\n## 测试目标\n1. **TypeScript 编译检查**：运行 `npx tsc --noEmit`，确认无类型错误（特别是 PLATFORM_TYPE_LABELS 的 Record<PlatformType, string> 完整性约束、isSiliconFlow 变量无未使用警告导致的编译失败）\n2. **单元测试**：运行 `npx vitest run`，确认现有测试全部通过，无回归\n3. **ModelList 组件行为验证**（如已有相关测试则确认；否则以编译通过为准）：\n   - SILICONFLOW 平台在平台类型下拉中可选\n   - 表格中 SILICONFLOW 模型显示标签\"硅基流动\"\n   - 选中 SILICONFLOW 时 modelName 为输入框（非下拉）\n\n## 判定标准\n- tsc --noEmit 通过\n- 现有 vitest 测试全部通过\n",
+  "timestamp": "2026-08-05T06:34:53.963Z"
+}

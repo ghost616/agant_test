@@ -7,7 +7,7 @@
     },
     {
       "path": "src/pages/models/ModelList.tsx",
-      "description": "模型列表页面组件，包含模型列表展示、搜索筛选、状态切换、编辑删除等操作。定义 PLATFORM_TYPE_LABELS 映射表。离朱在 2026-07-21 新增 KIMI'Kimi' 和 VOLCENGINE'火山引擎' 映射。2026-07-31 新增 REQUEST_TYPE_OPTIONS/RESPONSES_SUPPORTED 常量、requestType 表单 Select（仅 RESPONSES_SUPPORTED 平台显示）与请求类型表格列，REQUEST_TYPE_OPTIONS 的 value 使用 RequestType 枚举 code 值（RequestType.RESPONSES.code / RequestType.RESPONSES_STATELESS.code）。"
+      "description": "模型列表页面组件，包含模型列表展示、搜索筛选、状态切换、编辑删除等操作。定义 PLATFORM_TYPE_LABELS 映射表。离朱在 2026-07-21 新增 KIMI'Kimi' 和 VOLCENGINE'火山引擎' 映射。2026-07-31 新增 REQUEST_TYPE_OPTIONS/RESPONSES_SUPPORTED 常量、requestType 表单 Select（仅 RESPONSES_SUPPORTED 平台显示）与请求类型表格列，REQUEST_TYPE_OPTIONS 的 value 使用 RequestType 枚举 code 值（RequestType.RESPONSES.code / RequestType.RESPONSES_STATELESS.code）。2026-08-05 新增 SILICONFLOW'硅基流动' 平台标签；SILICONFLOW 平台 modelName 固定使用自由文本输入框（新增 isSiliconFlow 判断排除下拉选择逻辑，其他平台保留原有下拉）。"
     },
     {
       "path": "src/pages/models/ModelTest.tsx",
@@ -75,7 +75,7 @@
     },
     {
       "path": "src/types/common.ts",
-      "description": "公共类型定义文件，包含 ApiResponse、PageResult、CommonStatus、ToolType、HookPhase、PlatformType 等共享类型"
+      "description": "公共类型定义文件，包含 ApiResponse、PageResult、CommonStatus、ToolType、HookPhase、PlatformType 等共享类型。2026-08-05 PlatformType 联合类型新增 'SILICONFLOW'。"
     },
     {
       "path": "src/services/toolExecutor.ts",

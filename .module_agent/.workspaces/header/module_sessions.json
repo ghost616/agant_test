@@ -1,1 +1,17 @@
-{}
+{
+  "agent-base": [
+    "ses_02f8dfab1ffeVD9aaYkNPGQOjx"
+  ],
+  "frontend-ui": [
+    "ses_02f76b2cfffet5cvXnO0H0qz0M"
+  ],
+  "agent-integration": [
+    "ses_02f7696c9ffewZlg1OIfZkOBvC"
+  ],
+  "platform-app": [
+    "ses_02f713cc8ffe7N6WcGkzmF53i4"
+  ],
+  "_checked": [
+    "ses_02f777313ffemhGs55IzD1G4hZ"
+  ]
+}

@@ -184,3 +184,8 @@
 - AgentContextDTO.HistoryEntryDTO 字段 toolCallId(String) 改为 toolInfo(ToolInfo)；AgentContextController.mapHistory 改为 dto.setToolInfo(entry.toolInfo())
 - SessionController.completeSubSession 中 agent-base Message 构造从 toolCallId(lastAssistantMsg.toolCallId()) 改为 toolInfo(lastAssistantMsg.toolInfo())
 - 更新 DefaultMessageDataProviderTest（saveMessage 传 ToolInfo、批次断言含 tool_result 行、toolInfo 读取断言）并新增 5 个用例；AgentContextControllerTest HistoryEntry 第 4 参改为 ToolInfo
+[2026-08-05T06:15:23.593Z] [session: ses_02f713cc8ffe7N6WcGkzmF53i4] 检测 SILICONFLOW 平台支持（agent-integration 已新增 PlatformType.SILICONFLOW）：
+1. ModelConfigController.platformConfig()（/api/models/platform-config）使用 Arrays.stream(PlatformType.values()) 动态枚举，无硬编码列表，SILICONFLOW 自动包含在 PlatformConfigResponse 中，无需修改。
+2. DefaultToolDataProvider.getBuiltinTools() 存在 OPENAI/DEEPSEEK（responses→web_search）与 KIMI（completions→$web_search）的平台能力判断，属平台专属内置工具能力映射而非平台枚举列表；SILICONFLOW 当前落入 List.of() 默认分支（无内置工具），与其 OpenAI 兼容 chat-completions 调用器（SiliconFlowInvoker extends OpenAIInvoker）能力一致，无需补充。
+3. 其余引用（ModelConfigServiceImpl/DefaultChatDataProvider/DTO 字段）均动态使用 PlatformType，无硬编码平台列表。
+结论：platform-app 无需代码改动。

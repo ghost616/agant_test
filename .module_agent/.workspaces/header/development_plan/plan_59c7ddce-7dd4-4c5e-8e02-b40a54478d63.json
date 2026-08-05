@@ -1,0 +1,11 @@
+{
+  "plan_id": "plan_59c7ddce-7dd4-4c5e-8e02-b40a54478d63",
+  "module_name": "",
+  "development_plan": "新建 EmbeddingRequest/EmbeddingResponse DTO，ModelInvoker 新增 embed 方法",
+  "session_id": "",
+  "modified_files": [
+    "agent-base/src/main/java/com/ghost616/agentbase/dto/model/EmbeddingRequest.java",
+    "agent-base/src/main/java/com/ghost616/agentbase/dto/model/EmbeddingResponse.java",
+    "agent-base/src/main/java/com/ghost616/agentbase/service/model/invoker/ModelInvoker.java"
+  ]
+}
