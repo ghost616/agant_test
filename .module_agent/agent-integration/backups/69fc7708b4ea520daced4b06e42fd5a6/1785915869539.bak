@@ -5,6 +5,7 @@ import com.ghost616.agentbase.dto.model.ModelConfigData;
 import com.ghost616.agentbase.enums.RequestType;
 import com.ghost616.agentbase.service.model.invoker.ModelInvoker;
 import com.ghost616.agentinteg.model.PlatformType;
+import com.ghost616.agentinteg.model.SiliconFlowModel;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.client.RestClient;
@@ -83,6 +84,13 @@ class SiliconFlowInvokerTest {
         assertEquals("SILICONFLOW", PlatformType.SILICONFLOW.getCode());
         assertEquals("硅基流动", PlatformType.SILICONFLOW.getDescription());
         assertEquals("https://api.siliconflow.cn/v1", PlatformType.SILICONFLOW.getDefaultBaseUrl());
-        assertTrue(PlatformType.SILICONFLOW.getDefaultModelNames().isEmpty());
+        assertTrue(PlatformType.SILICONFLOW.getDefaultModelNames().contains("deepseek-ai/DeepSeek-V3"));
+        assertTrue(PlatformType.SILICONFLOW.getDefaultModelNames().contains("Qwen/Qwen2.5-7B-Instruct"));
+    }
+
+    @Test
+    void siliconFlowModelNames() {
+        assertEquals("deepseek-ai/DeepSeek-V3", SiliconFlowModel.DEEPSEEK_V3.getModelName());
+        assertEquals("Qwen/Qwen2.5-7B-Instruct", SiliconFlowModel.QWEN2_5_7B_INSTRUCT.getModelName());
     }
 }

@@ -50,7 +50,8 @@ public enum PlatformType {
             case DEEPSEEK -> Arrays.stream(DeepSeekModel.values()).map(DeepSeekModel::getModelName).toList();
             case KIMI -> Arrays.stream(KimiModel.values()).map(KimiModel::getModelName).toList();
             case VOLCENGINE -> Arrays.stream(VolcEngineModel.values()).map(VolcEngineModel::getModelName).toList();
-            case AZURE, OLLAMA, SILICONFLOW, CUSTOM -> List.of();
+            case SILICONFLOW -> Arrays.stream(SiliconFlowModel.values()).map(SiliconFlowModel::getModelName).toList();
+            case AZURE, OLLAMA, CUSTOM -> List.of();
         };
     }
 }

@@ -110,12 +110,8 @@
       "description": "硅基流动平台模型调用器，继承 OpenAIInvoker，构造函数透传参数，无覆盖方法"
     },
     {
-      "path": "agent-integration/src/main/java/com/ghost616/agentinteg/model/SiliconFlowModel.java",
-      "description": "硅基流动平台默认模型名称枚举（DeepSeek-V3/Qwen2.5-7B/72B/bge-m3）"
-    },
-    {
       "path": "agent-integration/src/test/java/com/ghost616/agentinteg/model/invoker/SiliconFlowInvokerTest.java",
-      "description": "SiliconFlowInvoker 单元测试：验证继承 embed 支持、embeddings URL、工厂 SILICONFLOW 路由、PlatformType.SILICONFLOW 默认值、SiliconFlowModel 名称"
+      "description": "SiliconFlowInvoker 单元测试：验证继承 embed 支持、embeddings URL、工厂 SILICONFLOW 路由、PlatformType.SILICONFLOW 默认值（含默认模型列表为空断言）"
     }
   ]
 }

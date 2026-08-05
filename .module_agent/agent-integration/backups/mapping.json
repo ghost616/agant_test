@@ -20,5 +20,7 @@
   "agent-integration/src/main/java/com/ghost616/agentinteg/model/invoker/OpenAIResponsesInvoker.java": "0477a2e4da55ad446a9f5487d482c6cf",
   "agent-integration/src/test/java/com/ghost616/agentinteg/model/invoker/OpenAIResponsesInvokerTest.java": "1877aebdfcf8632447e27d45e70be424",
   "agent-integration/src/main/java/com/ghost616/agentinteg/model/invoker/KimiInvoker.java": "9fc0ef8830d2fad6d3564231616b80a0",
-  "agent-integration/src/main/java/com/ghost616/agentinteg/model/PlatformType.java": "7d014c8d7f99848f1fc1002983d4a335"
+  "agent-integration/src/main/java/com/ghost616/agentinteg/model/PlatformType.java": "7d014c8d7f99848f1fc1002983d4a335",
+  "agent-integration/src/test/java/com/ghost616/agentinteg/model/invoker/SiliconFlowInvokerTest.java": "69fc7708b4ea520daced4b06e42fd5a6",
+  "agent-integration/src/main/java/com/ghost616/agentinteg/model/SiliconFlowModel.java": "b04958b3d6fa7219a9f7149ff4b5595c"
 }
