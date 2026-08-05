@@ -107,14 +107,14 @@ function ModelList(): JSX.Element {
     (c) => c.platformType === watchedPlatformType,
   );
   const needsManualInput = !currentConfig?.defaultBaseUrl || !currentConfig?.modelNames?.length;
-  const showBaseUrl = needsManualInput;
+  const isCustom = watchedPlatformType === 'CUSTOM';
+  const showBaseUrl = isCustom;
   const isSiliconFlow = watchedPlatformType === 'SILICONFLOW';
   const modelNameSelectOptions =
     !needsManualInput && !isSiliconFlow && currentConfig?.modelNames?.length
       ? currentConfig.modelNames.map((n) => ({ value: n, label: n }))
       : [];
   const isModelNameSelect = modelNameSelectOptions.length > 0;
-  const isCustom = watchedPlatformType === 'CUSTOM';
   const isResponsesSupported =
     !!watchedPlatformType && RESPONSES_SUPPORTED.includes(watchedPlatformType);
 
