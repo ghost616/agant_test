@@ -2,11 +2,11 @@ package com.ghost616.platform.entity;
 
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.ghost616.agentbase.enums.CommonStatus;
+import com.ghost616.agentbase.enums.ModelType;
 import com.ghost616.agentinteg.model.PlatformType;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-
-import com.ghost616.agentbase.enums.CommonStatus;
 
 
 @Data
@@ -26,6 +26,9 @@ public class ModelConfig extends BaseEntity {
 
     @TableField("request_type")
     private String requestType;
+
+    @TableField("model_type")
+    private ModelType modelType = ModelType.LLM;
 
     private Double temperature;
 

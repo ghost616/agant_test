@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 import com.ghost616.agentbase.enums.CommonStatus;
+import com.ghost616.agentbase.enums.ModelType;
 
 
 @Data
@@ -27,6 +28,7 @@ public class ModelConfigDTO {
     private String baseUrl;
     private String modelName;
     private String requestType;
+    private ModelType modelType;
     private Double temperature;
     private Integer maxTokens;
     private CommonStatus status;

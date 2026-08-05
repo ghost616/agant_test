@@ -47,7 +47,8 @@ execute 方法签名由 execute(AgentExecutionContext, ChatChunk) 改为 execute
 非 Spring 组件（已去掉 @Component），保留 @Slf4j。构造函数改为接收 AgentComponentRegistry，通过 registry.getToolExecutionProvider() 获取 ToolExecutionProvider，所有 Map 操作（setExecuting/setDone/setFailed/clear/getCurrentExecution/getAndClearResults）委派给 provider。内部 record ToolExecutionStatus（status/toolId/toolName/arguments）和 ToolResult（toolId/toolName/arguments/result）保持不变。
 ## ModelConfigData
 
-ModelConfigData record（com.ghost616.agentbase.dto.model.ModelConfigData），包含字段：String id, String apiKey, String baseUrl, String modelName, Double temperature, Integer maxTokens, String platformType, String requestType。requestType 表示模型请求类型（如 "responses" 走 Responses API），可为 null，ChatService 依据该字段分发调用流程。
+ModelConfigData record（com.ghost616.agentbase.dto.model.ModelConfigData），包含字段：String id, String apiKey, String baseUrl, String modelName, Double temperature, Integer maxTokens, String platformType, ModelType modelType, String requestType。modelType 表示模型类型（LLM/EMBEDDINGS），位于 platformType 之后、requestType 之前，可为 null；requestType 表示模型请求类型（如 "responses" 走 Responses API），可为 null，ChatService 依据该字段分发调用流程。
+保留 8 参兼容构造器（省略 modelType），默认 modelType=ModelType.LLM，与全参构造器共存，兼容既有调用方。
 新增实例方法 isResponsesType()：委托 RequestType.isResponses(requestType) 判断当前模型配置是否走 Responses 系列请求（responses / responses_stateless 均返回 true）。
 ## ModelInvokerFactory
 
@@ -256,3 +257,6 @@ ToolExecutionService.executeTool 在 invoker==null 分支新增判断：当 peek
 ModelInvoker 接口新增 default 方法 EmbeddingResponse embed(EmbeddingRequest request)，用于同步调用模型生成文本向量，默认实现抛出 UnsupportedOperationException（不支持向量化的提供方无需实现），实现类可按需覆写。
 
 向量化请求 DTO（com.ghost616.agentbase.dto.model.EmbeddingRequest）：model（模型标识）+ input（待向量化文本，支持 String 或 List<String>，字段类型为 Object）。向量化响应 DTO（com.ghost616.agentbase.dto.model.EmbeddingResponse）：embeddings（List<EmbeddingItem>，内部类 EmbeddingItem 含 index + List<Float> embedding 浮点数组）+ usage（UsageInfo Token 用量）。均使用 Lombok @Data @Builder @NoArgsConstructor @AllArgsConstructor。
+## 模型类型
+
+ModelType 枚举（com.ghost616.agentbase.enums.ModelType），定义模型的能力类型，包含 LLM("LLM", "大语言模型") 与 EMBEDDINGS("EMBEDDINGS", "向量嵌入模型") 两个值。code 字段使用 @EnumValue 标注，提供 getCode()/getDescription() 方法。供 ModelConfigData.modelType 字段引用，用于区分对话/向量化模型。

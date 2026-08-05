@@ -4,5 +4,17 @@
   ],
   "agent-integration": [
     "ses_02f1ee954ffeYcUDmcGjcqGv8N"
+  ],
+  "agent-base": [
+    "ses_02f10f15fffeGST5W1by3O3hn5"
+  ],
+  "frontend-ui": [
+    "ses_02f10e3c0ffePLAhedSIPD9dju"
+  ],
+  "platform-data": [
+    "ses_02f0c22bcffeSz2JqI0GG60w0L"
+  ],
+  "platform-app": [
+    "ses_02f041580ffeGWzFxGUX5EbkDh"
   ]
 }

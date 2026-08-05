@@ -1,0 +1,14 @@
+[
+  {
+    "plan_id": "plan_4de623d2-4de6-452d-a71e-5c4ae6fe7b54",
+    "plan": "1. src/types/common.ts 新增 ModelType 类型；2. ModelConfig 新增 modelType 字段；3. ModelList.tsx SILICONFLOW 平台显示模型类型下拉、列表展示 modelType 列",
+    "modified_files": [
+      "src/types/common.ts",
+      "src/types/model.ts",
+      "src/pages/models/ModelList.tsx",
+      "src/pages/models/__tests__/ModelTest.test.tsx"
+    ],
+    "summary": "执行总结：模型类型(modelType)功能开发完成并通过离朱测试。\n【本次计划】1) src/types/common.ts 新增 ModelType 联合类型 'LLM'|'EMBEDDINGS'；2) src/types/model.ts ModelConfig 新增 modelType: ModelType 字段（ModelFormData 经 Omit 派生自动同步）；3) ModelList.tsx：新增 MODEL_TYPE_LABELS/MODEL_TYPE_OPTIONS 常量，表单\"模型类型\" Select 仅 SILICONFLOW 显示（hidden={!isSiliconFlow}，initialValue='LLM'），编辑回填 modelType（空值回填 'LLM'），提交时非 SILICONFLOW 强制 modelType='LLM'，表格新增\"模型类型\"列（空值渲染 'LLM'），scroll.x 调整至 1360。\n【前序上下文】本次为独立需求，未依赖前序开发中的特定上下文；ModelList.tsx 已有 isSiliconFlow/watchedPlatformType 联动逻辑与 requestType 隐藏字段模式，本次复用相同模式。\n【开发总结】修改 4 个文件（common.ts/model.ts/ModelList.tsx/ModelTest.test.tsx）。后端 DTO 对应 modelType 字段（LLM/EMBEDDINGS），前端 ModelFormData 直接透传；非 SILICONFLOW 平台不显示选择器且提交强制 LLM，SILICONFLOW 平台用户可下拉选择。已同步 append_history。\n【测试总结】离朱测试：变更文件 tsc 零错误；ModelTest.test.tsx 6/6 通过；全量 540 用例中 36 失败均为既有问题（toolExecutor 全局注册/session totalTokenUsed/SessionList Token 列，与本次无关）；需求 7 个验证点全部 PASS。\n【后序工作】无。既有失败修复建议已由离朱在报告中列出，独立于本次需求。",
+    "errors": []
+  }
+]

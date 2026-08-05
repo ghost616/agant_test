@@ -1,0 +1,12 @@
+{
+  "plan_id": "plan_4de623d2-4de6-452d-a71e-5c4ae6fe7b54",
+  "module_name": "frontend-ui",
+  "development_plan": "1. src/types/common.ts 新增 ModelType 类型 'LLM' | 'EMBEDDINGS'\n2. ModelConfig 接口（src/types/model.ts）新增 modelType 字段\n3. ModelList.tsx：新增/编辑表单中，仅当 platformType 为 SILICONFLOW 时显示模型类型下拉选择（LLM/EMBEDDINGS），其他平台默认 LLM 不显示选择器；列表展示 modelType 列",
+  "session_id": "ses_02f10e3c0ffePLAhedSIPD9dju",
+  "modified_files": [
+    "src/types/common.ts",
+    "src/types/model.ts",
+    "src/pages/models/ModelList.tsx",
+    "src/pages/models/__tests__/ModelTest.test.tsx"
+  ]
+}

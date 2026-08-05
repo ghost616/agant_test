@@ -19,6 +19,7 @@ vi.mock('../../../services/model', () => ({
     id: 'test-id',
     name: 'Test Model',
     platformType: 'OPENAI',
+    modelType: 'LLM',
     apiKey: '',
     baseUrl: '',
     modelName: 'gpt-4',

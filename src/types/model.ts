@@ -1,4 +1,4 @@
-import type { CommonStatus, PlatformType } from './common';
+import type { CommonStatus, ModelType, PlatformType } from './common';
 
 /** 请求类型枚举，code 对应后端 RequestType 枚举的 code 值 */
 export const RequestType = {
@@ -17,6 +17,7 @@ export interface ModelConfig {
   id: string;
   name: string;
   platformType: PlatformType;
+  modelType: ModelType;
   apiKey: string;
   baseUrl: string;
   modelName: string;

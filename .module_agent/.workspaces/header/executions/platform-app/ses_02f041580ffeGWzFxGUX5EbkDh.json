@@ -1,0 +1,14 @@
+[
+  {
+    "plan_id": "plan_1bfd82ea-d523-41c6-9912-40547ae02e58",
+    "plan": "ModelConfig 新增 modelType 字段（DTO/Request/ServiceImpl）",
+    "modified_files": [
+      "platform-app/src/main/java/com/ghost616/platform/dto/model/ModelConfigDTO.java",
+      "platform-app/src/main/java/com/ghost616/platform/dto/model/ModelCreateRequest.java",
+      "platform-app/src/main/java/com/ghost616/platform/dto/model/ModelUpdateRequest.java",
+      "platform-app/src/main/java/com/ghost616/platform/service/model/ModelConfigServiceImpl.java"
+    ],
+    "summary": "已更新 ModelConfigDTO/ModelCreateRequest/ModelUpdateRequest 新增 modelType 字段，ModelConfigServiceImpl 完成 toDTO/create/update 的 modelType 映射",
+    "errors": []
+  }
+]

@@ -16,7 +16,6 @@ import java.util.List;
 
 import com.ghost616.agentbase.enums.CommonStatus;
 import com.ghost616.agentbase.enums.ErrorCode;
-import com.ghost616.agentbase.enums.ModelType;
 import com.ghost616.agentbase.exception.BusinessException;
 import com.ghost616.platform.util.IdConverter;
 
@@ -70,7 +69,6 @@ public class ModelConfigServiceImpl implements ModelConfigService {
                 : request.getPlatformType().getDefaultBaseUrl());
         entity.setModelName(request.getModelName());
         entity.setRequestType(request.getRequestType());
-        entity.setModelType(request.getModelType() != null ? request.getModelType() : ModelType.LLM);
         entity.setTemperature(request.getTemperature());
         entity.setMaxTokens(request.getMaxTokens());
         entity.setStatus(request.getStatus() != null ? request.getStatus() : CommonStatus.ENABLED);
@@ -107,9 +105,6 @@ public class ModelConfigServiceImpl implements ModelConfigService {
         }
         if (request.getRequestType() != null) {
             entity.setRequestType(request.getRequestType());
-        }
-        if (request.getModelType() != null) {
-            entity.setModelType(request.getModelType());
         }
         if (request.getTemperature() != null) {
             entity.setTemperature(request.getTemperature());
@@ -171,7 +166,6 @@ public class ModelConfigServiceImpl implements ModelConfigService {
                 .baseUrl(entity.getBaseUrl())
                 .modelName(entity.getModelName())
                 .requestType(entity.getRequestType())
-                .modelType(entity.getModelType())
                 .temperature(entity.getTemperature())
                 .maxTokens(entity.getMaxTokens())
                 .status(entity.getStatus())

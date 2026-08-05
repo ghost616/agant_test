@@ -396,6 +396,10 @@
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/dto/model/EmbeddingResponse.java",
       "description": "向量化响应 DTO，包含 embeddings（List<EmbeddingItem>，每项含 index 与 List<Float> embedding 浮点数组）与 usage（UsageInfo）两个字段，内部类 EmbeddingItem 为单个向量项，使用 Lombok @Data @Builder @NoArgsConstructor @AllArgsConstructor"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/enums/ModelType.java",
+      "description": "模型类型枚举，定义模型的能力类型（LLM 大语言模型 / EMBEDDINGS 向量嵌入模型），code 字段 @EnumValue 标注，提供 getCode/getDescription 方法，供 ModelConfigData.modelType 字段引用区分对话与向量化模型。"
     }
   ]
 }

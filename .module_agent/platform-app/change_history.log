@@ -189,3 +189,4 @@
 2. DefaultToolDataProvider.getBuiltinTools() 存在 OPENAI/DEEPSEEK（responses→web_search）与 KIMI（completions→$web_search）的平台能力判断，属平台专属内置工具能力映射而非平台枚举列表；SILICONFLOW 当前落入 List.of() 默认分支（无内置工具），与其 OpenAI 兼容 chat-completions 调用器（SiliconFlowInvoker extends OpenAIInvoker）能力一致，无需补充。
 3. 其余引用（ModelConfigServiceImpl/DefaultChatDataProvider/DTO 字段）均动态使用 PlatformType，无硬编码平台列表。
 结论：platform-app 无需代码改动。
+[2026-08-05T08:14:11.849Z] [session: ses_02f041580ffeGWzFxGUX5EbkDh] ModelConfig 新增 modelType 字段：ModelConfigDTO/ModelCreateRequest/ModelUpdateRequest 新增 modelType（com.ghost616.agentbase.enums.ModelType），ModelConfigServiceImpl toDTO 映射 .modelType(entity.getModelType())，create 时 entity.setModelType(request.getModelType())（空则默认 LLM），update 时非空则更新

@@ -14,6 +14,8 @@ export interface PageResult<T> {
 
 export type CommonStatus = 'ENABLED' | 'DISABLED';
 
+export type ModelType = 'LLM' | 'EMBEDDINGS';
+
 export type HookPhase =
   | 'SESSION_START'
   | 'SESSION_END'

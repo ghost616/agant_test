@@ -6,5 +6,37 @@
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": false
+  },
+  {
+    "plan_id": "plan_d0e26517-cbdb-4924-9ac7-1dbd26caf933",
+    "plan_summary": "agent-base 新增 ModelType 枚举并改造 ModelConfigData",
+    "starter_session_id": "ses_02f120c27ffe5A5qxRPpPlbDYu",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_4de623d2-4de6-452d-a71e-5c4ae6fe7b54",
+    "plan_summary": "frontend-ui 前端新增 ModelType 类型与表单/列表展示",
+    "starter_session_id": "ses_02f120c27ffe5A5qxRPpPlbDYu",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_62707783-e18a-4d0f-a6a9-cb23b796bfe3",
+    "plan_summary": "platform-data 新增 modelType 字段及数据库迁移",
+    "starter_session_id": "ses_02f120c27ffe5A5qxRPpPlbDYu",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_1bfd82ea-d523-41c6-9912-40547ae02e58",
+    "plan_summary": "platform-app DTO 与 Service 同步 modelType 字段",
+    "starter_session_id": "ses_02f120c27ffe5A5qxRPpPlbDYu",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
   }
 ]

@@ -15,7 +15,7 @@ import {
   Tag,
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import type { CommonStatus, PlatformType } from '../../types/common';
+import type { CommonStatus, ModelType, PlatformType } from '../../types/common';
 import type { ModelConfig, ModelFormData, PlatformConfig } from '../../types/model';
 import { RequestType } from '../../types/model';
 import {
@@ -59,6 +59,16 @@ const RESPONSES_SUPPORTED: PlatformType[] = [
   'AZURE',
   'CUSTOM',
 ];
+
+const MODEL_TYPE_LABELS: Record<ModelType, string> = {
+  LLM: 'LLM',
+  EMBEDDINGS: 'Embeddings',
+};
+
+const MODEL_TYPE_OPTIONS = Object.entries(MODEL_TYPE_LABELS).map(([value, label]) => ({
+  value,
+  label,
+}));
 
 const STATUS_LABELS: Record<CommonStatus, string> = {
   ENABLED: '启用',
@@ -162,6 +172,7 @@ function ModelList(): JSX.Element {
     form.setFieldsValue({
       name: editingModel.name,
       platformType: editingModel.platformType,
+      modelType: editingModel.modelType ?? 'LLM',
       apiKey: editingModel.apiKey,
       baseUrl: editingModel.baseUrl,
       modelName: editingModel.modelName,
@@ -206,6 +217,9 @@ function ModelList(): JSX.Element {
 
     setSubmitting(true);
     try {
+      if (watchedPlatformType !== 'SILICONFLOW') {
+        values.modelType = 'LLM';
+      }
       if (editingModel) {
         await updateModel(editingModel.id, values);
         message.success('更新成功');
@@ -234,6 +248,13 @@ function ModelList(): JSX.Element {
       dataIndex: 'platformType',
       width: 120,
       render: (value: PlatformType) => PLATFORM_TYPE_LABELS[value] || value,
+    },
+    {
+      title: '模型类型',
+      dataIndex: 'modelType',
+      width: 100,
+      align: 'center',
+      render: (value?: ModelType) => (value ? MODEL_TYPE_LABELS[value] : 'LLM'),
     },
     {
       title: '请求类型',
@@ -351,7 +372,7 @@ function ModelList(): JSX.Element {
         dataSource={dataSource}
         loading={loading}
         pagination={false}
-        scroll={{ x: 1260 }}
+        scroll={{ x: 1360 }}
       />
 
       <Modal
@@ -377,6 +398,14 @@ function ModelList(): JSX.Element {
             rules={[{ required: true, message: '请选择平台类型' }]}
           >
             <Select options={PLATFORM_TYPE_OPTIONS} placeholder="请选择平台类型" />
+          </Form.Item>
+          <Form.Item
+            name="modelType"
+            label="模型类型"
+            hidden={!isSiliconFlow}
+            initialValue="LLM"
+          >
+            <Select options={MODEL_TYPE_OPTIONS} placeholder="请选择模型类型" />
           </Form.Item>
           <Form.Item
             name="requestType"

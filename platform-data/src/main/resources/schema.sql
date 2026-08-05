@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS model_config (
     base_url    VARCHAR(512),
     model_name  VARCHAR(255),
     request_type VARCHAR(32),
+    model_type  VARCHAR(32) DEFAULT 'LLM',
     temperature DOUBLE,
     max_tokens  INTEGER,
     status      VARCHAR(32),

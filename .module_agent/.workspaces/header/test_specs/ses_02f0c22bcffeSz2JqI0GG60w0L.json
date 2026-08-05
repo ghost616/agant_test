@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_02f0c22bcffeSz2JqI0GG60w0L",
+  "content": "## 待测试功能说明（复测）\n\n本次为修复后复测，范围仅限 SchemaMigration 的 duplicate column 容错判断逻辑。\n\n**背景**：SchemaMigration.run() 中对\"列已存在\"的容错判断原实现为 `e instanceof SQLException && msg.contains(\"duplicate column name\")`，但 JdbcTemplate.execute 会把 SQLException 包装为 Spring 的 UncategorizedSQLException，导致 `e instanceof SQLException` 恒为 false，\"迁移跳过\"日志分支永不命中（每次启动对已存在列均打印 ERROR）。已修复为 `isDuplicateColumn(Throwable)` 方法，沿 cause 链查找 SQLException 并忽略大小写匹配 \"duplicate column name\"。\n\n**修改文件**：\n- platform-data/src/main/java/com/ghost616/platform/config/SchemaMigration.java\n  - 新增私有方法 `isDuplicateColumn(Throwable e)`（第 35-46 行）\n  - run() 捕获分支改为调用该方法判断（第 113-119 行）\n\n**验证点**：\n1. 编译通过（mvn -pl platform-data -am test-compile）\n2. 在已含全部列（含 model_type）的库上执行 SchemaMigration.run()，应命中\"迁移跳过\"INFO 分支，不再打印 ERROR\"迁移失败\"\n3. 在缺 model_type 列的旧库上执行，应正常补列（迁移成功）\n4. 非重复列异常（如真实 SQL 错误）仍走\"迁移失败\" ERROR 分支\n\n涉及代码文件：\n- platform-data/src/main/java/com/ghost616/platform/config/SchemaMigration.java",
+  "timestamp": "2026-08-05T08:10:17.547Z"
+}

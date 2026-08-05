@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_02f10f15fffeGST5W1by3O3hn5",
+  "content": "## 待测试功能说明\n\n本轮变更涉及以下可测试功能与代码文件：\n\n1. **ModelType 枚举**（agent-base/src/main/java/com/ghost616/agentbase/enums/ModelType.java）\n   - 含 LLM 与 EMBEDDINGS 两个枚举值\n   - 每个枚举值附带 code 与 description，getCode()/getDescription() 返回正确\n   - code 字段使用 @EnumValue 标注\n\n2. **ModelConfigData record**（agent-base/src/main/java/com/ghost616/agentbase/dto/model/ModelConfigData.java）\n   - 新增 ModelType modelType 字段，位于 platformType 之后、requestType 之前\n   - 保留 8 参兼容构造器（省略 modelType），默认 modelType=ModelType.LLM\n   - 全参 9 参构造器可正确设置 modelType\n   - 既有 isResponsesType() 方法行为不变\n\n3. **新增测试文件**\n   - agent-base/src/test/java/com/ghost616/agentbase/enums/ModelTypeTest.java（枚举值/code/description 断言）\n   - agent-base/src/test/java/com/ghost616/agentbase/dto/model/ModelConfigDataTest.java（新增 modelType 兼容构造器与全参构造器用例）\n\n## 编译/测试要求\n\n- Java 17 编译检查（agent-base 模块 maven 编译）\n- 运行 agent-base 模块全部单元测试，确认既有 232 个用例不回归、新增用例通过",
+  "timestamp": "2026-08-05T08:01:05.137Z"
+}

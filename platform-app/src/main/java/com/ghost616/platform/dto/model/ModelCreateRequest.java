@@ -12,6 +12,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import com.ghost616.agentbase.enums.CommonStatus;
+import com.ghost616.agentbase.enums.ModelType;
 
 
 @Data
@@ -34,6 +35,8 @@ public class ModelCreateRequest {
     private String modelName;
 
     private String requestType;
+
+    private ModelType modelType;
 
     @Min(value = 0, message = "温度参数最小为0.0")
     @Max(value = 2, message = "温度参数最大为2.0")

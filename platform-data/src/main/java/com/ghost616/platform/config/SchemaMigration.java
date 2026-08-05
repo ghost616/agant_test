@@ -32,6 +32,19 @@ public class SchemaMigration implements ApplicationRunner {
         }
     }
 
+    private boolean isDuplicateColumn(Throwable e) {
+        Throwable cause = e;
+        while (cause != null) {
+            if (cause instanceof SQLException
+                    && cause.getMessage() != null
+                    && cause.getMessage().toLowerCase().contains("duplicate column name")) {
+                return true;
+            }
+            cause = cause.getCause();
+        }
+        return false;
+    }
+
     @Override
     public void run(ApplicationArguments args) {
         log.info("开始执行数据库 Schema 迁移...");
@@ -87,6 +100,7 @@ public class SchemaMigration implements ApplicationRunner {
                 new Migration("evaluation", "agent_id", "BIGINT", null),
                 new Migration("evaluation", "execution_type", "VARCHAR(32)", "'BACKGROUND'"),
                 new Migration("model_config", "request_type", "VARCHAR(32)", null),
+                new Migration("model_config", "model_type", "VARCHAR(32)", "'LLM'"),
                 new Migration("message_tool_call", "type", "VARCHAR(32)", "'function'"),
                 new Migration("message_tool_call", "web_search_call", "TEXT", null),
                 new Migration("message_tool_call", "custom_tool_call", "TEXT", null)
@@ -97,11 +111,10 @@ public class SchemaMigration implements ApplicationRunner {
                 jdbcTemplate.execute(migration.toAlterSql());
                 log.info("迁移成功: {}.{} 列已添加", migration.tableName(), migration.columnName());
             } catch (Exception e) {
-                String msg = e.getMessage();
-                if (e instanceof SQLException && msg != null && msg.contains("duplicate column name")) {
+                if (isDuplicateColumn(e)) {
                     log.info("迁移跳过: {}.{} 列已存在", migration.tableName(), migration.columnName());
                 } else {
-                    log.error("迁移失败: {}.{} - {}", migration.tableName(), migration.columnName(), msg);
+                    log.error("迁移失败: {}.{} - {}", migration.tableName(), migration.columnName(), e.getMessage());
                 }
             }
         }

@@ -1,0 +1,12 @@
+[
+  {
+    "plan_id": "plan_d0e26517-cbdb-4924-9ac7-1dbd26caf933",
+    "plan": "新建 ModelType 枚举 + ModelConfigData 新增 modelType 字段并调整构造函数顺序",
+    "modified_files": [
+      "agent-base/src/main/java/com/ghost616/agentbase/enums/ModelType.java",
+      "agent-base/src/main/java/com/ghost616/agentbase/dto/model/ModelConfigData.java"
+    ],
+    "summary": "已创建 ModelType 枚举，ModelConfigData 新增 modelType 字段并保留 8 参兼容构造器",
+    "errors": []
+  }
+]
