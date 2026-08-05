@@ -1,9 +1,0 @@
-{
-  "plan_id": "plan_4dd2dfd2-50b2-4031-b697-a8658aa37081",
-  "module_name": "platform-app",
-  "development_plan": "在 ModelConfigController.java 中新增 POST /{id}/embed 端点：从数据库获取模型配置，通过 ModelInvokerManager 获取对应 Invoker，调用 invoker.embed(request) 返回 EmbeddingResponse。输入校验：input 文本超过 1000 字符时抛出 BusinessException。复用现有的 ModelConfigData 构建和 Invoker 获取模式。",
-  "session_id": "ses_02ebb5a94ffee1cWwGfKSyX95X",
-  "modified_files": [
-    "platform-app/src/main/java/com/ghost616/platform/controller/ModelConfigController.java"
-  ]
-}

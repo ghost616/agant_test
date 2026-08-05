@@ -256,6 +256,54 @@
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/MessageToolCallServiceImpl.java",
       "description": "MessageToolCall 服务实现（@Service，继承 ServiceImpl<MessageToolCallMapper, MessageToolCall> 并实现 MessageToolCallService 接口），承载 MyBatis-Plus saveBatch 批量插入逻辑，减少逐条 insert 的数据库交互"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/controller/KnowledgeBaseController.java",
+      "description": "知识库管理控制器，提供 /api/knowledge-bases 的 list/getById/create/update/delete/toggleStatus 六个 CRUD 接口，使用 ApiResponse 包装响应"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/controller/KnowledgeFileController.java",
+      "description": "知识文件管理控制器，提供 /api/knowledge-bases/{kbId}/files 的 list/getById/create/update/delete/toggleStatus 六个接口，kbId 来自路径参数"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/service/knowledge/KnowledgeBaseService.java",
+      "description": "知识库服务接口，定义 list/getById/create/update/delete/toggleStatus 方法"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/service/knowledge/KnowledgeBaseServiceImpl.java",
+      "description": "知识库服务实现，基于 MyBatis-Plus 实现 CRUD，含 name 唯一性校验；delete 时级联删除该知识库下所有关联文件（@Transactional）"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/service/knowledge/KnowledgeFileService.java",
+      "description": "知识文件服务接口，定义 list/getById/create/update/delete/toggleStatus 方法，list 支持按 knowledgeBaseId 过滤"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/service/knowledge/KnowledgeFileServiceImpl.java",
+      "description": "知识文件服务实现，创建/更新时校验知识库存在并按 fileContent 计算 fileSize/lineCount，CRUD 与状态切换"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/dto/knowledge/KnowledgeBaseDTO.java",
+      "description": "知识库响应 DTO，字段 id/name/description/status/createTime/updateTime，id 使用 ToStringSerializer 序列化"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/dto/knowledge/KnowledgeBaseCreateRequest.java",
+      "description": "知识库创建请求 DTO，字段 name（@NotBlank）/description"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/dto/knowledge/KnowledgeBaseUpdateRequest.java",
+      "description": "知识库更新请求 DTO，字段 name/description/status"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/dto/knowledge/KnowledgeFileDTO.java",
+      "description": "知识文件响应 DTO，字段 id/fileName/fileDescription/knowledgeBaseId/fileSize/lineCount/status/fileContent/createTime/updateTime，id/knowledgeBaseId 使用 ToStringSerializer 序列化"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/dto/knowledge/KnowledgeFileCreateRequest.java",
+      "description": "知识文件创建请求 DTO，字段 fileName（@NotBlank）/fileDescription/fileContent"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/dto/knowledge/KnowledgeFileUpdateRequest.java",
+      "description": "知识文件更新请求 DTO，字段 fileName/fileDescription/fileContent/status"
     }
   ]
 }

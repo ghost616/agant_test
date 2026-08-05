@@ -126,3 +126,12 @@ platform-app 模块包含以下功能：
 - 已删除 DefaultSessionDataProvider（SessionDataProvider 接口已从 agent-base 移除，lastResponseId 持久化能力迁移至 ContextDataProvider）
 - AgentContextDTO 新增 lastResponseId 字段；AgentContextController 在 getContext 中映射 ctx.getLastResponseId()
 - 新增 GET /api/context/{sessionId}/basic 轻量接口，返回 AgentContextBasicDTO（sessionId/agentId/modelId/lastResponseId/parentSessionId）
+## 知识库管理
+
+- 知识库(KnowledgeBase) CRUD 接口：DTO（KnowledgeBaseDTO/KnowledgeBaseCreateRequest/KnowledgeBaseUpdateRequest）、Service（KnowledgeBaseService 接口与 KnowledgeBaseServiceImpl 实现）、Controller（KnowledgeBaseController，路径 /api/knowledge-bases）
+- 支持 name 唯一性校验（create 和 update 时检查，重复抛 KNOWLEDGE_BASE_ALREADY_EXISTS）
+- 级联删除：delete 时 @Transactional 内先按 knowledgeBaseId 删除该知识库下所有 KnowledgeFile，再删除知识库
+- 知识文件(KnowledgeFile) CRUD 接口：DTO（KnowledgeFileDTO/KnowledgeFileCreateRequest/KnowledgeFileUpdateRequest）、Service（KnowledgeFileService 接口与 KnowledgeFileServiceImpl 实现）、Controller（KnowledgeFileController，路径 /api/knowledge-bases/{kbId}/files）
+- KnowledgeFile.create 校验 knowledgeBaseId 对应知识库存在（否则抛 KNOWLEDGE_BASE_NOT_FOUND），并按 fileContent 计算 fileSize（UTF-8 字节数）与 lineCount（按 \n 计数）
+- 实体与 Mapper 复用 platform-data 模块已存在的 KnowledgeBase/KnowledgeFile/AgentKnowledgeBase 及对应 Mapper
+- 知识库与知识文件均支持 toggleStatus（@RequestParam status）状态切换，list 支持 name/fileName 模糊过滤与 status 过滤

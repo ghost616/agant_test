@@ -190,3 +190,11 @@
 3. 其余引用（ModelConfigServiceImpl/DefaultChatDataProvider/DTO 字段）均动态使用 PlatformType，无硬编码平台列表。
 结论：platform-app 无需代码改动。
 [2026-08-05T08:14:11.849Z] [session: ses_02f041580ffeGWzFxGUX5EbkDh] ModelConfig 新增 modelType 字段：ModelConfigDTO/ModelCreateRequest/ModelUpdateRequest 新增 modelType（com.ghost616.agentbase.enums.ModelType），ModelConfigServiceImpl toDTO 映射 .modelType(entity.getModelType())，create 时 entity.setModelType(request.getModelType())（空则默认 LLM），update 时非空则更新
+[2026-08-05T11:32:02.167Z] [session: ses_02e4ef725ffec9l4s6EjEvd5D0] ModelConfigController.list() 新增 @RequestParam(required=false) ModelType modelType 参数并传给 ModelConfigService.list()；ModelConfigService 接口与 ModelConfigServiceImpl 实现 list() 新增 ModelType modelType 参数，modelType 非空时通过 wrapper.eq(ModelConfig::getModelType, modelType) 过滤 model_type 字段
+[2026-08-05T12:35:41.278Z] [session: ses_02e4ef725ffec9l4s6EjEvd5D0] 新增知识库与知识文件管理后端 API：
+- ErrorCode 新增 KNOWLEDGE_BASE_NOT_FOUND/KNOWLEDGE_BASE_ALREADY_EXISTS/KNOWLEDGE_FILE_NOT_FOUND
+- 新建 dto/knowledge 下 6 个 DTO（KnowledgeBaseDTO/CreateRequest/UpdateRequest、KnowledgeFileDTO/CreateRequest/UpdateRequest），DTO 响应模式对齐 ModelConfigDTO（id 用 ToStringSerializer）
+- 新建 KnowledgeBaseService/KnowledgeBaseServiceImpl：list/getById/create/update/delete/toggleStatus，name 唯一性校验，delete 级联删除该知识库下所有文件（@Transactional，通过 KnowledgeFileMapper 按 knowledgeBaseId 删除）
+- 新建 KnowledgeFileService/KnowledgeFileServiceImpl：list/getById/create/update/delete/toggleStatus，create 校验知识库存在，按 fileContent 计算 fileSize/lineCount
+- 新建 KnowledgeBaseController（/api/knowledge-bases）与 KnowledgeFileController（/api/knowledge-bases/{kbId}/files），使用 ApiResponse 包装
+- 复用已存在的 KnowledgeBase/KnowledgeFile 实体与 Mapper（platform-data 模块）

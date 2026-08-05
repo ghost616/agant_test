@@ -148,6 +148,30 @@
     {
       "path": "platform-data/src/main/java/com/ghost616/platform/repository/AgentEvaluationMapper.java",
       "description": "AgentEvaluation 实体的 MyBatis-Plus Mapper 接口，继承 BaseMapper<AgentEvaluation>，提供基础 CRUD 操作"
+    },
+    {
+      "path": "platform-data/src/main/java/com/ghost616/platform/entity/KnowledgeBase.java",
+      "description": "知识库实体类，继承 BaseEntity，映射 knowledge_base 表，含 name/description/status(CommonStatus) 字段"
+    },
+    {
+      "path": "platform-data/src/main/java/com/ghost616/platform/entity/KnowledgeFile.java",
+      "description": "知识库文件实体类，继承 BaseEntity，映射 knowledge_file 表，含 fileName/fileDescription/knowledgeBaseId/fileSize/lineCount/status(CommonStatus)/fileContent 字段"
+    },
+    {
+      "path": "platform-data/src/main/java/com/ghost616/platform/entity/AgentKnowledgeBase.java",
+      "description": "智能体-知识库关联实体类，独立实体，@TableId ASSIGN_ID，映射 agent_knowledge_base 表，含 agentId/knowledgeBaseId 字段"
+    },
+    {
+      "path": "platform-data/src/main/java/com/ghost616/platform/repository/KnowledgeBaseMapper.java",
+      "description": "KnowledgeBase 的 MyBatis-Plus Mapper 接口"
+    },
+    {
+      "path": "platform-data/src/main/java/com/ghost616/platform/repository/KnowledgeFileMapper.java",
+      "description": "KnowledgeFile 的 MyBatis-Plus Mapper 接口"
+    },
+    {
+      "path": "platform-data/src/main/java/com/ghost616/platform/repository/AgentKnowledgeBaseMapper.java",
+      "description": "AgentKnowledgeBase 的 MyBatis-Plus Mapper 接口"
     }
   ]
 }

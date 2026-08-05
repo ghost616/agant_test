@@ -78,5 +78,6 @@
   "platform-app/src/main/java/com/ghost616/platform/dto/model/ModelCreateRequest.java": "10c4722a21cd18e36d9d9acb877f7bad",
   "platform-app/src/main/java/com/ghost616/platform/dto/model/ModelUpdateRequest.java": "340d36d39c9894fed559839ae8fb2af8",
   "platform-app/src/test/java/com/ghost616/platform/service/model/ModelConfigServiceImplRequestTypeTest.java": "7240658397e9553c6ee4ce2c4dafa0f6",
-  "platform-app/src/main/java/com/ghost616/platform/dto/AgentContextDTO.java": "7f33d7fb0dd0d9df0bf37ccea550319c"
+  "platform-app/src/main/java/com/ghost616/platform/dto/AgentContextDTO.java": "7f33d7fb0dd0d9df0bf37ccea550319c",
+  "platform-app/src/main/java/com/ghost616/platform/service/model/ModelConfigService.java": "a28685743b3a2d4b9ad1469a58e239f6"
 }
