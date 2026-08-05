@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_02eeeecfaffeebZgPLaK7cz9Et",
+  "content": "## 待测试功能\n\n修改 `src/pages/models/ModelList.tsx` 中 Base URL 字段的显示条件：\n\n- `showBaseUrl` 从依赖 `needsManualInput` 改为依赖 `isCustom`（`watchedPlatformType === 'CUSTOM'`），仅\"自定义\"平台显示 Base URL 输入框\n- `isCustom` 定义位置前移至 `showBaseUrl` 之前，并删除原位置（isModelNameSelect 之后）的重复声明\n- 其余平台 Base URL 输入框默认隐藏，仍通过 useEffect 自动填充 defaultBaseUrl\n\n## 涉及代码文件\n\n- src/pages/models/ModelList.tsx\n\n## 测试项\n\n- TypeScript 编译检查：`tsc` 无类型错误（注意 isCustom 无重复声明、无未使用变量）",
+  "timestamp": "2026-08-05T08:37:10.636Z"
+}

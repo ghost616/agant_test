@@ -1,51 +1,8 @@
 前端 UI：模型管理、工具管理、HOOK 管理、智能体配置、对话交互界面
 ## 模型管理界面
 
+- baseUrl 显示由 isCustom 决定（仅"自定义"CUSTOM 平台显示 Base URL 输入框），其余平台隐藏并自动填充 defaultBaseUrl；disabled 由 needsManualInput 决定（编辑模式与添加模式行为一致）：showBaseUrl = isCustom，disabled = !needsManualInput
 
-- 模型配置管理页面 `/models`，支持模型列表展示、搜索筛选、新增/编辑/删除/启用禁用
-- Table 列：名称、平台类型、模型名称、温度、最大Token、状态(Tag)、创建时间、操作(编辑/删除Switch)
-- 筛选栏：名称搜索(Input.Search)、平台类型(Select)、状态(Select)
-- 新增/编辑 Modal：name、platformType、apiKey(Input.Password)、baseUrl、modelName、temperature(InputNumber 0-2)、maxTokens(InputNumber)、description
-- 删除使用 Popconfirm 确认
-- 启用/禁用使用 Switch 切换
-- API 服务封装：listModels、getModel、createModel、updateModel、deleteModel、updateModelStatus
-
-- 新增 PlatformConfig 接口：{ platformType: PlatformType; defaultBaseUrl: string; modelNames: string[]; }，定义平台默认配置
-- 新增 getPlatformConfig() API 函数，调用 GET /api/models/platform-config 获取平台配置列表
-- 表单联动逻辑：
-  - 组件挂载时自动获取平台配置
-  - 通过 Form.useWatch 监听 platformType 字段变化
-  - 新建模式下切换平台：自动填入对应 defaultBaseUrl 到 baseUrl 字段
-  - 非 CUSTOM 新建：隐藏 baseUrl 表单项（自动填入值），CUSTOM 显示可手动输入
-  - 编辑模式：baseUrl 始终显示（可编辑）
-  - 非 CUSTOM 且 modelNames 非空：modelName 切换为 Select 下拉选择（支持搜索）
-  - CUSTOM 或 modelNames 为空：modelName 保持 Input 自由输入
-  - 新建时默认选中 OPENAI 平台并填入其 defaultBaseUrl
-- 修复：AZURE/OLLAMA 平台新建模式下 Base URL 输入框被禁用的问题。将 disabled 条件从 `!isCustom && !editingModel` 改为 `!needsManualInput && !editingModel`，使所有需要手动输入 Base URL 的平台（AZURE/OLLAMA/CUSTOM）在新建模式下均可编辑。
-- 模型列表操作列新增"测试"按钮，点击跳转 `/models/:id/test`
-- 新增模型测试页面 `/models/:id/test`：加载模型信息，展示模型名称和平台标签，支持思考模式开关
-- 对话交互：Input.TextArea 输入消息，Enter 发送（Shift+Enter 换行），流式接收 AI 回复
-- 使用 react-markdown + remark-gfm 渲染回复内容（支持表格、代码块、列表等 GFM 语法），深色背景 (#1e1e1e) 展示区
-- chatStream API：基于 fetch + ReadableStream 的 SSE 流式请求封装，支持 AbortController 取消
-- 每次发送仅含当前消息，无上下文历史，清空按钮清除回复
-- 温度(Temperature)和最大Token(MaxTokens)改为可选字段，不再要求必填，新建时不再预设默认值。后端在值为 null 时跳过传递，使用平台默认值。
-- API `listModels` 不再返回分页结构，直接返回 `ModelConfig[]` 扁平数组，`ModelListParams` 移除 `page`/`size` 字段
-- 模型列表表格移除分页器，全量展示所有符合条件的记录
-- 修复编辑 Modal 打开时表单值丢失问题：将 `form.setFieldsValue` 从 `handleEdit` 移至 useEffect 监听 `editingModel` 和 `modalVisible` 变化后设置
-- 操作列宽度从 200 调整为 260，适配测试按钮
-- 模型测试页修复 React.StrictMode 导致 useEffect 重复调用 API 的问题：添加 calledRef 标记
-
-- baseUrl 显示与禁用逻辑统一由 needsManualInput 决定（去掉 editingModel 条件）：showBaseUrl = needsManualInput，disabled = !needsManualInput，编辑模式与添加模式行为一致
-- 修复 chatStream SSE 解析逻辑（src/services/model.ts：103-122行）：后端 invokeStream 输出纯 JSON 行（无 `data:` 前缀），移除 `line.startsWith('data: ')` 检查，改为 `!line.trim()` 跳过空行，直接 JSON.parse(line)；移除过时 `[DONE]` 检查，改为 `chunk.finishReason === 'stop'` 触发 onDone
-- chatStream 方法添加调试日志：每个非空 SSE 行打印原始内容（`[chatStream] raw line:`），JSON 解析成功后打印 chunk 对象（`[chatStream] parsed chunk:`），解析失败时打印出错行和异常信息（`[chatStream] JSON parse failed for line:`）
-- OpenAIInvoker.buildRequestBody 新增 thinking 属性处理：当 ChatRequest.thinking 为 true 时，向请求体添加 {"thinking": {"type": "enabled"}}，支持 DeepSeek 等平台的思考模式
-- ChatChunk 接口新增 reasoning?: string 字段，支持接收服务端返回的推理/思考内容
-
-- chatStream 接口新增 `onReasoning` 回调，在 SSE 解析循环中处理 `chunk.reasoning` 字段，支持接收服务端返回的推理/思考内容
-- 模型测试页新增推理内容展示区域：接收并累积 reasoningText，以深色背景 (#252525) + 金色左侧边框 (#ffd700) 区分于普通回复
-- 推理区域上方显示"思考过程"标签（金色小字），内容使用 ReactMarkdown 渲染
-- 发送/清空操作同步清除 reasoningText 和 hasReasoningRef；onReasoning 回调中设置 hasResponseRef=true（只有 reasoning 无 delta 也算有内容）
-- 2026-08-05 新增 SILICONFLOW 平台：PlatformType 联合类型含 'SILICONFLOW'；PLATFORM_TYPE_LABELS 含 SILICONFLOW: '硅基流动'；SILICONFLOW 平台 modelName 恒为自由文本输入框（isSiliconFlow 使 modelNameSelectOptions 为空），其余平台保留 modelNames 下拉逻辑
 ## 工具管理界面
 
 - 工具配置管理页面 `/tools`，支持工具列表展示、搜索筛选、新增/编辑/删除/启用禁用
