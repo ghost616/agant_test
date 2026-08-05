@@ -140,7 +140,7 @@ function AgentChat(): JSX.Element {
         getSession(sessionId),
         getSessionMessages(sessionId),
       ]);
-      const models = await listModels({ status: 'ENABLED' });
+      const models = await listModels({ status: 'ENABLED', modelType: 'LLM' });
       setModelList(models);
       setModelId(session.modelId);
       if (session.thinking !== undefined) setThinking(session.thinking);

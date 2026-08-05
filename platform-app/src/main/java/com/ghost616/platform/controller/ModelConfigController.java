@@ -10,6 +10,7 @@ import com.ghost616.agentinteg.model.PlatformType;
 import com.ghost616.platform.repository.ModelConfigMapper;
 import com.ghost616.platform.service.model.ModelConfigService;
 import com.ghost616.agentbase.dto.model.ModelConfigData;
+import com.ghost616.agentbase.enums.ModelType;
 import com.ghost616.agentbase.service.model.invoker.ModelInvokerManager;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -58,8 +59,9 @@ public class ModelConfigController {
     public ApiResponse<List<ModelConfigDTO>> list(
             @RequestParam(required = false) String name,
             @RequestParam(required = false) PlatformType platformType,
-            @RequestParam(required = false) CommonStatus status) {
-        List<ModelConfigDTO> result = modelConfigService.list(name, platformType, status);
+            @RequestParam(required = false) CommonStatus status,
+            @RequestParam(required = false) ModelType modelType) {
+        List<ModelConfigDTO> result = modelConfigService.list(name, platformType, status, modelType);
         return ApiResponse.success(result);
     }
 

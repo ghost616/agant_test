@@ -50,7 +50,7 @@ function EvaluationList(): JSX.Element {
 
   const fetchModels = useCallback(async () => {
     try {
-      const models = await listModels({});
+      const models = await listModels({ modelType: 'LLM' });
       setModelList(models);
     } catch {
       message.error('获取模型列表失败');

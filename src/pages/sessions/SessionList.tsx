@@ -48,7 +48,7 @@ function SessionList(): JSX.Element {
     try {
       const [agents, models] = await Promise.all([
         listAgents({ status: 'ENABLED' }),
-        listModels({ status: 'ENABLED' }),
+        listModels({ status: 'ENABLED', modelType: 'LLM' }),
       ]);
       setAgentList(agents);
       setModelList(models);

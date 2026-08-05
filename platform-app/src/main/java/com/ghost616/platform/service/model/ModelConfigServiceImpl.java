@@ -29,7 +29,7 @@ public class ModelConfigServiceImpl implements ModelConfigService {
     private final ModelInvokerManager modelInvokerManager;
 
     @Override
-    public List<ModelConfigDTO> list(String name, PlatformType platformType, CommonStatus status) {
+    public List<ModelConfigDTO> list(String name, PlatformType platformType, CommonStatus status, ModelType modelType) {
         LambdaQueryWrapper<ModelConfig> wrapper = new LambdaQueryWrapper<>();
         if (StringUtils.isNotBlank(name)) {
             wrapper.like(ModelConfig::getName, name);
@@ -39,6 +39,9 @@ public class ModelConfigServiceImpl implements ModelConfigService {
         }
         if (status != null) {
             wrapper.eq(ModelConfig::getStatus, status);
+        }
+        if (modelType != null) {
+            wrapper.eq(ModelConfig::getModelType, modelType);
         }
         wrapper.orderByDesc(ModelConfig::getCreateTime);
 

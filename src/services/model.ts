@@ -14,6 +14,7 @@ export interface ModelListParams {
   name?: string;
   platformType?: string;
   status?: string;
+  modelType?: string;
 }
 
 export async function listModels(

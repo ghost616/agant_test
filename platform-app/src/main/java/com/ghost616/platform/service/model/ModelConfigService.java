@@ -8,11 +8,12 @@ import com.ghost616.agentinteg.model.PlatformType;
 import java.util.List;
 
 import com.ghost616.agentbase.enums.CommonStatus;
+import com.ghost616.agentbase.enums.ModelType;
 
 
 public interface ModelConfigService {
 
-    List<ModelConfigDTO> list(String name, PlatformType platformType, CommonStatus status);
+    List<ModelConfigDTO> list(String name, PlatformType platformType, CommonStatus status, ModelType modelType);
 
     ModelConfigDTO getById(Long id);
 

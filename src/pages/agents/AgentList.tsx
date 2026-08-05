@@ -161,7 +161,7 @@ function AgentList(): JSX.Element {
   const fetchRefData = useCallback(async () => {
     try {
       const [models, tools, skills] = await Promise.all([
-        listModels({}),
+        listModels({ modelType: 'LLM' }),
         listTools({}),
         listSkills({}),
       ]);

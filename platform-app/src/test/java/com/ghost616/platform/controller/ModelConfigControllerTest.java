@@ -3,12 +3,15 @@ package com.ghost616.platform.controller;
 import com.ghost616.agentbase.dto.model.EmbeddingRequest;
 import com.ghost616.agentbase.dto.model.EmbeddingResponse;
 import com.ghost616.agentbase.dto.model.ModelConfigData;
+import com.ghost616.agentbase.enums.CommonStatus;
 import com.ghost616.agentbase.enums.ErrorCode;
+import com.ghost616.agentbase.enums.ModelType;
 import com.ghost616.agentbase.exception.BusinessException;
 import com.ghost616.agentbase.service.model.invoker.ModelInvoker;
 import com.ghost616.agentbase.service.model.invoker.ModelInvokerManager;
 import com.ghost616.agentinteg.model.PlatformType;
 import com.ghost616.platform.dto.ApiResponse;
+import com.ghost616.platform.dto.model.ModelConfigDTO;
 import com.ghost616.platform.entity.ModelConfig;
 import com.ghost616.platform.repository.ModelConfigMapper;
 import com.ghost616.platform.service.model.ModelConfigService;
@@ -57,6 +60,35 @@ class ModelConfigControllerTest {
 
     private EmbeddingRequest request(String input) {
         return EmbeddingRequest.builder().input(input).build();
+    }
+
+    @Test
+    void list_modelType参数透传给Service() {
+        ModelConfigDTO dto = ModelConfigDTO.builder()
+                .id(1L)
+                .name("m")
+                .modelType(ModelType.EMBEDDINGS)
+                .build();
+        when(modelConfigService.list("gpt", PlatformType.OPENAI, CommonStatus.ENABLED, ModelType.EMBEDDINGS))
+                .thenReturn(List.of(dto));
+
+        ApiResponse<List<ModelConfigDTO>> response = controller.list("gpt", PlatformType.OPENAI, CommonStatus.ENABLED, ModelType.EMBEDDINGS);
+
+        assertTrue(response.isSuccess());
+        assertEquals(1, response.getData().size());
+        assertEquals(ModelType.EMBEDDINGS, response.getData().get(0).getModelType());
+        verify(modelConfigService).list("gpt", PlatformType.OPENAI, CommonStatus.ENABLED, ModelType.EMBEDDINGS);
+    }
+
+    @Test
+    void list_modelType为空时透传null() {
+        when(modelConfigService.list(null, null, null, null)).thenReturn(List.of());
+
+        ApiResponse<List<ModelConfigDTO>> response = controller.list(null, null, null, null);
+
+        assertTrue(response.isSuccess());
+        assertTrue(response.getData().isEmpty());
+        verify(modelConfigService).list(null, null, null, null);
     }
 
     @Test
