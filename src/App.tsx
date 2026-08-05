@@ -4,6 +4,7 @@ import { Layout, Menu } from 'antd';
 import type { MenuProps } from 'antd';
 import {
   ApiOutlined,
+  BookOutlined,
   CheckCircleOutlined,
   MessageOutlined,
   RobotOutlined,
@@ -17,6 +18,8 @@ import AgentList from './pages/agents/AgentList';
 import SessionList from './pages/sessions/SessionList';
 import AgentChat from './pages/sessions/AgentChat';
 import SkillList from './pages/skills/SkillList';
+import KnowledgeBaseList from './pages/knowledge/KnowledgeBaseList';
+import KnowledgeFileList from './pages/knowledge/KnowledgeFileList';
 import AgentEvaluationList from './pages/evaluations/AgentEvaluationList';
 import EvaluationList from './pages/evaluations/EvaluationList';
 import EvaluationResultList from './pages/evaluations/EvaluationResultList';
@@ -39,6 +42,11 @@ const MENU_ITEMS: MenuProps['items'] = [
     key: '/skills',
     icon: <ThunderboltOutlined />,
     label: '技能管理',
+  },
+  {
+    key: '/knowledge',
+    icon: <BookOutlined />,
+    label: '知识库管理',
   },
   {
     key: '/agents',
@@ -112,6 +120,8 @@ function App() {
             <Route path="/tools" element={<ToolList />} />
             <Route path="/agents" element={<AgentList />} />
             <Route path="/skills" element={<SkillList />} />
+            <Route path="/knowledge" element={<KnowledgeBaseList />} />
+            <Route path="/knowledge/:kbId/files" element={<KnowledgeFileList />} />
             <Route path="/sessions" element={<SessionList />} />
             <Route path="/sessions/:id/chat" element={<AgentChat />} />
             <Route path="/evaluations" element={<AgentEvaluationList />} />
