@@ -1,0 +1,100 @@
+import type { CommonStatus, ModelType, PlatformType } from './common';
+
+/** 请求类型枚举，code 对应后端 RequestType 枚举的 code 值 */
+export const RequestType = {
+  COMPLETIONS: { code: 'completions', description: 'Chat Completions' },
+  RESPONSES: { code: 'responses', description: 'Responses（有状态）' },
+  RESPONSES_STATELESS: { code: 'responses_stateless', description: 'Responses（无状态）' },
+} as const;
+
+export interface PlatformConfig {
+  platformType: PlatformType;
+  defaultBaseUrl: string;
+  modelNames: string[];
+}
+
+export interface ModelConfig {
+  id: string;
+  name: string;
+  platformType: PlatformType;
+  modelType: ModelType;
+  apiKey: string;
+  baseUrl: string;
+  modelName: string;
+  temperature: number;
+  maxTokens: number;
+  status: CommonStatus;
+  description: string;
+  requestType?: string;
+  createTime: string;
+  updateTime: string;
+}
+
+export type ModelFormData = Omit<ModelConfig, 'id' | 'status' | 'createTime' | 'updateTime'>;
+
+export interface Message {
+  role: string;
+  content: string;
+  toolCalls?: ToolCall[];
+  toolCallId?: string;
+}
+
+export interface UsageInfo {
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+}
+
+export interface ToolDefinition {
+  name: string;
+  description: string;
+  parameters: Record<string, unknown>;
+}
+
+export interface ToolCall {
+  id: string;
+  name: string;
+  arguments: string;
+}
+
+export interface ToolCallDelta {
+  index: number;
+  id: string;
+  name: string;
+  arguments?: string;
+}
+
+export interface EmbeddingRequest {
+  input: string;
+  model: string;
+}
+
+export interface EmbeddingResponse {
+  embedding: number[];
+  dimensions: number;
+  usage?: UsageInfo;
+}
+
+export interface ChatRequest {
+  messages: Message[];
+  tools?: ToolDefinition[];
+  temperature: number;
+  maxTokens: number;
+  model: string;
+  thinking?: boolean;
+}
+
+export interface ChatResponse {
+  content: string;
+  toolCalls?: ToolCall[];
+  usage: UsageInfo;
+  finishReason: string;
+}
+
+export interface ChatChunk {
+  delta: string;
+  toolCalls?: ToolCallDelta[];
+  finishReason: string;
+  index: number;
+  reasoning?: string;
+}

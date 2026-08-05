@@ -1,10 +1,26 @@
 [
   {
-    "plan_id": "plan_dc7a45ca-19bc-4cb3-ab63-0234023ef29c",
-    "plan_summary": "审查 showBaseUrl 逻辑变更",
-    "starter_session_id": "ses_02ef82161ffeem5aTJ1bGa99Ys",
+    "plan_id": "plan_4dd2dfd2-50b2-4031-b697-a8658aa37081",
+    "plan_summary": "platform-app 新增模型 Embed 端点",
+    "starter_session_id": "ses_02ebbd2cfffehJ5UwGQqV9Oibu",
     "code_reviewed": true,
     "plan_completed": true,
-    "test_passed": false
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_d408b514-a512-485d-84cd-4dcc44094597",
+    "plan_summary": "frontend-ui 新增 Embedding 测试界面",
+    "starter_session_id": "ses_02ebbd2cfffehJ5UwGQqV9Oibu",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_82ed4e7b-64d3-4a73-87ed-cb0d3c46c1e4",
+    "plan_summary": "修复 EmbeddingResponse 类型与后端不匹配",
+    "starter_session_id": "ses_02ebbd2cfffehJ5UwGQqV9Oibu",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
   }
 ]

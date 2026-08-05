@@ -3,7 +3,7 @@
   "files": [
     {
       "path": "src/services/model.ts",
-      "description": "模型管理 API 服务封装，含列表/CRUD/状态更新/平台配置/流式对话接口（SSE 解析：直接 JSON 行，无 data: 前缀；含调试日志；新增 onReasoning 回调支持推理内容）"
+      "description": "模型管理 API 服务封装，含列表/CRUD/状态更新/平台配置/流式对话接口（SSE 解析：直接 JSON 行，无 data: 前缀；含调试日志；新增 onReasoning 回调支持推理内容）、embed(id, request) 嵌入向量接口（POST /models/{id}/embed）"
     },
     {
       "path": "src/pages/models/ModelList.tsx",
@@ -11,7 +11,7 @@
     },
     {
       "path": "src/pages/models/ModelTest.tsx",
-      "description": "模型测试页面：修复React.StrictMode导致useEffect重复调用API(添加calledRef标记)；新增推理内容展示区域（深色背景+金色边框，ReactMarkdown渲染）"
+      "description": "模型测试页面：修复React.StrictMode导致useEffect重复调用API(添加calledRef标记)；新增推理内容展示区域（深色背景+金色边框，ReactMarkdown渲染）；按 modelType 分支渲染 LLM 对话测试界面（LlmChat 组件：流式对话/思考模式/推理展示/清空/停止）或 EMBEDDINGS 嵌入测试界面（EmbeddingTest 组件：输入限制1000字符超出报错、embed API 调用、结果区展示 result.embeddings[0].embedding 前100维向量超出显示'...'、embeddings 为空/缺失时显示占位文本\"未返回嵌入向量\"、错误 message.error）；页面头部显示 modelType 标签"
     },
     {
       "path": "src/types/tool.ts",
@@ -123,7 +123,19 @@
     },
     {
       "path": "src/types/model.ts",
-      "description": "模型模块 TypeScript 类型定义：PlatformConfig（平台默认配置）、ModelConfig（模型配置，含 id/name/platformType/apiKey/baseUrl/modelName/temperature/maxTokens/status/description/requestType/createTime/updateTime）、ModelFormData 表单数据类型（Omit 派生）、ChatRequest/ChatResponse/ChatChunk/Message/ToolCall 等对话消息与流式数据结构。RequestType 常量枚举（RESPONSES/RESPONSES_STATELESS，各含 code/description，code 对应后端 RequestType 枚举）"
+      "description": "模型模块 TypeScript 类型定义：PlatformConfig（平台默认配置）、ModelConfig（模型配置，含 id/name/platformType/modelType/apiKey/baseUrl/modelName/temperature/maxTokens/status/description/requestType/createTime/updateTime）、ModelFormData 表单数据类型（Omit 派生）、ChatRequest/ChatResponse/ChatChunk/Message/ToolCall 等对话消息与流式数据结构、EmbeddingRequest（input/model）、EmbeddingItem（index/embedding）与 EmbeddingResponse（embeddings: EmbeddingItem[]/usage?）嵌入请求与响应结构（与后端 DTO 一致）。RequestType 常量枚举（RESPONSES/RESPONSES_STATELESS，各含 code/description，code 对应后端 RequestType 枚举）"
+    },
+    {
+      "path": "src/types/__tests__/model.test.ts",
+      "description": "模型类型定义测试：验证 EmbeddingRequest（input/model）与 EmbeddingResponse（embeddings: EmbeddingItem[]/usage?）类型结构及可选字段行为"
+    },
+    {
+      "path": "src/services/__tests__/model.test.ts",
+      "description": "embed API 服务测试：验证 embed(id, request) 调用 POST /models/{id}/embed 的请求路径/请求体/返回值（embeddings 数组结构）与错误抛出"
+    },
+    {
+      "path": "src/pages/models/__tests__/ModelTest.embedding.test.tsx",
+      "description": "ModelTest EMBEDDINGS 分支测试：验证嵌入测试界面渲染（头部 modelType 标签、无 LLM 控件）、输入 1000 字符限制（超出报错并截断）、发送调用 embed、结果区展示 embeddings[0].embedding 前 100 维超出显示'...'、embeddings 为空显示占位文本、错误 message.error、清空按钮行为"
     }
   ]
 }

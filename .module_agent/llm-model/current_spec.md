@@ -47,6 +47,7 @@ LLM 模型的 CRUD 管理、独立参数配置、连通性验证、统一模型�
 - 新增 ModelInvokerDataProvider 接口（createInvoker 工厂方法），DefaultModelInvokerDataProvider @Component 实现（注入 RestClient.Builder/WebClient.Builder，承载原本在 ModelInvokerManager 中的 switch-case 工厂逻辑）
 - 重构 ModelInvokerManager：移除 @Component/@RequiredArgsConstructor/RestClient.Builder/WebClient.Builder，改为构造器注入 ModelInvokerDataProvider，委托其创建 Invoker 实例
 - 新增 ModelInvokerConfiguration（@Configuration + @Bean 创建 ModelInvokerManager 实例）
+- ModelConfigController 新增 POST /api/models/{id}/embed 端点：调用 ModelInvoker 的 embed(EmbeddingRequest) 生成文本向量，返回 EmbeddingResponse；输入校验 input 文本超过 1000 字符抛 BusinessException(PARAM_INVALID)；模型配置不存在抛 MODEL_NOT_FOUND；复用 ModelConfigData 构建与 ModelInvokerManager.getInvoker 获取 Invoker 的既有模式
 ## 模型配置 CRUD（ModelConfig 实体与 API）
 - 创建 `ModelConfig` 实体类（`entity/`），继承 `BaseEntity`，字段：name、platformType（PlatformType 枚举）、apiKey、baseUrl、modelName、temperature、maxTokens、status（CommonStatus 枚举）、description
 - 枚举增强：`CommonStatus` 和 `PlatformType` 新增 `code` 字段（@EnumValue），支持 MyBatis-Plus 枚举持久化

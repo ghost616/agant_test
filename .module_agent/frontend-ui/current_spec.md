@@ -3,6 +3,10 @@
 
 - baseUrl 显示由 isCustom 决定（仅"自定义"CUSTOM 平台显示 Base URL 输入框），其余平台隐藏并自动填充 defaultBaseUrl；disabled 由 needsManualInput 决定（编辑模式与添加模式行为一致）：showBaseUrl = isCustom，disabled = !needsManualInput
 
+- 模型测试页面按 modelType 分支：LLM 显示对话测试界面（chatStream 流式对话、思考模式、推理展示），EMBEDDINGS 显示嵌入测试界面（输入限制 1000 字符超出报错、embed API 调用、结果区展示前 100 维向量超出显示 '...'）；页面头部显示 modelType 标签
+- types/model.ts 提供 EmbeddingRequest/EmbeddingResponse 类型；services/model.ts 提供 embed(id, request) 调用 POST /api/models/{id}/embed
+
+- EmbeddingResponse 与后端 DTO 一致：{ embeddings: EmbeddingItem[]; usage?: UsageInfo }，EmbeddingItem 为 { index: number; embedding: number[] }；EmbeddingTest 组件取 result.embeddings[0].embedding 展示，embeddings 为空或缺失时显示占位文本"未返回嵌入向量"
 ## 工具管理界面
 
 - 工具配置管理页面 `/tools`，支持工具列表展示、搜索筛选、新增/编辑/删除/启用禁用

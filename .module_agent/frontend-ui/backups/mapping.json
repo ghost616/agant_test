@@ -38,5 +38,9 @@
   "src/pages/evaluations/hooks/useEvaluationExecute.ts": "cacf4fc1df3a61c18ef0201b1ba4d298",
   "src/pages/evaluations/__tests__/useEvaluationExecute.test.tsx": "e739aba23710597c2547dadb33742ae1",
   "src/services/__tests__/evaluation.test.ts": "a27f97ca0b6759d403f9896a478d9aef",
-  "src/types/model.ts": "7bde5072051ada357e02b8703c781310"
+  "src/types/model.ts": "7bde5072051ada357e02b8703c781310",
+  "src/services/__tests__/model.test.ts": "04dc5c77722858ed399d282f97c495b3",
+  "src/pages/models/__tests__/ModelTest.embedding.test.tsx": "0e05db3c0e8e2c88ab8410a4f4043f32",
+  "e2e/ModelTest.spec.ts": "4c0ce9d29d39a62603678ba4c65bb655",
+  "src/types/__tests__/model.test.ts": "5ca7ba84fa21b12010edb3668f508d31"
 }
