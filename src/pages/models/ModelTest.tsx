@@ -3,35 +3,27 @@ import { useNavigate, useParams } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Button, Input, message, Spin, Switch, Tag, Typography } from 'antd';
-import type { ChatRequest } from '../../types/model';
-import { chatStream, getModel } from '../../services/model';
-import type { ModelConfig } from '../../types/model';
+import type { EmbeddingResponse, ChatRequest, ModelConfig } from '../../types/model';
+import { chatStream, embed, getModel } from '../../services/model';
 
-function ModelTest(): JSX.Element {
-  const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
-  const [model, setModel] = useState<ModelConfig | null>(null);
+const MAX_EMBEDDING_INPUT_LENGTH = 1000;
+const MAX_PREVIEW_DIMENSIONS = 100;
+
+interface LlmChatProps {
+  modelId: string;
+  model: ModelConfig;
+}
+
+function LlmChat({ modelId, model }: LlmChatProps): JSX.Element {
   const [inputValue, setInputValue] = useState('');
   const [responseText, setResponseText] = useState('');
   const [reasoningText, setReasoningText] = useState('');
   const [loading, setLoading] = useState(false);
   const [thinking, setThinking] = useState(false);
-  const [pageLoading, setPageLoading] = useState(true);
   const responseRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
-  const calledRef = useRef(false);
   const hasResponseRef = useRef(false);
   const hasReasoningRef = useRef(false);
-
-  useEffect(() => {
-    if (!id) return;
-    if (calledRef.current) return;
-    calledRef.current = true;
-    getModel(id)
-      .then((data) => setModel(data))
-      .catch(() => message.error('获取模型信息失败'))
-      .finally(() => setPageLoading(false));
-  }, [id]);
 
   useEffect(() => {
     if (responseRef.current) {
@@ -51,7 +43,7 @@ function ModelTest(): JSX.Element {
   }, [handleAbort]);
 
   const handleSend = useCallback(() => {
-    if (!id || !inputValue.trim() || !model) return;
+    if (!modelId || !inputValue.trim() || !model) return;
 
     setLoading(true);
     setResponseText('');
@@ -67,7 +59,7 @@ function ModelTest(): JSX.Element {
       thinking,
     };
 
-    abortRef.current = chatStream(id, request, {
+    abortRef.current = chatStream(modelId, request, {
       onChunk: (text: string) => {
         hasResponseRef.current = true;
         setResponseText((prev) => prev + text);
@@ -92,7 +84,7 @@ function ModelTest(): JSX.Element {
     });
 
     setInputValue('');
-  }, [id, inputValue, model, thinking]);
+  }, [modelId, inputValue, model, thinking]);
 
   const handleClear = useCallback(() => {
     setResponseText('');
@@ -109,24 +101,8 @@ function ModelTest(): JSX.Element {
     [handleSend, loading],
   );
 
-  if (pageLoading) {
-    return (
-      <div style={{ textAlign: 'center', paddingTop: 100 }}>
-        <Spin size="large" />
-      </div>
-    );
-  }
-
-  if (!model) {
-    return (
-      <div style={{ textAlign: 'center', paddingTop: 100 }}>
-        <Typography.Text type="secondary">模型不存在</Typography.Text>
-      </div>
-    );
-  }
-
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 180px)' }}>
+    <>
       <style>{`
         .model-test-markdown pre {
           background: #2d2d2d;
@@ -189,22 +165,13 @@ function ModelTest(): JSX.Element {
           margin: 8px 0;
         }
       `}</style>
-      <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
-        <Button type="text" onClick={() => navigate('/models')}>
-          返回
-        </Button>
-        <Typography.Title level={4} style={{ margin: 0 }}>
-          {model.name}
-        </Typography.Title>
-        <Tag color="blue">{model.platformType}</Tag>
-        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Typography.Text type="secondary">思考模式</Typography.Text>
-          <Switch
-            checked={thinking}
-            onChange={setThinking}
-            size="small"
-          />
-        </div>
+      <div style={{ marginBottom: 8, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 8 }}>
+        <Typography.Text type="secondary">思考模式</Typography.Text>
+        <Switch
+          checked={thinking}
+          onChange={setThinking}
+          size="small"
+        />
       </div>
 
       <div
@@ -294,6 +261,172 @@ function ModelTest(): JSX.Element {
           )}
         </div>
       </div>
+    </>
+  );
+}
+
+interface EmbeddingTestProps {
+  modelId: string;
+  model: ModelConfig;
+}
+
+function formatEmbedding(embedding: number[]): string {
+  const body = embedding
+    .slice(0, MAX_PREVIEW_DIMENSIONS)
+    .map((n) => n.toFixed(6))
+    .join(', ');
+  return embedding.length > MAX_PREVIEW_DIMENSIONS ? `[${body}, ...]` : `[${body}]`;
+}
+
+function EmbeddingTest({ modelId, model }: EmbeddingTestProps): JSX.Element {
+  const [inputValue, setInputValue] = useState('');
+  const [result, setResult] = useState<EmbeddingResponse | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const handleInputChange = useCallback((value: string) => {
+    if (value.length > MAX_EMBEDDING_INPUT_LENGTH) {
+      message.error(`输入内容不能超过 ${MAX_EMBEDDING_INPUT_LENGTH} 字符`);
+      setInputValue(value.slice(0, MAX_EMBEDDING_INPUT_LENGTH));
+      return;
+    }
+    setInputValue(value);
+  }, []);
+
+  const handleSend = useCallback(async () => {
+    const text = inputValue.trim();
+    if (!text || !modelId) return;
+    setLoading(true);
+    try {
+      const res = await embed(modelId, { input: text, model: model.modelName });
+      setResult(res);
+    } catch (err) {
+      message.error(err instanceof Error ? err.message : '嵌入请求失败');
+    } finally {
+      setLoading(false);
+    }
+  }, [inputValue, modelId, model.modelName]);
+
+  const handleClear = useCallback(() => {
+    setInputValue('');
+    setResult(null);
+  }, []);
+
+  return (
+    <>
+      <div
+        style={{
+          flex: 1,
+          background: '#1e1e1e',
+          borderRadius: 8,
+          padding: 16,
+          overflowY: 'auto',
+          marginBottom: 16,
+          minHeight: 200,
+        }}
+      >
+        {result ? (
+          result.embeddings && result.embeddings.length > 0 ? (
+            <Typography.Text
+              style={{
+                color: '#d4d4d4',
+                fontSize: 13,
+                lineHeight: 1.8,
+                wordBreak: 'break-all',
+              }}
+            >
+              {formatEmbedding(result.embeddings[0].embedding)}
+            </Typography.Text>
+          ) : (
+            <Typography.Text style={{ color: '#6a6a6a', fontSize: 14 }}>
+              未返回嵌入向量
+            </Typography.Text>
+          )
+        ) : (
+          <Typography.Text style={{ color: '#6a6a6a', fontSize: 14 }}>
+            输入文本获取向量表示
+          </Typography.Text>
+        )}
+      </div>
+
+      <div style={{ display: 'flex', gap: 8 }}>
+        <Input.TextArea
+          value={inputValue}
+          onChange={(e) => handleInputChange(e.target.value)}
+          placeholder={`输入文本，最多 ${MAX_EMBEDDING_INPUT_LENGTH} 字符`}
+          rows={3}
+          autoSize={{ minRows: 2, maxRows: 6 }}
+        />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minWidth: 80 }}>
+          <Button
+            type="primary"
+            onClick={handleSend}
+            disabled={loading || !inputValue.trim()}
+            loading={loading}
+          >
+            发送
+          </Button>
+          <Button onClick={handleClear} disabled={loading}>
+            清空
+          </Button>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function ModelTest(): JSX.Element {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const [model, setModel] = useState<ModelConfig | null>(null);
+  const [pageLoading, setPageLoading] = useState(true);
+  const calledRef = useRef(false);
+
+  useEffect(() => {
+    if (!id) return;
+    if (calledRef.current) return;
+    calledRef.current = true;
+    getModel(id)
+      .then((data) => setModel(data))
+      .catch(() => message.error('获取模型信息失败'))
+      .finally(() => setPageLoading(false));
+  }, [id]);
+
+  if (pageLoading) {
+    return (
+      <div style={{ textAlign: 'center', paddingTop: 100 }}>
+        <Spin size="large" />
+      </div>
+    );
+  }
+
+  if (!model) {
+    return (
+      <div style={{ textAlign: 'center', paddingTop: 100 }}>
+        <Typography.Text type="secondary">模型不存在</Typography.Text>
+      </div>
+    );
+  }
+
+  const isEmbedding = model.modelType === 'EMBEDDINGS';
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 180px)' }}>
+      <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
+        <Button type="text" onClick={() => navigate('/models')}>
+          返回
+        </Button>
+        <Typography.Title level={4} style={{ margin: 0 }}>
+          {model.name}
+        </Typography.Title>
+        <Tag color="blue">{model.platformType}</Tag>
+        <Tag color="purple">{model.modelType}</Tag>
+      </div>
+
+      {isEmbedding ? (
+        <EmbeddingTest modelId={id ?? ''} model={model} />
+      ) : (
+        <LlmChat modelId={id ?? ''} model={model} />
+      )}
     </div>
   );
 }

@@ -1,5 +1,13 @@
 import type { ApiResponse, CommonStatus } from '../types/common';
-import type { ChatChunk, ChatRequest, ModelConfig, ModelFormData, PlatformConfig } from '../types/model';
+import type {
+  ChatChunk,
+  ChatRequest,
+  EmbeddingRequest,
+  EmbeddingResponse,
+  ModelConfig,
+  ModelFormData,
+  PlatformConfig,
+} from '../types/model';
 import api from './api';
 
 export interface ModelListParams {
@@ -46,6 +54,14 @@ export async function updateModelStatus(
 
 export async function getPlatformConfig(): Promise<PlatformConfig[]> {
   const res = await api.get<ApiResponse<PlatformConfig[]>>('/models/platform-config');
+  return res.data.data;
+}
+
+export async function embed(
+  id: string,
+  request: EmbeddingRequest,
+): Promise<EmbeddingResponse> {
+  const res = await api.post<ApiResponse<EmbeddingResponse>>(`/models/${id}/embed`, request);
   return res.data.data;
 }
 

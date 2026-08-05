@@ -64,6 +64,21 @@ export interface ToolCallDelta {
   arguments?: string;
 }
 
+export interface EmbeddingRequest {
+  input: string;
+  model: string;
+}
+
+export interface EmbeddingItem {
+  index: number;
+  embedding: number[];
+}
+
+export interface EmbeddingResponse {
+  embeddings: EmbeddingItem[];
+  usage?: UsageInfo;
+}
+
 export interface ChatRequest {
   messages: Message[];
   tools?: ToolDefinition[];

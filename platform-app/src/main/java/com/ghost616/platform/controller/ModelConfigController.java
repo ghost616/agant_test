@@ -34,6 +34,8 @@ import reactor.core.publisher.Flux;
 import com.ghost616.agentbase.dto.model.ChatChunk;
 import com.ghost616.agentbase.dto.model.ChatRequest;
 import com.ghost616.agentbase.dto.model.ChatResponse;
+import com.ghost616.agentbase.dto.model.EmbeddingRequest;
+import com.ghost616.agentbase.dto.model.EmbeddingResponse;
 import com.ghost616.agentbase.enums.CommonStatus;
 import com.ghost616.agentbase.enums.ErrorCode;
 import com.ghost616.agentbase.exception.BusinessException;
@@ -45,6 +47,8 @@ import com.ghost616.platform.util.IdConverter;
 @RequestMapping("/api/models")
 @RequiredArgsConstructor
 public class ModelConfigController {
+
+    private static final int MAX_EMBED_INPUT_LENGTH = 1000;
 
     private final ModelConfigService modelConfigService;
     private final ModelConfigMapper modelConfigMapper;
@@ -139,6 +143,22 @@ public class ModelConfigController {
         ModelInvoker invoker = modelInvokerManager.getInvoker(configData);
         return invoker.invokeStream(request)
                 .map(chunk -> ServerSentEvent.<ChatChunk>builder().data(chunk).build());
+    }
+
+    @PostMapping("/{id}/embed")
+    public ApiResponse<EmbeddingResponse> embed(@PathVariable Long id,
+                                                @RequestBody EmbeddingRequest request) {
+        ModelConfig config = modelConfigMapper.selectById(id);
+        if (config == null) {
+            throw new BusinessException(ErrorCode.MODEL_NOT_FOUND);
+        }
+        if (request.getInput() != null && request.getInput().length() > MAX_EMBED_INPUT_LENGTH) {
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "input 文本不能超过 1000 字符");
+        }
+        ModelConfigData configData = new ModelConfigData(IdConverter.toString(config.getId()), config.getApiKey(), config.getBaseUrl(), config.getModelName(), config.getTemperature(), config.getMaxTokens(), config.getPlatformType().name(), config.getRequestType());
+        ModelInvoker invoker = modelInvokerManager.getInvoker(configData);
+        EmbeddingResponse response = invoker.embed(request);
+        return ApiResponse.success(response);
     }
 
     @GetMapping("/{id}/invoker")
