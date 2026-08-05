@@ -199,3 +199,36 @@ CREATE TABLE IF NOT EXISTS evaluation_result (
     update_time           TIMESTAMP,
     deleted               INTEGER DEFAULT 0
 );
+
+CREATE TABLE IF NOT EXISTS knowledge_base (
+    id          BIGINT PRIMARY KEY,
+    name        VARCHAR(255) NOT NULL,
+    description TEXT,
+    status      VARCHAR(32),
+    create_time TIMESTAMP,
+    update_time TIMESTAMP,
+    deleted     INTEGER DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS knowledge_file (
+    id                 BIGINT PRIMARY KEY,
+    file_name          VARCHAR(255),
+    file_description   TEXT,
+    knowledge_base_id  BIGINT,
+    file_size          BIGINT,
+    line_count         INTEGER,
+    status             VARCHAR(32),
+    file_content       LONGTEXT,
+    create_time        TIMESTAMP,
+    update_time        TIMESTAMP,
+    deleted            INTEGER DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_knowledge_file_knowledge_base_id ON knowledge_file(knowledge_base_id);
+
+CREATE TABLE IF NOT EXISTS agent_knowledge_base (
+    id                 BIGINT PRIMARY KEY,
+    agent_id           BIGINT NOT NULL,
+    knowledge_base_id  BIGINT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_agent_knowledge_base_agent_id ON agent_knowledge_base(agent_id);
+CREATE INDEX IF NOT EXISTS idx_agent_knowledge_base_knowledge_base_id ON agent_knowledge_base(knowledge_base_id);

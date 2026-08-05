@@ -103,7 +103,28 @@ public class SchemaMigration implements ApplicationRunner {
                 new Migration("model_config", "model_type", "VARCHAR(32)", "'LLM'"),
                 new Migration("message_tool_call", "type", "VARCHAR(32)", "'function'"),
                 new Migration("message_tool_call", "web_search_call", "TEXT", null),
-                new Migration("message_tool_call", "custom_tool_call", "TEXT", null)
+                new Migration("message_tool_call", "custom_tool_call", "TEXT", null),
+                new Migration("knowledge_base", "id", "BIGINT", null),
+                new Migration("knowledge_base", "name", "VARCHAR(255)", null),
+                new Migration("knowledge_base", "description", "TEXT", null),
+                new Migration("knowledge_base", "status", "VARCHAR(32)", null),
+                new Migration("knowledge_base", "create_time", "TIMESTAMP", null),
+                new Migration("knowledge_base", "update_time", "TIMESTAMP", null),
+                new Migration("knowledge_base", "deleted", "INTEGER", "0"),
+                new Migration("knowledge_file", "id", "BIGINT", null),
+                new Migration("knowledge_file", "file_name", "VARCHAR(255)", null),
+                new Migration("knowledge_file", "file_description", "TEXT", null),
+                new Migration("knowledge_file", "knowledge_base_id", "BIGINT", null),
+                new Migration("knowledge_file", "file_size", "BIGINT", null),
+                new Migration("knowledge_file", "line_count", "INTEGER", null),
+                new Migration("knowledge_file", "status", "VARCHAR(32)", null),
+                new Migration("knowledge_file", "file_content", "LONGTEXT", null),
+                new Migration("knowledge_file", "create_time", "TIMESTAMP", null),
+                new Migration("knowledge_file", "update_time", "TIMESTAMP", null),
+                new Migration("knowledge_file", "deleted", "INTEGER", "0"),
+                new Migration("agent_knowledge_base", "id", "BIGINT", null),
+                new Migration("agent_knowledge_base", "agent_id", "BIGINT", null),
+                new Migration("agent_knowledge_base", "knowledge_base_id", "BIGINT", null)
         );
 
         for (Migration migration : migrations) {
