@@ -31,6 +31,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 知识库发布服务，负责将知识文件内容向量化写入 Elasticsearch 索引，并支持知识库整体重建索引。
@@ -45,6 +47,9 @@ public class KnowledgePublishService {
     /** 单次向量化批次的字符累积上限 */
     private static final int EMBEDDING_BATCH_MAX_CHARS = 5000;
 
+    /** 进行中的发布任务，key 为知识文件 ID，value 为对应异步任务 */
+    private final ConcurrentHashMap<Long, CompletableFuture<Void>> activeTasks = new ConcurrentHashMap<>();
+
     private final KnowledgeFileMapper knowledgeFileMapper;
     private final KnowledgeBaseMapper knowledgeBaseMapper;
     private final ModelConfigMapper modelConfigMapper;
@@ -55,41 +60,64 @@ public class KnowledgePublishService {
      * 异步发布单个知识文件：删除旧文本块后逐行向量化并批量写入索引。
      *
      * @param fileId 知识文件 ID
+     * @return 发布任务完成信号
      */
     @Async
-    public void publishFile(Long fileId) {
-        KnowledgeFile file = knowledgeFileMapper.selectById(fileId);
-        if (file == null) {
-            log.warn("publishFile 跳过：文件不存在, fileId={}", fileId);
-            return;
-        }
-        KnowledgeBase knowledgeBase = knowledgeBaseMapper.selectById(file.getKnowledgeBaseId());
-        if (knowledgeBase == null || StringUtils.isBlank(knowledgeBase.getEsIndex())) {
-            markPublishError(file);
-            log.warn("publishFile 跳过：知识库或 ES 索引缺失, fileId={}, kbId={}", fileId, file.getKnowledgeBaseId());
-            return;
-        }
-        String indexName = knowledgeBase.getEsIndex();
-
-        file.setPublishStatus(PublishStatus.PUBLISHING);
-        knowledgeFileMapper.updateById(file);
+    public CompletableFuture<Void> publishFile(Long fileId) {
+        CompletableFuture<Void> future = new CompletableFuture<>();
+        activeTasks.put(fileId, future);
         try {
-            if (knowledgeSearchClient.indexExists(indexName)) {
-                knowledgeSearchClient.deleteByFile(indexName, fileId);
+            KnowledgeFile file = knowledgeFileMapper.selectById(fileId);
+            if (file == null) {
+                log.warn("publishFile 跳过：文件不存在, fileId={}", fileId);
+                future.complete(null);
+                return future;
             }
-            ModelConfig vectorModel = resolveVectorModel(knowledgeBase);
-            ModelInvoker invoker = modelInvokerManager.getInvoker(buildModelConfigData(vectorModel));
-            List<TextChunk> chunks = embedLines(file, knowledgeBase, vectorModel, invoker);
-            knowledgeSearchClient.batchSave(indexName, chunks);
+            KnowledgeBase knowledgeBase = knowledgeBaseMapper.selectById(file.getKnowledgeBaseId());
+            if (knowledgeBase == null || StringUtils.isBlank(knowledgeBase.getEsIndex())) {
+                markPublishError(file);
+                log.warn("publishFile 跳过：知识库或 ES 索引缺失, fileId={}, kbId={}", fileId, file.getKnowledgeBaseId());
+                future.complete(null);
+                return future;
+            }
+            String indexName = knowledgeBase.getEsIndex();
 
-            file.setPublishStatus(PublishStatus.PUBLISHED);
+            file.setPublishStatus(PublishStatus.PUBLISHING);
             knowledgeFileMapper.updateById(file);
-            log.info("publishFile 成功, fileId={}, kbId={}, chunkCount={}", fileId, file.getKnowledgeBaseId(), chunks.size());
-        } catch (Exception e) {
-            log.error("publishFile 失败, fileId={}, kbId={}", fileId, file.getKnowledgeBaseId(), e);
-            markPublishError(file);
-            cleanupIndex(indexName, fileId);
+            try {
+                if (knowledgeSearchClient.indexExists(indexName)) {
+                    knowledgeSearchClient.deleteByFile(indexName, fileId);
+                }
+                ModelConfig vectorModel = resolveVectorModel(knowledgeBase);
+                ModelInvoker invoker = modelInvokerManager.getInvoker(buildModelConfigData(vectorModel));
+                List<TextChunk> chunks = embedLines(file, knowledgeBase, vectorModel, invoker);
+                knowledgeSearchClient.batchSave(indexName, chunks);
+
+                file.setPublishStatus(PublishStatus.PUBLISHED);
+                knowledgeFileMapper.updateById(file);
+                log.info("publishFile 成功, fileId={}, kbId={}, chunkCount={}", fileId, file.getKnowledgeBaseId(), chunks.size());
+                future.complete(null);
+            } catch (Exception e) {
+                log.error("publishFile 失败, fileId={}, kbId={}", fileId, file.getKnowledgeBaseId(), e);
+                markPublishError(file);
+                cleanupIndex(indexName, fileId);
+                future.completeExceptionally(e);
+            }
+        } finally {
+            activeTasks.remove(fileId);
         }
+        return future;
+    }
+
+    /**
+     * 判断指定知识文件是否正在进行发布。
+     *
+     * @param fileId 知识文件 ID
+     * @return true 表示存在未完成的发布任务
+     */
+    public boolean isPublishing(Long fileId) {
+        CompletableFuture<Void> future = activeTasks.get(fileId);
+        return future != null && !future.isDone();
     }
 
     /**

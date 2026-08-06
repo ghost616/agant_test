@@ -28,6 +28,7 @@ export interface KnowledgeFile {
   lineCount?: number;
   status: CommonStatus;
   publishStatus?: PublishStatus;
+  publishing?: boolean;
   createTime: string;
   updateTime: string;
 }

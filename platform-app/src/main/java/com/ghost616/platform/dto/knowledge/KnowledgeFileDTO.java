@@ -27,6 +27,7 @@ public class KnowledgeFileDTO {
     private Integer lineCount;
     private CommonStatus status;
     private PublishStatus publishStatus;
+    private Boolean publishing;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
 }

@@ -1,6 +1,8 @@
 package com.ghost616.platform.controller;
 
 import com.ghost616.agentbase.enums.CommonStatus;
+import com.ghost616.agentbase.enums.ErrorCode;
+import com.ghost616.agentbase.exception.BusinessException;
 import com.ghost616.platform.dto.ApiResponse;
 import com.ghost616.platform.dto.knowledge.KnowledgeFileCreateRequest;
 import com.ghost616.platform.dto.knowledge.KnowledgeFileDTO;
@@ -48,6 +50,9 @@ public class KnowledgeFileController {
 
     @PostMapping("/{id}/publish")
     public ApiResponse<Void> publish(@PathVariable Long kbId, @PathVariable Long id) {
+        if (knowledgePublishService.isPublishing(id)) {
+            throw new BusinessException(ErrorCode.KNOWLEDGE_FILE_PUBLISHING);
+        }
         knowledgePublishService.publishFile(id);
         return ApiResponse.success(null);
     }

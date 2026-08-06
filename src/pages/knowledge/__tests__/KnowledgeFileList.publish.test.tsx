@@ -156,23 +156,32 @@ describe('KnowledgeFileList 发布按钮逻辑 (功能点3)', () => {
     mocks.getKnowledgeBase.mockResolvedValue(makeKb());
   });
 
-  it('PUBLISHING 状态发布按钮文案为「发布中」且禁用', async () => {
+  it('PUBLISHING + publishing=true 发布按钮文案为「发布中」且禁用', async () => {
     mocks.listKnowledgeFiles.mockResolvedValue([
-      makeFile({ id: 'f1', publishStatus: 'PUBLISHING' }),
+      makeFile({ id: 'f1', publishStatus: 'PUBLISHING', publishing: true }),
     ]);
     renderComponent();
     const btn = await screen.findByRole('button', { name: '发布中' });
     expect((btn as HTMLButtonElement).disabled).toBe(true);
   });
 
-  it('PUBLISHED 状态发布按钮禁用', async () => {
+  it('PUBLISHING + publishing=false（崩溃恢复）发布按钮文案为「发布」且可点击', async () => {
+    mocks.listKnowledgeFiles.mockResolvedValue([
+      makeFile({ id: 'f1', publishStatus: 'PUBLISHING', publishing: false }),
+    ]);
+    renderComponent();
+    const btn = await screen.findByRole('button', { name: '发布' });
+    expect((btn as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it('PUBLISHED 状态发布按钮可点击（支持重新发布）', async () => {
     mocks.listKnowledgeFiles.mockResolvedValue([
       makeFile({ id: 'f1', publishStatus: 'PUBLISHED' }),
     ]);
     renderComponent();
     await screen.findByText('已发布');
     const btn = screen.getByRole('button', { name: '发布' }) as HTMLButtonElement;
-    expect(btn.disabled).toBe(true);
+    expect(btn.disabled).toBe(false);
   });
 
   it.each(['UNPUBLISHED', 'PENDING_PUBLISH', 'PUBLISH_ERROR'] as const)(

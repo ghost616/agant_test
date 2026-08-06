@@ -53,12 +53,6 @@ const PUBLISH_STATUS_COLORS: Record<PublishStatus, string> = {
   PUBLISH_ERROR: 'error',
 };
 
-const PUBLISHABLE_STATUSES: PublishStatus[] = [
-  'UNPUBLISHED',
-  'PENDING_PUBLISH',
-  'PUBLISH_ERROR',
-];
-
 function KnowledgeFileList(): JSX.Element {
   const navigate = useNavigate();
   const { kbId } = useParams<{ kbId: string }>();
@@ -247,9 +241,8 @@ function KnowledgeFileList(): JSX.Element {
       width: 420,
       render: (_: unknown, record: KnowledgeFile) => {
         const publishStatus: PublishStatus = record.publishStatus ?? 'UNPUBLISHED';
-        const isPublishing = publishStatus === 'PUBLISHING';
-        const canPublish =
-          !kb?.rebuilding && PUBLISHABLE_STATUSES.includes(publishStatus);
+        const isPublishing = publishStatus === 'PUBLISHING' && record.publishing === true;
+        const canPublish = !kb?.rebuilding && !isPublishing;
         return (
           <Space size="small">
             <Button

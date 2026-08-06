@@ -25,6 +25,7 @@ public class KnowledgeFileServiceImpl implements KnowledgeFileService {
 
     private final KnowledgeFileMapper knowledgeFileMapper;
     private final KnowledgeBaseMapper knowledgeBaseMapper;
+    private final KnowledgePublishService knowledgePublishService;
 
     @Override
     public List<KnowledgeFileDTO> list(Long knowledgeBaseId, String fileName, CommonStatus status) {
@@ -85,6 +86,9 @@ public class KnowledgeFileServiceImpl implements KnowledgeFileService {
         KnowledgeFile entity = knowledgeFileMapper.selectById(id);
         if (entity == null) {
             throw new BusinessException(ErrorCode.KNOWLEDGE_FILE_NOT_FOUND);
+        }
+        if (knowledgePublishService.isPublishing(id)) {
+            throw new BusinessException(ErrorCode.KNOWLEDGE_FILE_PUBLISHING);
         }
         entity.setFileContent(content);
         entity.setFileSize(computeFileSize(content));
@@ -160,6 +164,7 @@ public class KnowledgeFileServiceImpl implements KnowledgeFileService {
                 .lineCount(entity.getLineCount())
                 .status(entity.getStatus())
                 .publishStatus(entity.getPublishStatus())
+                .publishing(knowledgePublishService.isPublishing(entity.getId()))
                 .createTime(entity.getCreateTime())
                 .updateTime(entity.getUpdateTime())
                 .build();
