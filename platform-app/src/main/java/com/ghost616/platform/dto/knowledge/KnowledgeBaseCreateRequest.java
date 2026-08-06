@@ -1,6 +1,7 @@
 package com.ghost616.platform.dto.knowledge;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -16,4 +17,9 @@ public class KnowledgeBaseCreateRequest {
     private String name;
 
     private String description;
+
+    @NotNull(message = "向量模型不能为空")
+    private Long vectorModelId;
+
+    private String esIndex;
 }

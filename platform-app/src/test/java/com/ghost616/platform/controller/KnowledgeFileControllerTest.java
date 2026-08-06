@@ -6,6 +6,7 @@ import com.ghost616.platform.dto.knowledge.KnowledgeFileCreateRequest;
 import com.ghost616.platform.dto.knowledge.KnowledgeFileDTO;
 import com.ghost616.platform.dto.knowledge.KnowledgeFileUpdateRequest;
 import com.ghost616.platform.service.knowledge.KnowledgeFileService;
+import com.ghost616.platform.service.knowledge.KnowledgePublishService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -22,6 +23,9 @@ class KnowledgeFileControllerTest {
 
     @Mock
     private KnowledgeFileService knowledgeFileService;
+
+    @Mock
+    private KnowledgePublishService knowledgePublishService;
 
     @InjectMocks
     private KnowledgeFileController controller;
@@ -40,6 +44,27 @@ class KnowledgeFileControllerTest {
         assertTrue(response.isSuccess());
         assertEquals(1, response.getData().size());
         verify(knowledgeFileService).list(100L, "doc", CommonStatus.ENABLED);
+    }
+
+    @Test
+    void refresh_应重新查询列表() {
+        when(knowledgeFileService.list(100L, "doc", CommonStatus.ENABLED))
+                .thenReturn(List.of(dto(1L, 100L)));
+
+        ApiResponse<List<KnowledgeFileDTO>> response = controller.refresh(100L, "doc", CommonStatus.ENABLED);
+
+        assertTrue(response.isSuccess());
+        assertEquals(1, response.getData().size());
+        verify(knowledgeFileService).list(100L, "doc", CommonStatus.ENABLED);
+    }
+
+    @Test
+    void publish_应调用发布服务() {
+        ApiResponse<Void> response = controller.publish(100L, 1L);
+
+        assertTrue(response.isSuccess());
+        assertNull(response.getData());
+        verify(knowledgePublishService).publishFile(1L);
     }
 
     @Test

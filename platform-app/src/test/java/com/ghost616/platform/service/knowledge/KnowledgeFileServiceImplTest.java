@@ -11,6 +11,7 @@ import com.ghost616.platform.dto.knowledge.KnowledgeFileDTO;
 import com.ghost616.platform.dto.knowledge.KnowledgeFileUpdateRequest;
 import com.ghost616.platform.entity.KnowledgeBase;
 import com.ghost616.platform.entity.KnowledgeFile;
+import com.ghost616.platform.enums.PublishStatus;
 import com.ghost616.platform.repository.KnowledgeBaseMapper;
 import com.ghost616.platform.repository.KnowledgeFileMapper;
 import org.apache.ibatis.builder.MapperBuilderAssistant;
@@ -77,10 +78,12 @@ class KnowledgeFileServiceImplTest {
         assertEquals("描述", saved.getFileDescription());
         assertEquals(100L, saved.getKnowledgeBaseId());
         assertEquals(CommonStatus.ENABLED, saved.getStatus(), "create 默认状态应为 ENABLED");
+        assertEquals(PublishStatus.UNPUBLISHED, saved.getPublishStatus(), "create 默认发布状态应为 UNPUBLISHED");
         assertNull(saved.getFileContent(), "create 不应设置 fileContent");
         assertNull(saved.getFileSize(), "create 不应计算 fileSize");
         assertNull(saved.getLineCount(), "create 不应计算 lineCount");
         assertEquals(CommonStatus.ENABLED, result.getStatus());
+        assertEquals(PublishStatus.UNPUBLISHED, result.getPublishStatus());
         assertEquals(100L, result.getKnowledgeBaseId());
     }
 
@@ -107,6 +110,30 @@ class KnowledgeFileServiceImplTest {
         BusinessException ex = assertThrows(BusinessException.class, () -> service.updateFileContent(1L, "内容"));
         assertEquals(ErrorCode.KNOWLEDGE_FILE_NOT_FOUND, ex.getErrorCode());
         verify(knowledgeFileMapper, never()).updateById(any(KnowledgeFile.class));
+    }
+
+    @Test
+    @DisplayName("updateFileContent() 已发布文件修改内容后 publishStatus 变为 PENDING_PUBLISH")
+    void updateFileContent_已发布转待发布() {
+        KnowledgeFile existing = fileEntity(1L, 100L, "a.txt");
+        existing.setPublishStatus(PublishStatus.PUBLISHED);
+        when(knowledgeFileMapper.selectById(1L)).thenReturn(existing);
+
+        service.updateFileContent(1L, "新内容");
+
+        assertEquals(PublishStatus.PENDING_PUBLISH, existing.getPublishStatus(), "已发布文件改内容后应置为 PENDING_PUBLISH");
+    }
+
+    @Test
+    @DisplayName("updateFileContent() 非已发布文件不改变 publishStatus")
+    void updateFileContent_未发布不改状态() {
+        KnowledgeFile existing = fileEntity(1L, 100L, "a.txt");
+        existing.setPublishStatus(PublishStatus.UNPUBLISHED);
+        when(knowledgeFileMapper.selectById(1L)).thenReturn(existing);
+
+        service.updateFileContent(1L, "新内容");
+
+        assertEquals(PublishStatus.UNPUBLISHED, existing.getPublishStatus());
     }
 
     @Test

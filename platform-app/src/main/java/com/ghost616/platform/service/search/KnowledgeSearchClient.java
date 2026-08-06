@@ -67,6 +67,36 @@ public class KnowledgeSearchClient {
     }
 
     /**
+     * 按指定维度创建索引，dense_vector 维度与向量模型输出维度保持一致。
+     *
+     * @param indexName 索引名称
+     * @param dimension 向量维度
+     */
+    public void createIndex(String indexName, int dimension) {
+        try {
+            if (indexExists(indexName)) {
+                throw new IllegalStateException("索引已存在: " + indexName);
+            }
+            elasticsearchClient.indices().create(c -> c
+                    .index(indexName)
+                    .mappings(m -> m
+                            .properties("vector", p -> p.denseVector(d -> d
+                                    .dims(dimension)
+                                    .similarity(DenseVectorSimilarity.Cosine)))
+                            .properties("text", p -> p.text(t -> t
+                                    .analyzer("ik_max_word")
+                                    .searchAnalyzer("ik_smart")))
+                            .properties("kbEnabled", p -> p.boolean_(b -> b))
+                            .properties("fileEnabled", p -> p.boolean_(b -> b))
+                            .properties("knowledgeBaseId", p -> p.keyword(k -> k))
+                            .properties("fileId", p -> p.keyword(k -> k))
+                            .properties("lineNumber", p -> p.integer(i -> i))));
+        } catch (IOException e) {
+            throw new IllegalStateException("创建索引失败: " + indexName, e);
+        }
+    }
+
+    /**
      * 删除索引。
      *
      * @param indexName 索引名称

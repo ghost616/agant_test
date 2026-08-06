@@ -22,4 +22,13 @@ public class KnowledgeBase extends BaseEntity {
 
     @TableField("status")
     private CommonStatus status;
+
+    @TableField("vector_model_id")
+    private Long vectorModelId;
+
+    @TableField("es_index")
+    private String esIndex;
+
+    @TableField("rebuilding")
+    private Boolean rebuilding = false;
 }

@@ -55,13 +55,19 @@ class KnowledgeBaseServiceImplTest {
     }
 
     @Test
-    @DisplayName("create() 默认 status=ENABLED 且插入实体")
+    @DisplayName("create() 默认 status=ENABLED、设置 vectorModelId，esIndex 为空时自动生成")
     void create_默认ENABLED() {
         when(knowledgeBaseMapper.selectCount(any())).thenReturn(0L);
+        doAnswer(invocation -> {
+            KnowledgeBase e = invocation.getArgument(0);
+            e.setId(7L);
+            return 1;
+        }).when(knowledgeBaseMapper).insert(any(KnowledgeBase.class));
 
         KnowledgeBaseCreateRequest request = KnowledgeBaseCreateRequest.builder()
                 .name("kb-1")
                 .description("知识库描述")
+                .vectorModelId(5L)
                 .build();
         KnowledgeBaseDTO result = service.create(request);
 
@@ -70,9 +76,34 @@ class KnowledgeBaseServiceImplTest {
         KnowledgeBase saved = captor.getValue();
         assertEquals("kb-1", saved.getName());
         assertEquals("知识库描述", saved.getDescription());
+        assertEquals(5L, saved.getVectorModelId());
         assertEquals(CommonStatus.ENABLED, saved.getStatus(), "create 默认状态应为 ENABLED");
+        assertNotNull(saved.getEsIndex(), "create 应自动生成 esIndex");
+        assertTrue(saved.getEsIndex().startsWith("agent_7_"), "esIndex 应以 agent_<id>_ 开头, 实际: " + saved.getEsIndex());
+        verify(knowledgeBaseMapper).updateById((KnowledgeBase) saved);
         assertEquals(CommonStatus.ENABLED, result.getStatus());
         assertEquals("kb-1", result.getName());
+        assertEquals(5L, result.getVectorModelId());
+        assertEquals(saved.getEsIndex(), result.getEsIndex());
+    }
+
+    @Test
+    @DisplayName("create() 传入 esIndex 时保留指定值，不重新生成")
+    void create_指定esIndex() {
+        when(knowledgeBaseMapper.selectCount(any())).thenReturn(0L);
+
+        KnowledgeBaseCreateRequest request = KnowledgeBaseCreateRequest.builder()
+                .name("kb-2")
+                .vectorModelId(5L)
+                .esIndex("agent_custom")
+                .build();
+        KnowledgeBaseDTO result = service.create(request);
+
+        ArgumentCaptor<KnowledgeBase> captor = ArgumentCaptor.forClass(KnowledgeBase.class);
+        verify(knowledgeBaseMapper).insert((KnowledgeBase) captor.capture());
+        assertEquals("agent_custom", captor.getValue().getEsIndex());
+        verify(knowledgeBaseMapper, never()).updateById(any(KnowledgeBase.class));
+        assertEquals("agent_custom", result.getEsIndex());
     }
 
     @Test
@@ -155,9 +186,47 @@ class KnowledgeBaseServiceImplTest {
     }
 
     @Test
+    @DisplayName("update() 当 esIndex 为空时自动生成")
+    void update_esIndex为空自动生成() {
+        KnowledgeBase existing = entity(1L, "kb", CommonStatus.ENABLED);
+        when(knowledgeBaseMapper.selectById(1L)).thenReturn(existing);
+
+        KnowledgeBaseUpdateRequest request = KnowledgeBaseUpdateRequest.builder()
+                .vectorModelId(9L)
+                .build();
+        KnowledgeBaseDTO result = service.update(1L, request);
+
+        assertEquals(9L, existing.getVectorModelId());
+        assertNotNull(existing.getEsIndex(), "esIndex 为空时应自动生成");
+        assertTrue(existing.getEsIndex().startsWith("agent_1_"), "实际: " + existing.getEsIndex());
+        verify(knowledgeBaseMapper).updateById((KnowledgeBase) existing);
+        assertEquals(9L, result.getVectorModelId());
+        assertEquals(existing.getEsIndex(), result.getEsIndex());
+    }
+
+    @Test
+    @DisplayName("update() 传入 esIndex 时更新指定值")
+    void update_更新esIndex() {
+        KnowledgeBase existing = entity(1L, "kb", CommonStatus.ENABLED);
+        existing.setEsIndex("old_index");
+        when(knowledgeBaseMapper.selectById(1L)).thenReturn(existing);
+
+        KnowledgeBaseUpdateRequest request = KnowledgeBaseUpdateRequest.builder()
+                .esIndex("new_index")
+                .build();
+        service.update(1L, request);
+
+        assertEquals("new_index", existing.getEsIndex());
+    }
+
+    @Test
     @DisplayName("getById() 正常返回并映射 toDTO")
     void getById_正常返回() {
-        when(knowledgeBaseMapper.selectById(1L)).thenReturn(entity(1L, "kb", CommonStatus.DISABLED));
+        KnowledgeBase kb = entity(1L, "kb", CommonStatus.DISABLED);
+        kb.setVectorModelId(5L);
+        kb.setEsIndex("agent_1_a1b2c3");
+        kb.setRebuilding(true);
+        when(knowledgeBaseMapper.selectById(1L)).thenReturn(kb);
 
         KnowledgeBaseDTO result = service.getById(1L);
 
@@ -165,6 +234,9 @@ class KnowledgeBaseServiceImplTest {
         assertEquals("kb", result.getName());
         assertEquals("desc-kb", result.getDescription());
         assertEquals(CommonStatus.DISABLED, result.getStatus());
+        assertEquals(5L, result.getVectorModelId());
+        assertEquals("agent_1_a1b2c3", result.getEsIndex());
+        assertEquals(Boolean.TRUE, result.getRebuilding());
     }
 
     @Test

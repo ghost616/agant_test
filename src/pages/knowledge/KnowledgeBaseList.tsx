@@ -16,10 +16,13 @@ import {
 import type { ColumnsType } from 'antd/es/table';
 import type { CommonStatus } from '../../types/common';
 import type { KBFormData, KnowledgeBase } from '../../types/knowledge';
+import type { ModelConfig } from '../../types/model';
+import { listModels } from '../../services/model';
 import {
   createKnowledgeBase,
   deleteKnowledgeBase,
   listKnowledgeBases,
+  rebuildKnowledgeBaseES,
   updateKnowledgeBase,
   updateKnowledgeBaseStatus,
 } from '../../services/knowledge';
@@ -46,6 +49,10 @@ function KnowledgeBaseList(): JSX.Element {
   const [submitting, setSubmitting] = useState(false);
   const [form] = Form.useForm<KBFormData>();
 
+  const [modelList, setModelList] = useState<ModelConfig[]>([]);
+  const [vectorModelLoading, setVectorModelLoading] = useState(false);
+  const [rebuildingId, setRebuildingId] = useState<string | null>(null);
+
   const fetchList = useCallback(async () => {
     setLoading(true);
     try {
@@ -64,6 +71,28 @@ function KnowledgeBaseList(): JSX.Element {
   useEffect(() => {
     fetchList();
   }, [fetchList]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setVectorModelLoading(true);
+    listModels({ modelType: 'EMBEDDINGS' })
+      .then((models) => {
+        if (!cancelled) {
+          setModelList(models);
+        }
+      })
+      .catch(() => {
+        message.error('获取向量模型列表失败');
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setVectorModelLoading(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleSearch = (value: string): void => {
     setSearchName(value);
@@ -85,8 +114,23 @@ function KnowledgeBaseList(): JSX.Element {
     form.setFieldsValue({
       name: editingKB.name,
       description: editingKB.description,
+      vectorModelId: editingKB.vectorModelId || undefined,
+      esIndex: editingKB.esIndex || undefined,
     });
   }, [editingKB, modalVisible, form]);
+
+  const handleRebuildES = async (record: KnowledgeBase): Promise<void> => {
+    setRebuildingId(record.id);
+    try {
+      await rebuildKnowledgeBaseES(record.id);
+      message.success('ES 数据重构已触发');
+      fetchList();
+    } catch {
+      message.error('ES 数据重构失败');
+    } finally {
+      setRebuildingId(null);
+    }
+  };
 
   const handleDelete = async (record: KnowledgeBase): Promise<void> => {
     try {
@@ -122,11 +166,16 @@ function KnowledgeBaseList(): JSX.Element {
 
     setSubmitting(true);
     try {
+      const submitData: KBFormData = {
+        ...values,
+        vectorModelId: values.vectorModelId || undefined,
+        esIndex: values.esIndex || undefined,
+      };
       if (editingKB) {
-        await updateKnowledgeBase(editingKB.id, values);
+        await updateKnowledgeBase(editingKB.id, submitData);
         message.success('更新成功');
       } else {
-        await createKnowledgeBase(values);
+        await createKnowledgeBase(submitData);
         message.success('创建成功');
       }
       setModalVisible(false);
@@ -171,15 +220,25 @@ function KnowledgeBaseList(): JSX.Element {
     {
       title: '操作',
       key: 'actions',
-      width: 320,
+      width: 430,
       render: (_: unknown, record: KnowledgeBase) => (
         <Space size="small">
           <Button
             type="link"
             size="small"
+            disabled={record.rebuilding}
             onClick={() => navigate(`/knowledge/${record.id}/files`)}
           >
             管理文件
+          </Button>
+          <Button
+            type="link"
+            size="small"
+            loading={rebuildingId === record.id}
+            disabled={record.rebuilding}
+            onClick={() => handleRebuildES(record)}
+          >
+            ES数据重构
           </Button>
           <Button type="link" size="small" onClick={() => handleEdit(record)}>
             编辑
@@ -231,7 +290,7 @@ function KnowledgeBaseList(): JSX.Element {
         dataSource={dataSource}
         loading={loading}
         pagination={false}
-        scroll={{ x: 1100 }}
+        scroll={{ x: 1300 }}
       />
 
       <Modal
@@ -253,6 +312,19 @@ function KnowledgeBaseList(): JSX.Element {
           </Form.Item>
           <Form.Item name="description" label="描述">
             <Input.TextArea placeholder="请输入知识库描述" rows={3} maxLength={500} showCount />
+          </Form.Item>
+          <Form.Item name="vectorModelId" label="向量模型">
+            <Select
+              placeholder="请选择向量模型"
+              options={modelList.map((m) => ({ value: m.id, label: m.name }))}
+              loading={vectorModelLoading}
+              allowClear
+              showSearch
+              optionFilterProp="label"
+            />
+          </Form.Item>
+          <Form.Item name="esIndex" label="ES 索引">
+            <Input placeholder="请输入 ES 索引名称" maxLength={100} />
           </Form.Item>
         </Form>
       </Modal>

@@ -1,0 +1,210 @@
+package com.ghost616.platform.service.knowledge;
+
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.StringUtils;
+import com.ghost616.agentbase.dto.model.EmbeddingRequest;
+import com.ghost616.agentbase.dto.model.EmbeddingResponse;
+import com.ghost616.agentbase.dto.model.ModelConfigData;
+import com.ghost616.agentbase.enums.CommonStatus;
+import com.ghost616.agentbase.enums.ErrorCode;
+import com.ghost616.agentbase.exception.BusinessException;
+import com.ghost616.agentbase.service.model.invoker.ModelInvoker;
+import com.ghost616.agentbase.service.model.invoker.ModelInvokerManager;
+import com.ghost616.platform.entity.KnowledgeBase;
+import com.ghost616.platform.entity.KnowledgeFile;
+import com.ghost616.platform.entity.ModelConfig;
+import com.ghost616.platform.enums.PublishStatus;
+import com.ghost616.platform.model.TextChunk;
+import com.ghost616.platform.repository.KnowledgeBaseMapper;
+import com.ghost616.platform.repository.KnowledgeFileMapper;
+import com.ghost616.platform.repository.ModelConfigMapper;
+import com.ghost616.platform.service.search.KnowledgeSearchClient;
+import com.ghost616.platform.util.IdConverter;
+import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * 知识库发布服务，负责将知识文件内容向量化写入 Elasticsearch 索引，并支持知识库整体重建索引。
+ */
+@Service
+@EnableAsync
+@RequiredArgsConstructor
+public class KnowledgePublishService {
+
+    private static final Logger log = LoggerFactory.getLogger(KnowledgePublishService.class);
+
+    private final KnowledgeFileMapper knowledgeFileMapper;
+    private final KnowledgeBaseMapper knowledgeBaseMapper;
+    private final ModelConfigMapper modelConfigMapper;
+    private final ModelInvokerManager modelInvokerManager;
+    private final KnowledgeSearchClient knowledgeSearchClient;
+
+    /**
+     * 异步发布单个知识文件：删除旧文本块后逐行向量化并批量写入索引。
+     *
+     * @param fileId 知识文件 ID
+     */
+    @Async
+    public void publishFile(Long fileId) {
+        KnowledgeFile file = knowledgeFileMapper.selectById(fileId);
+        if (file == null) {
+            log.warn("publishFile 跳过：文件不存在, fileId={}", fileId);
+            return;
+        }
+        KnowledgeBase knowledgeBase = knowledgeBaseMapper.selectById(file.getKnowledgeBaseId());
+        if (knowledgeBase == null || StringUtils.isBlank(knowledgeBase.getEsIndex())) {
+            markPublishError(file);
+            log.warn("publishFile 跳过：知识库或 ES 索引缺失, fileId={}, kbId={}", fileId, file.getKnowledgeBaseId());
+            return;
+        }
+        String indexName = knowledgeBase.getEsIndex();
+
+        file.setPublishStatus(PublishStatus.PUBLISHING);
+        knowledgeFileMapper.updateById(file);
+        try {
+            if (knowledgeSearchClient.indexExists(indexName)) {
+                knowledgeSearchClient.deleteByFile(indexName, fileId);
+            }
+            ModelConfig vectorModel = resolveVectorModel(knowledgeBase);
+            ModelInvoker invoker = modelInvokerManager.getInvoker(buildModelConfigData(vectorModel));
+            List<TextChunk> chunks = embedLines(file, knowledgeBase, indexName, vectorModel, invoker);
+            knowledgeSearchClient.batchSave(indexName, chunks);
+
+            file.setPublishStatus(PublishStatus.PUBLISHED);
+            knowledgeFileMapper.updateById(file);
+            log.info("publishFile 成功, fileId={}, kbId={}, chunkCount={}", fileId, file.getKnowledgeBaseId(), chunks.size());
+        } catch (Exception e) {
+            log.error("publishFile 失败, fileId={}, kbId={}", fileId, file.getKnowledgeBaseId(), e);
+            markPublishError(file);
+            cleanupIndex(indexName, fileId);
+        }
+    }
+
+    /**
+     * 重建知识库索引：删除旧索引后重新发布所有已发布状态的文件。
+     *
+     * @param kbId 知识库 ID
+     */
+    public void rebuildKnowledgeBase(Long kbId) {
+        KnowledgeBase knowledgeBase = knowledgeBaseMapper.selectById(kbId);
+        if (knowledgeBase == null) {
+            throw new BusinessException(ErrorCode.KNOWLEDGE_BASE_NOT_FOUND);
+        }
+        knowledgeBase.setRebuilding(true);
+        knowledgeBaseMapper.updateById(knowledgeBase);
+        try {
+            if (StringUtils.isNotBlank(knowledgeBase.getEsIndex())) {
+                knowledgeSearchClient.deleteIndex(knowledgeBase.getEsIndex());
+            }
+            LambdaQueryWrapper<KnowledgeFile> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(KnowledgeFile::getKnowledgeBaseId, kbId);
+            wrapper.in(KnowledgeFile::getPublishStatus,
+                    PublishStatus.PUBLISHING, PublishStatus.PUBLISHED, PublishStatus.PENDING_PUBLISH);
+            List<KnowledgeFile> files = knowledgeFileMapper.selectList(wrapper);
+            for (KnowledgeFile file : files) {
+                publishFile(file.getId());
+            }
+            log.info("rebuildKnowledgeBase 完成, kbId={}, fileCount={}", kbId, files.size());
+        } finally {
+            knowledgeBase.setRebuilding(false);
+            knowledgeBaseMapper.updateById(knowledgeBase);
+        }
+    }
+
+    private ModelConfig resolveVectorModel(KnowledgeBase knowledgeBase) {
+        Long vectorModelId = knowledgeBase.getVectorModelId();
+        if (vectorModelId == null) {
+            throw new BusinessException(ErrorCode.MODEL_NOT_FOUND, "知识库未配置向量模型");
+        }
+        ModelConfig config = modelConfigMapper.selectById(vectorModelId);
+        if (config == null) {
+            throw new BusinessException(ErrorCode.MODEL_NOT_FOUND);
+        }
+        return config;
+    }
+
+    private ModelConfigData buildModelConfigData(ModelConfig config) {
+        return new ModelConfigData(
+                IdConverter.toString(config.getId()),
+                config.getApiKey(),
+                config.getBaseUrl(),
+                config.getModelName(),
+                config.getTemperature(),
+                config.getMaxTokens(),
+                config.getPlatformType() != null ? config.getPlatformType().name() : null,
+                config.getRequestType()
+        );
+    }
+
+    private List<TextChunk> embedLines(KnowledgeFile file, KnowledgeBase knowledgeBase,
+                                       String indexName, ModelConfig vectorModel, ModelInvoker invoker) {
+        String content = file.getFileContent();
+        List<TextChunk> chunks = new ArrayList<>();
+        if (content == null || content.isBlank()) {
+            return chunks;
+        }
+        String[] lines = content.split("\n", -1);
+        int lineNumber = 1;
+        Integer dimension = null;
+        for (String line : lines) {
+            if (line == null || line.trim().isEmpty()) {
+                continue;
+            }
+            EmbeddingRequest request = EmbeddingRequest.builder()
+                    .model(vectorModel.getModelName())
+                    .input(line)
+                    .build();
+            EmbeddingResponse response = invoker.embed(request);
+            List<Float> vector = extractVector(response);
+            if (vector == null || vector.isEmpty()) {
+                continue;
+            }
+            if (dimension == null) {
+                dimension = vector.size();
+                if (!knowledgeSearchClient.indexExists(indexName)) {
+                    knowledgeSearchClient.createIndex(indexName, dimension);
+                }
+            }
+            chunks.add(TextChunk.builder()
+                    .knowledgeBaseId(file.getKnowledgeBaseId())
+                    .fileId(file.getId())
+                    .lineNumber(lineNumber++)
+                    .vector(vector)
+                    .text(line)
+                    .kbEnabled(knowledgeBase.getStatus() == CommonStatus.ENABLED)
+                    .fileEnabled(file.getStatus() == CommonStatus.ENABLED)
+                    .build());
+        }
+        return chunks;
+    }
+
+    private List<Float> extractVector(EmbeddingResponse response) {
+        if (response == null || response.getEmbeddings() == null || response.getEmbeddings().isEmpty()) {
+            return null;
+        }
+        EmbeddingResponse.EmbeddingItem item = response.getEmbeddings().get(0);
+        return item == null ? null : item.getEmbedding();
+    }
+
+    private void markPublishError(KnowledgeFile file) {
+        file.setPublishStatus(PublishStatus.PUBLISH_ERROR);
+        knowledgeFileMapper.updateById(file);
+    }
+
+    private void cleanupIndex(String indexName, Long fileId) {
+        try {
+            if (knowledgeSearchClient.indexExists(indexName)) {
+                knowledgeSearchClient.deleteByFile(indexName, fileId);
+            }
+        } catch (Exception ignore) {
+            log.warn("publishFile 失败后清理索引异常, indexName={}, fileId={}", indexName, fileId);
+        }
+    }
+}

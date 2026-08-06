@@ -12,13 +12,22 @@ import {
   Table,
   Tag,
 } from 'antd';
+import { ReloadOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import type { CommonStatus } from '../../types/common';
-import type { KFFormData, KnowledgeFile } from '../../types/knowledge';
+import type {
+  KFFormData,
+  KnowledgeBase,
+  KnowledgeFile,
+  PublishStatus,
+} from '../../types/knowledge';
 import {
   createKnowledgeFile,
   deleteKnowledgeFile,
+  getKnowledgeBase,
   listKnowledgeFiles,
+  publishKnowledgeFile,
+  refreshKnowledgeFiles,
   updateKnowledgeFile,
   updateKnowledgeFileStatus,
 } from '../../services/knowledge';
@@ -28,11 +37,36 @@ const STATUS_LABELS: Record<CommonStatus, string> = {
   DISABLED: '禁用',
 };
 
+const PUBLISH_STATUS_LABELS: Record<PublishStatus, string> = {
+  UNPUBLISHED: '未发布',
+  PUBLISHING: '发布中',
+  PUBLISHED: '已发布',
+  PENDING_PUBLISH: '待发布',
+  PUBLISH_ERROR: '发布失败',
+};
+
+const PUBLISH_STATUS_COLORS: Record<PublishStatus, string> = {
+  UNPUBLISHED: 'default',
+  PUBLISHING: 'processing',
+  PUBLISHED: 'success',
+  PENDING_PUBLISH: 'warning',
+  PUBLISH_ERROR: 'error',
+};
+
+const PUBLISHABLE_STATUSES: PublishStatus[] = [
+  'UNPUBLISHED',
+  'PENDING_PUBLISH',
+  'PUBLISH_ERROR',
+];
+
 function KnowledgeFileList(): JSX.Element {
   const navigate = useNavigate();
   const { kbId } = useParams<{ kbId: string }>();
   const [dataSource, setDataSource] = useState<KnowledgeFile[]>([]);
   const [loading, setLoading] = useState(false);
+  const [kb, setKb] = useState<KnowledgeBase | null>(null);
+  const [publishingId, setPublishingId] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   const [modalVisible, setModalVisible] = useState(false);
   const [editingKF, setEditingKF] = useState<KnowledgeFile | null>(null);
@@ -55,6 +89,13 @@ function KnowledgeFileList(): JSX.Element {
   useEffect(() => {
     fetchList();
   }, [fetchList]);
+
+  useEffect(() => {
+    if (!kbId) return;
+    getKnowledgeBase(kbId)
+      .then((result) => setKb(result))
+      .catch(() => setKb(null));
+  }, [kbId]);
 
   const handleAdd = (): void => {
     setEditingKF(null);
@@ -101,8 +142,32 @@ function KnowledgeFileList(): JSX.Element {
     }
   };
 
-  const handlePublish = (record: KnowledgeFile): void => {
-    void record;
+  const handlePublish = async (record: KnowledgeFile): Promise<void> => {
+    if (!kbId) return;
+    setPublishingId(record.id);
+    try {
+      await publishKnowledgeFile(kbId, record.id);
+      message.success('发布成功');
+      fetchList();
+    } catch {
+      message.error('发布失败');
+    } finally {
+      setPublishingId(null);
+    }
+  };
+
+  const handleRefresh = async (): Promise<void> => {
+    if (!kbId) return;
+    setRefreshing(true);
+    try {
+      await refreshKnowledgeFiles(kbId);
+      message.success('文件列表已刷新');
+      fetchList();
+    } catch {
+      message.error('刷新文件列表失败');
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   const handleModalOk = async (): Promise<void> => {
@@ -158,6 +223,20 @@ function KnowledgeFileList(): JSX.Element {
       ),
     },
     {
+      title: '发布状态',
+      dataIndex: 'publishStatus',
+      width: 120,
+      align: 'center',
+      render: (value?: PublishStatus) => {
+        const status: PublishStatus = value ?? 'UNPUBLISHED';
+        return (
+          <Tag color={PUBLISH_STATUS_COLORS[status]}>
+            {PUBLISH_STATUS_LABELS[status]}
+          </Tag>
+        );
+      },
+    },
+    {
       title: '创建时间',
       dataIndex: 'createTime',
       width: 180,
@@ -165,36 +244,48 @@ function KnowledgeFileList(): JSX.Element {
     {
       title: '操作',
       key: 'actions',
-      width: 360,
-      render: (_: unknown, record: KnowledgeFile) => (
-        <Space size="small">
-          <Button type="link" size="small" onClick={() => handlePublish(record)}>
-            发布文件
-          </Button>
-          <Button
-            type="link"
-            size="small"
-            onClick={() => navigate(`/knowledge/${kbId}/files/${record.id}/edit`)}
-          >
-            编辑内容
-          </Button>
-          <Button type="link" size="small" onClick={() => handleEdit(record)}>
-            编辑
-          </Button>
-          <Popconfirm
-            title="确定删除该文件？"
-            onConfirm={() => handleDelete(record)}
-          >
-            <Button type="link" size="small" danger>
-              删除
+      width: 420,
+      render: (_: unknown, record: KnowledgeFile) => {
+        const publishStatus: PublishStatus = record.publishStatus ?? 'UNPUBLISHED';
+        const isPublishing = publishStatus === 'PUBLISHING';
+        const canPublish =
+          !kb?.rebuilding && PUBLISHABLE_STATUSES.includes(publishStatus);
+        return (
+          <Space size="small">
+            <Button
+              type="link"
+              size="small"
+              disabled={!canPublish}
+              loading={publishingId === record.id}
+              onClick={() => handlePublish(record)}
+            >
+              {isPublishing ? '发布中' : '发布'}
             </Button>
-          </Popconfirm>
-          <Switch
-            checked={record.status === 'ENABLED'}
-            onChange={(checked) => handleStatusChange(checked, record)}
-          />
-        </Space>
-      ),
+            <Button
+              type="link"
+              size="small"
+              onClick={() => navigate(`/knowledge/${kbId}/files/${record.id}/edit`)}
+            >
+              编辑内容
+            </Button>
+            <Button type="link" size="small" onClick={() => handleEdit(record)}>
+              编辑
+            </Button>
+            <Popconfirm
+              title="确定删除该文件？"
+              onConfirm={() => handleDelete(record)}
+            >
+              <Button type="link" size="small" danger>
+                删除
+              </Button>
+            </Popconfirm>
+            <Switch
+              checked={record.status === 'ENABLED'}
+              onChange={(checked) => handleStatusChange(checked, record)}
+            />
+          </Space>
+        );
+      },
     },
   ];
 
@@ -203,6 +294,9 @@ function KnowledgeFileList(): JSX.Element {
       <Space style={{ marginBottom: 16 }} wrap>
         <Button type="text" onClick={() => navigate('/knowledge')}>
           返回
+        </Button>
+        <Button icon={<ReloadOutlined />} loading={refreshing} onClick={handleRefresh}>
+          刷新
         </Button>
         <Button type="primary" onClick={handleAdd}>
           新增文件
@@ -215,7 +309,7 @@ function KnowledgeFileList(): JSX.Element {
         dataSource={dataSource}
         loading={loading}
         pagination={false}
-        scroll={{ x: 1100 }}
+        scroll={{ x: 1300 }}
       />
 
       <Modal

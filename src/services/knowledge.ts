@@ -138,3 +138,31 @@ export async function updateKnowledgeFileStatus(
     params: { status },
   });
 }
+
+/**
+ * 发布知识文件。
+ * @param kbId 知识库 ID
+ * @param fileId 知识文件 ID
+ */
+export async function publishKnowledgeFile(
+  kbId: string,
+  fileId: string,
+): Promise<void> {
+  await api.post(`/knowledge-bases/${kbId}/files/${fileId}/publish`);
+}
+
+/**
+ * 刷新知识文件列表（重新扫描知识库目录）。
+ * @param kbId 知识库 ID
+ */
+export async function refreshKnowledgeFiles(kbId: string): Promise<void> {
+  await api.put(`/knowledge-bases/${kbId}/files/refresh`);
+}
+
+/**
+ * 触发知识库 ES 数据重构。
+ * @param kbId 知识库 ID
+ */
+export async function rebuildKnowledgeBaseES(kbId: string): Promise<void> {
+  await api.post(`/knowledge-bases/${kbId}/rebuild-es`);
+}

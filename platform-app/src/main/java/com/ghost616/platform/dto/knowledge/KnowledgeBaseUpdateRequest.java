@@ -17,4 +17,8 @@ public class KnowledgeBaseUpdateRequest {
     private String description;
 
     private CommonStatus status;
+
+    private Long vectorModelId;
+
+    private String esIndex;
 }

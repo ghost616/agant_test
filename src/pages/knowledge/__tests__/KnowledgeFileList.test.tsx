@@ -37,6 +37,7 @@ vi.mock('../../../services/knowledge', () => ({
       fileDescription: '测试文件',
       knowledgeBaseId: 'kb-1',
       status: 'ENABLED',
+      publishStatus: 'UNPUBLISHED',
       createTime: '2026-08-01T00:00:00',
       updateTime: '2026-08-01T00:00:00',
     } satisfies KnowledgeFile,
@@ -45,6 +46,16 @@ vi.mock('../../../services/knowledge', () => ({
   updateKnowledgeFile: vi.fn().mockResolvedValue({ id: 'file-1' }),
   deleteKnowledgeFile: vi.fn().mockResolvedValue(undefined),
   updateKnowledgeFileStatus: vi.fn().mockResolvedValue(undefined),
+  getKnowledgeBase: vi.fn().mockResolvedValue({
+    id: 'kb-1',
+    name: '知识库',
+    status: 'ENABLED',
+    rebuilding: false,
+    createTime: '2026-08-01T00:00:00',
+    updateTime: '2026-08-01T00:00:00',
+  }),
+  publishKnowledgeFile: vi.fn().mockResolvedValue(undefined),
+  refreshKnowledgeFiles: vi.fn().mockResolvedValue(undefined),
 }));
 
 import KnowledgeFileList from '../KnowledgeFileList';
@@ -100,6 +111,23 @@ describe('KnowledgeFileList 新建/编辑弹窗字段 (功能点1)', () => {
     expect(source).toContain('name="fileName"');
     expect(source).toContain('name="fileDescription"');
     expect(source).not.toContain('name="fileContent"');
+  });
+});
+
+describe('KnowledgeFileList 返回按钮 (功能点3)', () => {
+  beforeEach(() => {
+    mockNavigate.mockClear();
+  });
+
+  it('应渲染文案为「返回」的返回按钮', async () => {
+    renderComponent();
+    expect(screen.getByRole('button', { name: '返回' })).toBeTruthy();
+  });
+
+  it('点击返回按钮应导航到 /knowledge', async () => {
+    renderComponent();
+    fireEvent.click(screen.getByRole('button', { name: '返回' }));
+    expect(mockNavigate).toHaveBeenCalledWith('/knowledge');
   });
 });
 

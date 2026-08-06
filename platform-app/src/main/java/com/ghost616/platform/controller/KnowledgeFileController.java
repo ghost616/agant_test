@@ -6,6 +6,7 @@ import com.ghost616.platform.dto.knowledge.KnowledgeFileCreateRequest;
 import com.ghost616.platform.dto.knowledge.KnowledgeFileDTO;
 import com.ghost616.platform.dto.knowledge.KnowledgeFileUpdateRequest;
 import com.ghost616.platform.service.knowledge.KnowledgeFileService;
+import com.ghost616.platform.service.knowledge.KnowledgePublishService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -27,6 +28,7 @@ import java.util.List;
 public class KnowledgeFileController {
 
     private final KnowledgeFileService knowledgeFileService;
+    private final KnowledgePublishService knowledgePublishService;
 
     @GetMapping
     public ApiResponse<List<KnowledgeFileDTO>> list(@PathVariable Long kbId,
@@ -34,6 +36,20 @@ public class KnowledgeFileController {
                                                     @RequestParam(required = false) CommonStatus status) {
         List<KnowledgeFileDTO> result = knowledgeFileService.list(kbId, fileName, status);
         return ApiResponse.success(result);
+    }
+
+    @PutMapping("/refresh")
+    public ApiResponse<List<KnowledgeFileDTO>> refresh(@PathVariable Long kbId,
+                                                       @RequestParam(required = false) String fileName,
+                                                       @RequestParam(required = false) CommonStatus status) {
+        List<KnowledgeFileDTO> result = knowledgeFileService.list(kbId, fileName, status);
+        return ApiResponse.success(result);
+    }
+
+    @PostMapping("/{id}/publish")
+    public ApiResponse<Void> publish(@PathVariable Long kbId, @PathVariable Long id) {
+        knowledgePublishService.publishFile(id);
+        return ApiResponse.success(null);
     }
 
     @GetMapping("/{id}")

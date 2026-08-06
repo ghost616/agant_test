@@ -3,6 +3,7 @@ package com.ghost616.platform.entity;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.ghost616.agentbase.enums.CommonStatus;
+import com.ghost616.platform.enums.PublishStatus;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -31,6 +32,9 @@ public class KnowledgeFile extends BaseEntity {
 
     @TableField("status")
     private CommonStatus status;
+
+    @TableField("publish_status")
+    private PublishStatus publishStatus;
 
     @TableField("file_content")
     private String fileContent;

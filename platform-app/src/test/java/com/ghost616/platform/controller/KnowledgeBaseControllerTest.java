@@ -6,6 +6,7 @@ import com.ghost616.platform.dto.knowledge.KnowledgeBaseCreateRequest;
 import com.ghost616.platform.dto.knowledge.KnowledgeBaseDTO;
 import com.ghost616.platform.dto.knowledge.KnowledgeBaseUpdateRequest;
 import com.ghost616.platform.service.knowledge.KnowledgeBaseService;
+import com.ghost616.platform.service.knowledge.KnowledgePublishService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -22,6 +23,9 @@ class KnowledgeBaseControllerTest {
 
     @Mock
     private KnowledgeBaseService knowledgeBaseService;
+
+    @Mock
+    private KnowledgePublishService knowledgePublishService;
 
     @InjectMocks
     private KnowledgeBaseController controller;
@@ -92,5 +96,14 @@ class KnowledgeBaseControllerTest {
 
         assertTrue(response.isSuccess());
         verify(knowledgeBaseService).toggleStatus(1L, CommonStatus.DISABLED);
+    }
+
+    @Test
+    void rebuildEs_应调用重建服务() {
+        ApiResponse<Void> response = controller.rebuildEs(1L);
+
+        assertTrue(response.isSuccess());
+        assertNull(response.getData());
+        verify(knowledgePublishService).rebuildKnowledgeBase(1L);
     }
 }

@@ -6,6 +6,7 @@ import com.ghost616.platform.dto.knowledge.KnowledgeBaseCreateRequest;
 import com.ghost616.platform.dto.knowledge.KnowledgeBaseDTO;
 import com.ghost616.platform.dto.knowledge.KnowledgeBaseUpdateRequest;
 import com.ghost616.platform.service.knowledge.KnowledgeBaseService;
+import com.ghost616.platform.service.knowledge.KnowledgePublishService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -26,6 +27,7 @@ import java.util.List;
 public class KnowledgeBaseController {
 
     private final KnowledgeBaseService knowledgeBaseService;
+    private final KnowledgePublishService knowledgePublishService;
 
     @GetMapping
     public ApiResponse<List<KnowledgeBaseDTO>> list(
@@ -65,5 +67,11 @@ public class KnowledgeBaseController {
                                                       @RequestParam CommonStatus status) {
         KnowledgeBaseDTO result = knowledgeBaseService.toggleStatus(id, status);
         return ApiResponse.success(result);
+    }
+
+    @PostMapping("/{id}/rebuild-es")
+    public ApiResponse<Void> rebuildEs(@PathVariable Long id) {
+        knowledgePublishService.rebuildKnowledgeBase(id);
+        return ApiResponse.success(null);
     }
 }

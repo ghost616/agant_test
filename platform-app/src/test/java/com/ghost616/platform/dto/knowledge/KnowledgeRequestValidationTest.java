@@ -32,8 +32,17 @@ class KnowledgeRequestValidationTest {
         KnowledgeBaseCreateRequest r3 = KnowledgeBaseCreateRequest.builder().name("   ").build();
         assertFalse(validator.validate(r3).isEmpty(), "name 为空白应校验失败");
 
-        KnowledgeBaseCreateRequest r4 = KnowledgeBaseCreateRequest.builder().name("kb").build();
+        KnowledgeBaseCreateRequest r4 = KnowledgeBaseCreateRequest.builder().name("kb").vectorModelId(1L).build();
         assertTrue(validator.validate(r4).isEmpty(), "name 非空应通过");
+    }
+
+    @Test
+    @DisplayName("KnowledgeBaseCreateRequest.vectorModelId 为 null 时校验失败")
+    void 知识库vectorModelId必填() {
+        KnowledgeBaseCreateRequest r = KnowledgeBaseCreateRequest.builder().name("kb").build();
+        Set<ConstraintViolation<KnowledgeBaseCreateRequest>> violations = validator.validate(r);
+        assertFalse(violations.isEmpty(), "vectorModelId 为 null 应校验失败");
+        assertTrue(violations.stream().anyMatch(v -> v.getPropertyPath().toString().contains("vectorModelId")));
     }
 
     @Test

@@ -21,6 +21,10 @@ public class KnowledgeBaseDTO {
     private String name;
     private String description;
     private CommonStatus status;
+    @JsonSerialize(using = ToStringSerializer.class)
+    private Long vectorModelId;
+    private String esIndex;
+    private Boolean rebuilding;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
 }

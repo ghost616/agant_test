@@ -10,6 +10,7 @@ import com.ghost616.platform.dto.knowledge.KnowledgeFileDTO;
 import com.ghost616.platform.dto.knowledge.KnowledgeFileUpdateRequest;
 import com.ghost616.platform.entity.KnowledgeBase;
 import com.ghost616.platform.entity.KnowledgeFile;
+import com.ghost616.platform.enums.PublishStatus;
 import com.ghost616.platform.repository.KnowledgeBaseMapper;
 import com.ghost616.platform.repository.KnowledgeFileMapper;
 import lombok.RequiredArgsConstructor;
@@ -64,6 +65,7 @@ public class KnowledgeFileServiceImpl implements KnowledgeFileService {
         entity.setFileDescription(request.getFileDescription());
         entity.setKnowledgeBaseId(knowledgeBaseId);
         entity.setStatus(CommonStatus.ENABLED);
+        entity.setPublishStatus(PublishStatus.UNPUBLISHED);
 
         knowledgeFileMapper.insert(entity);
         return toDTO(entity);
@@ -87,6 +89,9 @@ public class KnowledgeFileServiceImpl implements KnowledgeFileService {
         entity.setFileContent(content);
         entity.setFileSize(computeFileSize(content));
         entity.setLineCount(computeLineCount(content));
+        if (entity.getPublishStatus() == PublishStatus.PUBLISHED) {
+            entity.setPublishStatus(PublishStatus.PENDING_PUBLISH);
+        }
         knowledgeFileMapper.updateById(entity);
     }
 
@@ -154,6 +159,7 @@ public class KnowledgeFileServiceImpl implements KnowledgeFileService {
                 .fileSize(entity.getFileSize())
                 .lineCount(entity.getLineCount())
                 .status(entity.getStatus())
+                .publishStatus(entity.getPublishStatus())
                 .createTime(entity.getCreateTime())
                 .updateTime(entity.getUpdateTime())
                 .build();

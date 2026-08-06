@@ -3,6 +3,7 @@ package com.ghost616.platform.dto.knowledge;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import com.ghost616.agentbase.enums.CommonStatus;
+import com.ghost616.platform.enums.PublishStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -25,6 +26,7 @@ public class KnowledgeFileDTO {
     private Long fileSize;
     private Integer lineCount;
     private CommonStatus status;
+    private PublishStatus publishStatus;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
 }

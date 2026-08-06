@@ -16,11 +16,19 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.SecureRandom;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
+
+    private static final String ES_INDEX_PREFIX = "agent_";
+    private static final char[] ES_INDEX_CHARS =
+            "0123456789abcdefghijklmnopqrstuvwxyz_".toCharArray();
+    private static final int ES_INDEX_RANDOM_LENGTH = 6;
+
+    private final SecureRandom random = new SecureRandom();
 
     private final KnowledgeBaseMapper knowledgeBaseMapper;
     private final KnowledgeFileMapper knowledgeFileMapper;
@@ -56,9 +64,17 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
         KnowledgeBase entity = new KnowledgeBase();
         entity.setName(request.getName());
         entity.setDescription(request.getDescription());
+        entity.setVectorModelId(request.getVectorModelId());
+        if (StringUtils.isNotBlank(request.getEsIndex())) {
+            entity.setEsIndex(request.getEsIndex());
+        }
         entity.setStatus(CommonStatus.ENABLED);
 
         knowledgeBaseMapper.insert(entity);
+        if (StringUtils.isBlank(entity.getEsIndex())) {
+            entity.setEsIndex(generateEsIndex(entity.getId()));
+            knowledgeBaseMapper.updateById(entity);
+        }
         return toDTO(entity);
     }
 
@@ -78,6 +94,15 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
         }
         if (request.getStatus() != null) {
             entity.setStatus(request.getStatus());
+        }
+        if (request.getVectorModelId() != null) {
+            entity.setVectorModelId(request.getVectorModelId());
+        }
+        if (request.getEsIndex() != null) {
+            entity.setEsIndex(request.getEsIndex());
+        }
+        if (StringUtils.isBlank(entity.getEsIndex())) {
+            entity.setEsIndex(generateEsIndex(entity.getId()));
         }
 
         knowledgeBaseMapper.updateById(entity);
@@ -121,12 +146,23 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
         }
     }
 
+    private String generateEsIndex(Long knowledgeBaseId) {
+        StringBuilder suffix = new StringBuilder(ES_INDEX_RANDOM_LENGTH);
+        for (int i = 0; i < ES_INDEX_RANDOM_LENGTH; i++) {
+            suffix.append(ES_INDEX_CHARS[random.nextInt(ES_INDEX_CHARS.length)]);
+        }
+        return ES_INDEX_PREFIX + knowledgeBaseId + "_" + suffix;
+    }
+
     private KnowledgeBaseDTO toDTO(KnowledgeBase entity) {
         return KnowledgeBaseDTO.builder()
                 .id(entity.getId())
                 .name(entity.getName())
                 .description(entity.getDescription())
                 .status(entity.getStatus())
+                .vectorModelId(entity.getVectorModelId())
+                .esIndex(entity.getEsIndex())
+                .rebuilding(entity.getRebuilding())
                 .createTime(entity.getCreateTime())
                 .updateTime(entity.getUpdateTime())
                 .build();

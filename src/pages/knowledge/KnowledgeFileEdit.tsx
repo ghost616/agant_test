@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Button, Input, message, Space } from 'antd';
+import { Button, Input, message, Space, Tag } from 'antd';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import {
@@ -23,6 +23,7 @@ function KnowledgeFileEdit(): JSX.Element {
   const { kbId, fileId } = useParams<{ kbId: string; fileId: string }>();
   const [fileName, setFileName] = useState('');
   const [content, setContent] = useState('');
+  const [publishing, setPublishing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -33,6 +34,7 @@ function KnowledgeFileEdit(): JSX.Element {
       .then(([file, fileContent]) => {
         setFileName(file.fileName);
         setContent(fileContent);
+        setPublishing(file.publishStatus === 'PUBLISHING');
       })
       .catch(() => {
         message.error('获取文件详情失败');
@@ -62,7 +64,12 @@ function KnowledgeFileEdit(): JSX.Element {
   return (
     <div>
       <div style={{ marginBottom: 16 }}>
-        {fileName && <span style={{ fontWeight: 600 }}>{fileName}</span>}
+        {fileName && (
+          <Space>
+            <span style={{ fontWeight: 600 }}>{fileName}</span>
+            {publishing && <Tag color="processing">发布中，暂不可编辑</Tag>}
+          </Space>
+        )}
       </div>
 
       <div style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
@@ -72,6 +79,7 @@ function KnowledgeFileEdit(): JSX.Element {
             onChange={(e) => setContent(e.target.value)}
             placeholder="请输入 Markdown 内容"
             rows={24}
+            disabled={publishing}
             style={{
               fontFamily: 'monospace',
               fontSize: 14,
@@ -102,7 +110,12 @@ function KnowledgeFileEdit(): JSX.Element {
 
       <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
         <Space>
-          <Button type="primary" loading={saving} disabled={loading} onClick={handleSave}>
+          <Button
+            type="primary"
+            loading={saving}
+            disabled={loading || publishing}
+            onClick={handleSave}
+          >
             保存
           </Button>
           <Button onClick={handleClose}>关闭</Button>

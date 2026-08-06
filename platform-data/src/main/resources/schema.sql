@@ -201,13 +201,16 @@ CREATE TABLE IF NOT EXISTS evaluation_result (
 );
 
 CREATE TABLE IF NOT EXISTS knowledge_base (
-    id          BIGINT PRIMARY KEY,
-    name        VARCHAR(255) NOT NULL,
-    description TEXT,
-    status      VARCHAR(32),
-    create_time TIMESTAMP,
-    update_time TIMESTAMP,
-    deleted     INTEGER DEFAULT 0
+    id               BIGINT PRIMARY KEY,
+    name             VARCHAR(255) NOT NULL,
+    description      TEXT,
+    status           VARCHAR(32),
+    vector_model_id  BIGINT,
+    es_index         VARCHAR(255),
+    rebuilding       TINYINT(1) DEFAULT 0,
+    create_time      TIMESTAMP,
+    update_time      TIMESTAMP,
+    deleted          INTEGER DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS knowledge_file (
@@ -218,6 +221,7 @@ CREATE TABLE IF NOT EXISTS knowledge_file (
     file_size          BIGINT,
     line_count         INTEGER,
     status             VARCHAR(32),
+    publish_status     VARCHAR(32) DEFAULT 'UNPUBLISHED',
     file_content       LONGTEXT,
     create_time        TIMESTAMP,
     update_time        TIMESTAMP,

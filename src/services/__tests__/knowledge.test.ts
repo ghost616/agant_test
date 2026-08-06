@@ -2,16 +2,21 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const mockGet = vi.hoisted(() => vi.fn());
 const mockPut = vi.hoisted(() => vi.fn());
+const mockPost = vi.hoisted(() => vi.fn());
 
 vi.mock('../api', () => ({
   default: {
     get: mockGet,
     put: mockPut,
+    post: mockPost,
   },
 }));
 
 import {
   getKnowledgeFileContent,
+  publishKnowledgeFile,
+  rebuildKnowledgeBaseES,
+  refreshKnowledgeFiles,
   updateKnowledgeFileContent,
 } from '../knowledge';
 
@@ -90,5 +95,74 @@ describe('updateKnowledgeFileContent', () => {
     await expect(
       updateKnowledgeFileContent('kb-1', 'file-1', '内容'),
     ).rejects.toThrow('Network Error');
+  });
+});
+
+describe('publishKnowledgeFile', () => {
+  beforeEach(() => {
+    mockPost.mockReset();
+  });
+
+  it('应调用 POST /knowledge-bases/{kbId}/files/{fileId}/publish', async () => {
+    mockPost.mockResolvedValueOnce({ data: { success: true, data: null } });
+    await publishKnowledgeFile('kb-1', 'file-1');
+    expect(mockPost).toHaveBeenCalledWith('/knowledge-bases/kb-1/files/file-1/publish');
+  });
+
+  it('应正确处理不同 kbId/fileId 参数', async () => {
+    mockPost.mockResolvedValueOnce({ data: { success: true, data: null } });
+    await publishKnowledgeFile('kb-a', 'file-b');
+    expect(mockPost).toHaveBeenCalledWith('/knowledge-bases/kb-a/files/file-b/publish');
+  });
+
+  it('应在 API 失败时抛出错误', async () => {
+    mockPost.mockRejectedValueOnce(new Error('发布失败'));
+    await expect(publishKnowledgeFile('kb-1', 'file-1')).rejects.toThrow('发布失败');
+  });
+});
+
+describe('refreshKnowledgeFiles', () => {
+  beforeEach(() => {
+    mockPut.mockReset();
+  });
+
+  it('应调用 PUT /knowledge-bases/{kbId}/files/refresh', async () => {
+    mockPut.mockResolvedValueOnce({ data: { success: true, data: null } });
+    await refreshKnowledgeFiles('kb-1');
+    expect(mockPut).toHaveBeenCalledWith('/knowledge-bases/kb-1/files/refresh');
+  });
+
+  it('应正确处理不同 kbId 参数', async () => {
+    mockPut.mockResolvedValueOnce({ data: { success: true, data: null } });
+    await refreshKnowledgeFiles('kb-x');
+    expect(mockPut).toHaveBeenCalledWith('/knowledge-bases/kb-x/files/refresh');
+  });
+
+  it('应在 API 失败时抛出错误', async () => {
+    mockPut.mockRejectedValueOnce(new Error('刷新失败'));
+    await expect(refreshKnowledgeFiles('kb-1')).rejects.toThrow('刷新失败');
+  });
+});
+
+describe('rebuildKnowledgeBaseES', () => {
+  beforeEach(() => {
+    mockPost.mockReset();
+  });
+
+  it('应调用 POST /knowledge-bases/{kbId}/rebuild-es', async () => {
+    mockPost.mockResolvedValueOnce({ data: { success: true, data: null } });
+    await rebuildKnowledgeBaseES('kb-1');
+    expect(mockPost).toHaveBeenCalledWith('/knowledge-bases/kb-1/rebuild-es');
+  });
+
+  it('应正确处理不同 kbId 参数', async () => {
+    mockPost.mockResolvedValueOnce({ data: { success: true, data: null } });
+    await rebuildKnowledgeBaseES('kb-y');
+    expect(mockPost).toHaveBeenCalledWith('/knowledge-bases/kb-y/rebuild-es');
+  });
+
+  it('应在 API 失败时抛出错误', async () => {
+    mockPost.mockRejectedValueOnce(new Error('重构失败'));
+    await expect(rebuildKnowledgeBaseES('kb-1')).rejects.toThrow('重构失败');
   });
 });
