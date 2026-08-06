@@ -91,3 +91,9 @@
   - agentEvaluation.ts: getAgentEvaluationList、getAgentEvaluation、createAgentEvaluation、updateAgentEvaluation、deleteAgentEvaluation、updateAgentEvaluationStatus
   - evaluation.ts: getEvaluationList(支持 agentEvalId 筛选)、getEvaluation、createEvaluation、updateEvaluation、deleteEvaluation、getEvaluationResults
 - EvaluationList 操作列新增"清空结果"按钮（danger 类型）：Modal.confirm 二次确认后调用 clearEvaluationResults(record.id) 清空该评估下所有评估结果，成功后 message.success 并刷新列表，失败 message.error；按钮始终可点击（后端对空列表无操作处理）
+## 知识库管理界面
+
+- 知识库管理页面 `/knowledge`：列表展示、名称搜索、状态筛选、新增/编辑/删除/启用禁用，"管理文件"跳转 `/knowledge/:kbId/files`
+- 知识文件列表页面 `/knowledge/:kbId/files`：按路由参数 kbId 加载，新增/编辑/删除/启用禁用、发布文件占位按钮；新建/编辑弹窗仅 fileName/fileDescription（不含 fileContent）
+- 知识文件内容编辑页面 `/knowledge/:kbId/files/:fileId/edit`：getKnowledgeFile 加载详情填充，左右分栏（左 TextArea 编辑 Markdown，右 react-markdown + remark-gfm 实时预览），"保存"调用 updateKnowledgeFile 保存 fileContent，"关闭"返回文件列表
+- API 服务封装：知识库/知识文件 CRUD + 状态切换，路径 /knowledge-bases 与 /knowledge-bases/{kbId}/files

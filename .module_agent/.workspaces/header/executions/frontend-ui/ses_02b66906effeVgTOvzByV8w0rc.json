@@ -1,0 +1,11 @@
+[
+  {
+    "plan_id": "plan_1d0a67f5-b540-44bc-a78d-c7906074d1b3",
+    "plan": "文件内容编辑功能",
+    "modified_files": [
+      "src/pages/knowledge/KnowledgeFileEdit.tsx"
+    ],
+    "summary": "离朱回归测试通过（32/32）：单元 21、E2E 11、变更文件 tsc 零错误。测试发现项目基线问题（缺 @types/node、EvaluationResultList/ToolList 既有类型错误）与本次变更无关。",
+    "errors": []
+  }
+]

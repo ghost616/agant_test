@@ -1,19 +1,13 @@
 {
   "gaotao": {
-    "ses_02ef82161ffeem5aTJ1bGa99Ys": "ses_02e5d5fe0ffeuxRfNHaJs8QOvn",
-    "ses_02e4f5ee1ffeRZReJDjESZs5TJ": "ses_02e41c19cffed4s1mU2QL3hO2L"
+    "ses_02ef82161ffeem5aTJ1bGa99Ys": "ses_02b4c5b81ffekJ5SCDKKqBfQSe"
   },
   "limu": {
-    "ses_02e5fd99affeUvBaprkt07BKR1": "ses_02ef82161ffeem5aTJ1bGa99Ys",
-    "ses_02e4ef725ffec9l4s6EjEvd5D0": "ses_02e4f5ee1ffeRZReJDjESZs5TJ",
-    "ses_02e4ed5afffeO5Pfbai7pS22lu": "ses_02e4f5ee1ffeRZReJDjESZs5TJ"
+    "ses_02b66906effeVgTOvzByV8w0rc": "ses_02ef82161ffeem5aTJ1bGa99Ys"
   },
   "lizhu": {},
   "lizhu_fengzhou": {
-    "ses_02e5e8d4bffellGLEt1m0L0kRR": "ses_02ef82161ffeem5aTJ1bGa99Ys",
-    "ses_02e4e0a9dffeSEq242jECYVaZy": "ses_02e4f5ee1ffeRZReJDjESZs5TJ"
+    "ses_02b653209ffeABCsIrsFxy5tVx": "ses_02ef82161ffeem5aTJ1bGa99Ys"
   },
-  "kui": {
-    "ses_02ef82161ffeem5aTJ1bGa99Ys": "ses_02e4f5ee1ffeRZReJDjESZs5TJ"
-  }
+  "kui": {}
 }

@@ -136,6 +136,26 @@
     {
       "path": "src/pages/models/__tests__/ModelTest.embedding.test.tsx",
       "description": "ModelTest EMBEDDINGS 分支测试：验证嵌入测试界面渲染（头部 modelType 标签、无 LLM 控件）、输入 1000 字符限制（超出报错并截断）、发送调用 embed、结果区展示 embeddings[0].embedding 前 100 维超出显示'...'、embeddings 为空显示占位文本、错误 message.error、清空按钮行为"
+    },
+    {
+      "path": "src/types/knowledge.ts",
+      "description": "知识库与知识文件类型定义：KnowledgeBase（id/name/description/status/createTime/updateTime）、KnowledgeFile（id/fileName/fileDescription/knowledgeBaseId/fileSize/lineCount/status/fileContent/createTime/updateTime）、KBFormData、KFFormData（fileName/fileDescription/fileContent）、KBListParams、KFListParams 列表筛选参数"
+    },
+    {
+      "path": "src/services/knowledge.ts",
+      "description": "知识库与知识文件 API 服务封装：listKnowledgeBases/getKnowledgeBase/createKnowledgeBase/updateKnowledgeBase/deleteKnowledgeBase/updateKnowledgeBaseStatus、listKnowledgeFiles/getKnowledgeFile/createKnowledgeFile/updateKnowledgeFile/deleteKnowledgeFile/updateKnowledgeFileStatus，路径基于 /knowledge-bases 与 /knowledge-bases/{kbId}/files"
+    },
+    {
+      "path": "src/pages/knowledge/KnowledgeBaseList.tsx",
+      "description": "知识库管理页面：列表展示、名称搜索与状态筛选、新增/编辑/删除（Popconfirm）/启用禁用（Switch）、操作列\"管理文件\"跳转 /knowledge/:kbId/files"
+    },
+    {
+      "path": "src/pages/knowledge/KnowledgeFileList.tsx",
+      "description": "知识文件列表页面（按 kbId 路由参数加载）：返回知识库管理按钮、列表展示、新增/编辑/删除/启用禁用、发布文件占位按钮、操作列\"编辑内容\"跳转 /knowledge/:kbId/files/:fileId/edit；新建/编辑弹窗仅包含 fileName 与 fileDescription（不含 fileContent）"
+    },
+    {
+      "path": "src/pages/knowledge/KnowledgeFileEdit.tsx",
+      "description": "知识文件内容编辑页面：按 kbId/fileId 路由参数调用 getKnowledgeFile 加载文件详情填充内容；左右分栏布局（左侧 TextArea 编辑 Markdown，右侧 react-markdown + remark-gfm 实时预览）；底部\"保存\"调用 updateKnowledgeFile 保存 fileContent、\"关闭/返回文件列表\"导航回文件列表页"
     }
   ]
 }
