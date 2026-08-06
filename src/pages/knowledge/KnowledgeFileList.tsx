@@ -72,7 +72,6 @@ function KnowledgeFileList(): JSX.Element {
     form.setFieldsValue({
       fileName: editingKF.fileName,
       fileDescription: editingKF.fileDescription,
-      fileContent: editingKF.fileContent,
     });
   }, [editingKF, modalVisible, form]);
 
@@ -166,11 +165,18 @@ function KnowledgeFileList(): JSX.Element {
     {
       title: '操作',
       key: 'actions',
-      width: 300,
+      width: 360,
       render: (_: unknown, record: KnowledgeFile) => (
         <Space size="small">
           <Button type="link" size="small" onClick={() => handlePublish(record)}>
             发布文件
+          </Button>
+          <Button
+            type="link"
+            size="small"
+            onClick={() => navigate(`/knowledge/${kbId}/files/${record.id}/edit`)}
+          >
+            编辑内容
           </Button>
           <Button type="link" size="small" onClick={() => handleEdit(record)}>
             编辑
@@ -231,9 +237,6 @@ function KnowledgeFileList(): JSX.Element {
           </Form.Item>
           <Form.Item name="fileDescription" label="描述">
             <Input.TextArea placeholder="请输入文件描述" rows={2} maxLength={500} showCount />
-          </Form.Item>
-          <Form.Item name="fileContent" label="文件内容">
-            <Input.TextArea placeholder="请输入文件内容" rows={10} />
           </Form.Item>
         </Form>
       </Modal>

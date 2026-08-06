@@ -20,6 +20,7 @@ import AgentChat from './pages/sessions/AgentChat';
 import SkillList from './pages/skills/SkillList';
 import KnowledgeBaseList from './pages/knowledge/KnowledgeBaseList';
 import KnowledgeFileList from './pages/knowledge/KnowledgeFileList';
+import KnowledgeFileEdit from './pages/knowledge/KnowledgeFileEdit';
 import AgentEvaluationList from './pages/evaluations/AgentEvaluationList';
 import EvaluationList from './pages/evaluations/EvaluationList';
 import EvaluationResultList from './pages/evaluations/EvaluationResultList';
@@ -122,6 +123,7 @@ function App() {
             <Route path="/skills" element={<SkillList />} />
             <Route path="/knowledge" element={<KnowledgeBaseList />} />
             <Route path="/knowledge/:kbId/files" element={<KnowledgeFileList />} />
+            <Route path="/knowledge/:kbId/files/:fileId/edit" element={<KnowledgeFileEdit />} />
             <Route path="/sessions" element={<SessionList />} />
             <Route path="/sessions/:id/chat" element={<AgentChat />} />
             <Route path="/evaluations" element={<AgentEvaluationList />} />
