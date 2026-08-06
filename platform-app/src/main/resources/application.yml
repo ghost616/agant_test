@@ -21,6 +21,12 @@ mybatis-plus:
     db-config:
       id-type: assign_id
 
+elasticsearch:
+  host: localhost
+  port: 9200
+  username: ""
+  password: ""
+
 logging:
   level:
     root: INFO
