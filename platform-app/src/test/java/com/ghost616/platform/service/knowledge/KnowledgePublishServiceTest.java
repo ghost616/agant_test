@@ -25,6 +25,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -155,7 +157,7 @@ class KnowledgePublishServiceTest {
     }
 
     @Test
-    void publishFile_索引不存在时由batchSave自动创建索引() {
+    void publishFile_索引不存在时不显式创建索引() {
         newService();
         KnowledgeFile f = file(1L, 100L, "line1", PublishStatus.UNPUBLISHED);
         when(knowledgeFileMapper.selectById(1L)).thenReturn(f);
@@ -163,18 +165,11 @@ class KnowledgePublishServiceTest {
         stubPublishDependencies();
         stubBatchEmbedding();
         when(knowledgeSearchClient.indexExists("agent_idx")).thenReturn(false);
-        doAnswer(invocation -> {
-            String idx = invocation.getArgument(0);
-            if (!knowledgeSearchClient.indexExists(idx)) {
-                knowledgeSearchClient.createIndex(idx);
-            }
-            return null;
-        }).when(knowledgeSearchClient).batchSave(anyString(), anyList());
 
         service.publishFile(1L);
 
         verify(knowledgeSearchClient, never()).deleteByFile("agent_idx", 1L);
-        verify(knowledgeSearchClient).createIndex("agent_idx");
+        verify(knowledgeSearchClient, never()).createIndex("agent_idx");
         verify(knowledgeSearchClient).batchSave(eq("agent_idx"), anyList());
         assertEquals(PublishStatus.PUBLISHED, f.getPublishStatus());
     }
@@ -293,6 +288,55 @@ class KnowledgePublishServiceTest {
         assertEquals(Integer.valueOf(1), chunks.get(0).getLineNumber());
         assertEquals("c", chunks.get(1).getText(), "应依据 index 匹配行而非响应顺序");
         assertEquals(Integer.valueOf(2), chunks.get(1).getLineNumber());
+    }
+
+    @Test
+    void isPublishing_发布中返回true完成后返回false() throws Exception {
+        newService();
+        KnowledgeFile f = file(1L, 100L, "line1", PublishStatus.UNPUBLISHED);
+        when(knowledgeFileMapper.selectById(1L)).thenReturn(f);
+        when(knowledgeBaseMapper.selectById(100L)).thenReturn(kb(100L, "agent_idx"));
+        stubPublishDependencies();
+        CountDownLatch started = new CountDownLatch(1);
+        CountDownLatch release = new CountDownLatch(1);
+        when(modelInvoker.embed(any(EmbeddingRequest.class))).thenAnswer(invocation -> {
+            started.countDown();
+            assertTrue(release.await(5, TimeUnit.SECONDS), "发布任务等待释放超时");
+            return embeddingResponse(List.of(embeddingItem(0, 0.1f)));
+        });
+        when(knowledgeSearchClient.indexExists("agent_idx")).thenReturn(true);
+
+        Thread t = new Thread(() -> {
+            try {
+                service.publishFile(1L).join();
+            } catch (Exception ignore) {
+                // 测试主线程控制释放，join 异常不影响断言
+            }
+        });
+        t.start();
+        assertTrue(started.await(5, TimeUnit.SECONDS), "发布任务应已启动");
+        assertTrue(service.isPublishing(1L), "发布进行中 isPublishing 应为 true");
+        release.countDown();
+        t.join(5000);
+        assertFalse(t.isAlive(), "发布任务应已结束");
+        assertFalse(service.isPublishing(1L), "发布完成后 isPublishing 应为 false");
+    }
+
+    @Test
+    void isPublishing_无发布任务或任务完成后返回false() {
+        newService();
+        assertFalse(service.isPublishing(1L), "无发布任务时应返回 false");
+
+        KnowledgeFile f = file(1L, 100L, "line1", PublishStatus.UNPUBLISHED);
+        when(knowledgeFileMapper.selectById(1L)).thenReturn(f);
+        when(knowledgeBaseMapper.selectById(100L)).thenReturn(kb(100L, "agent_idx"));
+        stubPublishDependencies();
+        stubBatchEmbedding();
+        when(knowledgeSearchClient.indexExists("agent_idx")).thenReturn(true);
+
+        service.publishFile(1L);
+
+        assertFalse(service.isPublishing(1L), "同步执行完成后任务应从 map 清理");
     }
 
     @Test

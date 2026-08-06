@@ -15,7 +15,12 @@ import {
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import type { CommonStatus } from '../../types/common';
-import type { AgentConfig, AgentFormData, SessionAuthType } from '../../types/agent';
+import type {
+  AgentConfig,
+  AgentFormData,
+  KnowledgeBaseItem,
+  SessionAuthType,
+} from '../../types/agent';
 import type { ModelConfig } from '../../types/model';
 import type { ToolConfig } from '../../types/tool';
 import {
@@ -28,7 +33,9 @@ import {
 import { listModels } from '../../services/model';
 import { listTools } from '../../services/tool';
 import { listSkills } from '../../services/skill';
+import { listKnowledgeBases } from '../../services/knowledge';
 import type { SkillConfig } from '../../types/skill';
+import type { KnowledgeBase } from '../../types/knowledge';
 
 const STATUS_LABELS: Record<CommonStatus, string> = {
   ENABLED: '启用',
@@ -139,6 +146,7 @@ function AgentList(): JSX.Element {
   const [modelList, setModelList] = useState<ModelConfig[]>([]);
   const [toolList, setToolList] = useState<ToolConfig[]>([]);
   const [skillList, setSkillList] = useState<SkillConfig[]>([]);
+  const [knowledgeBaseList, setKnowledgeBaseList] = useState<KnowledgeBase[]>([]);
   const [modelMap, setModelMap] = useState<Record<string, string>>({});
   const [toolMap, setToolMap] = useState<Record<string, string>>({});
   const [skillMap, setSkillMap] = useState<Record<string, string>>({});
@@ -160,14 +168,16 @@ function AgentList(): JSX.Element {
 
   const fetchRefData = useCallback(async () => {
     try {
-      const [models, tools, skills] = await Promise.all([
+      const [models, tools, skills, knowledgeBases] = await Promise.all([
         listModels({ modelType: 'LLM' }),
         listTools({}),
         listSkills({}),
+        listKnowledgeBases({}),
       ]);
       setModelList(models);
       setToolList(tools);
       setSkillList(skills);
+      setKnowledgeBaseList(knowledgeBases);
       const modelMapData: Record<string, string> = {};
       models.forEach((m) => {
         modelMapData[m.id] = m.name;
@@ -184,7 +194,7 @@ function AgentList(): JSX.Element {
       });
       setSkillMap(skillMapData);
     } catch {
-      message.error('获取模型/工具/技能列表失败');
+      message.error('获取模型/工具/技能/知识库列表失败');
     }
   }, []);
 
@@ -220,6 +230,7 @@ function AgentList(): JSX.Element {
       modelId: editingAgent.modelId,
       tools: editingAgent.tools,
       skills: editingAgent.skills,
+      knowledgeBaseIds: editingAgent.knowledgeBases?.map((kb) => kb.id),
       recentMessageCount: editingAgent.recentMessageCount,
     });
   }, [editingAgent, modalVisible, form]);
@@ -329,6 +340,21 @@ function AgentList(): JSX.Element {
       },
     },
     {
+      title: '绑定知识库',
+      dataIndex: 'knowledgeBases',
+      width: 200,
+      render: (value: KnowledgeBaseItem[] | undefined) => {
+        if (!value || value.length === 0) return '-';
+        return (
+          <Space size={[0, 4]} wrap>
+            {value.map((item) => (
+              <Tag key={item.id}>{item.name}</Tag>
+            ))}
+          </Space>
+        );
+      },
+    },
+    {
       title: '最近消息',
       dataIndex: 'recentMessageCount',
       width: 100,
@@ -406,7 +432,7 @@ function AgentList(): JSX.Element {
         dataSource={dataSource}
         loading={loading}
         pagination={false}
-        scroll={{ x: 1400 }}
+        scroll={{ x: 1600 }}
       />
 
       <Modal
@@ -461,6 +487,19 @@ function AgentList(): JSX.Element {
               options={skillList.map((s) => ({
                 value: s.id,
                 label: s.name,
+              }))}
+            />
+          </Form.Item>
+          <Form.Item name="knowledgeBaseIds" label="绑定知识库">
+            <Select
+              mode="multiple"
+              placeholder="请选择绑定知识库"
+              allowClear
+              showSearch
+              optionFilterProp="label"
+              options={knowledgeBaseList.map((kb) => ({
+                value: kb.id,
+                label: kb.name,
               }))}
             />
           </Form.Item>

@@ -29,4 +29,6 @@ public class AgentUpdateRequest {
     private List<AgentToolItem> tools;
 
     private List<AgentSkillItem> skills;
+
+    private List<Long> knowledgeBaseIds;
 }

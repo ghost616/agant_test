@@ -13,6 +13,7 @@ import java.util.List;
 import com.ghost616.agentbase.enums.CommonStatus;
 import com.ghost616.platform.dto.agent.AgentToolItem;
 import com.ghost616.platform.dto.agent.AgentSkillItem;
+import com.ghost616.platform.dto.knowledge.KnowledgeBaseDTO;
 
 
 @Data
@@ -32,6 +33,7 @@ public class AgentConfigDTO {
     private Integer recentMessageCount;
     private List<AgentToolItem> tools;
     private List<AgentSkillItem> skills;
+    private List<KnowledgeBaseDTO> knowledgeBases;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
 }

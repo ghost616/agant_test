@@ -155,3 +155,48 @@ describe('AgentList 表格展示 (静态验证)', () => {
     expect(source).toContain("'orange'");
   });
 });
+
+describe('AgentList 绑定知识库 (静态验证)', () => {
+  it('表格应包含「绑定知识库」列（dataIndex=knowledgeBases）', () => {
+    const source = readFileSync(resolve(__dirname, '../AgentList.tsx'), 'utf-8');
+    expect(source).toContain("title: '绑定知识库'");
+    expect(source).toContain("dataIndex: 'knowledgeBases'");
+  });
+
+  it('绑定知识库列直接读取 config.knowledgeBases 展示 name，空值显示 -', () => {
+    const source = readFileSync(resolve(__dirname, '../AgentList.tsx'), 'utf-8');
+    expect(source).toContain("if (!value || value.length === 0) return '-'");
+    expect(source).toContain('<Tag key={item.id}>{item.name}</Tag>');
+  });
+
+  it('表单应包含「绑定知识库」多选 Select，选项来自 knowledgeBaseList', () => {
+    const source = readFileSync(resolve(__dirname, '../AgentList.tsx'), 'utf-8');
+    expect(source).toContain('Form.Item name="knowledgeBaseIds"');
+    expect(source).toContain('mode="multiple"');
+    expect(source).toContain('knowledgeBaseList.map');
+  });
+
+  it('fetchRefData 应并行加载知识库列表（仅用于选项，不再构建 knowledgeBaseMap）', () => {
+    const source = readFileSync(resolve(__dirname, '../AgentList.tsx'), 'utf-8');
+    expect(source).toContain('listKnowledgeBases({})');
+    expect(source).toContain('Promise.all');
+    expect(source).not.toContain('knowledgeBaseMap');
+  });
+
+  it('编辑时回填 knowledgeBaseIds 由 config.knowledgeBases 的 id 映射而来', () => {
+    const source = readFileSync(resolve(__dirname, '../AgentList.tsx'), 'utf-8');
+    expect(source).toContain(
+      'knowledgeBaseIds: editingAgent.knowledgeBases?.map((kb) => kb.id)',
+    );
+  });
+
+  it('新增/编辑提交应透传 knowledgeBaseIds（通过 values 提交）', () => {
+    const source = readFileSync(resolve(__dirname, '../AgentList.tsx'), 'utf-8');
+    const modalOkBlock = source.match(/const handleModalOk[\s\S]*?};/);
+    expect(modalOkBlock).not.toBeNull();
+    if (modalOkBlock) {
+      expect(modalOkBlock[0]).toContain('updateAgent(editingAgent.id, values)');
+      expect(modalOkBlock[0]).toContain('createAgent(values)');
+    }
+  });
+});

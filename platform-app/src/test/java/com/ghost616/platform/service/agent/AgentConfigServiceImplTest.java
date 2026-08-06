@@ -1,5 +1,6 @@
 package com.ghost616.platform.service.agent;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.ghost616.agentbase.enums.CommonStatus;
 import com.ghost616.agentbase.enums.ErrorCode;
 import com.ghost616.agentbase.enums.SessionAuthType;
@@ -10,12 +11,15 @@ import com.ghost616.platform.dto.agent.AgentSkillItem;
 import com.ghost616.platform.dto.agent.AgentToolItem;
 import com.ghost616.platform.dto.agent.AgentUpdateRequest;
 import com.ghost616.platform.entity.AgentConfig;
+import com.ghost616.platform.entity.AgentKnowledgeBase;
 import com.ghost616.platform.entity.AgentSkill;
 import com.ghost616.platform.entity.AgentTool;
+import com.ghost616.platform.entity.KnowledgeBase;
 import com.ghost616.platform.entity.SkillConfig;
 import com.ghost616.platform.repository.AgentConfigMapper;
 import com.ghost616.platform.repository.AgentSkillMapper;
 import com.ghost616.platform.repository.AgentToolMapper;
+import com.ghost616.platform.repository.KnowledgeBaseMapper;
 import com.ghost616.platform.repository.SkillConfigMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -40,20 +44,24 @@ class AgentConfigServiceImplTest {
     @Mock private AgentToolMapper agentToolMapper;
     @Mock private AgentSkillMapper agentSkillMapper;
     @Mock private SkillConfigMapper skillConfigMapper;
+    @Mock private AgentKnowledgeBaseService agentKnowledgeBaseService;
+    @Mock private KnowledgeBaseMapper knowledgeBaseMapper;
 
     @Captor private ArgumentCaptor<AgentTool> agentToolCaptor;
     @Captor private ArgumentCaptor<AgentSkill> agentSkillCaptor;
+    @Captor private ArgumentCaptor<List<AgentKnowledgeBase>> agentKnowledgeBaseListCaptor;
 
     private AgentConfigServiceImpl service;
 
     private final Long EXISTING_AGENT_ID = 1L;
     private final Long TOOL_ID = 100L;
     private final Long SKILL_ID = 200L;
+    private final Long KB_ID = 300L;
 
     @BeforeEach
     void setUp() {
         service = new AgentConfigServiceImpl(agentConfigMapper, agentToolMapper,
-                agentSkillMapper, skillConfigMapper);
+                agentSkillMapper, skillConfigMapper, agentKnowledgeBaseService, knowledgeBaseMapper);
     }
 
     private AgentConfig createAgentEntity() {
@@ -225,6 +233,62 @@ class AgentConfigServiceImplTest {
 
             assertThrows(BusinessException.class, () -> service.create(req));
         }
+
+        @Test
+        @DisplayName("传入 knowledgeBaseIds 时批量插入 AgentKnowledgeBase 记录")
+        void knowledgeBaseIds_insertsAgentKnowledgeBase() {
+            mockInsertSetsId();
+            mockToDTOReturns(List.of(), List.of());
+            when(agentConfigMapper.selectCount(any())).thenReturn(0L);
+
+            AgentCreateRequest req = AgentCreateRequest.builder()
+                    .name("new-agent")
+                    .knowledgeBaseIds(List.of(KB_ID, KB_ID + 1))
+                    .build();
+
+            service.create(req);
+
+            verify(agentKnowledgeBaseService).saveBatch(agentKnowledgeBaseListCaptor.capture());
+            List<AgentKnowledgeBase> inserted = agentKnowledgeBaseListCaptor.getValue();
+            assertEquals(2, inserted.size());
+            assertEquals(EXISTING_AGENT_ID, inserted.get(0).getAgentId());
+            assertEquals(KB_ID, inserted.get(0).getKnowledgeBaseId());
+            assertEquals(KB_ID + 1, inserted.get(1).getKnowledgeBaseId());
+        }
+
+        @Test
+        @DisplayName("null knowledgeBaseIds 不插入 AgentKnowledgeBase 记录")
+        void nullKnowledgeBaseIds_skipsInsert() {
+            mockInsertSetsId();
+            mockToDTOReturns(List.of(), List.of());
+            when(agentConfigMapper.selectCount(any())).thenReturn(0L);
+
+            AgentCreateRequest req = AgentCreateRequest.builder()
+                    .name("new-agent")
+                    .knowledgeBaseIds(null)
+                    .build();
+
+            service.create(req);
+
+            verify(agentKnowledgeBaseService, never()).saveBatch(any());
+        }
+
+        @Test
+        @DisplayName("空 knowledgeBaseIds 不插入 AgentKnowledgeBase 记录")
+        void emptyKnowledgeBaseIds_skipsInsert() {
+            mockInsertSetsId();
+            mockToDTOReturns(List.of(), List.of());
+            when(agentConfigMapper.selectCount(any())).thenReturn(0L);
+
+            AgentCreateRequest req = AgentCreateRequest.builder()
+                    .name("new-agent")
+                    .knowledgeBaseIds(List.of())
+                    .build();
+
+            service.create(req);
+
+            verify(agentKnowledgeBaseService, never()).saveBatch(any());
+        }
     }
 
     @Nested
@@ -348,6 +412,62 @@ class AgentConfigServiceImplTest {
 
             assertThrows(BusinessException.class, () -> service.update(999L, req));
         }
+
+        @Test
+        @DisplayName("传入 knowledgeBaseIds 时先删除旧关联再批量插入新关联")
+        void updateKnowledgeBaseIds_deletesOldAndInsertsNew() {
+            when(agentConfigMapper.selectById(EXISTING_AGENT_ID)).thenReturn(createAgentEntity());
+            mockToDTOReturns(List.of(), List.of());
+
+            AgentUpdateRequest req = AgentUpdateRequest.builder()
+                    .name("updated")
+                    .knowledgeBaseIds(List.of(KB_ID, KB_ID + 1))
+                    .build();
+
+            service.update(EXISTING_AGENT_ID, req);
+
+            verify(agentKnowledgeBaseService).remove(any());
+            verify(agentKnowledgeBaseService).saveBatch(agentKnowledgeBaseListCaptor.capture());
+            List<AgentKnowledgeBase> inserted = agentKnowledgeBaseListCaptor.getValue();
+            assertEquals(2, inserted.size());
+            assertEquals(EXISTING_AGENT_ID, inserted.get(0).getAgentId());
+            assertEquals(KB_ID, inserted.get(0).getKnowledgeBaseId());
+            assertEquals(KB_ID + 1, inserted.get(1).getKnowledgeBaseId());
+        }
+
+        @Test
+        @DisplayName("knowledgeBaseIds 为 null 时不处理关联表")
+        void nullKnowledgeBaseIds_doesNotTouchKbTable() {
+            when(agentConfigMapper.selectById(EXISTING_AGENT_ID)).thenReturn(createAgentEntity());
+            mockToDTOReturns(List.of(), List.of());
+
+            AgentUpdateRequest req = AgentUpdateRequest.builder()
+                    .name("updated")
+                    .knowledgeBaseIds(null)
+                    .build();
+
+            service.update(EXISTING_AGENT_ID, req);
+
+            verify(agentKnowledgeBaseService, never()).remove(any());
+            verify(agentKnowledgeBaseService, never()).saveBatch(any());
+        }
+
+        @Test
+        @DisplayName("空 knowledgeBaseIds 列表不处理关联表")
+        void emptyKnowledgeBaseIds_doesNotTouchKbTable() {
+            when(agentConfigMapper.selectById(EXISTING_AGENT_ID)).thenReturn(createAgentEntity());
+            mockToDTOReturns(List.of(), List.of());
+
+            AgentUpdateRequest req = AgentUpdateRequest.builder()
+                    .name("updated")
+                    .knowledgeBaseIds(List.of())
+                    .build();
+
+            service.update(EXISTING_AGENT_ID, req);
+
+            verify(agentKnowledgeBaseService, never()).remove(any());
+            verify(agentKnowledgeBaseService, never()).saveBatch(any());
+        }
     }
 
     @Nested
@@ -388,6 +508,44 @@ class AgentConfigServiceImplTest {
             assertEquals(1, dto.getSkills().size());
             assertEquals(SKILL_ID, dto.getSkills().get(0).skillId());
             assertEquals(SessionAuthType.PARENT, dto.getSkills().get(0).sessionAuth());
+        }
+
+        @Test
+        @DisplayName("getById 返回值中 knowledgeBases 列表包含 knowledgeBaseId 和 name")
+        void getById_containsKnowledgeBases() {
+            AgentConfig entity = createAgentEntity();
+            when(agentConfigMapper.selectById(EXISTING_AGENT_ID)).thenReturn(entity);
+            mockToDTOReturns(List.of(), List.of());
+
+            AgentKnowledgeBase akb = new AgentKnowledgeBase();
+            akb.setAgentId(EXISTING_AGENT_ID);
+            akb.setKnowledgeBaseId(KB_ID);
+            when(agentKnowledgeBaseService.list(any(LambdaQueryWrapper.class))).thenReturn(List.of(akb));
+
+            KnowledgeBase kb = new KnowledgeBase();
+            kb.setId(KB_ID);
+            kb.setName("test-kb");
+            when(knowledgeBaseMapper.selectBatchIds(any())).thenReturn(List.of(kb));
+
+            AgentConfigDTO dto = service.getById(EXISTING_AGENT_ID);
+
+            assertEquals(1, dto.getKnowledgeBases().size());
+            assertEquals(KB_ID, dto.getKnowledgeBases().get(0).getId());
+            assertEquals("test-kb", dto.getKnowledgeBases().get(0).getName());
+        }
+
+        @Test
+        @DisplayName("无绑定知识库时 knowledgeBases 为空列表")
+        void getById_noKnowledgeBases_returnsEmptyList() {
+            AgentConfig entity = createAgentEntity();
+            when(agentConfigMapper.selectById(EXISTING_AGENT_ID)).thenReturn(entity);
+            mockToDTOReturns(List.of(), List.of());
+            when(agentKnowledgeBaseService.list(any(LambdaQueryWrapper.class))).thenReturn(List.of());
+
+            AgentConfigDTO dto = service.getById(EXISTING_AGENT_ID);
+
+            assertNotNull(dto.getKnowledgeBases());
+            assertTrue(dto.getKnowledgeBases().isEmpty());
         }
     }
 }

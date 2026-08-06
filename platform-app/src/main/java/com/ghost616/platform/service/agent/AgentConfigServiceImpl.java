@@ -11,19 +11,26 @@ import com.ghost616.platform.dto.agent.AgentCreateRequest;
 import com.ghost616.platform.dto.agent.AgentSkillItem;
 import com.ghost616.platform.dto.agent.AgentToolItem;
 import com.ghost616.platform.dto.agent.AgentUpdateRequest;
+import com.ghost616.platform.dto.knowledge.KnowledgeBaseDTO;
 import com.ghost616.platform.entity.AgentConfig;
+import com.ghost616.platform.entity.AgentKnowledgeBase;
 import com.ghost616.platform.entity.AgentSkill;
 import com.ghost616.platform.entity.AgentTool;
+import com.ghost616.platform.entity.KnowledgeBase;
 import com.ghost616.platform.repository.AgentConfigMapper;
 import com.ghost616.platform.repository.AgentSkillMapper;
 import com.ghost616.platform.repository.AgentToolMapper;
+import com.ghost616.platform.repository.KnowledgeBaseMapper;
 import com.ghost616.platform.repository.SkillConfigMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -34,6 +41,8 @@ public class AgentConfigServiceImpl implements AgentConfigService {
     private final AgentToolMapper agentToolMapper;
     private final AgentSkillMapper agentSkillMapper;
     private final SkillConfigMapper skillConfigMapper;
+    private final AgentKnowledgeBaseService agentKnowledgeBaseService;
+    private final KnowledgeBaseMapper knowledgeBaseMapper;
 
     @Override
     public List<AgentConfigDTO> list(String name, CommonStatus status) {
@@ -96,6 +105,18 @@ public class AgentConfigServiceImpl implements AgentConfigService {
                 agentSkill.setSessionAuth(Optional.ofNullable(item.sessionAuth()).orElse(SessionAuthType.ALL));
                 agentSkillMapper.insert(agentSkill);
             }
+        }
+
+        if (request.getKnowledgeBaseIds() != null && !request.getKnowledgeBaseIds().isEmpty()) {
+            List<AgentKnowledgeBase> agentKnowledgeBases = request.getKnowledgeBaseIds().stream()
+                    .map(knowledgeBaseId -> {
+                        AgentKnowledgeBase agentKnowledgeBase = new AgentKnowledgeBase();
+                        agentKnowledgeBase.setAgentId(entity.getId());
+                        agentKnowledgeBase.setKnowledgeBaseId(knowledgeBaseId);
+                        return agentKnowledgeBase;
+                    })
+                    .toList();
+            agentKnowledgeBaseService.saveBatch(agentKnowledgeBases);
         }
 
         return toDTO(entity);
@@ -162,6 +183,22 @@ public class AgentConfigServiceImpl implements AgentConfigService {
             }
         }
 
+        if (request.getKnowledgeBaseIds() != null && !request.getKnowledgeBaseIds().isEmpty()) {
+            LambdaQueryWrapper<AgentKnowledgeBase> kbDeleteWrapper = new LambdaQueryWrapper<>();
+            kbDeleteWrapper.eq(AgentKnowledgeBase::getAgentId, id);
+            agentKnowledgeBaseService.remove(kbDeleteWrapper);
+
+            List<AgentKnowledgeBase> agentKnowledgeBases = request.getKnowledgeBaseIds().stream()
+                    .map(knowledgeBaseId -> {
+                        AgentKnowledgeBase agentKnowledgeBase = new AgentKnowledgeBase();
+                        agentKnowledgeBase.setAgentId(id);
+                        agentKnowledgeBase.setKnowledgeBaseId(knowledgeBaseId);
+                        return agentKnowledgeBase;
+                    })
+                    .toList();
+            agentKnowledgeBaseService.saveBatch(agentKnowledgeBases);
+        }
+
         return toDTO(entity);
     }
 
@@ -180,6 +217,10 @@ public class AgentConfigServiceImpl implements AgentConfigService {
         LambdaQueryWrapper<AgentSkill> skillDeleteWrapper = new LambdaQueryWrapper<>();
         skillDeleteWrapper.eq(AgentSkill::getAgentId, id);
         agentSkillMapper.delete(skillDeleteWrapper);
+
+        LambdaQueryWrapper<AgentKnowledgeBase> kbDeleteWrapper = new LambdaQueryWrapper<>();
+        kbDeleteWrapper.eq(AgentKnowledgeBase::getAgentId, id);
+        agentKnowledgeBaseService.remove(kbDeleteWrapper);
 
         agentConfigMapper.deleteById(id);
     }
@@ -221,6 +262,8 @@ public class AgentConfigServiceImpl implements AgentConfigService {
                 .map(s -> new AgentSkillItem(s.getSkillId(), s.getSessionAuth()))
                 .toList();
 
+        List<KnowledgeBaseDTO> knowledgeBases = loadKnowledgeBases(entity.getId());
+
         return AgentConfigDTO.builder()
                 .id(entity.getId())
                 .name(entity.getName())
@@ -231,9 +274,35 @@ public class AgentConfigServiceImpl implements AgentConfigService {
                 .recentMessageCount(entity.getRecentMessageCount())
                 .tools(tools)
                 .skills(skills)
+                .knowledgeBases(knowledgeBases)
                 .createTime(entity.getCreateTime())
                 .updateTime(entity.getUpdateTime())
                 .build();
+    }
+
+    private List<KnowledgeBaseDTO> loadKnowledgeBases(Long agentId) {
+        LambdaQueryWrapper<AgentKnowledgeBase> kbWrapper = new LambdaQueryWrapper<>();
+        kbWrapper.eq(AgentKnowledgeBase::getAgentId, agentId);
+        List<AgentKnowledgeBase> agentKnowledgeBases = agentKnowledgeBaseService.list(kbWrapper);
+        if (agentKnowledgeBases.isEmpty()) {
+            return List.of();
+        }
+
+        List<Long> knowledgeBaseIds = agentKnowledgeBases.stream()
+                .map(AgentKnowledgeBase::getKnowledgeBaseId)
+                .toList();
+        Map<Long, KnowledgeBase> kbMap = knowledgeBaseMapper.selectBatchIds(knowledgeBaseIds).stream()
+                .collect(Collectors.toMap(KnowledgeBase::getId, Function.identity()));
+
+        return agentKnowledgeBases.stream()
+                .map(akb -> {
+                    KnowledgeBase kb = kbMap.get(akb.getKnowledgeBaseId());
+                    return KnowledgeBaseDTO.builder()
+                            .id(akb.getKnowledgeBaseId())
+                            .name(kb != null ? kb.getName() : null)
+                            .build();
+                })
+                .toList();
     }
 
     private void validateSkillIds(List<AgentSkillItem> skills) {

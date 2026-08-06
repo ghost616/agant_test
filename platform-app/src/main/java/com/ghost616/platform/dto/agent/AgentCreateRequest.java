@@ -31,4 +31,6 @@ public class AgentCreateRequest {
     private List<AgentToolItem> tools;
 
     private List<AgentSkillItem> skills;
+
+    private List<Long> knowledgeBaseIds;
 }

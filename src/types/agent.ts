@@ -2,6 +2,11 @@ import type { CommonStatus } from './common';
 
 export type SessionAuthType = 'ALL' | 'PARENT' | 'CHILD';
 
+export interface KnowledgeBaseItem {
+  id: string;
+  name: string;
+}
+
 export interface AgentConfig {
   id: string;
   name: string;
@@ -11,6 +16,7 @@ export interface AgentConfig {
   status: CommonStatus;
   tools: { toolId: string; sessionAuth: SessionAuthType }[];
   skills: { skillId: string; sessionAuth: SessionAuthType }[];
+  knowledgeBases?: KnowledgeBaseItem[];
   recentMessageCount?: number;
   createTime: string;
   updateTime: string;
@@ -23,6 +29,7 @@ export interface AgentFormData {
   modelId?: string;
   tools?: { toolId: string; sessionAuth: SessionAuthType }[];
   skills?: { skillId: string; sessionAuth: SessionAuthType }[];
+  knowledgeBaseIds?: string[];
   recentMessageCount?: number;
 }
 
