@@ -1,0 +1,31 @@
+[
+  {
+    "plan_id": "plan_779f0d49-eb35-425c-b59a-344d243b59d3",
+    "plan": "新增 Elasticsearch 客户端实现",
+    "modified_files": [
+      "platform-app/src/main/java/com/ghost616/platform/config/ElasticsearchConfig.java",
+      "platform-app/src/main/java/com/ghost616/platform/model/TextChunk.java",
+      "platform-app/src/main/java/com/ghost616/platform/service/search/KnowledgeSearchClient.java"
+    ],
+    "summary": "已创建 ElasticsearchConfig、TextChunk、KnowledgeSearchClient 三个新文件，并依据 elasticsearch-java 9.0.0 实际 API（KnnSearch、DenseVectorSimilarity 枚举、RestClientBuilder、List<Float> queryVector）修正代码",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_2718da3e-13a3-446d-b7c3-6b0a16a2a41c",
+    "plan": "修改 KnowledgeSearchClient 方法逻辑",
+    "modified_files": [
+      "platform-app/src/main/java/com/ghost616/platform/service/search/KnowledgeSearchClient.java"
+    ],
+    "summary": "已完成 KnowledgeSearchClient 全部逻辑调整：enable 字段拆分更新、检索启用状态过滤、ensureIndex 自动创建索引、deleteIndex 跳过、createIndex 重复抛异常",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_63e74848-ba69-4596-aff9-737012d547a7",
+    "plan": "修正 updateEnabledByFile/updateEnabledByKnowledgeBase 字段更新逻辑",
+    "modified_files": [
+      "platform-app/src/main/java/com/ghost616/platform/service/search/KnowledgeSearchClient.java"
+    ],
+    "summary": "源码已修正：updateEnabledByFile 仅更新 fileEnabled、updateEnabledByKnowledgeBase 仅更新 kbEnabled（含 javadoc 同步），测试断言待离朱同步更新",
+    "errors": []
+  }
+]

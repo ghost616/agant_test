@@ -1,1 +1,10 @@
-[]
+[
+  {
+    "plan_id": "plan_63e74848-ba69-4596-aff9-737012d547a7",
+    "plan_summary": "修正enable字段更新逻辑",
+    "starter_session_id": "ses_02ef82161ffeem5aTJ1bGa99Ys",
+    "code_reviewed": false,
+    "plan_completed": true,
+    "test_passed": true
+  }
+]

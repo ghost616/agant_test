@@ -304,6 +304,18 @@
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/dto/knowledge/KnowledgeFileUpdateRequest.java",
       "description": "知识文件更新请求 DTO，字段 fileName/fileDescription/status；文件内容更新走独立 updateFileContent 接口"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/config/ElasticsearchConfig.java",
+      "description": "Elasticsearch 客户端配置类：从 application.yml 加载 host/port/username/password 配置，创建 ElasticsearchTransport（destroyMethod=close）与 ElasticsearchClient Bean，支持用户名密码认证。"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/model/TextChunk.java",
+      "description": "知识库文本块模型，对应 Elasticsearch 索引中的文档结构，包含 knowledgeBaseId/fileId（ToStringSerializer 序列化）、lineNumber、vector（List<Float>）、text、kbEnabled、fileEnabled 字段，使用 Lombok Data/Builder 提供构造与访问能力。"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/service/search/KnowledgeSearchClient.java",
+      "description": "知识库搜索客户端服务类，封装 Elasticsearch 索引操作，所有方法接收 indexName 参数：indexExists 检查索引；createIndex 创建索引（dense_vector cosine + ik 分词 text + boolean/keyword/integer mapping，索引已存在时抛 IllegalStateException）；deleteIndex 删除索引（不存在时跳过）；batchSave 批量保存 TextChunk（bulk，docId=knowledgeBaseId_fileId_lineNumber）；deleteByKnowledgeBase/deleteByFile 按条件 deleteByQuery 删除；vectorSearch 用 search.knn（KnnSearch）kNN 检索，fullTextSearch 用 bool(match text) BM25 检索，两者均过滤 knowledgeBaseId + kbEnabled=true + fileEnabled=true；updateEnabledByFile 按 fileId 仅更新 fileEnabled、updateEnabledByKnowledgeBase 按 knowledgeBaseId 仅更新 kbEnabled（updateByQuery + painless scriptString）；batchSave/deleteBy*/search/updateEnabled 方法开头自动检查索引，不存在时自动创建；ES 调用 IOException 统一包装为 IllegalStateException。"
     }
   ]
 }

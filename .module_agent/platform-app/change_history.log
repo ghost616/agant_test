@@ -205,3 +205,24 @@
 - KnowledgeFileController 新增 GET /api/knowledge-bases/{kbId}/files/{id}/content（produces=text/plain 返回纯文本内容）和 PUT /api/knowledge-bases/{kbId}/files/{id}/content（consumes=text/plain 接受 @RequestBody String content）
 - 同步更新测试：KnowledgeFileServiceImplTest（create 不计算指标、新增 getFileContent/updateFileContent 用例）、KnowledgeFileDTOJsonTest（fileContent 序列化断言改为不包含）、KnowledgeFileControllerTest（新增两个 content 端点用例）
 [2026-08-06T02:19:55.294Z] [session: ses_02b221a81ffegaED7aVMKkB2aB] 修改 KnowledgeFileController.getFileContent 方法：返回类型从 String 改为 ApiResponse<String>，返回值改为 ApiResponse.success(knowledgeFileService.getFileContent(id))，移除 produces=MediaType.TEXT_PLAIN_VALUE 使 GET /{id}/content 返回 JSON 而非纯文本；同步更新 KnowledgeFileControllerTest 中 getFileContent 用例改为断言 ApiResponse 响应格式
+[2026-08-06T03:17:26.606Z] [session: ses_02af4ad67ffeoq1oLgfSw3aS6O] 新增 Elasticsearch 客户端实现：
+- pom.xml 新增 elasticsearch-java 9.0.0 与 elasticsearch-rest-client 9.0.0 依赖（elasticsearch-java 9.x 中 rest-client 为 compileOnly/optional，需显式声明）
+- application.yml 新增 elasticsearch.host/port/username/password 配置项
+- 新建 ElasticsearchConfig：创建 ElasticsearchTransport（destroyMethod=close）与 ElasticsearchClient Bean，支持 BasicCredentialsProvider 认证
+- 新建 TextChunk 模型：knowledgeBaseId/fileId/lineNumber/vector/text/kbEnabled/fileEnabled，Long 字段用 ToStringSerializer
+- 新建 KnowledgeSearchClient：indexExists/createIndex/deleteIndex/batchSave/deleteByKnowledgeBase/deleteByFile/vectorSearch（kNN KnnSearch）/fullTextSearch（BM25）/updateEnabledByFile/updateEnabledByKnowledgeBase，全部方法接收 indexName；mapping 含 dense_vector(cosine, dim 动态)/text(ik_max_word/ik_smart)/boolean/keyword/integer 字段
+- 实现依据 elasticsearch-java 9.0.0 实际 API：search.knn 使用 KnnSearch（query_vector 为 List<Float>）、denseVector similarity 使用 DenseVectorSimilarity.Cosine 枚举、RestClient.builder 返回 RestClientBuilder
+[2026-08-06T03:44:16.700Z] [session: ses_02af4ad67ffeoq1oLgfSw3aS6O] 离朱测试通过：ES 依赖解析+模块编译通过；ElasticsearchConfigTest 6/6、TextChunkTest 3/3、KnowledgeSearchClientTest 18/18 全部通过。编译修复：elasticsearch-java 9.0.0 的 Script.Builder 已移除 inline() 方法，updateEnabledByFile/updateEnabledByKnowledgeBase 改用 lang("painless") + source(src -> src.scriptString(...))（ScriptSource 联合类型）。全量 581 测试中 15 个既有失败（ToolDetailDTOTest/ToolConfigServiceImplTest/SchemaMigrationTest/ChatServiceTest 等）均与本次 ES 变更无关。
+[2026-08-06T03:56:00.535Z] [session: ses_02af4ad67ffeoq1oLgfSw3aS6O] KnowledgeSearchClient 逻辑调整：
+1. updateEnabledByFile 改为仅更新 kbEnabled；updateEnabledByKnowledgeBase 改为仅更新 fileEnabled（painless scriptString 仅写单字段）
+2. vectorSearch/fullTextSearch 检索条件增加 kbEnabled=true AND fileEnabled=true 过滤（knn filter 改为 bool 组合 3 个 term；fullText bool filter 增加两个 term）
+3. 新增私有 ensureIndex(indexName)：索引不存在时自动 createIndex；batchSave/deleteByKnowledgeBase/deleteByFile/vectorSearch/fullTextSearch/updateEnabledByFile/updateEnabledByKnowledgeBase 七个方法开头调用
+4. deleteIndex 索引不存在时跳过不报错（indexExists 提前返回）
+5. createIndex 索引已存在时抛 IllegalStateException("索引已存在: ...")
+- 依据 elasticsearch-java 9.0.0 API 验证：TermQuery.Builder.value(boolean)、Query.Builder.bool、BoolQuery.Builder.filter 均可多次追加
+[2026-08-06T03:59:30.915Z] [session: ses_02af4ad67ffeoq1oLgfSw3aS6O] 离朱测试通过（37/37）：KnowledgeSearchClientTest 28/28（覆盖 7 个逻辑调整点：单字段 enable 更新、检索启用状态过滤、ensureIndex 自动建索引、deleteIndex 跳过、createIndex 重复抛异常）、ElasticsearchConfigTest 6/6、TextChunkTest 3/3 回归通过；platform-app 全模块编译 install 成功。
+[2026-08-06T04:06:16.132Z] [session: ses_02af4ad67ffeoq1oLgfSw3aS6O] 修正 updateEnabled 字段更新逻辑（反转）：
+- updateEnabledByFile 改为仅更新 fileEnabled（按文件 ID 更新文件启用状态）
+- updateEnabledByKnowledgeBase 改为仅更新 kbEnabled（按知识库 ID 更新知识库启用状态）
+- 同步更新 KnowledgeSearchClientTest 4 个字段断言用例（updateEnabledByFile/updateEnabledByFile_false/updateEnabledByKnowledgeBase/updateEnabledByKnowledgeBase_false）
+- 离朱测试通过（37/37）：KnowledgeSearchClientTest 28/28、ElasticsearchConfigTest 6/6、TextChunkTest 3/3，无回归

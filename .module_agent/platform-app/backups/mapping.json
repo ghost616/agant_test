@@ -88,5 +88,7 @@
   "platform-app/src/main/java/com/ghost616/platform/controller/KnowledgeFileController.java": "8123332636872ea3a14fd99c7e56ef3d",
   "platform-app/src/test/java/com/ghost616/platform/service/knowledge/KnowledgeFileServiceImplTest.java": "7c2cf02fbf3679cc3d50b5ddb9941198",
   "platform-app/src/test/java/com/ghost616/platform/dto/knowledge/KnowledgeFileDTOJsonTest.java": "73b153112ab001e195f1c6aada0f8500",
-  "platform-app/src/test/java/com/ghost616/platform/controller/KnowledgeFileControllerTest.java": "bdd9ee3da79eb6d6d158611b6991f9bd"
+  "platform-app/src/test/java/com/ghost616/platform/controller/KnowledgeFileControllerTest.java": "bdd9ee3da79eb6d6d158611b6991f9bd",
+  "platform-app/src/main/resources/application.yml": "880309351b0e8cf237266c0d63319d9f",
+  "platform-app/src/main/java/com/ghost616/platform/service/search/KnowledgeSearchClient.java": "d6305e9f6a4b6915cc20e37a9e31062f"
 }

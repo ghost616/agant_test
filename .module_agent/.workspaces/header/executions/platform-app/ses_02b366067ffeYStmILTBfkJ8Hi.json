@@ -1,9 +1,0 @@
-[
-  {
-    "plan_id": "plan_84c3cdda-42dc-4158-a6ea-4094b87b86b7",
-    "plan": "知识文件内容接口拆分：移除 fileContent 字段，新增内容读写接口",
-    "modified_files": [],
-    "summary": "知识文件内容接口拆分任务已启动",
-    "errors": []
-  }
-]

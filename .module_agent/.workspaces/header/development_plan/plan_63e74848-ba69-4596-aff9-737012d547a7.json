@@ -1,0 +1,10 @@
+{
+  "plan_id": "plan_63e74848-ba69-4596-aff9-737012d547a7",
+  "module_name": "platform-app",
+  "development_plan": "修正 KnowledgeSearchClient 中 updateEnabledByFile 和 updateEnabledByKnowledgeBase 的字段更新逻辑：updateEnabledByFile 应更新 fileEnabled（按文件ID更新文件的启用状态），updateEnabledByKnowledgeBase 应更新 kbEnabled（按知识库ID更新知识库的启用状态）。同步更新测试。",
+  "session_id": "ses_02af4ad67ffeoq1oLgfSw3aS6O",
+  "modified_files": [
+    "platform-app/src/main/java/com/ghost616/platform/service/search/KnowledgeSearchClient.java",
+    "platform-app/src/test/java/com/ghost616/platform/service/search/KnowledgeSearchClientTest.java"
+  ]
+}
