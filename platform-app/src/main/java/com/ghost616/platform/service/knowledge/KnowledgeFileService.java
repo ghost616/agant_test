@@ -13,6 +13,10 @@ public interface KnowledgeFileService {
 
     KnowledgeFileDTO getById(Long id);
 
+    String getFileContent(Long id);
+
+    void updateFileContent(Long id, String content);
+
     KnowledgeFileDTO create(Long knowledgeBaseId, KnowledgeFileCreateRequest request);
 
     KnowledgeFileDTO update(Long id, KnowledgeFileUpdateRequest request);

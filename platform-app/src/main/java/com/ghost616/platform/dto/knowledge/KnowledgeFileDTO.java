@@ -25,7 +25,6 @@ public class KnowledgeFileDTO {
     private Long fileSize;
     private Integer lineCount;
     private CommonStatus status;
-    private String fileContent;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
 }

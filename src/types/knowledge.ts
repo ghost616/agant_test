@@ -17,7 +17,6 @@ export interface KnowledgeFile {
   fileSize?: number;
   lineCount?: number;
   status: CommonStatus;
-  fileContent?: string;
   createTime: string;
   updateTime: string;
 }
@@ -30,7 +29,6 @@ export type KBFormData = Omit<
 export interface KFFormData {
   fileName: string;
   fileDescription?: string;
-  fileContent?: string;
 }
 
 export interface KBListParams {

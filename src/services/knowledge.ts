@@ -93,6 +93,38 @@ export async function updateKnowledgeFile(
   return res.data.data;
 }
 
+/**
+ * 获取知识文件内容。
+ * @param kbId 知识库 ID
+ * @param id 知识文件 ID
+ * @returns 文件内容（纯文本）
+ */
+export async function getKnowledgeFileContent(
+  kbId: string,
+  id: string,
+): Promise<string> {
+  const res = await api.get<ApiResponse<string>>(
+    `/knowledge-bases/${kbId}/files/${id}/content`,
+  );
+  return res.data.data;
+}
+
+/**
+ * 更新知识文件内容。
+ * @param kbId 知识库 ID
+ * @param id 知识文件 ID
+ * @param content 新的文件内容
+ */
+export async function updateKnowledgeFileContent(
+  kbId: string,
+  id: string,
+  content: string,
+): Promise<void> {
+  await api.put(`/knowledge-bases/${kbId}/files/${id}/content`, content, {
+    headers: { 'Content-Type': 'text/plain' },
+  });
+}
+
 export async function deleteKnowledgeFile(kbId: string, id: string): Promise<void> {
   await api.delete(`/knowledge-bases/${kbId}/files/${id}`);
 }

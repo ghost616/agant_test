@@ -37,7 +37,6 @@ vi.mock('../../../services/knowledge', () => ({
       fileDescription: '测试文件',
       knowledgeBaseId: 'kb-1',
       status: 'ENABLED',
-      fileContent: '# 标题',
       createTime: '2026-08-01T00:00:00',
       updateTime: '2026-08-01T00:00:00',
     } satisfies KnowledgeFile,

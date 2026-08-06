@@ -32,13 +32,12 @@ class KnowledgeFileDTOJsonTest {
                 .fileSize(10L)
                 .lineCount(2)
                 .status(CommonStatus.ENABLED)
-                .fileContent("内容")
                 .build();
 
         String json = objectMapper.writeValueAsString(dto);
         assertTrue(json.contains("\"id\":\"111\""), "id 应序列化为字符串, 实际: " + json);
         assertTrue(json.contains("\"knowledgeBaseId\":\"222\""), "knowledgeBaseId 应序列化为字符串, 实际: " + json);
-        assertTrue(json.contains("\"fileContent\":\"内容\""));
+        assertFalse(json.contains("fileContent"), "DTO 不应包含 fileContent 字段, 实际: " + json);
     }
 
     @Test

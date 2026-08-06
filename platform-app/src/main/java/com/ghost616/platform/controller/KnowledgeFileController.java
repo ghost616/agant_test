@@ -8,6 +8,7 @@ import com.ghost616.platform.dto.knowledge.KnowledgeFileUpdateRequest;
 import com.ghost616.platform.service.knowledge.KnowledgeFileService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -39,6 +40,19 @@ public class KnowledgeFileController {
     public ApiResponse<KnowledgeFileDTO> getById(@PathVariable Long kbId, @PathVariable Long id) {
         KnowledgeFileDTO result = knowledgeFileService.getById(id);
         return ApiResponse.success(result);
+    }
+
+    @GetMapping("/{id}/content")
+    public ApiResponse<String> getFileContent(@PathVariable Long kbId, @PathVariable Long id) {
+        return ApiResponse.success(knowledgeFileService.getFileContent(id));
+    }
+
+    @PutMapping(value = "/{id}/content", consumes = MediaType.TEXT_PLAIN_VALUE)
+    public ApiResponse<Void> updateFileContent(@PathVariable Long kbId,
+                                               @PathVariable Long id,
+                                               @RequestBody String content) {
+        knowledgeFileService.updateFileContent(id, content);
+        return ApiResponse.success(null);
     }
 
     @PostMapping

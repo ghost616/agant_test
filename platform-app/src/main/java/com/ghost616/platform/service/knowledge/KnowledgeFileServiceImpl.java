@@ -63,13 +63,31 @@ public class KnowledgeFileServiceImpl implements KnowledgeFileService {
         entity.setFileName(request.getFileName());
         entity.setFileDescription(request.getFileDescription());
         entity.setKnowledgeBaseId(knowledgeBaseId);
-        entity.setFileContent(request.getFileContent());
-        entity.setFileSize(computeFileSize(request.getFileContent()));
-        entity.setLineCount(computeLineCount(request.getFileContent()));
         entity.setStatus(CommonStatus.ENABLED);
 
         knowledgeFileMapper.insert(entity);
         return toDTO(entity);
+    }
+
+    @Override
+    public String getFileContent(Long id) {
+        KnowledgeFile entity = knowledgeFileMapper.selectById(id);
+        if (entity == null) {
+            throw new BusinessException(ErrorCode.KNOWLEDGE_FILE_NOT_FOUND);
+        }
+        return entity.getFileContent();
+    }
+
+    @Override
+    public void updateFileContent(Long id, String content) {
+        KnowledgeFile entity = knowledgeFileMapper.selectById(id);
+        if (entity == null) {
+            throw new BusinessException(ErrorCode.KNOWLEDGE_FILE_NOT_FOUND);
+        }
+        entity.setFileContent(content);
+        entity.setFileSize(computeFileSize(content));
+        entity.setLineCount(computeLineCount(content));
+        knowledgeFileMapper.updateById(entity);
     }
 
     @Override
@@ -84,11 +102,6 @@ public class KnowledgeFileServiceImpl implements KnowledgeFileService {
         }
         if (request.getFileDescription() != null) {
             entity.setFileDescription(request.getFileDescription());
-        }
-        if (request.getFileContent() != null) {
-            entity.setFileContent(request.getFileContent());
-            entity.setFileSize(computeFileSize(request.getFileContent()));
-            entity.setLineCount(computeLineCount(request.getFileContent()));
         }
         if (request.getStatus() != null) {
             entity.setStatus(request.getStatus());
@@ -141,7 +154,6 @@ public class KnowledgeFileServiceImpl implements KnowledgeFileService {
                 .fileSize(entity.getFileSize())
                 .lineCount(entity.getLineCount())
                 .status(entity.getStatus())
-                .fileContent(entity.getFileContent())
                 .createTime(entity.getCreateTime())
                 .updateTime(entity.getUpdateTime())
                 .build();

@@ -58,17 +58,15 @@ class KnowledgeFileServiceImplTest {
     }
 
     @Test
-    @DisplayName("create() 校验知识库存在并计算 fileSize/lineCount")
-    void create_校验并计算指标() {
+    @DisplayName("create() 校验知识库存在，不计算 fileSize/lineCount")
+    void create_校验知识库存在() {
         KnowledgeBase kb = new KnowledgeBase();
         kb.setId(100L);
         when(knowledgeBaseMapper.selectById(100L)).thenReturn(kb);
 
-        String content = "第一行\n第二行";
         KnowledgeFileCreateRequest request = KnowledgeFileCreateRequest.builder()
                 .fileName("doc.txt")
                 .fileDescription("描述")
-                .fileContent(content)
                 .build();
         KnowledgeFileDTO result = service.create(100L, request);
 
@@ -79,25 +77,49 @@ class KnowledgeFileServiceImplTest {
         assertEquals("描述", saved.getFileDescription());
         assertEquals(100L, saved.getKnowledgeBaseId());
         assertEquals(CommonStatus.ENABLED, saved.getStatus(), "create 默认状态应为 ENABLED");
-        assertEquals(content.getBytes(StandardCharsets.UTF_8).length, saved.getFileSize(), "fileSize 应为 UTF-8 字节数");
-        assertEquals(2, saved.getLineCount(), "lineCount 应按换行符计数");
+        assertNull(saved.getFileContent(), "create 不应设置 fileContent");
+        assertNull(saved.getFileSize(), "create 不应计算 fileSize");
+        assertNull(saved.getLineCount(), "create 不应计算 lineCount");
         assertEquals(CommonStatus.ENABLED, result.getStatus());
         assertEquals(100L, result.getKnowledgeBaseId());
     }
 
     @Test
-    @DisplayName("create() 中文内容按 UTF-8 字节计算 fileSize")
-    void create_UTF8字节数() {
-        KnowledgeBase kb = new KnowledgeBase();
-        kb.setId(1L);
-        when(knowledgeBaseMapper.selectById(1L)).thenReturn(kb);
+    @DisplayName("updateFileContent() 按 UTF-8 字节计算 fileSize，按换行符计算 lineCount")
+    void updateFileContent_计算指标() {
+        KnowledgeFile existing = fileEntity(1L, 100L, "a.txt");
+        when(knowledgeFileMapper.selectById(1L)).thenReturn(existing);
 
-        String content = "你好世界";
-        service.create(1L, KnowledgeFileCreateRequest.builder().fileName("c.txt").fileContent(content).build());
+        String content = "你好\n世界";
+        service.updateFileContent(1L, content);
 
-        ArgumentCaptor<KnowledgeFile> captor = ArgumentCaptor.forClass(KnowledgeFile.class);
-        verify(knowledgeFileMapper).insert((KnowledgeFile) captor.capture());
-        assertEquals("你好世界".getBytes(StandardCharsets.UTF_8).length, captor.getValue().getFileSize());
+        verify(knowledgeFileMapper).updateById((KnowledgeFile) existing);
+        assertEquals(content, existing.getFileContent());
+        assertEquals(content.getBytes(StandardCharsets.UTF_8).length, existing.getFileSize());
+        assertEquals(2, existing.getLineCount());
+    }
+
+    @Test
+    @DisplayName("updateFileContent() 文件不存在抛 KNOWLEDGE_FILE_NOT_FOUND")
+    void updateFileContent_不存在() {
+        when(knowledgeFileMapper.selectById(1L)).thenReturn(null);
+
+        BusinessException ex = assertThrows(BusinessException.class, () -> service.updateFileContent(1L, "内容"));
+        assertEquals(ErrorCode.KNOWLEDGE_FILE_NOT_FOUND, ex.getErrorCode());
+        verify(knowledgeFileMapper, never()).updateById(any(KnowledgeFile.class));
+    }
+
+    @Test
+    @DisplayName("getFileContent() 返回文件内容，不存在抛异常")
+    void getFileContent_行为() {
+        KnowledgeFile f = fileEntity(1L, 100L, "a.txt");
+        f.setFileContent("文件内容");
+        when(knowledgeFileMapper.selectById(1L)).thenReturn(f);
+        assertEquals("文件内容", service.getFileContent(1L));
+
+        when(knowledgeFileMapper.selectById(2L)).thenReturn(null);
+        BusinessException ex = assertThrows(BusinessException.class, () -> service.getFileContent(2L));
+        assertEquals(ErrorCode.KNOWLEDGE_FILE_NOT_FOUND, ex.getErrorCode());
     }
 
     @Test
@@ -112,40 +134,35 @@ class KnowledgeFileServiceImplTest {
     }
 
     @Test
-    @DisplayName("update() fileContent 非空时重算 fileSize/lineCount")
-    void update_重算指标() {
-        KnowledgeFile existing = fileEntity(1L, 100L, "old.txt");
-        when(knowledgeFileMapper.selectById(1L)).thenReturn(existing);
-
-        String newContent = "a\nb\nc";
-        KnowledgeFileUpdateRequest request = KnowledgeFileUpdateRequest.builder()
-                .fileName("new.txt")
-                .fileContent(newContent)
-                .build();
-        KnowledgeFileDTO result = service.update(1L, request);
-
-        verify(knowledgeFileMapper).updateById((KnowledgeFile) existing);
-        assertEquals("new.txt", existing.getFileName());
-        assertEquals(newContent, existing.getFileContent());
-        assertEquals(newContent.getBytes(StandardCharsets.UTF_8).length, existing.getFileSize());
-        assertEquals(3, existing.getLineCount());
-        assertEquals("new.txt", result.getFileName());
-    }
-
-    @Test
-    @DisplayName("update() fileContent 为 null 时不重算指标")
-    void update_fileContent为空() {
+    @DisplayName("update() 更新基础字段，不重算 fileSize/lineCount")
+    void update_更新基础字段() {
         KnowledgeFile existing = fileEntity(1L, 100L, "old.txt");
         existing.setFileSize(99L);
         existing.setLineCount(9);
         when(knowledgeFileMapper.selectById(1L)).thenReturn(existing);
 
-        service.update(1L, KnowledgeFileUpdateRequest.builder().status(CommonStatus.DISABLED).build());
+        KnowledgeFileUpdateRequest request = KnowledgeFileUpdateRequest.builder()
+                .fileName("new.txt")
+                .build();
+        KnowledgeFileDTO result = service.update(1L, request);
 
         verify(knowledgeFileMapper).updateById((KnowledgeFile) existing);
-        assertEquals(CommonStatus.DISABLED, existing.getStatus());
-        assertEquals(99L, existing.getFileSize(), "fileContent 为 null 不应重算 fileSize");
-        assertEquals(9, existing.getLineCount(), "fileContent 为 null 不应重算 lineCount");
+        assertEquals("new.txt", existing.getFileName());
+        assertEquals(99L, existing.getFileSize(), "update 不应重算 fileSize");
+        assertEquals(9, existing.getLineCount(), "update 不应重算 lineCount");
+        assertEquals("new.txt", result.getFileName());
+    }
+
+    @Test
+    @DisplayName("update() 更新 fileDescription")
+    void update_更新描述() {
+        KnowledgeFile existing = fileEntity(1L, 100L, "old.txt");
+        when(knowledgeFileMapper.selectById(1L)).thenReturn(existing);
+
+        service.update(1L, KnowledgeFileUpdateRequest.builder().fileDescription("新描述").build());
+
+        verify(knowledgeFileMapper).updateById((KnowledgeFile) existing);
+        assertEquals("新描述", existing.getFileDescription());
     }
 
     @Test
@@ -159,7 +176,7 @@ class KnowledgeFileServiceImplTest {
     }
 
     @Test
-    @DisplayName("getById() 正常返回含 fileContent")
+    @DisplayName("getById() 正常返回 DTO，不含 fileContent")
     void getById_正常返回() {
         KnowledgeFile f = fileEntity(1L, 100L, "a.txt");
         f.setFileContent("内容");
@@ -170,7 +187,6 @@ class KnowledgeFileServiceImplTest {
         assertEquals(1L, result.getId());
         assertEquals(100L, result.getKnowledgeBaseId());
         assertEquals("a.txt", result.getFileName());
-        assertEquals("内容", result.getFileContent());
     }
 
     @Test

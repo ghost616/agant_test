@@ -3,14 +3,20 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Button, Input, message, Space } from 'antd';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { getKnowledgeFile, updateKnowledgeFile } from '../../services/knowledge';
+import {
+  getKnowledgeFile,
+  getKnowledgeFileContent,
+  updateKnowledgeFileContent,
+} from '../../services/knowledge';
 
 const PANEL_PADDING = 16;
+const EDITOR_HEIGHT = 640;
 
 /**
  * 知识文件内容编辑页面。
  * 左右分栏布局：左侧 TextArea 编辑 Markdown，右侧 react-markdown 实时预览。
- * 底部提供保存（调用 updateKnowledgeFile）与关闭（返回文件列表）按钮。
+ * 内容通过 getKnowledgeFileContent 加载、updateKnowledgeFileContent 保存。
+ * 底部右下角提供保存与关闭按钮。
  */
 function KnowledgeFileEdit(): JSX.Element {
   const navigate = useNavigate();
@@ -23,10 +29,10 @@ function KnowledgeFileEdit(): JSX.Element {
   useEffect(() => {
     if (!kbId || !fileId) return;
     setLoading(true);
-    getKnowledgeFile(kbId, fileId)
-      .then((file) => {
+    Promise.all([getKnowledgeFile(kbId, fileId), getKnowledgeFileContent(kbId, fileId)])
+      .then(([file, fileContent]) => {
         setFileName(file.fileName);
-        setContent(file.fileContent || '');
+        setContent(fileContent);
       })
       .catch(() => {
         message.error('获取文件详情失败');
@@ -40,7 +46,7 @@ function KnowledgeFileEdit(): JSX.Element {
     if (!kbId || !fileId) return;
     setSaving(true);
     try {
-      await updateKnowledgeFile(kbId, fileId, { fileContent: content });
+      await updateKnowledgeFileContent(kbId, fileId, content);
       message.success('保存成功');
     } catch {
       message.error('保存失败');
@@ -55,12 +61,9 @@ function KnowledgeFileEdit(): JSX.Element {
 
   return (
     <div>
-      <Space style={{ marginBottom: 16 }} wrap>
-        <Button onClick={handleClose}>返回文件列表</Button>
-        {fileName && (
-          <span style={{ fontWeight: 600 }}>{fileName}</span>
-        )}
-      </Space>
+      <div style={{ marginBottom: 16 }}>
+        {fileName && <span style={{ fontWeight: 600 }}>{fileName}</span>}
+      </div>
 
       <div style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -69,7 +72,12 @@ function KnowledgeFileEdit(): JSX.Element {
             onChange={(e) => setContent(e.target.value)}
             placeholder="请输入 Markdown 内容"
             rows={24}
-            style={{ fontFamily: 'monospace', fontSize: 14, lineHeight: 1.7 }}
+            style={{
+              fontFamily: 'monospace',
+              fontSize: 14,
+              lineHeight: 1.7,
+              height: EDITOR_HEIGHT,
+            }}
             showCount
           />
         </div>
@@ -81,7 +89,7 @@ function KnowledgeFileEdit(): JSX.Element {
             borderRadius: 6,
             padding: PANEL_PADDING,
             overflow: 'auto',
-            maxHeight: 640,
+            height: EDITOR_HEIGHT,
           }}
         >
           {content.trim() ? (
@@ -92,12 +100,14 @@ function KnowledgeFileEdit(): JSX.Element {
         </div>
       </div>
 
-      <Space>
-        <Button type="primary" loading={saving} disabled={loading} onClick={handleSave}>
-          保存
-        </Button>
-        <Button onClick={handleClose}>关闭</Button>
-      </Space>
+      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <Space>
+          <Button type="primary" loading={saving} disabled={loading} onClick={handleSave}>
+            保存
+          </Button>
+          <Button onClick={handleClose}>关闭</Button>
+        </Space>
+      </div>
     </div>
   );
 }

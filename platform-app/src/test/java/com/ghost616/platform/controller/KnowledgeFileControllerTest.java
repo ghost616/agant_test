@@ -53,6 +53,26 @@ class KnowledgeFileControllerTest {
     }
 
     @Test
+    void getFileContent_应返回ApiResponse成功() {
+        when(knowledgeFileService.getFileContent(1L)).thenReturn("文件内容");
+
+        ApiResponse<String> response = controller.getFileContent(100L, 1L);
+
+        assertTrue(response.isSuccess());
+        assertEquals("文件内容", response.getData());
+        verify(knowledgeFileService).getFileContent(1L);
+    }
+
+    @Test
+    void updateFileContent_应传递id与内容() {
+        ApiResponse<Void> response = controller.updateFileContent(100L, 1L, "新内容");
+
+        assertTrue(response.isSuccess());
+        assertNull(response.getData());
+        verify(knowledgeFileService).updateFileContent(1L, "新内容");
+    }
+
+    @Test
     void create_应传递路径kbId() {
         KnowledgeFileCreateRequest request = KnowledgeFileCreateRequest.builder().fileName("a.txt").build();
         when(knowledgeFileService.create(100L, request)).thenReturn(dto(1L, 100L));

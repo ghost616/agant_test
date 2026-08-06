@@ -16,7 +16,5 @@ public class KnowledgeFileUpdateRequest {
 
     private String fileDescription;
 
-    private String fileContent;
-
     private CommonStatus status;
 }

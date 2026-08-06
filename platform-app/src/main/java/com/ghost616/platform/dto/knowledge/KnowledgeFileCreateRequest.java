@@ -16,6 +16,4 @@ public class KnowledgeFileCreateRequest {
     private String fileName;
 
     private String fileDescription;
-
-    private String fileContent;
 }
