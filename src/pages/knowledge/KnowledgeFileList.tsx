@@ -201,8 +201,8 @@ function KnowledgeFileList(): JSX.Element {
   return (
     <div>
       <Space style={{ marginBottom: 16 }} wrap>
-        <Button onClick={() => navigate('/knowledge')}>
-          返回知识库管理
+        <Button type="text" onClick={() => navigate('/knowledge')}>
+          返回
         </Button>
         <Button type="primary" onClick={handleAdd}>
           新增文件
