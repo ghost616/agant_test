@@ -115,7 +115,6 @@ function KnowledgeBaseList(): JSX.Element {
       name: editingKB.name,
       description: editingKB.description,
       vectorModelId: editingKB.vectorModelId || undefined,
-      esIndex: editingKB.esIndex || undefined,
     });
   }, [editingKB, modalVisible, form]);
 
@@ -166,10 +165,10 @@ function KnowledgeBaseList(): JSX.Element {
 
     setSubmitting(true);
     try {
+      const { esIndex: _esIndex, ...restValues } = values;
       const submitData: KBFormData = {
-        ...values,
+        ...restValues,
         vectorModelId: values.vectorModelId || undefined,
-        esIndex: values.esIndex || undefined,
       };
       if (editingKB) {
         await updateKnowledgeBase(editingKB.id, submitData);
@@ -198,6 +197,13 @@ function KnowledgeBaseList(): JSX.Element {
       title: '描述',
       dataIndex: 'description',
       width: 300,
+      ellipsis: true,
+      render: (value?: string) => value || '-',
+    },
+    {
+      title: 'ES 索引',
+      dataIndex: 'esIndex',
+      width: 180,
       ellipsis: true,
       render: (value?: string) => value || '-',
     },
@@ -322,9 +328,6 @@ function KnowledgeBaseList(): JSX.Element {
               showSearch
               optionFilterProp="label"
             />
-          </Form.Item>
-          <Form.Item name="esIndex" label="ES 索引">
-            <Input placeholder="请输入 ES 索引名称" maxLength={100} />
           </Form.Item>
         </Form>
       </Modal>
