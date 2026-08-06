@@ -28,7 +28,9 @@ import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 知识库发布服务，负责将知识文件内容向量化写入 Elasticsearch 索引，并支持知识库整体重建索引。
@@ -39,6 +41,9 @@ import java.util.List;
 public class KnowledgePublishService {
 
     private static final Logger log = LoggerFactory.getLogger(KnowledgePublishService.class);
+
+    /** 单次向量化批次的字符累积上限 */
+    private static final int EMBEDDING_BATCH_MAX_CHARS = 5000;
 
     private final KnowledgeFileMapper knowledgeFileMapper;
     private final KnowledgeBaseMapper knowledgeBaseMapper;
@@ -74,7 +79,7 @@ public class KnowledgePublishService {
             }
             ModelConfig vectorModel = resolveVectorModel(knowledgeBase);
             ModelInvoker invoker = modelInvokerManager.getInvoker(buildModelConfigData(vectorModel));
-            List<TextChunk> chunks = embedLines(file, knowledgeBase, indexName, vectorModel, invoker);
+            List<TextChunk> chunks = embedLines(file, knowledgeBase, vectorModel, invoker);
             knowledgeSearchClient.batchSave(indexName, chunks);
 
             file.setPublishStatus(PublishStatus.PUBLISHED);
@@ -144,53 +149,64 @@ public class KnowledgePublishService {
     }
 
     private List<TextChunk> embedLines(KnowledgeFile file, KnowledgeBase knowledgeBase,
-                                       String indexName, ModelConfig vectorModel, ModelInvoker invoker) {
+                                       ModelConfig vectorModel, ModelInvoker invoker) {
         String content = file.getFileContent();
         List<TextChunk> chunks = new ArrayList<>();
         if (content == null || content.isBlank()) {
             return chunks;
         }
-        String[] lines = content.split("\n", -1);
-        int lineNumber = 1;
-        Integer dimension = null;
-        for (String line : lines) {
+        List<String> batch = new ArrayList<>();
+        int batchChars = 0;
+        for (String line : content.split("\n", -1)) {
             if (line == null || line.trim().isEmpty()) {
                 continue;
             }
-            EmbeddingRequest request = EmbeddingRequest.builder()
-                    .model(vectorModel.getModelName())
-                    .input(line)
-                    .build();
-            EmbeddingResponse response = invoker.embed(request);
-            List<Float> vector = extractVector(response);
-            if (vector == null || vector.isEmpty()) {
-                continue;
+            if (!batch.isEmpty() && batchChars + line.length() > EMBEDDING_BATCH_MAX_CHARS) {
+                embedBatch(file, knowledgeBase, vectorModel, invoker, batch, chunks);
+                batch = new ArrayList<>();
+                batchChars = 0;
             }
-            if (dimension == null) {
-                dimension = vector.size();
-                if (!knowledgeSearchClient.indexExists(indexName)) {
-                    knowledgeSearchClient.createIndex(indexName, dimension);
-                }
-            }
-            chunks.add(TextChunk.builder()
-                    .knowledgeBaseId(file.getKnowledgeBaseId())
-                    .fileId(file.getId())
-                    .lineNumber(lineNumber++)
-                    .vector(vector)
-                    .text(line)
-                    .kbEnabled(knowledgeBase.getStatus() == CommonStatus.ENABLED)
-                    .fileEnabled(file.getStatus() == CommonStatus.ENABLED)
-                    .build());
+            batch.add(line);
+            batchChars += line.length();
+        }
+        if (!batch.isEmpty()) {
+            embedBatch(file, knowledgeBase, vectorModel, invoker, batch, chunks);
         }
         return chunks;
     }
 
-    private List<Float> extractVector(EmbeddingResponse response) {
-        if (response == null || response.getEmbeddings() == null || response.getEmbeddings().isEmpty()) {
-            return null;
+    private void embedBatch(KnowledgeFile file, KnowledgeBase knowledgeBase,
+                            ModelConfig vectorModel, ModelInvoker invoker,
+                            List<String> batch, List<TextChunk> chunks) {
+        EmbeddingRequest request = EmbeddingRequest.builder()
+                .model(vectorModel.getModelName())
+                .inputList(batch)
+                .build();
+        EmbeddingResponse response = invoker.embed(request);
+        List<EmbeddingResponse.EmbeddingItem> items =
+                response == null || response.getEmbeddings() == null ? List.of() : response.getEmbeddings();
+        Map<Integer, EmbeddingResponse.EmbeddingItem> itemByIndex = new HashMap<>();
+        for (EmbeddingResponse.EmbeddingItem item : items) {
+            if (item != null && item.getIndex() != null) {
+                itemByIndex.put(item.getIndex(), item);
+            }
         }
-        EmbeddingResponse.EmbeddingItem item = response.getEmbeddings().get(0);
-        return item == null ? null : item.getEmbedding();
+        for (int i = 0; i < batch.size(); i++) {
+            EmbeddingResponse.EmbeddingItem item = itemByIndex.get(i);
+            List<Float> vector = item == null ? null : item.getEmbedding();
+            if (vector == null || vector.isEmpty()) {
+                continue;
+            }
+            chunks.add(TextChunk.builder()
+                    .knowledgeBaseId(file.getKnowledgeBaseId())
+                    .fileId(file.getId())
+                    .lineNumber(chunks.size() + 1)
+                    .vector(vector)
+                    .text(batch.get(i))
+                    .kbEnabled(knowledgeBase.getStatus() == CommonStatus.ENABLED)
+                    .fileEnabled(file.getStatus() == CommonStatus.ENABLED)
+                    .build());
+        }
     }
 
     private void markPublishError(KnowledgeFile file) {

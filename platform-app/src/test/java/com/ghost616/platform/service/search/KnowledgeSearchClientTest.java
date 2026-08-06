@@ -165,37 +165,6 @@ class KnowledgeSearchClientTest {
     }
 
     @Test
-    @DisplayName("createIndex(带维度)：dense_vector 设置指定 dimension")
-    void createIndex_withDimension() throws Exception {
-        stubExists(false);
-        when(indicesClient.create(any(Function.class))).thenReturn(null);
-
-        client.createIndex("kb-index", 768);
-
-        @SuppressWarnings("unchecked")
-        ArgumentCaptor<Function<CreateIndexRequest.Builder, ObjectBuilder<CreateIndexRequest>>> captor =
-                ArgumentCaptor.forClass(Function.class);
-        verify(indicesClient).create(captor.capture());
-        CreateIndexRequest request = apply(captor.getValue(), new CreateIndexRequest.Builder());
-        Property vector = request.mappings().properties().get("vector");
-        assertTrue(vector.isDenseVector());
-        DenseVectorProperty dv = vector.denseVector();
-        assertEquals(768, dv.dims(), "dense_vector 维度应等于传入的 dimension");
-        assertEquals(DenseVectorSimilarity.Cosine, dv.similarity());
-    }
-
-    @Test
-    @DisplayName("createIndex(带维度)：索引已存在时抛 IllegalStateException")
-    void createIndex_withDimension_alreadyExists() throws Exception {
-        stubExists(true);
-
-        IllegalStateException ex = assertThrows(IllegalStateException.class,
-                () -> client.createIndex("kb-index", 768));
-        assertTrue(ex.getMessage().contains("索引已存在"), "实际: " + ex.getMessage());
-        verify(indicesClient, never()).create(any(Function.class));
-    }
-
-    @Test
     @DisplayName("createIndex：IOException 包装为 IllegalStateException")
     void createIndex_ioException() throws Exception {
         stubExists(false);

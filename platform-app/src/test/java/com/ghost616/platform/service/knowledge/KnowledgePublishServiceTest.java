@@ -28,7 +28,6 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -88,21 +87,38 @@ class KnowledgePublishServiceTest {
         return m;
     }
 
-    private EmbeddingResponse embeddingResponse(float... values) {
-        List<Float> vector = new java.util.ArrayList<>();
+    private EmbeddingResponse.EmbeddingItem embeddingItem(int index, float... values) {
+        List<Float> vector = new ArrayList<>();
         for (float v : values) {
             vector.add(v);
         }
+        return EmbeddingResponse.EmbeddingItem.builder()
+                .index(index)
+                .embedding(vector)
+                .build();
+    }
+
+    private EmbeddingResponse embeddingResponse(List<EmbeddingResponse.EmbeddingItem> items) {
         return EmbeddingResponse.builder()
-                .embeddings(List.of(EmbeddingResponse.EmbeddingItem.builder()
-                        .embedding(vector)
-                        .build()))
+                .embeddings(items)
                 .build();
     }
 
     private void stubPublishDependencies() {
         when(modelConfigMapper.selectById(5L)).thenReturn(model(5L));
         when(modelInvokerManager.getInvoker(any(ModelConfigData.class))).thenReturn(modelInvoker);
+    }
+
+    private void stubBatchEmbedding() {
+        when(modelInvoker.embed(any(EmbeddingRequest.class))).thenAnswer(invocation -> {
+            EmbeddingRequest request = invocation.getArgument(0);
+            List<String> inputs = request.getInputList() == null ? List.of() : request.getInputList();
+            List<EmbeddingResponse.EmbeddingItem> items = new ArrayList<>();
+            for (int i = 0; i < inputs.size(); i++) {
+                items.add(embeddingItem(i, 0.1f, 0.2f));
+            }
+            return embeddingResponse(items);
+        });
     }
 
     @Test
@@ -112,12 +128,17 @@ class KnowledgePublishServiceTest {
         when(knowledgeFileMapper.selectById(1L)).thenReturn(f);
         when(knowledgeBaseMapper.selectById(100L)).thenReturn(kb(100L, "agent_idx"));
         stubPublishDependencies();
-        when(modelInvoker.embed(any(EmbeddingRequest.class))).thenReturn(embeddingResponse(0.1f, 0.2f));
+        stubBatchEmbedding();
         when(knowledgeSearchClient.indexExists("agent_idx")).thenReturn(true);
 
         service.publishFile(1L);
 
         verify(knowledgeSearchClient).deleteByFile("agent_idx", 1L);
+        ArgumentCaptor<EmbeddingRequest> requestCaptor = ArgumentCaptor.forClass(EmbeddingRequest.class);
+        verify(modelInvoker, times(1)).embed(requestCaptor.capture());
+        EmbeddingRequest request = requestCaptor.getValue();
+        assertNull(request.getInput(), "批量向量化应使用 inputList 而非 input");
+        assertEquals(List.of("line1", "line2"), request.getInputList(), "同一批次的非空行应合并为 inputList");
         @SuppressWarnings("unchecked")
         ArgumentCaptor<List<TextChunk>> captor = ArgumentCaptor.forClass(List.class);
         verify(knowledgeSearchClient).batchSave(eq("agent_idx"), captor.capture());
@@ -131,23 +152,29 @@ class KnowledgePublishServiceTest {
         assertEquals(Boolean.TRUE, chunks.get(0).getKbEnabled());
         assertEquals(Boolean.TRUE, chunks.get(0).getFileEnabled());
         assertEquals(PublishStatus.PUBLISHED, f.getPublishStatus());
-        verify(knowledgeSearchClient, never()).createIndex(anyString(), anyInt());
     }
 
     @Test
-    void publishFile_索引不存在时按向量维度创建索引() {
+    void publishFile_索引不存在时由batchSave自动创建索引() {
         newService();
         KnowledgeFile f = file(1L, 100L, "line1", PublishStatus.UNPUBLISHED);
         when(knowledgeFileMapper.selectById(1L)).thenReturn(f);
         when(knowledgeBaseMapper.selectById(100L)).thenReturn(kb(100L, "agent_idx"));
         stubPublishDependencies();
-        when(modelInvoker.embed(any(EmbeddingRequest.class))).thenReturn(embeddingResponse(0.1f, 0.2f));
+        stubBatchEmbedding();
         when(knowledgeSearchClient.indexExists("agent_idx")).thenReturn(false);
+        doAnswer(invocation -> {
+            String idx = invocation.getArgument(0);
+            if (!knowledgeSearchClient.indexExists(idx)) {
+                knowledgeSearchClient.createIndex(idx);
+            }
+            return null;
+        }).when(knowledgeSearchClient).batchSave(anyString(), anyList());
 
         service.publishFile(1L);
 
         verify(knowledgeSearchClient, never()).deleteByFile("agent_idx", 1L);
-        verify(knowledgeSearchClient).createIndex("agent_idx", 2);
+        verify(knowledgeSearchClient).createIndex("agent_idx");
         verify(knowledgeSearchClient).batchSave(eq("agent_idx"), anyList());
         assertEquals(PublishStatus.PUBLISHED, f.getPublishStatus());
     }
@@ -209,6 +236,66 @@ class KnowledgePublishServiceTest {
     }
 
     @Test
+    void publishFile_按5000字符分组合并批量向量化() {
+        newService();
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 4; i++) {
+            sb.append("l").append(i).append("_").append("x".repeat(2000)).append("\n");
+        }
+        KnowledgeFile f = file(1L, 100L, sb.toString(), PublishStatus.UNPUBLISHED);
+        when(knowledgeFileMapper.selectById(1L)).thenReturn(f);
+        when(knowledgeBaseMapper.selectById(100L)).thenReturn(kb(100L, "agent_idx"));
+        stubPublishDependencies();
+        stubBatchEmbedding();
+        when(knowledgeSearchClient.indexExists("agent_idx")).thenReturn(true);
+
+        service.publishFile(1L);
+
+        ArgumentCaptor<EmbeddingRequest> requestCaptor = ArgumentCaptor.forClass(EmbeddingRequest.class);
+        verify(modelInvoker, times(2)).embed(requestCaptor.capture());
+        List<EmbeddingRequest> requests = requestCaptor.getAllValues();
+        assertEquals(2, requests.size(), "2000 字符行每 2 行应划分为一个批次");
+        assertEquals(List.of("l0_" + "x".repeat(2000), "l1_" + "x".repeat(2000)), requests.get(0).getInputList());
+        assertEquals(List.of("l2_" + "x".repeat(2000), "l3_" + "x".repeat(2000)), requests.get(1).getInputList());
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<TextChunk>> captor = ArgumentCaptor.forClass(List.class);
+        verify(knowledgeSearchClient).batchSave(eq("agent_idx"), captor.capture());
+        List<TextChunk> chunks = captor.getValue();
+        assertEquals(4, chunks.size());
+        assertEquals(Integer.valueOf(1), chunks.get(0).getLineNumber());
+        assertEquals(Integer.valueOf(4), chunks.get(3).getLineNumber());
+        assertEquals("l3_" + "x".repeat(2000), chunks.get(3).getText(), "行号应跨批次保持连续且按原顺序");
+    }
+
+    @Test
+    void publishFile_按EmbeddingItem的index匹配行并跳过缺失项() {
+        newService();
+        KnowledgeFile f = file(1L, 100L, "a\nb\nc", PublishStatus.UNPUBLISHED);
+        when(knowledgeFileMapper.selectById(1L)).thenReturn(f);
+        when(knowledgeBaseMapper.selectById(100L)).thenReturn(kb(100L, "agent_idx"));
+        stubPublishDependencies();
+        when(modelInvoker.embed(any(EmbeddingRequest.class))).thenReturn(embeddingResponse(List.of(
+                embeddingItem(2, 0.1f),
+                embeddingItem(0, 0.1f))));
+        when(knowledgeSearchClient.indexExists("agent_idx")).thenReturn(true);
+
+        service.publishFile(1L);
+
+        ArgumentCaptor<EmbeddingRequest> requestCaptor = ArgumentCaptor.forClass(EmbeddingRequest.class);
+        verify(modelInvoker, times(1)).embed(requestCaptor.capture());
+        assertEquals(List.of("a", "b", "c"), requestCaptor.getValue().getInputList());
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<TextChunk>> captor = ArgumentCaptor.forClass(List.class);
+        verify(knowledgeSearchClient).batchSave(eq("agent_idx"), captor.capture());
+        List<TextChunk> chunks = captor.getValue();
+        assertEquals(2, chunks.size(), "无对应 index 的行应被跳过");
+        assertEquals("a", chunks.get(0).getText());
+        assertEquals(Integer.valueOf(1), chunks.get(0).getLineNumber());
+        assertEquals("c", chunks.get(1).getText(), "应依据 index 匹配行而非响应顺序");
+        assertEquals(Integer.valueOf(2), chunks.get(1).getLineNumber());
+    }
+
+    @Test
     void rebuildKnowledgeBase_删除索引并重新发布全部已发布文件() {
         newService();
         KnowledgeBase kb = kb(100L, "agent_idx");
@@ -219,7 +306,7 @@ class KnowledgePublishServiceTest {
         when(knowledgeFileMapper.selectById(2L)).thenReturn(f2);
         when(knowledgeFileMapper.selectList(any())).thenReturn(List.of(f1, f2));
         stubPublishDependencies();
-        when(modelInvoker.embed(any(EmbeddingRequest.class))).thenReturn(embeddingResponse(0.1f));
+        stubBatchEmbedding();
         when(knowledgeSearchClient.indexExists("agent_idx")).thenReturn(true);
 
         List<Boolean> rebuildingValues = new ArrayList<>();
