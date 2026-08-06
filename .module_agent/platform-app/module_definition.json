@@ -263,7 +263,7 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/controller/KnowledgeFileController.java",
-      "description": "知识文件管理控制器，提供 /api/knowledge-bases/{kbId}/files 的 list/getById/create/update/delete/toggleStatus 六个接口，kbId 来自路径参数"
+      "description": "知识文件管理控制器，提供 /api/knowledge-bases/{kbId}/files 的 list/getById/create/update/delete/toggleStatus 六个接口及 GET/PUT /{id}/content 内容读写端点（GET 返回 ApiResponse<String> JSON 包装的文件内容，PUT 接受纯文本内容），kbId 来自路径参数"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/knowledge/KnowledgeBaseService.java",
@@ -275,11 +275,11 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/knowledge/KnowledgeFileService.java",
-      "description": "知识文件服务接口，定义 list/getById/create/update/delete/toggleStatus 方法，list 支持按 knowledgeBaseId 过滤"
+      "description": "知识文件服务接口，定义 list/getById/getFileContent/updateFileContent/create/update/delete/toggleStatus 方法，list 支持按 knowledgeBaseId 过滤，getFileContent 返回文件纯文本内容，updateFileContent 更新内容并重算 fileSize/lineCount"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/knowledge/KnowledgeFileServiceImpl.java",
-      "description": "知识文件服务实现，创建/更新时校验知识库存在并按 fileContent 计算 fileSize/lineCount，CRUD 与状态切换"
+      "description": "知识文件服务实现，创建时校验知识库存在，getFileContent 读取文件内容，updateFileContent 按新内容重算 fileSize/lineCount，CRUD 与状态切换"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/dto/knowledge/KnowledgeBaseDTO.java",
@@ -295,15 +295,15 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/dto/knowledge/KnowledgeFileDTO.java",
-      "description": "知识文件响应 DTO，字段 id/fileName/fileDescription/knowledgeBaseId/fileSize/lineCount/status/fileContent/createTime/updateTime，id/knowledgeBaseId 使用 ToStringSerializer 序列化"
+      "description": "知识文件响应 DTO，字段 id/fileName/fileDescription/knowledgeBaseId/fileSize/lineCount/status/createTime/updateTime，id/knowledgeBaseId 使用 ToStringSerializer 序列化；不含文件内容，内容通过 getFileContent 接口单独获取"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/dto/knowledge/KnowledgeFileCreateRequest.java",
-      "description": "知识文件创建请求 DTO，字段 fileName（@NotBlank）/fileDescription/fileContent"
+      "description": "知识文件创建请求 DTO，字段 fileName（@NotBlank）/fileDescription；文件内容不随创建提交，创建后通过 PUT /{id}/content 写入"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/dto/knowledge/KnowledgeFileUpdateRequest.java",
-      "description": "知识文件更新请求 DTO，字段 fileName/fileDescription/fileContent/status"
+      "description": "知识文件更新请求 DTO，字段 fileName/fileDescription/status；文件内容更新走独立 updateFileContent 接口"
     }
   ]
 }

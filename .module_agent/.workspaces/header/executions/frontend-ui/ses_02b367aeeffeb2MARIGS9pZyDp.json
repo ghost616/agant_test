@@ -1,0 +1,28 @@
+[
+  {
+    "plan_id": "plan_7f7f294f-5672-4d29-9b5c-d37453cb05c0",
+    "plan": "知识文件内容专用接口改造",
+    "modified_files": [
+      "src/services/knowledge.ts",
+      "src/types/knowledge.ts",
+      "src/pages/knowledge/KnowledgeFileEdit.tsx",
+      "src/pages/knowledge/__tests__/KnowledgeFileEdit.test.tsx",
+      "src/pages/knowledge/__tests__/KnowledgeFileList.test.tsx",
+      "e2e/KnowledgeFile.spec.ts"
+    ],
+    "summary": "代码变更完成，等待离朱测试",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_bae71f11-976e-4440-b930-d51831d582d9",
+    "plan": "皋陶审查修复：Content-Type 对齐与死代码清理",
+    "modified_files": [
+      "src/services/knowledge.ts",
+      "src/types/knowledge.ts",
+      "src/services/__tests__/knowledge.test.ts",
+      "e2e/KnowledgeFile.spec.ts"
+    ],
+    "summary": "执行总结：1) src/services/knowledge.ts updateKnowledgeFileContent 请求体由 JSON.stringify(content) 改为原始字符串，并覆盖 headers { 'Content-Type': 'text/plain' }，与后端 PUT /{id}/content 端点 consumes = TEXT_PLAIN_VALUE 对齐，消除运行时 415 Unsupported Media Type。2) src/types/knowledge.ts KFFormData 移除死代码 fileContent 字段（仅保留 fileName/fileDescription）。3) 同步更新 src/services/__tests__/knowledge.test.ts（断言原始字符串请求体 + text/plain header）与 e2e/KnowledgeFile.spec.ts（保存断言由 postDataJSON 改为 postData）。测试结果：服务层单测 8 + 回归单测 21 + E2E 11，共 40 条全部通过，变更文件 tsc 零错误。已更新模块 spec（updateKnowledgeFileContent text/plain 说明、KFFormData 字段说明）与文件定义（2 个文件 description），并 append_history 记录变更。",
+    "errors": []
+  }
+]

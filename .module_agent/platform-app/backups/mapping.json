@@ -79,5 +79,14 @@
   "platform-app/src/main/java/com/ghost616/platform/dto/model/ModelUpdateRequest.java": "340d36d39c9894fed559839ae8fb2af8",
   "platform-app/src/test/java/com/ghost616/platform/service/model/ModelConfigServiceImplRequestTypeTest.java": "7240658397e9553c6ee4ce2c4dafa0f6",
   "platform-app/src/main/java/com/ghost616/platform/dto/AgentContextDTO.java": "7f33d7fb0dd0d9df0bf37ccea550319c",
-  "platform-app/src/main/java/com/ghost616/platform/service/model/ModelConfigService.java": "a28685743b3a2d4b9ad1469a58e239f6"
+  "platform-app/src/main/java/com/ghost616/platform/service/model/ModelConfigService.java": "a28685743b3a2d4b9ad1469a58e239f6",
+  "platform-app/src/main/java/com/ghost616/platform/dto/knowledge/KnowledgeFileDTO.java": "3bb757213d4a4510b91691922a52c901",
+  "platform-app/src/main/java/com/ghost616/platform/dto/knowledge/KnowledgeFileCreateRequest.java": "b4f3fa2f1802008edc7d51da687ef537",
+  "platform-app/src/main/java/com/ghost616/platform/dto/knowledge/KnowledgeFileUpdateRequest.java": "2b2c8153951975c0d1b2cc0c45a38169",
+  "platform-app/src/main/java/com/ghost616/platform/service/knowledge/KnowledgeFileService.java": "364785f3762f9b73c6911fa4bc2481b8",
+  "platform-app/src/main/java/com/ghost616/platform/service/knowledge/KnowledgeFileServiceImpl.java": "a4814eeb4aaadcb61199c52443a023b3",
+  "platform-app/src/main/java/com/ghost616/platform/controller/KnowledgeFileController.java": "8123332636872ea3a14fd99c7e56ef3d",
+  "platform-app/src/test/java/com/ghost616/platform/service/knowledge/KnowledgeFileServiceImplTest.java": "7c2cf02fbf3679cc3d50b5ddb9941198",
+  "platform-app/src/test/java/com/ghost616/platform/dto/knowledge/KnowledgeFileDTOJsonTest.java": "73b153112ab001e195f1c6aada0f8500",
+  "platform-app/src/test/java/com/ghost616/platform/controller/KnowledgeFileControllerTest.java": "bdd9ee3da79eb6d6d158611b6991f9bd"
 }

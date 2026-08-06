@@ -135,3 +135,4 @@ platform-app 模块包含以下功能：
 - KnowledgeFile.create 校验 knowledgeBaseId 对应知识库存在（否则抛 KNOWLEDGE_BASE_NOT_FOUND），并按 fileContent 计算 fileSize（UTF-8 字节数）与 lineCount（按 \n 计数）
 - 实体与 Mapper 复用 platform-data 模块已存在的 KnowledgeBase/KnowledgeFile/AgentKnowledgeBase 及对应 Mapper
 - 知识库与知识文件均支持 toggleStatus（@RequestParam status）状态切换，list 支持 name/fileName 模糊过滤与 status 过滤
+- 知识文件内容读写拆分：KnowledgeFileDTO/CreateRequest/UpdateRequest 均不含 fileContent 字段；Service 新增 getFileContent(Long id): String（返回纯文本内容）与 updateFileContent(Long id, String content): void（更新内容并按新内容重算 fileSize/lineCount），create 不再计算 fileSize/lineCount；Controller 新增 GET /{id}/content（返回 ApiResponse<String> JSON 包装的文件内容）与 PUT /{id}/content（consumes=text/plain，@RequestBody String）两个端点

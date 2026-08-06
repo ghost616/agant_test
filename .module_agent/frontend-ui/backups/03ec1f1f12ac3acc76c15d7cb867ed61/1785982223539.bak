@@ -1,0 +1,213 @@
+import { test, expect, Page } from '@playwright/test';
+
+const KB_ID = 'kb-100';
+const FILE_ID = 'file-200';
+
+const MOCK_CONTENT = '# 一级标题\n\n- 列表项一\n- 列表项二';
+
+const MOCK_FILE = {
+  id: FILE_ID,
+  fileName: '知识文档.md',
+  fileDescription: '测试文件描述',
+  knowledgeBaseId: KB_ID,
+  fileSize: 1024,
+  lineCount: 5,
+  status: 'ENABLED',
+  createTime: '2026-08-01T00:00:00',
+  updateTime: '2026-08-01T00:00:00',
+};
+
+const MOCK_FILES = [MOCK_FILE];
+
+async function setupMocks(page: Page, opts?: { loadFail?: boolean; saveFail?: boolean }) {
+  await page.route(`**/api/knowledge-bases/${KB_ID}/files`, async (route) => {
+    if (route.request().method() === 'GET') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true, data: MOCK_FILES }),
+      });
+      return;
+    }
+    if (route.request().method() === 'POST') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true, data: MOCK_FILE }),
+      });
+      return;
+    }
+    await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+  });
+  await page.route(`**/api/knowledge-bases/${KB_ID}/files/${FILE_ID}`, async (route) => {
+    if (opts?.loadFail) {
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: false, message: '系统内部错误', data: null }),
+      });
+      return;
+    }
+    if (route.request().method() === 'PUT') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true, data: MOCK_FILE }),
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ success: true, data: MOCK_FILE }),
+    });
+  });
+  await page.route(`**/api/knowledge-bases/${KB_ID}/files/${FILE_ID}/content`, async (route) => {
+    if (route.request().method() === 'GET') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true, data: MOCK_CONTENT }),
+      });
+      return;
+    }
+    if (route.request().method() === 'PUT') {
+      const ok = opts?.saveFail !== true;
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: ok,
+          message: ok ? '操作成功' : '系统内部错误',
+          data: null,
+        }),
+      });
+      return;
+    }
+    await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+  });
+}
+
+test.describe('知识文件列表页 - 编辑内容按钮与弹窗字段', () => {
+  test('操作列应渲染「编辑内容」按钮', async ({ page }) => {
+    await setupMocks(page);
+    await page.goto(`/knowledge/${KB_ID}/files`);
+    await page.waitForSelector('.ant-table');
+    await expect(page.locator('.ant-table-tbody tr[data-row-key]').first().getByText('编辑内容')).toBeVisible();
+  });
+
+  test('点击「编辑内容」应跳转到 /knowledge/:kbId/files/:fileId/edit', async ({ page }) => {
+    await setupMocks(page);
+    await page.goto(`/knowledge/${KB_ID}/files`);
+    await page.waitForSelector('.ant-table');
+    await page.locator('.ant-table-tbody tr[data-row-key]').first().getByText('编辑内容').click();
+    await page.waitForURL(`**/knowledge/${KB_ID}/files/${FILE_ID}/edit`);
+    await expect(page.getByRole('button', { name: /保\s*存/ })).toBeVisible();
+  });
+
+  test('新增文件弹窗仅包含文件名与描述字段，不含文件内容字段', async ({ page }) => {
+    await setupMocks(page);
+    await page.goto(`/knowledge/${KB_ID}/files`);
+    await page.waitForSelector('.ant-table');
+    await page.getByRole('button', { name: '新增文件' }).click();
+    await page.locator('.ant-modal').waitFor();
+    await expect(page.locator('.ant-modal').getByLabel('文件名')).toBeVisible();
+    await expect(page.locator('.ant-modal').getByLabel('描述')).toBeVisible();
+    await expect(page.locator('.ant-modal').getByLabel('文件内容')).toHaveCount(0);
+  });
+});
+
+test.describe('知识文件内容编辑页', () => {
+  test('挂载时通过内容接口加载文件内容，左侧 TextArea 显示内容', async ({ page }) => {
+    await setupMocks(page);
+    await page.goto(`/knowledge/${KB_ID}/files/${FILE_ID}/edit`);
+    const textarea = page.locator('textarea');
+    await expect(textarea).toHaveValue('# 一级标题\n\n- 列表项一\n- 列表项二');
+    await expect(page.locator('text=知识文档.md')).toBeVisible();
+  });
+
+  test('加载失败应提示「获取文件详情失败」', async ({ page }) => {
+    await setupMocks(page, { loadFail: true });
+    await page.goto(`/knowledge/${KB_ID}/files/${FILE_ID}/edit`);
+    await expect(
+      page.locator('.ant-message-notice-content:has-text("获取文件详情失败")'),
+    ).toBeVisible();
+  });
+
+  test('内容为空时右侧显示「预览区域」占位', async ({ page }) => {
+    await setupMocks(page);
+    await page.route(`**/api/knowledge-bases/${KB_ID}/files/${FILE_ID}/content`, async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ success: true, data: '' }),
+        });
+        return;
+      }
+      await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+    });
+    await page.goto(`/knowledge/${KB_ID}/files/${FILE_ID}/edit`);
+    await expect(page.locator('text=预览区域')).toBeVisible();
+  });
+
+  test('编辑 Markdown 后右侧实时预览渲染结果', async ({ page }) => {
+    await setupMocks(page);
+    await page.goto(`/knowledge/${KB_ID}/files/${FILE_ID}/edit`);
+    const textarea = page.locator('textarea');
+    await expect(textarea).toHaveValue('# 一级标题\n\n- 列表项一\n- 列表项二');
+    await page.locator('text=列表项一').first().waitFor();
+
+    await textarea.fill('# 新标题\n\n**加粗文本**');
+    await expect(page.locator('h1')).toHaveText('新标题');
+    await expect(page.locator('strong')).toHaveText('加粗文本');
+  });
+
+  test('点击保存应调用 PUT 更新内容并提示「保存成功」', async ({ page }) => {
+    await setupMocks(page);
+    await page.goto(`/knowledge/${KB_ID}/files/${FILE_ID}/edit`);
+    const textarea = page.locator('textarea');
+    await expect(textarea).toHaveValue('# 一级标题\n\n- 列表项一\n- 列表项二');
+
+    const [request] = await Promise.all([
+      page.waitForRequest(
+        (req) =>
+          req.method() === 'PUT' &&
+          req.url().includes(`/api/knowledge-bases/${KB_ID}/files/${FILE_ID}/content`),
+      ),
+      page.getByRole('button', { name: /保\s*存/ }).click(),
+    ]);
+    expect(request.postDataJSON()).toEqual('# 一级标题\n\n- 列表项一\n- 列表项二');
+    await expect(
+      page.locator('.ant-message-notice-content:has-text("保存成功")'),
+    ).toBeVisible();
+  });
+
+  test('保存失败应提示「保存失败」', async ({ page }) => {
+    await setupMocks(page, { saveFail: true });
+    await page.goto(`/knowledge/${KB_ID}/files/${FILE_ID}/edit`);
+    const textarea = page.locator('textarea');
+    await expect(textarea).toHaveValue('# 一级标题\n\n- 列表项一\n- 列表项二');
+    await page.getByRole('button', { name: /保\s*存/ }).click();
+    await expect(
+      page.locator('.ant-message-notice-content:has-text("保存失败")'),
+    ).toBeVisible();
+  });
+
+  test('点击「关闭」应返回文件列表页', async ({ page }) => {
+    await setupMocks(page);
+    await page.goto(`/knowledge/${KB_ID}/files/${FILE_ID}/edit`);
+    await page.waitForSelector('textarea');
+    await page.getByRole('button', { name: /关\s*闭/ }).click();
+    await page.waitForURL(`**/knowledge/${KB_ID}/files`);
+    await expect(page.locator('.ant-table')).toBeVisible();
+  });
+
+  test('编辑页不应存在「返回文件列表」按钮', async ({ page }) => {
+    await setupMocks(page);
+    await page.goto(`/knowledge/${KB_ID}/files/${FILE_ID}/edit`);
+    await page.waitForSelector('textarea');
+    await expect(page.getByRole('button', { name: '返回文件列表' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: /关\s*闭/ })).toBeVisible();
+  });
+});

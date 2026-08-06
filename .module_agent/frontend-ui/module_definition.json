@@ -139,11 +139,11 @@
     },
     {
       "path": "src/types/knowledge.ts",
-      "description": "知识库与知识文件类型定义：KnowledgeBase（id/name/description/status/createTime/updateTime）、KnowledgeFile（id/fileName/fileDescription/knowledgeBaseId/fileSize/lineCount/status/fileContent/createTime/updateTime）、KBFormData、KFFormData（fileName/fileDescription/fileContent）、KBListParams、KFListParams 列表筛选参数"
+      "description": "知识库与知识文件类型定义：KnowledgeBase（id/name/description/status/createTime/updateTime）、KnowledgeFile（id/fileName/fileDescription/knowledgeBaseId/fileSize/lineCount/status/createTime/updateTime，不含 fileContent）、KBFormData、KFFormData（fileName/fileDescription）、KBListParams、KFListParams 列表筛选参数"
     },
     {
       "path": "src/services/knowledge.ts",
-      "description": "知识库与知识文件 API 服务封装：listKnowledgeBases/getKnowledgeBase/createKnowledgeBase/updateKnowledgeBase/deleteKnowledgeBase/updateKnowledgeBaseStatus、listKnowledgeFiles/getKnowledgeFile/createKnowledgeFile/updateKnowledgeFile/deleteKnowledgeFile/updateKnowledgeFileStatus，路径基于 /knowledge-bases 与 /knowledge-bases/{kbId}/files"
+      "description": "知识库与知识文件 API 服务封装：listKnowledgeBases/getKnowledgeBase/createKnowledgeBase/updateKnowledgeBase/deleteKnowledgeBase/updateKnowledgeBaseStatus、listKnowledgeFiles/getKnowledgeFile/createKnowledgeFile/updateKnowledgeFile/deleteKnowledgeFile/updateKnowledgeFileStatus、getKnowledgeFileContent/updateKnowledgeFileContent（内容专用接口，GET/PUT /knowledge-bases/{kbId}/files/{id}/content；updateKnowledgeFileContent 请求体为原始字符串并覆盖 Content-Type: text/plain 对齐后端 consumes），路径基于 /knowledge-bases 与 /knowledge-bases/{kbId}/files"
     },
     {
       "path": "src/pages/knowledge/KnowledgeBaseList.tsx",
@@ -155,7 +155,11 @@
     },
     {
       "path": "src/pages/knowledge/KnowledgeFileEdit.tsx",
-      "description": "知识文件内容编辑页面：按 kbId/fileId 路由参数调用 getKnowledgeFile 加载文件详情填充内容；左右分栏布局（左侧 TextArea 编辑 Markdown，右侧 react-markdown + remark-gfm 实时预览）；底部\"保存\"调用 updateKnowledgeFile 保存 fileContent、\"关闭/返回文件列表\"导航回文件列表页"
+      "description": "知识文件内容编辑页面：按 kbId/fileId 路由参数并行调用 getKnowledgeFile 加载文件元信息（文件名）与 getKnowledgeFileContent 加载文件内容；左右分栏布局（左侧 TextArea 编辑 Markdown，右侧 react-markdown + remark-gfm 实时预览，左右使用相同高度设置对齐）；底部右下角（flex-end justify）提供\"保存\"（调用 updateKnowledgeFileContent）与\"关闭\"按钮，无返回按钮"
+    },
+    {
+      "path": "src/services/__tests__/knowledge.test.ts",
+      "description": "知识库服务层单元测试：mock api 验证 getKnowledgeFileContent（GET /knowledge-bases/{kbId}/files/{id}/content 返回内容字符串）与 updateKnowledgeFileContent（PUT 同路径，请求体为 JSON.stringify(content)）的调用路径与返回值"
     }
   ]
 }

@@ -43,5 +43,12 @@
   "src/pages/models/__tests__/ModelTest.embedding.test.tsx": "0e05db3c0e8e2c88ab8410a4f4043f32",
   "e2e/ModelTest.spec.ts": "4c0ce9d29d39a62603678ba4c65bb655",
   "src/types/__tests__/model.test.ts": "5ca7ba84fa21b12010edb3668f508d31",
-  "src/pages/knowledge/KnowledgeFileList.tsx": "b5332bc04cb0078aeaba09ce914b9e32"
+  "src/pages/knowledge/KnowledgeFileList.tsx": "b5332bc04cb0078aeaba09ce914b9e32",
+  "src/services/knowledge.ts": "bad691dc343df988478dd23170c294ec",
+  "src/types/knowledge.ts": "4e7d934f131edd1fddee361384564d4f",
+  "src/pages/knowledge/KnowledgeFileEdit.tsx": "20884bf171e0dcc0a4b8791e6d3bbf8f",
+  "src/pages/knowledge/__tests__/KnowledgeFileEdit.test.tsx": "f69ab0523536a205edcb01b60dd62b53",
+  "src/pages/knowledge/__tests__/KnowledgeFileList.test.tsx": "b90104e853c09a7dcdfd23c822b0ea32",
+  "e2e/KnowledgeFile.spec.ts": "03ec1f1f12ac3acc76c15d7cb867ed61",
+  "src/services/__tests__/knowledge.test.ts": "f15591343c659a3f1d6d8aacc2538f55"
 }

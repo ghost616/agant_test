@@ -1,0 +1,12 @@
+[
+  {
+    "plan_id": "plan_7e5e8488-5017-44d9-8181-496fbfe0ebf3",
+    "plan": "修改 KnowledgeFileController.getFileContent 方法：将返回类型从 String 改为 ApiResponse<String>，返回值从 knowledgeFileService.getFileContent(id) 改为 ApiResponse.success(knowledgeFileService.getFileContent(id))，移除 produces = MediaType.TEXT_PLAIN_VALUE 使其返回 JSON。同步更新相关测试。",
+    "modified_files": [
+      "platform-app/src/main/java/com/ghost616/platform/controller/KnowledgeFileController.java",
+      "platform-app/src/test/java/com/ghost616/platform/controller/KnowledgeFileControllerTest.java"
+    ],
+    "summary": "已修改 KnowledgeFileController.java 和 KnowledgeFileControllerTest.java：getFileContent 返回类型改为 ApiResponse<String>，返回值包 ApiResponse.success，移除 produces=TEXT_PLAIN；测试断言改为 ApiResponse 格式",
+    "errors": []
+  }
+]

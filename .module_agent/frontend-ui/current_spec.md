@@ -95,5 +95,7 @@
 
 - 知识库管理页面 `/knowledge`：列表展示、名称搜索、状态筛选、新增/编辑/删除/启用禁用，"管理文件"跳转 `/knowledge/:kbId/files`
 - 知识文件列表页面 `/knowledge/:kbId/files`：按路由参数 kbId 加载，新增/编辑/删除/启用禁用、发布文件占位按钮；新建/编辑弹窗仅 fileName/fileDescription（不含 fileContent）
-- 知识文件内容编辑页面 `/knowledge/:kbId/files/:fileId/edit`：getKnowledgeFile 加载详情填充，左右分栏（左 TextArea 编辑 Markdown，右 react-markdown + remark-gfm 实时预览），"保存"调用 updateKnowledgeFile 保存 fileContent，"关闭"返回文件列表
-- API 服务封装：知识库/知识文件 CRUD + 状态切换，路径 /knowledge-bases 与 /knowledge-bases/{kbId}/files
+- 知识文件内容编辑页面 `/knowledge/:kbId/files/:fileId/edit`：并行调用 getKnowledgeFile 加载文件元信息（文件名）与 getKnowledgeFileContent 加载内容，左右分栏（左 TextArea 编辑 Markdown，右 react-markdown + remark-gfm 实时预览，左右使用相同高度设置），底部右下角（flex-end justify）提供"保存"（调用 updateKnowledgeFileContent）与"关闭"按钮，无返回按钮
+- API 服务封装：知识库/知识文件 CRUD + 状态切换 + 内容专用接口（getKnowledgeFileContent/updateKnowledgeFileContent，路径 /knowledge-bases/{kbId}/files/{id}/content），路径基于 /knowledge-bases 与 /knowledge-bases/{kbId}/files
+- updateKnowledgeFileContent 请求体为原始字符串并覆盖 Content-Type: text/plain（与后端 consumes 对齐，避免 415）；getKnowledgeFileContent 返回 ApiResponse.data 内容字符串
+- KnowledgeFile 类型不含 fileContent 字段，KFFormData 仅 fileName/fileDescription，文件内容通过内容专用接口单独读写

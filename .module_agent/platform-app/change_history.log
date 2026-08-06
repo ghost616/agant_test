@@ -198,3 +198,10 @@
 - 新建 KnowledgeFileService/KnowledgeFileServiceImpl：list/getById/create/update/delete/toggleStatus，create 校验知识库存在，按 fileContent 计算 fileSize/lineCount
 - 新建 KnowledgeBaseController（/api/knowledge-bases）与 KnowledgeFileController（/api/knowledge-bases/{kbId}/files），使用 ApiResponse 包装
 - 复用已存在的 KnowledgeBase/KnowledgeFile 实体与 Mapper（platform-data 模块）
+[2026-08-06T01:58:53.236Z] [session: ses_02b366067ffeYStmILTBfkJ8Hi] [2026-08-06] 知识文件内容接口拆分：
+- KnowledgeFileDTO 移除 fileContent 字段（内容不再随 DTO 返回，避免列表查询携带大文本）
+- KnowledgeFileCreateRequest/KnowledgeFileUpdateRequest 移除 fileContent 字段（创建/更新不再提交内容）
+- KnowledgeFileService 接口与实现新增 getFileContent(Long id): String 和 updateFileContent(Long id, String content): void，updateFileContent 会按新内容重算 fileSize/lineCount，create 不再计算 fileSize/lineCount（内容此时未知）
+- KnowledgeFileController 新增 GET /api/knowledge-bases/{kbId}/files/{id}/content（produces=text/plain 返回纯文本内容）和 PUT /api/knowledge-bases/{kbId}/files/{id}/content（consumes=text/plain 接受 @RequestBody String content）
+- 同步更新测试：KnowledgeFileServiceImplTest（create 不计算指标、新增 getFileContent/updateFileContent 用例）、KnowledgeFileDTOJsonTest（fileContent 序列化断言改为不包含）、KnowledgeFileControllerTest（新增两个 content 端点用例）
+[2026-08-06T02:19:55.294Z] [session: ses_02b221a81ffegaED7aVMKkB2aB] 修改 KnowledgeFileController.getFileContent 方法：返回类型从 String 改为 ApiResponse<String>，返回值改为 ApiResponse.success(knowledgeFileService.getFileContent(id))，移除 produces=MediaType.TEXT_PLAIN_VALUE 使 GET /{id}/content 返回 JSON 而非纯文本；同步更新 KnowledgeFileControllerTest 中 getFileContent 用例改为断言 ApiResponse 响应格式
