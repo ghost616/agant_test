@@ -1,6 +1,7 @@
 package com.ghost616.platform.service.search;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch._types.SortOrder;
 import co.elastic.clients.elasticsearch._types.mapping.DenseVectorSimilarity;
 import co.elastic.clients.elasticsearch.core.BulkRequest;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
@@ -198,6 +199,41 @@ public class KnowledgeSearchClient {
             return toChunks(response);
         } catch (IOException e) {
             throw new IllegalStateException("全文检索失败: " + indexName, e);
+        }
+    }
+
+    /**
+     * 按文件行号范围检索文本块，结果按 lineNumber 升序排列。
+     *
+     * @param indexName       索引名称
+     * @param knowledgeBaseId 知识库 ID（检索范围过滤）
+     * @param fileId          文件 ID（检索范围过滤）
+     * @param startLine       起始行号（含）
+     * @param endLine         结束行号（含）
+     * @return 指定行范围的文本块列表，按 lineNumber 升序排列
+     */
+    public List<TextChunk> searchByFileAndLineRange(String indexName, Long knowledgeBaseId, Long fileId, int startLine, int endLine) {
+        if (startLine > endLine) {
+            return List.of();
+        }
+        ensureIndex(indexName);
+        try {
+            SearchResponse<TextChunk> response = elasticsearchClient.search(s -> s
+                            .index(indexName)
+                            .query(q -> q.bool(b -> b
+                                    .filter(f -> f.term(t -> t.field("knowledgeBaseId").value(knowledgeBaseId.toString())))
+                                    .filter(f -> f.term(t -> t.field("fileId").value(fileId.toString())))
+                                    .filter(f -> f.range(r -> r
+                                            .number(n -> n
+                                                    .field("lineNumber")
+                                                    .gte((double) startLine)
+                                                    .lte((double) endLine))))))
+                            .sort(srt -> srt.field(f -> f.field("lineNumber").order(SortOrder.Asc)))
+                            .size(endLine - startLine + 1),
+                    TextChunk.class);
+            return toChunks(response);
+        } catch (IOException e) {
+            throw new IllegalStateException("按文件行号范围检索失败: " + indexName, e);
         }
     }
 

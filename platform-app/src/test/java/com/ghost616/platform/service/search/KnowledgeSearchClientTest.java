@@ -2,13 +2,17 @@ package com.ghost616.platform.service.search;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.KnnSearch;
+import co.elastic.clients.elasticsearch._types.SortOptions;
+import co.elastic.clients.elasticsearch._types.SortOrder;
 import co.elastic.clients.elasticsearch._types.mapping.DenseVectorProperty;
 import co.elastic.clients.elasticsearch._types.mapping.DenseVectorSimilarity;
 import co.elastic.clients.elasticsearch._types.mapping.Property;
 import co.elastic.clients.elasticsearch._types.mapping.TextProperty;
 import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.MatchQuery;
+import co.elastic.clients.elasticsearch._types.query_dsl.NumberRangeQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
+import co.elastic.clients.elasticsearch._types.query_dsl.RangeQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.TermQuery;
 import co.elastic.clients.elasticsearch.core.BulkRequest;
 import co.elastic.clients.elasticsearch.core.DeleteByQueryRequest;
@@ -479,6 +483,103 @@ class KnowledgeSearchClientTest {
 
         IllegalStateException ex = assertThrows(IllegalStateException.class,
                 () -> client.fullTextSearch("kb-index", 100L, "q", 3));
+        assertTrue(ex.getMessage().contains("kb-index"));
+    }
+
+    // ---------- searchByFileAndLineRange ----------
+
+    @Test
+    @DisplayName("searchByFileAndLineRange：bool filter(knowledgeBaseId/fileId/lineNumber range)，sort lineNumber asc，size=范围跨度")
+    void searchByFileAndLineRange() throws Exception {
+        stubExists(true);
+        TextChunk hitChunk = chunk(100L, 200L, 3);
+        SearchResponse<TextChunk> response = mockSearchResponse(hitChunk);
+        when(elasticsearchClient.search(any(Function.class), eq(TextChunk.class))).thenReturn(response);
+
+        List<TextChunk> result = client.searchByFileAndLineRange("kb-index", 100L, 200L, 1, 5);
+
+        assertEquals(List.of(hitChunk), result);
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Function<SearchRequest.Builder, ObjectBuilder<SearchRequest>>> captor =
+                ArgumentCaptor.forClass(Function.class);
+        verify(elasticsearchClient).search(captor.capture(), eq(TextChunk.class));
+        SearchRequest req = apply(captor.getValue(), new SearchRequest.Builder());
+        assertEquals(List.of("kb-index"), req.index());
+        assertEquals(5, req.size(), "size 应为范围跨度");
+
+        Query query = req.query();
+        assertTrue(query.isBool(), "查询应为 bool");
+        BoolQuery bool = query.bool();
+        assertEquals(3, bool.filter().size(), "filter 应含 3 个条件");
+        assertEquals("knowledgeBaseId", bool.filter().get(0).term().field());
+        assertEquals("100", bool.filter().get(0).term().value()._toJsonString());
+        assertEquals("fileId", bool.filter().get(1).term().field());
+        assertEquals("200", bool.filter().get(1).term().value()._toJsonString());
+
+        Query rangeQuery = bool.filter().get(2);
+        assertTrue(rangeQuery.isRange(), "第 3 个 filter 应为 range");
+        RangeQuery range = rangeQuery.range();
+        assertTrue(range.isNumber(), "第 3 个 filter 应为 number range");
+        NumberRangeQuery numberRange = range.number();
+        assertEquals("lineNumber", numberRange.field());
+        assertEquals(Double.valueOf(1.0), numberRange.gte());
+        assertEquals(Double.valueOf(5.0), numberRange.lte());
+
+        List<SortOptions> sorts = req.sort();
+        assertNotNull(sorts);
+        assertEquals(1, sorts.size(), "sort 应含 1 项");
+        SortOptions sort = sorts.get(0);
+        assertTrue(sort.isField(), "sort 应为 field sort");
+        assertEquals("lineNumber", sort.field().field());
+        assertEquals(SortOrder.Asc, sort.field().order());
+    }
+
+    @Test
+    @DisplayName("searchByFileAndLineRange：索引不存在时自动创建")
+    void searchByFileAndLineRange_ensureIndex() throws Exception {
+        stubExists(false);
+        when(indicesClient.create(any(Function.class))).thenReturn(null);
+        SearchResponse<TextChunk> response = mockSearchResponse(null);
+        when(elasticsearchClient.search(any(Function.class), eq(TextChunk.class))).thenReturn(response);
+
+        client.searchByFileAndLineRange("kb-index", 100L, 200L, 1, 5);
+
+        verify(indicesClient).create(any(Function.class));
+        verify(elasticsearchClient).search(any(Function.class), eq(TextChunk.class));
+    }
+
+    @Test
+    @DisplayName("searchByFileAndLineRange：startLine > endLine 时返回空列表，不执行任何 ES 操作")
+    void searchByFileAndLineRange_invalidRange() throws Exception {
+        List<TextChunk> result = client.searchByFileAndLineRange("kb-index", 100L, 200L, 5, 1);
+
+        assertTrue(result.isEmpty());
+        verify(indicesClient, never()).exists(any(Function.class));
+        verify(elasticsearchClient, never()).search(any(Function.class), eq(TextChunk.class));
+    }
+
+    @Test
+    @DisplayName("searchByFileAndLineRange：忽略无 source 的命中")
+    void searchByFileAndLineRange_skipsNullSource() throws Exception {
+        stubExists(true);
+        SearchResponse<TextChunk> response = mockSearchResponse(null);
+        when(elasticsearchClient.search(any(Function.class), eq(TextChunk.class))).thenReturn(response);
+
+        List<TextChunk> result = client.searchByFileAndLineRange("kb-index", 100L, 200L, 1, 5);
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    @DisplayName("searchByFileAndLineRange：IOException 包装为 IllegalStateException")
+    void searchByFileAndLineRange_ioException() throws Exception {
+        stubExists(true);
+        when(elasticsearchClient.search(any(Function.class), eq(TextChunk.class)))
+                .thenThrow(new IOException("boom"));
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class,
+                () -> client.searchByFileAndLineRange("kb-index", 100L, 200L, 1, 5));
         assertTrue(ex.getMessage().contains("kb-index"));
     }
 
