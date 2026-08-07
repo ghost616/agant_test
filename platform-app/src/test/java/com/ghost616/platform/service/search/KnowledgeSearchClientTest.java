@@ -539,7 +539,7 @@ class KnowledgeSearchClientTest {
     // ---------- searchByFileAndLineRange ----------
 
     @Test
-    @DisplayName("searchByFileAndLineRange：bool filter(knowledgeBaseId/fileId/lineNumber range)，sort lineNumber asc，size=范围跨度")
+    @DisplayName("searchByFileAndLineRange：bool filter(knowledgeBaseId/kbEnabled/fileEnabled/fileId/lineNumber range)，sort lineNumber asc，size=范围跨度")
     void searchByFileAndLineRange() throws Exception {
         stubExists(true);
         TextChunk hitChunk = chunk(100L, 200L, 3);
@@ -561,16 +561,20 @@ class KnowledgeSearchClientTest {
         Query query = req.query();
         assertTrue(query.isBool(), "查询应为 bool");
         BoolQuery bool = query.bool();
-        assertEquals(3, bool.filter().size(), "filter 应含 3 个条件");
+        assertEquals(5, bool.filter().size(), "filter 应含 5 个条件");
         assertEquals("knowledgeBaseId", bool.filter().get(0).term().field());
         assertEquals("100", bool.filter().get(0).term().value()._toJsonString());
-        assertEquals("fileId", bool.filter().get(1).term().field());
-        assertEquals("200", bool.filter().get(1).term().value()._toJsonString());
+        assertEquals("kbEnabled", bool.filter().get(1).term().field());
+        assertEquals("true", bool.filter().get(1).term().value()._toJsonString());
+        assertEquals("fileEnabled", bool.filter().get(2).term().field());
+        assertEquals("true", bool.filter().get(2).term().value()._toJsonString());
+        assertEquals("fileId", bool.filter().get(3).term().field());
+        assertEquals("200", bool.filter().get(3).term().value()._toJsonString());
 
-        Query rangeQuery = bool.filter().get(2);
-        assertTrue(rangeQuery.isRange(), "第 3 个 filter 应为 range");
+        Query rangeQuery = bool.filter().get(4);
+        assertTrue(rangeQuery.isRange(), "第 5 个 filter 应为 range");
         RangeQuery range = rangeQuery.range();
-        assertTrue(range.isNumber(), "第 3 个 filter 应为 number range");
+        assertTrue(range.isNumber(), "第 5 个 filter 应为 number range");
         NumberRangeQuery numberRange = range.number();
         assertEquals("lineNumber", numberRange.field());
         assertEquals(Double.valueOf(1.0), numberRange.gte());

@@ -233,6 +233,8 @@ public class KnowledgeSearchClient {
                             .index(indexName)
                             .query(q -> q.bool(b -> b
                                     .filter(f -> f.term(t -> t.field("knowledgeBaseId").value(knowledgeBaseId.toString())))
+                                    .filter(f -> f.term(t -> t.field("kbEnabled").value(true)))
+                                    .filter(f -> f.term(t -> t.field("fileEnabled").value(true)))
                                     .filter(f -> f.term(t -> t.field("fileId").value(fileId.toString())))
                                     .filter(f -> f.range(r -> r
                                             .number(n -> n
