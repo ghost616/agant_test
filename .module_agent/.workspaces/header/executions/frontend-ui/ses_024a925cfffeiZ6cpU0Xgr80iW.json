@@ -7,5 +7,24 @@
     ],
     "summary": "已完成 KnowledgeFileEdit.tsx 修复：line 36 setContent(fileContent) 改为 setContent(fileContent ?? '')，并写入执行总结。测试由离朱执行：TypeScript 编译检查 0 错误，单元测试 16/16 通过，新增 getKnowledgeFileContent 返回 null 场景用例，验证组件正常渲染且 TextArea 内容为空字符串，不抛 TypeError。",
     "errors": []
+  },
+  {
+    "plan_id": "plan_1299a02f-a9c5-4cdc-a1dc-73c9b1c7b995",
+    "plan": "修改 ModelList modelType 可见性与 CUSTOM/EMBEDDINGS 场景",
+    "modified_files": [
+      "src/pages/models/ModelList.tsx",
+      "src/pages/models/__tests__/ModelList.test.tsx"
+    ],
+    "summary": "ModelList.tsx 三项改动完成并测试通过（编译 0 错误，单测 4/4）：1) modelType hidden 改 !isSiliconFlow && !isCustom；2) 提交强制 modelType=LLM 排除 CUSTOM；3) 新增 watchedModelType，requestType 在 CUSTOM+EMBEDDINGS 时隐藏。新增 ModelList.test.tsx 验证 CUSTOM+EMBEDDINGS 场景，离朱修正测试写法后通过。",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_820890d0-8ade-4444-a46e-a5d9406e115b",
+    "plan": "减少 REQUEST_TYPE_OPTIONS 为 3 项",
+    "modified_files": [
+      "src/pages/models/ModelList.tsx"
+    ],
+    "summary": "ModelList.tsx REQUEST_TYPE_OPTIONS 已从 4 项精简为 3 项（删除 Chat Completions 独立项）。测试通过：编译 0 错误、单测 4/4，既有测试无需修改。",
+    "errors": []
   }
 ]

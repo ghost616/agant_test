@@ -1,5 +1,5 @@
 {
   "session_id": "ses_024a925cfffeiZ6cpU0Xgr80iW",
-  "content": "待测试功能：\n1. src/pages/knowledge/KnowledgeFileEdit.tsx line 36：setContent(fileContent) 改为 setContent(fileContent ?? '')，防止 getKnowledgeFileContent 返回 null 时 content 状态为 null 导致渲染 content.trim() 抛 TypeError。\n\n测试类型：compile（TypeScript 编译检查）、unit（该组件使用 antd 与 react-markdown）。\n\n涉及代码文件：src/pages/knowledge/KnowledgeFileEdit.tsx",
-  "timestamp": "2026-08-07T08:29:36.442Z"
+  "content": "待测试功能：\n1. src/pages/models/ModelList.tsx REQUEST_TYPE_OPTIONS 从 4 项改为 3 项，删除 `{ value: RequestType.COMPLETIONS.code, label: 'Chat Completions' }`。\n   保留：{ value: '', label: '默认（Chat Completions）' }、{ value: 'responses', label: 'Responses（有状态）' }、{ value: 'responses_stateless', label: 'Responses（无状态）' }。\n\n测试类型：compile（TypeScript 编译检查）、unit（vitest 运行 ModelList 相关测试）。\n涉及代码文件：src/pages/models/ModelList.tsx、src/pages/models/__tests__/ModelList.test.tsx",
+  "timestamp": "2026-08-07T12:22:52.109Z"
 }

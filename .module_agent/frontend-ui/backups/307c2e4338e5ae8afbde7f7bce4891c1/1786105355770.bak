@@ -46,6 +46,7 @@ const PLATFORM_TYPE_OPTIONS = Object.entries(PLATFORM_TYPE_LABELS).map(([value, 
 
 const REQUEST_TYPE_OPTIONS = [
   { value: '', label: '默认（Chat Completions）' },
+  { value: RequestType.COMPLETIONS.code, label: 'Chat Completions' },
   { value: RequestType.RESPONSES.code, label: 'Responses（有状态）' },
   { value: RequestType.RESPONSES_STATELESS.code, label: 'Responses（无状态）' },
 ];

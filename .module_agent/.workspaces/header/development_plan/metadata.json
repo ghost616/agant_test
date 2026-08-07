@@ -83,7 +83,7 @@
     "plan_id": "plan_e824b5b7-ee2d-42f6-bf88-0e62f45258b1",
     "plan_summary": "README 新增知识库配置和知识库工具章节，更新功能模块列表和项目结构",
     "starter_session_id": "ses_024fd0f36ffeN2ZR73FKkNJndP",
-    "code_reviewed": false,
+    "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
   },
@@ -91,7 +91,7 @@
     "plan_id": "plan_2e86cc0d-7d29-4a9d-bf7f-0cca0f99a072",
     "plan_summary": "README：ES 索引由手动配置改为自动生成",
     "starter_session_id": "ses_024fd0f36ffeN2ZR73FKkNJndP",
-    "code_reviewed": false,
+    "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
   },
@@ -99,8 +99,40 @@
     "plan_id": "plan_82fedcad-0fcd-48fc-9fe1-29e3b8a55a3b",
     "plan_summary": "README：删除 4 处括号注释",
     "starter_session_id": "ses_024fd0f36ffeN2ZR73FKkNJndP",
-    "code_reviewed": false,
+    "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
+  },
+  {
+    "plan_id": "plan_1299a02f-a9c5-4cdc-a1dc-73c9b1c7b995",
+    "plan_summary": "CUSTOM 平台模型添加 Embeddings 类型支持",
+    "starter_session_id": "ses_024fd0f36ffeN2ZR73FKkNJndP",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_80f993d0-4e73-4620-b614-66d90c1ad26a",
+    "plan_summary": "审查 ModelList CUSTOM+EMBEDDINGS 支持",
+    "starter_session_id": "ses_024fd0f36ffeN2ZR73FKkNJndP",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": false
+  },
+  {
+    "plan_id": "plan_820890d0-8ade-4444-a46e-a5d9406e115b",
+    "plan_summary": "ModelList 请求类型去掉重复的 Chat Completions 选项",
+    "starter_session_id": "ses_024fd0f36ffeN2ZR73FKkNJndP",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_c760e858-4413-4aa8-a58e-b093430c8b64",
+    "plan_summary": "审查 ModelList REQUEST_TYPE_OPTIONS 精简",
+    "starter_session_id": "ses_024fd0f36ffeN2ZR73FKkNJndP",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": false
   }
 ]

@@ -1,0 +1,10 @@
+{
+  "plan_id": "plan_1299a02f-a9c5-4cdc-a1dc-73c9b1c7b995",
+  "module_name": "frontend-ui",
+  "development_plan": "## 修改 ModelList.tsx\n\n1. modelType 字段 visible 条件改为：`!isSiliconFlow && !isCustom → isSiliconFlow || isCustom`\n   即：让 CUSTOM 平台也显示 modelType 下拉框\n\n2. 提交时强制 modelType='LLM' 的逻辑中排除 CUSTOM：\n   `if (watchedPlatformType !== 'SILICONFLOW')` 改为 `if (watchedPlatformType !== 'SILICONFLOW' && watchedPlatformType !== 'CUSTOM')`\n   即：CUSTOM 平台保留用户选择的 modelType 值\n\n3. 新增 watchedModelType 监听，当 CUSTOM 平台选择 EMBEDDINGS 时隐藏 requestType：\n   - requestType 的 hidden 条件：`hidden={!isResponsesSupported || (isCustom && watchedModelType === 'EMBEDDINGS')}`\n\n## 同步更新测试文件\n\n修改 ModelList.test.tsx / ModelList 相关测试，验证 CUSTOM + EMBEDDINGS 场景",
+  "session_id": "ses_024a925cfffeiZ6cpU0Xgr80iW",
+  "modified_files": [
+    "src/pages/models/ModelList.tsx",
+    "src/pages/models/__tests__/ModelList.test.tsx"
+  ]
+}
