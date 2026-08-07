@@ -23,13 +23,19 @@ import com.ghost616.agentbase.service.agent.ToolDataProvider;
 import com.ghost616.agentbase.service.agent.ToolDataProvider.SessionToolInfo;
 import com.ghost616.agentbase.service.agent.ToolDataProvider.SkillToolInfo;
 import com.ghost616.agentbase.service.agent.invoker.CustomToolInvoker;
+import com.ghost616.agentinteg.knowledge.KnowledgeBaseQueryProvider;
 import com.ghost616.agentinteg.tool.BrowserToolCallback;
 import com.ghost616.agentinteg.tool.BrowserToolInvoker;
+import com.ghost616.agentinteg.tool.KnowledgeBaseInfoTool;
+import com.ghost616.agentinteg.tool.KnowledgeFileChunkTool;
+import com.ghost616.agentinteg.tool.KnowledgeFileInfoTool;
+import com.ghost616.agentinteg.tool.KnowledgeSearchTool;
 import com.ghost616.platform.dto.tool.ToolDetailDTO;
 import com.ghost616.platform.enums.SubToolType;
 import com.ghost616.platform.util.IdConverter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -50,6 +56,7 @@ public class DefaultToolDataProvider implements ToolDataProvider {
     private final ToolConfigService toolConfigService;
     private final BrowserToolCallback browserToolCallback;
     private final ModelConfigMapper modelConfigMapper;
+    private final ObjectProvider<KnowledgeBaseQueryProvider> knowledgeBaseQueryProvider;
 
     @Override
     public List<SessionToolInfo> getSessionToolIds(String sessionId) {
@@ -77,7 +84,28 @@ public class DefaultToolDataProvider implements ToolDataProvider {
         if (toolConfig.getToolType() == ToolType.CUSTOM && detail.getSubToolType() == SubToolType.BROWSER) {
             return new BrowserToolInvoker(toolConfig, browserToolCallback);
         }
+        if (toolConfig.getToolType() == ToolType.CUSTOM && detail.getSubToolType() == SubToolType.RAG_KNOWLEDGE) {
+            return createKnowledgeTool(toolConfig);
+        }
         throw new UnsupportedOperationException("Custom tool invoker not supported");
+    }
+
+    private CustomToolInvoker createKnowledgeTool(ToolConfigDTO toolConfig) {
+        KnowledgeBaseQueryProvider provider = knowledgeBaseQueryProvider.getObject();
+        String name = toolConfig.getName();
+        if (KnowledgeBaseInfoTool.TOOL_NAME.equals(name)) {
+            return new KnowledgeBaseInfoTool(toolConfig, provider);
+        }
+        if (KnowledgeFileInfoTool.TOOL_NAME.equals(name)) {
+            return new KnowledgeFileInfoTool(toolConfig, provider);
+        }
+        if (KnowledgeSearchTool.TOOL_NAME.equals(name)) {
+            return new KnowledgeSearchTool(toolConfig, provider);
+        }
+        if (KnowledgeFileChunkTool.TOOL_NAME.equals(name)) {
+            return new KnowledgeFileChunkTool(toolConfig, provider);
+        }
+        throw new UnsupportedOperationException("Unsupported RAG_KNOWLEDGE tool: " + name);
     }
 
     @Override

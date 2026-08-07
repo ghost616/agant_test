@@ -2,6 +2,8 @@ package com.ghost616.agentinteg.tool;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
+import com.ghost616.agentbase.enums.ToolType;
 import com.ghost616.agentbase.service.agent.AgentExecutionContext;
 import com.ghost616.agentinteg.knowledge.FileInfo;
 import com.ghost616.agentinteg.knowledge.KnowledgeBaseQueryProvider;
@@ -30,26 +32,26 @@ class KnowledgeFileInfoToolTest {
 
     @BeforeEach
     void setUp() {
-        tool = new KnowledgeFileInfoTool(provider);
+        tool = new KnowledgeFileInfoTool(KnowledgeFileInfoTool.createToolConfig(), provider);
     }
 
     @Test
-    void getToolName_返回kb_file_info() {
-        assertEquals("kb_file_info", tool.getToolName());
+    void createToolConfig_返回CUSTOM类型且name为default_tool_rag_file_info() {
+        ToolConfigDTO config = KnowledgeFileInfoTool.createToolConfig();
+        assertNull(config.getId());
+        assertEquals(ToolType.CUSTOM, config.getToolType());
+        assertEquals("default_tool_rag_file_info", config.getName());
     }
 
     @Test
-    void getDescription_返回非空描述() {
-        assertNotNull(tool.getDescription());
-        assertFalse(tool.getDescription().isBlank());
-    }
-
-    @Test
-    void getParameterSchema_包含必填参数knowledgeBaseId和可选fileId() {
-        String schema = tool.getParameterSchema();
-        assertTrue(schema.contains("\"knowledgeBaseId\""));
-        assertTrue(schema.contains("\"fileId\""));
-        assertTrue(schema.contains("\"required\""));
+    void createToolConfig_包含描述和参数schema() {
+        ToolConfigDTO config = KnowledgeFileInfoTool.createToolConfig();
+        assertNotNull(config.getDescription());
+        assertFalse(config.getDescription().isBlank());
+        assertNotNull(config.getParameterSchema());
+        assertTrue(config.getParameterSchema().contains("\"knowledgeBaseId\""));
+        assertTrue(config.getParameterSchema().contains("\"fileId\""));
+        assertTrue(config.getParameterSchema().contains("\"required\""));
     }
 
     @Test

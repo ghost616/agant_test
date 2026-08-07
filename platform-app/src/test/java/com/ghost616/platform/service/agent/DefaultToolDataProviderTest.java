@@ -6,9 +6,14 @@ import com.ghost616.agentbase.enums.SessionAuthType;
 import com.ghost616.agentbase.enums.ToolType;
 import com.ghost616.agentbase.service.agent.invoker.CustomToolInvoker;
 import com.ghost616.agentbase.service.agent.ToolDataProvider.SessionToolInfo;
+import com.ghost616.agentinteg.knowledge.KnowledgeBaseQueryProvider;
 import com.ghost616.agentinteg.model.PlatformType;
 import com.ghost616.agentinteg.tool.BrowserToolCallback;
 import com.ghost616.agentinteg.tool.BrowserToolInvoker;
+import com.ghost616.agentinteg.tool.KnowledgeBaseInfoTool;
+import com.ghost616.agentinteg.tool.KnowledgeFileChunkTool;
+import com.ghost616.agentinteg.tool.KnowledgeFileInfoTool;
+import com.ghost616.agentinteg.tool.KnowledgeSearchTool;
 import com.ghost616.platform.dto.tool.ToolDetailDTO;
 import com.ghost616.platform.entity.ModelConfig;
 import com.ghost616.platform.entity.SessionTool;
@@ -27,6 +32,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.ObjectProvider;
 
 import java.util.List;
 import java.util.Map;
@@ -46,6 +52,8 @@ class DefaultToolDataProviderTest {
     @Mock private ToolConfigService toolConfigService;
     @Mock private BrowserToolCallback browserToolCallback;
     @Mock private ModelConfigMapper modelConfigMapper;
+    @Mock private KnowledgeBaseQueryProvider knowledgeBaseQueryProvider;
+    @Mock private ObjectProvider<KnowledgeBaseQueryProvider> knowledgeBaseQueryProviderProvider;
 
     private DefaultToolDataProvider provider;
 
@@ -53,7 +61,7 @@ class DefaultToolDataProviderTest {
     void setUp() {
         provider = new DefaultToolDataProvider(sessionToolMapper, sessionMapper,
                 agentSkillMapper, skillToolMapper, sessionSkillMapper, toolConfigService,
-                browserToolCallback, modelConfigMapper);
+                browserToolCallback, modelConfigMapper, knowledgeBaseQueryProviderProvider);
     }
 
     private SessionTool createSessionTool(Long toolId, SessionAuthType auth) {
@@ -127,6 +135,14 @@ class DefaultToolDataProviderTest {
                     .build();
         }
 
+        private ToolConfigDTO createToolConfigWithName(ToolType toolType, String name) {
+            return ToolConfigDTO.builder()
+                    .id(String.valueOf(toolId))
+                    .toolType(toolType)
+                    .name(name)
+                    .build();
+        }
+
         private ToolDetailDTO createToolDetail(SubToolType subToolType) {
             return ToolDetailDTO.builder()
                     .id(String.valueOf(toolId))
@@ -174,6 +190,69 @@ class DefaultToolDataProviderTest {
         void customNonBrowser_shouldThrow() {
             ToolConfigDTO config = createToolConfig(ToolType.CUSTOM);
             ToolDetailDTO detail = createToolDetail(null);
+            when(toolConfigService.getById(toolId)).thenReturn(detail);
+
+            assertThrows(UnsupportedOperationException.class,
+                    () -> provider.getCustomInvoker(config));
+        }
+
+        @Test
+        @DisplayName("CUSTOM + RAG_KNOWLEDGE + default_tool_rag_info 返回 KnowledgeBaseInfoTool")
+        void ragKnowledgeInfo_shouldReturnKnowledgeBaseInfoTool() {
+            ToolConfigDTO config = createToolConfigWithName(ToolType.CUSTOM, KnowledgeBaseInfoTool.TOOL_NAME);
+            ToolDetailDTO detail = createToolDetail(SubToolType.RAG_KNOWLEDGE);
+            when(toolConfigService.getById(toolId)).thenReturn(detail);
+            when(knowledgeBaseQueryProviderProvider.getObject()).thenReturn(knowledgeBaseQueryProvider);
+
+            CustomToolInvoker result = provider.getCustomInvoker(config);
+
+            assertInstanceOf(KnowledgeBaseInfoTool.class, result);
+        }
+
+        @Test
+        @DisplayName("CUSTOM + RAG_KNOWLEDGE + default_tool_rag_file_info 返回 KnowledgeFileInfoTool")
+        void ragKnowledgeFileInfo_shouldReturnKnowledgeFileInfoTool() {
+            ToolConfigDTO config = createToolConfigWithName(ToolType.CUSTOM, KnowledgeFileInfoTool.TOOL_NAME);
+            ToolDetailDTO detail = createToolDetail(SubToolType.RAG_KNOWLEDGE);
+            when(toolConfigService.getById(toolId)).thenReturn(detail);
+            when(knowledgeBaseQueryProviderProvider.getObject()).thenReturn(knowledgeBaseQueryProvider);
+
+            CustomToolInvoker result = provider.getCustomInvoker(config);
+
+            assertInstanceOf(KnowledgeFileInfoTool.class, result);
+        }
+
+        @Test
+        @DisplayName("CUSTOM + RAG_KNOWLEDGE + default_tool_rag_search 返回 KnowledgeSearchTool")
+        void ragKnowledgeSearch_shouldReturnKnowledgeSearchTool() {
+            ToolConfigDTO config = createToolConfigWithName(ToolType.CUSTOM, KnowledgeSearchTool.TOOL_NAME);
+            ToolDetailDTO detail = createToolDetail(SubToolType.RAG_KNOWLEDGE);
+            when(toolConfigService.getById(toolId)).thenReturn(detail);
+            when(knowledgeBaseQueryProviderProvider.getObject()).thenReturn(knowledgeBaseQueryProvider);
+
+            CustomToolInvoker result = provider.getCustomInvoker(config);
+
+            assertInstanceOf(KnowledgeSearchTool.class, result);
+        }
+
+        @Test
+        @DisplayName("CUSTOM + RAG_KNOWLEDGE + default_tool_rag_file_chunk 返回 KnowledgeFileChunkTool")
+        void ragKnowledgeFileChunk_shouldReturnKnowledgeFileChunkTool() {
+            ToolConfigDTO config = createToolConfigWithName(ToolType.CUSTOM, KnowledgeFileChunkTool.TOOL_NAME);
+            ToolDetailDTO detail = createToolDetail(SubToolType.RAG_KNOWLEDGE);
+            when(toolConfigService.getById(toolId)).thenReturn(detail);
+            when(knowledgeBaseQueryProviderProvider.getObject()).thenReturn(knowledgeBaseQueryProvider);
+
+            CustomToolInvoker result = provider.getCustomInvoker(config);
+
+            assertInstanceOf(KnowledgeFileChunkTool.class, result);
+        }
+
+        @Test
+        @DisplayName("CUSTOM + RAG_KNOWLEDGE + 未支持的工具名抛出 UnsupportedOperationException")
+        void ragKnowledgeUnsupportedName_shouldThrow() {
+            ToolConfigDTO config = createToolConfigWithName(ToolType.CUSTOM, "unknown_rag_tool");
+            ToolDetailDTO detail = createToolDetail(SubToolType.RAG_KNOWLEDGE);
             when(toolConfigService.getById(toolId)).thenReturn(detail);
 
             assertThrows(UnsupportedOperationException.class,

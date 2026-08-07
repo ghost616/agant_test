@@ -1,7 +1,7 @@
 package com.ghost616.agentinteg.tool;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.ghost616.agentbase.dto.model.Message;
 import com.ghost616.agentbase.dto.skill.SkillConfigDTO;
 import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
@@ -19,7 +19,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class SubSessionCallbackSystemTool implements SystemTool {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final JsonMapper JSON_MAPPER = JsonMapper.builder().build();
     private static final String TOOL_NAME = "callback_sub_session";
 
     private final SubSessionCallback callback;
@@ -54,7 +54,7 @@ public class SubSessionCallbackSystemTool implements SystemTool {
     @Override
     public String execute(AgentExecutionContext ctx, String arguments) {
         try {
-            JsonNode root = OBJECT_MAPPER.readTree(arguments);
+            JsonNode root = JSON_MAPPER.readTree(arguments);
             String sessionName = root.get("sessionName").asText();
             String userMessage = root.get("userMessage").asText();
             String description = root.has("description") && !root.get("description").isNull()
@@ -74,7 +74,7 @@ public class SubSessionCallbackSystemTool implements SystemTool {
         } catch (Exception e) {
             log.error("callback_sub_session 执行失败", e);
             try {
-                return OBJECT_MAPPER.writeValueAsString(Map.of("status", "error", "errMsg", e.getMessage()));
+                return JSON_MAPPER.writeValueAsString(Map.of("status", "error", "errMsg", e.getMessage()));
             } catch (Exception inner) {
                 return "{\"status\":\"error\",\"errMsg\":\"" + inner.getMessage() + "\"}";
             }

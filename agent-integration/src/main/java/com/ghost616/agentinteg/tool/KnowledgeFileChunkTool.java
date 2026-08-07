@@ -2,53 +2,51 @@ package com.ghost616.agentinteg.tool;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
+import com.ghost616.agentbase.enums.ToolType;
 import com.ghost616.agentbase.service.agent.AgentExecutionContext;
-import com.ghost616.agentbase.service.agent.invoker.SystemTool;
+import com.ghost616.agentbase.service.agent.invoker.CustomToolInvoker;
 import com.ghost616.agentinteg.knowledge.FileInfo;
 import com.ghost616.agentinteg.knowledge.KnowledgeBaseQueryProvider;
 import com.ghost616.agentinteg.knowledge.TextChunkWithFile;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Map;
 
 @Slf4j
-@Component
-@RequiredArgsConstructor
-public class KnowledgeFileChunkTool implements SystemTool {
+public class KnowledgeFileChunkTool extends CustomToolInvoker {
 
     private static final JsonMapper JSON_MAPPER = JsonMapper.builder().build();
-    private static final String TOOL_NAME = "kb_file_chunk";
+    public static final String TOOL_NAME = "default_tool_rag_file_chunk";
     private static final int DEFAULT_START_LINE = 0;
     private static final int MAX_FILE_LOOKUP_LIMIT = 1000;
 
     private final KnowledgeBaseQueryProvider provider;
 
-    @Override
-    public String getToolName() {
-        return TOOL_NAME;
+    public KnowledgeFileChunkTool(ToolConfigDTO toolConfig, KnowledgeBaseQueryProvider provider) {
+        super(toolConfig);
+        this.provider = provider;
     }
 
-    @Override
-    public String getDescription() {
-        return "获取知识库文件中指定行号范围内的文本块，不传 endLine 时默认为文件最大行数";
-    }
-
-    @Override
-    public String getParameterSchema() {
-        return """
-                {
-                  "type": "object",
-                  "properties": {
-                    "knowledgeBaseId": { "type": "integer", "description": "知识库 ID" },
-                    "fileId": { "type": "integer", "description": "文件 ID" },
-                    "startLine": { "type": "integer", "description": "起始行号，默认 0" },
-                    "endLine": { "type": "integer", "description": "结束行号，默认文件最大行数" }
-                  },
-                  "required": ["knowledgeBaseId", "fileId"]
-                }""";
+    public static ToolConfigDTO createToolConfig() {
+        return ToolConfigDTO.builder()
+                .id(null)
+                .toolType(ToolType.CUSTOM)
+                .name(TOOL_NAME)
+                .description("获取知识库文件中指定行号范围内的文本块，不传 endLine 时默认为文件最大行数")
+                .parameterSchema("""
+                        {
+                          "type": "object",
+                          "properties": {
+                            "knowledgeBaseId": { "type": "integer", "description": "知识库 ID" },
+                            "fileId": { "type": "integer", "description": "文件 ID" },
+                            "startLine": { "type": "integer", "description": "起始行号，默认 0" },
+                            "endLine": { "type": "integer", "description": "结束行号，默认文件最大行数" }
+                          },
+                          "required": ["knowledgeBaseId", "fileId"]
+                        }""")
+                .build();
     }
 
     @Override
@@ -73,7 +71,7 @@ public class KnowledgeFileChunkTool implements SystemTool {
             TextChunkWithFile result = provider.getFileChunks(knowledgeBaseId, fileId, startLine, endLine);
             return JSON_MAPPER.writeValueAsString(result);
         } catch (Exception e) {
-            log.error("kb_file_chunk 执行失败", e);
+            log.error("default_tool_rag_file_chunk 执行失败", e);
             return buildError(e.getMessage());
         }
     }

@@ -4,7 +4,8 @@ import com.baomidou.mybatisplus.annotation.EnumValue;
 
 public enum SubToolType {
 
-    BROWSER("BROWSER", "浏览器");
+    BROWSER("BROWSER", "浏览器"),
+    RAG_KNOWLEDGE("RAG_KNOWLEDGE", "知识库检索");
 
     @EnumValue
     private final String code;

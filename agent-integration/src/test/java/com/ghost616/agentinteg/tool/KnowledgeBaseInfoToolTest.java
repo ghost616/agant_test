@@ -2,6 +2,8 @@ package com.ghost616.agentinteg.tool;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
+import com.ghost616.agentbase.enums.ToolType;
 import com.ghost616.agentbase.service.agent.AgentExecutionContext;
 import com.ghost616.agentinteg.knowledge.KnowledgeBaseInfo;
 import com.ghost616.agentinteg.knowledge.KnowledgeBaseQueryProvider;
@@ -28,27 +30,24 @@ class KnowledgeBaseInfoToolTest {
 
     @BeforeEach
     void setUp() {
-        tool = new KnowledgeBaseInfoTool(provider);
+        tool = new KnowledgeBaseInfoTool(KnowledgeBaseInfoTool.createToolConfig(), provider);
     }
 
     @Test
-    void getToolName_返回kb_info() {
-        assertEquals("kb_info", tool.getToolName());
+    void createToolConfig_返回CUSTOM类型且name为default_tool_rag_info() {
+        ToolConfigDTO config = KnowledgeBaseInfoTool.createToolConfig();
+        assertNull(config.getId());
+        assertEquals(ToolType.CUSTOM, config.getToolType());
+        assertEquals("default_tool_rag_info", config.getName());
     }
 
     @Test
-    void getDescription_返回非空描述() {
-        assertNotNull(tool.getDescription());
-        assertFalse(tool.getDescription().isBlank());
-    }
-
-    @Test
-    void getParameterSchema_不含任何参数定义() {
-        String schema = tool.getParameterSchema();
-        assertNotNull(schema);
-        assertFalse(schema.contains("\"sessionId\""));
-        assertFalse(schema.contains("\"required\""));
-        assertTrue(schema.contains("\"properties\""));
+    void createToolConfig_包含描述和参数schema() {
+        ToolConfigDTO config = KnowledgeBaseInfoTool.createToolConfig();
+        assertNotNull(config.getDescription());
+        assertFalse(config.getDescription().isBlank());
+        assertNotNull(config.getParameterSchema());
+        assertTrue(config.getParameterSchema().contains("\"properties\""));
     }
 
     @Test

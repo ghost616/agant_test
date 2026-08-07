@@ -1,43 +1,41 @@
 package com.ghost616.agentinteg.tool;
 
 import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
+import com.ghost616.agentbase.enums.ToolType;
 import com.ghost616.agentbase.service.agent.AgentExecutionContext;
-import com.ghost616.agentbase.service.agent.invoker.SystemTool;
+import com.ghost616.agentbase.service.agent.invoker.CustomToolInvoker;
 import com.ghost616.agentinteg.knowledge.KnowledgeBaseInfo;
 import com.ghost616.agentinteg.knowledge.KnowledgeBaseQueryProvider;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
 
 import java.util.Map;
 
 @Slf4j
-@Component
-@RequiredArgsConstructor
-public class KnowledgeBaseInfoTool implements SystemTool {
+public class KnowledgeBaseInfoTool extends CustomToolInvoker {
 
     private static final JsonMapper JSON_MAPPER = JsonMapper.builder().build();
-    private static final String TOOL_NAME = "kb_info";
+    public static final String TOOL_NAME = "default_tool_rag_info";
 
     private final KnowledgeBaseQueryProvider provider;
 
-    @Override
-    public String getToolName() {
-        return TOOL_NAME;
+    public KnowledgeBaseInfoTool(ToolConfigDTO toolConfig, KnowledgeBaseQueryProvider provider) {
+        super(toolConfig);
+        this.provider = provider;
     }
 
-    @Override
-    public String getDescription() {
-        return "获取当前会话关联的知识库信息";
-    }
-
-    @Override
-    public String getParameterSchema() {
-        return """
-                {
-                  "type": "object",
-                  "properties": {}
-                }""";
+    public static ToolConfigDTO createToolConfig() {
+        return ToolConfigDTO.builder()
+                .id(null)
+                .toolType(ToolType.CUSTOM)
+                .name(TOOL_NAME)
+                .description("获取当前会话关联的知识库信息")
+                .parameterSchema("""
+                        {
+                          "type": "object",
+                          "properties": {}
+                        }""")
+                .build();
     }
 
     @Override
@@ -50,7 +48,7 @@ public class KnowledgeBaseInfoTool implements SystemTool {
             KnowledgeBaseInfo info = provider.getKnowledgeBaseInfo(sessionId);
             return JSON_MAPPER.writeValueAsString(info);
         } catch (Exception e) {
-            log.error("kb_info 执行失败", e);
+            log.error("default_tool_rag_info 执行失败", e);
             return buildError(e.getMessage());
         }
     }

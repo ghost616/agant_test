@@ -1,6 +1,6 @@
 package com.ghost616.agentinteg.tool;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
 import com.ghost616.agentbase.service.agent.AgentExecutionContext;
 import com.ghost616.agentbase.service.agent.invoker.CustomToolInvoker;
@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class BrowserToolInvoker extends CustomToolInvoker {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final JsonMapper JSON_MAPPER = JsonMapper.builder().build();
     private static final String DEFAULT_JS_PATH = "browser/browser_tool_executor.js";
 
     private final BrowserToolCallback callback;
@@ -38,7 +38,7 @@ public class BrowserToolInvoker extends CustomToolInvoker {
         } catch (Exception e) {
             log.error("BrowserToolInvoker execute failed", e);
             try {
-                return OBJECT_MAPPER.writeValueAsString(Map.of("status", "error", "errMsg", e.getMessage()));
+                return JSON_MAPPER.writeValueAsString(Map.of("status", "error", "errMsg", e.getMessage()));
             } catch (Exception inner) {
                 return "{\"status\":\"error\",\"errMsg\":\"" + inner.getMessage() + "\"}";
             }

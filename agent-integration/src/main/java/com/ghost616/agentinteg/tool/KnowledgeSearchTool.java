@@ -2,15 +2,15 @@ package com.ghost616.agentinteg.tool;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
+import com.ghost616.agentbase.enums.ToolType;
 import com.ghost616.agentbase.service.agent.AgentExecutionContext;
-import com.ghost616.agentbase.service.agent.invoker.SystemTool;
+import com.ghost616.agentbase.service.agent.invoker.CustomToolInvoker;
 import com.ghost616.agentinteg.knowledge.KnowledgeBaseQueryProvider;
 import com.ghost616.agentinteg.knowledge.SearchType;
 import com.ghost616.agentinteg.knowledge.TextChunkWithFile;
 import com.ghost616.agentinteg.knowledge.TextChunkWithFile.TextChunk;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -19,42 +19,40 @@ import java.util.List;
 import java.util.Map;
 
 @Slf4j
-@Component
-@RequiredArgsConstructor
-public class KnowledgeSearchTool implements SystemTool {
+public class KnowledgeSearchTool extends CustomToolInvoker {
 
     private static final JsonMapper JSON_MAPPER = JsonMapper.builder().build();
-    private static final String TOOL_NAME = "kb_search";
+    public static final String TOOL_NAME = "default_tool_rag_search";
     private static final int DEFAULT_SEARCH_LIMIT = 10;
     private static final int DEFAULT_CONTEXT_LINES = 3;
 
     private final KnowledgeBaseQueryProvider provider;
 
-    @Override
-    public String getToolName() {
-        return TOOL_NAME;
+    public KnowledgeSearchTool(ToolConfigDTO toolConfig, KnowledgeBaseQueryProvider provider) {
+        super(toolConfig);
+        this.provider = provider;
     }
 
-    @Override
-    public String getDescription() {
-        return "搜索知识库文本块，按上下文行数扩展并合并连续行号块后返回";
-    }
-
-    @Override
-    public String getParameterSchema() {
-        return """
-                {
-                  "type": "object",
-                  "properties": {
-                    "knowledgeBaseId": { "type": "integer", "description": "知识库 ID" },
-                    "fileId": { "type": "integer", "description": "文件 ID，不传表示不限文件" },
-                    "searchType": { "type": "string", "enum": ["VECTOR", "FULLTEXT", "HYBRID"], "description": "搜索类型" },
-                    "query": { "type": "string", "description": "查询关键字" },
-                    "searchLimit": { "type": "integer", "description": "返回数量上限，默认 10" },
-                    "contextLines": { "type": "integer", "description": "上下文行数，默认 3" }
-                  },
-                  "required": ["knowledgeBaseId", "searchType", "query"]
-                }""";
+    public static ToolConfigDTO createToolConfig() {
+        return ToolConfigDTO.builder()
+                .id(null)
+                .toolType(ToolType.CUSTOM)
+                .name(TOOL_NAME)
+                .description("搜索知识库文本块，按上下文行数扩展并合并连续行号块后返回")
+                .parameterSchema("""
+                        {
+                          "type": "object",
+                          "properties": {
+                            "knowledgeBaseId": { "type": "integer", "description": "知识库 ID" },
+                            "fileId": { "type": "integer", "description": "文件 ID，不传表示不限文件" },
+                            "searchType": { "type": "string", "enum": ["VECTOR", "FULLTEXT", "HYBRID"], "description": "搜索类型" },
+                            "query": { "type": "string", "description": "查询关键字" },
+                            "searchLimit": { "type": "integer", "description": "返回数量上限，默认 10" },
+                            "contextLines": { "type": "integer", "description": "上下文行数，默认 3" }
+                          },
+                          "required": ["knowledgeBaseId", "searchType", "query"]
+                        }""")
+                .build();
     }
 
     @Override
@@ -95,7 +93,7 @@ public class KnowledgeSearchTool implements SystemTool {
             }
             return JSON_MAPPER.writeValueAsString(output);
         } catch (Exception e) {
-            log.error("kb_search 执行失败", e);
+            log.error("default_tool_rag_search 执行失败", e);
             return buildError(e.getMessage());
         }
     }

@@ -2,6 +2,8 @@ package com.ghost616.agentinteg.tool;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
+import com.ghost616.agentbase.enums.ToolType;
 import com.ghost616.agentbase.service.agent.AgentExecutionContext;
 import com.ghost616.agentinteg.knowledge.KnowledgeBaseQueryProvider;
 import com.ghost616.agentinteg.knowledge.SearchType;
@@ -34,23 +36,24 @@ class KnowledgeSearchToolTest {
 
     @BeforeEach
     void setUp() {
-        tool = new KnowledgeSearchTool(provider);
+        tool = new KnowledgeSearchTool(KnowledgeSearchTool.createToolConfig(), provider);
     }
 
     @Test
-    void getToolName_返回kb_search() {
-        assertEquals("kb_search", tool.getToolName());
+    void createToolConfig_返回CUSTOM类型且name为default_tool_rag_search() {
+        ToolConfigDTO config = KnowledgeSearchTool.createToolConfig();
+        assertNull(config.getId());
+        assertEquals(ToolType.CUSTOM, config.getToolType());
+        assertEquals("default_tool_rag_search", config.getName());
     }
 
     @Test
-    void getDescription_返回非空描述() {
-        assertNotNull(tool.getDescription());
-        assertFalse(tool.getDescription().isBlank());
-    }
-
-    @Test
-    void getParameterSchema_searchType为enum且包含必填参数() {
-        String schema = tool.getParameterSchema();
+    void createToolConfig_包含描述和参数schema() {
+        ToolConfigDTO config = KnowledgeSearchTool.createToolConfig();
+        assertNotNull(config.getDescription());
+        assertFalse(config.getDescription().isBlank());
+        assertNotNull(config.getParameterSchema());
+        String schema = config.getParameterSchema();
         assertTrue(schema.contains("\"knowledgeBaseId\""));
         assertTrue(schema.contains("\"searchType\""));
         assertTrue(schema.contains("\"enum\""));
