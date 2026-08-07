@@ -7,5 +7,14 @@
     ],
     "summary": "执行总结：本轮修改 README.md，完成知识库相关文档更新——①功能模块列表新增「知识库管理」条目；②项目结构补充 platform-app/service/knowledge 目录、controller 下 KnowledgeBaseController/KnowledgeFileController 说明、前端 src/pages/knowledge 目录（KnowledgeBaseList/KnowledgeFileList/KnowledgeFileEdit）；③浏览器工具章节后新增「知识库配置」章节（配置流程 5 步、UNPUBLISHED/PUBLISHING/PUBLISHED/PENDING_PUBLISH/PUBLISH_ERROR 五种发布状态、5000 字符分批向量化发布机制）；④新增「知识库工具」章节（default_tool_rag_info/default_tool_rag_file_info/default_tool_rag_search/default_tool_rag_file_chunk 四个工具表格、自动注入说明 sessionAuth: ALL）。\n测试总结：纯文档变更，不涉及代码逻辑，无测试类型适用。",
     "errors": []
+  },
+  {
+    "plan_id": "plan_2e86cc0d-7d29-4a9d-bf7f-0cca0f99a072",
+    "plan": "修改 README.md 两处文字（ES 索引相关）",
+    "modified_files": [
+      "README.md"
+    ],
+    "summary": "执行总结：本轮修改 README.md 两处文字。①功能模块「知识库管理」条目中「ES 索引配置」改为「ES 索引自动生成」；②「知识库配置」章节配置流程第 2 步改为「ES 索引自动生成」完整描述（创建知识库时自动生成 ES 索引名称、可在创建请求中指定、前端仅列表页展示、编辑弹窗不可修改）。两处均已完成并本地核对无误。\n测试总结：纯文档文字修改，不涉及代码逻辑，无测试类型适用（无需编写或执行测试）。",
+    "errors": []
   }
 ]

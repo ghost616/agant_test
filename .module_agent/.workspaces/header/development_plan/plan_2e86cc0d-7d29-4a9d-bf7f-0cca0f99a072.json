@@ -1,0 +1,9 @@
+{
+  "plan_id": "plan_2e86cc0d-7d29-4a9d-bf7f-0cca0f99a072",
+  "module_name": "framework",
+  "development_plan": "## 修改 README.md 两处文字\n\n1. 功能模块列表行（约第 25 行）：\n   将 `ES 索引配置` 改为 `ES 索引自动生成`\n\n2. 知识库配置章节 > 配置流程 > 第 2 步（约第 215 行）：\n   将 `配置 ES 索引 — 为知识库配置 Elasticsearch 索引（索引名称、分片数、副本数等），用于后续文件内容的向量化存储与检索`\n   改为 `ES 索引自动生成 — 创建知识库时自动生成 ES 索引名称（可在创建请求中指定），前端仅列表页展示，编辑弹窗不可修改，用于后续文件内容的向量化存储与检索`",
+  "session_id": "ses_02474ce71ffe416qhuL32gNF5q",
+  "modified_files": [
+    "README.md"
+  ]
+}
