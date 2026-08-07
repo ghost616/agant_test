@@ -106,14 +106,12 @@ public class KnowledgeSearchTool extends CustomToolInvoker {
             return output;
         }
         Map<FileKey, List<TextChunk>> grouped = new LinkedHashMap<>();
-        Map<FileKey, TextChunkWithFile> fileInfoMap = new LinkedHashMap<>();
         for (TextChunkWithFile withFile : results) {
             FileKey key = new FileKey(withFile.knowledgeBaseId(), withFile.fileId());
             grouped.computeIfAbsent(key, k -> new ArrayList<>()).addAll(expandContext(withFile, contextLines));
-            fileInfoMap.putIfAbsent(key, withFile);
         }
         for (Map.Entry<FileKey, List<TextChunk>> entry : grouped.entrySet()) {
-            output.add(buildResult(fileInfoMap.get(entry.getKey()), entry.getValue()));
+            output.add(buildResult(entry.getKey(), entry.getValue()));
         }
         return output;
     }
@@ -158,11 +156,10 @@ public class KnowledgeSearchTool extends CustomToolInvoker {
         return merged;
     }
 
-    private Map<String, Object> buildResult(TextChunkWithFile withFile, List<TextChunk> chunks) {
+    private Map<String, Object> buildResult(FileKey key, List<TextChunk> chunks) {
         Map<String, Object> result = new LinkedHashMap<>();
-        result.put("knowledgeBaseId", withFile.knowledgeBaseId());
-        result.put("fileId", withFile.fileId());
-        result.put("fileName", withFile.fileName());
+        result.put("knowledgeBaseId", key.knowledgeBaseId());
+        result.put("fileId", key.fileId());
         result.put("chunks", mergeContinuousChunks(dedupeByLineNumber(chunks)));
         return result;
     }
@@ -178,15 +175,16 @@ public class KnowledgeSearchTool extends CustomToolInvoker {
     private record FileKey(Long knowledgeBaseId, Long fileId) {
     }
 
-    private List<String> mergeContinuousChunks(List<TextChunk> chunks) {
+    private List<TextChunk> mergeContinuousChunks(List<TextChunk> chunks) {
         if (chunks == null || chunks.isEmpty()) {
             return List.of();
         }
         List<TextChunk> sorted = chunks.stream()
                 .sorted(Comparator.comparingInt(TextChunk::lineNumber))
                 .toList();
-        List<String> merged = new ArrayList<>();
-        int lastLine = sorted.get(0).lineNumber();
+        List<TextChunk> merged = new ArrayList<>();
+        int startLine = sorted.get(0).lineNumber();
+        int lastLine = startLine;
         StringBuilder text = new StringBuilder(sorted.get(0).text());
         for (int i = 1; i < sorted.size(); i++) {
             TextChunk chunk = sorted.get(i);
@@ -195,13 +193,15 @@ public class KnowledgeSearchTool extends CustomToolInvoker {
                     text.append("\n");
                 }
                 text.append(chunk.text());
+                lastLine = chunk.lineNumber();
             } else {
-                merged.add(text.toString());
+                merged.add(new TextChunk(startLine, text.toString()));
+                startLine = chunk.lineNumber();
+                lastLine = startLine;
                 text = new StringBuilder(chunk.text());
             }
-            lastLine = chunk.lineNumber();
         }
-        merged.add(text.toString());
+        merged.add(new TextChunk(startLine, text.toString()));
         return merged;
     }
 

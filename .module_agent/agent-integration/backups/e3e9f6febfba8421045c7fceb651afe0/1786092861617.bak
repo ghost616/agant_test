@@ -91,9 +91,10 @@ class KnowledgeSearchToolTest {
         JsonNode file = root.get(0);
         assertEquals(100, file.get("knowledgeBaseId").asLong());
         assertEquals(2, file.get("fileId").asLong());
-        assertEquals("a.txt", file.get("fileName").asText());
+        assertFalse(file.has("fileName"));
         assertEquals(1, file.get("chunks").size());
-        assertEquals("line5\nline6\nline7\nline8", file.get("chunks").get(0).asText());
+        assertEquals(5, file.get("chunks").get(0).get("lineNumber").asInt());
+        assertEquals("line5\nline6\nline7\nline8", file.get("chunks").get(0).get("text").asText());
         verify(provider).searchChunks(100L, null, SearchType.VECTOR, "hello", 5);
         verify(provider).getFileChunks(100L, 2L, 2, 11);
     }
@@ -130,7 +131,8 @@ class KnowledgeSearchToolTest {
         assertEquals(100, file2.get("knowledgeBaseId").asLong());
         assertEquals(2, file2.get("fileId").asLong());
         assertEquals(1, file2.get("chunks").size());
-        assertEquals("line5\nline6\nline7", file2.get("chunks").get(0).asText());
+        assertEquals(5, file2.get("chunks").get(0).get("lineNumber").asInt());
+        assertEquals("line5\nline6\nline7", file2.get("chunks").get(0).get("text").asText());
         JsonNode file3 = root.get(1);
         assertEquals(3, file3.get("fileId").asLong());
         assertEquals(1, file3.get("chunks").size());
@@ -165,7 +167,8 @@ class KnowledgeSearchToolTest {
         assertEquals(1, root.size());
         JsonNode file = root.get(0);
         assertEquals(1, file.get("chunks").size());
-        assertEquals("line5\nfirst6\nline7", file.get("chunks").get(0).asText());
+        assertEquals(5, file.get("chunks").get(0).get("lineNumber").asInt());
+        assertEquals("line5\nfirst6\nline7", file.get("chunks").get(0).get("text").asText());
         verify(provider).getFileChunks(100L, 2L, 2, 9);
         verify(provider).getFileChunks(100L, 2L, 3, 10);
     }

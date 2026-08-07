@@ -88,6 +88,18 @@ describe('KnowledgeFileEdit 加载文件内容 (功能点3)', () => {
     expect(await screen.findByText('知识文档.md')).toBeTruthy();
   });
 
+  it('getKnowledgeFileContent 返回 null 时不应抛错，TextArea 内容为空字符串', async () => {
+    mocks.getKnowledgeFile.mockResolvedValue(MOCK_FILE);
+    mocks.getKnowledgeFileContent.mockResolvedValue(null as unknown as string);
+    renderComponent();
+    await waitFor(() => {
+      const textarea = document.querySelector('textarea') as HTMLTextAreaElement | null;
+      expect(textarea).toBeTruthy();
+      expect(textarea!.value).toBe('');
+    });
+    expect(document.body.textContent).not.toContain('获取文件详情失败');
+  });
+
   it('加载失败应提示「获取文件详情失败」', async () => {
     mocks.getKnowledgeFile.mockRejectedValue(new Error('网络异常'));
     renderComponent();

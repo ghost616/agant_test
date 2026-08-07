@@ -108,5 +108,7 @@
   "platform-app/src/main/java/com/ghost616/platform/service/agent/AgentConfigServiceImpl.java": "8658a6abf3451c470b98ee4e10a8ee7b",
   "platform-app/src/test/java/com/ghost616/platform/service/agent/AgentConfigServiceImplTest.java": "e40fc3fc9b98bae006e07711b17663a8",
   "platform-app/src/main/java/com/ghost616/platform/service/knowledge/KnowledgeBaseQueryProviderImpl.java": "b5e53d922f0be697b49aaeeb5f73a1fd",
-  "platform-app/src/test/java/com/ghost616/platform/service/knowledge/KnowledgeBaseQueryProviderImplTest.java": "ea4ae3329fa2ee35b21c622870c82c04"
+  "platform-app/src/test/java/com/ghost616/platform/service/knowledge/KnowledgeBaseQueryProviderImplTest.java": "ea4ae3329fa2ee35b21c622870c82c04",
+  "platform-app/src/main/java/com/ghost616/platform/service/tool/ToolConfigServiceImpl.java": "67a324059a2f7700b13fc78b974d2fb4",
+  "platform-app/src/test/java/com/ghost616/platform/service/tool/ToolConfigServiceImplTest.java": "8c4b0dc2f7c219c08b75536bb2771cec"
 }

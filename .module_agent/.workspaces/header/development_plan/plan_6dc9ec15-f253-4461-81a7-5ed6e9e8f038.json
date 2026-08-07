@@ -1,0 +1,9 @@
+{
+  "plan_id": "plan_6dc9ec15-f253-4461-81a7-5ed6e9e8f038",
+  "module_name": "frontend-ui",
+  "development_plan": "## 修改 KnowledgeFileEdit.tsx\n\nLine 36: `setContent(fileContent)` 改为 `setContent(fileContent ?? '')`\n\n原因：getKnowledgeFileContent API 可能返回 null（文件无内容），导致 content 状态为 null，渲染时 content.trim() 抛 TypeError。",
+  "session_id": "ses_024a925cfffeiZ6cpU0Xgr80iW",
+  "modified_files": [
+    "src/pages/knowledge/KnowledgeFileEdit.tsx"
+  ]
+}

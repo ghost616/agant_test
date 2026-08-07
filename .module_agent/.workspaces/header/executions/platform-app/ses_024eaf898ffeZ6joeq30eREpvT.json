@@ -18,5 +18,15 @@
     ],
     "summary": "完成。KNOWLEDGE_TOOL_NAMES 改为引用各知识库工具类 TOOL_NAME 常量；getKnowledgeToolConfig 按工具名调用各工具 createToolConfig() 获取完整配置（name/description/parameterSchema）并 set id=toolName，未支持工具名抛 UnsupportedOperationException。测试断言增强验证返回完整 name/description/parameterSchema。离朱测试通过 27/27，编译检查通过，无回归。",
     "errors": []
+  },
+  {
+    "plan_id": "plan_9d399057-61ef-4a4e-840a-4a7ac8dbb106",
+    "plan": "getToolConfigBySessionAndName 知识库工具名判断：DTO id 为知识库工具名直接返回 null，补充测试用例",
+    "modified_files": [
+      "platform-app/src/main/java/com/ghost616/platform/service/tool/ToolConfigServiceImpl.java",
+      "platform-app/src/test/java/com/ghost616/platform/service/tool/ToolConfigServiceImplTest.java"
+    ],
+    "summary": "完成。getToolConfigBySessionAndName 新增 isKnowledgeToolId 判断，dto.getId() 为知识库工具名（KnowledgeBaseInfoTool/KnowledgeFileInfoTool/KnowledgeSearchTool/KnowledgeFileChunkTool 的 TOOL_NAME）时直接返回 null，跳过 IdConverter.parse 与 toolConfigMapper.selectById。测试补充 whenDtoIdIsKnowledgeToolName_shouldReturnNull 用例。离朱测试目标分组 5/5 通过（修复 2 处旧测试桩参数类型不匹配），编译通过，无回归。",
+    "errors": []
   }
 ]

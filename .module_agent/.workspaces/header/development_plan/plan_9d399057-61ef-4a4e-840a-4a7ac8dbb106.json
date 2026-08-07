@@ -1,0 +1,10 @@
+{
+  "plan_id": "plan_9d399057-61ef-4a4e-840a-4a7ac8dbb106",
+  "module_name": "platform-app",
+  "development_plan": "## 修改 ToolConfigServiceImpl.java\n\ngetToolConfigBySessionAndName 方法中：\n- toolManager.getToolConfig() 返回 DTO 后，判断 dto.getId() 是否为知识库工具名（KnowledgeBaseInfoTool.TOOL_NAME / KnowledgeFileInfoTool.TOOL_NAME / KnowledgeSearchTool.TOOL_NAME / KnowledgeFileChunkTool.TOOL_NAME）\n- 若是知识库工具名，直接返回 null（不执行后续 IdConverter.parse 和 toolConfigMapper.selectById）\n- 否则按原逻辑执行\n\n## 修改 ToolConfigServiceImplTest.java\n\n补充 getToolConfigBySessionAndName 知识库工具名返回 null 的测试用例。",
+  "session_id": "ses_024eaf898ffeZ6joeq30eREpvT",
+  "modified_files": [
+    "platform-app/src/main/java/com/ghost616/platform/service/tool/ToolConfigServiceImpl.java",
+    "platform-app/src/test/java/com/ghost616/platform/service/tool/ToolConfigServiceImplTest.java"
+  ]
+}

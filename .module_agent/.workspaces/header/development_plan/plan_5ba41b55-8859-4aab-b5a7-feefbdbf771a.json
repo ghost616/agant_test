@@ -1,0 +1,10 @@
+{
+  "plan_id": "plan_5ba41b55-8859-4aab-b5a7-feefbdbf771a",
+  "module_name": "agent-integration",
+  "development_plan": "## 修改 KnowledgeSearchTool.java\n\n1. buildResults 方法中新增 Map<FileKey, TextChunkWithFile> fileInfoMap：\n   - 遍历 results 时，key 为 FileKey(kbId, fileId)，value 为 TextChunkWithFile\n   - 仅在 fileInfoMap 中不存在该 key 时放入（取第一个）\n\n2. buildResult 方法改为接收 TextChunkWithFile + List<TextChunk>：\n   - 输出增加 \"fileName\" 字段，值为 TextChunkWithFile.fileName()\n   - 保留 knowledgeBaseId 和 fileId\n\n3. mergeContinuousChunks 改为返回 List<String>：\n   - 相邻行合并为纯文本字符串，不再包含 lineNumber 的 TextChunk 对象\n   - 签名改为 private List<String> mergeContinuousChunks(List<TextChunk> chunks)",
+  "session_id": "ses_024925160ffeF7Sy0IjwVeg4j9",
+  "modified_files": [
+    "agent-integration/src/main/java/com/ghost616/agentinteg/tool/KnowledgeSearchTool.java",
+    "agent-integration/src/test/java/com/ghost616/agentinteg/tool/KnowledgeSearchToolTest.java"
+  ]
+}

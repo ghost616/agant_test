@@ -33,7 +33,7 @@ function KnowledgeFileEdit(): JSX.Element {
     Promise.all([getKnowledgeFile(kbId, fileId), getKnowledgeFileContent(kbId, fileId)])
       .then(([file, fileContent]) => {
         setFileName(file.fileName);
-        setContent(fileContent ?? '');
+        setContent(fileContent);
         setPublishing(file.publishStatus === 'PUBLISHING');
       })
       .catch(() => {

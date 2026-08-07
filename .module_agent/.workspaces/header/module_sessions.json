@@ -1,5 +1,14 @@
 {
   "platform-app": [
     "ses_024eaf898ffeZ6joeq30eREpvT"
+  ],
+  "frontend-ui": [
+    "ses_024a925cfffeiZ6cpU0Xgr80iW"
+  ],
+  "_checked": [
+    "ses_024a925cfffeiZ6cpU0Xgr80iW"
+  ],
+  "agent-integration": [
+    "ses_024925160ffeF7Sy0IjwVeg4j9"
   ]
 }

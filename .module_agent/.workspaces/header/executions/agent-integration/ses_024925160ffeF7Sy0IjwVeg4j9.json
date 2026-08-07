@@ -1,0 +1,12 @@
+[
+  {
+    "plan_id": "plan_5ba41b55-8859-4aab-b5a7-feefbdbf771a",
+    "plan": "KnowledgeSearchTool.java 修改",
+    "modified_files": [
+      "agent-integration/src/main/java/com/ghost616/agentinteg/tool/KnowledgeSearchTool.java",
+      "agent-integration/src/test/java/com/ghost616/agentinteg/tool/KnowledgeSearchToolTest.java"
+    ],
+    "summary": "已修改 KnowledgeSearchTool.java 与 KnowledgeSearchToolTest.java",
+    "errors": []
+  }
+]
