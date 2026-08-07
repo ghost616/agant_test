@@ -43,19 +43,21 @@ class KnowledgeBaseInfoToolTest {
     }
 
     @Test
-    void getParameterSchema_包含必填参数sessionId() {
+    void getParameterSchema_不含任何参数定义() {
         String schema = tool.getParameterSchema();
-        assertTrue(schema.contains("\"sessionId\""));
-        assertTrue(schema.contains("\"required\""));
+        assertNotNull(schema);
+        assertFalse(schema.contains("\"sessionId\""));
+        assertFalse(schema.contains("\"required\""));
+        assertTrue(schema.contains("\"properties\""));
     }
 
     @Test
-    void execute_正常路径_返回知识库信息() throws Exception {
-        String arguments = "{\"sessionId\": \"s1\"}";
+    void execute_正常路径_使用ctx会话ID返回知识库信息() throws Exception {
+        when(ctx.getSessionId()).thenReturn("s1");
         KnowledgeBaseInfo info = new KnowledgeBaseInfo(1L, "kb-name", "kb-desc");
         when(provider.getKnowledgeBaseInfo("s1")).thenReturn(info);
 
-        String result = tool.execute(ctx, arguments);
+        String result = tool.execute(ctx, "{}");
 
         assertTrue(result.contains("\"kbId\":1"));
         assertTrue(result.contains("\"kbName\":\"kb-name\""));
@@ -64,20 +66,22 @@ class KnowledgeBaseInfoToolTest {
     }
 
     @Test
-    void execute_缺少sessionId_返回错误() throws Exception {
+    void execute_ctx会话ID为null_返回错误() throws Exception {
+        when(ctx.getSessionId()).thenReturn(null);
+
         String result = tool.execute(ctx, "{}");
 
         assertTrue(result.contains("error"));
-        assertTrue(result.contains("sessionId"));
+        assertTrue(result.contains("会话"));
         verify(provider, never()).getKnowledgeBaseInfo(anyString());
     }
 
     @Test
     void execute_provider抛出异常_返回错误JSON() throws Exception {
-        String arguments = "{\"sessionId\": \"s1\"}";
+        when(ctx.getSessionId()).thenReturn("s1");
         when(provider.getKnowledgeBaseInfo("s1")).thenThrow(new RuntimeException("查询失败"));
 
-        String result = tool.execute(ctx, arguments);
+        String result = tool.execute(ctx, "{}");
 
         assertTrue(result.contains("error"));
         assertTrue(result.contains("查询失败"));
@@ -85,11 +89,11 @@ class KnowledgeBaseInfoToolTest {
 
     @Test
     void execute_provider异常消息含特殊字符_返回合法JSON() throws Exception {
-        String arguments = "{\"sessionId\": \"s1\"}";
+        when(ctx.getSessionId()).thenReturn("s1");
         String specialMsg = "查询失败: \"引号\" \n 第二行 \\ 反斜杠";
         when(provider.getKnowledgeBaseInfo("s1")).thenThrow(new RuntimeException(specialMsg));
 
-        String result = tool.execute(ctx, arguments);
+        String result = tool.execute(ctx, "{}");
 
         ObjectMapper mapper = new ObjectMapper();
         JsonNode root = assertDoesNotThrow(() -> mapper.readTree(result));

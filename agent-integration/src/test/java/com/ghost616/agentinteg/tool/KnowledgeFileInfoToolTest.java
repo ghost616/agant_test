@@ -45,9 +45,10 @@ class KnowledgeFileInfoToolTest {
     }
 
     @Test
-    void getParameterSchema_包含必填参数knowledgeBaseId() {
+    void getParameterSchema_包含必填参数knowledgeBaseId和可选fileId() {
         String schema = tool.getParameterSchema();
         assertTrue(schema.contains("\"knowledgeBaseId\""));
+        assertTrue(schema.contains("\"fileId\""));
         assertTrue(schema.contains("\"required\""));
     }
 
@@ -69,6 +70,44 @@ class KnowledgeFileInfoToolTest {
         assertTrue(result.contains("\"fileName\":\"readme.md\""));
         assertTrue(result.contains("\"maxLineCount\":120"));
         verify(provider).searchFiles(100L, "readme", 5);
+    }
+
+    @Test
+    void execute_传fileId时过滤返回对应文件() throws Exception {
+        String arguments = """
+                {
+                  "knowledgeBaseId": 100,
+                  "fileId": 2
+                }
+                """;
+        FileInfo file2 = new FileInfo(2L, "b.txt", "文档2", 50);
+        FileInfo file3 = new FileInfo(3L, "c.txt", "文档3", 80);
+        when(provider.searchFiles(100L, null, 10)).thenReturn(List.of(file2, file3));
+
+        String result = tool.execute(ctx, arguments);
+
+        assertTrue(result.contains("\"fileId\":2"));
+        assertFalse(result.contains("\"fileId\":3"));
+        assertFalse(result.contains("c.txt"));
+        verify(provider).searchFiles(100L, null, 10);
+    }
+
+    @Test
+    void execute_传fileId但无匹配_返回空列表() throws Exception {
+        String arguments = """
+                {
+                  "knowledgeBaseId": 100,
+                  "fileId": 99
+                }
+                """;
+        when(provider.searchFiles(100L, null, 10)).thenReturn(List.of(
+                new FileInfo(2L, "b.txt", "文档2", 50)));
+
+        String result = tool.execute(ctx, arguments);
+
+        JsonNode root = new ObjectMapper().readTree(result);
+        assertTrue(root.isArray());
+        assertEquals(0, root.size());
     }
 
     @Test

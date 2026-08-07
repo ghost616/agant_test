@@ -1,7 +1,7 @@
 package com.ghost616.agentinteg.tool;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.ghost616.agentbase.service.agent.AgentExecutionContext;
 import com.ghost616.agentbase.service.agent.invoker.SystemTool;
 import com.ghost616.agentinteg.knowledge.FileInfo;
@@ -19,7 +19,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class KnowledgeFileChunkTool implements SystemTool {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final JsonMapper JSON_MAPPER = JsonMapper.builder().build();
     private static final String TOOL_NAME = "kb_file_chunk";
     private static final int DEFAULT_START_LINE = 0;
     private static final int MAX_FILE_LOOKUP_LIMIT = 1000;
@@ -54,7 +54,7 @@ public class KnowledgeFileChunkTool implements SystemTool {
     @Override
     public String execute(AgentExecutionContext ctx, String arguments) {
         try {
-            JsonNode root = OBJECT_MAPPER.readTree(arguments);
+            JsonNode root = JSON_MAPPER.readTree(arguments);
             JsonNode kbIdNode = root.get("knowledgeBaseId");
             if (kbIdNode == null || kbIdNode.isNull() || !kbIdNode.canConvertToLong()) {
                 return "{\"status\":\"error\",\"errMsg\":\"缺少 knowledgeBaseId 参数\"}";
@@ -71,7 +71,7 @@ public class KnowledgeFileChunkTool implements SystemTool {
                     ? root.get("endLine").asInt() : resolveFileMaxLine(knowledgeBaseId, fileId);
 
             TextChunkWithFile result = provider.getFileChunks(knowledgeBaseId, fileId, startLine, endLine);
-            return OBJECT_MAPPER.writeValueAsString(result);
+            return JSON_MAPPER.writeValueAsString(result);
         } catch (Exception e) {
             log.error("kb_file_chunk 执行失败", e);
             return buildError(e.getMessage());
@@ -80,7 +80,7 @@ public class KnowledgeFileChunkTool implements SystemTool {
 
     private static String buildError(String message) {
         try {
-            return OBJECT_MAPPER.writeValueAsString(
+            return JSON_MAPPER.writeValueAsString(
                     Map.of("status", "error", "errMsg", message == null ? "未知错误" : message));
         } catch (Exception e) {
             log.error("构建错误 JSON 失败", e);

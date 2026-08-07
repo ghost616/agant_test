@@ -1,7 +1,6 @@
 package com.ghost616.agentinteg.tool;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.ghost616.agentbase.service.agent.AgentExecutionContext;
 import com.ghost616.agentbase.service.agent.invoker.SystemTool;
 import com.ghost616.agentinteg.knowledge.KnowledgeBaseInfo;
@@ -17,7 +16,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class KnowledgeBaseInfoTool implements SystemTool {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final JsonMapper JSON_MAPPER = JsonMapper.builder().build();
     private static final String TOOL_NAME = "kb_info";
 
     private final KnowledgeBaseQueryProvider provider;
@@ -29,7 +28,7 @@ public class KnowledgeBaseInfoTool implements SystemTool {
 
     @Override
     public String getDescription() {
-        return "根据会话 ID 获取当前会话关联的知识库信息";
+        return "获取当前会话关联的知识库信息";
     }
 
     @Override
@@ -37,24 +36,19 @@ public class KnowledgeBaseInfoTool implements SystemTool {
         return """
                 {
                   "type": "object",
-                  "properties": {
-                    "sessionId": { "type": "string", "description": "会话 ID" }
-                  },
-                  "required": ["sessionId"]
+                  "properties": {}
                 }""";
     }
 
     @Override
     public String execute(AgentExecutionContext ctx, String arguments) {
         try {
-            JsonNode root = OBJECT_MAPPER.readTree(arguments);
-            String sessionId = root.has("sessionId") && !root.get("sessionId").isNull()
-                    ? root.get("sessionId").asText() : null;
+            String sessionId = ctx.getSessionId();
             if (sessionId == null || sessionId.isBlank()) {
-                return "{\"status\":\"error\",\"errMsg\":\"缺少 sessionId 参数\"}";
+                return "{\"status\":\"error\",\"errMsg\":\"无法获取会话 ID\"}";
             }
             KnowledgeBaseInfo info = provider.getKnowledgeBaseInfo(sessionId);
-            return OBJECT_MAPPER.writeValueAsString(info);
+            return JSON_MAPPER.writeValueAsString(info);
         } catch (Exception e) {
             log.error("kb_info 执行失败", e);
             return buildError(e.getMessage());
@@ -63,7 +57,7 @@ public class KnowledgeBaseInfoTool implements SystemTool {
 
     private static String buildError(String message) {
         try {
-            return OBJECT_MAPPER.writeValueAsString(
+            return JSON_MAPPER.writeValueAsString(
                     Map.of("status", "error", "errMsg", message == null ? "未知错误" : message));
         } catch (Exception e) {
             log.error("构建错误 JSON 失败", e);

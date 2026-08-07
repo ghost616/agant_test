@@ -36,7 +36,7 @@ public interface KnowledgeBaseQueryProvider {
      * @param contextLines 上下文行数
      * @return 文本块列表
      */
-    List<TextChunkWithFile> searchChunks(Long kbId, Long fileId, String searchType, String query,
+    List<TextChunkWithFile> searchChunks(Long kbId, Long fileId, SearchType searchType, String query,
                                          int topK, int contextLines);
 
     /**

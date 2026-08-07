@@ -12,6 +12,7 @@ import com.ghost616.agentbase.service.model.invoker.ModelInvokerManager;
 import com.ghost616.agentinteg.knowledge.FileInfo;
 import com.ghost616.agentinteg.knowledge.KnowledgeBaseInfo;
 import com.ghost616.agentinteg.knowledge.KnowledgeBaseQueryProvider;
+import com.ghost616.agentinteg.knowledge.SearchType;
 import com.ghost616.agentinteg.knowledge.TextChunkWithFile;
 import com.ghost616.platform.entity.AgentKnowledgeBase;
 import com.ghost616.platform.entity.KnowledgeBase;
@@ -125,7 +126,7 @@ public class KnowledgeBaseQueryProviderImpl implements KnowledgeBaseQueryProvide
      * @return 文本块列表
      */
     @Override
-    public List<TextChunkWithFile> searchChunks(Long kbId, Long fileId, String searchType, String query,
+    public List<TextChunkWithFile> searchChunks(Long kbId, Long fileId, SearchType searchType, String query,
                                                 int topK, int contextLines) {
         KnowledgeBase knowledgeBase = knowledgeBaseMapper.selectById(kbId);
         if (knowledgeBase == null || StringUtils.isBlank(knowledgeBase.getEsIndex())) {
@@ -161,7 +162,7 @@ public class KnowledgeBaseQueryProviderImpl implements KnowledgeBaseQueryProvide
                             new TextChunkWithFile.TextChunk(neighbor.getLineNumber(), neighbor.getText()));
                 }
             }
-            results.add(new TextChunkWithFile(fileIdKey, fileName, new ArrayList<>(dedup.values())));
+            results.add(new TextChunkWithFile(kbId, fileIdKey, fileName, new ArrayList<>(dedup.values())));
         }
         return results;
     }
@@ -210,29 +211,29 @@ public class KnowledgeBaseQueryProviderImpl implements KnowledgeBaseQueryProvide
         List<TextChunkWithFile.TextChunk> chunkList = chunks.stream()
                 .map(chunk -> new TextChunkWithFile.TextChunk(chunk.getLineNumber(), chunk.getText()))
                 .toList();
-        return new TextChunkWithFile(fileId, fileName, chunkList);
+        return new TextChunkWithFile(kbId, fileId, fileName, chunkList);
     }
 
     private List<TextChunk> search(String indexName, Long kbId, KnowledgeBase knowledgeBase,
-                                   String searchType, String query, int topK) {
-        if ("vector".equalsIgnoreCase(searchType)) {
-            return knowledgeSearchClient.vectorSearch(indexName, kbId, embedQuery(knowledgeBase, query), topK);
+                                   SearchType searchType, String query, int topK) {
+        switch (searchType) {
+            case VECTOR:
+                return knowledgeSearchClient.vectorSearch(indexName, kbId, embedQuery(knowledgeBase, query), topK);
+            case FULLTEXT:
+                return knowledgeSearchClient.fullTextSearch(indexName, kbId, query, topK);
+            case HYBRID:
+                Map<String, TextChunk> dedup = new LinkedHashMap<>();
+                for (TextChunk chunk : knowledgeSearchClient.vectorSearch(
+                        indexName, kbId, embedQuery(knowledgeBase, query), topK)) {
+                    dedup.putIfAbsent(docKey(chunk), chunk);
+                }
+                for (TextChunk chunk : knowledgeSearchClient.fullTextSearch(indexName, kbId, query, topK)) {
+                    dedup.putIfAbsent(docKey(chunk), chunk);
+                }
+                return new ArrayList<>(dedup.values());
+            default:
+                return List.of();
         }
-        if ("full_text".equalsIgnoreCase(searchType) || "fulltext".equalsIgnoreCase(searchType)) {
-            return knowledgeSearchClient.fullTextSearch(indexName, kbId, query, topK);
-        }
-        if ("hybrid".equalsIgnoreCase(searchType)) {
-            Map<String, TextChunk> dedup = new LinkedHashMap<>();
-            for (TextChunk chunk : knowledgeSearchClient.vectorSearch(
-                    indexName, kbId, embedQuery(knowledgeBase, query), topK)) {
-                dedup.putIfAbsent(docKey(chunk), chunk);
-            }
-            for (TextChunk chunk : knowledgeSearchClient.fullTextSearch(indexName, kbId, query, topK)) {
-                dedup.putIfAbsent(docKey(chunk), chunk);
-            }
-            return new ArrayList<>(dedup.values());
-        }
-        return List.of();
     }
 
     private String docKey(TextChunk chunk) {

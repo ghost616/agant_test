@@ -11,6 +11,7 @@ import com.ghost616.agentbase.service.model.invoker.ModelInvoker;
 import com.ghost616.agentbase.service.model.invoker.ModelInvokerManager;
 import com.ghost616.agentinteg.knowledge.FileInfo;
 import com.ghost616.agentinteg.knowledge.KnowledgeBaseInfo;
+import com.ghost616.agentinteg.knowledge.SearchType;
 import com.ghost616.agentinteg.knowledge.TextChunkWithFile;
 import com.ghost616.platform.entity.AgentKnowledgeBase;
 import com.ghost616.platform.entity.KnowledgeBase;
@@ -294,23 +295,14 @@ class KnowledgeBaseQueryProviderImplTest {
     @DisplayName("searchChunks: 知识库不存在时返回空列表")
     void searchChunks_kbNotFound() {
         when(knowledgeBaseMapper.selectById(100L)).thenReturn(null);
-        assertEquals(List.of(), provider.searchChunks(100L, null, "vector", "q", 10, 3));
+        assertEquals(List.of(), provider.searchChunks(100L, null, SearchType.VECTOR, "q", 10, 3));
     }
 
     @Test
     @DisplayName("searchChunks: esIndex 为空时返回空列表")
     void searchChunks_emptyEsIndex() {
         when(knowledgeBaseMapper.selectById(100L)).thenReturn(kb(100L, "  "));
-        assertEquals(List.of(), provider.searchChunks(100L, null, "vector", "q", 10, 3));
-    }
-
-    @Test
-    @DisplayName("searchChunks: 未支持 searchType 返回空列表")
-    void searchChunks_unsupportedType() {
-        when(knowledgeBaseMapper.selectById(100L)).thenReturn(kb(100L, "idx"));
-        assertEquals(List.of(), provider.searchChunks(100L, null, "unknown", "q", 10, 3));
-        verify(knowledgeSearchClient, never()).vectorSearch(any(), any(), anyList(), anyInt());
-        verify(knowledgeSearchClient, never()).fullTextSearch(any(), any(), any(), anyInt());
+        assertEquals(List.of(), provider.searchChunks(100L, null, SearchType.VECTOR, "q", 10, 3));
     }
 
     @Test
@@ -320,7 +312,7 @@ class KnowledgeBaseQueryProviderImplTest {
         k.setVectorModelId(null);
         when(knowledgeBaseMapper.selectById(100L)).thenReturn(k);
         BusinessException ex = assertThrows(BusinessException.class,
-                () -> provider.searchChunks(100L, null, "vector", "q", 10, 3));
+                () -> provider.searchChunks(100L, null, SearchType.VECTOR, "q", 10, 3));
         assertEquals(ErrorCode.MODEL_NOT_FOUND, ex.getErrorCode());
     }
 
@@ -341,7 +333,7 @@ class KnowledgeBaseQueryProviderImplTest {
         when(knowledgeSearchClient.searchByFileAndLineRange(eq("idx"), eq(100L), eq(2L), anyInt(), anyInt()))
                 .thenReturn(List.of(chunk(100L, 2L, 5, "line5")));
 
-        List<TextChunkWithFile> result = provider.searchChunks(100L, null, "vector", "q", 5, 3);
+        List<TextChunkWithFile> result = provider.searchChunks(100L, null, SearchType.VECTOR, "q", 5, 3);
 
         assertEquals(1, result.size());
         TextChunkWithFile withFile = result.get(0);
@@ -366,7 +358,7 @@ class KnowledgeBaseQueryProviderImplTest {
         when(knowledgeSearchClient.searchByFileAndLineRange(eq("idx"), eq(100L), eq(2L), anyInt(), anyInt()))
                 .thenReturn(List.of(chunk(100L, 2L, 3, "line3")));
 
-        List<TextChunkWithFile> result = provider.searchChunks(100L, null, "full_text", "q", 5, 3);
+        List<TextChunkWithFile> result = provider.searchChunks(100L, null, SearchType.FULLTEXT, "q", 5, 3);
         assertEquals(1, result.size());
         assertEquals(2L, result.get(0).fileId());
         verify(knowledgeSearchClient, never()).vectorSearch(any(), any(), anyList(), anyInt());
@@ -379,7 +371,7 @@ class KnowledgeBaseQueryProviderImplTest {
         when(knowledgeSearchClient.fullTextSearch("idx", 100L, "q", 5))
                 .thenReturn(new java.util.ArrayList<>(List.of(chunk(100L, 2L, 3, "line3"))));
 
-        List<TextChunkWithFile> result = provider.searchChunks(100L, 99L, "full_text", "q", 5, 3);
+        List<TextChunkWithFile> result = provider.searchChunks(100L, 99L, SearchType.FULLTEXT, "q", 5, 3);
         assertEquals(List.of(), result);
         verify(knowledgeFileMapper, never()).selectById(any());
     }
@@ -394,7 +386,7 @@ class KnowledgeBaseQueryProviderImplTest {
         when(knowledgeSearchClient.searchByFileAndLineRange(eq("idx"), eq(100L), eq(2L), anyInt(), anyInt()))
                 .thenReturn(List.of(chunk(100L, 2L, 3, "line3")));
 
-        List<TextChunkWithFile> result = provider.searchChunks(100L, null, "full_text", "q", 5, 3);
+        List<TextChunkWithFile> result = provider.searchChunks(100L, null, SearchType.FULLTEXT, "q", 5, 3);
         assertEquals("2", result.get(0).fileName());
     }
 
@@ -412,7 +404,7 @@ class KnowledgeBaseQueryProviderImplTest {
                         chunk(100L, 2L, 5, "line5-dupe"),
                         chunk(100L, 2L, 6, "line6")));
 
-        List<TextChunkWithFile> result = provider.searchChunks(100L, null, "full_text", "q", 5, 3);
+        List<TextChunkWithFile> result = provider.searchChunks(100L, null, SearchType.FULLTEXT, "q", 5, 3);
         List<TextChunkWithFile.TextChunk> chunks = result.get(0).chunkList();
         assertEquals(2, chunks.size());
         assertTrue(chunks.stream().allMatch(c -> c.lineNumber() == 5 || c.lineNumber() == 6));
@@ -445,7 +437,7 @@ class KnowledgeBaseQueryProviderImplTest {
                     return range;
                 });
 
-        List<TextChunkWithFile> result = provider.searchChunks(100L, null, "hybrid", "q", 5, 3);
+        List<TextChunkWithFile> result = provider.searchChunks(100L, null, SearchType.HYBRID, "q", 5, 3);
         assertEquals(1, result.size());
         // 命中 line5(line 扩展 [2,8]) 与 line8(扩展 [5,11])，去重后行号 2..11
         assertEquals(10, result.get(0).chunkList().size());
@@ -464,7 +456,7 @@ class KnowledgeBaseQueryProviderImplTest {
         when(knowledgeSearchClient.searchByFileAndLineRange("idx", 100L, 2L, 2, 10))
                 .thenReturn(List.of(chunk(100L, 2L, 5, "line5"), chunk(100L, 2L, 7, "line7")));
 
-        List<TextChunkWithFile> result = provider.searchChunks(100L, null, "full_text", "q", 5, 3);
+        List<TextChunkWithFile> result = provider.searchChunks(100L, null, SearchType.FULLTEXT, "q", 5, 3);
 
         assertEquals(1, result.size());
         verify(knowledgeSearchClient, times(1)).searchByFileAndLineRange(eq("idx"), eq(100L), eq(2L), anyInt(), anyInt());
@@ -485,7 +477,7 @@ class KnowledgeBaseQueryProviderImplTest {
         when(knowledgeSearchClient.searchByFileAndLineRange("idx", 100L, 2L, 97, 103))
                 .thenReturn(List.of(chunk(100L, 2L, 100, "line100")));
 
-        List<TextChunkWithFile> result = provider.searchChunks(100L, null, "full_text", "q", 5, 3);
+        List<TextChunkWithFile> result = provider.searchChunks(100L, null, SearchType.FULLTEXT, "q", 5, 3);
 
         assertEquals(1, result.size());
         assertEquals(2, result.get(0).chunkList().size());

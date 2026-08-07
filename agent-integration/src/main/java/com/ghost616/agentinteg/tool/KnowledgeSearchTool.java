@@ -1,10 +1,11 @@
 package com.ghost616.agentinteg.tool;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.ghost616.agentbase.service.agent.AgentExecutionContext;
 import com.ghost616.agentbase.service.agent.invoker.SystemTool;
 import com.ghost616.agentinteg.knowledge.KnowledgeBaseQueryProvider;
+import com.ghost616.agentinteg.knowledge.SearchType;
 import com.ghost616.agentinteg.knowledge.TextChunkWithFile;
 import com.ghost616.agentinteg.knowledge.TextChunkWithFile.TextChunk;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -21,7 +23,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class KnowledgeSearchTool implements SystemTool {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final JsonMapper JSON_MAPPER = JsonMapper.builder().build();
     private static final String TOOL_NAME = "kb_search";
     private static final int DEFAULT_SEARCH_LIMIT = 10;
     private static final int DEFAULT_CONTEXT_LINES = 3;
@@ -46,7 +48,7 @@ public class KnowledgeSearchTool implements SystemTool {
                   "properties": {
                     "knowledgeBaseId": { "type": "integer", "description": "知识库 ID" },
                     "fileId": { "type": "integer", "description": "文件 ID，不传表示不限文件" },
-                    "searchType": { "type": "string", "description": "搜索类型" },
+                    "searchType": { "type": "string", "enum": ["VECTOR", "FULLTEXT", "HYBRID"], "description": "搜索类型" },
                     "query": { "type": "string", "description": "查询关键字" },
                     "searchLimit": { "type": "integer", "description": "返回数量上限，默认 10" },
                     "contextLines": { "type": "integer", "description": "上下文行数，默认 3" }
@@ -58,7 +60,7 @@ public class KnowledgeSearchTool implements SystemTool {
     @Override
     public String execute(AgentExecutionContext ctx, String arguments) {
         try {
-            JsonNode root = OBJECT_MAPPER.readTree(arguments);
+            JsonNode root = JSON_MAPPER.readTree(arguments);
             JsonNode kbIdNode = root.get("knowledgeBaseId");
             if (kbIdNode == null || kbIdNode.isNull() || !kbIdNode.canConvertToLong()) {
                 return "{\"status\":\"error\",\"errMsg\":\"缺少 knowledgeBaseId 参数\"}";
@@ -66,12 +68,16 @@ public class KnowledgeSearchTool implements SystemTool {
             Long knowledgeBaseId = kbIdNode.asLong();
             Long fileId = root.has("fileId") && root.get("fileId").canConvertToLong()
                     ? root.get("fileId").asLong() : null;
-            String searchType = root.has("searchType") && !root.get("searchType").isNull()
+            String searchTypeText = root.has("searchType") && !root.get("searchType").isNull()
                     ? root.get("searchType").asText() : null;
             String query = root.has("query") && !root.get("query").isNull()
                     ? root.get("query").asText() : null;
-            if (searchType == null || searchType.isBlank() || query == null || query.isBlank()) {
+            if (searchTypeText == null || searchTypeText.isBlank() || query == null || query.isBlank()) {
                 return "{\"status\":\"error\",\"errMsg\":\"缺少 searchType 或 query 参数\"}";
+            }
+            SearchType searchType = parseSearchType(searchTypeText);
+            if (searchType == null) {
+                return "{\"status\":\"error\",\"errMsg\":\"无效的 searchType: " + searchTypeText + "\"}";
             }
             int searchLimit = root.has("searchLimit") && root.get("searchLimit").canConvertToInt()
                     ? root.get("searchLimit").asInt() : DEFAULT_SEARCH_LIMIT;
@@ -81,34 +87,40 @@ public class KnowledgeSearchTool implements SystemTool {
             List<TextChunkWithFile> results = provider.searchChunks(
                     knowledgeBaseId, fileId, searchType, query, searchLimit, contextLines);
 
-            List<TextChunkWithFile> merged = new ArrayList<>();
+            List<Map<String, Object>> output = new ArrayList<>();
             if (results != null) {
                 for (TextChunkWithFile withFile : results) {
-                    merged.add(mergeContinuousChunks(withFile));
+                    output.add(buildResult(withFile));
                 }
             }
-            return OBJECT_MAPPER.writeValueAsString(merged);
+            return JSON_MAPPER.writeValueAsString(output);
         } catch (Exception e) {
             log.error("kb_search 执行失败", e);
             return buildError(e.getMessage());
         }
     }
 
-    private static String buildError(String message) {
+    private SearchType parseSearchType(String text) {
         try {
-            return OBJECT_MAPPER.writeValueAsString(
-                    Map.of("status", "error", "errMsg", message == null ? "未知错误" : message));
-        } catch (Exception e) {
-            log.error("构建错误 JSON 失败", e);
-            return "{\"status\":\"error\",\"errMsg\":\"未知错误\"}";
+            return SearchType.valueOf(text.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return null;
         }
     }
 
-    private TextChunkWithFile mergeContinuousChunks(TextChunkWithFile withFile) {
-        if (withFile == null || withFile.chunkList() == null || withFile.chunkList().isEmpty()) {
-            return withFile;
+    private Map<String, Object> buildResult(TextChunkWithFile withFile) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("knowledgeBaseId", withFile.knowledgeBaseId());
+        result.put("fileId", withFile.fileId());
+        result.put("chunks", mergeContinuousChunks(withFile.chunkList()));
+        return result;
+    }
+
+    private List<TextChunk> mergeContinuousChunks(List<TextChunk> chunks) {
+        if (chunks == null || chunks.isEmpty()) {
+            return List.of();
         }
-        List<TextChunk> sorted = withFile.chunkList().stream()
+        List<TextChunk> sorted = chunks.stream()
                 .sorted(Comparator.comparingInt(TextChunk::lineNumber))
                 .toList();
         List<TextChunk> merged = new ArrayList<>();
@@ -131,6 +143,16 @@ public class KnowledgeSearchTool implements SystemTool {
             }
         }
         merged.add(new TextChunk(startLine, text.toString()));
-        return new TextChunkWithFile(withFile.fileId(), withFile.fileName(), merged);
+        return merged;
+    }
+
+    private static String buildError(String message) {
+        try {
+            return JSON_MAPPER.writeValueAsString(
+                    Map.of("status", "error", "errMsg", message == null ? "未知错误" : message));
+        } catch (Exception e) {
+            log.error("构建错误 JSON 失败", e);
+            return "{\"status\":\"error\",\"errMsg\":\"未知错误\"}";
+        }
     }
 }

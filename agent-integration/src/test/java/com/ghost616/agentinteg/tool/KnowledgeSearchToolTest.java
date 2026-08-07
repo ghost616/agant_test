@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghost616.agentbase.service.agent.AgentExecutionContext;
 import com.ghost616.agentinteg.knowledge.KnowledgeBaseQueryProvider;
+import com.ghost616.agentinteg.knowledge.SearchType;
 import com.ghost616.agentinteg.knowledge.TextChunkWithFile;
 import com.ghost616.agentinteg.knowledge.TextChunkWithFile.TextChunk;
 
@@ -48,28 +49,32 @@ class KnowledgeSearchToolTest {
     }
 
     @Test
-    void getParameterSchema_包含必填参数() {
+    void getParameterSchema_searchType为enum且包含必填参数() {
         String schema = tool.getParameterSchema();
         assertTrue(schema.contains("\"knowledgeBaseId\""));
         assertTrue(schema.contains("\"searchType\""));
+        assertTrue(schema.contains("\"enum\""));
+        assertTrue(schema.contains("\"VECTOR\""));
+        assertTrue(schema.contains("\"FULLTEXT\""));
+        assertTrue(schema.contains("\"HYBRID\""));
         assertTrue(schema.contains("\"query\""));
         assertTrue(schema.contains("\"required\""));
     }
 
     @Test
-    void execute_正常路径_返回合并后的文本块() throws Exception {
+    void execute_正常路径_返回合并后的文本块结构() throws Exception {
         String arguments = """
                 {
                   "knowledgeBaseId": 100,
-                  "searchType": "vector",
+                  "searchType": "VECTOR",
                   "query": "hello",
                   "searchLimit": 5,
                   "contextLines": 3
                 }
                 """;
         TextChunkWithFile withFile = new TextChunkWithFile(
-                2L, "a.txt", List.of(new TextChunk(5, "line5"), new TextChunk(6, "line6"), new TextChunk(8, "line8")));
-        when(provider.searchChunks(100L, null, "vector", "hello", 5, 3)).thenReturn(List.of(withFile));
+                100L, 2L, "a.txt", List.of(new TextChunk(5, "line5"), new TextChunk(6, "line6"), new TextChunk(8, "line8")));
+        when(provider.searchChunks(100L, null, SearchType.VECTOR, "hello", 5, 3)).thenReturn(List.of(withFile));
 
         String result = tool.execute(ctx, arguments);
         JsonNode root = MAPPER.readTree(result);
@@ -77,14 +82,32 @@ class KnowledgeSearchToolTest {
         assertTrue(root.isArray());
         assertEquals(1, root.size());
         JsonNode file = root.get(0);
+        assertEquals(100, file.get("knowledgeBaseId").asLong());
         assertEquals(2, file.get("fileId").asLong());
-        assertEquals("a.txt", file.get("fileName").asText());
-        assertEquals(2, file.get("chunkList").size());
-        assertEquals(5, file.get("chunkList").get(0).get("lineNumber").asInt());
-        assertEquals("line5\nline6", file.get("chunkList").get(0).get("text").asText());
-        assertEquals(8, file.get("chunkList").get(1).get("lineNumber").asInt());
-        assertEquals("line8", file.get("chunkList").get(1).get("text").asText());
-        verify(provider).searchChunks(100L, null, "vector", "hello", 5, 3);
+        assertFalse(file.has("fileName"));
+        assertEquals(2, file.get("chunks").size());
+        assertEquals(5, file.get("chunks").get(0).get("lineNumber").asInt());
+        assertEquals("line5\nline6", file.get("chunks").get(0).get("text").asText());
+        assertEquals(8, file.get("chunks").get(1).get("lineNumber").asInt());
+        assertEquals("line8", file.get("chunks").get(1).get("text").asText());
+        verify(provider).searchChunks(100L, null, SearchType.VECTOR, "hello", 5, 3);
+    }
+
+    @Test
+    void execute_searchType为FULLTEXT小写_转枚举调用provider() throws Exception {
+        String arguments = """
+                {
+                  "knowledgeBaseId": 100,
+                  "searchType": "fulltext",
+                  "query": "world"
+                }
+                """;
+        when(provider.searchChunks(100L, null, SearchType.FULLTEXT, "world", 10, 3)).thenReturn(List.of());
+
+        String result = tool.execute(ctx, arguments);
+
+        assertNotNull(result);
+        verify(provider).searchChunks(100L, null, SearchType.FULLTEXT, "world", 10, 3);
     }
 
     @Test
@@ -92,16 +115,16 @@ class KnowledgeSearchToolTest {
         String arguments = """
                 {
                   "knowledgeBaseId": 100,
-                  "searchType": "full_text",
+                  "searchType": "FULLTEXT",
                   "query": "world"
                 }
                 """;
-        when(provider.searchChunks(100L, null, "full_text", "world", 10, 3)).thenReturn(List.of());
+        when(provider.searchChunks(100L, null, SearchType.FULLTEXT, "world", 10, 3)).thenReturn(List.of());
 
         String result = tool.execute(ctx, arguments);
 
         assertNotNull(result);
-        verify(provider).searchChunks(100L, null, "full_text", "world", 10, 3);
+        verify(provider).searchChunks(100L, null, SearchType.FULLTEXT, "world", 10, 3);
     }
 
     @Test
@@ -110,34 +133,43 @@ class KnowledgeSearchToolTest {
                 {
                   "knowledgeBaseId": 100,
                   "fileId": 7,
-                  "searchType": "vector",
+                  "searchType": "HYBRID",
                   "query": "test"
                 }
                 """;
-        when(provider.searchChunks(100L, 7L, "vector", "test", 10, 3)).thenReturn(List.of());
+        when(provider.searchChunks(100L, 7L, SearchType.HYBRID, "test", 10, 3)).thenReturn(List.of());
 
         tool.execute(ctx, arguments);
 
-        verify(provider).searchChunks(100L, 7L, "vector", "test", 10, 3);
+        verify(provider).searchChunks(100L, 7L, SearchType.HYBRID, "test", 10, 3);
     }
 
     @Test
     void execute_缺少knowledgeBaseId_返回错误() throws Exception {
-        String result = tool.execute(ctx, "{\"searchType\":\"vector\",\"query\":\"hello\"}");
+        String result = tool.execute(ctx, "{\"searchType\":\"VECTOR\",\"query\":\"hello\"}");
 
         assertTrue(result.contains("error"));
         assertTrue(result.contains("knowledgeBaseId"));
-        verify(provider, never()).searchChunks(anyLong(), any(), anyString(), anyString(), anyInt(), anyInt());
+        verify(provider, never()).searchChunks(anyLong(), any(), any(), anyString(), anyInt(), anyInt());
     }
 
     @Test
     void execute_缺少searchType或query_返回错误() throws Exception {
         String result1 = tool.execute(ctx, "{\"knowledgeBaseId\":100,\"query\":\"hello\"}");
-        String result2 = tool.execute(ctx, "{\"knowledgeBaseId\":100,\"searchType\":\"vector\"}");
+        String result2 = tool.execute(ctx, "{\"knowledgeBaseId\":100,\"searchType\":\"VECTOR\"}");
 
         assertTrue(result1.contains("error"));
         assertTrue(result2.contains("error"));
-        verify(provider, never()).searchChunks(anyLong(), any(), anyString(), anyString(), anyInt(), anyInt());
+        verify(provider, never()).searchChunks(anyLong(), any(), any(), anyString(), anyInt(), anyInt());
+    }
+
+    @Test
+    void execute_无效searchType_返回错误() throws Exception {
+        String result = tool.execute(ctx, "{\"knowledgeBaseId\":100,\"searchType\":\"UNKNOWN\",\"query\":\"hello\"}");
+
+        assertTrue(result.contains("error"));
+        assertTrue(result.contains("searchType"));
+        verify(provider, never()).searchChunks(anyLong(), any(), any(), anyString(), anyInt(), anyInt());
     }
 
     @Test
@@ -145,11 +177,11 @@ class KnowledgeSearchToolTest {
         String arguments = """
                 {
                   "knowledgeBaseId": 100,
-                  "searchType": "vector",
+                  "searchType": "VECTOR",
                   "query": "hello"
                 }
                 """;
-        when(provider.searchChunks(100L, null, "vector", "hello", 10, 3))
+        when(provider.searchChunks(100L, null, SearchType.VECTOR, "hello", 10, 3))
                 .thenThrow(new RuntimeException("搜索失败"));
 
         String result = tool.execute(ctx, arguments);
@@ -163,12 +195,12 @@ class KnowledgeSearchToolTest {
         String arguments = """
                 {
                   "knowledgeBaseId": 100,
-                  "searchType": "vector",
+                  "searchType": "VECTOR",
                   "query": "hello"
                 }
                 """;
         String specialMsg = "搜索失败: \"引号\" \n 第二行 \\ 反斜杠";
-        when(provider.searchChunks(100L, null, "vector", "hello", 10, 3))
+        when(provider.searchChunks(100L, null, SearchType.VECTOR, "hello", 10, 3))
                 .thenThrow(new RuntimeException(specialMsg));
 
         String result = tool.execute(ctx, arguments);

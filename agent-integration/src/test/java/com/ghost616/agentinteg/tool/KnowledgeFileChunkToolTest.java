@@ -57,7 +57,7 @@ class KnowledgeFileChunkToolTest {
     }
 
     @Test
-    void execute_正常路径_返回文本块() throws Exception {
+    void execute_正常路径_返回单个TextChunkWithFile对象() throws Exception {
         String arguments = """
                 {
                   "knowledgeBaseId": 100,
@@ -67,12 +67,14 @@ class KnowledgeFileChunkToolTest {
                 }
                 """;
         TextChunkWithFile withFile = new TextChunkWithFile(
-                2L, "a.txt", List.of(new TextChunk(0, "line0"), new TextChunk(1, "line1")));
+                100L, 2L, "a.txt", List.of(new TextChunk(0, "line0"), new TextChunk(1, "line1")));
         when(provider.getFileChunks(100L, 2L, 0, 10)).thenReturn(withFile);
 
         String result = tool.execute(ctx, arguments);
         JsonNode root = MAPPER.readTree(result);
 
+        assertFalse(root.isArray());
+        assertEquals(100, root.get("knowledgeBaseId").asLong());
         assertEquals(2, root.get("fileId").asLong());
         assertEquals("a.txt", root.get("fileName").asText());
         assertEquals(2, root.get("chunkList").size());
@@ -89,7 +91,7 @@ class KnowledgeFileChunkToolTest {
                 }
                 """;
         when(provider.getFileChunks(100L, 2L, 0, 50)).thenReturn(
-                new TextChunkWithFile(2L, "a.txt", List.of()));
+                new TextChunkWithFile(100L, 2L, "a.txt", List.of()));
 
         tool.execute(ctx, arguments);
 
@@ -107,7 +109,7 @@ class KnowledgeFileChunkToolTest {
         FileInfo file = new FileInfo(2L, "a.txt", "文档", 120);
         when(provider.searchFiles(100L, null, 1000)).thenReturn(List.of(file));
         when(provider.getFileChunks(100L, 2L, 0, 120)).thenReturn(
-                new TextChunkWithFile(2L, "a.txt", List.of()));
+                new TextChunkWithFile(100L, 2L, "a.txt", List.of()));
 
         tool.execute(ctx, arguments);
 
@@ -125,7 +127,7 @@ class KnowledgeFileChunkToolTest {
                 """;
         when(provider.searchFiles(100L, null, 1000)).thenReturn(List.of());
         when(provider.getFileChunks(100L, 999L, 0, Integer.MAX_VALUE)).thenReturn(
-                new TextChunkWithFile(999L, "x.txt", List.of()));
+                new TextChunkWithFile(100L, 999L, "x.txt", List.of()));
 
         tool.execute(ctx, arguments);
 
