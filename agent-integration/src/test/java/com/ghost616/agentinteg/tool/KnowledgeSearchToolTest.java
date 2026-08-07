@@ -97,6 +97,65 @@ class KnowledgeSearchToolTest {
     }
 
     @Test
+    void execute_同一文件多个withFile_按文件分组合并输出() throws Exception {
+        String arguments = """
+                {
+                  "knowledgeBaseId": 100,
+                  "searchType": "VECTOR",
+                  "query": "hello"
+                }
+                """;
+        TextChunkWithFile withFile1 = new TextChunkWithFile(
+                100L, 2L, "a.txt", List.of(new TextChunk(5, "line5"), new TextChunk(6, "line6")));
+        TextChunkWithFile withFile2 = new TextChunkWithFile(
+                100L, 2L, "a.txt", List.of(new TextChunk(7, "line7")));
+        TextChunkWithFile withFile3 = new TextChunkWithFile(
+                100L, 3L, "b.txt", List.of(new TextChunk(1, "b1")));
+        when(provider.searchChunks(100L, null, SearchType.VECTOR, "hello", 10, 3))
+                .thenReturn(List.of(withFile1, withFile2, withFile3));
+
+        String result = tool.execute(ctx, arguments);
+        JsonNode root = MAPPER.readTree(result);
+
+        assertEquals(2, root.size());
+        JsonNode file2 = root.get(0);
+        assertEquals(100, file2.get("knowledgeBaseId").asLong());
+        assertEquals(2, file2.get("fileId").asLong());
+        assertEquals(1, file2.get("chunks").size());
+        assertEquals(5, file2.get("chunks").get(0).get("lineNumber").asInt());
+        assertEquals("line5\nline6\nline7", file2.get("chunks").get(0).get("text").asText());
+        JsonNode file3 = root.get(1);
+        assertEquals(3, file3.get("fileId").asLong());
+        assertEquals(1, file3.get("chunks").size());
+    }
+
+    @Test
+    void execute_同一文件重复行号_去重后合并() throws Exception {
+        String arguments = """
+                {
+                  "knowledgeBaseId": 100,
+                  "searchType": "VECTOR",
+                  "query": "hello"
+                }
+                """;
+        TextChunkWithFile withFile1 = new TextChunkWithFile(
+                100L, 2L, "a.txt", List.of(new TextChunk(5, "line5"), new TextChunk(6, "first6")));
+        TextChunkWithFile withFile2 = new TextChunkWithFile(
+                100L, 2L, "a.txt", List.of(new TextChunk(6, "second6"), new TextChunk(7, "line7")));
+        when(provider.searchChunks(100L, null, SearchType.VECTOR, "hello", 10, 3))
+                .thenReturn(List.of(withFile1, withFile2));
+
+        String result = tool.execute(ctx, arguments);
+        JsonNode root = MAPPER.readTree(result);
+
+        assertEquals(1, root.size());
+        JsonNode file = root.get(0);
+        assertEquals(1, file.get("chunks").size());
+        assertEquals(5, file.get("chunks").get(0).get("lineNumber").asInt());
+        assertEquals("line5\nfirst6\nline7", file.get("chunks").get(0).get("text").asText());
+    }
+
+    @Test
     void execute_searchType为FULLTEXT小写_转枚举调用provider() throws Exception {
         String arguments = """
                 {

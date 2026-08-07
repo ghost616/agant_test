@@ -85,13 +85,7 @@ public class KnowledgeSearchTool extends CustomToolInvoker {
             List<TextChunkWithFile> results = provider.searchChunks(
                     knowledgeBaseId, fileId, searchType, query, searchLimit, contextLines);
 
-            List<Map<String, Object>> output = new ArrayList<>();
-            if (results != null) {
-                for (TextChunkWithFile withFile : results) {
-                    output.add(buildResult(withFile));
-                }
-            }
-            return JSON_MAPPER.writeValueAsString(output);
+            return JSON_MAPPER.writeValueAsString(buildResults(results));
         } catch (Exception e) {
             log.error("default_tool_rag_search 执行失败", e);
             return buildError(e.getMessage());
@@ -106,12 +100,40 @@ public class KnowledgeSearchTool extends CustomToolInvoker {
         }
     }
 
-    private Map<String, Object> buildResult(TextChunkWithFile withFile) {
+    private List<Map<String, Object>> buildResults(List<TextChunkWithFile> results) {
+        List<Map<String, Object>> output = new ArrayList<>();
+        if (results == null || results.isEmpty()) {
+            return output;
+        }
+        Map<FileKey, List<TextChunk>> grouped = new LinkedHashMap<>();
+        for (TextChunkWithFile withFile : results) {
+            FileKey key = new FileKey(withFile.knowledgeBaseId(), withFile.fileId());
+            List<TextChunk> chunks = withFile.chunkList() == null ? List.of() : withFile.chunkList();
+            grouped.computeIfAbsent(key, k -> new ArrayList<>()).addAll(chunks);
+        }
+        for (Map.Entry<FileKey, List<TextChunk>> entry : grouped.entrySet()) {
+            output.add(buildResult(entry.getKey(), entry.getValue()));
+        }
+        return output;
+    }
+
+    private Map<String, Object> buildResult(FileKey key, List<TextChunk> chunks) {
         Map<String, Object> result = new LinkedHashMap<>();
-        result.put("knowledgeBaseId", withFile.knowledgeBaseId());
-        result.put("fileId", withFile.fileId());
-        result.put("chunks", mergeContinuousChunks(withFile.chunkList()));
+        result.put("knowledgeBaseId", key.knowledgeBaseId());
+        result.put("fileId", key.fileId());
+        result.put("chunks", mergeContinuousChunks(dedupeByLineNumber(chunks)));
         return result;
+    }
+
+    private List<TextChunk> dedupeByLineNumber(List<TextChunk> chunks) {
+        Map<Integer, TextChunk> unique = new LinkedHashMap<>();
+        for (TextChunk chunk : chunks) {
+            unique.putIfAbsent(chunk.lineNumber(), chunk);
+        }
+        return new ArrayList<>(unique.values());
+    }
+
+    private record FileKey(Long knowledgeBaseId, Long fileId) {
     }
 
     private List<TextChunk> mergeContinuousChunks(List<TextChunk> chunks) {
