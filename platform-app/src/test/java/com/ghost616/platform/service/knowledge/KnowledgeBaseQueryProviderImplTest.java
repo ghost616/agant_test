@@ -18,6 +18,7 @@ import com.ghost616.platform.entity.KnowledgeBase;
 import com.ghost616.platform.entity.KnowledgeFile;
 import com.ghost616.platform.entity.ModelConfig;
 import com.ghost616.platform.entity.Session;
+import com.ghost616.platform.enums.PublishStatus;
 import com.ghost616.platform.model.TextChunk;
 import com.ghost616.platform.repository.AgentKnowledgeBaseMapper;
 import com.ghost616.platform.repository.KnowledgeBaseMapper;
@@ -42,6 +43,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -110,6 +112,7 @@ class KnowledgeBaseQueryProviderImplTest {
         f.setFileName(name);
         f.setFileDescription("desc-" + name);
         f.setFileContent(content);
+        f.setPublishStatus(PublishStatus.PUBLISHED);
         return f;
     }
 
@@ -136,10 +139,10 @@ class KnowledgeBaseQueryProviderImplTest {
     // ---------- getKnowledgeBaseInfo ----------
 
     @Test
-    @DisplayName("getKnowledgeBaseInfo: sessionId 为 null/空白时返回 null")
+    @DisplayName("getKnowledgeBaseInfo: sessionId 为 null/空白时返回空列表")
     void getKnowledgeBaseInfo_nullSessionId() {
-        assertNull(provider.getKnowledgeBaseInfo(null));
-        assertNull(provider.getKnowledgeBaseInfo("  "));
+        assertTrue(provider.getKnowledgeBaseInfo(null).isEmpty());
+        assertTrue(provider.getKnowledgeBaseInfo("  ").isEmpty());
         verifyNoInteractions(sessionMapper);
     }
 
@@ -150,46 +153,48 @@ class KnowledgeBaseQueryProviderImplTest {
     }
 
     @Test
-    @DisplayName("getKnowledgeBaseInfo: session 不存在时返回 null")
+    @DisplayName("getKnowledgeBaseInfo: session 不存在时返回空列表")
     void getKnowledgeBaseInfo_sessionNotFound() {
         when(sessionMapper.selectById(100L)).thenReturn(null);
-        assertNull(provider.getKnowledgeBaseInfo("100"));
+        assertTrue(provider.getKnowledgeBaseInfo("100").isEmpty());
         verify(agentKnowledgeBaseMapper, never()).selectList(any());
     }
 
     @Test
-    @DisplayName("getKnowledgeBaseInfo: session.agentId 为 null 时返回 null")
+    @DisplayName("getKnowledgeBaseInfo: session.agentId 为 null 时返回空列表")
     void getKnowledgeBaseInfo_agentIdNull() {
         when(sessionMapper.selectById(100L)).thenReturn(session(100L, null));
-        assertNull(provider.getKnowledgeBaseInfo("100"));
+        assertTrue(provider.getKnowledgeBaseInfo("100").isEmpty());
         verify(agentKnowledgeBaseMapper, never()).selectList(any());
     }
 
     @Test
-    @DisplayName("getKnowledgeBaseInfo: 无绑定记录时返回 null")
+    @DisplayName("getKnowledgeBaseInfo: 无绑定记录时返回空列表")
     void getKnowledgeBaseInfo_noBinding() {
         when(sessionMapper.selectById(100L)).thenReturn(session(100L, 10L));
         when(agentKnowledgeBaseMapper.selectList(any())).thenReturn(List.of());
-        assertNull(provider.getKnowledgeBaseInfo("100"));
+        assertTrue(provider.getKnowledgeBaseInfo("100").isEmpty());
         verify(knowledgeBaseMapper, never()).selectById(any());
     }
 
     @Test
-    @DisplayName("getKnowledgeBaseInfo: 绑定知识库不存在时返回 null")
+    @DisplayName("getKnowledgeBaseInfo: 绑定知识库不存在时返回空列表")
     void getKnowledgeBaseInfo_bindingKbNotFound() {
         when(sessionMapper.selectById(100L)).thenReturn(session(100L, 10L));
         when(agentKnowledgeBaseMapper.selectList(any())).thenReturn(List.of(binding(200L)));
         when(knowledgeBaseMapper.selectById(200L)).thenReturn(null);
-        assertNull(provider.getKnowledgeBaseInfo("100"));
+        assertTrue(provider.getKnowledgeBaseInfo("100").isEmpty());
     }
 
     @Test
-    @DisplayName("getKnowledgeBaseInfo: 正常链路返回知识库信息")
+    @DisplayName("getKnowledgeBaseInfo: 正常链路返回知识库信息列表")
     void getKnowledgeBaseInfo_normal() {
         when(sessionMapper.selectById(100L)).thenReturn(session(100L, 10L));
         when(agentKnowledgeBaseMapper.selectList(any())).thenReturn(List.of(binding(200L)));
         when(knowledgeBaseMapper.selectById(200L)).thenReturn(kb(200L, "idx"));
-        KnowledgeBaseInfo info = provider.getKnowledgeBaseInfo("100");
+        List<KnowledgeBaseInfo> infos = provider.getKnowledgeBaseInfo("100");
+        assertEquals(1, infos.size());
+        KnowledgeBaseInfo info = infos.get(0);
         assertNotNull(info);
         assertEquals(200L, info.kbId());
         assertEquals("kb-name", info.kbName());
@@ -197,7 +202,7 @@ class KnowledgeBaseQueryProviderImplTest {
     }
 
     @Test
-    @DisplayName("getKnowledgeBaseInfo: 多绑定记录时仍取第一条")
+    @DisplayName("getKnowledgeBaseInfo: 多绑定记录时返回全部存在的知识库信息")
     void getKnowledgeBaseInfo_multipleBindings() {
         when(sessionMapper.selectById(100L)).thenReturn(session(100L, 10L));
         AgentKnowledgeBase first = binding(200L);
@@ -206,16 +211,30 @@ class KnowledgeBaseQueryProviderImplTest {
         second.setId(2L);
         when(agentKnowledgeBaseMapper.selectList(any())).thenReturn(List.of(first, second));
         when(knowledgeBaseMapper.selectById(200L)).thenReturn(kb(200L, "idx"));
+        when(knowledgeBaseMapper.selectById(300L)).thenReturn(kb(300L, "idx2"));
 
-        KnowledgeBaseInfo info = provider.getKnowledgeBaseInfo("100");
+        List<KnowledgeBaseInfo> infos = provider.getKnowledgeBaseInfo("100");
 
-        assertNotNull(info);
-        assertEquals(200L, info.kbId());
+        assertEquals(2, infos.size());
+        assertEquals(200L, infos.get(0).kbId());
+        assertEquals(300L, infos.get(1).kbId());
         verify(knowledgeBaseMapper).selectById(200L);
-        verify(knowledgeBaseMapper, never()).selectById(300L);
+        verify(knowledgeBaseMapper).selectById(300L);
     }
 
     // ---------- searchFiles ----------
+
+    @Test
+    @DisplayName("searchFiles: 仅查询已发布到 ES 的文件（publish_status 过滤）")
+    void searchFiles_filtersPublished() {
+        when(knowledgeFileMapper.selectList(any())).thenReturn(List.of(file(1L, 100L, "a.txt", "a\nb")));
+        provider.searchFiles(100L, null, 10);
+
+        ArgumentCaptor<LambdaQueryWrapper> captor = ArgumentCaptor.forClass(LambdaQueryWrapper.class);
+        verify(knowledgeFileMapper).selectList(captor.capture());
+        String sql = captor.getValue().getSqlSegment();
+        assertTrue(sql.contains("publish_status"), sql);
+    }
 
     @Test
     @DisplayName("searchFiles: fileName 非空时追加 like 条件")
@@ -327,7 +346,7 @@ class KnowledgeBaseQueryProviderImplTest {
                         .index(0).embedding(List.of(0.1f, 0.2f)).build()))
                 .build();
         when(modelInvoker.embed(any(EmbeddingRequest.class))).thenReturn(resp);
-        when(knowledgeSearchClient.vectorSearch(eq("idx"), eq(100L), eq(List.of(0.1f, 0.2f)), eq(5)))
+        when(knowledgeSearchClient.vectorSearch(eq("idx"), eq(100L), isNull(), eq(List.of(0.1f, 0.2f)), eq(5)))
                 .thenReturn(List.of(chunk(100L, 2L, 5, "line5")));
         when(knowledgeFileMapper.selectById(2L)).thenReturn(file(2L, 100L, "a.txt", "x"));
 
@@ -350,33 +369,50 @@ class KnowledgeBaseQueryProviderImplTest {
     @DisplayName("searchChunks: full_text 检索调用全文检索")
     void searchChunks_fullTextSearch() {
         when(knowledgeBaseMapper.selectById(100L)).thenReturn(kb(100L, "idx"));
-        when(knowledgeSearchClient.fullTextSearch("idx", 100L, "q", 5))
+        when(knowledgeSearchClient.fullTextSearch("idx", 100L, null, "q", 5))
                 .thenReturn(List.of(chunk(100L, 2L, 3, "line3")));
         when(knowledgeFileMapper.selectById(2L)).thenReturn(file(2L, 100L, "a.txt", "x"));
 
         List<TextChunkWithFile> result = provider.searchChunks(100L, null, SearchType.FULLTEXT, "q", 5);
         assertEquals(1, result.size());
         assertEquals(2L, result.get(0).fileId());
-        verify(knowledgeSearchClient, never()).vectorSearch(any(), any(), anyList(), anyInt());
+        verify(knowledgeSearchClient, never()).vectorSearch(any(), any(), any(), anyList(), anyInt());
     }
 
     @Test
-    @DisplayName("searchChunks: fileId 过滤后为空时返回空列表")
-    void searchChunks_fileIdFilterEmpty() {
+    @DisplayName("searchChunks: fileId 透传 ES 查询，非内存过滤")
+    void searchChunks_fileIdPassedToEs() {
         when(knowledgeBaseMapper.selectById(100L)).thenReturn(kb(100L, "idx"));
-        when(knowledgeSearchClient.fullTextSearch("idx", 100L, "q", 5))
+        when(knowledgeSearchClient.fullTextSearch("idx", 100L, 99L, "q", 5))
                 .thenReturn(new java.util.ArrayList<>(List.of(chunk(100L, 2L, 3, "line3"))));
 
         List<TextChunkWithFile> result = provider.searchChunks(100L, 99L, SearchType.FULLTEXT, "q", 5);
-        assertEquals(List.of(), result);
-        verify(knowledgeFileMapper, never()).selectById(any());
+
+        assertEquals(1, result.size());
+        verify(knowledgeSearchClient).fullTextSearch("idx", 100L, 99L, "q", 5);
+        verify(knowledgeFileMapper).selectById(2L);
+    }
+
+    @Test
+    @DisplayName("searchChunks: fileId 为空时 ES 查询不携带 fileId 过滤")
+    void searchChunks_fileIdNullNoFilter() {
+        when(knowledgeBaseMapper.selectById(100L)).thenReturn(kb(100L, "idx"));
+        when(knowledgeSearchClient.fullTextSearch("idx", 100L, null, "q", 5))
+                .thenReturn(new java.util.ArrayList<>(List.of(chunk(100L, 2L, 3, "line3"))));
+        when(knowledgeFileMapper.selectById(2L)).thenReturn(file(2L, 100L, "a.txt", "x"));
+
+        List<TextChunkWithFile> result = provider.searchChunks(100L, null, SearchType.FULLTEXT, "q", 5);
+
+        assertEquals(1, result.size());
+        verify(knowledgeSearchClient).fullTextSearch("idx", 100L, null, "q", 5);
+        verify(knowledgeFileMapper).selectById(2L);
     }
 
     @Test
     @DisplayName("searchChunks: 文件不存在时 fileName 使用 fileId 字符串")
     void searchChunks_fileNameFallback() {
         when(knowledgeBaseMapper.selectById(100L)).thenReturn(kb(100L, "idx"));
-        when(knowledgeSearchClient.fullTextSearch("idx", 100L, "q", 5))
+        when(knowledgeSearchClient.fullTextSearch("idx", 100L, null, "q", 5))
                 .thenReturn(List.of(chunk(100L, 2L, 3, "line3")));
         when(knowledgeFileMapper.selectById(2L)).thenReturn(null);
 
@@ -388,7 +424,7 @@ class KnowledgeBaseQueryProviderImplTest {
     @DisplayName("searchChunks: 同一文件内按 lineNumber 去重")
     void searchChunks_dedupeByLineNumber() {
         when(knowledgeBaseMapper.selectById(100L)).thenReturn(kb(100L, "idx"));
-        when(knowledgeSearchClient.fullTextSearch("idx", 100L, "q", 5))
+        when(knowledgeSearchClient.fullTextSearch("idx", 100L, null, "q", 5))
                 .thenReturn(new java.util.ArrayList<>(List.of(
                         chunk(100L, 2L, 5, "line5"),
                         chunk(100L, 2L, 5, "line5-dupe"))));
@@ -412,9 +448,9 @@ class KnowledgeBaseQueryProviderImplTest {
                         .index(0).embedding(List.of(0.1f)).build()))
                 .build());
         // 向量与全文命中同一行（line 5）应去重，另全文命中 line 8
-        when(knowledgeSearchClient.vectorSearch(eq("idx"), eq(100L), anyList(), eq(5)))
+        when(knowledgeSearchClient.vectorSearch(eq("idx"), eq(100L), isNull(), anyList(), eq(5)))
                 .thenReturn(List.of(chunk(100L, 2L, 5, "line5")));
-        when(knowledgeSearchClient.fullTextSearch("idx", 100L, "q", 5))
+        when(knowledgeSearchClient.fullTextSearch("idx", 100L, null, "q", 5))
                 .thenReturn(List.of(chunk(100L, 2L, 5, "line5"), chunk(100L, 2L, 8, "line8")));
         when(knowledgeFileMapper.selectById(2L)).thenReturn(file(2L, 100L, "a.txt", "x"));
 

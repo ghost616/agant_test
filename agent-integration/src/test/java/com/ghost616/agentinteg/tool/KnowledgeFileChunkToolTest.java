@@ -59,7 +59,7 @@ class KnowledgeFileChunkToolTest {
     }
 
     @Test
-    void execute_正常路径_返回单个TextChunkWithFile对象() throws Exception {
+    void execute_正常路径_按行号合并chunks返回纯文本() throws Exception {
         String arguments = """
                 {
                   "knowledgeBaseId": 100,
@@ -73,14 +73,63 @@ class KnowledgeFileChunkToolTest {
         when(provider.getFileChunks(100L, 2L, 0, 10)).thenReturn(withFile);
 
         String result = tool.execute(ctx, arguments);
-        JsonNode root = MAPPER.readTree(result);
 
-        assertFalse(root.isArray());
-        assertEquals(100, root.get("knowledgeBaseId").asLong());
-        assertEquals(2, root.get("fileId").asLong());
-        assertEquals("a.txt", root.get("fileName").asText());
-        assertEquals(2, root.get("chunkList").size());
+        assertEquals("line0\nline1", result);
         verify(provider).getFileChunks(100L, 2L, 0, 10);
+    }
+
+    @Test
+    void execute_非连续行号_按行号升序合并() throws Exception {
+        String arguments = """
+                {
+                  "knowledgeBaseId": 100,
+                  "fileId": 2,
+                  "startLine": 0,
+                  "endLine": 10
+                }
+                """;
+        TextChunkWithFile withFile = new TextChunkWithFile(
+                100L, 2L, "a.txt", List.of(new TextChunk(3, "line3"), new TextChunk(1, "line1")));
+        when(provider.getFileChunks(100L, 2L, 0, 10)).thenReturn(withFile);
+
+        String result = tool.execute(ctx, arguments);
+
+        assertEquals("line1\nline3", result);
+    }
+
+    @Test
+    void execute_provider返回null_返回空字符串() throws Exception {
+        String arguments = """
+                {
+                  "knowledgeBaseId": 100,
+                  "fileId": 2,
+                  "startLine": 0,
+                  "endLine": 10
+                }
+                """;
+        when(provider.getFileChunks(100L, 2L, 0, 10)).thenReturn(null);
+
+        String result = tool.execute(ctx, arguments);
+
+        assertEquals("", result);
+    }
+
+    @Test
+    void execute_chunks为空_返回空字符串() throws Exception {
+        String arguments = """
+                {
+                  "knowledgeBaseId": 100,
+                  "fileId": 2,
+                  "startLine": 0,
+                  "endLine": 10
+                }
+                """;
+        when(provider.getFileChunks(100L, 2L, 0, 10)).thenReturn(
+                new TextChunkWithFile(100L, 2L, "a.txt", List.of()));
+
+        String result = tool.execute(ctx, arguments);
+
+        assertEquals("", result);
     }
 
     @Test

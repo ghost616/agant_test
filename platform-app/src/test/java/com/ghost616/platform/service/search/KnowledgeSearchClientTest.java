@@ -349,7 +349,7 @@ class KnowledgeSearchClientTest {
         SearchResponse<TextChunk> response = mockSearchResponse(hitChunk);
         when(elasticsearchClient.search(any(Function.class), eq(TextChunk.class))).thenReturn(response);
 
-        List<TextChunk> result = client.vectorSearch("kb-index", 100L, vector, 5);
+        List<TextChunk> result = client.vectorSearch("kb-index", 100L, null, vector, 5);
 
         assertEquals(List.of(hitChunk), result);
 
@@ -390,7 +390,7 @@ class KnowledgeSearchClientTest {
         SearchResponse<TextChunk> response = mockSearchResponse(null);
         when(elasticsearchClient.search(any(Function.class), eq(TextChunk.class))).thenReturn(response);
 
-        client.vectorSearch("kb-index", 100L, List.of(0.1f), 5);
+        client.vectorSearch("kb-index", 100L, null, List.of(0.1f), 5);
 
         verify(indicesClient).create(any(Function.class));
         verify(elasticsearchClient).search(any(Function.class), eq(TextChunk.class));
@@ -403,7 +403,7 @@ class KnowledgeSearchClientTest {
         SearchResponse<TextChunk> response = mockSearchResponse(null);
         when(elasticsearchClient.search(any(Function.class), eq(TextChunk.class))).thenReturn(response);
 
-        List<TextChunk> result = client.vectorSearch("kb-index", 100L, List.of(0.1f), 5);
+        List<TextChunk> result = client.vectorSearch("kb-index", 100L, null, List.of(0.1f), 5);
 
         assertTrue(result.isEmpty());
     }
@@ -416,8 +416,33 @@ class KnowledgeSearchClientTest {
                 .thenThrow(new IOException("boom"));
 
         IllegalStateException ex = assertThrows(IllegalStateException.class,
-                () -> client.vectorSearch("kb-index", 100L, List.of(0.1f), 5));
+                () -> client.vectorSearch("kb-index", 100L, null, List.of(0.1f), 5));
         assertTrue(ex.getMessage().contains("kb-index"));
+    }
+
+    @Test
+    @DisplayName("vectorSearch：fileId 非空时在 ES 查询中追加 fileId term 过滤")
+    void vectorSearch_withFileId() throws Exception {
+        stubExists(true);
+        TextChunk hitChunk = chunk(100L, 200L, 1);
+        SearchResponse<TextChunk> response = mockSearchResponse(hitChunk);
+        when(elasticsearchClient.search(any(Function.class), eq(TextChunk.class))).thenReturn(response);
+
+        List<TextChunk> result = client.vectorSearch("kb-index", 100L, 200L, List.of(0.1f), 5);
+
+        assertEquals(List.of(hitChunk), result);
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Function<SearchRequest.Builder, ObjectBuilder<SearchRequest>>> captor =
+                ArgumentCaptor.forClass(Function.class);
+        verify(elasticsearchClient).search(captor.capture(), eq(TextChunk.class));
+        SearchRequest req = apply(captor.getValue(), new SearchRequest.Builder());
+        Query filter = req.knn().get(0).filter().get(0);
+        assertTrue(filter.isBool(), "knn filter 应为 bool");
+        BoolQuery bool = filter.bool();
+        assertEquals(4, bool.filter().size(), "bool filter 应含 4 个 term");
+        assertEquals("fileId", bool.filter().get(3).term().field());
+        assertEquals("200", bool.filter().get(3).term().value()._toJsonString());
     }
 
     // ---------- fullTextSearch ----------
@@ -430,7 +455,7 @@ class KnowledgeSearchClientTest {
         SearchResponse<TextChunk> response = mockSearchResponse(hitChunk);
         when(elasticsearchClient.search(any(Function.class), eq(TextChunk.class))).thenReturn(response);
 
-        List<TextChunk> result = client.fullTextSearch("kb-index", 100L, "查询词", 3);
+        List<TextChunk> result = client.fullTextSearch("kb-index", 100L, null, "查询词", 3);
 
         assertEquals(List.of(hitChunk), result);
 
@@ -468,7 +493,7 @@ class KnowledgeSearchClientTest {
         SearchResponse<TextChunk> response = mockSearchResponse(null);
         when(elasticsearchClient.search(any(Function.class), eq(TextChunk.class))).thenReturn(response);
 
-        client.fullTextSearch("kb-index", 100L, "q", 3);
+        client.fullTextSearch("kb-index", 100L, null, "q", 3);
 
         verify(indicesClient).create(any(Function.class));
         verify(elasticsearchClient).search(any(Function.class), eq(TextChunk.class));
@@ -482,8 +507,33 @@ class KnowledgeSearchClientTest {
                 .thenThrow(new IOException("boom"));
 
         IllegalStateException ex = assertThrows(IllegalStateException.class,
-                () -> client.fullTextSearch("kb-index", 100L, "q", 3));
+                () -> client.fullTextSearch("kb-index", 100L, null, "q", 3));
         assertTrue(ex.getMessage().contains("kb-index"));
+    }
+
+    @Test
+    @DisplayName("fullTextSearch：fileId 非空时在 ES 查询中追加 fileId term 过滤")
+    void fullTextSearch_withFileId() throws Exception {
+        stubExists(true);
+        TextChunk hitChunk = chunk(100L, 200L, 1);
+        SearchResponse<TextChunk> response = mockSearchResponse(hitChunk);
+        when(elasticsearchClient.search(any(Function.class), eq(TextChunk.class))).thenReturn(response);
+
+        List<TextChunk> result = client.fullTextSearch("kb-index", 100L, 200L, "查询词", 3);
+
+        assertEquals(List.of(hitChunk), result);
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Function<SearchRequest.Builder, ObjectBuilder<SearchRequest>>> captor =
+                ArgumentCaptor.forClass(Function.class);
+        verify(elasticsearchClient).search(captor.capture(), eq(TextChunk.class));
+        SearchRequest req = apply(captor.getValue(), new SearchRequest.Builder());
+        Query query = req.query();
+        assertTrue(query.isBool(), "查询应为 bool");
+        BoolQuery bool = query.bool();
+        assertEquals(4, bool.filter().size(), "filter 应含 4 个 term");
+        assertEquals("fileId", bool.filter().get(3).term().field());
+        assertEquals("200", bool.filter().get(3).term().value()._toJsonString());
     }
 
     // ---------- searchByFileAndLineRange ----------

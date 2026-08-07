@@ -9,10 +9,13 @@ import com.ghost616.agentbase.service.agent.invoker.CustomToolInvoker;
 import com.ghost616.agentinteg.knowledge.FileInfo;
 import com.ghost616.agentinteg.knowledge.KnowledgeBaseQueryProvider;
 import com.ghost616.agentinteg.knowledge.TextChunkWithFile;
+import com.ghost616.agentinteg.knowledge.TextChunkWithFile.TextChunk;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class KnowledgeFileChunkTool extends CustomToolInvoker {
@@ -34,7 +37,7 @@ public class KnowledgeFileChunkTool extends CustomToolInvoker {
                 .id(null)
                 .toolType(ToolType.CUSTOM)
                 .name(TOOL_NAME)
-                .description("获取知识库文件中指定行号范围内的文本块，不传 endLine 时默认为文件最大行数")
+                .description("获取知识库文件中指定行号范围内的文本块，按行号合并为纯文本返回，不传 endLine 时默认为文件最大行数")
                 .parameterSchema("""
                         {
                           "type": "object",
@@ -69,11 +72,24 @@ public class KnowledgeFileChunkTool extends CustomToolInvoker {
                     ? root.get("endLine").asInt() : resolveFileMaxLine(knowledgeBaseId, fileId);
 
             TextChunkWithFile result = provider.getFileChunks(knowledgeBaseId, fileId, startLine, endLine);
-            return JSON_MAPPER.writeValueAsString(result);
+            return mergeChunksToText(result);
         } catch (Exception e) {
             log.error("default_tool_rag_file_chunk 执行失败", e);
             return buildError(e.getMessage());
         }
+    }
+
+    /**
+     * 将 TextChunkWithFile 中的文本块按行号升序合并为纯文本，块之间以换行分隔。
+     */
+    private static String mergeChunksToText(TextChunkWithFile withFile) {
+        if (withFile == null || withFile.chunkList() == null || withFile.chunkList().isEmpty()) {
+            return "";
+        }
+        return withFile.chunkList().stream()
+                .sorted(Comparator.comparingInt(TextChunk::lineNumber))
+                .map(TextChunk::text)
+                .collect(Collectors.joining("\n"));
     }
 
     private static String buildError(String message) {

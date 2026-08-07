@@ -9,6 +9,7 @@ import com.ghost616.agentinteg.knowledge.KnowledgeBaseInfo;
 import com.ghost616.agentinteg.knowledge.KnowledgeBaseQueryProvider;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -45,8 +46,8 @@ public class KnowledgeBaseInfoTool extends CustomToolInvoker {
             if (sessionId == null || sessionId.isBlank()) {
                 return "{\"status\":\"error\",\"errMsg\":\"无法获取会话 ID\"}";
             }
-            KnowledgeBaseInfo info = provider.getKnowledgeBaseInfo(sessionId);
-            return JSON_MAPPER.writeValueAsString(info);
+            List<KnowledgeBaseInfo> infos = provider.getKnowledgeBaseInfo(sessionId);
+            return JSON_MAPPER.writeValueAsString(infos == null ? List.of() : infos);
         } catch (Exception e) {
             log.error("default_tool_rag_info 执行失败", e);
             return buildError(e.getMessage());

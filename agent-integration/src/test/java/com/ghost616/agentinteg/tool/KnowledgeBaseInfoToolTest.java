@@ -14,6 +14,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -51,16 +53,27 @@ class KnowledgeBaseInfoToolTest {
     }
 
     @Test
-    void execute_正常路径_使用ctx会话ID返回知识库信息() throws Exception {
+    void execute_正常路径_使用ctx会话ID返回知识库信息列表() throws Exception {
         when(ctx.getSessionId()).thenReturn("s1");
         KnowledgeBaseInfo info = new KnowledgeBaseInfo(1L, "kb-name", "kb-desc");
-        when(provider.getKnowledgeBaseInfo("s1")).thenReturn(info);
+        when(provider.getKnowledgeBaseInfo("s1")).thenReturn(List.of(info));
 
         String result = tool.execute(ctx, "{}");
 
         assertTrue(result.contains("\"kbId\":1"));
         assertTrue(result.contains("\"kbName\":\"kb-name\""));
         assertTrue(result.contains("\"kbDescription\":\"kb-desc\""));
+        verify(provider).getKnowledgeBaseInfo("s1");
+    }
+
+    @Test
+    void execute_provider返回null_序列化为空列表() throws Exception {
+        when(ctx.getSessionId()).thenReturn("s1");
+        when(provider.getKnowledgeBaseInfo("s1")).thenReturn(null);
+
+        String result = tool.execute(ctx, "{}");
+
+        assertEquals("[]", result);
         verify(provider).getKnowledgeBaseInfo("s1");
     }
 

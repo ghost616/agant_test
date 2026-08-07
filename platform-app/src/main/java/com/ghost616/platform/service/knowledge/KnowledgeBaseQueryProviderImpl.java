@@ -14,6 +14,7 @@ import com.ghost616.agentinteg.knowledge.KnowledgeBaseInfo;
 import com.ghost616.agentinteg.knowledge.KnowledgeBaseQueryProvider;
 import com.ghost616.agentinteg.knowledge.SearchType;
 import com.ghost616.agentinteg.knowledge.TextChunkWithFile;
+import com.ghost616.platform.enums.PublishStatus;
 import com.ghost616.platform.entity.AgentKnowledgeBase;
 import com.ghost616.platform.entity.KnowledgeBase;
 import com.ghost616.platform.entity.KnowledgeFile;
@@ -53,51 +54,51 @@ public class KnowledgeBaseQueryProviderImpl implements KnowledgeBaseQueryProvide
     private final KnowledgeSearchClient knowledgeSearchClient;
 
     /**
-     * 根据会话 ID 获取关联的知识库信息。
+     * 根据会话 ID 获取关联的知识库信息列表。
      *
      * @param sessionId 会话 ID
-     * @return 知识库基础信息，会话或知识库不存在时返回 null
+     * @return 知识库基础信息列表，会话或知识库不存在时返回空列表
      */
     @Override
-    public KnowledgeBaseInfo getKnowledgeBaseInfo(String sessionId) {
+    public List<KnowledgeBaseInfo> getKnowledgeBaseInfo(String sessionId) {
         Long sessionIdLong = IdConverter.parse(sessionId);
         if (sessionIdLong == null) {
-            return null;
+            return List.of();
         }
         Session session = sessionMapper.selectById(sessionIdLong);
         if (session == null || session.getAgentId() == null) {
-            return null;
+            return List.of();
         }
         List<AgentKnowledgeBase> bindings = agentKnowledgeBaseMapper.selectList(
                 new LambdaQueryWrapper<AgentKnowledgeBase>()
                         .eq(AgentKnowledgeBase::getAgentId, session.getAgentId()));
         if (bindings.isEmpty()) {
-            return null;
+            return List.of();
         }
-        // 当前业务仅支持单个知识库绑定，多绑定时取第一条记录
-        if (bindings.size() > 1) {
-            log.warn("智能体 {} 绑定了多个知识库（{} 条），仅取第一个 kbId={}",
-                    session.getAgentId(), bindings.size(), bindings.get(0).getKnowledgeBaseId());
+        List<KnowledgeBaseInfo> infos = new ArrayList<>();
+        for (AgentKnowledgeBase binding : bindings) {
+            KnowledgeBase knowledgeBase = knowledgeBaseMapper.selectById(binding.getKnowledgeBaseId());
+            if (knowledgeBase != null) {
+                infos.add(new KnowledgeBaseInfo(knowledgeBase.getId(), knowledgeBase.getName(),
+                        knowledgeBase.getDescription()));
+            }
         }
-        KnowledgeBase knowledgeBase = knowledgeBaseMapper.selectById(bindings.get(0).getKnowledgeBaseId());
-        if (knowledgeBase == null) {
-            return null;
-        }
-        return new KnowledgeBaseInfo(knowledgeBase.getId(), knowledgeBase.getName(), knowledgeBase.getDescription());
+        return infos;
     }
 
     /**
-     * 按文件名关键字搜索知识库下的文件。
+     * 按文件名关键字搜索知识库下的文件，仅返回已发布到 ES 的文件。
      *
      * @param kbId     知识库 ID
      * @param fileName 文件名关键字（可为 null）
      * @param limit    返回数量上限
-     * @return 文件信息列表
+     * @return 文件信息列表（仅已发布到 ES 的文件）
      */
     @Override
     public List<FileInfo> searchFiles(Long kbId, String fileName, int limit) {
         LambdaQueryWrapper<KnowledgeFile> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(KnowledgeFile::getKnowledgeBaseId, kbId);
+        wrapper.eq(KnowledgeFile::getKnowledgeBaseId, kbId)
+                .eq(KnowledgeFile::getPublishStatus, PublishStatus.PUBLISHED);
         if (StringUtils.isNotBlank(fileName)) {
             wrapper.like(KnowledgeFile::getFileName, fileName);
         }
@@ -115,9 +116,10 @@ public class KnowledgeBaseQueryProviderImpl implements KnowledgeBaseQueryProvide
 
     /**
      * 搜索知识库文本块，返回匹配的文本块列表（含文件信息）。
+     * 参数 fileId 作为 ES 查询的过滤条件在查询层面生效（非内存过滤），非 null 时仅返回该文件下的文本块。
      *
      * @param kbId       知识库 ID
-     * @param fileId     文件 ID（可为 null，表示不限文件）
+     * @param fileId     文件 ID（可为 null，表示不限文件；非 null 时在 ES 查询中过滤）
      * @param searchType 搜索类型
      * @param query      查询关键字
      * @param topK       返回数量上限
@@ -131,13 +133,7 @@ public class KnowledgeBaseQueryProviderImpl implements KnowledgeBaseQueryProvide
             return List.of();
         }
         String indexName = knowledgeBase.getEsIndex();
-        List<TextChunk> matched = search(indexName, kbId, knowledgeBase, searchType, query, topK);
-        if (matched.isEmpty()) {
-            return List.of();
-        }
-        if (fileId != null) {
-            matched.removeIf(chunk -> !fileId.equals(chunk.getFileId()));
-        }
+        List<TextChunk> matched = search(indexName, kbId, fileId, knowledgeBase, searchType, query, topK);
         if (matched.isEmpty()) {
             return List.of();
         }
@@ -186,20 +182,20 @@ public class KnowledgeBaseQueryProviderImpl implements KnowledgeBaseQueryProvide
         return new TextChunkWithFile(kbId, fileId, fileName, chunkList);
     }
 
-    private List<TextChunk> search(String indexName, Long kbId, KnowledgeBase knowledgeBase,
+    private List<TextChunk> search(String indexName, Long kbId, Long fileId, KnowledgeBase knowledgeBase,
                                    SearchType searchType, String query, int topK) {
         switch (searchType) {
             case VECTOR:
-                return knowledgeSearchClient.vectorSearch(indexName, kbId, embedQuery(knowledgeBase, query), topK);
+                return knowledgeSearchClient.vectorSearch(indexName, kbId, fileId, embedQuery(knowledgeBase, query), topK);
             case FULLTEXT:
-                return knowledgeSearchClient.fullTextSearch(indexName, kbId, query, topK);
+                return knowledgeSearchClient.fullTextSearch(indexName, kbId, fileId, query, topK);
             case HYBRID:
                 Map<String, TextChunk> dedup = new LinkedHashMap<>();
                 for (TextChunk chunk : knowledgeSearchClient.vectorSearch(
-                        indexName, kbId, embedQuery(knowledgeBase, query), topK)) {
+                        indexName, kbId, fileId, embedQuery(knowledgeBase, query), topK)) {
                     dedup.putIfAbsent(docKey(chunk), chunk);
                 }
-                for (TextChunk chunk : knowledgeSearchClient.fullTextSearch(indexName, kbId, query, topK)) {
+                for (TextChunk chunk : knowledgeSearchClient.fullTextSearch(indexName, kbId, fileId, query, topK)) {
                     dedup.putIfAbsent(docKey(chunk), chunk);
                 }
                 return new ArrayList<>(dedup.values());

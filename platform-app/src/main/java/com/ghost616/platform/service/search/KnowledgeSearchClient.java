@@ -3,6 +3,7 @@ package com.ghost616.platform.service.search;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.SortOrder;
 import co.elastic.clients.elasticsearch._types.mapping.DenseVectorSimilarity;
+import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery;
 import co.elastic.clients.elasticsearch.core.BulkRequest;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
@@ -148,11 +149,12 @@ public class KnowledgeSearchClient {
      *
      * @param indexName       索引名称
      * @param knowledgeBaseId 知识库 ID（检索范围过滤）
+     * @param fileId          文件 ID（可为 null，表示不限文件；非 null 时在 ES 查询中过滤）
      * @param vector          查询向量
      * @param topK            返回条数
      * @return 命中的文本块列表
      */
-    public List<TextChunk> vectorSearch(String indexName, Long knowledgeBaseId, List<Float> vector, int topK) {
+    public List<TextChunk> vectorSearch(String indexName, Long knowledgeBaseId, Long fileId, List<Float> vector, int topK) {
         ensureIndex(indexName);
         try {
             SearchResponse<TextChunk> response = elasticsearchClient.search(s -> s
@@ -162,11 +164,7 @@ public class KnowledgeSearchClient {
                                     .queryVector(vector)
                                     .k(topK)
                                     .numCandidates(Math.max(topK * 10, DEFAULT_NUM_CANDIDATES))
-                                    .filter(f -> f.bool(b -> b
-                                            .filter(fl -> fl.term(t -> t.field("knowledgeBaseId")
-                                                    .value(knowledgeBaseId.toString())))
-                                            .filter(fl -> fl.term(t -> t.field("kbEnabled").value(true)))
-                                            .filter(fl -> fl.term(t -> t.field("fileEnabled").value(true)))))),
+                                    .filter(f -> f.bool(b -> addScopeFilters(b, knowledgeBaseId, fileId)))),
                     TextChunk.class);
             return toChunks(response);
         } catch (IOException e) {
@@ -179,27 +177,40 @@ public class KnowledgeSearchClient {
      *
      * @param indexName       索引名称
      * @param knowledgeBaseId 知识库 ID（检索范围过滤）
+     * @param fileId          文件 ID（可为 null，表示不限文件；非 null 时在 ES 查询中过滤）
      * @param query           查询文本
      * @param topK            返回条数
      * @return 命中的文本块列表
      */
-    public List<TextChunk> fullTextSearch(String indexName, Long knowledgeBaseId, String query, int topK) {
+    public List<TextChunk> fullTextSearch(String indexName, Long knowledgeBaseId, Long fileId, String query, int topK) {
         ensureIndex(indexName);
         try {
             SearchResponse<TextChunk> response = elasticsearchClient.search(s -> s
                             .index(indexName)
-                            .query(q -> q.bool(b -> b
-                                    .filter(f -> f.term(t -> t.field("knowledgeBaseId")
-                                            .value(knowledgeBaseId.toString())))
-                                    .filter(f -> f.term(t -> t.field("kbEnabled").value(true)))
-                                    .filter(f -> f.term(t -> t.field("fileEnabled").value(true)))
-                                    .must(m -> m.match(mt -> mt.field("text").query(query)))))
+                            .query(q -> q.bool(b -> {
+                                addScopeFilters(b, knowledgeBaseId, fileId);
+                                b.must(m -> m.match(mt -> mt.field("text").query(query)));
+                                return b;
+                            }))
                             .size(topK),
                     TextChunk.class);
             return toChunks(response);
         } catch (IOException e) {
             throw new IllegalStateException("全文检索失败: " + indexName, e);
         }
+    }
+
+    /**
+     * 向 bool 查询添加知识库、启用状态及可选文件维度的过滤条件。
+     */
+    private BoolQuery.Builder addScopeFilters(BoolQuery.Builder b, Long knowledgeBaseId, Long fileId) {
+        b.filter(f -> f.term(t -> t.field("knowledgeBaseId").value(knowledgeBaseId.toString())));
+        b.filter(f -> f.term(t -> t.field("kbEnabled").value(true)));
+        b.filter(f -> f.term(t -> t.field("fileEnabled").value(true)));
+        if (fileId != null) {
+            b.filter(f -> f.term(t -> t.field("fileId").value(fileId.toString())));
+        }
+        return b;
     }
 
     /**

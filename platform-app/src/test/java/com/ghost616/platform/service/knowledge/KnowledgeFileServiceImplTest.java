@@ -37,6 +37,8 @@ class KnowledgeFileServiceImplTest {
     private KnowledgeFileMapper knowledgeFileMapper;
     @Mock
     private KnowledgeBaseMapper knowledgeBaseMapper;
+    @Mock
+    private KnowledgePublishService knowledgePublishService;
 
     private KnowledgeFileServiceImpl service;
 
@@ -44,7 +46,7 @@ class KnowledgeFileServiceImplTest {
     void setUp() {
         TableInfoHelper.initTableInfo(new MapperBuilderAssistant(new MybatisConfiguration(), ""), KnowledgeBase.class);
         TableInfoHelper.initTableInfo(new MapperBuilderAssistant(new MybatisConfiguration(), ""), KnowledgeFile.class);
-        service = new KnowledgeFileServiceImpl(knowledgeFileMapper, knowledgeBaseMapper);
+        service = new KnowledgeFileServiceImpl(knowledgeFileMapper, knowledgeBaseMapper, knowledgePublishService);
     }
 
     private KnowledgeFile fileEntity(Long id, Long kbId, String name) {
@@ -134,6 +136,32 @@ class KnowledgeFileServiceImplTest {
         service.updateFileContent(1L, "新内容");
 
         assertEquals(PublishStatus.UNPUBLISHED, existing.getPublishStatus());
+    }
+
+    @Test
+    @DisplayName("updateFileContent() 发布中拒绝修改内容")
+    void updateFileContent_发布中拒绝() {
+        KnowledgeFile existing = fileEntity(1L, 100L, "a.txt");
+        when(knowledgeFileMapper.selectById(1L)).thenReturn(existing);
+        when(knowledgePublishService.isPublishing(1L)).thenReturn(true);
+
+        BusinessException ex = assertThrows(BusinessException.class, () -> service.updateFileContent(1L, "新内容"));
+        assertEquals(ErrorCode.KNOWLEDGE_FILE_PUBLISHING, ex.getErrorCode());
+        verify(knowledgeFileMapper, never()).updateById(any(KnowledgeFile.class));
+    }
+
+    @Test
+    @DisplayName("list()/getById() 返回 DTO 填充 publishing 字段")
+    void dto_填充publishing字段() {
+        when(knowledgePublishService.isPublishing(1L)).thenReturn(true);
+        when(knowledgeFileMapper.selectById(1L)).thenReturn(fileEntity(1L, 100L, "a.txt"));
+        KnowledgeFileDTO dto = service.getById(1L);
+        assertEquals(Boolean.TRUE, dto.getPublishing(), "发布中文件 publishing 应为 true");
+
+        when(knowledgeFileMapper.selectList(any())).thenReturn(List.of(fileEntity(2L, 100L, "b.txt")));
+        when(knowledgePublishService.isPublishing(2L)).thenReturn(false);
+        List<KnowledgeFileDTO> list = service.list(100L, null, null);
+        assertEquals(Boolean.FALSE, list.get(0).getPublishing(), "非发布中文件 publishing 应为 false");
     }
 
     @Test
