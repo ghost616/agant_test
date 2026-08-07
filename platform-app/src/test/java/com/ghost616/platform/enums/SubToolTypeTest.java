@@ -8,8 +8,9 @@ class SubToolTypeTest {
 
     @Test
     void enum_shouldContainBROWSER() {
-        assertEquals(1, SubToolType.values().length);
+        assertEquals(2, SubToolType.values().length);
         assertEquals("BROWSER", SubToolType.BROWSER.name());
+        assertEquals("RAG_KNOWLEDGE", SubToolType.RAG_KNOWLEDGE.name());
     }
 
     @Test

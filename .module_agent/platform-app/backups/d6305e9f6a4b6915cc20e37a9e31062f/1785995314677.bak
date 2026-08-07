@@ -1,0 +1,266 @@
+package com.ghost616.platform.service.search;
+
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch._types.mapping.DenseVectorSimilarity;
+import co.elastic.clients.elasticsearch.core.BulkRequest;
+import co.elastic.clients.elasticsearch.core.SearchResponse;
+import co.elastic.clients.elasticsearch.core.search.Hit;
+import com.ghost616.platform.model.TextChunk;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * 知识库搜索客户端，封装 Elasticsearch 索引的创建、文本块保存与向量/全文检索操作。
+ */
+@Service
+@RequiredArgsConstructor
+public class KnowledgeSearchClient {
+
+    private static final int DEFAULT_NUM_CANDIDATES = 100;
+
+    private final ElasticsearchClient elasticsearchClient;
+
+    /**
+     * 检查索引是否存在。
+     *
+     * @param indexName 索引名称
+     * @return 索引存在返回 true
+     */
+    public boolean indexExists(String indexName) {
+        try {
+            return elasticsearchClient.indices().exists(e -> e.index(indexName)).value();
+        } catch (IOException e) {
+            throw new IllegalStateException("检查索引是否存在失败: " + indexName, e);
+        }
+    }
+
+    /**
+     * 创建索引，mapping 包含 dense_vector、text（ik 分词）、启用状态、关联 ID 等字段。
+     *
+     * @param indexName 索引名称
+     */
+    public void createIndex(String indexName) {
+        try {
+            if (indexExists(indexName)) {
+                throw new IllegalStateException("索引已存在: " + indexName);
+            }
+            elasticsearchClient.indices().create(c -> c
+                    .index(indexName)
+                    .mappings(m -> m
+                            .properties("vector", p -> p.denseVector(d -> d
+                                    .similarity(DenseVectorSimilarity.Cosine)))
+                            .properties("text", p -> p.text(t -> t
+                                    .analyzer("ik_max_word")
+                                    .searchAnalyzer("ik_smart")))
+                            .properties("kbEnabled", p -> p.boolean_(b -> b))
+                            .properties("fileEnabled", p -> p.boolean_(b -> b))
+                            .properties("knowledgeBaseId", p -> p.keyword(k -> k))
+                            .properties("fileId", p -> p.keyword(k -> k))
+                            .properties("lineNumber", p -> p.integer(i -> i))));
+        } catch (IOException e) {
+            throw new IllegalStateException("创建索引失败: " + indexName, e);
+        }
+    }
+
+    /**
+     * 删除索引。
+     *
+     * @param indexName 索引名称
+     */
+    public void deleteIndex(String indexName) {
+        try {
+            if (!indexExists(indexName)) {
+                return;
+            }
+            elasticsearchClient.indices().delete(d -> d.index(indexName));
+        } catch (IOException e) {
+            throw new IllegalStateException("删除索引失败: " + indexName, e);
+        }
+    }
+
+    /**
+     * 批量保存文本块到索引。
+     *
+     * @param indexName 索引名称
+     * @param chunks    文本块列表
+     */
+    public void batchSave(String indexName, List<TextChunk> chunks) {
+        ensureIndex(indexName);
+        if (chunks == null || chunks.isEmpty()) {
+            return;
+        }
+        try {
+            BulkRequest.Builder bulkBuilder = new BulkRequest.Builder();
+            for (TextChunk chunk : chunks) {
+                bulkBuilder.operations(op -> op
+                        .index(idx -> idx
+                                .index(indexName)
+                                .id(buildDocId(chunk))
+                                .document(chunk)));
+            }
+            elasticsearchClient.bulk(bulkBuilder.build());
+        } catch (IOException e) {
+            throw new IllegalStateException("批量保存文本块失败: " + indexName, e);
+        }
+    }
+
+    /**
+     * 按知识库 ID 删除该知识库下的所有文本块。
+     *
+     * @param indexName       索引名称
+     * @param knowledgeBaseId 知识库 ID
+     */
+    public void deleteByKnowledgeBase(String indexName, Long knowledgeBaseId) {
+        ensureIndex(indexName);
+        try {
+            elasticsearchClient.deleteByQuery(d -> d
+                    .index(indexName)
+                    .query(q -> q.term(t -> t.field("knowledgeBaseId").value(knowledgeBaseId.toString()))));
+        } catch (IOException e) {
+            throw new IllegalStateException("按知识库删除文本块失败: " + indexName, e);
+        }
+    }
+
+    /**
+     * 按文件 ID 删除该文件下的所有文本块。
+     *
+     * @param indexName 索引名称
+     * @param fileId    文件 ID
+     */
+    public void deleteByFile(String indexName, Long fileId) {
+        ensureIndex(indexName);
+        try {
+            elasticsearchClient.deleteByQuery(d -> d
+                    .index(indexName)
+                    .query(q -> q.term(t -> t.field("fileId").value(fileId.toString()))));
+        } catch (IOException e) {
+            throw new IllegalStateException("按文件删除文本块失败: " + indexName, e);
+        }
+    }
+
+    /**
+     * 向量检索，按相似度分数降序返回 topK 条文本块。
+     *
+     * @param indexName       索引名称
+     * @param knowledgeBaseId 知识库 ID（检索范围过滤）
+     * @param vector          查询向量
+     * @param topK            返回条数
+     * @return 命中的文本块列表
+     */
+    public List<TextChunk> vectorSearch(String indexName, Long knowledgeBaseId, List<Float> vector, int topK) {
+        ensureIndex(indexName);
+        try {
+            SearchResponse<TextChunk> response = elasticsearchClient.search(s -> s
+                            .index(indexName)
+                            .knn(k -> k
+                                    .field("vector")
+                                    .queryVector(vector)
+                                    .k(topK)
+                                    .numCandidates(Math.max(topK * 10, DEFAULT_NUM_CANDIDATES))
+                                    .filter(f -> f.bool(b -> b
+                                            .filter(fl -> fl.term(t -> t.field("knowledgeBaseId")
+                                                    .value(knowledgeBaseId.toString())))
+                                            .filter(fl -> fl.term(t -> t.field("kbEnabled").value(true)))
+                                            .filter(fl -> fl.term(t -> t.field("fileEnabled").value(true)))))),
+                    TextChunk.class);
+            return toChunks(response);
+        } catch (IOException e) {
+            throw new IllegalStateException("向量检索失败: " + indexName, e);
+        }
+    }
+
+    /**
+     * 全文检索（BM25），按相关度分数降序返回 topK 条文本块。
+     *
+     * @param indexName       索引名称
+     * @param knowledgeBaseId 知识库 ID（检索范围过滤）
+     * @param query           查询文本
+     * @param topK            返回条数
+     * @return 命中的文本块列表
+     */
+    public List<TextChunk> fullTextSearch(String indexName, Long knowledgeBaseId, String query, int topK) {
+        ensureIndex(indexName);
+        try {
+            SearchResponse<TextChunk> response = elasticsearchClient.search(s -> s
+                            .index(indexName)
+                            .query(q -> q.bool(b -> b
+                                    .filter(f -> f.term(t -> t.field("knowledgeBaseId")
+                                            .value(knowledgeBaseId.toString())))
+                                    .filter(f -> f.term(t -> t.field("kbEnabled").value(true)))
+                                    .filter(f -> f.term(t -> t.field("fileEnabled").value(true)))
+                                    .must(m -> m.match(mt -> mt.field("text").query(query)))))
+                            .size(topK),
+                    TextChunk.class);
+            return toChunks(response);
+        } catch (IOException e) {
+            throw new IllegalStateException("全文检索失败: " + indexName, e);
+        }
+    }
+
+    /**
+     * 按文件 ID 更新文本块的启用状态（仅更新 fileEnabled）。
+     *
+     * @param indexName 索引名称
+     * @param fileId    文件 ID
+     * @param enabled   是否启用
+     */
+    public void updateEnabledByFile(String indexName, Long fileId, boolean enabled) {
+        ensureIndex(indexName);
+        try {
+            elasticsearchClient.updateByQuery(u -> u
+                    .index(indexName)
+                    .query(q -> q.term(t -> t.field("fileId").value(fileId.toString())))
+                    .script(sc -> sc
+                            .lang("painless")
+                            .source(src -> src.scriptString("ctx._source.fileEnabled = " + enabled + ";"))));
+        } catch (IOException e) {
+            throw new IllegalStateException("按文件更新启用状态失败: " + indexName, e);
+        }
+    }
+
+    /**
+     * 按知识库 ID 更新文本块的启用状态（仅更新 kbEnabled）。
+     *
+     * @param indexName       索引名称
+     * @param knowledgeBaseId 知识库 ID
+     * @param enabled         是否启用
+     */
+    public void updateEnabledByKnowledgeBase(String indexName, Long knowledgeBaseId, boolean enabled) {
+        ensureIndex(indexName);
+        try {
+            elasticsearchClient.updateByQuery(u -> u
+                    .index(indexName)
+                    .query(q -> q.term(t -> t.field("knowledgeBaseId").value(knowledgeBaseId.toString())))
+                    .script(sc -> sc
+                            .lang("painless")
+                            .source(src -> src.scriptString("ctx._source.kbEnabled = " + enabled + ";"))));
+        } catch (IOException e) {
+            throw new IllegalStateException("按知识库更新启用状态失败: " + indexName, e);
+        }
+    }
+
+    private void ensureIndex(String indexName) {
+        if (!indexExists(indexName)) {
+            createIndex(indexName);
+        }
+    }
+
+    private String buildDocId(TextChunk chunk) {
+        return chunk.getKnowledgeBaseId() + "_" + chunk.getFileId() + "_" + chunk.getLineNumber();
+    }
+
+    private List<TextChunk> toChunks(SearchResponse<TextChunk> response) {
+        List<Hit<TextChunk>> hits = response.hits().hits();
+        List<TextChunk> chunks = new ArrayList<>(hits.size());
+        for (Hit<TextChunk> hit : hits) {
+            if (hit.source() != null) {
+                chunks.add(hit.source());
+            }
+        }
+        return chunks;
+    }
+}

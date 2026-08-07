@@ -3,31 +3,7 @@
 > 待力牧首次执行后填充，记录模块公共方法与功能。
 ## 数据实体层
 
-提供 16 个数据实体类，均位于 `com.ghost616.platform.entity` 包下：
-- **BaseEntity**：实体基类，含雪花ID、自动填充的 createTime/updateTime、逻辑删除标志
-- **Message**：消息实体，映射 message 表，不继承 BaseEntity
-- **AgentConfig**：智能体配置，继承 BaseEntity，映射 agent_config 表
-- **AgentTool**：智能体-工具关联实体，映射 agent_tool 表
-- **AgentSkill**：智能体-技能关联实体，映射 agent_skill 表
-- **ModelConfig**：模型配置实体，继承 BaseEntity，映射 model_config 表
-- **ToolConfig**：工具配置实体，继承 BaseEntity，映射 tool_config 表
-- **SkillConfig**：SKILL 配置实体，继承 BaseEntity，映射 skill_config 表
-- **SkillTool**：SKILL-工具关联实体，映射 skill_tool 表
-- **Session**：会话实体，继承 BaseEntity，映射 session 表，含 isEvaluation 评估标记字段
-- **MessageToolCall**：工具调用记录实体，映射 message_tool_call 表
-- **SessionTool**：会话工具关联实体，映射 session_tool 表
-- **SessionVariable**：会话变量实体，映射 session_variable 表
-- **SessionSkill**：会话技能关联实体
-- **Evaluation**：评估配置实体，继承 BaseEntity，映射 evaluation 表，含 name/description/benchmarkSessionId/executionCount/modelId/agentEvalId/agentId/executionType
-- **EvaluationResult**：评估结果实体，继承 BaseEntity，映射 evaluation_result 表，含 evaluationId/evaluationSessionId/result/modelId/finalScore
-
-枚举位于 `com.ghost616.platform.enums` 包：
-- **SubToolType**：子工具类型枚举（BROWSER），@EnumValue 标记 code 字段
-- **AgentEvaluation**：智能体评估实体，继承 BaseEntity，映射 agent_evaluation 表，含 name/description/agentId
-知识库相关实体：
-- **KnowledgeBase**：知识库实体，继承 BaseEntity，映射 knowledge_base 表，含 name/description/status(CommonStatus)
-- **KnowledgeFile**：知识库文件实体，继承 BaseEntity，映射 knowledge_file 表，含 fileName/fileDescription/knowledgeBaseId/fileSize/lineCount/status(CommonStatus)/fileContent(LONGTEXT)
-- **AgentKnowledgeBase**：智能体-知识库关联实体（独立实体，@TableId ASSIGN_ID），映射 agent_knowledge_base 表，含 agentId/knowledgeBaseId
+- **SubToolType**：子工具类型枚举（BROWSER/RAG_KNOWLEDGE），@EnumValue 标记 code 字段
 ## 数据访问层
 
 提供 15 个 MyBatis-Plus Mapper 接口，均位于 `com.ghost616.platform.repository` 包下：
@@ -51,3 +27,4 @@
 - **SchemaMigration**（com.ghost616.platform.config）：数据库 Schema 迁移组件，继承 ApplicationRunner，通过 ALTER TABLE 实现列增量迁移和 NULL 回填，支持幂等执行和异常跳过；新增 session.is_evaluation 列及 evaluation、evaluation_result 表的全字段迁移
 新增 agent_evaluation 表建表语句及 evaluation 表 agent_eval_id/agent_id/execution_type 列；SchemaMigration 新增 agent_evaluation 表全字段迁移及 evaluation.agent_eval_id/evaluation.agent_id/evaluation.execution_type 迁移条目
 新增 knowledge_base、knowledge_file、agent_knowledge_base 三张表建表语句及对应索引；SchemaMigration 新增三张表全字段迁移条目
+SchemaMigration 新增 knowledge_file.publish_status（VARCHAR(32)，默认 'UNPUBLISHED'）、knowledge_base.vector_model_id（BIGINT）、knowledge_base.es_index（VARCHAR(255)）、knowledge_base.rebuilding（TINYINT(1)，默认 0）四个列迁移条目；schema.sql knowledge_base/knowledge_file 表 DDL 同步新增对应列

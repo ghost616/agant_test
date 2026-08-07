@@ -1,0 +1,617 @@
+package com.ghost616.platform.service.search;
+
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch._types.KnnSearch;
+import co.elastic.clients.elasticsearch._types.mapping.DenseVectorProperty;
+import co.elastic.clients.elasticsearch._types.mapping.DenseVectorSimilarity;
+import co.elastic.clients.elasticsearch._types.mapping.Property;
+import co.elastic.clients.elasticsearch._types.mapping.TextProperty;
+import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery;
+import co.elastic.clients.elasticsearch._types.query_dsl.MatchQuery;
+import co.elastic.clients.elasticsearch._types.query_dsl.Query;
+import co.elastic.clients.elasticsearch._types.query_dsl.TermQuery;
+import co.elastic.clients.elasticsearch.core.BulkRequest;
+import co.elastic.clients.elasticsearch.core.DeleteByQueryRequest;
+import co.elastic.clients.elasticsearch.core.SearchRequest;
+import co.elastic.clients.elasticsearch.core.SearchResponse;
+import co.elastic.clients.elasticsearch.core.UpdateByQueryRequest;
+import co.elastic.clients.elasticsearch.core.bulk.BulkOperation;
+import co.elastic.clients.elasticsearch.core.bulk.IndexOperation;
+import co.elastic.clients.elasticsearch.core.search.Hit;
+import co.elastic.clients.elasticsearch.core.search.HitsMetadata;
+import co.elastic.clients.elasticsearch.indices.CreateIndexRequest;
+import co.elastic.clients.elasticsearch.indices.DeleteIndexRequest;
+import co.elastic.clients.elasticsearch.indices.ElasticsearchIndicesClient;
+import co.elastic.clients.elasticsearch.indices.ExistsRequest;
+import co.elastic.clients.transport.endpoints.BooleanResponse;
+import co.elastic.clients.util.ObjectBuilder;
+import com.ghost616.platform.model.TextChunk;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+class KnowledgeSearchClientTest {
+
+    @Mock
+    private ElasticsearchClient elasticsearchClient;
+
+    @Mock
+    private ElasticsearchIndicesClient indicesClient;
+
+    private KnowledgeSearchClient client;
+
+    @BeforeEach
+    void setUp() {
+        lenient().when(elasticsearchClient.indices()).thenReturn(indicesClient);
+        client = new KnowledgeSearchClient(elasticsearchClient);
+    }
+
+    private TextChunk chunk(long kbId, long fileId, int lineNumber) {
+        return TextChunk.builder()
+                .knowledgeBaseId(kbId)
+                .fileId(fileId)
+                .lineNumber(lineNumber)
+                .text("line-" + lineNumber)
+                .vector(List.of(0.1f, 0.2f))
+                .kbEnabled(true)
+                .fileEnabled(true)
+                .build();
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T, B> T apply(Function<B, ObjectBuilder<T>> fn, B builder) {
+        return fn.apply(builder).build();
+    }
+
+    private void stubExists(boolean exists) throws Exception {
+        BooleanResponse response = mock(BooleanResponse.class);
+        when(response.value()).thenReturn(exists);
+        when(indicesClient.exists(any(Function.class))).thenReturn(response);
+    }
+
+    // ---------- indexExists ----------
+
+    @Test
+    @DisplayName("indexExists：调用 indices().exists 并返回布尔值")
+    void indexExists() throws Exception {
+        BooleanResponse response = mock(BooleanResponse.class);
+        when(response.value()).thenReturn(true);
+        when(indicesClient.exists(any(Function.class))).thenReturn(response);
+
+        boolean result = client.indexExists("kb-index");
+
+        assertTrue(result);
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Function<ExistsRequest.Builder, ObjectBuilder<ExistsRequest>>> captor =
+                ArgumentCaptor.forClass(Function.class);
+        verify(indicesClient).exists(captor.capture());
+        ExistsRequest request = apply(captor.getValue(), new ExistsRequest.Builder());
+        assertEquals(List.of("kb-index"), request.index());
+    }
+
+    @Test
+    @DisplayName("indexExists：IOException 包装为 IllegalStateException")
+    void indexExists_ioException() throws Exception {
+        when(indicesClient.exists(any(Function.class))).thenThrow(new IOException("boom"));
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class,
+                () -> client.indexExists("kb-index"));
+        assertTrue(ex.getMessage().contains("kb-index"));
+    }
+
+    // ---------- createIndex ----------
+
+    @Test
+    @DisplayName("createIndex：索引不存在时正常创建，mapping 含 7 字段")
+    void createIndex() throws Exception {
+        stubExists(false);
+        when(indicesClient.create(any(Function.class))).thenReturn(null);
+
+        client.createIndex("kb-index");
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Function<CreateIndexRequest.Builder, ObjectBuilder<CreateIndexRequest>>> captor =
+                ArgumentCaptor.forClass(Function.class);
+        verify(indicesClient).create(captor.capture());
+        CreateIndexRequest request = apply(captor.getValue(), new CreateIndexRequest.Builder());
+        assertEquals("kb-index", request.index());
+
+        Map<String, Property> properties = request.mappings().properties();
+        assertEquals(7, properties.size());
+
+        Property vector = properties.get("vector");
+        assertTrue(vector.isDenseVector(), "vector 应为 dense_vector");
+        DenseVectorProperty dv = vector.denseVector();
+        assertEquals(DenseVectorSimilarity.Cosine, dv.similarity());
+        assertNull(dv.dims(), "不指定 dims");
+
+        Property text = properties.get("text");
+        assertTrue(text.isText(), "text 应为 text 类型");
+        TextProperty tp = text.text();
+        assertEquals("ik_max_word", tp.analyzer());
+        assertEquals("ik_smart", tp.searchAnalyzer());
+
+        assertTrue(properties.get("kbEnabled").isBoolean(), "kbEnabled 应为 boolean");
+        assertTrue(properties.get("fileEnabled").isBoolean(), "fileEnabled 应为 boolean");
+        assertTrue(properties.get("knowledgeBaseId").isKeyword(), "knowledgeBaseId 应为 keyword");
+        assertTrue(properties.get("fileId").isKeyword(), "fileId 应为 keyword");
+        assertTrue(properties.get("lineNumber").isInteger(), "lineNumber 应为 integer");
+    }
+
+    @Test
+    @DisplayName("createIndex：索引已存在时抛 IllegalStateException，不调用 create")
+    void createIndex_alreadyExists() throws Exception {
+        stubExists(true);
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class,
+                () -> client.createIndex("kb-index"));
+        assertTrue(ex.getMessage().contains("索引已存在"), "实际: " + ex.getMessage());
+        verify(indicesClient, never()).create(any(Function.class));
+    }
+
+    @Test
+    @DisplayName("createIndex：IOException 包装为 IllegalStateException")
+    void createIndex_ioException() throws Exception {
+        stubExists(false);
+        when(indicesClient.create(any(Function.class))).thenThrow(new IOException("boom"));
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class,
+                () -> client.createIndex("kb-index"));
+        assertTrue(ex.getMessage().contains("kb-index"));
+    }
+
+    // ---------- deleteIndex ----------
+
+    @Test
+    @DisplayName("deleteIndex：索引存在时正常删除")
+    void deleteIndex() throws Exception {
+        stubExists(true);
+        when(indicesClient.delete(any(Function.class))).thenReturn(null);
+
+        client.deleteIndex("kb-index");
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Function<DeleteIndexRequest.Builder, ObjectBuilder<DeleteIndexRequest>>> captor =
+                ArgumentCaptor.forClass(Function.class);
+        verify(indicesClient).delete(captor.capture());
+        DeleteIndexRequest request = apply(captor.getValue(), new DeleteIndexRequest.Builder());
+        assertEquals(List.of("kb-index"), request.index());
+    }
+
+    @Test
+    @DisplayName("deleteIndex：索引不存在时跳过删除，不抛异常")
+    void deleteIndex_notExists() throws Exception {
+        stubExists(false);
+
+        client.deleteIndex("kb-index");
+
+        verify(indicesClient, never()).delete(any(Function.class));
+    }
+
+    // ---------- batchSave ----------
+
+    @Test
+    @DisplayName("batchSave：bulk 批量保存，docId 为 knowledgeBaseId_fileId_lineNumber")
+    void batchSave() throws Exception {
+        stubExists(true);
+        when(elasticsearchClient.bulk(any(BulkRequest.class))).thenReturn(null);
+
+        client.batchSave("kb-index", List.of(chunk(100L, 200L, 1), chunk(100L, 200L, 2)));
+
+        ArgumentCaptor<BulkRequest> captor = ArgumentCaptor.forClass(BulkRequest.class);
+        verify(elasticsearchClient).bulk(captor.capture());
+        BulkRequest request = captor.getValue();
+        List<BulkOperation> ops = request.operations();
+        assertEquals(2, ops.size());
+
+        for (int i = 0; i < ops.size(); i++) {
+            assertTrue(ops.get(i).isIndex(), "操作应为 index");
+            IndexOperation<TextChunk> indexOp = ops.get(i).index();
+            assertEquals("kb-index", indexOp.index());
+            assertEquals("100_200_" + (i + 1), indexOp.id());
+            assertEquals(Integer.valueOf(i + 1), indexOp.document().getLineNumber());
+        }
+    }
+
+    @Test
+    @DisplayName("batchSave：null 或空列表仍先执行索引检查，但不调用 bulk")
+    void batchSave_emptyOrNull() throws Exception {
+        stubExists(true);
+
+        client.batchSave("kb-index", null);
+        client.batchSave("kb-index", List.of());
+
+        verify(indicesClient, atLeast(2)).exists(any(Function.class));
+        verify(elasticsearchClient, never()).bulk(any(BulkRequest.class));
+    }
+
+    @Test
+    @DisplayName("batchSave：索引不存在时自动创建")
+    void batchSave_ensureIndex() throws Exception {
+        stubExists(false);
+        when(indicesClient.create(any(Function.class))).thenReturn(null);
+        when(elasticsearchClient.bulk(any(BulkRequest.class))).thenReturn(null);
+
+        client.batchSave("kb-index", List.of(chunk(100L, 200L, 1)));
+
+        verify(indicesClient).create(any(Function.class));
+        verify(elasticsearchClient).bulk(any(BulkRequest.class));
+    }
+
+    @Test
+    @DisplayName("batchSave：IOException 包装为 IllegalStateException")
+    void batchSave_ioException() throws Exception {
+        stubExists(true);
+        when(elasticsearchClient.bulk(any(BulkRequest.class))).thenThrow(new IOException("boom"));
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class,
+                () -> client.batchSave("kb-index", List.of(chunk(1L, 2L, 1))));
+        assertTrue(ex.getMessage().contains("kb-index"));
+    }
+
+    // ---------- deleteByKnowledgeBase ----------
+
+    @Test
+    @DisplayName("deleteByKnowledgeBase：deleteByQuery 按 knowledgeBaseId term 删除")
+    void deleteByKnowledgeBase() throws Exception {
+        stubExists(true);
+        when(elasticsearchClient.deleteByQuery(any(Function.class))).thenReturn(null);
+
+        client.deleteByKnowledgeBase("kb-index", 100L);
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Function<DeleteByQueryRequest.Builder, ObjectBuilder<DeleteByQueryRequest>>> captor =
+                ArgumentCaptor.forClass(Function.class);
+        verify(elasticsearchClient).deleteByQuery(captor.capture());
+        DeleteByQueryRequest req = apply(captor.getValue(), new DeleteByQueryRequest.Builder());
+        assertEquals(List.of("kb-index"), req.index());
+        assertTrue(req.query().isTerm());
+        TermQuery term = req.query().term();
+        assertEquals("knowledgeBaseId", term.field());
+        assertEquals("100", term.value()._toJsonString());
+    }
+
+    @Test
+    @DisplayName("deleteByKnowledgeBase：索引不存在时自动创建")
+    void deleteByKnowledgeBase_ensureIndex() throws Exception {
+        stubExists(false);
+        when(indicesClient.create(any(Function.class))).thenReturn(null);
+        when(elasticsearchClient.deleteByQuery(any(Function.class))).thenReturn(null);
+
+        client.deleteByKnowledgeBase("kb-index", 100L);
+
+        verify(indicesClient).create(any(Function.class));
+        verify(elasticsearchClient).deleteByQuery(any(Function.class));
+    }
+
+    // ---------- deleteByFile ----------
+
+    @Test
+    @DisplayName("deleteByFile：deleteByQuery 按 fileId term 删除")
+    void deleteByFile() throws Exception {
+        stubExists(true);
+        when(elasticsearchClient.deleteByQuery(any(Function.class))).thenReturn(null);
+
+        client.deleteByFile("kb-index", 200L);
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Function<DeleteByQueryRequest.Builder, ObjectBuilder<DeleteByQueryRequest>>> captor =
+                ArgumentCaptor.forClass(Function.class);
+        verify(elasticsearchClient).deleteByQuery(captor.capture());
+        DeleteByQueryRequest req = apply(captor.getValue(), new DeleteByQueryRequest.Builder());
+        assertEquals(List.of("kb-index"), req.index());
+        assertTrue(req.query().isTerm());
+        TermQuery term = req.query().term();
+        assertEquals("fileId", term.field());
+        assertEquals("200", term.value()._toJsonString());
+    }
+
+    @Test
+    @DisplayName("deleteByFile：索引不存在时自动创建")
+    void deleteByFile_ensureIndex() throws Exception {
+        stubExists(false);
+        when(indicesClient.create(any(Function.class))).thenReturn(null);
+        when(elasticsearchClient.deleteByQuery(any(Function.class))).thenReturn(null);
+
+        client.deleteByFile("kb-index", 200L);
+
+        verify(indicesClient).create(any(Function.class));
+        verify(elasticsearchClient).deleteByQuery(any(Function.class));
+    }
+
+    // ---------- vectorSearch ----------
+
+    @Test
+    @DisplayName("vectorSearch：knn 携带 query_vector/k/num_candidates 与 bool 过滤(knowledgeBaseId/kbEnabled/fileEnabled)")
+    void vectorSearch() throws Exception {
+        stubExists(true);
+        List<Float> vector = List.of(0.1f, 0.2f, 0.3f);
+        TextChunk hitChunk = chunk(100L, 200L, 1);
+        SearchResponse<TextChunk> response = mockSearchResponse(hitChunk);
+        when(elasticsearchClient.search(any(Function.class), eq(TextChunk.class))).thenReturn(response);
+
+        List<TextChunk> result = client.vectorSearch("kb-index", 100L, vector, 5);
+
+        assertEquals(List.of(hitChunk), result);
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Function<SearchRequest.Builder, ObjectBuilder<SearchRequest>>> captor =
+                ArgumentCaptor.forClass(Function.class);
+        verify(elasticsearchClient).search(captor.capture(), eq(TextChunk.class));
+        SearchRequest req = apply(captor.getValue(), new SearchRequest.Builder());
+        assertEquals(List.of("kb-index"), req.index());
+
+        List<KnnSearch> knn = req.knn();
+        assertNotNull(knn);
+        assertEquals(1, knn.size());
+        KnnSearch knnSearch = knn.get(0);
+        assertEquals("vector", knnSearch.field());
+        assertEquals(vector, knnSearch.queryVector());
+        assertEquals(5, knnSearch.k());
+        assertEquals(100, knnSearch.numCandidates());
+
+        assertEquals(1, knnSearch.filter().size(), "knn filter 应为单个 bool 组合");
+        Query filter = knnSearch.filter().get(0);
+        assertTrue(filter.isBool(), "knn filter 应为 bool");
+        BoolQuery bool = filter.bool();
+        assertEquals(3, bool.filter().size(), "bool filter 应含 3 个 term");
+        assertEquals("knowledgeBaseId", bool.filter().get(0).term().field());
+        assertEquals("100", bool.filter().get(0).term().value()._toJsonString());
+        assertEquals("kbEnabled", bool.filter().get(1).term().field());
+        assertEquals("true", bool.filter().get(1).term().value()._toJsonString());
+        assertEquals("fileEnabled", bool.filter().get(2).term().field());
+        assertEquals("true", bool.filter().get(2).term().value()._toJsonString());
+    }
+
+    @Test
+    @DisplayName("vectorSearch：索引不存在时自动创建")
+    void vectorSearch_ensureIndex() throws Exception {
+        stubExists(false);
+        when(indicesClient.create(any(Function.class))).thenReturn(null);
+        SearchResponse<TextChunk> response = mockSearchResponse(null);
+        when(elasticsearchClient.search(any(Function.class), eq(TextChunk.class))).thenReturn(response);
+
+        client.vectorSearch("kb-index", 100L, List.of(0.1f), 5);
+
+        verify(indicesClient).create(any(Function.class));
+        verify(elasticsearchClient).search(any(Function.class), eq(TextChunk.class));
+    }
+
+    @Test
+    @DisplayName("vectorSearch：忽略无 source 的命中")
+    void vectorSearch_skipsNullSource() throws Exception {
+        stubExists(true);
+        SearchResponse<TextChunk> response = mockSearchResponse(null);
+        when(elasticsearchClient.search(any(Function.class), eq(TextChunk.class))).thenReturn(response);
+
+        List<TextChunk> result = client.vectorSearch("kb-index", 100L, List.of(0.1f), 5);
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    @DisplayName("vectorSearch：IOException 包装为 IllegalStateException")
+    void vectorSearch_ioException() throws Exception {
+        stubExists(true);
+        when(elasticsearchClient.search(any(Function.class), eq(TextChunk.class)))
+                .thenThrow(new IOException("boom"));
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class,
+                () -> client.vectorSearch("kb-index", 100L, List.of(0.1f), 5));
+        assertTrue(ex.getMessage().contains("kb-index"));
+    }
+
+    // ---------- fullTextSearch ----------
+
+    @Test
+    @DisplayName("fullTextSearch：bool filter 3 个 term(knowledgeBaseId/kbEnabled/fileEnabled)+must(match text)，size=topK")
+    void fullTextSearch() throws Exception {
+        stubExists(true);
+        TextChunk hitChunk = chunk(100L, 200L, 1);
+        SearchResponse<TextChunk> response = mockSearchResponse(hitChunk);
+        when(elasticsearchClient.search(any(Function.class), eq(TextChunk.class))).thenReturn(response);
+
+        List<TextChunk> result = client.fullTextSearch("kb-index", 100L, "查询词", 3);
+
+        assertEquals(List.of(hitChunk), result);
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Function<SearchRequest.Builder, ObjectBuilder<SearchRequest>>> captor =
+                ArgumentCaptor.forClass(Function.class);
+        verify(elasticsearchClient).search(captor.capture(), eq(TextChunk.class));
+        SearchRequest req = apply(captor.getValue(), new SearchRequest.Builder());
+        assertEquals(3, req.size());
+
+        Query query = req.query();
+        assertTrue(query.isBool(), "查询应为 bool");
+        BoolQuery bool = query.bool();
+        assertEquals(3, bool.filter().size(), "filter 应含 3 个 term");
+        assertEquals("knowledgeBaseId", bool.filter().get(0).term().field());
+        assertEquals("100", bool.filter().get(0).term().value()._toJsonString());
+        assertEquals("kbEnabled", bool.filter().get(1).term().field());
+        assertEquals("true", bool.filter().get(1).term().value()._toJsonString());
+        assertEquals("fileEnabled", bool.filter().get(2).term().field());
+        assertEquals("true", bool.filter().get(2).term().value()._toJsonString());
+
+        assertEquals(1, bool.must().size(), "must 应含 1 个 match");
+        Query must = bool.must().get(0);
+        assertTrue(must.isMatch(), "must 应为 match");
+        MatchQuery match = must.match();
+        assertEquals("text", match.field());
+        assertEquals("查询词", match.query()._toJsonString());
+    }
+
+    @Test
+    @DisplayName("fullTextSearch：索引不存在时自动创建")
+    void fullTextSearch_ensureIndex() throws Exception {
+        stubExists(false);
+        when(indicesClient.create(any(Function.class))).thenReturn(null);
+        SearchResponse<TextChunk> response = mockSearchResponse(null);
+        when(elasticsearchClient.search(any(Function.class), eq(TextChunk.class))).thenReturn(response);
+
+        client.fullTextSearch("kb-index", 100L, "q", 3);
+
+        verify(indicesClient).create(any(Function.class));
+        verify(elasticsearchClient).search(any(Function.class), eq(TextChunk.class));
+    }
+
+    @Test
+    @DisplayName("fullTextSearch：IOException 包装为 IllegalStateException")
+    void fullTextSearch_ioException() throws Exception {
+        stubExists(true);
+        when(elasticsearchClient.search(any(Function.class), eq(TextChunk.class)))
+                .thenThrow(new IOException("boom"));
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class,
+                () -> client.fullTextSearch("kb-index", 100L, "q", 3));
+        assertTrue(ex.getMessage().contains("kb-index"));
+    }
+
+    // ---------- updateEnabledByFile ----------
+
+    @Test
+    @DisplayName("updateEnabledByFile：updateByQuery 按 fileId 仅更新 fileEnabled")
+    void updateEnabledByFile() throws Exception {
+        stubExists(true);
+        when(elasticsearchClient.updateByQuery(any(Function.class))).thenReturn(null);
+
+        client.updateEnabledByFile("kb-index", 200L, true);
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Function<UpdateByQueryRequest.Builder, ObjectBuilder<UpdateByQueryRequest>>> captor =
+                ArgumentCaptor.forClass(Function.class);
+        verify(elasticsearchClient).updateByQuery(captor.capture());
+        UpdateByQueryRequest req = apply(captor.getValue(), new UpdateByQueryRequest.Builder());
+        assertEquals(List.of("kb-index"), req.index());
+        assertTrue(req.query().isTerm());
+        TermQuery term = req.query().term();
+        assertEquals("fileId", term.field());
+        assertEquals("200", term.value()._toJsonString());
+
+        assertNotNull(req.script());
+        assertTrue(req.script().source().isScriptString(), "script 应使用 scriptString");
+        String source = req.script().source().scriptString();
+        assertTrue(source.contains("ctx._source.fileEnabled = true"), "script 应设置 fileEnabled, 实际: " + source);
+        assertFalse(source.contains("kbEnabled"), "script 不应更新 kbEnabled, 实际: " + source);
+        assertEquals("painless", req.script().lang());
+    }
+
+    @Test
+    @DisplayName("updateEnabledByFile：enabled=false 时仅更新 fileEnabled=false")
+    void updateEnabledByFile_false() throws Exception {
+        stubExists(true);
+        when(elasticsearchClient.updateByQuery(any(Function.class))).thenReturn(null);
+
+        client.updateEnabledByFile("kb-index", 200L, false);
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Function<UpdateByQueryRequest.Builder, ObjectBuilder<UpdateByQueryRequest>>> captor =
+                ArgumentCaptor.forClass(Function.class);
+        verify(elasticsearchClient).updateByQuery(captor.capture());
+        UpdateByQueryRequest req = apply(captor.getValue(), new UpdateByQueryRequest.Builder());
+        String source = req.script().source().scriptString();
+        assertTrue(source.contains("ctx._source.fileEnabled = false"), "实际: " + source);
+        assertFalse(source.contains("kbEnabled"), "script 不应更新 kbEnabled, 实际: " + source);
+    }
+
+    @Test
+    @DisplayName("updateEnabledByFile：索引不存在时自动创建")
+    void updateEnabledByFile_ensureIndex() throws Exception {
+        stubExists(false);
+        when(indicesClient.create(any(Function.class))).thenReturn(null);
+        when(elasticsearchClient.updateByQuery(any(Function.class))).thenReturn(null);
+
+        client.updateEnabledByFile("kb-index", 200L, true);
+
+        verify(indicesClient).create(any(Function.class));
+        verify(elasticsearchClient).updateByQuery(any(Function.class));
+    }
+
+    // ---------- updateEnabledByKnowledgeBase ----------
+
+    @Test
+    @DisplayName("updateEnabledByKnowledgeBase：updateByQuery 按 knowledgeBaseId 仅更新 kbEnabled")
+    void updateEnabledByKnowledgeBase() throws Exception {
+        stubExists(true);
+        when(elasticsearchClient.updateByQuery(any(Function.class))).thenReturn(null);
+
+        client.updateEnabledByKnowledgeBase("kb-index", 100L, true);
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Function<UpdateByQueryRequest.Builder, ObjectBuilder<UpdateByQueryRequest>>> captor =
+                ArgumentCaptor.forClass(Function.class);
+        verify(elasticsearchClient).updateByQuery(captor.capture());
+        UpdateByQueryRequest req = apply(captor.getValue(), new UpdateByQueryRequest.Builder());
+        assertEquals(List.of("kb-index"), req.index());
+        assertTrue(req.query().isTerm());
+        TermQuery term = req.query().term();
+        assertEquals("knowledgeBaseId", term.field());
+        assertEquals("100", term.value()._toJsonString());
+
+        assertNotNull(req.script());
+        assertTrue(req.script().source().isScriptString(), "script 应使用 scriptString");
+        String source = req.script().source().scriptString();
+        assertTrue(source.contains("ctx._source.kbEnabled = true"), "script 应设置 kbEnabled, 实际: " + source);
+        assertFalse(source.contains("fileEnabled"), "script 不应更新 fileEnabled, 实际: " + source);
+        assertEquals("painless", req.script().lang());
+    }
+
+    @Test
+    @DisplayName("updateEnabledByKnowledgeBase：enabled=false 时仅更新 kbEnabled=false")
+    void updateEnabledByKnowledgeBase_false() throws Exception {
+        stubExists(true);
+        when(elasticsearchClient.updateByQuery(any(Function.class))).thenReturn(null);
+
+        client.updateEnabledByKnowledgeBase("kb-index", 100L, false);
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Function<UpdateByQueryRequest.Builder, ObjectBuilder<UpdateByQueryRequest>>> captor =
+                ArgumentCaptor.forClass(Function.class);
+        verify(elasticsearchClient).updateByQuery(captor.capture());
+        UpdateByQueryRequest req = apply(captor.getValue(), new UpdateByQueryRequest.Builder());
+        String source = req.script().source().scriptString();
+        assertTrue(source.contains("ctx._source.kbEnabled = false"), "实际: " + source);
+        assertFalse(source.contains("fileEnabled"), "script 不应更新 fileEnabled, 实际: " + source);
+    }
+
+    @Test
+    @DisplayName("updateEnabledByKnowledgeBase：索引不存在时自动创建")
+    void updateEnabledByKnowledgeBase_ensureIndex() throws Exception {
+        stubExists(false);
+        when(indicesClient.create(any(Function.class))).thenReturn(null);
+        when(elasticsearchClient.updateByQuery(any(Function.class))).thenReturn(null);
+
+        client.updateEnabledByKnowledgeBase("kb-index", 100L, true);
+
+        verify(indicesClient).create(any(Function.class));
+        verify(elasticsearchClient).updateByQuery(any(Function.class));
+    }
+
+    private SearchResponse<TextChunk> mockSearchResponse(TextChunk source) {
+        @SuppressWarnings("unchecked")
+        SearchResponse<TextChunk> response = mock(SearchResponse.class);
+        @SuppressWarnings("unchecked")
+        HitsMetadata<TextChunk> hits = mock(HitsMetadata.class);
+        @SuppressWarnings("unchecked")
+        Hit<TextChunk> hit = mock(Hit.class);
+        when(hit.source()).thenReturn(source);
+        when(hits.hits()).thenReturn(List.of(hit));
+        when(response.hits()).thenReturn(hits);
+        return response;
+    }
+}

@@ -50,5 +50,7 @@
   "src/pages/knowledge/__tests__/KnowledgeFileEdit.test.tsx": "f69ab0523536a205edcb01b60dd62b53",
   "src/pages/knowledge/__tests__/KnowledgeFileList.test.tsx": "b90104e853c09a7dcdfd23c822b0ea32",
   "e2e/KnowledgeFile.spec.ts": "03ec1f1f12ac3acc76c15d7cb867ed61",
-  "src/services/__tests__/knowledge.test.ts": "f15591343c659a3f1d6d8aacc2538f55"
+  "src/services/__tests__/knowledge.test.ts": "f15591343c659a3f1d6d8aacc2538f55",
+  "src/pages/knowledge/KnowledgeBaseList.tsx": "16e483ef6d543404d6e858dc7343ed38",
+  "src/pages/knowledge/__tests__/KnowledgeFileList.publish.test.tsx": "2bf12ae8ffab6c6a7b4bf2af65ac58f8"
 }

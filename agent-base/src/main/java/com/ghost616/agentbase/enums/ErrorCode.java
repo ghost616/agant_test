@@ -45,7 +45,12 @@ public enum ErrorCode {
     EVALUATION_RESULT_NOT_FOUND("EVAL-RES-001", "评估结果不存在"),
 
     AGENT_EVALUATION_NOT_FOUND("AGENT-EVAL-001", "智能体评估不存在"),
-    AGENT_EVALUATION_ALREADY_EXISTS("AGENT-EVAL-002", "智能体评估名称已存在");
+    AGENT_EVALUATION_ALREADY_EXISTS("AGENT-EVAL-002", "智能体评估名称已存在"),
+
+    KNOWLEDGE_BASE_NOT_FOUND("KNOWLEDGE-BASE-001", "知识库不存在"),
+    KNOWLEDGE_BASE_ALREADY_EXISTS("KNOWLEDGE-BASE-002", "知识库名称已存在"),
+    KNOWLEDGE_FILE_NOT_FOUND("KNOWLEDGE-FILE-001", "知识文件不存在"),
+    KNOWLEDGE_FILE_PUBLISHING("KNOWLEDGE-FILE-002", "知识文件正在发布中");
 
     private final String code;
     private final String message;

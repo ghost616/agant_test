@@ -94,6 +94,17 @@ describe('createAgent', () => {
     mockPost.mockRejectedValueOnce(new Error('Network Error'));
     await expect(createAgent({ name: 'test' })).rejects.toThrow('Network Error');
   });
+
+  it('应透传 knowledgeBaseIds 到 POST /agents', async () => {
+    const newAgent = { id: 'new-2', name: 'agent-with-kb', tools: [], skills: [], status: 'ENABLED' };
+    const formData = {
+      name: 'agent-with-kb',
+      knowledgeBaseIds: ['kb-100', 'kb-101'],
+    };
+    mockPost.mockResolvedValueOnce({ data: { data: newAgent } });
+    await createAgent(formData);
+    expect(mockPost).toHaveBeenCalledWith('/agents', formData);
+  });
 });
 
 describe('updateAgent', () => {
@@ -108,6 +119,17 @@ describe('updateAgent', () => {
     const result = await updateAgent('a1', formData);
     expect(mockPut).toHaveBeenCalledWith('/agents/a1', formData);
     expect(result).toEqual(updated);
+  });
+
+  it('应透传 knowledgeBaseIds 到 PUT /agents/{id}', async () => {
+    const updated = { id: 'a1', name: 'updated', tools: [], skills: [], status: 'ENABLED' };
+    const formData = {
+      name: 'updated',
+      knowledgeBaseIds: ['kb-200'],
+    };
+    mockPut.mockResolvedValueOnce({ data: { data: updated } });
+    await updateAgent('a1', formData);
+    expect(mockPut).toHaveBeenCalledWith('/agents/a1', formData);
   });
 });
 

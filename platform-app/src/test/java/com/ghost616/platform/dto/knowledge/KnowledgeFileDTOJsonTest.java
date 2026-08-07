@@ -49,4 +49,17 @@ class KnowledgeFileDTOJsonTest {
         assertEquals(2L, dto.getKnowledgeBaseId());
         assertEquals("a.txt", dto.getFileName());
     }
+
+    @Test
+    @DisplayName("KnowledgeFileDTO.publishing 字段序列化")
+    void publishing序列化() throws Exception {
+        KnowledgeFileDTO dto = KnowledgeFileDTO.builder()
+                .id(1L)
+                .knowledgeBaseId(2L)
+                .publishing(true)
+                .build();
+
+        String json = objectMapper.writeValueAsString(dto);
+        assertTrue(json.contains("\"publishing\":true"), "publishing 应序列化为布尔值, 实际: " + json);
+    }
 }

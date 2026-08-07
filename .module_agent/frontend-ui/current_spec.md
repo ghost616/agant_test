@@ -52,6 +52,7 @@
 - SessionAuthType：ALL（所有会话）/ PARENT（父会话）/ CHILD（子会话）
 - 表单工具/技能选择使用 SessionAuthSelect 组件：多选 + 每项可配置 sessionAuth 下拉（默认 ALL）
 - 表格列中 tools/skills 显示为 Tag 标签，颜色区分 sessionAuth 类型（blue/green/orange）
+- 智能体绑定知识库：AgentConfig/AgentFormData 新增 knowledgeBaseIds?: string[] 字段，新增 KnowledgeBaseItem 类型（{ knowledgeBaseId: string; name: string }）；fetchRefData 并行加载知识库列表（listKnowledgeBases({})）构建 knowledgeBaseList 与 knowledgeBaseMap；表单新增"绑定知识库"多选 Select（mode=multiple，从知识库列表获取）；表格新增"绑定知识库"列（knowledgeBaseMap 映射 ID→名称渲染 Tag 列表，空显示 '-'）；createAgent/updateAgent 复用透传 knowledgeBaseIds
 ## 会话管理界面
 
 - Web 搜索结果显示：ChatChunk 新增 webSearchCall 字段（WebSearchCall[] 数组，每项 { itemId, outputIndex, results: [{ title, url, snippet }] }）和 customToolCall 字段，StreamCallbacks 新增 onWebSearchCall 回调（(calls: WebSearchCall[]) => void），processSSEStream 解析 chunk.webSearchCall 数组并回调
@@ -99,3 +100,8 @@
 - API 服务封装：知识库/知识文件 CRUD + 状态切换 + 内容专用接口（getKnowledgeFileContent/updateKnowledgeFileContent，路径 /knowledge-bases/{kbId}/files/{id}/content），路径基于 /knowledge-bases 与 /knowledge-bases/{kbId}/files
 - updateKnowledgeFileContent 请求体为原始字符串并覆盖 Content-Type: text/plain（与后端 consumes 对齐，避免 415）；getKnowledgeFileContent 返回 ApiResponse.data 内容字符串
 - KnowledgeFile 类型不含 fileContent 字段，KFFormData 仅 fileName/fileDescription，文件内容通过内容专用接口单独读写
+- 知识文件发布功能：types/knowledge.ts 新增 PublishStatus 类型（UNPUBLISHED/PUBLISHING/PUBLISHED/PENDING_PUBLISH/PUBLISH_ERROR）；KnowledgeFile 新增 publishStatus 字段；KnowledgeBase 新增 vectorModelId/esIndex/rebuilding 字段；KBFormData 排除 rebuilding
+- services/knowledge.ts 新增三个接口：publishKnowledgeFile(kbId, fileId) POST /knowledge-bases/{kbId}/files/{fileId}/publish、refreshKnowledgeFiles(kbId) PUT /knowledge-bases/{kbId}/files/refresh、rebuildKnowledgeBaseES(kbId) POST /knowledge-bases/{kbId}/rebuild-es
+- KnowledgeBaseList：操作列新增「ES数据重构」按钮（调用 rebuildKnowledgeBaseES，执行中 loading，rebuilding=true 时禁用）；知识库 rebuilding=true 时「管理文件」按钮禁用置灰；编辑弹窗新增向量模型下拉（listModels({modelType:'EMBEDDINGS'}) 加载 EMBEDDINGS 模型）与 ES 索引输入框，提交时空字符串归一化为 undefined
+- KnowledgeFileList：发布状态 Tag 列（UNPUBLISHED=default 灰、PUBLISHING=processing 蓝、PUBLISHED=success 绿、PENDING_PUBLISH=warning 橙、PUBLISH_ERROR=error 红）；「发布」按钮仅 UNPUBLISHED/PENDING_PUBLISH/PUBLISH_ERROR 可用，publishStatus=PUBLISHING 时显示「发布中」并 disabled，点击调用 publishKnowledgeFile；知识库 rebuilding=true 时禁用发布按钮；新增「刷新」按钮调用 refreshKnowledgeFiles 后重新拉取列表；页面加载 getKnowledgeBase 获取 rebuilding 状态
+- KnowledgeFileEdit：文件 publishStatus=PUBLISHING 时禁用 TextArea 与保存按钮，文件名旁显示「发布中，暂不可编辑」Tag

@@ -139,27 +139,35 @@
     },
     {
       "path": "src/types/knowledge.ts",
-      "description": "知识库与知识文件类型定义：KnowledgeBase（id/name/description/status/createTime/updateTime）、KnowledgeFile（id/fileName/fileDescription/knowledgeBaseId/fileSize/lineCount/status/createTime/updateTime，不含 fileContent）、KBFormData、KFFormData（fileName/fileDescription）、KBListParams、KFListParams 列表筛选参数"
+      "description": "知识库与知识文件类型定义：PublishStatus（UNPUBLISHED/PUBLISHING/PUBLISHED/PENDING_PUBLISH/PUBLISH_ERROR）；KnowledgeBase（id/name/description/status/vectorModelId/esIndex/rebuilding/createTime/updateTime）；KnowledgeFile（id/fileName/fileDescription/knowledgeBaseId/fileSize/lineCount/status/publishStatus/publishing/createTime/updateTime，不含 fileContent）；KBFormData（Omit 排除 id/status/rebuilding/createTime/updateTime，含 vectorModelId/esIndex）、KFFormData（fileName/fileDescription）、KBListParams、KFListParams 列表筛选参数"
     },
     {
       "path": "src/services/knowledge.ts",
-      "description": "知识库与知识文件 API 服务封装：listKnowledgeBases/getKnowledgeBase/createKnowledgeBase/updateKnowledgeBase/deleteKnowledgeBase/updateKnowledgeBaseStatus、listKnowledgeFiles/getKnowledgeFile/createKnowledgeFile/updateKnowledgeFile/deleteKnowledgeFile/updateKnowledgeFileStatus、getKnowledgeFileContent/updateKnowledgeFileContent（内容专用接口，GET/PUT /knowledge-bases/{kbId}/files/{id}/content；updateKnowledgeFileContent 请求体为原始字符串并覆盖 Content-Type: text/plain 对齐后端 consumes），路径基于 /knowledge-bases 与 /knowledge-bases/{kbId}/files"
+      "description": "知识库与知识文件 API 服务封装：listKnowledgeBases/getKnowledgeBase/createKnowledgeBase/updateKnowledgeBase/deleteKnowledgeBase/updateKnowledgeBaseStatus、listKnowledgeFiles/getKnowledgeFile/createKnowledgeFile/updateKnowledgeFile/deleteKnowledgeFile/updateKnowledgeFileStatus、getKnowledgeFileContent/updateKnowledgeFileContent（内容专用接口，GET/PUT /knowledge-bases/{kbId}/files/{id}/content；updateKnowledgeFileContent 请求体为原始字符串并覆盖 Content-Type: text/plain 对齐后端 consumes）、publishKnowledgeFile（POST /knowledge-bases/{kbId}/files/{fileId}/publish）、refreshKnowledgeFiles（PUT /knowledge-bases/{kbId}/files/refresh）、rebuildKnowledgeBaseES（POST /knowledge-bases/{kbId}/rebuild-es），路径基于 /knowledge-bases 与 /knowledge-bases/{kbId}/files"
     },
     {
       "path": "src/pages/knowledge/KnowledgeBaseList.tsx",
-      "description": "知识库管理页面：列表展示、名称搜索与状态筛选、新增/编辑/删除（Popconfirm）/启用禁用（Switch）、操作列\"管理文件\"跳转 /knowledge/:kbId/files"
+      "description": "知识库管理页面：列表展示、名称搜索与状态筛选、新增/编辑/删除（Popconfirm）/启用禁用（Switch）、操作列\"管理文件\"跳转 /knowledge/:kbId/files（知识库 rebuilding=true 时禁用置灰）、\"ES数据重构\"按钮调用 rebuildKnowledgeBaseES、表格新增\"ES 索引\"列（空显示'-'）、新增/编辑弹窗仅含向量模型下拉（listModels({modelType:'EMBEDDINGS'}) 加载），无 esIndex 表单项，提交时排除 esIndex 字段并归一化 vectorModelId 空字符串为 undefined"
     },
     {
       "path": "src/pages/knowledge/KnowledgeFileList.tsx",
-      "description": "知识文件列表页面（按 kbId 路由参数加载）：返回知识库管理按钮、列表展示、新增/编辑/删除/启用禁用、发布文件占位按钮、操作列\"编辑内容\"跳转 /knowledge/:kbId/files/:fileId/edit；新建/编辑弹窗仅包含 fileName 与 fileDescription（不含 fileContent）"
+      "description": "知识文件列表页面（按 kbId 路由参数加载）：返回按钮、\"刷新\"按钮（refreshKnowledgeFiles）、新增/编辑/删除/启用禁用、\"发布\"/\"发布中\"按钮（publishKnowledgeFile，仅 PUBLISHING+publishing=true 时显示「发布中」disabled，其他状态含崩溃恢复可点击，知识库 rebuilding=true 时禁用）、发布状态 Tag 列（默认灰/processing 蓝/success 绿/warning 橙/error 红）、操作列\"编辑内容\"跳转 /knowledge/:kbId/files/:fileId/edit、加载 getKnowledgeBase 获取 rebuilding 状态；新建/编辑弹窗仅包含 fileName 与 fileDescription（不含 fileContent）"
     },
     {
       "path": "src/pages/knowledge/KnowledgeFileEdit.tsx",
-      "description": "知识文件内容编辑页面：按 kbId/fileId 路由参数并行调用 getKnowledgeFile 加载文件元信息（文件名）与 getKnowledgeFileContent 加载文件内容；左右分栏布局（左侧 TextArea 编辑 Markdown，右侧 react-markdown + remark-gfm 实时预览，左右使用相同高度设置对齐）；底部右下角（flex-end justify）提供\"保存\"（调用 updateKnowledgeFileContent）与\"关闭\"按钮，无返回按钮"
+      "description": "知识文件内容编辑页面：按 kbId/fileId 路由参数并行调用 getKnowledgeFile 加载文件元信息（文件名+publishStatus）与 getKnowledgeFileContent 加载文件内容；若 publishStatus 为 PUBLISHING 则禁用 TextArea 与保存按钮并显示\"发布中，暂不可编辑\"Tag；左右分栏布局（左侧 TextArea 编辑 Markdown，右侧 react-markdown + remark-gfm 实时预览，左右使用相同高度设置对齐）；底部右下角（flex-end justify）提供\"保存\"（调用 updateKnowledgeFileContent）与\"关闭\"按钮，无返回按钮"
     },
     {
       "path": "src/services/__tests__/knowledge.test.ts",
       "description": "知识库服务层单元测试：mock api 验证 getKnowledgeFileContent（GET /knowledge-bases/{kbId}/files/{id}/content 返回内容字符串）与 updateKnowledgeFileContent（PUT 同路径，请求体为 JSON.stringify(content)）的调用路径与返回值"
+    },
+    {
+      "path": "src/pages/knowledge/__tests__/KnowledgeBaseList.test.tsx",
+      "description": "知识库管理页面单元测试：列表渲染/搜索筛选/CRUD 弹窗交互、表格「ES 索引」列展示（空值显示'-'）、新增/编辑弹窗不包含 esIndex 输入控件、编辑回填仅 name/description/vectorModelId、提交时 payload 排除 esIndex 字段、vectorModelId 空字符串归一化为 undefined"
+    },
+    {
+      "path": "e2e/KnowledgeBaseList.spec.ts",
+      "description": "知识库管理页面 E2E 测试（Playwright + page.route 模拟后端）：表格「ES 索引」列展示（空值显示'-'）、新增/编辑弹窗不包含 ES 索引输入框、新增/编辑提交 POST/PUT payload 不包含 esIndex 字段"
     }
   ]
 }

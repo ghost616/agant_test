@@ -112,6 +112,58 @@
     {
       "path": "agent-integration/src/test/java/com/ghost616/agentinteg/model/invoker/SiliconFlowInvokerTest.java",
       "description": "SiliconFlowInvoker 单元测试：验证继承 embed 支持、embeddings URL、工厂 SILICONFLOW 路由、PlatformType.SILICONFLOW 默认值（含默认模型列表为空断言）"
+    },
+    {
+      "path": "agent-integration/src/main/java/com/ghost616/agentinteg/knowledge/KnowledgeBaseQueryProvider.java",
+      "description": "知识库查询 Provider 接口，定义知识库基础信息查询、文件搜索、文本块搜索与行号范围文本块获取四类查询能力，由外部模块提供实现。getKnowledgeBaseInfo(sessionId) 返回 List<KnowledgeBaseInfo>（会话或知识库不存在时返回空列表）；searchFiles 仅返回已发布到 ES 的文件；searchChunks 的 searchType 参数为 SearchType 枚举，fileId 参数作为 ES 查询过滤条件在查询层面生效（非内存过滤），searchChunks 已移除 contextLines 参数（返回纯匹配结果，不含上下文扩展），返回的 TextChunkWithFile 含 knowledgeBaseId；上下文扩展交由调用方通过 getFileChunks 实现。"
+    },
+    {
+      "path": "agent-integration/src/main/java/com/ghost616/agentinteg/knowledge/KnowledgeBaseInfo.java",
+      "description": "知识库基础信息数据类（kbId/kbName/kbDescription），用于知识库查询工具返回结构。"
+    },
+    {
+      "path": "agent-integration/src/main/java/com/ghost616/agentinteg/knowledge/FileInfo.java",
+      "description": "知识库文件信息数据类（fileId/fileName/fileDescription/maxLineCount），用于文件搜索工具返回结构。"
+    },
+    {
+      "path": "agent-integration/src/main/java/com/ghost616/agentinteg/knowledge/TextChunkWithFile.java",
+      "description": "文本块数据类，包含知识库 ID（knowledgeBaseId）、文件信息（fileId/fileName）与文本块列表（chunkList），嵌套 TextChunk（lineNumber/text），用于文本块搜索与行号范围获取返回结构。"
+    },
+    {
+      "path": "agent-integration/src/main/java/com/ghost616/agentinteg/tool/KnowledgeBaseInfoTool.java",
+      "description": "知识库信息工具（工具名 default_tool_rag_info），继承 CustomToolInvoker（非 SystemTool），移除 getToolName/getDescription/getParameterSchema 方法，无 @Component 注解。静态 createToolConfig() 返回 ToolConfigDTO（id=null, toolType=CUSTOM, name=default_tool_rag_info, 描述与空参数 schema）。构造函数传入 ToolConfigDTO 与 KnowledgeBaseQueryProvider。execute 通过 AgentExecutionContext.getSessionId() 获取会话 ID 调用 getKnowledgeBaseInfo，返回知识库信息列表 JSON（null 时序列化为空列表），使用 JsonMapper。"
+    },
+    {
+      "path": "agent-integration/src/main/java/com/ghost616/agentinteg/tool/KnowledgeFileInfoTool.java",
+      "description": "知识库文件搜索工具（工具名 default_tool_rag_file_info），继承 CustomToolInvoker（非 SystemTool），移除 getToolName/getDescription/getParameterSchema 方法，无 @Component 注解。静态 createToolConfig() 返回 ToolConfigDTO（id=null, toolType=CUSTOM, name=default_tool_rag_file_info, 描述与参数 schema：knowledgeBaseId 必填/fileId 可选/fileName/searchLimit 默认10）。构造函数传入 ToolConfigDTO 与 KnowledgeBaseQueryProvider。execute 调用 searchFiles 搜索文件，传 fileId 时按 fileId 过滤，返回 FileInfo 列表 JSON，使用 JsonMapper。"
+    },
+    {
+      "path": "agent-integration/src/main/java/com/ghost616/agentinteg/tool/KnowledgeSearchTool.java",
+      "description": "知识库文本块搜索工具（工具名 default_tool_rag_search），继承 CustomToolInvoker（非 SystemTool），无 @Component 注解。静态 createToolConfig() 返回 ToolConfigDTO（id=null, toolType=CUSTOM, name=default_tool_rag_search, 描述与参数 schema：knowledgeBaseId 必填/fileId/searchType 必填 enum VECTOR/FULLTEXT/HYBRID/query 必填/searchLimit 默认10/contextLines 默认3）。构造函数传入 ToolConfigDTO 与 KnowledgeBaseQueryProvider。execute 调用 searchChunks 获取纯匹配文本块后，用 contextLines 扩大每个 chunk 的行范围（line-contextLines ~ line+contextLines），将同文件重叠/相邻行范围合并后逐个调用 provider.getFileChunks() 获取上下文文本块，再按 (knowledgeBaseId, fileId) 分组到 LinkedHashMap，组内按 lineNumber 去重（LinkedHashMap putIfAbsent 保持插入顺序）后调用 mergeContinuousChunks 按行号升序合并连续行号块，返回 List<{knowledgeBaseId, fileId, chunks}> 结构，使用 JsonMapper。"
+    },
+    {
+      "path": "agent-integration/src/main/java/com/ghost616/agentinteg/tool/KnowledgeFileChunkTool.java",
+      "description": "知识库文件行号范围文本块工具（工具名 default_tool_rag_file_chunk），继承 CustomToolInvoker（非 SystemTool），移除 getToolName/getDescription/getParameterSchema 方法，无 @Component 注解。静态 createToolConfig() 返回 ToolConfigDTO（id=null, toolType=CUSTOM, name=default_tool_rag_file_chunk, 描述与参数 schema：knowledgeBaseId 必填/fileId 必填/startLine 默认0/endLine 默认文件最大行数）。构造函数传入 ToolConfigDTO 与 KnowledgeBaseQueryProvider。endLine 未传时通过 searchFiles 解析 maxLineCount，找不到则用 Integer.MAX_VALUE，调用 getFileChunks 后将 chunkList 按行号升序合并为纯文本字符串返回（块之间以换行分隔，null/空列表返回空字符串），使用 JsonMapper 序列化错误。"
+    },
+    {
+      "path": "agent-integration/src/test/java/com/ghost616/agentinteg/tool/KnowledgeBaseInfoToolTest.java",
+      "description": "KnowledgeBaseInfoTool 单元测试，覆盖工具名/描述/参数 schema、正常返回、缺少 sessionId、provider 异常场景。"
+    },
+    {
+      "path": "agent-integration/src/test/java/com/ghost616/agentinteg/tool/KnowledgeFileInfoToolTest.java",
+      "description": "KnowledgeFileInfoTool 单元测试，覆盖工具名/描述/参数 schema、正常返回、searchLimit 默认值、缺少 knowledgeBaseId、provider 异常场景。"
+    },
+    {
+      "path": "agent-integration/src/test/java/com/ghost616/agentinteg/tool/KnowledgeSearchToolTest.java",
+      "description": "KnowledgeSearchTool 单元测试，覆盖工具名/描述/参数 schema、searchChunks 纯匹配后经 getFileChunks 扩大行范围并合并连续行号块、同一文件多个 withFile 聚合合并、重复行号去重、getFileChunks 返回 null 跳过、searchLimit/contextLines 默认值、fileId 透传、必填参数缺失、无效 searchType、provider 异常与特殊字符场景。"
+    },
+    {
+      "path": "agent-integration/src/test/java/com/ghost616/agentinteg/tool/KnowledgeFileChunkToolTest.java",
+      "description": "KnowledgeFileChunkTool 单元测试，覆盖工具名/描述/参数 schema、正常返回、startLine 默认值、endLine 文件最大行数解析、找不到文件时 Integer.MAX_VALUE 回退、必填参数缺失、provider 异常场景。"
+    },
+    {
+      "path": "agent-integration/src/main/java/com/ghost616/agentinteg/knowledge/SearchType.java",
+      "description": "知识库文本块搜索类型枚举（VECTOR/FULLTEXT/HYBRID），用于 KnowledgeBaseQueryProvider.searchChunks 的搜索类型参数。"
     }
   ]
 }

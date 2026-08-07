@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_029cfc86affe2OYtzXzOoeAwry",
+  "content": "待测试功能说明\n\n变更文件：\n- src/pages/knowledge/KnowledgeBaseList.tsx\n\n需测试的功能：\n1. 表格 columns 新增「ES 索引」列显示 esIndex，值为空时显示 '-'。\n2. 编辑 Modal 中已移除 esIndex 的 Form.Item（表单不再包含 ES 索引输入控件）。\n3. 编辑回填 useEffect 中不再设置 esIndex 字段值。\n4. handleModalOk 提交时排除 esIndex 字段：createKnowledgeBase / updateKnowledgeBase 的请求体 payload 中不包含 esIndex 字段。\n5. 提交时 vectorModelId 空字符串归一化为 undefined 的逻辑保持不变。\n\n编译要求：\n- 变更文件 TypeScript 编译零错误（tsc 检查 src/pages/knowledge/KnowledgeBaseList.tsx）。",
+  "timestamp": "2026-08-06T08:56:04.364Z"
+}

@@ -1,6 +1,8 @@
 package com.ghost616.platform.controller;
 
 import com.ghost616.agentbase.enums.CommonStatus;
+import com.ghost616.agentbase.enums.ErrorCode;
+import com.ghost616.agentbase.exception.BusinessException;
 import com.ghost616.platform.dto.ApiResponse;
 import com.ghost616.platform.dto.knowledge.KnowledgeFileCreateRequest;
 import com.ghost616.platform.dto.knowledge.KnowledgeFileDTO;
@@ -65,6 +67,15 @@ class KnowledgeFileControllerTest {
         assertTrue(response.isSuccess());
         assertNull(response.getData());
         verify(knowledgePublishService).publishFile(1L);
+    }
+
+    @Test
+    void publish_发布中应拒绝重复提交() {
+        when(knowledgePublishService.isPublishing(1L)).thenReturn(true);
+
+        BusinessException ex = assertThrows(BusinessException.class, () -> controller.publish(100L, 1L));
+        assertEquals(ErrorCode.KNOWLEDGE_FILE_PUBLISHING, ex.getErrorCode());
+        verify(knowledgePublishService, never()).publishFile(1L);
     }
 
     @Test

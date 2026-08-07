@@ -1,0 +1,125 @@
+package com.ghost616.agentinteg.tool;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghost616.agentbase.service.agent.AgentExecutionContext;
+import com.ghost616.agentbase.service.agent.invoker.SystemTool;
+import com.ghost616.agentinteg.knowledge.KnowledgeBaseQueryProvider;
+import com.ghost616.agentinteg.knowledge.TextChunkWithFile;
+import com.ghost616.agentinteg.knowledge.TextChunkWithFile.TextChunk;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
+
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class KnowledgeSearchTool implements SystemTool {
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final String TOOL_NAME = "kb_search";
+    private static final int DEFAULT_SEARCH_LIMIT = 10;
+    private static final int DEFAULT_CONTEXT_LINES = 3;
+
+    private final KnowledgeBaseQueryProvider provider;
+
+    @Override
+    public String getToolName() {
+        return TOOL_NAME;
+    }
+
+    @Override
+    public String getDescription() {
+        return "搜索知识库文本块，按上下文行数扩展并合并连续行号块后返回";
+    }
+
+    @Override
+    public String getParameterSchema() {
+        return """
+                {
+                  "type": "object",
+                  "properties": {
+                    "knowledgeBaseId": { "type": "integer", "description": "知识库 ID" },
+                    "fileId": { "type": "integer", "description": "文件 ID，不传表示不限文件" },
+                    "searchType": { "type": "string", "description": "搜索类型" },
+                    "query": { "type": "string", "description": "查询关键字" },
+                    "searchLimit": { "type": "integer", "description": "返回数量上限，默认 10" },
+                    "contextLines": { "type": "integer", "description": "上下文行数，默认 3" }
+                  },
+                  "required": ["knowledgeBaseId", "searchType", "query"]
+                }""";
+    }
+
+    @Override
+    public String execute(AgentExecutionContext ctx, String arguments) {
+        try {
+            JsonNode root = OBJECT_MAPPER.readTree(arguments);
+            JsonNode kbIdNode = root.get("knowledgeBaseId");
+            if (kbIdNode == null || kbIdNode.isNull() || !kbIdNode.canConvertToLong()) {
+                return "{\"status\":\"error\",\"errMsg\":\"缺少 knowledgeBaseId 参数\"}";
+            }
+            Long knowledgeBaseId = kbIdNode.asLong();
+            Long fileId = root.has("fileId") && root.get("fileId").canConvertToLong()
+                    ? root.get("fileId").asLong() : null;
+            String searchType = root.has("searchType") && !root.get("searchType").isNull()
+                    ? root.get("searchType").asText() : null;
+            String query = root.has("query") && !root.get("query").isNull()
+                    ? root.get("query").asText() : null;
+            if (searchType == null || searchType.isBlank() || query == null || query.isBlank()) {
+                return "{\"status\":\"error\",\"errMsg\":\"缺少 searchType 或 query 参数\"}";
+            }
+            int searchLimit = root.has("searchLimit") && root.get("searchLimit").canConvertToInt()
+                    ? root.get("searchLimit").asInt() : DEFAULT_SEARCH_LIMIT;
+            int contextLines = root.has("contextLines") && root.get("contextLines").canConvertToInt()
+                    ? root.get("contextLines").asInt() : DEFAULT_CONTEXT_LINES;
+
+            List<TextChunkWithFile> results = provider.searchChunks(
+                    knowledgeBaseId, fileId, searchType, query, searchLimit, contextLines);
+
+            List<TextChunkWithFile> merged = new ArrayList<>();
+            if (results != null) {
+                for (TextChunkWithFile withFile : results) {
+                    merged.add(mergeContinuousChunks(withFile));
+                }
+            }
+            return OBJECT_MAPPER.writeValueAsString(merged);
+        } catch (Exception e) {
+            log.error("kb_search 执行失败", e);
+            return "{\"status\":\"error\",\"errMsg\":\"" + e.getMessage() + "\"}";
+        }
+    }
+
+    private TextChunkWithFile mergeContinuousChunks(TextChunkWithFile withFile) {
+        if (withFile == null || withFile.chunkList() == null || withFile.chunkList().isEmpty()) {
+            return withFile;
+        }
+        List<TextChunk> sorted = withFile.chunkList().stream()
+                .sorted(Comparator.comparingInt(TextChunk::lineNumber))
+                .toList();
+        List<TextChunk> merged = new ArrayList<>();
+        int startLine = sorted.get(0).lineNumber();
+        int lastLine = startLine;
+        StringBuilder text = new StringBuilder(sorted.get(0).text());
+        for (int i = 1; i < sorted.size(); i++) {
+            TextChunk chunk = sorted.get(i);
+            if (chunk.lineNumber() == lastLine + 1) {
+                if (text.length() > 0) {
+                    text.append("\n");
+                }
+                text.append(chunk.text());
+                lastLine = chunk.lineNumber();
+            } else {
+                merged.add(new TextChunk(startLine, text.toString()));
+                startLine = chunk.lineNumber();
+                lastLine = startLine;
+                text = new StringBuilder(chunk.text());
+            }
+        }
+        merged.add(new TextChunk(startLine, text.toString()));
+        return new TextChunkWithFile(withFile.fileId(), withFile.fileName(), merged);
+    }
+}

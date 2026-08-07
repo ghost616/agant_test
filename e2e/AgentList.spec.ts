@@ -1,0 +1,202 @@
+import { test, expect, Page } from '@playwright/test';
+
+const AGENT_ID = 'agent-100';
+
+const MOCK_MODEL = {
+  id: 'model-1',
+  name: 'LLM模型A',
+  platformType: 'openai',
+  modelName: 'gpt-4',
+};
+
+const MOCK_TOOL = {
+  id: 'tool-1',
+  name: '工具A',
+  toolType: 'function',
+};
+
+const MOCK_SKILL = {
+  id: 'skill-1',
+  name: '技能A',
+};
+
+const MOCK_KB_A = {
+  id: 'kb-100',
+  name: '测试知识库A',
+  status: 'ENABLED',
+};
+
+const MOCK_KB_B = {
+  id: 'kb-101',
+  name: '测试知识库B',
+  status: 'ENABLED',
+};
+
+const MOCK_AGENT_WITH_KB = {
+  id: AGENT_ID,
+  name: '绑定知识库智能体',
+  description: 'desc',
+  status: 'ENABLED',
+  tools: [],
+  skills: [],
+  knowledgeBases: [{ id: 'kb-100', name: '测试知识库A' }],
+  recentMessageCount: 10,
+  createTime: '2026-08-01T00:00:00',
+  updateTime: '2026-08-01T00:00:00',
+};
+
+const MOCK_AGENT_NO_KB = {
+  id: 'agent-101',
+  name: '无知识库智能体',
+  description: '',
+  status: 'DISABLED',
+  tools: [],
+  skills: [],
+  createTime: '2026-08-01T00:00:00',
+  updateTime: '2026-08-01T00:00:00',
+};
+
+async function setupMocks(page: Page, agents: unknown[] = [MOCK_AGENT_WITH_KB, MOCK_AGENT_NO_KB]) {
+  await page.route('**/api/knowledge-bases*', async (route) => {
+    if (route.request().method() === 'GET') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true, data: [MOCK_KB_A, MOCK_KB_B] }),
+      });
+      return;
+    }
+    await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+  });
+  await page.route('**/api/models*', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ success: true, data: [MOCK_MODEL] }),
+    });
+  });
+  await page.route('**/api/tools*', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ success: true, data: [MOCK_TOOL] }),
+    });
+  });
+  await page.route('**/api/skills*', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ success: true, data: [MOCK_SKILL] }),
+    });
+  });
+  await page.route('**/api/agents*', async (route) => {
+    if (route.request().method() === 'GET') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true, data: agents }),
+      });
+      return;
+    }
+    if (route.request().method() === 'POST') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true, data: MOCK_AGENT_WITH_KB }),
+      });
+      return;
+    }
+    if (route.request().method() === 'PUT') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true, data: MOCK_AGENT_WITH_KB }),
+      });
+      return;
+    }
+    await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+  });
+}
+
+function kbSelect(page: Page) {
+  const formItem = page.locator('.ant-modal .ant-form-item').filter({ hasText: '绑定知识库' });
+  return formItem.locator('.ant-select');
+}
+
+async function selectKnowledgeBases(page: Page, names: string[]) {
+  await kbSelect(page).click();
+  for (const name of names) {
+    await page.locator('.ant-select-dropdown:visible').getByText(name).click();
+  }
+}
+
+test.describe('智能体管理页 - 绑定知识库', () => {
+  test.setTimeout(120000);
+  test.beforeEach(async ({ page }) => {
+    await setupMocks(page);
+    await page.goto('/agents', { waitUntil: 'domcontentloaded', timeout: 120000 });
+    await page.waitForSelector('.ant-table', { timeout: 60000 });
+  });
+
+  test('表格渲染「绑定知识库」列：按名称显示 Tag，空值显示 -', async ({ page }) => {
+    const thead = page.locator('.ant-table-thead');
+    await expect(thead.getByText('绑定知识库')).toBeVisible();
+
+    const kbRow = page.getByRole('row', { name: /绑定知识库智能体/ });
+    await expect(kbRow).toContainText('测试知识库A');
+
+    const noKbRow = page.getByRole('row', { name: /无知识库智能体/ });
+    await expect(noKbRow).toContainText('-');
+  });
+
+  test('新增弹窗存在「绑定知识库」多选下拉，选项来自知识库列表接口', async ({ page }) => {
+    await page.getByRole('button', { name: '新增智能体' }).click();
+    await page.locator('.ant-modal').waitFor();
+
+    const select = kbSelect(page);
+    await expect(select).toBeVisible();
+    await select.click();
+    const dropdown = page.locator('.ant-select-dropdown:visible');
+    await expect(dropdown.getByText('测试知识库A')).toBeVisible();
+    await expect(dropdown.getByText('测试知识库B')).toBeVisible();
+  });
+
+  test('新增提交时 POST payload 携带 knowledgeBaseIds', async ({ page }) => {
+    await page.getByRole('button', { name: '新增智能体' }).click();
+    await page.locator('.ant-modal').waitFor();
+    await page.locator('.ant-modal').getByLabel('名称').fill('新智能体');
+    await selectKnowledgeBases(page, ['测试知识库A', '测试知识库B']);
+
+    const [request] = await Promise.all([
+      page.waitForRequest(
+        (req) => req.method() === 'POST' && req.url().includes('/api/agents'),
+      ),
+      (async () => {
+        await page.locator('.ant-modal-footer .ant-btn-primary').click();
+      })(),
+    ]);
+    const payload = request.postDataJSON();
+    expect(payload.name).toBe('新智能体');
+    expect(payload.knowledgeBaseIds).toEqual(['kb-100', 'kb-101']);
+  });
+
+  test('编辑弹窗回填已绑定知识库，提交 PUT payload 携带 knowledgeBaseIds', async ({ page }) => {
+    const row = page.getByRole('row', { name: /绑定知识库智能体/ });
+    await row.getByRole('button', { name: '编辑' }).click();
+    await page.locator('.ant-modal').waitFor();
+    await expect(page.locator('.ant-modal').getByText('测试知识库A')).toBeVisible();
+
+    await selectKnowledgeBases(page, ['测试知识库B']);
+    const [request] = await Promise.all([
+      page.waitForRequest(
+        (req) =>
+          req.method() === 'PUT' && req.url().includes(`/api/agents/${AGENT_ID}`),
+      ),
+      (async () => {
+        await page.locator('.ant-modal-footer .ant-btn-primary').click();
+      })(),
+    ]);
+    const payload = request.postDataJSON();
+    expect(payload.knowledgeBaseIds).toEqual(['kb-100', 'kb-101']);
+  });
+});

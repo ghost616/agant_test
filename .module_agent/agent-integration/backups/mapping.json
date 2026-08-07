@@ -22,5 +22,17 @@
   "agent-integration/src/main/java/com/ghost616/agentinteg/model/invoker/KimiInvoker.java": "9fc0ef8830d2fad6d3564231616b80a0",
   "agent-integration/src/main/java/com/ghost616/agentinteg/model/PlatformType.java": "7d014c8d7f99848f1fc1002983d4a335",
   "agent-integration/src/test/java/com/ghost616/agentinteg/model/invoker/SiliconFlowInvokerTest.java": "69fc7708b4ea520daced4b06e42fd5a6",
-  "agent-integration/src/main/java/com/ghost616/agentinteg/model/SiliconFlowModel.java": "b04958b3d6fa7219a9f7149ff4b5595c"
+  "agent-integration/src/main/java/com/ghost616/agentinteg/model/SiliconFlowModel.java": "b04958b3d6fa7219a9f7149ff4b5595c",
+  "agent-integration/src/main/java/com/ghost616/agentinteg/tool/KnowledgeBaseInfoTool.java": "dca248edd039da7ee1cb465a028c68ec",
+  "agent-integration/src/main/java/com/ghost616/agentinteg/tool/KnowledgeFileInfoTool.java": "3eafa3243b1419930308e00bd8a0343b",
+  "agent-integration/src/main/java/com/ghost616/agentinteg/tool/KnowledgeSearchTool.java": "6ec8ecc0af32e0e9324d2ba686217d3a",
+  "agent-integration/src/main/java/com/ghost616/agentinteg/tool/KnowledgeFileChunkTool.java": "e835d92ab557101234945ba3091b7cec",
+  "agent-integration/src/test/java/com/ghost616/agentinteg/tool/KnowledgeSearchToolTest.java": "e3e9f6febfba8421045c7fceb651afe0",
+  "agent-integration/src/main/java/com/ghost616/agentinteg/knowledge/KnowledgeBaseQueryProvider.java": "f8266c912ddc5f407257b4e147306b21",
+  "agent-integration/src/test/java/com/ghost616/agentinteg/tool/KnowledgeBaseInfoToolTest.java": "d1829644700f055916172dda3c3c1815",
+  "agent-integration/src/test/java/com/ghost616/agentinteg/tool/KnowledgeFileChunkToolTest.java": "6f5f51b3151f0fb842a9fa164d8cb9f7",
+  "platform-app/src/main/java/com/ghost616/platform/service/knowledge/KnowledgeBaseQueryProviderImpl.java": "b5e53d922f0be697b49aaeeb5f73a1fd",
+  "platform-app/src/main/java/com/ghost616/platform/service/search/KnowledgeSearchClient.java": "d6305e9f6a4b6915cc20e37a9e31062f",
+  "platform-app/src/test/java/com/ghost616/platform/service/knowledge/KnowledgeBaseQueryProviderImplTest.java": "ea4ae3329fa2ee35b21c622870c82c04",
+  "platform-app/src/test/java/com/ghost616/platform/service/search/KnowledgeSearchClientTest.java": "7a02de941de510e42125727d55b6f7b2"
 }

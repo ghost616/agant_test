@@ -259,11 +259,11 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/controller/KnowledgeBaseController.java",
-      "description": "知识库管理控制器，提供 /api/knowledge-bases 的 list/getById/create/update/delete/toggleStatus 六个 CRUD 接口，使用 ApiResponse 包装响应"
+      "description": "知识库管理控制器，提供 /api/knowledge-bases 的 list/getById/create/update/delete/toggleStatus 六个 CRUD 接口，使用 ApiResponse 包装响应；新增 POST /{id}/rebuild-es 端点调用 KnowledgePublishService.rebuildKnowledgeBase 重建索引，GET /{id} 返回 rebuilding 状态供轮询"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/controller/KnowledgeFileController.java",
-      "description": "知识文件管理控制器，提供 /api/knowledge-bases/{kbId}/files 的 list/getById/create/update/delete/toggleStatus 六个接口及 GET/PUT /{id}/content 内容读写端点（GET 返回 ApiResponse<String> JSON 包装的文件内容，PUT 接受纯文本内容），kbId 来自路径参数"
+      "description": "知识文件管理控制器，提供 /api/knowledge-bases/{kbId}/files 的 list/getById/create/update/delete/toggleStatus 六个接口及 GET/PUT /{id}/content 内容读写端点（GET 返回 ApiResponse<String> JSON 包装的文件内容，PUT 接受纯文本内容），kbId 来自路径参数；新增 POST /{id}/publish 端点（调用 KnowledgePublishService.publishFile 异步发布）与 PUT /refresh 端点（重新查询文件列表，支持 fileName/status 过滤）"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/knowledge/KnowledgeBaseService.java",
@@ -271,7 +271,7 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/knowledge/KnowledgeBaseServiceImpl.java",
-      "description": "知识库服务实现，基于 MyBatis-Plus 实现 CRUD，含 name 唯一性校验；delete 时级联删除该知识库下所有关联文件（@Transactional）"
+      "description": "知识库服务实现，基于 MyBatis-Plus 实现 CRUD，含 name 唯一性校验；delete 时级联删除该知识库下所有关联文件（@Transactional）；create/update 时设置 vectorModelId，esIndex 为空自动生成（agent_+id+_+随机6位小写字母数字下划线组合）；toDTO 映射 vectorModelId/esIndex/rebuilding 字段"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/knowledge/KnowledgeFileService.java",
@@ -279,23 +279,23 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/knowledge/KnowledgeFileServiceImpl.java",
-      "description": "知识文件服务实现，创建时校验知识库存在，getFileContent 读取文件内容，updateFileContent 按新内容重算 fileSize/lineCount，CRUD 与状态切换"
+      "description": "知识文件服务实现，创建时校验知识库存在并设置 publishStatus=UNPUBLISHED，getFileContent 读取文件内容，updateFileContent 按新内容重算 fileSize/lineCount（已发布文件改为 PENDING_PUBLISH），CRUD 与状态切换，toDTO 映射 publishStatus"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/dto/knowledge/KnowledgeBaseDTO.java",
-      "description": "知识库响应 DTO，字段 id/name/description/status/createTime/updateTime，id 使用 ToStringSerializer 序列化"
+      "description": "知识库响应 DTO，字段 id/name/description/status/vectorModelId/esIndex/rebuilding/createTime/updateTime，id/vectorModelId 使用 ToStringSerializer 序列化"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/dto/knowledge/KnowledgeBaseCreateRequest.java",
-      "description": "知识库创建请求 DTO，字段 name（@NotBlank）/description"
+      "description": "知识库创建请求 DTO，字段 name（@NotBlank）/description/vectorModelId（@NotNull 必填）/esIndex（可选，为空自动生成）"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/dto/knowledge/KnowledgeBaseUpdateRequest.java",
-      "description": "知识库更新请求 DTO，字段 name/description/status"
+      "description": "知识库更新请求 DTO，字段 name/description/status/vectorModelId/esIndex"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/dto/knowledge/KnowledgeFileDTO.java",
-      "description": "知识文件响应 DTO，字段 id/fileName/fileDescription/knowledgeBaseId/fileSize/lineCount/status/createTime/updateTime，id/knowledgeBaseId 使用 ToStringSerializer 序列化；不含文件内容，内容通过 getFileContent 接口单独获取"
+      "description": "知识文件响应 DTO，字段 id/fileName/fileDescription/knowledgeBaseId/fileSize/lineCount/status/publishStatus/createTime/updateTime，id/knowledgeBaseId 使用 ToStringSerializer 序列化；不含文件内容，内容通过 getFileContent 接口单独获取"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/dto/knowledge/KnowledgeFileCreateRequest.java",
@@ -315,7 +315,31 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/search/KnowledgeSearchClient.java",
-      "description": "知识库搜索客户端服务类，封装 Elasticsearch 索引操作，所有方法接收 indexName 参数：indexExists 检查索引；createIndex 创建索引（dense_vector cosine + ik 分词 text + boolean/keyword/integer mapping，索引已存在时抛 IllegalStateException）；deleteIndex 删除索引（不存在时跳过）；batchSave 批量保存 TextChunk（bulk，docId=knowledgeBaseId_fileId_lineNumber）；deleteByKnowledgeBase/deleteByFile 按条件 deleteByQuery 删除；vectorSearch 用 search.knn（KnnSearch）kNN 检索，fullTextSearch 用 bool(match text) BM25 检索，两者均过滤 knowledgeBaseId + kbEnabled=true + fileEnabled=true；updateEnabledByFile 按 fileId 仅更新 fileEnabled、updateEnabledByKnowledgeBase 按 knowledgeBaseId 仅更新 kbEnabled（updateByQuery + painless scriptString）；batchSave/deleteBy*/search/updateEnabled 方法开头自动检查索引，不存在时自动创建；ES 调用 IOException 统一包装为 IllegalStateException。"
+      "description": "知识搜索客户端，封装 Elasticsearch 索引操作，全部方法接收 indexName 参数。createIndex 创建 mapping（vector=dense_vector similarity=cosine 不指定 dims、text=ik_max_word/ik_smart、kbEnabled/fileEnabled=boolean、knowledgeBaseId/fileId=keyword、lineNumber=integer）；batchSave 通过 bulk 批量保存（文档 id=knowledgeBaseId_fileId_lineNumber，重复上传幂等）；deleteByKnowledgeBase/deleteByFile 用 deleteByQuery 按 term 删除；vectorSearch（knn，query_vector 为 List<Float>，按分数降序）与 fullTextSearch（bool filter+must match text BM25）均支持 fileId 参数过滤：addScopeFilters 统一追加 knowledgeBaseId/kbEnabled/fileEnabled 过滤，fileId 非 null 时追加 fileId term（第 4 个 term）；searchByFileAndLineRange 按文件行号范围检索并按 lineNumber 升序；updateEnabledByFile 仅更新 fileEnabled、updateEnabledByKnowledgeBase 仅更新 kbEnabled（painless script）；所有写/检索方法开头调用私有 ensureIndex(indexName)（索引不存在时自动 createIndex）；deleteIndex 索引不存在时跳过不报错；createIndex 索引已存在时抛 IllegalStateException；ES 调用 IOException 统一包装为 IllegalStateException。"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/service/knowledge/KnowledgePublishService.java",
+      "description": "知识库发布服务（@Service + @EnableAsync）：publishFile(Long) @Async 异步将知识文件按行向量化写入 ES 索引（发布中/成功/失败状态流转，失败时清理索引），索引不存在时由 batchSave 内部 ensureIndex 自动创建（不再显式按维度 createIndex）；rebuildKnowledgeBase(Long) 重建知识库索引（rebuilding 状态标记、删除旧索引、批量重新发布已发布文件）；通过 ModelInvokerManager + 知识库 vectorModelId 对应模型生成向量"
+    },
+    {
+      "path": "platform-app/src/test/java/com/ghost616/platform/service/knowledge/KnowledgePublishServiceTest.java",
+      "description": "KnowledgePublishService 单元测试：覆盖 publishFile 成功发布/空行过滤/索引不存在按维度创建/失败置 PUBLISH_ERROR 并清理/文件不存在/知识库无索引/空内容，rebuildKnowledgeBase 成功重建/知识库不存在抛异常/异常时复位 rebuilding 状态"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/AgentKnowledgeBaseService.java",
+      "description": "AgentKnowledgeBase 的 MyBatis-Plus 批量操作服务接口，继承 IService<AgentKnowledgeBase>，提供 saveBatch 批量插入与 remove 批量删除能力，供 AgentConfigServiceImpl 维护智能体-知识库绑定关系"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/AgentKnowledgeBaseServiceImpl.java",
+      "description": "AgentKnowledgeBaseService 的默认实现，继承 ServiceImpl<AgentKnowledgeBaseMapper, AgentKnowledgeBase>，作为 @Service Bean 提供 AgentKnowledgeBase 批量插入/删除能力"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/service/knowledge/KnowledgeBaseQueryProviderImpl.java",
+      "description": "知识库查询 Provider 实现（实现 agent-integration 的 KnowledgeBaseQueryProvider 接口）。getKnowledgeBaseInfo 通过 SessionMapper→AgentKnowledgeBaseMapper→KnowledgeBaseMapper 链路查询会话绑定知识库，返回所有绑定知识库的 List<KnowledgeBaseInfo>（知识库存在才加入）；searchFiles 通过 KnowledgeFileMapper 按 kbId + publishStatus=PUBLISHED 过滤（仅返回已发布到 ES 的文件）+ fileName like + createTime 降序 + SQL 层 LIMIT 限制条数；searchChunks 支持 VECTOR（ModelInvoker 向量化后 vectorSearch）/FULLTEXT（fullTextSearch）/HYBRID（合并去重）三种搜索类型，fileId 参数透传至 ES 查询做过滤（非内存过滤），按文件分组返回命中文本块并按 lineNumber 组内去重；getFileChunks 通过 searchByFileAndLineRange 按文件行号范围查询。注入 SessionMapper/AgentKnowledgeBaseMapper/KnowledgeBaseMapper/KnowledgeFileMapper/ModelConfigMapper/ModelInvokerManager/KnowledgeSearchClient 依赖。"
+    },
+    {
+      "path": "platform-app/src/test/java/com/ghost616/platform/service/knowledge/KnowledgeBaseQueryProviderImplTest.java",
+      "description": "KnowledgeBaseQueryProviderImpl 单元测试，覆盖 getKnowledgeBaseInfo/searchFiles/searchChunks/getFileChunks。searchChunks 用例验证纯搜索+按文件分组并按 lineNumber 去重返回（5 参签名，对齐接口），已移除上下文扩展相关用例（mergedRanges/nonAdjacentRanges）。"
     }
   ]
 }

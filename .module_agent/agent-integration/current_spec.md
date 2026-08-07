@@ -62,3 +62,15 @@
 ## 模型调用器（ModelInvoker 实现）
 
 - **OpenAIInvoker**：新增 embed(EmbeddingRequest) 方法，调用 baseUrl+/embeddings 接口，请求体构建 model + input/inputList（inputList 优先；input 与 inputList 均为 null 时抛出 IllegalArgumentException），解析响应返回 EmbeddingResponse（embeddings 列表与 usage），错误处理遵循 invoke() 模式；新增 buildEmbeddingsUrl/buildEmbeddingRequestBody/parseEmbeddingResponse 受保护方法
+## 知识库查询工具
+
+### 知识库查询工具（Knowledge Base Query Tools）
+- **SearchType**：知识库文本块搜索类型枚举（VECTOR/FULLTEXT/HYBRID），用于 searchChunks 的搜索类型参数。
+- **KnowledgeBaseQueryProvider**：知识库查询 Provider 接口，定义四类查询能力：getKnowledgeBaseInfo(sessionId) 获取会话关联知识库信息列表（返回 List\<KnowledgeBaseInfo\>，会话或知识库不存在时返回空列表）、searchFiles(kbId, fileName, limit) 按文件名搜索文件（返回 List\<FileInfo\>，仅返回已发布到 ES 的文件）、searchChunks(kbId, fileId, searchType, query, topK) 搜索文本块（返回 List\<TextChunkWithFile\>，searchType 为 SearchType 枚举，不含上下文扩展，返回纯匹配结果；参数 fileId 作为 ES 查询过滤条件在查询层面生效（非内存过滤），非 null 时仅返回该文件下的文本块）、getFileChunks(kbId, fileId, startLine, endLine) 获取行号范围文本块（返回 TextChunkWithFile）。由外部模块提供实现。
+- **KnowledgeBaseInfo/FileInfo/TextChunkWithFile**：知识库查询数据类。KnowledgeBaseInfo 含 kbId/kbName/kbDescription；FileInfo 含 fileId/fileName/fileDescription/maxLineCount；TextChunkWithFile 含 knowledgeBaseId/fileId/fileName/chunkList，嵌套 TextChunk(lineNumber/text)。
+- 四个知识库工具类均继承 CustomToolInvoker（非 SystemTool），无 @Component 注解，构造函数传参（ToolConfigDTO + KnowledgeBaseQueryProvider），提供静态 createToolConfig() 返回 ToolConfigDTO（id=null, toolType=CUSTOM），工具名/描述/参数 schema 定义在 ToolConfigDTO 中：
+  - **KnowledgeBaseInfoTool**（default_tool_rag_info）：无参数，execute 通过 ctx.getSessionId() 获取会话 ID 调用 getKnowledgeBaseInfo 返回知识库信息列表 JSON（null 时序列化为 []）。
+  - **KnowledgeFileInfoTool**（default_tool_rag_file_info）：参数 knowledgeBaseId(必填)/fileId(可选)/fileName/searchLimit(默认10)，调用 searchFiles 返回文件列表 JSON，传 fileId 时按 fileId 过滤。
+  - **KnowledgeSearchTool**（default_tool_rag_search）：参数 knowledgeBaseId(必填)/fileId/searchType(必填，enum VECTOR/FULLTEXT/HYBRID)/query(必填)/searchLimit(默认10)/contextLines(默认3)。调用 searchChunks 获取纯匹配结果后，用 contextLines 扩大每个 chunk 的行范围（line-contextLines ~ line+contextLines，下限 1），将同文件重叠/相邻行范围经 mergeRanges 合并后逐个调用 provider.getFileChunks() 获取上下文文本块；随后按 (knowledgeBaseId, fileId) 分组到 LinkedHashMap，组内按 lineNumber 去重（LinkedHashMap putIfAbsent 保持插入顺序）后按行号升序合并连续行号块，返回 List\<{knowledgeBaseId, fileId, chunks}\> 结构。
+  - **KnowledgeFileChunkTool**（default_tool_rag_file_chunk）：参数 knowledgeBaseId(必填)/fileId(必填)/startLine(默认0)/endLine(默认文件最大行数)。endLine 未传时通过 searchFiles 解析文件 maxLineCount，找不到则用 Integer.MAX_VALUE，调用 getFileChunks 后将 chunkList 按行号升序合并为纯文本字符串返回（块之间以换行分隔，null/空列表返回空字符串）。
+- 以上工具错误 JSON 序列化使用 JsonMapper。

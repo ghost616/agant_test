@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_024eaf898ffeZ6joeq30eREpvT",
+  "content": "待测试功能：DefaultToolDataProvider 知识库工具配置重构\n\n代码文件：\n- platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultToolDataProvider.java\n- platform-app/src/test/java/com/ghost616/platform/service/agent/DefaultToolDataProviderTest.java\n\n可测试功能：\n1. KNOWLEDGE_TOOL_NAMES 改为引用各知识库工具类的 TOOL_NAME 常量，不再硬编码字符串。\n2. getKnowledgeToolConfig 按工具名调用各工具 createToolConfig() 获取完整配置并 set id 为工具名；未支持工具名抛 UnsupportedOperationException。\n3. getToolById：知识库工具名返回含完整 name/description/parameterSchema 的 ToolConfigDTO，id=工具名、toolType=CUSTOM；普通工具 ID 走原逻辑。\n4. 原有测试回归：GetSessionToolIds / GetCustomInvoker / GetToolById / GetBuiltinTools 现有用例（含 TOOL_NAME 常量用法）必须继续通过。\n\n测试类型：单元测试（JUnit5 + Mockito）与编译检查。",
+  "timestamp": "2026-08-07T07:40:03.313Z"
+}

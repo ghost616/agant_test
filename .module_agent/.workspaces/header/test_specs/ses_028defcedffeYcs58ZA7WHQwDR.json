@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_028defcedffeYcs58ZA7WHQwDR",
+  "content": "## 待测试功能说明\n\n本计划为 platform-data 模块知识库发布扩展变更，涉及以下文件：\n\n1. `platform-data/src/main/java/com/ghost616/platform/enums/PublishStatus.java` - 知识库发布状态枚举（UNPUBLISHED/PUBLISHING/PUBLISHED/PENDING_PUBLISH/PUBLISH_ERROR），@EnumValue 标记 code\n2. `platform-data/src/main/java/com/ghost616/platform/enums/KnowledgeBasePublishError.java` - 知识库发布错误码枚举（EMPTY_CONTENT/VECTOR_MODEL_NOT_CONFIGURED/KNOWLEDGE_BASE_REBUILDING/FILE_PUBLISHING/FILE_PUBLISH_FAILED），含 code/message\n3. `platform-data/src/main/java/com/ghost616/platform/entity/KnowledgeFile.java` - 新增 publishStatus（PublishStatus 类型）字段\n4. `platform-data/src/main/java/com/ghost616/platform/entity/KnowledgeBase.java` - 新增 vectorModelId（Long）、esIndex（String）、rebuilding（Boolean，默认 false）字段\n5. `platform-data/src/main/java/com/ghost616/platform/config/SchemaMigration.java` - 新增 knowledge_file.publish_status、knowledge_base.vector_model_id、knowledge_base.es_index、knowledge_base.rebuilding 四个列迁移条目\n\n需要验证的功能：\n- 编译检查：platform-data 模块 Java 代码能否通过编译（mvn compile）\n- 上述枚举与实体字段变更不影响其他模块引用（方法签名未变，仅新增字段/枚举）",
+  "timestamp": "2026-08-06T12:52:07.226Z"
+}

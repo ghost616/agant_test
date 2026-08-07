@@ -33,4 +33,33 @@ describe('Agent 类型定义', () => {
     expect(source).toContain('name?: string');
     expect(source).toContain('status?: CommonStatus');
   });
+
+  it('应定义 KnowledgeBaseItem 接口（id + name，对齐后端 KnowledgeBaseDTO）', () => {
+    const source = readFileSync(resolve(__dirname, '../agent.ts'), 'utf-8');
+    expect(source).toContain('interface KnowledgeBaseItem');
+    expect(source).toContain('id: string');
+    expect(source).toContain('name: string');
+  });
+
+  it('AgentConfig 接口应包含 knowledgeBases?: KnowledgeBaseItem[]（用于回显）', () => {
+    const source = readFileSync(resolve(__dirname, '../agent.ts'), 'utf-8');
+    expect(source).toContain('knowledgeBases?: KnowledgeBaseItem[]');
+    const configBlock = source.match(/interface AgentConfig[\s\S]*?\n\}/);
+    expect(configBlock).not.toBeNull();
+    if (configBlock) {
+      expect(configBlock[0]).toContain('knowledgeBases?: KnowledgeBaseItem[]');
+      expect(configBlock[0]).not.toContain('knowledgeBaseIds?: string[]');
+    }
+  });
+
+  it('AgentFormData 接口应包含 knowledgeBaseIds?: string[]（用于提交）', () => {
+    const source = readFileSync(resolve(__dirname, '../agent.ts'), 'utf-8');
+    expect(source).toContain('knowledgeBaseIds?: string[]');
+    const formBlock = source.match(/interface AgentFormData[\s\S]*?\n\}/);
+    expect(formBlock).not.toBeNull();
+    if (formBlock) {
+      expect(formBlock[0]).toContain('knowledgeBaseIds?: string[]');
+      expect(formBlock[0]).not.toContain('knowledgeBases?: KnowledgeBaseItem[]');
+    }
+  });
 });

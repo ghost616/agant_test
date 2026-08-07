@@ -7,5 +7,9 @@
   "platform-data/src/main/java/com/ghost616/platform/entity/Evaluation.java": "561f8a7bec1f4dda2e7607219e9c40d8",
   "platform-data/src/main/java/com/ghost616/platform/entity/EvaluationResult.java": "a77897cf44256bef862a5772e0751fc7",
   "platform-data/src/main/java/com/ghost616/platform/entity/ModelConfig.java": "c67f159a7fe4ce7590bc7e306d7f6f91",
-  "platform-data/src/main/java/com/ghost616/platform/entity/MessageToolCall.java": "67ea2594b62abb502d8a03c99e84095b"
+  "platform-data/src/main/java/com/ghost616/platform/entity/MessageToolCall.java": "67ea2594b62abb502d8a03c99e84095b",
+  "platform-data/src/main/java/com/ghost616/platform/entity/KnowledgeFile.java": "0ced3dacb5002e6d96ea9676b307d88b",
+  "platform-data/src/main/java/com/ghost616/platform/entity/KnowledgeBase.java": "24b6842396553079b1eb71c34731e070",
+  "platform-data/src/main/java/com/ghost616/platform/enums/SubToolType.java": "e7cbb73185b3460044d43198135465ef",
+  "platform-app/src/test/java/com/ghost616/platform/enums/SubToolTypeTest.java": "51c830205e57f4b45e2cc8e7ecb793d4"
 }

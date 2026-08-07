@@ -1,0 +1,10 @@
+{
+  "plan_id": "plan_75c3e415-6b9e-403f-9ee8-4d29db86663f",
+  "module_name": "platform-app",
+  "development_plan": "## 修改 DefaultToolDataProvider.java\n\n1. KNOWLEDGE_TOOL_NAMES 改为使用各知识库工具类自身的 TOOL_NAME 常量：\n   Set.of(KnowledgeBaseInfoTool.TOOL_NAME, KnowledgeFileInfoTool.TOOL_NAME, KnowledgeSearchTool.TOOL_NAME, KnowledgeFileChunkTool.TOOL_NAME)\n   不再使用硬编码字符串。\n\n2. getKnowledgeToolConfig 改为调用各工具自身的 createToolConfig() 方法，然后设置 id 为工具名：\n   - KnowledgeBaseInfoTool.createToolConfig() 设置 id 为 TOOL_NAME\n   - KnowledgeFileInfoTool.createToolConfig() 设置 id 为 TOOL_NAME\n   - KnowledgeSearchTool.createToolConfig() 设置 id 为 TOOL_NAME\n   - KnowledgeFileChunkTool.createToolConfig() 设置 id 为 TOOL_NAME\n   default 分支抛 UnsupportedOperationException\n\n## 修改 DefaultToolDataProviderTest.java\n\n调整 knowledgeToolName_shouldReturnKnowledgeToolConfig 测试断言：\n- 验证返回的 ToolConfigDTO 包含完整的 name、description、parameterSchema 字段（由各工具 createToolConfig() 提供）\n- 其他测试无需变动（已使用 TOOL_NAME 常量）",
+  "session_id": "ses_024eaf898ffeZ6joeq30eREpvT",
+  "modified_files": [
+    "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultToolDataProvider.java",
+    "platform-app/src/test/java/com/ghost616/platform/service/agent/DefaultToolDataProviderTest.java"
+  ]
+}
