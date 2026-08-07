@@ -78,5 +78,13 @@
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": false
+  },
+  {
+    "plan_id": "plan_e824b5b7-ee2d-42f6-bf88-0e62f45258b1",
+    "plan_summary": "README 新增知识库配置和知识库工具章节，更新功能模块列表和项目结构",
+    "starter_session_id": "ses_024fd0f36ffeN2ZR73FKkNJndP",
+    "code_reviewed": false,
+    "plan_completed": true,
+    "test_passed": true
   }
 ]

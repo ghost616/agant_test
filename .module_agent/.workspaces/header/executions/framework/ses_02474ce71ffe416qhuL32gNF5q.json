@@ -1,0 +1,11 @@
+[
+  {
+    "plan_id": "plan_e824b5b7-ee2d-42f6-bf88-0e62f45258b1",
+    "plan": "修改 README.md：新增功能模块、项目结构、知识库配置章节、知识库工具章节",
+    "modified_files": [
+      "README.md"
+    ],
+    "summary": "执行总结：本轮修改 README.md，完成知识库相关文档更新——①功能模块列表新增「知识库管理」条目；②项目结构补充 platform-app/service/knowledge 目录、controller 下 KnowledgeBaseController/KnowledgeFileController 说明、前端 src/pages/knowledge 目录（KnowledgeBaseList/KnowledgeFileList/KnowledgeFileEdit）；③浏览器工具章节后新增「知识库配置」章节（配置流程 5 步、UNPUBLISHED/PUBLISHING/PUBLISHED/PENDING_PUBLISH/PUBLISH_ERROR 五种发布状态、5000 字符分批向量化发布机制）；④新增「知识库工具」章节（default_tool_rag_info/default_tool_rag_file_info/default_tool_rag_search/default_tool_rag_file_chunk 四个工具表格、自动注入说明 sessionAuth: ALL）。\n测试总结：纯文档变更，不涉及代码逻辑，无测试类型适用。",
+    "errors": []
+  }
+]

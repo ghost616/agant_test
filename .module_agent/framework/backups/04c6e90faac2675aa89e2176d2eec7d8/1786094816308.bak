@@ -22,7 +22,6 @@ AI 智能体调试与管理平台，基于 opencode + DeepSeek 及 module_agent 
 - **三域会话授权** — 工具和技能支持 ALL/PARENT/CHILD 三级会话作用域配置，控制跨会话可见性与可用性
 - **组件注册表** — AgentComponentRegistry 集中管理 Provider、Manager、Invoker 等核心组件，支持延迟初始化和生命周期控制
 - **智能体评估管理** — 评估模板的创建与管理，评估项配置（关联模型、执行次数、执行模式），评估任务执行，评估结果查看与结论分析
-- **知识库管理** — 知识库 CRUD、文件上传与 Markdown 编辑、ES 索引配置、发布状态管理、智能体-知识库绑定
 
 ## 快速启动
 
@@ -93,14 +92,13 @@ build.bat
 │   └── src/main/java/com/ghost616/platform/
 │       ├── PlatformApplication.java     # Spring Boot 启动类
 │       ├── config/                      # 配置（CORS、MyBatis-Plus、异常处理等）
-│       ├── controller/                  # REST 控制器（含 KnowledgeBaseController、KnowledgeFileController）
+│       ├── controller/                  # REST 控制器
 │       ├── service/                     # 业务服务实现
 │       │   ├── agent/                   # 智能体服务实现
 │       │   ├── model/                   # 模型配置服务
 │       │   ├── session/                 # 会话服务
 │       │   ├── tool/                    # 工具配置服务
-│       │   ├── skill/                   # 技能配置服务
-│       │   └── knowledge/               # 知识库服务实现
+│       │   └── skill/                   # 技能配置服务
 │       ├── repository/                  # 数据访问层（Mapper）
 │       ├── entity/                      # 数据库实体
 │       ├── dto/                         # 应用层 DTO
@@ -120,8 +118,7 @@ build.bat
     │   ├── agents/                      # 智能体配置
     │   ├── skills/                      # 技能管理
     │   ├── sessions/                    # 会话交互
-    │   ├── evaluations/                 # 智能体评估
-    │   └── knowledge/                   # 知识库管理（KnowledgeBaseList、KnowledgeFileList、KnowledgeFileEdit）
+    │   └── evaluations/                 # 智能体评估
     ├── components/                      # 通用组件
     ├── services/                        # API 请求封装
     ├── hooks/                           # 自定义 Hooks
@@ -206,40 +203,3 @@ BROWSER 浏览器工具通过客户端执行机制，在用户浏览器环境中
 **执行原理：**
 
 服务端 BrowserToolInvoker 发起调用 → 委托回调 BrowserToolCallbackImpl 阻塞等待 → 前端通过 ToolHostBridge JS 桥接获取执行上下文 → 调用 browser_tool_executor.js 引擎中的工具函数 → 结果回调至服务端，唤醒阻塞等待完成。
-
-## 知识库配置
-
-### 配置流程
-
-1. **创建知识库** — 在知识库管理页面创建知识库，填写名称与描述，完成基本信息定义
-2. **配置 ES 索引** — 为知识库配置 Elasticsearch 索引（索引名称、分片数、副本数等），用于后续文件内容的向量化存储与检索
-3. **上传 / 编辑文件** — 向知识库上传 Markdown 格式文件，或在页面内直接编辑文件内容（KnowledgeFileEdit）
-4. **发布到 ES** — 文件发布时文本按 **5000 字符**分批向量化写入 ES Index，完成内容检索的就绪
-5. **绑定智能体** — 将知识库绑定到目标智能体，绑定后该智能体的会话自动获得知识库检索能力
-
-### 发布状态
-
-知识库文件发布状态通过枚举管理，共五种状态：
-
-- **UNPUBLISHED** — 未发布
-- **PUBLISHING** — 发布中
-- **PUBLISHED** — 已发布
-- **PENDING_PUBLISH** — 待发布
-- **PUBLISH_ERROR** — 发布失败
-
-### 发布机制
-
-文件发布时，服务端将文件文本内容按 5000 字符分批切分，逐批向量化后写入 ES Index；任一状态流转（发布中、成功、失败）均会实时更新到文件记录，供前端展示与后续重试。
-
-## 知识库工具
-
-智能体绑定知识库后，以下 4 个内置工具（`default_tool_rag_*` 前缀）自动注入会话工具列表（sessionAuth: ALL），会话内直接可用。
-
-| 工具名称 | 用途描述 | 关键参数 |
-|----------|----------|----------|
-| default_tool_rag_info | 获取当前会话关联的知识库信息 | 无参数 |
-| default_tool_rag_file_info | 搜索知识库中的文件 | knowledgeBaseId、fileName、searchLimit |
-| default_tool_rag_search | 搜索知识库文本块 | knowledgeBaseId、fileId、searchType、query、searchLimit、contextLines |
-| default_tool_rag_file_chunk | 获取指定文件的文本块 | knowledgeBaseId、fileId、startLine、endLine |
-
-**自动绑定说明**：智能体绑定知识库后，4 个工具自动注入会话工具列表（sessionAuth: ALL），无需手动配置即可在会话中调用。
