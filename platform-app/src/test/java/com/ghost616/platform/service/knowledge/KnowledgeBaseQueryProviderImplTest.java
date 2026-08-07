@@ -295,14 +295,14 @@ class KnowledgeBaseQueryProviderImplTest {
     @DisplayName("searchChunks: 知识库不存在时返回空列表")
     void searchChunks_kbNotFound() {
         when(knowledgeBaseMapper.selectById(100L)).thenReturn(null);
-        assertEquals(List.of(), provider.searchChunks(100L, null, SearchType.VECTOR, "q", 10, 3));
+        assertEquals(List.of(), provider.searchChunks(100L, null, SearchType.VECTOR, "q", 10));
     }
 
     @Test
     @DisplayName("searchChunks: esIndex 为空时返回空列表")
     void searchChunks_emptyEsIndex() {
         when(knowledgeBaseMapper.selectById(100L)).thenReturn(kb(100L, "  "));
-        assertEquals(List.of(), provider.searchChunks(100L, null, SearchType.VECTOR, "q", 10, 3));
+        assertEquals(List.of(), provider.searchChunks(100L, null, SearchType.VECTOR, "q", 10));
     }
 
     @Test
@@ -312,7 +312,7 @@ class KnowledgeBaseQueryProviderImplTest {
         k.setVectorModelId(null);
         when(knowledgeBaseMapper.selectById(100L)).thenReturn(k);
         BusinessException ex = assertThrows(BusinessException.class,
-                () -> provider.searchChunks(100L, null, SearchType.VECTOR, "q", 10, 3));
+                () -> provider.searchChunks(100L, null, SearchType.VECTOR, "q", 10));
         assertEquals(ErrorCode.MODEL_NOT_FOUND, ex.getErrorCode());
     }
 
@@ -330,10 +330,8 @@ class KnowledgeBaseQueryProviderImplTest {
         when(knowledgeSearchClient.vectorSearch(eq("idx"), eq(100L), eq(List.of(0.1f, 0.2f)), eq(5)))
                 .thenReturn(List.of(chunk(100L, 2L, 5, "line5")));
         when(knowledgeFileMapper.selectById(2L)).thenReturn(file(2L, 100L, "a.txt", "x"));
-        when(knowledgeSearchClient.searchByFileAndLineRange(eq("idx"), eq(100L), eq(2L), anyInt(), anyInt()))
-                .thenReturn(List.of(chunk(100L, 2L, 5, "line5")));
 
-        List<TextChunkWithFile> result = provider.searchChunks(100L, null, SearchType.VECTOR, "q", 5, 3);
+        List<TextChunkWithFile> result = provider.searchChunks(100L, null, SearchType.VECTOR, "q", 5);
 
         assertEquals(1, result.size());
         TextChunkWithFile withFile = result.get(0);
@@ -355,10 +353,8 @@ class KnowledgeBaseQueryProviderImplTest {
         when(knowledgeSearchClient.fullTextSearch("idx", 100L, "q", 5))
                 .thenReturn(List.of(chunk(100L, 2L, 3, "line3")));
         when(knowledgeFileMapper.selectById(2L)).thenReturn(file(2L, 100L, "a.txt", "x"));
-        when(knowledgeSearchClient.searchByFileAndLineRange(eq("idx"), eq(100L), eq(2L), anyInt(), anyInt()))
-                .thenReturn(List.of(chunk(100L, 2L, 3, "line3")));
 
-        List<TextChunkWithFile> result = provider.searchChunks(100L, null, SearchType.FULLTEXT, "q", 5, 3);
+        List<TextChunkWithFile> result = provider.searchChunks(100L, null, SearchType.FULLTEXT, "q", 5);
         assertEquals(1, result.size());
         assertEquals(2L, result.get(0).fileId());
         verify(knowledgeSearchClient, never()).vectorSearch(any(), any(), anyList(), anyInt());
@@ -371,7 +367,7 @@ class KnowledgeBaseQueryProviderImplTest {
         when(knowledgeSearchClient.fullTextSearch("idx", 100L, "q", 5))
                 .thenReturn(new java.util.ArrayList<>(List.of(chunk(100L, 2L, 3, "line3"))));
 
-        List<TextChunkWithFile> result = provider.searchChunks(100L, 99L, SearchType.FULLTEXT, "q", 5, 3);
+        List<TextChunkWithFile> result = provider.searchChunks(100L, 99L, SearchType.FULLTEXT, "q", 5);
         assertEquals(List.of(), result);
         verify(knowledgeFileMapper, never()).selectById(any());
     }
@@ -383,31 +379,26 @@ class KnowledgeBaseQueryProviderImplTest {
         when(knowledgeSearchClient.fullTextSearch("idx", 100L, "q", 5))
                 .thenReturn(List.of(chunk(100L, 2L, 3, "line3")));
         when(knowledgeFileMapper.selectById(2L)).thenReturn(null);
-        when(knowledgeSearchClient.searchByFileAndLineRange(eq("idx"), eq(100L), eq(2L), anyInt(), anyInt()))
-                .thenReturn(List.of(chunk(100L, 2L, 3, "line3")));
 
-        List<TextChunkWithFile> result = provider.searchChunks(100L, null, SearchType.FULLTEXT, "q", 5, 3);
+        List<TextChunkWithFile> result = provider.searchChunks(100L, null, SearchType.FULLTEXT, "q", 5);
         assertEquals("2", result.get(0).fileName());
     }
 
     @Test
-    @DisplayName("searchChunks: 上下文扩展按 lineNumber 去重")
-    void searchChunks_contextDedup() {
+    @DisplayName("searchChunks: 同一文件内按 lineNumber 去重")
+    void searchChunks_dedupeByLineNumber() {
         when(knowledgeBaseMapper.selectById(100L)).thenReturn(kb(100L, "idx"));
         when(knowledgeSearchClient.fullTextSearch("idx", 100L, "q", 5))
-                .thenReturn(List.of(chunk(100L, 2L, 5, "line5")));
-        when(knowledgeFileMapper.selectById(2L)).thenReturn(file(2L, 100L, "a.txt", "x"));
-        // 行范围 [max(1,5-3), 5+3] = [2, 8]，返回含重复行号 5 的邻居
-        when(knowledgeSearchClient.searchByFileAndLineRange("idx", 100L, 2L, 2, 8))
-                .thenReturn(List.of(
+                .thenReturn(new java.util.ArrayList<>(List.of(
                         chunk(100L, 2L, 5, "line5"),
-                        chunk(100L, 2L, 5, "line5-dupe"),
-                        chunk(100L, 2L, 6, "line6")));
+                        chunk(100L, 2L, 5, "line5-dupe"))));
+        when(knowledgeFileMapper.selectById(2L)).thenReturn(file(2L, 100L, "a.txt", "x"));
 
-        List<TextChunkWithFile> result = provider.searchChunks(100L, null, SearchType.FULLTEXT, "q", 5, 3);
+        List<TextChunkWithFile> result = provider.searchChunks(100L, null, SearchType.FULLTEXT, "q", 5);
         List<TextChunkWithFile.TextChunk> chunks = result.get(0).chunkList();
-        assertEquals(2, chunks.size());
-        assertTrue(chunks.stream().allMatch(c -> c.lineNumber() == 5 || c.lineNumber() == 6));
+        assertEquals(1, chunks.size());
+        assertEquals(5, chunks.get(0).lineNumber());
+        assertEquals("line5", chunks.get(0).text());
     }
 
     @Test
@@ -426,62 +417,11 @@ class KnowledgeBaseQueryProviderImplTest {
         when(knowledgeSearchClient.fullTextSearch("idx", 100L, "q", 5))
                 .thenReturn(List.of(chunk(100L, 2L, 5, "line5"), chunk(100L, 2L, 8, "line8")));
         when(knowledgeFileMapper.selectById(2L)).thenReturn(file(2L, 100L, "a.txt", "x"));
-        when(knowledgeSearchClient.searchByFileAndLineRange(eq("idx"), eq(100L), eq(2L), anyInt(), anyInt()))
-                .thenAnswer(invocation -> {
-                    int start = invocation.getArgument(3);
-                    int end = invocation.getArgument(4);
-                    java.util.List<TextChunk> range = new java.util.ArrayList<>();
-                    for (int ln = start; ln <= end; ln++) {
-                        range.add(chunk(100L, 2L, ln, "line" + ln));
-                    }
-                    return range;
-                });
 
-        List<TextChunkWithFile> result = provider.searchChunks(100L, null, SearchType.HYBRID, "q", 5, 3);
+        List<TextChunkWithFile> result = provider.searchChunks(100L, null, SearchType.HYBRID, "q", 5);
         assertEquals(1, result.size());
-        // 命中 line5(line 扩展 [2,8]) 与 line8(扩展 [5,11])，去重后行号 2..11
-        assertEquals(10, result.get(0).chunkList().size());
-    }
-
-    @Test
-    @DisplayName("searchChunks: 同一文件重叠/相邻行范围合并为单次查询")
-    void searchChunks_mergedRanges() {
-        when(knowledgeBaseMapper.selectById(100L)).thenReturn(kb(100L, "idx"));
-        when(knowledgeSearchClient.fullTextSearch("idx", 100L, "q", 5))
-                .thenReturn(new java.util.ArrayList<>(List.of(
-                        chunk(100L, 2L, 5, "line5"),
-                        chunk(100L, 2L, 7, "line7"))));
-        when(knowledgeFileMapper.selectById(2L)).thenReturn(file(2L, 100L, "a.txt", "x"));
-        // line5 扩展 [2,8]，line7 扩展 [4,10]，重叠合并为 [2,10]，应只调用一次
-        when(knowledgeSearchClient.searchByFileAndLineRange("idx", 100L, 2L, 2, 10))
-                .thenReturn(List.of(chunk(100L, 2L, 5, "line5"), chunk(100L, 2L, 7, "line7")));
-
-        List<TextChunkWithFile> result = provider.searchChunks(100L, null, SearchType.FULLTEXT, "q", 5, 3);
-
-        assertEquals(1, result.size());
-        verify(knowledgeSearchClient, times(1)).searchByFileAndLineRange(eq("idx"), eq(100L), eq(2L), anyInt(), anyInt());
-    }
-
-    @Test
-    @DisplayName("searchChunks: 同一文件非相邻行范围保持多次查询")
-    void searchChunks_nonAdjacentRanges() {
-        when(knowledgeBaseMapper.selectById(100L)).thenReturn(kb(100L, "idx"));
-        when(knowledgeSearchClient.fullTextSearch("idx", 100L, "q", 5))
-                .thenReturn(new java.util.ArrayList<>(List.of(
-                        chunk(100L, 2L, 5, "line5"),
-                        chunk(100L, 2L, 100, "line100"))));
-        when(knowledgeFileMapper.selectById(2L)).thenReturn(file(2L, 100L, "a.txt", "x"));
-        // line5 扩展 [2,8]，line100 扩展 [97,103]，不重叠应分别查询
-        when(knowledgeSearchClient.searchByFileAndLineRange("idx", 100L, 2L, 2, 8))
-                .thenReturn(List.of(chunk(100L, 2L, 5, "line5")));
-        when(knowledgeSearchClient.searchByFileAndLineRange("idx", 100L, 2L, 97, 103))
-                .thenReturn(List.of(chunk(100L, 2L, 100, "line100")));
-
-        List<TextChunkWithFile> result = provider.searchChunks(100L, null, SearchType.FULLTEXT, "q", 5, 3);
-
-        assertEquals(1, result.size());
+        // 向量/全文去重后仅剩命中行 line5 与 line8，按行号去重返回
         assertEquals(2, result.get(0).chunkList().size());
-        verify(knowledgeSearchClient, times(2)).searchByFileAndLineRange(eq("idx"), eq(100L), eq(2L), anyInt(), anyInt());
     }
 
     // ---------- getFileChunks ----------

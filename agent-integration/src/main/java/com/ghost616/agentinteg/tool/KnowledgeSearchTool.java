@@ -83,9 +83,9 @@ public class KnowledgeSearchTool extends CustomToolInvoker {
                     ? root.get("contextLines").asInt() : DEFAULT_CONTEXT_LINES;
 
             List<TextChunkWithFile> results = provider.searchChunks(
-                    knowledgeBaseId, fileId, searchType, query, searchLimit, contextLines);
+                    knowledgeBaseId, fileId, searchType, query, searchLimit);
 
-            return JSON_MAPPER.writeValueAsString(buildResults(results));
+            return JSON_MAPPER.writeValueAsString(buildResults(results, contextLines));
         } catch (Exception e) {
             log.error("default_tool_rag_search 执行失败", e);
             return buildError(e.getMessage());
@@ -100,7 +100,7 @@ public class KnowledgeSearchTool extends CustomToolInvoker {
         }
     }
 
-    private List<Map<String, Object>> buildResults(List<TextChunkWithFile> results) {
+    private List<Map<String, Object>> buildResults(List<TextChunkWithFile> results, int contextLines) {
         List<Map<String, Object>> output = new ArrayList<>();
         if (results == null || results.isEmpty()) {
             return output;
@@ -108,13 +108,52 @@ public class KnowledgeSearchTool extends CustomToolInvoker {
         Map<FileKey, List<TextChunk>> grouped = new LinkedHashMap<>();
         for (TextChunkWithFile withFile : results) {
             FileKey key = new FileKey(withFile.knowledgeBaseId(), withFile.fileId());
-            List<TextChunk> chunks = withFile.chunkList() == null ? List.of() : withFile.chunkList();
-            grouped.computeIfAbsent(key, k -> new ArrayList<>()).addAll(chunks);
+            grouped.computeIfAbsent(key, k -> new ArrayList<>()).addAll(expandContext(withFile, contextLines));
         }
         for (Map.Entry<FileKey, List<TextChunk>> entry : grouped.entrySet()) {
             output.add(buildResult(entry.getKey(), entry.getValue()));
         }
         return output;
+    }
+
+    /**
+     * 按 contextLines 扩大每个匹配 chunk 的行范围，调用 getFileChunks 获取上下文文本块。
+     */
+    private List<TextChunk> expandContext(TextChunkWithFile withFile, int contextLines) {
+        List<TextChunk> matched = withFile.chunkList() == null ? List.of() : withFile.chunkList();
+        if (matched.isEmpty()) {
+            return List.of();
+        }
+        List<int[]> ranges = matched.stream()
+                .map(chunk -> new int[]{Math.max(1, chunk.lineNumber() - contextLines),
+                        chunk.lineNumber() + contextLines})
+                .sorted(Comparator.comparingInt(range -> range[0]))
+                .toList();
+        List<TextChunk> context = new ArrayList<>();
+        for (int[] range : mergeRanges(ranges)) {
+            TextChunkWithFile fileChunks = provider.getFileChunks(
+                    withFile.knowledgeBaseId(), withFile.fileId(), range[0], range[1]);
+            if (fileChunks != null && fileChunks.chunkList() != null) {
+                context.addAll(fileChunks.chunkList());
+            }
+        }
+        return context;
+    }
+
+    /**
+     * 合并重叠或相邻的行范围，减少 getFileChunks 查询次数。
+     */
+    private List<int[]> mergeRanges(List<int[]> ranges) {
+        List<int[]> merged = new ArrayList<>();
+        for (int[] range : ranges) {
+            if (merged.isEmpty() || range[0] > merged.get(merged.size() - 1)[1] + 1) {
+                merged.add(range);
+            } else {
+                int[] last = merged.get(merged.size() - 1);
+                last[1] = Math.max(last[1], range[1]);
+            }
+        }
+        return merged;
     }
 
     private Map<String, Object> buildResult(FileKey key, List<TextChunk> chunks) {

@@ -28,16 +28,14 @@ public interface KnowledgeBaseQueryProvider {
     /**
      * 搜索知识库文本块，返回匹配的文本块列表（含文件信息）。
      *
-     * @param kbId         知识库 ID
-     * @param fileId       文件 ID（可为 null，表示不限文件）
-     * @param searchType   搜索类型
-     * @param query        查询关键字
-     * @param topK         返回数量上限
-     * @param contextLines 上下文行数
+     * @param kbId       知识库 ID
+     * @param fileId     文件 ID（可为 null，表示不限文件）
+     * @param searchType 搜索类型
+     * @param query      查询关键字
+     * @param topK       返回数量上限
      * @return 文本块列表
      */
-    List<TextChunkWithFile> searchChunks(Long kbId, Long fileId, SearchType searchType, String query,
-                                         int topK, int contextLines);
+    List<TextChunkWithFile> searchChunks(Long kbId, Long fileId, SearchType searchType, String query, int topK);
 
     /**
      * 获取指定文件中某个行号范围内的文本块。

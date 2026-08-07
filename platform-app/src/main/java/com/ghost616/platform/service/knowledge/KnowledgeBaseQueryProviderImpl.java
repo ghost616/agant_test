@@ -32,7 +32,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -117,17 +116,16 @@ public class KnowledgeBaseQueryProviderImpl implements KnowledgeBaseQueryProvide
     /**
      * 搜索知识库文本块，返回匹配的文本块列表（含文件信息）。
      *
-     * @param kbId         知识库 ID
-     * @param fileId       文件 ID（可为 null，表示不限文件）
-     * @param searchType   搜索类型
-     * @param query        查询关键字
-     * @param topK         返回数量上限
-     * @param contextLines 上下文行数
+     * @param kbId       知识库 ID
+     * @param fileId     文件 ID（可为 null，表示不限文件）
+     * @param searchType 搜索类型
+     * @param query      查询关键字
+     * @param topK       返回数量上限
      * @return 文本块列表
      */
     @Override
     public List<TextChunkWithFile> searchChunks(Long kbId, Long fileId, SearchType searchType, String query,
-                                                int topK, int contextLines) {
+                                                int topK) {
         KnowledgeBase knowledgeBase = knowledgeBaseMapper.selectById(kbId);
         if (knowledgeBase == null || StringUtils.isBlank(knowledgeBase.getEsIndex())) {
             return List.of();
@@ -152,41 +150,15 @@ public class KnowledgeBaseQueryProviderImpl implements KnowledgeBaseQueryProvide
             Long fileIdKey = entry.getKey();
             KnowledgeFile file = knowledgeFileMapper.selectById(fileIdKey);
             String fileName = file != null ? file.getFileName() : String.valueOf(fileIdKey);
-            // 合并同一文件的多个行范围（重叠/相邻合并），再批量查询，避免逐块 N+1 查询
-            List<int[]> mergedRanges = mergeLineRanges(entry.getValue(), contextLines);
+            // 按文件分组返回命中文本块，并按 lineNumber 去重
             Map<Integer, TextChunkWithFile.TextChunk> dedup = new LinkedHashMap<>();
-            for (int[] range : mergedRanges) {
-                for (TextChunk neighbor : knowledgeSearchClient.searchByFileAndLineRange(
-                        indexName, kbId, fileIdKey, range[0], range[1])) {
-                    dedup.putIfAbsent(neighbor.getLineNumber(),
-                            new TextChunkWithFile.TextChunk(neighbor.getLineNumber(), neighbor.getText()));
-                }
+            for (TextChunk chunk : entry.getValue()) {
+                dedup.putIfAbsent(chunk.getLineNumber(),
+                        new TextChunkWithFile.TextChunk(chunk.getLineNumber(), chunk.getText()));
             }
             results.add(new TextChunkWithFile(kbId, fileIdKey, fileName, new ArrayList<>(dedup.values())));
         }
         return results;
-    }
-
-    /**
-     * 将多个文本块按 contextLines 扩展为行范围后，合并重叠或相邻的行范围，减少查询次数。
-     */
-    private List<int[]> mergeLineRanges(List<TextChunk> chunks, int contextLines) {
-        List<int[]> ranges = new ArrayList<>();
-        for (TextChunk chunk : chunks) {
-            ranges.add(new int[]{Math.max(1, chunk.getLineNumber() - contextLines),
-                    chunk.getLineNumber() + contextLines});
-        }
-        ranges.sort(Comparator.comparingInt(range -> range[0]));
-        List<int[]> merged = new ArrayList<>();
-        for (int[] range : ranges) {
-            if (merged.isEmpty() || range[0] > merged.get(merged.size() - 1)[1] + 1) {
-                merged.add(range);
-            } else {
-                int[] last = merged.get(merged.size() - 1);
-                last[1] = Math.max(last[1], range[1]);
-            }
-        }
-        return merged;
     }
 
     /**
