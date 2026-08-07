@@ -1,0 +1,119 @@
+package com.ghost616.agentinteg.tool;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghost616.agentbase.service.agent.AgentExecutionContext;
+import com.ghost616.agentinteg.knowledge.FileInfo;
+import com.ghost616.agentinteg.knowledge.KnowledgeBaseQueryProvider;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+class KnowledgeFileInfoToolTest {
+
+    @Mock
+    private KnowledgeBaseQueryProvider provider;
+
+    @Mock
+    private AgentExecutionContext ctx;
+
+    private KnowledgeFileInfoTool tool;
+
+    @BeforeEach
+    void setUp() {
+        tool = new KnowledgeFileInfoTool(provider);
+    }
+
+    @Test
+    void getToolName_返回kb_file_info() {
+        assertEquals("kb_file_info", tool.getToolName());
+    }
+
+    @Test
+    void getDescription_返回非空描述() {
+        assertNotNull(tool.getDescription());
+        assertFalse(tool.getDescription().isBlank());
+    }
+
+    @Test
+    void getParameterSchema_包含必填参数knowledgeBaseId() {
+        String schema = tool.getParameterSchema();
+        assertTrue(schema.contains("\"knowledgeBaseId\""));
+        assertTrue(schema.contains("\"required\""));
+    }
+
+    @Test
+    void execute_正常路径_返回文件列表() throws Exception {
+        String arguments = """
+                {
+                  "knowledgeBaseId": 100,
+                  "fileName": "readme",
+                  "searchLimit": 5
+                }
+                """;
+        FileInfo file = new FileInfo(2L, "readme.md", "说明文档", 120);
+        when(provider.searchFiles(100L, "readme", 5)).thenReturn(List.of(file));
+
+        String result = tool.execute(ctx, arguments);
+
+        assertTrue(result.contains("\"fileId\":2"));
+        assertTrue(result.contains("\"fileName\":\"readme.md\""));
+        assertTrue(result.contains("\"maxLineCount\":120"));
+        verify(provider).searchFiles(100L, "readme", 5);
+    }
+
+    @Test
+    void execute_未传searchLimit时使用默认值10() throws Exception {
+        String arguments = "{\"knowledgeBaseId\": 100}";
+        when(provider.searchFiles(100L, null, 10)).thenReturn(List.of());
+
+        String result = tool.execute(ctx, arguments);
+
+        assertNotNull(result);
+        verify(provider).searchFiles(100L, null, 10);
+    }
+
+    @Test
+    void execute_缺少knowledgeBaseId_返回错误() throws Exception {
+        String result = tool.execute(ctx, "{}");
+
+        assertTrue(result.contains("error"));
+        assertTrue(result.contains("knowledgeBaseId"));
+        verify(provider, never()).searchFiles(anyLong(), anyString(), anyInt());
+    }
+
+    @Test
+    void execute_provider抛出异常_返回错误JSON() throws Exception {
+        String arguments = "{\"knowledgeBaseId\": 100}";
+        when(provider.searchFiles(eq(100L), isNull(), eq(10))).thenThrow(new RuntimeException("搜索失败"));
+
+        String result = tool.execute(ctx, arguments);
+
+        assertTrue(result.contains("error"));
+        assertTrue(result.contains("搜索失败"));
+    }
+
+    @Test
+    void execute_provider异常消息含特殊字符_返回合法JSON() throws Exception {
+        String arguments = "{\"knowledgeBaseId\": 100}";
+        String specialMsg = "搜索失败: \"引号\" \n 第二行 \\ 反斜杠";
+        when(provider.searchFiles(eq(100L), isNull(), eq(10))).thenThrow(new RuntimeException(specialMsg));
+
+        String result = tool.execute(ctx, arguments);
+
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode root = assertDoesNotThrow(() -> mapper.readTree(result));
+        assertEquals("error", root.get("status").asText());
+        assertTrue(root.get("errMsg").asText().contains("引号"));
+        assertTrue(root.get("errMsg").asText().contains("第二行"));
+    }
+}
