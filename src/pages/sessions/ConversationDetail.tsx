@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Button, message, Modal, Table, Tag, Tooltip, Typography } from 'antd';
 import { ArrowLeftOutlined } from '@ant-design/icons';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import type { CSSProperties } from 'react';
 import type { ColumnsType } from 'antd/es/table';
 import type { SessionMessage, ToolCallData } from '../../types/session';
@@ -84,7 +86,7 @@ function renderToolCallFlow(messages: SessionMessage[], msgIndex: number, toolCa
   );
 }
 
-function renderMessageFlow(messages: SessionMessage[]): JSX.Element[] {
+function renderMessageFlow(messages: SessionMessage[], sessionId?: string): JSX.Element[] {
   return messages.map((msg, index) => {
     const roleCfg = ROLE_LABELS[msg.role] || { text: msg.role, color: 'default' };
     return (
@@ -95,8 +97,15 @@ function renderMessageFlow(messages: SessionMessage[]): JSX.Element[] {
       >
         <div style={{ marginBottom: 8 }}>
           <Tag color={roleCfg.color}>{roleCfg.text}</Tag>
+          {sessionId ? (
+            <Tag color={msg.sessionId === sessionId ? 'gold' : 'cyan'}>
+              {msg.sessionId === sessionId ? '主会话' : '子会话'}
+            </Tag>
+          ) : null}
         </div>
-        {msg.role === 'user' && msg.content ? <div>📝 {msg.content}</div> : null}
+        {msg.role === 'user' && msg.content ? (
+          <div>📝 <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown></div>
+        ) : null}
         {msg.role === 'assistant' ? (
           <div>
             {msg.reasoning ? (
@@ -108,7 +117,7 @@ function renderMessageFlow(messages: SessionMessage[]): JSX.Element[] {
             {msg.content ? (
               <div style={{ marginBottom: 8 }}>
                 <div>📝 内容</div>
-                <pre style={PRE_STYLE}>{msg.content}</pre>
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
               </div>
             ) : null}
             {msg.toolCalls && msg.toolCalls.length > 0
@@ -123,7 +132,7 @@ function renderMessageFlow(messages: SessionMessage[]): JSX.Element[] {
           </div>
         ) : null}
         {msg.role !== 'user' && msg.role !== 'assistant' && msg.role !== 'tool' && msg.content ? (
-          <div>📝 {msg.content}</div>
+          <div>📝 <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown></div>
         ) : null}
         <div style={{ marginTop: 8, color: '#999', fontSize: 12 }}>{msg.createTime}</div>
       </div>
@@ -256,6 +265,7 @@ function ConversationDetail(): JSX.Element {
         dataSource={messages}
         loading={loading}
         pagination={false}
+        bordered
         rowClassName={rowClassName}
       />
       <Modal
@@ -275,7 +285,7 @@ function ConversationDetail(): JSX.Element {
           }
         }}
       >
-        <div style={{ maxHeight: 520, overflow: 'auto' }}>{renderMessageFlow(messages)}</div>
+        <div style={{ maxHeight: 520, overflow: 'auto' }}>{renderMessageFlow(messages, sessionId)}</div>
       </Modal>
     </div>
   );

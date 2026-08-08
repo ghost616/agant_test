@@ -146,6 +146,32 @@ describe('ConversationDetail 对话详情 (静态验证)', () => {
     expect(source).toContain('msg.content');
   });
 
+  it('应导入 ReactMarkdown 与 remark-gfm', () => {
+    const source = readFileSync(pagePath, 'utf-8');
+    expect(source).toContain("import ReactMarkdown from 'react-markdown'");
+    expect(source).toContain("import remarkGfm from 'remark-gfm'");
+  });
+
+  it('Modal 消息卡片应增加 Tag 标签区分主/子会话（sessionId 对比）', () => {
+    const source = readFileSync(pagePath, 'utf-8');
+    expect(source).toContain('msg.sessionId === sessionId');
+    expect(source).toContain('主会话');
+    expect(source).toContain('子会话');
+    expect(source).toContain('renderMessageFlow(messages, sessionId)');
+  });
+
+  it('user/assistant 的 content 应使用 ReactMarkdown 渲染，reasoning/toolResult 保持 pre', () => {
+    const source = readFileSync(pagePath, 'utf-8');
+    expect(source).toContain('<ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>');
+    expect(source).toContain('<pre style={PRE_STYLE}>{msg.reasoning}</pre>');
+    expect(source).toContain('<pre style={PRE_STYLE}>{msg.toolResult ?? \'\'}</pre>');
+  });
+
+  it('Table 应增加 bordered 属性', () => {
+    const source = readFileSync(pagePath, 'utf-8');
+    expect(source).toContain('bordered');
+  });
+
   it('应按 toolCallId 配对 assistant 的 toolCalls 与后续 tool 的 toolResult', () => {
     const source = readFileSync(pagePath, 'utf-8');
     expect(source).toContain('findToolResult');
