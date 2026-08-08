@@ -38,7 +38,7 @@ class AgentExecutionContextTest {
         context = new AgentExecutionContext(
                 "1", "1", "system prompt", "1", 10,
                 new ArrayList<>(), new ArrayList<>(), new ArrayList<>(),
-                mutator, new HashMap<>(), new HashMap<>(), null, null, null);
+                mutator, new HashMap<>(), new HashMap<>(), null, null, null, null);
     }
 
     @Test
@@ -444,7 +444,7 @@ class AgentExecutionContextTest {
 
             AgentExecutionContext parentCtx = new AgentExecutionContext(
                     "1", "1", "p", "1", 10, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(),
-                    new AgentExecutionContext.AgentContextMutator(), parentVars, new HashMap<>(), null, null, null);
+                    new AgentExecutionContext.AgentContextMutator(), parentVars, new HashMap<>(), null, null, null, null);
 
             try {
                 Field f = AgentExecutionContext.AgentContextMutator.class.getDeclaredField("getSessionVarCallback");
@@ -456,7 +456,7 @@ class AgentExecutionContextTest {
 
             AgentExecutionContext childCtx = new AgentExecutionContext(
                     "2", "1", "c", "1", 10, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(),
-                    childMutator, new HashMap<>(), new HashMap<>(), "1", null, null);
+                    childMutator, new HashMap<>(), new HashMap<>(), "1", null, null, null);
 
             assertEquals("parentVal", childCtx.getSessionVariable("parentKey"));
         }
@@ -470,7 +470,7 @@ class AgentExecutionContextTest {
 
             AgentExecutionContext parentCtx = new AgentExecutionContext(
                     "1", "1", "p", "1", 10, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(),
-                    new AgentExecutionContext.AgentContextMutator(), parentVars, new HashMap<>(), null, null, null);
+                    new AgentExecutionContext.AgentContextMutator(), parentVars, new HashMap<>(), null, null, null, null);
 
             try {
                 Field f = AgentExecutionContext.AgentContextMutator.class.getDeclaredField("getSessionVarKeysCallback");
@@ -482,7 +482,7 @@ class AgentExecutionContextTest {
 
             AgentExecutionContext childCtx = new AgentExecutionContext(
                     "2", "1", "c", "1", 10, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(),
-                    childMutator, new HashMap<>(), new HashMap<>(), "1", null, null);
+                    childMutator, new HashMap<>(), new HashMap<>(), "1", null, null, null);
 
             Set<String> keys = childCtx.getSessionVariableKeys();
             assertTrue(keys.containsAll(Set.of("pk1", "pk2")));

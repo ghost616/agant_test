@@ -36,6 +36,7 @@ import com.ghost616.agentbase.service.agent.ChatDataProvider;
 import com.ghost616.agentbase.service.agent.SessionManager;
 import com.ghost616.agentbase.service.agent.invoker.HookManager;
 import com.ghost616.agentbase.service.agent.invoker.SystemToolManager;
+import com.ghost616.agentbase.service.agent.invoker.ToolManager;
 import com.ghost616.agentbase.dto.model.ModelConfigData;
 import com.ghost616.agentbase.service.model.invoker.ModelInvoker;
 import com.ghost616.agentbase.service.agent.ChatService;
@@ -62,6 +63,8 @@ class ChatServiceTest {
     @Mock
     private SystemToolManager systemToolManager;
     @Mock
+    private ToolManager toolManager;
+    @Mock
     private ModelInvoker modelInvoker;
     @Mock
     private AgentComponentRegistry registry;
@@ -83,12 +86,15 @@ class ChatServiceTest {
         context = new AgentExecutionContext(
                 "1", "1", "system prompt", "1", 10,
                 new ArrayList<>(), new ArrayList<>(), new ArrayList<>(),
-                mutator, new HashMap<>(), new HashMap<>(), null, null, null);
+                mutator, new HashMap<>(), new HashMap<>(), null, null, null, null);
         when(registry.getAgentContextManager()).thenReturn(agentContextManager);
         when(registry.getSessionManager()).thenReturn(sessionManager);
         when(registry.getModelInvokerManager()).thenReturn(modelInvokerManager);
         when(registry.getSystemToolManager()).thenReturn(systemToolManager);
+        when(registry.getToolManager()).thenReturn(toolManager);
+        when(toolManager.getBuiltinTools(any())).thenReturn(new ArrayList<>());
         when(registry.getChatDataProvider()).thenReturn(chatDataProvider);
+        when(chatDataProvider.getModelConfig(any())).thenReturn(new ModelConfigData("1", "key", "url", "model", 0.7, 4096, "openai", null));
         when(registry.getHookManager()).thenReturn(hookManager);
 
         AtomicBoolean toolInvoking = new AtomicBoolean(false);
@@ -100,6 +106,7 @@ class ChatServiceTest {
         when(saveBuilder.sessionId(any())).thenReturn(saveBuilder);
         when(saveBuilder.role(any())).thenReturn(saveBuilder);
         when(saveBuilder.content(any())).thenReturn(saveBuilder);
+        when(saveBuilder.conversationId(any())).thenReturn(saveBuilder);
         when(saveBuilder.save()).thenReturn(null);
     }
 
@@ -109,6 +116,7 @@ class ChatServiceTest {
                 .sessionId("1")
                 .content("hello")
                 .modelId("1")
+                .conversationId("conv-1")
                 .build();
 
         AgentContextManager.Builder builder = mock(AgentContextManager.Builder.class);
@@ -145,6 +153,7 @@ class ChatServiceTest {
                 .sessionId("1")
                 .content("hello")
                 .modelId("1")
+                .conversationId("conv-1")
                 .build();
 
         AgentContextManager.Builder builder = mock(AgentContextManager.Builder.class);
@@ -176,8 +185,9 @@ class ChatServiceTest {
     void toolContinue路径不应调用resetStopped() {
         ChatRequest request = ChatRequest.builder()
                 .sessionId("1")
-                .content("hello")
+                .content("[tool_continue]")
                 .modelId("1")
+                .conversationId("conv-1")
                 .build();
 
         AgentContextManager.Builder builder = mock(AgentContextManager.Builder.class);
@@ -211,6 +221,7 @@ class ChatServiceTest {
                 .sessionId("1")
                 .content("hello")
                 .modelId("1")
+                .conversationId("conv-1")
                 .build();
 
         AgentContextManager.Builder builder = mock(AgentContextManager.Builder.class);
