@@ -340,6 +340,38 @@
     {
       "path": "platform-app/src/test/java/com/ghost616/platform/service/knowledge/KnowledgeBaseQueryProviderImplTest.java",
       "description": "KnowledgeBaseQueryProviderImpl 单元测试，覆盖 getKnowledgeBaseInfo/searchFiles/searchChunks/getFileChunks。searchChunks 用例验证纯搜索+按文件分组并按 lineNumber 去重返回（5 参签名，对齐接口），已移除上下文扩展相关用例（mergedRanges/nonAdjacentRanges）。"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/controller/ConversationController.java",
+      "description": "会话ID生成控制器，GET /api/conversation-id 使用 SecureRandom 从 [0-9a-z_] 字符集生成 24 位唯一 conversationId，返回 ApiResponse<ConversationIdDTO>"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/dto/ConversationIdDTO.java",
+      "description": "会话ID响应 DTO，含 conversationId 字符串字段"
+    },
+    {
+      "path": "platform-app/src/test/java/com/ghost616/platform/controller/ConversationControllerTest.java",
+      "description": "ConversationController 单元测试（3 用例）：成功响应、24 位长度与字符集校验、两次调用 ID 不同"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/handler/MessageHandler.java",
+      "description": "sendmessage 消息处理器接口：定义 getMessageName() 声明订阅的消息类型名（对应 MessageName），handle(MessageDefinition) 处理收到的消息。由 MessageDispatcher 按消息名查找并调用。"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/handler/MessageDispatcher.java",
+      "description": "消息分发器：实现 agent-base MessageSender 接口，构造器接收 List<MessageHandler> 按 getMessageName() 建立路由表（重复名保留首个）；send(MessageDefinition) 按消息名路由到对应处理器，null/无处理器静默跳过（debug 日志）。注册为 Spring @Component，由 AgentContextConfiguration.agentAssembler 注入为 MessageSender 使消息分发链路生效。"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/handler/ConversationIdMessageHandler.java",
+      "description": "ConversationIdMessage 处理器：实现 MessageHandler，订阅 MessageName.CONVERSATION_ID。收到 ConversationIdMessage 时通过 ObjectProvider 惰性获取 AgentContextManager 并调用 handleConversationIdMessage() 同步 conversationId。ThreadLocal 重入保护防止 handleConversationIdMessage 内部再次 setConversationId 发送导致无限递归。"
+    },
+    {
+      "path": "platform-app/src/test/java/com/ghost616/platform/handler/ConversationIdMessageHandlerTest.java",
+      "description": "ConversationIdMessageHandler 单元测试（4 例）：getMessageName 返回 CONVERSATION_ID、handle 调用 handleConversationIdMessage、非 ConversationIdMessage 不调用 provider、重入时嵌套调用被 ThreadLocal 跳过避免递归。"
+    },
+    {
+      "path": "platform-app/src/test/java/com/ghost616/platform/handler/MessageDispatcherTest.java",
+      "description": "MessageDispatcher 单元测试（3 例）：按消息名分发到对应处理器、无对应处理器静默跳过、null 消息静默跳过。"
     }
   ]
 }

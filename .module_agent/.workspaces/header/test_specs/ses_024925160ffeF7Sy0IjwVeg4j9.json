@@ -1,5 +1,0 @@
-{
-  "session_id": "ses_024925160ffeF7Sy0IjwVeg4j9",
-  "content": "KnowledgeSearchTool.java 重构（含 KnowledgeSearchToolTest.java 同步适配）：\n\n涉及文件：\n- agent-integration/src/main/java/com/ghost616/agentinteg/tool/KnowledgeSearchTool.java\n- agent-integration/src/test/java/com/ghost616/agentinteg/tool/KnowledgeSearchToolTest.java\n\n待测试功能：\n1. buildResults 方法新增 Map<FileKey, TextChunkWithFile> fileInfoMap，遍历 results 时以 FileKey(kbId,fileId) 为 key、TextChunkWithFile 为 value，仅在该 key 不存在时放入（取第一个）。\n2. buildResult 方法改为接收 TextChunkWithFile + List<TextChunk>，输出新增 \"fileName\" 字段（值为 TextChunkWithFile.fileName()），保留 knowledgeBaseId 和 fileId，chunks 变为 List<String>。\n3. mergeContinuousChunks 改为返回 List<String>：相邻连续行号块合并为纯文本字符串（换行分隔），不再包含 lineNumber 的 TextChunk 对象。\n4. 编译检查：整个模块可编译。\n5. 单元测试：KnowledgeSearchToolTest 全部用例通过（多文件分组合并、重复行号去重、fileName 字段断言、contextlines 扩展、错误处理等）。",
-  "timestamp": "2026-08-07T08:55:42.233Z"
-}

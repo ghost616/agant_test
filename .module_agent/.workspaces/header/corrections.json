@@ -31,6 +31,14 @@
     {
       "content": "DefaultToolDataProvider 的 KNOWLEDGE_TOOL_NAMES 应使用各知识库工具类自身的 TOOL_NAME 常量（如 KnowledgeBaseInfoTool.TOOL_NAME），而非硬编码字符串；getKnowledgeToolConfig 应调用各工具的 createToolConfig() 方法（设置 id 为工具名），而非创建最小化 ToolConfigDTO",
       "timestamp": "2026-08-07T07:37:45.491Z"
+    },
+    {
+      "content": "AgentContextMutator不需要getConversationId方法，只需setConversationId()。对话ID每次用户发消息时由前端调用接口生成新的。browser_tool_executor.js也有AgentExecutionContext需要同步修改。SchemaMigration需要添加conversation_id字段迁移。",
+      "timestamp": "2026-08-08T01:59:58.668Z"
+    },
+    {
+      "content": "browser_tool_executor.js也有AgentExecutionContext需要同步修改。SchemaMigration需要添加conversation_id字段迁移。MessageSavePostHook需要从context获取conversationId传入messageSave。ToolExecutionService保存tool消息时也需要传入conversationId。",
+      "timestamp": "2026-08-08T02:02:30.796Z"
     }
   ]
 }

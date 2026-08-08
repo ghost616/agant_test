@@ -67,7 +67,7 @@
     },
     {
       "path": "platform-data/src/main/java/com/ghost616/platform/repository/MessageMapper.java",
-      "description": "MyBatis-Plus 消息数据访问层，继承 BaseMapper<Message>，提供按 sessionId 和 sequenceNum 批量设置 rollback=1 的自定义方法"
+      "description": "MyBatis-Plus 消息数据访问层，继承 BaseMapper<Message>，提供按 sessionId 和 sequenceNum 批量设置 rollback=1 的自定义方法，以及按 conversationId 查询未回滚消息（rollback=0，按 create_time 升序）的 selectByConversationId 方法"
     },
     {
       "path": "platform-data/src/main/java/com/ghost616/platform/repository/AgentConfigMapper.java",

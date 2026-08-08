@@ -39,11 +39,11 @@
     },
     {
       "path": "src/types/session.ts",
-      "description": "会话相关 TypeScript 类型定义：Session、CreateSessionParams、ToolCallData、ToolInfo、SessionMessage、SubSessionData 接口；Session 包含 totalTokenUsed 可选字段；新增 WebSearchResult/WebSearchCall 接口，SessionMessage 新增 webSearchCall 可选字段（数组 WebSearchCall[]，web 搜索引用，每项含标题/链接/摘要）；新增 ToolInfo 接口（toolCallId/toolName），SessionMessage 的 toolCallId 字段改为 toolInfo 可选字段（ToolInfo 对象）"
+      "description": "会话相关 TypeScript 类型定义：Session、CreateSessionParams、ChatRequest（含 conversationId 可选字段，对应后端 ChatRequest DTO）、ToolCallData、ToolInfo、SessionMessage（含 conversationId 可选字段）、SubSessionData 接口；Session 包含 totalTokenUsed 可选字段；新增 WebSearchResult/WebSearchCall 接口，SessionMessage 新增 webSearchCall 可选字段（数组 WebSearchCall[]，web 搜索引用，每项含标题/链接/摘要）；新增 ToolInfo 接口（toolCallId/toolName），SessionMessage 的 toolCallId 字段改为 toolInfo 可选字段（ToolInfo 对象）"
     },
     {
       "path": "src/services/session.ts",
-      "description": "会话相关 API 封装，包括列表/创建/获取/删除会话、获取子会话列表（listChildSessions）、获取历史消息、SSE 流式聊天（agentChatStream/continueChatStream）、工具执行（executeTools/getToolStatus）、工具执行状态轮询（pollToolStatus）、回滚会话（rollbackSession）、停止 AI 回复（stopChat）、子会话回调工具（getSubSessionData/completeSubSession）以及 SubSessionData 类型定义；ExecuteToolsResult 和 ToolStatusResult 接口新增 needsSubSessionFlow 可选字段；ChatChunk 接口新增 responseId/webSearchCall/customToolCall 字段（webSearchCall 为 WebSearchCall[] 数组）、StreamCallbacks 新增 onResponseId/onWebSearchCall 回调（processSSEStream 解析 chunk.responseId 与 chunk.webSearchCall 数组并回调）、agentChatStream 新增 previousResponseId 参数（Responses 有状态模式多轮续接透传）；新增 SessionContextBasic 类型与 getSessionContextBasic API（GET /api/context/{sessionId}/basic 获取会话上下文基础信息含 lastResponseId）"
+      "description": "会话相关 API 封装，包括列表/创建/获取/删除会话、获取子会话列表（listChildSessions）、获取历史消息（getSessionMessages）、按 conversationId 获取对话消息（getConversationMessages，GET /api/conversations/{conversationId}/messages）、SSE 流式聊天（agentChatStream/continueChatStream）、工具执行（executeTools/getToolStatus）、工具执行状态轮询（pollToolStatus）、回滚会话（rollbackSession）、停止 AI 回复（stopChat）、子会话回调工具（getSubSessionData/completeSubSession）以及 SubSessionData 类型定义；fetchConversationId（GET /conversation-id 获取新 conversationId）；ChatRequest 类型来源于 types/session.ts；ExecuteToolsResult 和 ToolStatusResult 接口新增 needsSubSessionFlow 可选字段；ChatChunk 接口新增 responseId/webSearchCall/customToolCall 字段（webSearchCall 为 WebSearchCall[] 数组）、StreamCallbacks 新增 onResponseId/onWebSearchCall 回调（processSSEStream 解析 chunk.responseId 与 chunk.webSearchCall 数组并回调）、agentChatStream 新增 previousResponseId 参数且参数类型改为 ChatRequest（Responses 有状态模式多轮续接透传，conversationId 用户发送前获取传入）；新增 SessionContextBasic 类型与 getSessionContextBasic API（GET /api/context/{sessionId}/basic 获取会话上下文基础信息含 lastResponseId）"
     },
     {
       "path": "src/pages/sessions/SessionList.tsx",
@@ -168,6 +168,18 @@
     {
       "path": "e2e/KnowledgeBaseList.spec.ts",
       "description": "知识库管理页面 E2E 测试（Playwright + page.route 模拟后端）：表格「ES 索引」列展示（空值显示'-'）、新增/编辑弹窗不包含 ES 索引输入框、新增/编辑提交 POST/PUT payload 不包含 esIndex 字段"
+    },
+    {
+      "path": "src/pages/sessions/ConversationHistory.tsx",
+      "description": "会话历史页面（路由 /conversations 与 /conversations/:sessionId）：无 sessionId 路由参数时展示主会话列表（复用 listSessions API，点「查看消息」跳转该会话的用户消息视图）；有 sessionId 参数时调用 getSessionMessages 并过滤 role==='user' 展示用户消息列表，每条消息显示内容与时间，带 conversationId 的消息显示可点击的「查看详情」按钮，点击时以 navigate state 传递当前 sessionId 并跳转 /conversations/:conversationId/detail（供详情页据此返回），用户消息视图含「返回」按钮回到会话列表"
+    },
+    {
+      "path": "src/pages/sessions/ConversationDetail.tsx",
+      "description": "对话详情页面（路由 /conversations/:conversationId/detail）：从路由参数取 conversationId 调用 getConversationMessages 展示该 conversationId 下所有消息（列表形式：角色 Tag/来源会话/时间），从 useLocation().state 读取 sessionId，顶部「返回」按钮在存在 sessionId 时跳转回 /conversations/:sessionId，否则回 /conversations；内容列重构为纵向三行可点击区域（💭reasoning / 📝content / 底部按钮行），assistant 有 toolCalls 显示「🔧 工具调用 (N)」、tool 角色显示「📋 工具结果」，单行省略（LINE_ROW_STYLE）；点击内容区域打开「对话详情」Modal 按对话流（renderMessageFlow）完整展示所有消息：user 显示 content，assistant 显示 💭reasoning（有则）+ 📝content（有则）+ 🔧 工具调用列表（renderToolCallFlow，名称+参数 JSON，并按 toolCallId 用 findToolResult 与后续 tool 消息关联展示配对 📋结果），tool 显示 toolName 与 result JSON；来源会话列对 sessionId 截短显示（前8后4…，Tooltip 显示完整）；Table rowClassName 按 record.sessionId===主会话 sessionId 应用 conversation-main-row/conversation-child-row 背景区分"
+    },
+    {
+      "path": "e2e/ConversationHistory.spec.ts",
+      "description": "会话历史与对话详情页 E2E 测试（Playwright）：mock 会话/消息/对话接口，覆盖返回定位跳转、查看详情跳转、对话详情工具按钮（assistant toolCalls 显示「查看工具 (N)」、tool 角色「查看结果」、点击弹出 Modal 展示 JSON）、长 sessionId 截短与 Tooltip 悬浮、rowClassName 主/子会话行背景区分；含 test.describe.configure 120s 超时配置"
     }
   ]
 }

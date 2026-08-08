@@ -71,5 +71,17 @@
   "agent-base/src/main/resources/agent/_runner.py": "b6f27eb37d7fbd73a02a27944b2a1978",
   "agent-base/src/test/java/com/ghost616/agentbase/service/agent/ChatServiceHistoryGroupJsonTest.java": "662d1b002d94712f5751e963f1cb6081",
   "agent-base/src/main/java/com/ghost616/agentbase/service/model/invoker/ModelInvoker.java": "bb510c2eb7eac9957c312a772a81b474",
-  "agent-base/src/main/java/com/ghost616/agentbase/dto/model/EmbeddingRequest.java": "0957a58b2e8462b634b916de5a926def"
+  "agent-base/src/main/java/com/ghost616/agentbase/dto/model/EmbeddingRequest.java": "0957a58b2e8462b634b916de5a926def",
+  "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultMessageDataProvider.java": "d9f773467e3edc5dcf57fbcffb534efb",
+  "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultContextDataProvider.java": "e49203866d50ac50200a7f800cee28bf",
+  "platform-app/src/test/java/com/ghost616/platform/service/agent/DefaultMessageDataProviderTest.java": "9e6e131b1f17011e2e7d5031deb90158",
+  "platform-app/src/test/java/com/ghost616/platform/service/agent/AgentExecutionContextTest.java": "181285b32b79c1f2a649cccec79322d8",
+  "platform-app/src/test/java/com/ghost616/platform/service/agent/ChatServiceTest.java": "cb4587564bb145b362b5cd3104af5257",
+  "platform-app/src/test/java/com/ghost616/platform/service/agent/invoker/ContextSerializerTest.java": "95b442601d1b75eccc26d93292b18a47",
+  "platform-app/src/test/java/com/ghost616/platform/controller/SessionControllerTest.java": "c4c171192994e930cdab621001e4c124",
+  "platform-app/src/test/java/com/ghost616/platform/controller/EvaluationSessionControllerTest.java": "2eac81c0417d99041863169d569d2fa2",
+  "platform-app/src/test/java/com/ghost616/platform/service/evaluation/EvaluationExecutionServiceTest.java": "51108fc90da9c4f22f239e420e6cc6b1",
+  "platform-app/src/test/java/com/ghost616/platform/service/evaluation/EvaluationResultGenerateServiceTest.java": "ec6fc2d075bddc4e05a833ca0eba59d0",
+  "platform-app/src/test/java/com/ghost616/platform/service/agent/DefaultContextDataProviderTest.java": "78b088cf078c1024c1a28a321930038a",
+  "agent-base/src/main/java/com/ghost616/agentbase/sendmessage/MessageName.java": "d5790d2d79e8b777fb8d39cde726ec09"
 }

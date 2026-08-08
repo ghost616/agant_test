@@ -95,10 +95,10 @@ Builder.doBuild() 在遍历 skills 展开 skillTools 的循环中，对每个加
 - 所有刷新方法在缓存中无对应 sessionId 的上下文时静默返回
 
 ### AgentContextMutator 消息发送
-AgentContextMutator 在 6 个操作点通过注入的 MessageSender 发送消息：addHistoryEntry() 发送 HistoryMessage；putSessionVariable()/removeSessionVariable() 发送 VariableMessage(scope="SESSION")；putConversationVariable()/removeConversationVariable() 发送 VariableMessage(scope="CONVERSATION")；createChildSession() 发送 ChildCreateSession；sendUserMessage() 发送 ChildMessageEvent。所有发送操作在 messageSender 为 null 时静默跳过。
+AgentContextMutator 在 7 个操作点通过注入的 MessageSender 发送消息：addHistoryEntry() 发送 HistoryMessage；putSessionVariable()/removeSessionVariable() 发送 VariableMessage(scope="SESSION")；putConversationVariable()/removeConversationVariable() 发送 VariableMessage(scope="CONVERSATION")；createChildSession() 发送 ChildCreateSession；sendUserMessage() 发送 ChildMessageEvent；setConversationId() 发送 ConversationIdMessage(sessionId, conversationId)。所有发送操作在 messageSender 为 null 时静默跳过。
 
 ### AgentContextManager 消息处理器
-AgentContextManager 提供 3 个 public handler 方法供外部系统在收到消息后调用：handleChildCreateSession(ChildCreateSession) 将新子会话添加到父会话缓存的 childSessions 列表中；handleHistoryMessage(HistoryMessage) 将 HistoryEntry 追加到对应会话的 history 列表；handleVariableMessage(VariableMessage) 根据 scope 复制当前变量 Map 并应用 PUT/REMOVE 操作后刷新。
+AgentContextManager 提供 4 个 public handler 方法供外部系统在收到消息后调用：handleChildCreateSession(ChildCreateSession) 将新子会话添加到父会话缓存的 childSessions 列表中；handleHistoryMessage(HistoryMessage) 将 HistoryEntry 追加到对应会话的 history 列表；handleVariableMessage(VariableMessage) 根据 scope 复制当前变量 Map 并应用 PUT/REMOVE 操作后刷新；handleConversationIdMessage(ConversationIdMessage) 从缓存获取 sessionId 对应的上下文并调用 mutator.setConversationId() 更新对话 ID。
 
 ### 父子会话变量委托
 injectVariableCallbacks() 方法在子会话上下文中，将 sessionVarPutCallback/sessionVarRemoveCallback 直接指向父会话上下文的 putSessionVariable/removeSessionVariable，实现子会话变量读写直接委托给父会话，不经过 MessageSender。ConversationVariable 同理。
@@ -162,7 +162,7 @@ MessageSender 接口（com.ghost616.agentbase.sendmessage.MessageSender），可
 MessageDefinition 接口（com.ghost616.agentbase.sendmessage.MessageDefinition），所有消息类型的顶层契约。定义 String getMessageName() 方法。
 ## MessageName
 
-MessageName 常量类，定义 5 种消息类型名称：HISTORY_MESSAGE、SESSION_VARIABLE、CONVERSATION_VARIABLE、CHILD_SESSION、CHILD_MESSAGE。
+MessageName 常量类，定义 6 种消息类型名称：HISTORY_MESSAGE、SESSION_VARIABLE、CONVERSATION_VARIABLE、CHILD_SESSION、CHILD_MESSAGE、CONVERSATION_ID。CONVERSATION_ID 供 ConversationIdMessage 使用，标识会话对话 ID 变更消息。
 ## SessionMessage
 
 SessionMessage 抽象类，实现 MessageDefinition，新增 String sessionId 字段，作为所有会话级消息的基类。
@@ -260,3 +260,6 @@ ModelInvoker 接口新增 default 方法 EmbeddingResponse embed(EmbeddingReques
 ## 模型类型
 
 ModelType 枚举（com.ghost616.agentbase.enums.ModelType），定义模型的能力类型，包含 LLM("LLM", "大语言模型") 与 EMBEDDINGS("EMBEDDINGS", "向量嵌入模型") 两个值。code 字段使用 @EnumValue 标注，提供 getCode()/getDescription() 方法。供 ModelConfigData.modelType 字段引用，用于区分对话/向量化模型。
+## ConversationIdMessage
+
+ConversationIdMessage 消息类，继承 SessionMessage，messageName=CONVERSATION_ID。携带 String conversationId 字段（对应会话归属的对话 ID）。由 AgentContextMutator.setConversationId() 在设置对话 ID 时触发发送，供外部系统收到消息后通过 AgentContextManager.handleConversationIdMessage() 同步更新缓存上下文。

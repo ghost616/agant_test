@@ -1,5 +1,0 @@
-{
-  "session_id": "ses_024eaf898ffeZ6joeq30eREpvT",
-  "content": "待测试功能：ToolConfigServiceImpl.getToolConfigBySessionAndName 知识库工具名判断\n\n代码文件：\n- platform-app/src/main/java/com/ghost616/platform/service/tool/ToolConfigServiceImpl.java\n- platform-app/src/test/java/com/ghost616/platform/service/tool/ToolConfigServiceImplTest.java\n\n可测试功能：\n1. getToolConfigBySessionAndName：toolManager.getToolConfig 返回的 DTO 的 id 为知识库工具名（KnowledgeBaseInfoTool.TOOL_NAME 等）时直接返回 null，不执行 IdConverter.parse 与 toolConfigMapper.selectById。\n2. 原有逻辑回归：dto 为 null 返回 null、dto.id 为 null 返回 null、dto 存在但实体不存在抛 TOOL_NOT_FOUND、正常返回实体。\n\n测试类型：单元测试（JUnit5 + Mockito）与编译检查。",
-  "timestamp": "2026-08-07T08:01:16.096Z"
-}

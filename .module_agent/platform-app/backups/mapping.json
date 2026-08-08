@@ -110,5 +110,8 @@
   "platform-app/src/main/java/com/ghost616/platform/service/knowledge/KnowledgeBaseQueryProviderImpl.java": "b5e53d922f0be697b49aaeeb5f73a1fd",
   "platform-app/src/test/java/com/ghost616/platform/service/knowledge/KnowledgeBaseQueryProviderImplTest.java": "ea4ae3329fa2ee35b21c622870c82c04",
   "platform-app/src/main/java/com/ghost616/platform/service/tool/ToolConfigServiceImpl.java": "67a324059a2f7700b13fc78b974d2fb4",
-  "platform-app/src/test/java/com/ghost616/platform/service/tool/ToolConfigServiceImplTest.java": "8c4b0dc2f7c219c08b75536bb2771cec"
+  "platform-app/src/test/java/com/ghost616/platform/service/tool/ToolConfigServiceImplTest.java": "8c4b0dc2f7c219c08b75536bb2771cec",
+  "platform-app/src/main/java/com/ghost616/platform/controller/ConversationController.java": "41f3c957b8b804bbea84da9fc6ef28d2",
+  "platform-app/src/test/java/com/ghost616/platform/service/agent/AgentExecutionContextTest.java": "181285b32b79c1f2a649cccec79322d8",
+  "platform-app/src/test/java/com/ghost616/platform/migration/SchemaMigrationTest.java": "d5dc7d9d8506fe131d0115e9bfc9830d"
 }

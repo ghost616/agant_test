@@ -1,5 +1,0 @@
-{
-  "session_id": "ses_02b221a81ffegaED7aVMKkB2aB",
-  "content": "## 待测试功能说明\n\n修改 KnowledgeFileController.getFileContent 方法的返回契约，涉及以下代码文件：\n- platform-app/src/main/java/com/ghost616/platform/controller/KnowledgeFileController.java（getFileContent 返回类型 String→ApiResponse<String>，返回值改为 ApiResponse.success(...)，移除 produces=MediaType.TEXT_PLAIN_VALUE，GET /{id}/content 改为返回 JSON）\n- platform-app/src/test/java/com/ghost616/platform/controller/KnowledgeFileControllerTest.java（getFileContent 用例改为断言 ApiResponse 响应格式：isSuccess、getData 为文件内容）\n\n需要测试的功能：\n1. 编译测试：platform-app 模块编译通过（含 test-compile），确认方法签名变更无残留引用（MediaType import 仍被 updateFileContent 使用，不应被误删）\n2. 单元测试：KnowledgeFileControllerTest 的 getFileContent_应返回ApiResponse成功 用例断言 ApiResponse<String> 响应，verify 仍调用 knowledgeFileService.getFileContent(1L)\n3. 接口行为：GET /{id}/content 现在返回 ApiResponse JSON 包装（code/success/message/data），data 为文件内容字符串，不再返回纯文本；PUT /{id}/content 仍保持 consumes=text/plain 不变",
-  "timestamp": "2026-08-06T02:20:04.294Z"
-}

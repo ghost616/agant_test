@@ -1,5 +1,0 @@
-{
-  "session_id": "ses_02ebb5a94ffee1cWwGfKSyX95X",
-  "content": "# 待测试功能说明\n\n## 变更概述\nplatform-app 模块的 ModelConfigController.java 新增 POST /api/models/{id}/embed 端点。\n\n## 涉及代码文件\n- platform-app/src/main/java/com/ghost616/platform/controller/ModelConfigController.java\n\n## 需要测试的功能\n1. **POST /api/models/{id}/embed 端点**：\n   - 模型配置不存在时返回 MODEL_NOT_FOUND 错误\n   - input 文本超过 1000 字符时抛出 BusinessException(PARAM_INVALID)，错误信息包含\"1000\"\n   - input 合法时调用 ModelInvoker.embed(EmbeddingRequest) 返回 EmbeddingResponse\n   - 复用 ModelConfigData 构建与 ModelInvokerManager.getInvoker 获取 Invoker 的既有模式（与 verify/chat 端点一致）\n   - 返回体为 ApiResponse<EmbeddingResponse>\n\n2. **编译测试**：ModelConfigController.java 新增代码可通过 Maven 编译（依赖 EmbeddingRequest/EmbeddingResponse/ModelInvoker.embed 均已存在）",
-  "timestamp": "2026-08-05T09:34:05.178Z"
-}

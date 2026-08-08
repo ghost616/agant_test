@@ -1,5 +1,0 @@
-{
-  "session_id": "ses_02b0c481bffeoa6Ka4Cx5q9xWu",
-  "content": "## 待测试功能\n\n本次变更涉及文件：src/pages/knowledge/KnowledgeFileList.tsx\n\n变更内容：\n- 知识文件列表页返回按钮样式调整：原为 `<Button onClick={() => navigate('/knowledge')}>返回知识库管理</Button>`，改为 `<Button type=\"text\" onClick={() => navigate('/knowledge')}>返回</Button>`，与其他页面（ModelTest、EvaluationList 等）返回按钮风格一致。\n- 功能不变：点击仍导航回 /knowledge。\n\n需要验证：\n1. 编译检查：变更文件 TypeScript 编译无错误。\n2. 页面测试/E2E：返回按钮渲染文案为「返回」，点击仍导航到 /knowledge；该页面其他功能（列表、新增、编辑、删除、状态切换、编辑内容跳转）不受影响。\n3. 确认无测试用例引用旧文案「返回知识库管理」导致失败。",
-  "timestamp": "2026-08-06T02:43:22.299Z"
-}

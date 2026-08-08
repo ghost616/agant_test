@@ -1,5 +1,0 @@
-{
-  "session_id": "ses_02f1ee954ffeYcUDmcGjcqGv8N",
-  "content": "## 待测试功能\n\n本次变更为删除 SiliconFlowModel 枚举及相关引用，涉及文件：\n\n1. `agent-integration/src/main/java/com/ghost616/agentinteg/model/PlatformType.java`\n   - 删除 getDefaultModelNames() 中 SILICONFLOW case 对 SiliconFlowModel 的引用\n   - SILICONFLOW 现在并入 `case AZURE, OLLAMA, CUSTOM -> List.of()`，返回空列表\n\n2. `agent-integration/src/test/java/com/ghost616/agentinteg/model/invoker/SiliconFlowInvokerTest.java`\n   - 移除 SiliconFlowModel import\n   - 删除 siliconFlowModelNames 测试方法\n   - platformTypeSiliconFlowDefaults 中模型名断言改为 `getDefaultModelNames().isEmpty()`\n\n3. 删除文件：`agent-integration/src/main/java/com/ghost616/agentinteg/model/SiliconFlowModel.java`\n\n验证点：\n- 编译检查通过（删除后无残留 SiliconFlowModel 引用）\n- PlatformType.getDefaultModelNames() 对 SILICONFLOW 返回空列表\n- SiliconFlowInvokerTest 其余用例（embed 继承、embeddings URL、工厂路由）不受影响",
-  "timestamp": "2026-08-05T07:45:02.266Z"
-}

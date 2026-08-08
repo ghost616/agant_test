@@ -1,9 +1,0 @@
-{
-  "plan_id": "plan_820890d0-8ade-4444-a46e-a5d9406e115b",
-  "module_name": "frontend-ui",
-  "development_plan": "## 修改 ModelList.tsx\n\nREQUEST_TYPE_OPTIONS 从 4 项改为 3 项，删除 `{ value: RequestType.COMPLETIONS.code, label: 'Chat Completions' }`：\n- 保留：{ value: '', label: '默认（Chat Completions）' }\n- 保留：{ value: 'responses', label: 'Responses（有状态）' }\n- 保留：{ value: 'responses_stateless', label: 'Responses（无状态）' }",
-  "session_id": "ses_024a925cfffeiZ6cpU0Xgr80iW",
-  "modified_files": [
-    "src/pages/models/ModelList.tsx"
-  ]
-}

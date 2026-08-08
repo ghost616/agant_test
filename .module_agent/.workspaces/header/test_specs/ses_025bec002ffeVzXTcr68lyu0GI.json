@@ -1,5 +1,0 @@
-{
-  "session_id": "ses_025bec002ffeVzXTcr68lyu0GI",
-  "content": "本次变更涉及的功能：\n1. SubToolType 枚举新增 RAG_KNOWLEDGE 值（code=RAG_KNOWLEDGE，description=知识库检索）\n2. 同步更新 platform-app 的 SubToolTypeTest 断言（values().length 1→2，新增 RAG_KNOWLEDGE name 校验）\n\n涉及代码文件：\n- platform-data/src/main/java/com/ghost616/platform/enums/SubToolType.java\n- platform-app/src/test/java/com/ghost616/platform/enums/SubToolTypeTest.java",
-  "timestamp": "2026-08-07T03:26:26.723Z"
-}

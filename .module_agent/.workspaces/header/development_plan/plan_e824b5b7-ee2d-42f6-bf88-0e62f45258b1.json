@@ -1,9 +1,0 @@
-{
-  "plan_id": "plan_e824b5b7-ee2d-42f6-bf88-0e62f45258b1",
-  "module_name": "framework",
-  "development_plan": "## 修改 README.md\n\n### 1. 功能模块列表新增\n在现有功能模块列表末尾新增一行：\n- **知识库管理** — 知识库 CRUD、文件上传与 Markdown 编辑、ES 索引配置、发布状态管理、智能体-知识库绑定\n\n### 2. 项目结构补充\n- 后端 platform-app/service/ 下新增 knowledge/ 目录说明\n- 后端 platform-app/controller/ 下说明 KnowledgeBaseController 和 KnowledgeFileController\n- 前端 src/pages/ 下新增 knowledge/ 目录说明（KnowledgeBaseList、KnowledgeFileList、KnowledgeFileEdit）\n\n### 3. 新增「知识库配置」章节（在浏览器工具章节之后）\n参考现有文档风格，编写知识库配置章节，包含：\n- 配置流程：创建知识库 → 配置 ES 索引 → 上传/编辑文件（Markdown 格式）→ 发布到 ES → 绑定智能体\n- 发布状态：UNPUBLISHED/PUBLISHING/PUBLISHED/PENDING_PUBLISH/PUBLISH_ERROR\n- 发布机制：文件发布时文本按 5000 字符分批向量化写入 ES Index\n\n### 4. 新增「知识库工具」章节\n参考现有「四种工具实现方式」表格风格，编写知识库工具章节，包含：\n- 4 个工具介绍表格：工具名称、用途描述、关键参数\n  - default_tool_rag_info：获取当前会话关联的知识库信息（无参数）\n  - default_tool_rag_file_info：搜索知识库中的文件（knowledgeBaseId、fileName、searchLimit）\n  - default_tool_rag_search：搜索知识库文本块（knowledgeBaseId、fileId、searchType、query、searchLimit、contextLines）\n  - default_tool_rag_file_chunk：获取指定文件的文本块（knowledgeBaseId、fileId、startLine、endLine）\n- 自动绑定说明：智能体绑定知识库后，4 个工具自动注入会话工具列表（sessionAuth: ALL）",
-  "session_id": "ses_02474ce71ffe416qhuL32gNF5q",
-  "modified_files": [
-    "README.md"
-  ]
-}

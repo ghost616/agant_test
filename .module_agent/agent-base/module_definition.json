@@ -400,6 +400,14 @@
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/enums/ModelType.java",
       "description": "模型类型枚举，定义模型的能力类型（LLM 大语言模型 / EMBEDDINGS 向量嵌入模型），code 字段 @EnumValue 标注，提供 getCode/getDescription 方法，供 ModelConfigData.modelType 字段引用区分对话与向量化模型。"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/sendmessage/ConversationIdMessage.java",
+      "description": "ConversationIdMessage 消息类，继承 SessionMessage，messageName=CONVERSATION_ID，携带 String conversationId 字段。由 AgentContextMutator.setConversationId() 在设置对话 ID 时触发发送，供外部系统经 AgentContextManager.handleConversationIdMessage() 同步更新缓存上下文。"
+    },
+    {
+      "path": "agent-base/src/test/java/com/ghost616/agentbase/sendmessage/ConversationIdMessageTest.java",
+      "description": "ConversationIdMessage 单元测试（5 例）：覆盖 MessageName.CONVERSATION_ID 常量值、构造时 sessionId/conversationId 存取、getMessageName 返回 CONVERSATION_ID、空字符串与 null conversationId 边界。"
     }
   ]
 }

@@ -1,9 +1,0 @@
-{
-  "plan_id": "plan_82fedcad-0fcd-48fc-9fe1-29e3b8a55a3b",
-  "module_name": "framework",
-  "development_plan": "## 修改 README.md\n\n删除以下 4 处括号内容（括号本身一并删除）：\n\n1. ES 索引自动生成行：删除 `（可在创建请求中指定）`\n2. 上传/编辑文件行：删除 `（KnowledgeFileEdit）`\n3. 知识库工具章节第一段：删除 `（sessionAuth: ALL）`\n4. 自动绑定说明行：删除 `（sessionAuth: ALL）`",
-  "session_id": "ses_02474ce71ffe416qhuL32gNF5q",
-  "modified_files": [
-    "README.md"
-  ]
-}

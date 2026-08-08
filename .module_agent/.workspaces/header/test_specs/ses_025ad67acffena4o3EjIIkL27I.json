@@ -1,5 +1,0 @@
-{
-  "session_id": "ses_025ad67acffena4o3EjIIkL27I",
-  "content": "## 待测试功能说明\n\n### 涉及文件\n1. `agent-integration/src/main/java/com/ghost616/agentinteg/tool/KnowledgeSearchTool.java`\n2. `agent-integration/src/test/java/com/ghost616/agentinteg/tool/KnowledgeSearchToolTest.java`\n\n### 本次变更功能\n重构 KnowledgeSearchTool.execute/buildResult，将 searchChunks 返回的所有 TextChunkWithFile 的 chunks 全部收集，按 (knowledgeBaseId, fileId) 分组到 LinkedHashMap（保持插入顺序），组内按 lineNumber 使用 LinkedHashMap putIfAbsent 去重后调用 mergeContinuousChunks 按行号升序合并相邻连续块，再构建 List<{knowledgeBaseId, fileId, chunks}> 输出。\n\n### 需要验证的行为\n- 同一 (knowledgeBaseId, fileId) 的多个 TextChunkWithFile 的 chunks 聚合到同一输出条目，连续行号块正确合并\n- 同一文件组内重复 lineNumber 去重（保留首个插入的文本）\n- 不同文件各自独立分组输出\n- 原有行为不变：正常路径合并、默认参数、fileId 透传、必填参数缺失校验、无效 searchType、provider 异常返回错误 JSON\n\n### 编译要求\nJava 17，Maven 多模块。需确保模块可编译、测试可通过。",
-  "timestamp": "2026-08-07T03:45:41.712Z"
-}

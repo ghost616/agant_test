@@ -7,7 +7,7 @@
 ## 数据访问层
 
 提供 15 个 MyBatis-Plus Mapper 接口，均位于 `com.ghost616.platform.repository` 包下：
-- **MessageMapper**：继承 BaseMapper\<Message\>，额外提供 rollbackBySessionIdAndGeSequenceNum 批量更新方法
+- **MessageMapper**：继承 BaseMapper\<Message\>，额外提供 rollbackBySessionIdAndGeSequenceNum 批量更新方法、selectByConversationId 按会话查询未回滚消息（按创建时间升序）
 - **MessageToolCallMapper**：继承 BaseMapper\<MessageToolCall\>，额外提供 deleteByMessageIds 批量删除方法
 - **SessionMapper**：继承 BaseMapper\<Session\>，额外提供 addTotalTokenUsed 原子增减方法
 - **AgentConfigMapper、AgentToolMapper、AgentSkillMapper**：基础 CRUD Mapper

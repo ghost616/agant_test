@@ -1,7 +1,7 @@
 {
   "limu": {
-    "providerID": "opencode",
-    "modelID": "deepseek-v4-flash-free"
+    "providerID": "deepseek",
+    "modelID": "deepseek-v4-flash"
   },
   "gaotao": {
     "providerID": "deepseek",
@@ -12,7 +12,7 @@
     "modelID": "deepseek-v4-flash"
   },
   "kui": {
-    "providerID": "opencode",
-    "modelID": "deepseek-v4-flash-free"
+    "providerID": "deepseek",
+    "modelID": "deepseek-v4-flash"
   }
 }

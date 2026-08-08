@@ -1,5 +1,0 @@
-{
-  "session_id": "ses_0292da88cffeoRJcGdSOq2HRUG",
-  "content": "待测试功能说明：\n\n1. src/types/knowledge.ts：KnowledgeFile 接口新增 publishing?: boolean 字段\n   - 涉及文件：src/types/knowledge.ts\n\n2. src/pages/knowledge/KnowledgeFileList.tsx：发布按钮逻辑改为同时判断 publishStatus 与 publishing\n   - PUBLISHING + publishing=true → 按钮文案「发布中」且 disabled\n   - 其他状态（含 PUBLISHING + publishing=false 崩溃恢复）→ 按钮文案「发布」且可点击\n   - 移除 PUBLISHABLE_STATUSES 常量；知识库 rebuilding=true 时发布按钮仍禁用\n   - 涉及文件：src/pages/knowledge/KnowledgeFileList.tsx\n\n3. 同步更新测试用例：src/pages/knowledge/__tests__/KnowledgeFileList.publish.test.tsx\n   - PUBLISHING + publishing=true → 「发布中」禁用\n   - PUBLISHING + publishing=false（崩溃恢复）→ 「发布」可点击\n   - PUBLISHED 状态 → 「发布」可点击（支持重新发布）\n   - rebuilding=true → 发布按钮禁用（原有用例应保持通过）\n\n编译测试：对上述三个变更文件执行 TypeScript 编译检查，确保无类型错误。",
-  "timestamp": "2026-08-06T11:26:58.486Z"
-}
