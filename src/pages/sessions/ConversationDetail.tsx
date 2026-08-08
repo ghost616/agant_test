@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Button, message, Modal, Table, Tag, Tooltip, Typography } from 'antd';
 import { ArrowLeftOutlined } from '@ant-design/icons';
+import type { CSSProperties } from 'react';
 import type { ColumnsType } from 'antd/es/table';
 import type { SessionMessage, ToolCallData } from '../../types/session';
 import { getConversationMessages } from '../../services/session';
@@ -13,11 +14,114 @@ const ROLE_LABELS: Record<string, { text: string; color: string }> = {
   system: { text: '系统', color: 'default' },
 };
 
+const LINE_ROW_STYLE: CSSProperties = {
+  whiteSpace: 'nowrap',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  lineHeight: 22,
+};
+
+const PRE_STYLE: CSSProperties = {
+  maxHeight: 220,
+  overflow: 'auto',
+  margin: '4px 0',
+  padding: 8,
+  backgroundColor: '#f5f5f5',
+  borderRadius: 4,
+  fontSize: 12,
+  whiteSpace: 'pre-wrap',
+  wordBreak: 'break-all',
+};
+
+interface ToolResultPair {
+  toolName?: string;
+  result?: string;
+}
+
 function shortenSessionId(id: string): string {
   if (!id || id.length <= 12) {
     return id || '-';
   }
   return `${id.slice(0, 8)}…${id.slice(-4)}`;
+}
+
+function findToolResult(messages: SessionMessage[], fromIndex: number, toolCallId: string): ToolResultPair | undefined {
+  for (let i = fromIndex + 1; i < messages.length; i += 1) {
+    const msg = messages[i];
+    if (msg.role === 'tool' && msg.toolInfo?.toolCallId === toolCallId) {
+      return { toolName: msg.toolInfo.toolName, result: msg.toolResult };
+    }
+  }
+  return undefined;
+}
+
+function renderToolCallFlow(messages: SessionMessage[], msgIndex: number, toolCalls: ToolCallData[]): JSX.Element {
+  return (
+    <div style={{ marginTop: 8 }}>
+      <div>🔧 工具调用</div>
+      {toolCalls.map((tc) => {
+        const pair = findToolResult(messages, msgIndex, tc.toolCallId);
+        return (
+          <div key={tc.toolCallId} style={{ marginTop: 8 }}>
+            <Tag color="purple">🔧 {tc.toolCallName}</Tag>
+            <pre style={PRE_STYLE}>{tc.toolCallArguments}</pre>
+            {pair ? (
+              <>
+                <div style={{ marginTop: 4 }}>📋 {pair.toolName}</div>
+                <pre style={PRE_STYLE}>{pair.result ?? '无结果'}</pre>
+              </>
+            ) : null}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function renderMessageFlow(messages: SessionMessage[]): JSX.Element[] {
+  return messages.map((msg, index) => {
+    const roleCfg = ROLE_LABELS[msg.role] || { text: msg.role, color: 'default' };
+    return (
+      <div
+        key={msg.id}
+        style={{ marginBottom: 16, padding: 12, border: '1px solid #f0f0f0', borderRadius: 4 }}
+      >
+        <div style={{ marginBottom: 8 }}>
+          <Tag color={roleCfg.color}>{roleCfg.text}</Tag>
+        </div>
+        {msg.role === 'user' && msg.content ? <div>📝 {msg.content}</div> : null}
+        {msg.role === 'assistant' ? (
+          <div>
+            {msg.reasoning ? (
+              <div style={{ marginBottom: 8 }}>
+                <div>💭 推理</div>
+                <pre style={PRE_STYLE}>{msg.reasoning}</pre>
+              </div>
+            ) : null}
+            {msg.content ? (
+              <div style={{ marginBottom: 8 }}>
+                <div>📝 内容</div>
+                <pre style={PRE_STYLE}>{msg.content}</pre>
+              </div>
+            ) : null}
+            {msg.toolCalls && msg.toolCalls.length > 0
+              ? renderToolCallFlow(messages, index, msg.toolCalls)
+              : null}
+          </div>
+        ) : null}
+        {msg.role === 'tool' ? (
+          <div>
+            <div>📋 {msg.toolInfo?.toolName ?? '工具结果'}</div>
+            <pre style={PRE_STYLE}>{msg.toolResult ?? ''}</pre>
+          </div>
+        ) : null}
+        {msg.role !== 'user' && msg.role !== 'assistant' && msg.role !== 'tool' && msg.content ? (
+          <div>📝 {msg.content}</div>
+        ) : null}
+        <div style={{ marginTop: 8, color: '#999', fontSize: 12 }}>{msg.createTime}</div>
+      </div>
+    );
+  });
 }
 
 function ConversationDetail(): JSX.Element {
@@ -28,8 +132,6 @@ function ConversationDetail(): JSX.Element {
   const [messages, setMessages] = useState<SessionMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [detailVisible, setDetailVisible] = useState(false);
-  const [detailTitle, setDetailTitle] = useState('');
-  const [detailContent, setDetailContent] = useState('');
 
   const fetchMessages = useCallback(async (cid: string): Promise<void> => {
     setLoading(true);
@@ -49,18 +151,6 @@ function ConversationDetail(): JSX.Element {
       fetchMessages(conversationId);
     }
   }, [conversationId, fetchMessages]);
-
-  const openToolCallsModal = (toolCalls: ToolCallData[]): void => {
-    setDetailTitle('工具调用');
-    setDetailContent(JSON.stringify(toolCalls, null, 2));
-    setDetailVisible(true);
-  };
-
-  const openToolResultModal = (toolResult?: string): void => {
-    setDetailTitle('工具结果');
-    setDetailContent(JSON.stringify(toolResult ?? null, null, 2));
-    setDetailVisible(true);
-  };
 
   const rowClassName = (record: SessionMessage): string => {
     if (!sessionId) {
@@ -84,25 +174,26 @@ function ConversationDetail(): JSX.Element {
       title: '内容',
       dataIndex: 'content',
       key: 'content',
-      ellipsis: true,
-      render: (content: string, record: SessionMessage) => {
-        if (record.role === 'assistant' && record.toolCalls && record.toolCalls.length > 0) {
-          const toolCalls = record.toolCalls;
-          return (
-            <Button size="small" onClick={() => openToolCallsModal(toolCalls)}>
-              查看工具 ({toolCalls.length})
-            </Button>
-          );
-        }
-        if (record.role === 'tool') {
-          return (
-            <Button size="small" onClick={() => openToolResultModal(record.toolResult)}>
-              查看结果
-            </Button>
-          );
-        }
-        return content;
-      },
+      render: (_content: string, record: SessionMessage) => (
+        <div style={{ cursor: 'pointer' }} onClick={() => setDetailVisible(true)}>
+          {record.reasoning ? <div style={LINE_ROW_STYLE}>💭 {record.reasoning}</div> : null}
+          {record.content ? <div style={LINE_ROW_STYLE}>📝 {record.content}</div> : null}
+          {record.role === 'assistant' && record.toolCalls && record.toolCalls.length > 0 ? (
+            <div style={LINE_ROW_STYLE}>
+              <Button size="small" type="text">
+                🔧 工具调用 ({record.toolCalls.length})
+              </Button>
+            </div>
+          ) : null}
+          {record.role === 'tool' ? (
+            <div style={LINE_ROW_STYLE}>
+              <Button size="small" type="text">
+                📋 工具结果
+              </Button>
+            </div>
+          ) : null}
+        </div>
+      ),
     },
     {
       title: '来源会话',
@@ -144,27 +235,13 @@ function ConversationDetail(): JSX.Element {
         rowClassName={rowClassName}
       />
       <Modal
-        title={detailTitle}
+        title="对话详情"
         open={detailVisible}
         onCancel={() => setDetailVisible(false)}
         footer={null}
-        width={720}
+        width={960}
       >
-        <pre
-          style={{
-            maxHeight: 480,
-            overflow: 'auto',
-            margin: 0,
-            padding: 12,
-            backgroundColor: '#f5f5f5',
-            borderRadius: 4,
-            fontSize: 12,
-            whiteSpace: 'pre-wrap',
-            wordBreak: 'break-all',
-          }}
-        >
-          {detailContent}
-        </pre>
+        <div style={{ maxHeight: 520, overflow: 'auto' }}>{renderMessageFlow(messages)}</div>
       </Modal>
     </div>
   );

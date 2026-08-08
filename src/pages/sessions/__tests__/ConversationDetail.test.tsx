@@ -42,26 +42,63 @@ describe('ConversationDetail 对话详情 (静态验证)', () => {
     expect(source).toContain("'/conversations'");
   });
 
-  it('assistant 有 toolCalls 时应显示「查看工具」按钮和数量', () => {
+  it('内容列应展示三行（💭推理/📝内容/按钮）且单行省略', () => {
+    const source = readFileSync(pagePath, 'utf-8');
+    expect(source).toContain('record.reasoning');
+    expect(source).toContain('record.content');
+    expect(source).toContain('LINE_ROW_STYLE');
+    expect(source).toContain("whiteSpace: 'nowrap'");
+    expect(source).toContain('textOverflow: \'ellipsis\'');
+  });
+
+  it('assistant 有 toolCalls 时应显示 🔧 图标按钮和数量', () => {
     const source = readFileSync(pagePath, 'utf-8');
     expect(source).toContain("record.role === 'assistant'");
     expect(source).toContain('record.toolCalls');
-    expect(source).toContain('查看工具');
+    expect(source).toContain('🔧 工具调用');
     expect(source).toContain('toolCalls.length');
   });
 
-  it('tool 角色应显示「查看结果」按钮', () => {
+  it('tool 角色应显示 📋 图标按钮', () => {
     const source = readFileSync(pagePath, 'utf-8');
     expect(source).toContain("record.role === 'tool'");
-    expect(source).toContain('查看结果');
+    expect(source).toContain('📋 工具结果');
   });
 
-  it('应通过 Modal 展示 toolCalls/toolResult 的 JSON.stringify 内容', () => {
+  it('点击内容区域应打开 Modal 并按对话流展示消息', () => {
     const source = readFileSync(pagePath, 'utf-8');
     expect(source).toContain('Modal');
-    expect(source).toContain('JSON.stringify(toolCalls, null, 2)');
-    expect(source).toContain('JSON.stringify(toolResult ?? null, null, 2)');
     expect(source).toContain('detailVisible');
+    expect(source).toContain('renderMessageFlow');
+    expect(source).toContain('onClick={() => setDetailVisible(true)}');
+  });
+
+  it('Modal 内 assistant 应展示 💭推理、📝内容与 🔧工具调用列表（名称+参数JSON）', () => {
+    const source = readFileSync(pagePath, 'utf-8');
+    expect(source).toContain('💭 推理');
+    expect(source).toContain('📝 内容');
+    expect(source).toContain('🔧 工具调用');
+    expect(source).toContain('tc.toolCallArguments');
+    expect(source).toContain('tc.toolCallName');
+  });
+
+  it('Modal 内 tool 消息应展示 toolName 和结果 JSON；user 消息展示 content', () => {
+    const source = readFileSync(pagePath, 'utf-8');
+    expect(source).toContain("msg.role === 'tool'");
+    expect(source).toContain('msg.toolInfo?.toolName');
+    expect(source).toContain('msg.toolResult');
+    expect(source).toContain("msg.role === 'user'");
+    expect(source).toContain('msg.content');
+  });
+
+  it('应按 toolCallId 配对 assistant 的 toolCalls 与后续 tool 的 toolResult', () => {
+    const source = readFileSync(pagePath, 'utf-8');
+    expect(source).toContain('findToolResult');
+    expect(source).toContain('toolCallId');
+    expect(source).toContain("msg.toolInfo?.toolCallId === toolCallId");
+    expect(source).toContain('fromIndex + 1');
+    expect(source).toContain("pair.toolName");
+    expect(source).toContain("pair.result");
   });
 
   it('应包含来源会话列并截短显示 sessionId（前8后4）', () => {

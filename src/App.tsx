@@ -63,14 +63,14 @@ const MENU_ITEMS: MenuProps['items'] = [
     label: '会话管理',
   },
   {
-    key: '/conversations',
-    icon: <HistoryOutlined />,
-    label: '会话历史',
-  },
-  {
     key: '/evaluations',
     icon: <CheckCircleOutlined />,
     label: '评估管理',
+  },
+  {
+    key: '/conversations',
+    icon: <HistoryOutlined />,
+    label: '会话历史',
   },
 ];
 

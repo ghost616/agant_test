@@ -118,36 +118,37 @@ test.describe('会话历史返回与跳转优化', () => {
 });
 
 test.describe('对话详情工具按钮与来源会话', () => {
-  test('assistant 有 toolCalls 时应显示「查看工具 (N)」按钮', async ({ page }) => {
+  test('assistant 有 toolCalls 时应显示 🔧 工具调用按钮和数量', async ({ page }) => {
     await setupToolMocks(page);
     await page.goto('/conversations/conv-1/detail');
     await page.waitForSelector('.ant-table');
 
-    await expect(page.locator('text=查看工具 (2)')).toBeVisible();
+    await expect(page.locator('text=工具调用 (2)')).toBeVisible();
+    await expect(page.locator('text=助手调用工具')).toBeVisible();
   });
 
-  test('点击「查看工具」应弹出 Modal 展示 JSON.stringify 内容', async ({ page }) => {
+  test('点击 assistant 内容应弹出「对话详情」Modal 展示工具调用', async ({ page }) => {
     await setupToolMocks(page);
     await page.goto('/conversations/conv-1/detail');
     await page.waitForSelector('.ant-table');
 
-    await page.locator('text=查看工具 (2)').click();
+    await page.locator('.ant-table-tbody tr').first().click();
     await expect(page.locator('.ant-modal-content')).toBeVisible();
-    await expect(page.locator('.ant-modal-title')).toHaveText('工具调用');
-    await expect(page.locator('.ant-modal-content pre')).toContainText('"toolCallName": "search"');
-    await expect(page.locator('.ant-modal-content pre')).toContainText('"toolCallName": "read"');
+    await expect(page.locator('.ant-modal-title')).toHaveText('对话详情');
+    await expect(page.locator('.ant-modal-content')).toContainText('🔧 工具调用');
+    await expect(page.locator('.ant-modal-content')).toContainText('search');
+    await expect(page.locator('.ant-modal-content')).toContainText('read');
   });
 
-  test('tool 角色应显示「查看结果」按钮并弹出 Modal 展示工具结果', async ({ page }) => {
+  test('Modal 应展示 tool 消息工具结果 JSON', async ({ page }) => {
     await setupToolMocks(page);
     await page.goto('/conversations/conv-1/detail');
     await page.waitForSelector('.ant-table');
 
-    await expect(page.locator('text=查看结果')).toBeVisible();
-    await page.locator('text=查看结果').click();
+    await page.locator('.ant-table-tbody tr').first().click();
     await expect(page.locator('.ant-modal-content')).toBeVisible();
-    await expect(page.locator('.ant-modal-title')).toHaveText('工具结果');
-    await expect(page.locator('.ant-modal-content pre')).toContainText('\\"result\\": \\"ok\\"');
+    await expect(page.locator('.ant-modal-content')).toContainText('📋 工具结果');
+    await expect(page.locator('.ant-modal-content')).toContainText('{"result": "ok"}');
   });
 
   test('长 sessionId 应截短显示为前8后4加省略号', async ({ page }) => {
