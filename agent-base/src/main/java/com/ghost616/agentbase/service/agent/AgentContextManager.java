@@ -14,6 +14,7 @@ import com.ghost616.agentbase.enums.SessionAuthType;
 import com.ghost616.agentbase.enums.ToolType;
 import com.ghost616.agentbase.exception.BusinessException;
 import com.ghost616.agentbase.sendmessage.ChildCreateSession;
+import com.ghost616.agentbase.sendmessage.ConversationIdMessage;
 import com.ghost616.agentbase.sendmessage.HistoryMessage;
 import com.ghost616.agentbase.sendmessage.VariableMessage;
 import com.ghost616.agentbase.service.agent.invoker.ToolManager;
@@ -394,6 +395,14 @@ public class AgentContextManager {
                 }
                 ctx.mutator().refreshConversationVariables(current);
             }
+        }
+    }
+
+    public void handleConversationIdMessage(ConversationIdMessage message) {
+        ensureInitialized();
+        AgentSessionContext ctx = cache.get(message.getSessionId());
+        if (ctx != null) {
+            ctx.mutator().setConversationId(message.getConversationId());
         }
     }
 

@@ -7,6 +7,8 @@ import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
 import com.ghost616.agentbase.enums.SessionAuthType;
 import com.ghost616.agentbase.enums.ToolType;
 import com.ghost616.agentbase.exception.BusinessException;
+import com.ghost616.agentbase.sendmessage.ConversationIdMessage;
+import com.ghost616.agentbase.sendmessage.MessageSender;
 import com.ghost616.agentbase.service.agent.invoker.ToolManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -36,6 +38,8 @@ class AgentContextManagerTest {
     private SessionManager sessionManager;
     @Mock
     private ToolManager toolManager;
+    @Mock
+    private MessageSender messageSender;
 
     private AgentComponentRegistry registry;
     private AgentContextManager agentContextManager;
@@ -738,6 +742,65 @@ class AgentContextManagerTest {
             @SuppressWarnings("unchecked")
             Map<String, String> childLocal = (Map<String, String>) localVars.get(childCtx.context());
             assertFalse(childLocal.containsKey("toBeRemoved"), "子会话的本地conversationVariables不应包含已删除的key");
+        }
+    }
+
+    @Nested
+    class ConversationIdTest {
+
+        @Test
+        void 正向_mutator_setConversationId更新context的conversationId() {
+            stubBasicContext();
+            AgentContextManager.AgentSessionContext ctx = agentContextManager.build(sessionId).build();
+
+            assertNull(ctx.context().getConversationId());
+
+            ctx.mutator().setConversationId("conv-100");
+
+            assertEquals("conv-100", ctx.context().getConversationId());
+        }
+
+        @Test
+        void 正向_messageSender非null时setConversationId发送ConversationIdMessage() {
+            stubBasicContext();
+            registry.setMessageSender(messageSender);
+            AgentContextManager.AgentSessionContext ctx = agentContextManager.build(sessionId).build();
+
+            ctx.mutator().setConversationId("conv-200");
+
+            verify(messageSender).send(argThat(msg -> msg instanceof ConversationIdMessage
+                    && "conv-200".equals(((ConversationIdMessage) msg).getConversationId())
+                    && sessionId.equals(((ConversationIdMessage) msg).getSessionId())));
+        }
+
+        @Test
+        void 反向_messageSender为null时setConversationId静默不抛异常() {
+            stubBasicContext();
+            registry.setMessageSender(null);
+            AgentContextManager.AgentSessionContext ctx = agentContextManager.build(sessionId).build();
+
+            assertDoesNotThrow(() -> ctx.mutator().setConversationId("conv-300"));
+
+            assertEquals("conv-300", ctx.context().getConversationId());
+        }
+
+        @Test
+        void 正向_handleConversationIdMessage更新缓存中对应上下文的conversationId() {
+            stubBasicContext();
+            registry.setMessageSender(null);
+            AgentContextManager.AgentSessionContext ctx = agentContextManager.build(sessionId).build();
+
+            agentContextManager.handleConversationIdMessage(new ConversationIdMessage(sessionId, "conv-400"));
+
+            assertEquals("conv-400", ctx.context().getConversationId());
+        }
+
+        @Test
+        void 边界_缓存中无该sessionId时handleConversationIdMessage静默不抛异常() {
+            String nonExistentSession = "999";
+
+            assertDoesNotThrow(() -> agentContextManager.handleConversationIdMessage(
+                    new ConversationIdMessage(nonExistentSession, "conv-500")));
         }
     }
 }

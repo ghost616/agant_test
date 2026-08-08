@@ -82,9 +82,10 @@ public class AgentContextConfiguration {
     public AgentAssembler agentAssembler(SystemToolProvider systemToolProvider,
                             ModelInvokerFactory modelInvokerFactory,
                             ChatDataProvider chatDataProvider,
-                            ToolExecutionProvider toolExecutionProvider) {
+                            ToolExecutionProvider toolExecutionProvider,
+                            MessageSender messageSender) {
         return new AgentAssembler(contextDataProvider, messageDataProvider, toolDataProvider,
-                systemToolProvider, modelInvokerFactory, chatDataProvider, null, toolExecutionProvider);
+                systemToolProvider, modelInvokerFactory, chatDataProvider, messageSender, toolExecutionProvider);
     }
 
     @Bean

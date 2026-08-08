@@ -109,3 +109,39 @@ describe('ToolList CUSTOM 表单 UI', () => {
     expect(source).toContain('returnSchema');
   });
 });
+
+describe('ToolList JsonEditor 懒加载', () => {
+  it('应导入 React 与 Suspense', () => {
+    const source = readFileSync(resolve(__dirname, '../ToolList.tsx'), 'utf-8');
+    expect(source).toMatch(/import React,\s*\{[\s\S]*?\bSuspense\b/);
+  });
+
+  it('应使用 React.lazy 动态导入 JsonEditor', () => {
+    const source = readFileSync(resolve(__dirname, '../ToolList.tsx'), 'utf-8');
+    expect(source).toContain("React.lazy(() => import('../../components/JsonEditor'))");
+  });
+
+  it('parameterSchema 的 JsonEditor 应被 Suspense fallback 包裹', () => {
+    const source = readFileSync(resolve(__dirname, '../ToolList.tsx'), 'utf-8');
+    expect(source).toContain('name="parameterSchema"');
+    expect(source).toContain('<Suspense fallback');
+    expect(source).toContain('<JsonEditor />');
+    expect(source).toContain('</Suspense>');
+  });
+
+  it('returnSchema 的 JsonEditor 应被 Suspense fallback 包裹', () => {
+    const source = readFileSync(resolve(__dirname, '../ToolList.tsx'), 'utf-8');
+    expect(source).toContain('name="returnSchema"');
+    expect(source).toContain('<Suspense fallback');
+    expect(source).toContain('<JsonEditor />');
+    expect(source).toContain('</Suspense>');
+  });
+
+  it('import type 应保持在文件顶部', () => {
+    const source = readFileSync(resolve(__dirname, '../ToolList.tsx'), 'utf-8');
+    const importTypeIndex = source.indexOf("import type { ColumnsType }");
+    const lazyIndex = source.indexOf('React.lazy');
+    expect(importTypeIndex).toBeGreaterThan(-1);
+    expect(lazyIndex).toBeGreaterThan(importTypeIndex);
+  });
+});

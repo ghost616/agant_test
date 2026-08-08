@@ -9,6 +9,7 @@ import com.ghost616.agentbase.dto.model.WebSearchCall;
 import com.ghost616.agentbase.dto.skill.SkillConfigDTO;
 import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
 import com.ghost616.agentbase.sendmessage.ChildCreateSession;
+import com.ghost616.agentbase.sendmessage.ConversationIdMessage;
 import com.ghost616.agentbase.sendmessage.HistoryMessage;
 import com.ghost616.agentbase.sendmessage.MessageSender;
 import com.ghost616.agentbase.sendmessage.ChildMessageEvent;
@@ -353,6 +354,9 @@ public class AgentExecutionContext {
 
         public void setConversationId(String conversationId) {
             context.conversationId = conversationId;
+            if (messageSender != null) {
+                messageSender.send(new ConversationIdMessage(context.sessionId, conversationId));
+            }
         }
 
         public String getConversationId() {
