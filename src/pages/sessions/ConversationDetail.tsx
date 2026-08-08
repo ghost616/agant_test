@@ -21,6 +21,13 @@ const LINE_ROW_STYLE: CSSProperties = {
   lineHeight: 22,
 };
 
+const CONTENT_CELL_STYLE: CSSProperties = {
+  cursor: 'pointer',
+  lineHeight: 22,
+  maxHeight: 66,
+  overflow: 'hidden',
+};
+
 const PRE_STYLE: CSSProperties = {
   maxHeight: 220,
   overflow: 'auto',
@@ -84,6 +91,7 @@ function renderMessageFlow(messages: SessionMessage[]): JSX.Element[] {
     return (
       <div
         key={msg.id}
+        id={`msg-${msg.id}`}
         style={{ marginBottom: 16, padding: 12, border: '1px solid #f0f0f0', borderRadius: 4 }}
       >
         <div style={{ marginBottom: 8 }}>
@@ -132,6 +140,7 @@ function ConversationDetail(): JSX.Element {
   const [messages, setMessages] = useState<SessionMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [detailVisible, setDetailVisible] = useState(false);
+  const [clickedMsgId, setClickedMsgId] = useState<string>('');
 
   const fetchMessages = useCallback(async (cid: string): Promise<void> => {
     setLoading(true);
@@ -175,7 +184,13 @@ function ConversationDetail(): JSX.Element {
       dataIndex: 'content',
       key: 'content',
       render: (_content: string, record: SessionMessage) => (
-        <div style={{ cursor: 'pointer' }} onClick={() => setDetailVisible(true)}>
+        <div
+          style={CONTENT_CELL_STYLE}
+          onClick={() => {
+            setClickedMsgId(record.id);
+            setDetailVisible(true);
+          }}
+        >
           {record.reasoning ? <div style={LINE_ROW_STYLE}>💭 {record.reasoning}</div> : null}
           {record.content ? <div style={LINE_ROW_STYLE}>📝 {record.content}</div> : null}
           {record.role === 'assistant' && record.toolCalls && record.toolCalls.length > 0 ? (
@@ -240,6 +255,16 @@ function ConversationDetail(): JSX.Element {
         onCancel={() => setDetailVisible(false)}
         footer={null}
         width={960}
+        afterOpenChange={(open) => {
+          if (open && clickedMsgId) {
+            setTimeout(() => {
+              document.getElementById(`msg-${clickedMsgId}`)?.scrollIntoView({
+                behavior: 'instant',
+                block: 'center',
+              });
+            }, 0);
+          }
+        }}
       >
         <div style={{ maxHeight: 520, overflow: 'auto' }}>{renderMessageFlow(messages)}</div>
       </Modal>

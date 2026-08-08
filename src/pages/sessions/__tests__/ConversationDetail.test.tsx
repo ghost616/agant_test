@@ -51,6 +51,15 @@ describe('ConversationDetail 对话详情 (静态验证)', () => {
     expect(source).toContain('textOverflow: \'ellipsis\'');
   });
 
+  it('内容列应通过 CONTENT_CELL_STYLE 限制三行高度使行高一致', () => {
+    const source = readFileSync(pagePath, 'utf-8');
+    expect(source).toContain('CONTENT_CELL_STYLE');
+    expect(source).toContain('lineHeight: 22');
+    expect(source).toContain('maxHeight: 66');
+    expect(source).toContain('overflow: \'hidden\'');
+    expect(source).toContain('style={CONTENT_CELL_STYLE}');
+  });
+
   it('assistant 有 toolCalls 时应显示 🔧 图标按钮和数量', () => {
     const source = readFileSync(pagePath, 'utf-8');
     expect(source).toContain("record.role === 'assistant'");
@@ -70,7 +79,25 @@ describe('ConversationDetail 对话详情 (静态验证)', () => {
     expect(source).toContain('Modal');
     expect(source).toContain('detailVisible');
     expect(source).toContain('renderMessageFlow');
-    expect(source).toContain('onClick={() => setDetailVisible(true)}');
+    expect(source).toContain('setClickedMsgId(record.id)');
+    expect(source).toContain('setDetailVisible(true)');
+  });
+
+  it('Modal 打开时应记录点击消息 id 并在 flow 每行设置 msg-{id}', () => {
+    const source = readFileSync(pagePath, 'utf-8');
+    expect(source).toContain('clickedMsgId');
+    expect(source).toContain('id={`msg-${msg.id}`}');
+    expect(source).toContain('afterOpenChange');
+  });
+
+  it('Modal 打开后应以 setTimeout 定位滚动到当前消息行', () => {
+    const source = readFileSync(pagePath, 'utf-8');
+    expect(source).toContain('setTimeout');
+    expect(source).toContain('document.getElementById');
+    expect(source).toContain('`msg-${clickedMsgId}`');
+    expect(source).toContain('scrollIntoView');
+    expect(source).toContain("behavior: 'instant'");
+    expect(source).toContain("block: 'center'");
   });
 
   it('Modal 内 assistant 应展示 💭推理、📝内容与 🔧工具调用列表（名称+参数JSON）', () => {
