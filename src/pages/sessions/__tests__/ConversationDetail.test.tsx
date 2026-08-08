@@ -60,6 +60,27 @@ describe('ConversationDetail 对话详情 (静态验证)', () => {
     expect(source).toContain('style={CONTENT_CELL_STYLE}');
   });
 
+  it('内容列表格列应增加 ellipsis: true 防止横向撑开', () => {
+    const source = readFileSync(pagePath, 'utf-8');
+    expect(source).toContain('ellipsis: true');
+  });
+
+  it('内容列渲染条件应使用 != null 判断使空字符串可渲染', () => {
+    const source = readFileSync(pagePath, 'utf-8');
+    expect(source).toContain('record.reasoning != null');
+    expect(source).toContain('record.content != null');
+    expect(source).not.toContain('record.reasoning ? <div style={LINE_ROW_STYLE}>💭');
+    expect(source).not.toContain('record.content ? <div style={LINE_ROW_STYLE}>📝');
+  });
+
+  it('内容为空且无工具时使用 "-" 兜底显示', () => {
+    const source = readFileSync(pagePath, 'utf-8');
+    expect(source).toContain('record.reasoning == null');
+    expect(source).toContain('record.content == null');
+    expect(source).toContain('record.role !== \'tool\'');
+    expect(source).toContain('-');
+  });
+
   it('assistant 有 toolCalls 时应显示 🔧 图标按钮和数量', () => {
     const source = readFileSync(pagePath, 'utf-8');
     expect(source).toContain("record.role === 'assistant'");

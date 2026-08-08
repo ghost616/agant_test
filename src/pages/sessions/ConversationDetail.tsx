@@ -183,6 +183,7 @@ function ConversationDetail(): JSX.Element {
       title: '内容',
       dataIndex: 'content',
       key: 'content',
+      ellipsis: true,
       render: (_content: string, record: SessionMessage) => (
         <div
           style={CONTENT_CELL_STYLE}
@@ -191,8 +192,10 @@ function ConversationDetail(): JSX.Element {
             setDetailVisible(true);
           }}
         >
-          {record.reasoning ? <div style={LINE_ROW_STYLE}>💭 {record.reasoning}</div> : null}
-          {record.content ? <div style={LINE_ROW_STYLE}>📝 {record.content}</div> : null}
+          {record.reasoning != null ? (
+            <div style={LINE_ROW_STYLE}>💭 {record.reasoning}</div>
+          ) : null}
+          {record.content != null ? <div style={LINE_ROW_STYLE}>📝 {record.content}</div> : null}
           {record.role === 'assistant' && record.toolCalls && record.toolCalls.length > 0 ? (
             <div style={LINE_ROW_STYLE}>
               <Button size="small" type="text">
@@ -206,6 +209,12 @@ function ConversationDetail(): JSX.Element {
                 📋 工具结果
               </Button>
             </div>
+          ) : null}
+          {record.reasoning == null &&
+          record.content == null &&
+          !(record.role === 'assistant' && record.toolCalls && record.toolCalls.length > 0) &&
+          record.role !== 'tool' ? (
+            <div style={LINE_ROW_STYLE}>-</div>
           ) : null}
         </div>
       ),
