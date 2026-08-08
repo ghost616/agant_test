@@ -388,6 +388,7 @@ class ToolExecutionServiceTest {
         when(saveBuilder.content(any())).thenReturn(saveBuilder);
         when(saveBuilder.toolInfo(any())).thenReturn(saveBuilder);
         when(saveBuilder.toolResult(any())).thenReturn(saveBuilder);
+        when(saveBuilder.conversationId(any())).thenReturn(saveBuilder);
         when(saveBuilder.save()).thenReturn("100");
         when(sessionManager.messageSave()).thenReturn(saveBuilder);
 

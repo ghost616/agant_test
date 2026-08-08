@@ -110,7 +110,7 @@ public class MessageSavePostHook implements SystemPostHook {
                     customToolCallData != null ? customToolCallData.size() : 0);
             sessionManager.messageSave().sessionId(sessionId).role("assistant").content(content).reasoning(reasoning)
                     .toolCalls(toolCalls).usage(usage).webSearchCall(webSearchCallData)
-                    .customToolCall(customToolCallData).save();
+                    .customToolCall(customToolCallData).conversationId(ctx.getConversationId()).save();
             String lastResponseId = ctx.getLastResponseId();
             if (lastResponseId != null && !lastResponseId.isEmpty()) {
                 contextDataProvider.updateLastResponseId(sessionId, lastResponseId);

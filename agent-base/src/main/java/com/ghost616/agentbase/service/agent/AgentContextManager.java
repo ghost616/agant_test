@@ -148,12 +148,18 @@ public class AgentContextManager {
                 }
             }
 
+            String conversationId = null;
+            if (parentSessionId != null && parentCtx != null) {
+                conversationId = parentCtx.context().getConversationId();
+            }
+
             AgentExecutionContext context = new AgentExecutionContext(
                     sessionId, agentId, systemPrompt, effectiveModelId,
                     ctxData.recentMessageCount(),
                     history, tools, skills, mutator,
                     new HashMap<>(ctxData.sessionVariables()), new HashMap<>(),
-                    parentSessionId, System.getProperty("user.dir"), ctxData.childSessions());
+                    parentSessionId, System.getProperty("user.dir"), ctxData.childSessions(),
+                    conversationId);
 
             injectVariableCallbacks(mutator, sessionId, parentSessionId, parentCtx);
             mutator.setMessageSender(registry.getMessageSender());
@@ -177,6 +183,7 @@ public class AgentContextManager {
                 mutator.getConversationVarCallback = parentContext::getConversationVariable;
                 mutator.getSessionVarKeysCallback = parentContext::getSessionVariableKeys;
                 mutator.getConversationVarKeysCallback = parentContext::getConversationVariableKeys;
+                mutator.conversationIdSupplier = parentContext::getConversationId;
             } else {
                 mutator.sessionVarPutCallback = (key, value) ->
                         dataProvider.saveSessionVariable(sessionId, key, value);

@@ -56,6 +56,9 @@ public class AgentExecutionContext {
     /** 最近一次模型响应的 ID（Responses API 有状态续接时作为 previousResponseId） */
     private String lastResponseId;
 
+    /** 对话 ID（会话归属的对话标识，子会话通过 mutator 委托获取父会话的对话 ID） */
+    private String conversationId;
+
     public AgentExecutionContext(String sessionId, String agentId, String systemPrompt, String modelId,
                                   Integer recentMessageCount,
                                  List<HistoryEntry> history, List<ToolConfigDTO> tools,
@@ -63,7 +66,8 @@ public class AgentExecutionContext {
                                  AgentContextMutator mutator,
                                   Map<String, String> sessionVariables,
                                   Map<String, String> conversationVariables,
-                                  String parentSessionId, String projectDir, List<ChildSession> childSessions) {
+                                  String parentSessionId, String projectDir, List<ChildSession> childSessions,
+                                  String conversationId) {
         this.sessionId = sessionId;
         this.agentId = agentId;
         this.systemPrompt = systemPrompt;
@@ -80,7 +84,15 @@ public class AgentExecutionContext {
         if (childSessions != null) {
             this.childSessions.addAll(childSessions);
         }
+        this.conversationId = conversationId;
         this.mutator.bind(this);
+    }
+
+    public String getConversationId() {
+        if (parentSessionId != null) {
+            return mutator.getConversationId();
+        }
+        return conversationId;
     }
 
     public List<ChildSession> getChildSessions() {
@@ -202,6 +214,7 @@ public class AgentExecutionContext {
         Supplier<Set<String>> getConversationVarKeysCallback;
         CreateChildSessionCallback createChildSessionCallback;
         SendUserMessageCallback sendUserMessageCallback;
+        Supplier<String> conversationIdSupplier;
         private MessageSender messageSender;
 
         @FunctionalInterface
@@ -336,6 +349,17 @@ public class AgentExecutionContext {
 
         public void setLastResponseId(String lastResponseId) {
             context.lastResponseId = lastResponseId;
+        }
+
+        public void setConversationId(String conversationId) {
+            context.conversationId = conversationId;
+        }
+
+        public String getConversationId() {
+            if (conversationIdSupplier != null) {
+                return conversationIdSupplier.get();
+            }
+            return context.conversationId;
         }
 
         public String createChildSession(String sessionName, String description, String modelId,

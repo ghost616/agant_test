@@ -75,7 +75,7 @@ class ChatServiceHistoryGroupJsonTest {
 
     private com.ghost616.agentbase.dto.model.ChatRequest executeFoldChat(
             List<AgentExecutionContext.HistoryEntry> history, Integer recentCount, String expandedIndicesJson) {
-        ChatRequest request = ChatRequest.builder().sessionId(sessionId).content("hello").build();
+        ChatRequest request = ChatRequest.builder().sessionId(sessionId).content("hello").conversationId("conv-1").build();
         AgentContextManager.AgentSessionContext sessionCtx =
                 new AgentContextManager.AgentSessionContext(context, mutator, new java.util.concurrent.atomic.AtomicBoolean(false));
 

@@ -1,5 +1,5 @@
 import type { ApiResponse } from '../types/common';
-import type { Session, CreateSessionParams, SessionMessage, WebSearchCall } from '../types/session';
+import type { Session, CreateSessionParams, SessionMessage, WebSearchCall, ChatRequest } from '../types/session';
 import api from './api';
 
 export async function listSessions(agentId?: string): Promise<Session[]> {
@@ -130,14 +130,13 @@ async function processSSEStream(
     }
   }
 }
+export async function fetchConversationId(): Promise<string> {
+  const res = await api.get<ApiResponse<{ conversationId: string }>>('/conversation-id');
+  return res.data.data.conversationId;
+}
+
 export function agentChatStream(
-  params: {
-    sessionId: string;
-    content: string;
-    modelId?: string;
-    thinking?: boolean;
-    previousResponseId?: string;
-  },
+  params: ChatRequest,
   callbacks: StreamCallbacks,
 ): AbortController {
   const controller = new AbortController();

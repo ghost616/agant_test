@@ -61,7 +61,7 @@ class SessionManagerTest {
 
     @Test
     void save_参数均非null时正常调用dataProvider() {
-        when(dataProvider.saveMessage("1", "user", "hello", null, null, null, null, null, null, null))
+        when(dataProvider.saveMessage("1", "user", "hello", null, null, null, null, null, null, null, null))
                 .thenReturn("100");
 
         String result = sessionManager.messageSave()
@@ -71,7 +71,7 @@ class SessionManagerTest {
                 .save();
 
         assertEquals("100", result);
-        verify(dataProvider).saveMessage("1", "user", "hello", null, null, null, null, null, null, null);
+        verify(dataProvider).saveMessage("1", "user", "hello", null, null, null, null, null, null, null, null);
     }
 
     @Test
@@ -79,7 +79,7 @@ class SessionManagerTest {
         var toolCalls = java.util.List.of(
                 new MessageDataProvider.ToolCallData("tc1", "getWeather", "{}"));
         when(dataProvider.saveMessage("1", "assistant", "response", "thinking...",
-                new ToolInfo("tc1", "getWeather"), "result_ok", toolCalls, null, null, null)).thenReturn("200");
+                new ToolInfo("tc1", "getWeather"), "result_ok", toolCalls, null, null, null, null)).thenReturn("200");
 
         String result = sessionManager.messageSave()
                 .sessionId("1")
@@ -93,6 +93,6 @@ class SessionManagerTest {
 
         assertEquals("200", result);
         verify(dataProvider).saveMessage("1", "assistant", "response", "thinking...",
-                new ToolInfo("tc1", "getWeather"), "result_ok", toolCalls, null, null, null);
+                new ToolInfo("tc1", "getWeather"), "result_ok", toolCalls, null, null, null, null);
     }
 }

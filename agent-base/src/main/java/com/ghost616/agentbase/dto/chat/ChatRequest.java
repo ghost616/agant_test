@@ -24,4 +24,7 @@ public class ChatRequest {
 
     /** 上一轮响应的 ID（Responses API 多轮续接时透传给模型请求） */
     private String previousResponseId;
+
+    /** 对话 ID（非必填，父会话发起聊天时用于标记对话归属） */
+    private String conversationId;
 }

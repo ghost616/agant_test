@@ -11,7 +11,32 @@ vi.mock('../api', () => ({
   },
 }));
 
-import { stopChat, listChildSessions, getSubSessionData, completeSubSession, getBrowserExtension, getToolScript } from '../session';
+import { stopChat, listChildSessions, getSubSessionData, completeSubSession, getBrowserExtension, getToolScript, fetchConversationId } from '../session';
+
+describe('fetchConversationId', () => {
+  beforeEach(() => {
+    mockGet.mockReset();
+  });
+
+  it('应调用 GET /conversation-id 并返回 conversationId', async () => {
+    mockGet.mockResolvedValueOnce({ data: { data: { conversationId: 'conv-123' } } });
+    const result = await fetchConversationId();
+    expect(mockGet).toHaveBeenCalledWith('/conversation-id');
+    expect(result).toBe('conv-123');
+  });
+
+  it('应在不同响应下正确返回 conversationId', async () => {
+    mockGet.mockResolvedValueOnce({ data: { data: { conversationId: 'conv-456' } } });
+    const result = await fetchConversationId();
+    expect(result).toBe('conv-456');
+  });
+
+  it('应在 API 失败时抛出错误', async () => {
+    const testError = new Error('Network Error');
+    mockGet.mockRejectedValueOnce(testError);
+    await expect(fetchConversationId()).rejects.toThrow('Network Error');
+  });
+});
 
 describe('stopChat', () => {
   beforeEach(() => {

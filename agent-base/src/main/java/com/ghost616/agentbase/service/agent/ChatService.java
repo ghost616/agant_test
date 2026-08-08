@@ -97,7 +97,14 @@ public class ChatService {
         if (!isToolContinue) {
             contextMutator.resetStopped();
             contextMutator.clearConversationVariables();
-            sessionManager.messageSave().sessionId(sessionId).role("user").content(content).save();
+            String conversationId = request.getConversationId();
+            if (context.getParentSessionId() == null
+                    && (conversationId == null || conversationId.isBlank())) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "conversationId 不能为空");
+            }
+            contextMutator.setConversationId(conversationId);
+            sessionManager.messageSave().sessionId(sessionId).role("user").content(content)
+                    .conversationId(context.getConversationId()).save();
 
             AgentExecutionContext.HistoryEntry userEntry = new AgentExecutionContext.HistoryEntry(
                     "user", content, null, null,

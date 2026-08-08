@@ -54,7 +54,7 @@ class AgentContextManagerTest {
 
     private void stubBasicContext() {
         when(dataProvider.loadAgentContext(sessionId)).thenReturn(
-                new ContextDataProvider.AgentContextData(agentId, "test prompt", "200", 10, List.of(), Map.of(), null, null, null));
+                new ContextDataProvider.AgentContextData(agentId, "test prompt", "200", 10, List.of(), Map.of(), null, null, null, null));
         when(sessionManager.getMessages(sessionId)).thenReturn(List.of());
         when(toolManager.getSessionTools(eq(sessionId), anyBoolean())).thenReturn(List.of());
     }
@@ -93,7 +93,7 @@ class AgentContextManagerTest {
                 .build();
 
         when(dataProvider.loadAgentContext(sessionId)).thenReturn(
-                new ContextDataProvider.AgentContextData(agentId, "test prompt", "200", 10, List.of(skill), Map.of(), null, null, null));
+                new ContextDataProvider.AgentContextData(agentId, "test prompt", "200", 10, List.of(skill), Map.of(), null, null, null, null));
         when(toolManager.expandMcpTools(mcpTool)).thenReturn(List.of(expanded1, expanded2));
 
         AgentContextManager.AgentSessionContext sessionContext = agentContextManager.build(sessionId).build();
@@ -127,7 +127,7 @@ class AgentContextManagerTest {
                 .build();
 
         when(dataProvider.loadAgentContext(sessionId)).thenReturn(
-                new ContextDataProvider.AgentContextData(agentId, "test prompt", "200", 10, List.of(skill), Map.of(), null, null, null));
+                new ContextDataProvider.AgentContextData(agentId, "test prompt", "200", 10, List.of(skill), Map.of(), null, null, null, null));
 
         AgentContextManager.AgentSessionContext sessionContext = agentContextManager.build(sessionId).build();
         AgentExecutionContext context = sessionContext.context();
@@ -147,7 +147,7 @@ class AgentContextManagerTest {
                 .build();
 
         when(dataProvider.loadAgentContext(sessionId)).thenReturn(
-                new ContextDataProvider.AgentContextData(agentId, "test prompt", "200", 10, List.of(skill), Map.of(), null, null, null));
+                new ContextDataProvider.AgentContextData(agentId, "test prompt", "200", 10, List.of(skill), Map.of(), null, null, null, null));
 
         AgentContextManager.AgentSessionContext sessionContext = agentContextManager.build(sessionId).build();
         AgentExecutionContext context = sessionContext.context();
@@ -170,7 +170,7 @@ class AgentContextManagerTest {
         SkillConfigDTO skill = SkillConfigDTO.builder().name("all_mcp").skillTools(List.of(mcp1, mcp2)).build();
 
         when(dataProvider.loadAgentContext(sessionId)).thenReturn(
-                new ContextDataProvider.AgentContextData(agentId, "test prompt", "200", 10, List.of(skill), Map.of(), null, null, null));
+                new ContextDataProvider.AgentContextData(agentId, "test prompt", "200", 10, List.of(skill), Map.of(), null, null, null, null));
         when(toolManager.expandMcpTools(mcp1)).thenReturn(List.of(e1));
         when(toolManager.expandMcpTools(mcp2)).thenReturn(List.of(e2));
 
@@ -193,7 +193,7 @@ class AgentContextManagerTest {
         SkillConfigDTO skill = SkillConfigDTO.builder().name("no_mcp").skillTools(List.of(javaTool, tsTool)).build();
 
         when(dataProvider.loadAgentContext(sessionId)).thenReturn(
-                new ContextDataProvider.AgentContextData(agentId, "test prompt", "200", 10, List.of(skill), Map.of(), null, null, null));
+                new ContextDataProvider.AgentContextData(agentId, "test prompt", "200", 10, List.of(skill), Map.of(), null, null, null, null));
 
         AgentContextManager.AgentSessionContext sessionContext = agentContextManager.build(sessionId).build();
         AgentExecutionContext context = sessionContext.context();
@@ -227,7 +227,7 @@ class AgentContextManagerTest {
                 .build();
 
         when(dataProvider.loadAgentContext(sessionId)).thenReturn(
-                new ContextDataProvider.AgentContextData(agentId, "test prompt", "200", 10, List.of(skill), Map.of(), null, null, null));
+                new ContextDataProvider.AgentContextData(agentId, "test prompt", "200", 10, List.of(skill), Map.of(), null, null, null, null));
         when(toolManager.expandMcpTools(mcpTool)).thenReturn(List.of(
                 McpExpandedToolDTO.builder().name("mcp_tool_funcA").toolType(ToolType.MCP_HTTP).remoteToolName("funcA").build()
         ));
@@ -256,7 +256,7 @@ class AgentContextManagerTest {
     @Test
     void 正向_agentId为null时build正常返回() {
         when(dataProvider.loadAgentContext(sessionId)).thenReturn(
-                new ContextDataProvider.AgentContextData(null, "test prompt", "200", 10, List.of(), Map.of(), null, null, null));
+                new ContextDataProvider.AgentContextData(null, "test prompt", "200", 10, List.of(), Map.of(), null, null, null, null));
         when(sessionManager.getMessages(sessionId)).thenReturn(List.of());
         when(toolManager.getSessionTools(eq(sessionId), anyBoolean())).thenReturn(List.of());
 
@@ -294,7 +294,7 @@ class AgentContextManagerTest {
                 .build();
 
         when(dataProvider.loadAgentContext(sessionId)).thenReturn(
-                new ContextDataProvider.AgentContextData(agentId, "test prompt", "200", 10, List.of(skill), Map.of(), null, null, null));
+                new ContextDataProvider.AgentContextData(agentId, "test prompt", "200", 10, List.of(skill), Map.of(), null, null, null, null));
         when(toolManager.expandMcpTools(mcpTool)).thenReturn(List.of(expanded1, expanded2));
 
         AgentExecutionContext context = agentContextManager.build(sessionId).build().context();
@@ -318,7 +318,7 @@ class AgentContextManagerTest {
                 .build();
 
         when(dataProvider.loadAgentContext(sessionId)).thenReturn(
-                new ContextDataProvider.AgentContextData(agentId, "test prompt", "200", 10, List.of(skill), Map.of(), null, null, null));
+                new ContextDataProvider.AgentContextData(agentId, "test prompt", "200", 10, List.of(skill), Map.of(), null, null, null, null));
 
         AgentExecutionContext context = agentContextManager.build(sessionId).build().context();
         List<ToolConfigDTO> resultTools = context.getSkills().get(0).getSkillTools();
@@ -343,7 +343,7 @@ class AgentContextManagerTest {
                 .build();
 
         when(dataProvider.loadAgentContext(sessionId)).thenReturn(
-                new ContextDataProvider.AgentContextData(agentId, "test prompt", "200", 10, List.of(skill), Map.of(), null, null, null));
+                new ContextDataProvider.AgentContextData(agentId, "test prompt", "200", 10, List.of(skill), Map.of(), null, null, null, null));
 
         AgentExecutionContext context = agentContextManager.build(sessionId).build().context();
         List<ToolConfigDTO> resultTools = context.getSkills().get(0).getSkillTools();
@@ -375,9 +375,9 @@ class AgentContextManagerTest {
                 .build();
 
         when(dataProvider.loadAgentContext(parentId)).thenReturn(
-                new ContextDataProvider.AgentContextData(agentId, "parent", "200", 10, List.of(), Map.of(), null, null, null));
+                new ContextDataProvider.AgentContextData(agentId, "parent", "200", 10, List.of(), Map.of(), null, null, null, null));
         when(dataProvider.loadAgentContext(childSessionId)).thenReturn(
-                new ContextDataProvider.AgentContextData(agentId, "sub prompt", "200", 10, List.of(childSkill), Map.of(), parentId, null, null));
+                new ContextDataProvider.AgentContextData(agentId, "sub prompt", "200", 10, List.of(childSkill), Map.of(), parentId, null, null, null));
         when(sessionManager.getMessages(anyString())).thenReturn(List.of());
         when(toolManager.getSessionTools(anyString(), anyBoolean())).thenReturn(List.of());
         when(toolManager.expandMcpTools(mcpTool)).thenReturn(List.of(expanded));
@@ -404,7 +404,7 @@ class AgentContextManagerTest {
                 .build();
 
         when(dataProvider.loadAgentContext(sessionId)).thenReturn(
-                new ContextDataProvider.AgentContextData(agentId, "test prompt", "200", 10, List.of(skill), Map.of(), null, null, null));
+                new ContextDataProvider.AgentContextData(agentId, "test prompt", "200", 10, List.of(skill), Map.of(), null, null, null, null));
 
         AgentExecutionContext context = agentContextManager.build(sessionId).build().context();
         List<ToolConfigDTO> resultTools = context.getSkills().get(0).getSkillTools();
@@ -426,9 +426,9 @@ class AgentContextManagerTest {
         @Test
         void 正向_refreshHistory后历史为最新数据() {
             var msg1 = new MessageDataProvider.MessageDTO("1", sessionId, "user", "hello", null, null, 0,
-                    LocalDateTime.now(), null, null, null, null, null, null);
+                    LocalDateTime.now(), null, null, null, null, null, null, null);
             var msg2 = new MessageDataProvider.MessageDTO("2", sessionId, "assistant", "hi", null, null, 1,
-                    LocalDateTime.now(), null, null, null, null, null, null);
+                    LocalDateTime.now(), null, null, null, null, null, null, null);
             when(dataProvider.getLatestMessages(sessionId)).thenReturn(List.of(msg1, msg2));
 
             agentContextManager.refreshHistory(sessionId);
@@ -489,7 +489,7 @@ class AgentContextManagerTest {
             agentContextManager.remove(sessionId);
 
             var oldMsg = new MessageDataProvider.MessageDTO("1", sessionId, "user", "old", null, null, 0,
-                    LocalDateTime.now(), null, null, null, null, null, null);
+                    LocalDateTime.now(), null, null, null, null, null, null, null);
             when(sessionManager.getMessages(sessionId)).thenReturn(List.of(oldMsg));
 
             AgentContextManager.AgentSessionContext ctx = agentContextManager.build(sessionId).build();
@@ -497,7 +497,7 @@ class AgentContextManagerTest {
             assertEquals("old", ctx.context().getHistory().get(0).content());
 
             var newMsg = new MessageDataProvider.MessageDTO("2", sessionId, "user", "new", null, null, 1,
-                    LocalDateTime.now(), null, null, null, null, null, null);
+                    LocalDateTime.now(), null, null, null, null, null, null, null);
             when(dataProvider.getLatestMessages(sessionId)).thenReturn(List.of(newMsg));
 
             agentContextManager.refreshHistory(sessionId);
@@ -516,7 +516,7 @@ class AgentContextManagerTest {
         @BeforeEach
         void setUpParent() {
             when(dataProvider.loadAgentContext(parentSessionId)).thenReturn(
-                    new ContextDataProvider.AgentContextData(agentId, "parent prompt", "200", 10, List.of(), new HashMap<>(), null, null, null));
+                    new ContextDataProvider.AgentContextData(agentId, "parent prompt", "200", 10, List.of(), new HashMap<>(), null, null, null, null));
             when(sessionManager.getMessages(parentSessionId)).thenReturn(List.of());
             when(toolManager.getSessionTools(eq(parentSessionId), anyBoolean())).thenReturn(List.of());
 
@@ -525,7 +525,7 @@ class AgentContextManagerTest {
 
         private void stubChildSession(String childId, String parentId) {
             when(dataProvider.loadAgentContext(childId)).thenReturn(
-                    new ContextDataProvider.AgentContextData(agentId, "child prompt", "200", 10, List.of(), new HashMap<>(), parentId, null, null));
+                    new ContextDataProvider.AgentContextData(agentId, "child prompt", "200", 10, List.of(), new HashMap<>(), parentId, null, null, null));
             when(sessionManager.getMessages(childId)).thenReturn(List.of());
             when(toolManager.getSessionTools(eq(childId), anyBoolean())).thenReturn(List.of());
         }
@@ -545,7 +545,7 @@ class AgentContextManagerTest {
             String freshSessionId = "100";
             var childSession = new AgentExecutionContext.ChildSession("10", "sub-agent", "test sub", "300");
             when(dataProvider.loadAgentContext(freshSessionId)).thenReturn(
-                    new ContextDataProvider.AgentContextData(agentId, "parent prompt", "200", 10, List.of(), new HashMap<>(), null, List.of(childSession), null));
+                    new ContextDataProvider.AgentContextData(agentId, "parent prompt", "200", 10, List.of(), new HashMap<>(), null, List.of(childSession), null, null));
             when(sessionManager.getMessages(freshSessionId)).thenReturn(List.of());
             when(toolManager.getSessionTools(eq(freshSessionId), anyBoolean())).thenReturn(List.of());
 
@@ -597,7 +597,7 @@ class AgentContextManagerTest {
             String autoParentId = "100";
             String autoChildId = "101";
             when(dataProvider.loadAgentContext(autoParentId)).thenReturn(
-                    new ContextDataProvider.AgentContextData(agentId, "auto parent", "200", 10, List.of(), new HashMap<>(), null, null, null));
+                    new ContextDataProvider.AgentContextData(agentId, "auto parent", "200", 10, List.of(), new HashMap<>(), null, null, null, null));
             when(sessionManager.getMessages(autoParentId)).thenReturn(List.of());
             when(toolManager.getSessionTools(eq(autoParentId), anyBoolean())).thenReturn(List.of());
 

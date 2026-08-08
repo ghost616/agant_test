@@ -2,6 +2,48 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
+describe('AgentChat conversationId (静态验证)', () => {
+  it('应导入 fetchConversationId', () => {
+    const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
+    expect(source).toContain('fetchConversationId');
+  });
+
+  it('handleSend 应发送前调用 fetchConversationId() 获取新的 conversationId', () => {
+    const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
+    const handleSendBlock = source.match(/const handleSend[\s\S]*?\}, \[inputValue, loading, sessionId, modelId, thinking, modelList\]\);/);
+    expect(handleSendBlock).not.toBeNull();
+    if (handleSendBlock) {
+      expect(handleSendBlock[0]).toContain('await fetchConversationId()');
+      expect(handleSendBlock[0]).toContain('conversationId = await fetchConversationId();');
+    }
+  });
+
+  it('handleSend 应构建 ChatRequest 时传入 conversationId', () => {
+    const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
+    const handleSendBlock = source.match(/const handleSend[\s\S]*?\}, \[inputValue, loading, sessionId, modelId, thinking, modelList\]\);/);
+    expect(handleSendBlock).not.toBeNull();
+    if (handleSendBlock) {
+      expect(handleSendBlock[0]).toContain('previousResponseId, conversationId');
+      expect(handleSendBlock[0]).toContain('agentChatStream(');
+    }
+  });
+
+  it('工具续接 continueChatStream 请求不传 conversationId', () => {
+    const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
+    const continueBlock = source.match(/abortRef\.current = continueChatStream\([\s\S]*?\n\s+\);/);
+    expect(continueBlock).not.toBeNull();
+    if (continueBlock) {
+      expect(continueBlock[0]).toContain('continueChatStream(');
+      expect(continueBlock[0]).not.toContain('conversationId');
+    }
+  });
+
+  it('handleSend 获取 conversationId 失败时应提示错误并返回', () => {
+    const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
+    expect(source).toContain("message.error('获取会话标识失败，请重试')");
+  });
+});
+
 describe('AgentChat 子会话相关 (静态验证)', () => {
   it('应导入 getSubSessionData 和 completeSubSession', () => {
     const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');

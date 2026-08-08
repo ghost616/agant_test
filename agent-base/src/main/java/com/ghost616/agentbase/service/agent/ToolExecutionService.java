@@ -182,6 +182,7 @@ public class ToolExecutionService {
             toolExecutionTracker.clear(sessionId);
             return Flux.empty();
         }
+        String conversationId = sessionCtx != null ? sessionCtx.context().getConversationId() : null;
 
         List<ToolExecutionTracker.ToolResult> results = toolExecutionTracker.getAndClearResults(sessionId);
 
@@ -193,7 +194,8 @@ public class ToolExecutionService {
                 toolResultMap.put("result", r.result());
                 String toolResultJson = JsonMapper.MAPPER.writeValueAsString(toolResultMap);
                 sessionManager.messageSave().sessionId(sessionId).role("tool")
-                        .content(r.result()).toolInfo(new ToolInfo(r.toolId(), r.toolName())).toolResult(toolResultJson).save();
+                        .content(r.result()).toolInfo(new ToolInfo(r.toolId(), r.toolName())).toolResult(toolResultJson)
+                        .conversationId(conversationId).save();
             } catch (Exception e) {
                 log.error("sessionId={} 构建 toolResult JSON 失败", sessionId, e);
             }

@@ -16,6 +16,7 @@ import {
   completeSubSession,
   continueChatStream,
   executeTools,
+  fetchConversationId,
   getSession,
   getSessionContextBasic,
   getSessionMessages,
@@ -712,8 +713,16 @@ function AgentChat(): JSX.Element {
     </Modal>
   );
 
-  const handleSend = useCallback(() => {
+  const handleSend = useCallback(async () => {
     if (!inputValue.trim() || loading) return;
+
+    let conversationId: string | undefined;
+    try {
+      conversationId = await fetchConversationId();
+    } catch {
+      message.error('获取会话标识失败，请重试');
+      return;
+    }
 
     const currentModel = modelList.find((m) => String(m.id) === String(modelId));
     const isResponsesStateful = currentModel?.requestType === 'responses';
@@ -732,7 +741,7 @@ function AgentChat(): JSX.Element {
     toolAbortRef.current = false;
 
     abortRef.current = agentChatStream(
-      { sessionId, content: inputValue, modelId, thinking, previousResponseId },
+      { sessionId, content: inputValue, modelId, thinking, previousResponseId, conversationId },
       {
         onDelta: (text: string) => {
           hasResponseRef.current = true;

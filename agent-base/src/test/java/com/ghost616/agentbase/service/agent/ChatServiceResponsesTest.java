@@ -70,6 +70,7 @@ class ChatServiceResponsesTest {
         lenient().when(msgBuilder.sessionId(any())).thenReturn(msgBuilder);
         lenient().when(msgBuilder.role(any())).thenReturn(msgBuilder);
         lenient().when(msgBuilder.content(any())).thenReturn(msgBuilder);
+        lenient().when(msgBuilder.conversationId(any())).thenReturn(msgBuilder);
         lenient().when(sessionManager.messageSave()).thenReturn(msgBuilder);
 
         registry = new AgentComponentRegistry();
@@ -97,7 +98,7 @@ class ChatServiceResponsesTest {
                     tools != null ? new ArrayList<>(tools) : new ArrayList<>(),
                     skills, mutator,
                     sessionVariables != null ? sessionVariables : new HashMap<>(),
-                    new HashMap<>(), null, "", null);
+                    new HashMap<>(), null, "", null, null);
         }
 
         TestHarness(String systemPrompt, List<ToolConfigDTO> tools,
@@ -112,7 +113,7 @@ class ChatServiceResponsesTest {
                     skills, mutator,
                     sessionVariables != null ? sessionVariables : new HashMap<>(),
                     conversationVariables != null ? conversationVariables : new HashMap<>(),
-                    null, "", null);
+                    null, "", null, null);
         }
     }
 
@@ -159,7 +160,7 @@ class ChatServiceResponsesTest {
         TestHarness harness = new TestHarness("sys_prompt", List.of(), List.of(), null, history);
         when(systemToolManager.getToolDefinitions()).thenReturn(List.of());
 
-        ChatRequest apiRequest = ChatRequest.builder().sessionId(sessionId).content("hello").build();
+        ChatRequest apiRequest = ChatRequest.builder().sessionId(sessionId).content("hello").conversationId("conv-1").build();
         com.ghost616.agentbase.dto.model.ChatRequest captured =
                 executeChat(apiRequest, harness, RequestType.RESPONSES.getCode(), Flux.empty());
 
@@ -185,7 +186,7 @@ class ChatServiceResponsesTest {
         when(systemToolManager.getToolDefinitions()).thenReturn(
                 List.of(ToolDefinition.builder().name(LoadSkillsSystemTool.FULL_TOOL_NAME).build()));
 
-        ChatRequest apiRequest = ChatRequest.builder().sessionId(sessionId).content("hello").build();
+        ChatRequest apiRequest = ChatRequest.builder().sessionId(sessionId).content("hello").conversationId("conv-1").build();
         com.ghost616.agentbase.dto.model.ChatRequest captured =
                 executeChat(apiRequest, harness, RequestType.RESPONSES.getCode(), Flux.empty());
 
@@ -210,7 +211,7 @@ class ChatServiceResponsesTest {
         when(systemToolManager.getToolDefinitions()).thenReturn(
                 List.of(ToolDefinition.builder().name(LoadSkillsSystemTool.FULL_TOOL_NAME).build()));
 
-        ChatRequest apiRequest = ChatRequest.builder().sessionId(sessionId).content("hello").build();
+        ChatRequest apiRequest = ChatRequest.builder().sessionId(sessionId).content("hello").conversationId("conv-1").build();
         com.ghost616.agentbase.dto.model.ChatRequest captured =
                 executeChat(apiRequest, harness, RequestType.RESPONSES.getCode(), Flux.empty());
 
@@ -228,6 +229,7 @@ class ChatServiceResponsesTest {
         ChatRequest apiRequest = ChatRequest.builder()
                 .sessionId(sessionId)
                 .content("hello")
+                .conversationId("conv-1")
                 .previousResponseId("resp_123")
                 .build();
         com.ghost616.agentbase.dto.model.ChatRequest captured =
@@ -245,7 +247,7 @@ class ChatServiceResponsesTest {
                 List.of(ToolDefinition.builder().name("sys_tool_a").build(),
                         ToolDefinition.builder().name("sys_tool_b").build()));
 
-        ChatRequest apiRequest = ChatRequest.builder().sessionId(sessionId).content("hello").build();
+        ChatRequest apiRequest = ChatRequest.builder().sessionId(sessionId).content("hello").conversationId("conv-1").build();
         com.ghost616.agentbase.dto.model.ChatRequest captured =
                 executeChat(apiRequest, harness, RequestType.RESPONSES.getCode(), Flux.empty());
 
@@ -264,7 +266,7 @@ class ChatServiceResponsesTest {
 
         ChatChunk chunk = ChatChunk.builder().delta("hi").finishReason("stop").build();
 
-        ChatRequest apiRequest = ChatRequest.builder().sessionId(sessionId).content("hello").build();
+        ChatRequest apiRequest = ChatRequest.builder().sessionId(sessionId).content("hello").conversationId("conv-1").build();
         executeChat(apiRequest, harness, RequestType.RESPONSES.getCode(), Flux.just(chunk));
 
         verify(hookManager).triggerSessionHooks(sessionId, HookPhase.BEFORE_MESSAGE_SEND,
@@ -320,6 +322,7 @@ class ChatServiceResponsesTest {
         ChatRequest apiRequest = ChatRequest.builder()
                 .sessionId(sessionId)
                 .content("hello")
+                .conversationId("conv-1")
                 .previousResponseId("api_resp")
                 .build();
         com.ghost616.agentbase.dto.model.ChatRequest captured =
@@ -337,7 +340,7 @@ class ChatServiceResponsesTest {
 
         ChatChunk chunk = ChatChunk.builder().delta("hi").responseId("r1").build();
 
-        ChatRequest apiRequest = ChatRequest.builder().sessionId(sessionId).content("hello").build();
+        ChatRequest apiRequest = ChatRequest.builder().sessionId(sessionId).content("hello").conversationId("conv-1").build();
         executeChat(apiRequest, harness, RequestType.RESPONSES.getCode(), Flux.just(chunk));
 
         assertEquals("r1", harness.context.getLastResponseId(),
@@ -361,6 +364,7 @@ class ChatServiceResponsesTest {
         ChatRequest apiRequest = ChatRequest.builder()
                 .sessionId(sessionId)
                 .content("hello")
+                .conversationId("conv-1")
                 .previousResponseId("api_resp")
                 .build();
         com.ghost616.agentbase.dto.model.ChatRequest captured =
@@ -383,6 +387,7 @@ class ChatServiceResponsesTest {
         ChatRequest apiRequest = ChatRequest.builder()
                 .sessionId(sessionId)
                 .content("hello")
+                .conversationId("conv-1")
                 .previousResponseId("resp_123")
                 .build();
         com.ghost616.agentbase.dto.model.ChatRequest captured =
@@ -402,6 +407,7 @@ class ChatServiceResponsesTest {
         ChatRequest apiRequest = ChatRequest.builder()
                 .sessionId(sessionId)
                 .content("hello")
+                .conversationId("conv-1")
                 .previousResponseId("resp_123")
                 .build();
         com.ghost616.agentbase.dto.model.ChatRequest captured =
@@ -434,7 +440,7 @@ class ChatServiceResponsesTest {
         when(systemToolManager.getToolDefinitions()).thenReturn(
                 List.of(ToolDefinition.builder().name(LoadSkillsSystemTool.FULL_TOOL_NAME).build()));
 
-        ChatRequest apiRequest = ChatRequest.builder().sessionId(sessionId).content("hello").build();
+        ChatRequest apiRequest = ChatRequest.builder().sessionId(sessionId).content("hello").conversationId("conv-1").build();
         com.ghost616.agentbase.dto.model.ChatRequest captured =
                 executeChat(apiRequest, harness, "openai", Flux.empty());
 
@@ -518,7 +524,7 @@ class ChatServiceResponsesTest {
         when(systemToolManager.getToolDefinitions()).thenReturn(
                 List.of(ToolDefinition.builder().name(LoadSkillsSystemTool.FULL_TOOL_NAME).build()));
 
-        ChatRequest apiRequest = ChatRequest.builder().sessionId(sessionId).content("hello").build();
+        ChatRequest apiRequest = ChatRequest.builder().sessionId(sessionId).content("hello").conversationId("conv-1").build();
         com.ghost616.agentbase.dto.model.ChatRequest captured =
                 executeChat(apiRequest, harness, "openai", Flux.empty());
 
@@ -555,7 +561,7 @@ class ChatServiceResponsesTest {
         TestHarness harness = new TestHarness("sys_prompt", List.of(), List.of(), null, List.of());
         when(systemToolManager.getToolDefinitions()).thenReturn(List.of());
 
-        ChatRequest apiRequest = ChatRequest.builder().sessionId(sessionId).content("hello").build();
+        ChatRequest apiRequest = ChatRequest.builder().sessionId(sessionId).content("hello").conversationId("conv-1").build();
         com.ghost616.agentbase.dto.model.ChatRequest captured =
                 executeChat(apiRequest, harness, RequestType.RESPONSES.getCode(), Flux.empty());
 
@@ -574,7 +580,7 @@ class ChatServiceResponsesTest {
         TestHarness harness = new TestHarness("sys_prompt", List.of(), List.of(), null, List.of());
         when(systemToolManager.getToolDefinitions()).thenReturn(List.of());
 
-        ChatRequest apiRequest = ChatRequest.builder().sessionId(sessionId).content("hello").build();
+        ChatRequest apiRequest = ChatRequest.builder().sessionId(sessionId).content("hello").conversationId("conv-1").build();
         com.ghost616.agentbase.dto.model.ChatRequest captured =
                 executeChat(apiRequest, harness, RequestType.RESPONSES_STATELESS.getCode(), Flux.empty());
 

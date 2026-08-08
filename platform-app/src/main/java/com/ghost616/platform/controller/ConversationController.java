@@ -1,0 +1,32 @@
+package com.ghost616.platform.controller;
+
+import com.ghost616.platform.dto.ApiResponse;
+import com.ghost616.platform.dto.ConversationIdDTO;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.security.SecureRandom;
+
+@RestController
+@RequestMapping("/api")
+public class ConversationController {
+
+    private static final char[] CONVERSATION_ID_CHARS = "0123456789abcdefghijklmnopqrstuvwxyz_".toCharArray();
+    private static final int CONVERSATION_ID_LENGTH = 24;
+
+    private final SecureRandom random = new SecureRandom();
+
+    @GetMapping("/conversation-id")
+    public ApiResponse<ConversationIdDTO> generateConversationId() {
+        return ApiResponse.success(new ConversationIdDTO(generateRandomConversationId()));
+    }
+
+    private String generateRandomConversationId() {
+        StringBuilder sb = new StringBuilder(CONVERSATION_ID_LENGTH);
+        for (int i = 0; i < CONVERSATION_ID_LENGTH; i++) {
+            sb.append(CONVERSATION_ID_CHARS[random.nextInt(CONVERSATION_ID_CHARS.length)]);
+        }
+        return sb.toString();
+    }
+}

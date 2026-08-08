@@ -20,6 +20,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -121,16 +122,21 @@ class AgentAssemblerTest {
 
     @Test
     void build_shouldShareSameHookManagerInstanceBetweenServices() throws Exception {
-        when(chatDataProvider.getHooks()).thenReturn(List.of());
-
         AgentAssembler.Result result = agentAssembler.build();
 
+        // hookManager 通过 ensureInitialized() 懒加载，build() 后未触发初始化前为 null
         Field csField = ChatService.class.getDeclaredField("hookManager");
         csField.setAccessible(true);
-        HookManager csHookManager = (HookManager) csField.get(result.chatService());
-
         Field tesField = ToolExecutionService.class.getDeclaredField("hookManager");
         tesField.setAccessible(true);
+        assertNull(csField.get(result.chatService()));
+        assertNull(tesField.get(result.toolExecutionService()));
+
+        // 触发一次初始化（等价于首次调用 chat()/executeTool()）
+        invokeEnsureInitialized(result.chatService());
+        invokeEnsureInitialized(result.toolExecutionService());
+
+        HookManager csHookManager = (HookManager) csField.get(result.chatService());
         HookManager tesHookManager = (HookManager) tesField.get(result.toolExecutionService());
 
         assertNotNull(csHookManager);
@@ -139,22 +145,29 @@ class AgentAssemblerTest {
     }
 
     @Test
-    void build_shouldCallRefreshHooksOnHookManager() {
-        List<HookInvoker> hooks = List.of();
-        when(chatDataProvider.getHooks()).thenReturn(hooks);
+    void refreshHooks_shouldFetchHooksFromChatDataProvider() {
+        when(chatDataProvider.getHooks()).thenReturn(List.of());
 
         agentAssembler.build();
+        agentAssembler.refreshHooks();
 
         verify(chatDataProvider, times(1)).getHooks();
     }
 
     @Test
-    void build_shouldPassHooksToHookManagerRefreshHooks() {
+    void refreshHooks_shouldPassHooksToHookManagerRefreshHooks() {
         HookInvoker mockHook = mock(HookInvoker.class);
         when(chatDataProvider.getHooks()).thenReturn(List.of(mockHook));
 
         agentAssembler.build();
+        agentAssembler.refreshHooks();
 
         verify(chatDataProvider, times(1)).getHooks();
+    }
+
+    private void invokeEnsureInitialized(Object service) throws Exception {
+        Method method = service.getClass().getDeclaredMethod("ensureInitialized");
+        method.setAccessible(true);
+        method.invoke(service);
     }
 }

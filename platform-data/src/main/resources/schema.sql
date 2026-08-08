@@ -63,6 +63,7 @@ CREATE TABLE IF NOT EXISTS message (
     tool_call_id VARCHAR(100),
     token_usage  TEXT,
     rollback     TINYINT NOT NULL DEFAULT 0,
+    conversation_id VARCHAR(50),
     create_time  TIMESTAMP
 );
 CREATE INDEX IF NOT EXISTS idx_message_session_id ON message(session_id);

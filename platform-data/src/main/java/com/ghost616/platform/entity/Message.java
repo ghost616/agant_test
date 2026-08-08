@@ -40,6 +40,9 @@ public class Message {
     @TableField("token_usage")
     private String tokenUsage;
 
+    @TableField("conversation_id")
+    private String conversationId;
+
     @TableField("rollback")
     private Boolean rollback;
 

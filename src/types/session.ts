@@ -18,6 +18,15 @@ export interface CreateSessionParams {
   title: string;
 }
 
+export interface ChatRequest {
+  sessionId: string;
+  content: string;
+  modelId?: string;
+  thinking?: boolean;
+  previousResponseId?: string;
+  conversationId?: string;
+}
+
 export interface ToolCallData {
   toolCallId: string;
   toolCallName: string;

@@ -12,7 +12,8 @@ public interface ContextDataProvider {
                             Map<String, String> sessionVariables,
                             String parentSessionId,
                             List<AgentExecutionContext.ChildSession> childSessions,
-                            String lastResponseId) {
+                            String lastResponseId,
+                            String conversationId) {
     }
 
     AgentContextData loadAgentContext(String sessionId);

@@ -24,6 +24,7 @@ const ToolHostBridge = {
 // ============================================================
 const AgentExecutionContext = {
     sessionId: null,
+    conversationId: null,
     agentId: null,
     systemPrompt: null,
     modelId: null,

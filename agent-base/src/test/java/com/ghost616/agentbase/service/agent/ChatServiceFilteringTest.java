@@ -64,6 +64,7 @@ class ChatServiceFilteringTest {
         lenient().when(msgBuilder.sessionId(any())).thenReturn(msgBuilder);
         lenient().when(msgBuilder.role(any())).thenReturn(msgBuilder);
         lenient().when(msgBuilder.content(any())).thenReturn(msgBuilder);
+        lenient().when(msgBuilder.conversationId(any())).thenReturn(msgBuilder);
         lenient().when(sessionManager.messageSave()).thenReturn(msgBuilder);
 
         registry = new AgentComponentRegistry();
@@ -90,7 +91,7 @@ class ChatServiceFilteringTest {
                     new ArrayList<>(), tools != null ? new ArrayList<>(tools) : new ArrayList<>(),
                     skills != null ? new ArrayList<>(skills) : null, mutator,
                     sessionVariables != null ? sessionVariables : new HashMap<>(),
-                    new HashMap<>(), parentSessionId, "", null);
+                    new HashMap<>(), parentSessionId, "", null, null);
         }
     }
 
@@ -118,6 +119,7 @@ class ChatServiceFilteringTest {
         ChatRequest request = ChatRequest.builder()
                 .sessionId(sessionId)
                 .content("hello")
+                .conversationId("conv-1")
                 .build();
 
         chatService.chat(request).subscribe();
