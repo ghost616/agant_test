@@ -359,6 +359,10 @@ public class AgentExecutionContext {
             }
         }
 
+        public void refreshConversationId(String conversationId) {
+            context.conversationId = conversationId;
+        }
+
         public String getConversationId() {
             if (conversationIdSupplier != null) {
                 return conversationIdSupplier.get();

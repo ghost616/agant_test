@@ -402,7 +402,7 @@ public class AgentContextManager {
         ensureInitialized();
         AgentSessionContext ctx = cache.get(message.getSessionId());
         if (ctx != null) {
-            ctx.mutator().setConversationId(message.getConversationId());
+            ctx.mutator().refreshConversationId(message.getConversationId());
         }
     }
 

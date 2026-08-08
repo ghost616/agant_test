@@ -796,6 +796,18 @@ class AgentContextManagerTest {
         }
 
         @Test
+        void 正向_refreshConversationId更新context的conversationId不发送消息() {
+            stubBasicContext();
+            registry.setMessageSender(messageSender);
+            AgentContextManager.AgentSessionContext ctx = agentContextManager.build(sessionId).build();
+
+            ctx.mutator().refreshConversationId("conv-refresh");
+
+            assertEquals("conv-refresh", ctx.context().getConversationId());
+            verify(messageSender, never()).send(any());
+        }
+
+        @Test
         void 边界_缓存中无该sessionId时handleConversationIdMessage静默不抛异常() {
             String nonExistentSession = "999";
 
