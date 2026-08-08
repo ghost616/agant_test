@@ -39,7 +39,8 @@ public class DefaultMessageDataProvider implements MessageDataProvider {
     @Override
     public String saveMessage(String sessionId, String role, String content, String reasoning,
                                ToolInfo toolInfo, String toolResult, List<ToolCallData> toolCalls,
-                               UsageInfo usage, List<WebSearchCallData> webSearchCall, List<CustomToolCallData> customToolCall) {
+                               UsageInfo usage, List<WebSearchCallData> webSearchCall, List<CustomToolCallData> customToolCall,
+                               String conversationId) {
         Long sid = IdConverter.parse(sessionId);
         Message message = new Message();
         message.setSessionId(sid);
@@ -48,6 +49,7 @@ public class DefaultMessageDataProvider implements MessageDataProvider {
         message.setReasoning(reasoning);
         message.setToolCallId(toolInfo != null ? toolInfo.toolCallId() : null);
         message.setToolResult(toolResult);
+        message.setConversationId(conversationId);
 
         LambdaQueryWrapper<Message> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Message::getSessionId, sid)
@@ -190,7 +192,7 @@ public class DefaultMessageDataProvider implements MessageDataProvider {
                     IdConverter.toString(msg.getId()), IdConverter.toString(msg.getSessionId()), msg.getRole(), msg.getContent(),
                     msg.getReasoning(), buildToolInfo(msg, toolCalls), msg.getSequenceNum(),
                     msg.getCreateTime(), msg.getToolResult(), toolCallDataList, usageInfo,
-                    msg.getRollback(), webSearchCallDataList, customToolCallDataList));
+                    msg.getRollback(), webSearchCallDataList, customToolCallDataList, msg.getConversationId()));
         }
 
         return result;

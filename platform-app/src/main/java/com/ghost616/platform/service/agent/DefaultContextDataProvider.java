@@ -93,7 +93,8 @@ public class DefaultContextDataProvider implements ContextDataProvider {
 
             return new AgentContextData(null, session.getSystemPrompt(), IdConverter.toString(session.getModelId()),
                     recentMessageCount, skills, sessionVariables,
-                    IdConverter.toString(session.getParentSessionId()), null, session.getLastResponseId());
+                    IdConverter.toString(session.getParentSessionId()), null, session.getLastResponseId(),
+                    null);
         }
 
         Long agentId = session.getAgentId();
@@ -113,7 +114,7 @@ public class DefaultContextDataProvider implements ContextDataProvider {
                 .toList();
 
         return new AgentContextData(IdConverter.toString(agentId), systemPrompt, IdConverter.toString(defaultModelId), recentMessageCount, skills, sessionVariables,
-                null, childSessions, session.getLastResponseId());
+                null, childSessions, session.getLastResponseId(), null);
     }
 
     @Override

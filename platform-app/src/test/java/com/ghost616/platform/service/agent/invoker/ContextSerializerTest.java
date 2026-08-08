@@ -26,7 +26,7 @@ class ContextSerializerTest {
         context = new AgentExecutionContext(
                 "1", "1", "system prompt", "1", 10,
                 new ArrayList<>(), new ArrayList<>(), new ArrayList<>(),
-                mutator, new HashMap<>(), new HashMap<>(), null, null, null);
+                mutator, new HashMap<>(), new HashMap<>(), null, null, null, null);
     }
 
     @Test

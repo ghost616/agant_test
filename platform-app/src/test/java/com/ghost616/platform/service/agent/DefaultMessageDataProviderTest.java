@@ -70,7 +70,7 @@ class DefaultMessageDataProviderTest {
         when(sessionMapper.addTotalTokenUsed(anyLong(), anyLong())).thenReturn(1);
 
         UsageInfo usage = UsageInfo.builder().promptTokens(10).completionTokens(20).totalTokens(30).build();
-        String result = provider.saveMessage("1", "user", "hello", null, null, null, null, usage, null, null);
+        String result = provider.saveMessage("1", "user", "hello", null, null, null, null, usage, null, null, null);
 
         assertEquals("100", result);
         verify(messageMapper).insert(messageCaptor.capture());
@@ -101,7 +101,7 @@ class DefaultMessageDataProviderTest {
         );
 
         provider.saveMessage("1", "assistant", "response", "thinking...",
-                new ToolInfo("call-1", "tool1"), null, toolCalls, null, null, null);
+                new ToolInfo("call-1", "tool1"), null, toolCalls, null, null, null, null);
 
         verify(messageMapper).insert(messageCaptor.capture());
         assertEquals("assistant", messageCaptor.getValue().getRole());
@@ -137,7 +137,7 @@ class DefaultMessageDataProviderTest {
             return 1;
         });
 
-        provider.saveMessage("1", "user", "next", null, null, null, null, null, null, null);
+        provider.saveMessage("1", "user", "next", null, null, null, null, null, null, null, null);
 
         verify(messageMapper).insert(messageCaptor.capture());
         assertEquals(6, messageCaptor.getValue().getSequenceNum());
@@ -152,7 +152,7 @@ class DefaultMessageDataProviderTest {
             return 1;
         });
 
-        provider.saveMessage("1", "user", "test", null, null, null, null, null, null, null);
+        provider.saveMessage("1", "user", "test", null, null, null, null, null, null, null, null);
 
         verify(messageMapper).insert(any(Message.class));
         verify(messageToolCallMapper, never()).insert(any(MessageToolCall.class));
@@ -316,7 +316,7 @@ class DefaultMessageDataProviderTest {
         when(sessionMapper.addTotalTokenUsed(anyLong(), anyLong())).thenReturn(1);
 
         UsageInfo usage = UsageInfo.builder().promptTokens(5).completionTokens(15).totalTokens(20).build();
-        provider.saveMessage("1", "assistant", "reply", null, null, null, null, usage, null, null);
+        provider.saveMessage("1", "assistant", "reply", null, null, null, null, usage, null, null, null);
 
         verify(messageMapper).insert(messageCaptor.capture());
         Message saved = messageCaptor.getValue();
@@ -336,7 +336,7 @@ class DefaultMessageDataProviderTest {
             return 1;
         });
 
-        provider.saveMessage("1", "user", "no usage", null, null, null, null, null, null, null);
+        provider.saveMessage("1", "user", "no usage", null, null, null, null, null, null, null, null);
 
         verify(messageMapper).insert(messageCaptor.capture());
         assertNull(messageCaptor.getValue().getTokenUsage());
@@ -354,7 +354,7 @@ class DefaultMessageDataProviderTest {
         when(sessionMapper.addTotalTokenUsed(anyLong(), anyLong())).thenReturn(1);
 
         UsageInfo usage = UsageInfo.builder().promptTokens(8).completionTokens(12).totalTokens(null).build();
-        provider.saveMessage("1", "assistant", "fallback", null, null, null, null, usage, null, null);
+        provider.saveMessage("1", "assistant", "fallback", null, null, null, null, usage, null, null, null);
 
         verify(messageMapper).insert(messageCaptor.capture());
         assertNotNull(messageCaptor.getValue().getTokenUsage());
@@ -371,7 +371,7 @@ class DefaultMessageDataProviderTest {
         });
 
         UsageInfo usage = UsageInfo.builder().promptTokens(null).completionTokens(null).totalTokens(null).build();
-        provider.saveMessage("1", "assistant", "zero", null, null, null, null, usage, null, null);
+        provider.saveMessage("1", "assistant", "zero", null, null, null, null, usage, null, null, null);
 
         verify(messageMapper).insert(messageCaptor.capture());
         assertNotNull(messageCaptor.getValue().getTokenUsage());
@@ -388,7 +388,7 @@ class DefaultMessageDataProviderTest {
         });
 
         UsageInfo usage = UsageInfo.builder().promptTokens(0).completionTokens(0).totalTokens(0).build();
-        provider.saveMessage("1", "assistant", "zero tokens", null, null, null, null, usage, null, null);
+        provider.saveMessage("1", "assistant", "zero tokens", null, null, null, null, usage, null, null, null);
 
         verify(messageMapper).insert(messageCaptor.capture());
         assertNotNull(messageCaptor.getValue().getTokenUsage());
@@ -507,7 +507,7 @@ class DefaultMessageDataProviderTest {
                 new WebSearchCallData("item-1", 0,
                         Collections.singletonList(new WebSearchResultData("title", "url", "snippet"))));
 
-        provider.saveMessage("1", "assistant", "searching", null, null, null, null, null, webSearchCall, null);
+        provider.saveMessage("1", "assistant", "searching", null, null, null, null, null, webSearchCall, null, null);
 
         verify(messageToolCallService, times(1)).saveBatch(batchCaptor.capture());
         List<MessageToolCall> capturedList = batchCaptor.getValue();
@@ -533,7 +533,7 @@ class DefaultMessageDataProviderTest {
                 new WebSearchCallData("item-1", 0, Collections.emptyList()),
                 new WebSearchCallData("item-2", 1, Collections.emptyList()));
 
-        provider.saveMessage("1", "assistant", "search", null, null, null, null, null, webSearchCall, null);
+        provider.saveMessage("1", "assistant", "search", null, null, null, null, null, webSearchCall, null, null);
 
         verify(messageToolCallService, times(1)).saveBatch(batchCaptor.capture());
         List<MessageToolCall> capturedList = batchCaptor.getValue();
@@ -565,7 +565,7 @@ class DefaultMessageDataProviderTest {
         List<CustomToolCallData> customToolCall = Collections.singletonList(
                 new CustomToolCallData("item-2", 1, "{\"a\":1}", "{\"b\":2}"));
 
-        provider.saveMessage("1", "assistant", "custom", null, null, null, null, null, null, customToolCall);
+        provider.saveMessage("1", "assistant", "custom", null, null, null, null, null, null, customToolCall, null);
 
         verify(messageToolCallService, times(1)).saveBatch(batchCaptor.capture());
         List<MessageToolCall> capturedList = batchCaptor.getValue();
@@ -589,7 +589,7 @@ class DefaultMessageDataProviderTest {
 
         List<ToolCallData> toolCalls = Collections.singletonList(
                 new ToolCallData("tc-x", "func-x", "{}", "web_search_call"));
-        provider.saveMessage("1", "assistant", "resp", null, null, null, toolCalls, null, null, null);
+        provider.saveMessage("1", "assistant", "resp", null, null, null, toolCalls, null, null, null, null);
 
         verify(messageToolCallService, times(1)).saveBatch(batchCaptor.capture());
         List<MessageToolCall> capturedList = batchCaptor.getValue();
@@ -613,7 +613,7 @@ class DefaultMessageDataProviderTest {
                 new CustomToolCallData("item-2", 1, "in", "out"));
 
         provider.saveMessage("1", "assistant", "multi", null, null, null, toolCalls, null,
-                webSearchCall, customToolCall);
+                webSearchCall, customToolCall, null);
 
         verify(messageToolCallService, times(1)).saveBatch(batchCaptor.capture());
         List<MessageToolCall> captured = batchCaptor.getValue();
@@ -758,7 +758,7 @@ class DefaultMessageDataProviderTest {
         });
 
         provider.saveMessage("1", "tool", "{\"temp\":25}",
-                null, new ToolInfo("call-9", "getWeather"), "{\"status\":\"success\"}", null, null, null, null);
+                null, new ToolInfo("call-9", "getWeather"), "{\"status\":\"success\"}", null, null, null, null, null);
 
         verify(messageMapper).insert(messageCaptor.capture());
         assertEquals("call-9", messageCaptor.getValue().getToolCallId());
@@ -780,7 +780,7 @@ class DefaultMessageDataProviderTest {
             return 1;
         });
 
-        provider.saveMessage("1", "tool", "result", null, null, null, null, null, null, null);
+        provider.saveMessage("1", "tool", "result", null, null, null, null, null, null, null, null);
 
         verify(messageMapper).insert(messageCaptor.capture());
         assertNull(messageCaptor.getValue().getToolCallId());

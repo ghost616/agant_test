@@ -186,6 +186,6 @@ class SessionControllerTest {
         List<MessageDataProvider.ToolCallData> toolCalls = tcId == null ? null
                 : List.of(new MessageDataProvider.ToolCallData(tcId, tcName, tcArgs));
         return new MessageDataProvider.MessageDTO("1", "100", role, content, reasoning,
-                toolInfo, 1, LocalDateTime.now(), null, toolCalls, null, false, null, null);
+                toolInfo, 1, LocalDateTime.now(), null, toolCalls, null, false, null, null, null);
     }
 }
