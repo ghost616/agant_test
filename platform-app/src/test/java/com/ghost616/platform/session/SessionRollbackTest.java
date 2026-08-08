@@ -44,6 +44,10 @@ class SessionRollbackTest {
     private AgentContextManager agentContextManager;
     @Mock
     private ToolManager toolManager;
+    @Mock
+    private com.ghost616.platform.repository.MessageMapper messageMapper;
+    @Mock
+    private com.ghost616.platform.service.agent.DefaultMessageDataProvider defaultMessageDataProvider;
 
     @InjectMocks
     private SessionServiceImpl sessionService;

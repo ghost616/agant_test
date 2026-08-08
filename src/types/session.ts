@@ -53,6 +53,7 @@ export interface WebSearchCall {
 export interface SessionMessage {
   id: string;
   sessionId: string;
+  conversationId?: string;
   role: string;
   content: string;
   reasoning?: string;

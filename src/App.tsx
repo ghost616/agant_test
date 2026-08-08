@@ -6,6 +6,7 @@ import {
   ApiOutlined,
   BookOutlined,
   CheckCircleOutlined,
+  HistoryOutlined,
   MessageOutlined,
   RobotOutlined,
   ThunderboltOutlined,
@@ -17,6 +18,8 @@ import ToolList from './pages/tools/ToolList';
 import AgentList from './pages/agents/AgentList';
 import SessionList from './pages/sessions/SessionList';
 import AgentChat from './pages/sessions/AgentChat';
+import ConversationHistory from './pages/sessions/ConversationHistory';
+import ConversationDetail from './pages/sessions/ConversationDetail';
 import SkillList from './pages/skills/SkillList';
 import KnowledgeBaseList from './pages/knowledge/KnowledgeBaseList';
 import KnowledgeFileList from './pages/knowledge/KnowledgeFileList';
@@ -58,6 +61,11 @@ const MENU_ITEMS: MenuProps['items'] = [
     key: '/sessions',
     icon: <MessageOutlined />,
     label: '会话管理',
+  },
+  {
+    key: '/conversations',
+    icon: <HistoryOutlined />,
+    label: '会话历史',
   },
   {
     key: '/evaluations',
@@ -126,6 +134,9 @@ function App() {
             <Route path="/knowledge/:kbId/files/:fileId/edit" element={<KnowledgeFileEdit />} />
             <Route path="/sessions" element={<SessionList />} />
             <Route path="/sessions/:id/chat" element={<AgentChat />} />
+            <Route path="/conversations" element={<ConversationHistory />} />
+            <Route path="/conversations/:sessionId" element={<ConversationHistory />} />
+            <Route path="/conversations/:conversationId/detail" element={<ConversationDetail />} />
             <Route path="/evaluations" element={<AgentEvaluationList />} />
             <Route path="/evaluations/:agentEvalId/items" element={<EvaluationList />} />
             <Route path="/evaluations/items/:evaluationId/results" element={<EvaluationResultList />} />

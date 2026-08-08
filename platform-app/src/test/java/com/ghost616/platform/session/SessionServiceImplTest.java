@@ -21,6 +21,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import com.ghost616.agentbase.service.agent.AgentContextManager;
+import com.ghost616.agentbase.service.agent.MessageDataProvider;
 import com.ghost616.agentbase.service.agent.SessionManager;
 import com.ghost616.agentbase.service.agent.invoker.ToolManager;
 
@@ -40,6 +41,10 @@ class SessionServiceImplTest {
     private AgentContextManager agentContextManager;
     @Mock
     private ToolManager toolManager;
+    @Mock
+    private com.ghost616.platform.repository.MessageMapper messageMapper;
+    @Mock
+    private com.ghost616.platform.service.agent.DefaultMessageDataProvider defaultMessageDataProvider;
 
     @InjectMocks
     private SessionServiceImpl sessionService;
@@ -330,6 +335,42 @@ class SessionServiceImplTest {
         assertEquals(2, result.size());
         assertEquals("newer", result.get(0).getTitle());
         assertEquals("older", result.get(1).getTitle());
+    }
+
+    // ========== getMessagesByConversationId ==========
+
+    @Test
+    void getMessagesByConversationId_有消息_返回DTO列表() {
+        com.ghost616.platform.entity.Message msg = new com.ghost616.platform.entity.Message();
+        msg.setId(1L);
+        msg.setConversationId("conv-1");
+        msg.setRole("user");
+        msg.setContent("hello");
+        msg.setSequenceNum(1);
+        when(messageMapper.selectByConversationId("conv-1")).thenReturn(List.of(msg));
+
+        MessageDataProvider.MessageDTO dto = new MessageDataProvider.MessageDTO(
+                "1", null, "user", "hello", null, null, 1, null, null,
+                List.of(), null, false, null, null, "conv-1");
+        when(defaultMessageDataProvider.toMessageDTOs(List.of(msg))).thenReturn(List.of(dto));
+
+        List<MessageDataProvider.MessageDTO> result = sessionService.getMessagesByConversationId("conv-1");
+
+        assertEquals(1, result.size());
+        assertEquals("hello", result.get(0).content());
+        verify(messageMapper).selectByConversationId("conv-1");
+        verify(defaultMessageDataProvider).toMessageDTOs(List.of(msg));
+    }
+
+    @Test
+    void getMessagesByConversationId_无消息_返回空列表() {
+        when(messageMapper.selectByConversationId("conv-empty")).thenReturn(List.of());
+        when(defaultMessageDataProvider.toMessageDTOs(List.of())).thenReturn(List.of());
+
+        List<MessageDataProvider.MessageDTO> result = sessionService.getMessagesByConversationId("conv-empty");
+
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
     }
 
     // ========== toDTO isEvaluation 映射 ==========

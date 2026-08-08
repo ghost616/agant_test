@@ -3,11 +3,14 @@ package com.ghost616.platform.service.session;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.ghost616.platform.dto.session.SessionDTO;
 import com.ghost616.platform.entity.AgentTool;
+import com.ghost616.platform.entity.Message;
 import com.ghost616.platform.entity.Session;
 import com.ghost616.platform.entity.SessionTool;
 import com.ghost616.platform.repository.AgentToolMapper;
+import com.ghost616.platform.repository.MessageMapper;
 import com.ghost616.platform.repository.SessionMapper;
 import com.ghost616.platform.repository.SessionToolMapper;
+import com.ghost616.platform.service.agent.DefaultMessageDataProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,6 +36,8 @@ public class SessionServiceImpl implements SessionService {
     private final SessionManager sessionManager;
     private final AgentContextManager agentContextManager;
     private final ToolManager toolManager;
+    private final MessageMapper messageMapper;
+    private final DefaultMessageDataProvider defaultMessageDataProvider;
 
     @Override
     public List<SessionDTO> listSessions(Long agentId) {
@@ -120,6 +125,12 @@ public class SessionServiceImpl implements SessionService {
             throw new BusinessException(ErrorCode.SESSION_NOT_FOUND);
         }
         return sessionManager.getMessages(IdConverter.toString(sessionId));
+    }
+
+    @Override
+    public List<MessageDataProvider.MessageDTO> getMessagesByConversationId(String conversationId) {
+        List<Message> messages = messageMapper.selectByConversationId(conversationId);
+        return defaultMessageDataProvider.toMessageDTOs(messages);
     }
 
     @Override

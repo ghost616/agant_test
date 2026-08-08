@@ -141,7 +141,10 @@ public class DefaultMessageDataProvider implements MessageDataProvider {
                 .eq(Message::getRollback, false)
                 .orderByAsc(Message::getSequenceNum);
         List<Message> messages = messageMapper.selectList(wrapper);
+        return toMessageDTOs(messages);
+    }
 
+    public List<MessageDTO> toMessageDTOs(List<Message> messages) {
         List<MessageDTO> result = new ArrayList<>();
         for (Message msg : messages) {
             LambdaQueryWrapper<MessageToolCall> tcWrapper = new LambdaQueryWrapper<>();

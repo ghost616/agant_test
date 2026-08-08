@@ -19,6 +19,8 @@ public interface SessionService {
 
     List<MessageDataProvider.MessageDTO> getMessages(Long sessionId);
 
+    List<MessageDataProvider.MessageDTO> getMessagesByConversationId(String conversationId);
+
     int rollback(Long sessionId);
 
     List<SessionDTO> listChildSessions(Long parentId);

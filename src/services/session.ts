@@ -45,6 +45,11 @@ export async function getSessionMessages(sessionId: string): Promise<SessionMess
   return res.data.data;
 }
 
+export async function getConversationMessages(conversationId: string): Promise<SessionMessage[]> {
+  const res = await api.get<ApiResponse<SessionMessage[]>>(`/conversations/${conversationId}/messages`);
+  return res.data.data;
+}
+
 interface ChatChunk {
   delta?: string;
   reasoning?: string;

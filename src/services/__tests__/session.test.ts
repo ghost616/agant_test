@@ -11,7 +11,7 @@ vi.mock('../api', () => ({
   },
 }));
 
-import { stopChat, listChildSessions, getSubSessionData, completeSubSession, getBrowserExtension, getToolScript, fetchConversationId } from '../session';
+import { stopChat, listChildSessions, getSubSessionData, completeSubSession, getBrowserExtension, getToolScript, fetchConversationId, getConversationMessages } from '../session';
 
 describe('fetchConversationId', () => {
   beforeEach(() => {
@@ -35,6 +35,51 @@ describe('fetchConversationId', () => {
     const testError = new Error('Network Error');
     mockGet.mockRejectedValueOnce(testError);
     await expect(fetchConversationId()).rejects.toThrow('Network Error');
+  });
+});
+
+describe('getConversationMessages', () => {
+  beforeEach(() => {
+    mockGet.mockReset();
+  });
+
+  it('应调用 GET /conversations/{conversationId}/messages', async () => {
+    mockGet.mockResolvedValueOnce({ data: { data: [] } });
+    await getConversationMessages('conv-123');
+    expect(mockGet).toHaveBeenCalledWith('/conversations/conv-123/messages');
+  });
+
+  it('应在不同 conversationId 下正确拼接 URL', async () => {
+    mockGet.mockResolvedValueOnce({ data: { data: [] } });
+    await getConversationMessages('conv-a');
+    expect(mockGet).toHaveBeenCalledWith('/conversations/conv-a/messages');
+
+    mockGet.mockResolvedValueOnce({ data: { data: [] } });
+    await getConversationMessages('conv-b');
+    expect(mockGet).toHaveBeenCalledWith('/conversations/conv-b/messages');
+  });
+
+  it('应返回 SessionMessage 数组', async () => {
+    const fakeMessages = [
+      {
+        id: 'm1',
+        sessionId: 's1',
+        conversationId: 'conv-1',
+        role: 'user',
+        content: 'hello',
+        sequenceNum: 1,
+        createTime: '2026-01-01T00:00:00',
+      },
+    ];
+    mockGet.mockResolvedValueOnce({ data: { data: fakeMessages } });
+    const result = await getConversationMessages('conv-1');
+    expect(result).toEqual(fakeMessages);
+  });
+
+  it('应在 API 失败时抛出错误', async () => {
+    const testError = new Error('Network Error');
+    mockGet.mockRejectedValueOnce(testError);
+    await expect(getConversationMessages('conv-1')).rejects.toThrow('Network Error');
   });
 });
 
