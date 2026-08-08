@@ -54,17 +54,22 @@ describe('ConversationDetail 对话详情 (静态验证)', () => {
   it('内容列应通过 CONTENT_CELL_STYLE 限制三行高度使行高一致', () => {
     const source = readFileSync(pagePath, 'utf-8');
     expect(source).toContain('CONTENT_CELL_STYLE');
-    expect(source).toContain('maxHeight: 66');
+    expect(source).toContain('maxHeight: 63');
     expect(source).toContain('overflow: \'hidden\'');
     expect(source).toContain('style={CONTENT_CELL_STYLE}');
   });
 
-  it('内容列不应设置 column ellipsis，由 LINE_ROW_STYLE 三件套实现省略号', () => {
+  it('LINE_ROW_STYLE 应使用 lineHeight: 1.5 与省略号三件套', () => {
     const source = readFileSync(pagePath, 'utf-8');
-    expect(source).not.toContain("key: 'content',\n      ellipsis: true");
-    expect(source).not.toContain('ellipsis: true,');
+    expect(source).toContain('lineHeight: \'1.5\'');
     expect(source).toContain("textOverflow: 'ellipsis'");
     expect(source).toContain("whiteSpace: 'nowrap'");
+  });
+
+  it('内容列应设置 column ellipsis: true 与 width: 300', () => {
+    const source = readFileSync(pagePath, 'utf-8');
+    expect(source).toContain('width: 300');
+    expect(source).toContain('ellipsis: true');
   });
 
   it('内容列渲染条件应使用 != null 判断使空字符串可渲染', () => {

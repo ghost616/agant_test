@@ -18,12 +18,12 @@ const LINE_ROW_STYLE: CSSProperties = {
   whiteSpace: 'nowrap',
   overflow: 'hidden',
   textOverflow: 'ellipsis',
-  lineHeight: 22,
+  lineHeight: '1.5',
 };
 
 const CONTENT_CELL_STYLE: CSSProperties = {
   cursor: 'pointer',
-  maxHeight: 66,
+  maxHeight: 63,
   overflow: 'hidden',
 };
 
@@ -182,6 +182,8 @@ function ConversationDetail(): JSX.Element {
       title: '内容',
       dataIndex: 'content',
       key: 'content',
+      width: 300,
+      ellipsis: true,
       render: (_content: string, record: SessionMessage) => (
         <div
           style={CONTENT_CELL_STYLE}
