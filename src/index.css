@@ -35,3 +35,11 @@ ul,
 ol {
   list-style: none;
 }
+
+.conversation-main-row > td {
+  background-color: #fff7e6;
+}
+
+.conversation-child-row > td {
+  background-color: #f0f5ff;
+}
