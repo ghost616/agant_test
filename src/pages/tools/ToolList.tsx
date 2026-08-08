@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import React, { Suspense, useCallback, useEffect, useState } from 'react';
 import {
   Button,
   Form,
@@ -12,7 +12,6 @@ import {
   Table,
   Tag,
 } from 'antd';
-import JsonEditor from '../../components/JsonEditor';
 import type { ColumnsType } from 'antd/es/table';
 import type { CommonStatus } from '../../types/common';
 import type { SubToolType, ToolConfig, ToolFormData, ToolType } from '../../types/tool';
@@ -23,6 +22,8 @@ import {
   updateTool,
   updateToolStatus,
 } from '../../services/tool';
+
+const JsonEditor = React.lazy(() => import('../../components/JsonEditor'));
 
 const TOOL_TYPE_LABELS: Record<ToolType, string> = {
   JAVA: 'Java',
@@ -391,12 +392,16 @@ function ToolList(): JSX.Element {
           </Form.Item>
           {toolType !== 'MCP_HTTP' && toolType !== 'CUSTOM' && (
             <Form.Item name="parameterSchema" label="参数 Schema">
-              <JsonEditor />
+              <Suspense fallback={<Input disabled placeholder="编辑器加载中..." />}>
+                <JsonEditor />
+              </Suspense>
             </Form.Item>
           )}
           {toolType !== 'MCP_HTTP' && toolType !== 'CUSTOM' && (
             <Form.Item name="returnSchema" label="返回 Schema">
-              <JsonEditor />
+              <Suspense fallback={<Input disabled placeholder="编辑器加载中..." />}>
+                <JsonEditor />
+              </Suspense>
             </Form.Item>
           )}
           {toolType === 'CUSTOM' && subToolType === 'BROWSER' ? (
