@@ -23,7 +23,6 @@ const LINE_ROW_STYLE: CSSProperties = {
 
 const CONTENT_CELL_STYLE: CSSProperties = {
   cursor: 'pointer',
-  lineHeight: 22,
   maxHeight: 66,
   overflow: 'hidden',
 };
@@ -183,7 +182,6 @@ function ConversationDetail(): JSX.Element {
       title: '内容',
       dataIndex: 'content',
       key: 'content',
-      ellipsis: true,
       render: (_content: string, record: SessionMessage) => (
         <div
           style={CONTENT_CELL_STYLE}
