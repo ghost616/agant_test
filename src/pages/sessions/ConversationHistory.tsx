@@ -103,7 +103,9 @@ function ConversationHistory(): JSX.Element {
             <Button
               type="link"
               size="small"
-              onClick={() => navigate(`/conversations/${record.conversationId}/detail`)}
+              onClick={() =>
+                navigate(`/conversations/${record.conversationId}/detail`, { state: { sessionId } })
+              }
             >
               查看详情
             </Button>
@@ -141,7 +143,7 @@ function ConversationHistory(): JSX.Element {
             style={{ marginBottom: 12 }}
             onClick={() => navigate('/conversations')}
           >
-            返回会话列表
+            返回
           </Button>
           <Typography.Title level={5} style={{ marginBottom: 16 }}>
             用户消息列表

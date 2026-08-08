@@ -33,9 +33,12 @@ describe('ConversationDetail 对话详情 (静态验证)', () => {
     expect(source).toContain("dataIndex: 'createTime'");
   });
 
-  it('应包含返回按钮（返回会话列表）', () => {
+  it('应包含返回按钮（返回），从 state 取 sessionId 返回 /conversations/:sessionId', () => {
     const source = readFileSync(pagePath, 'utf-8');
-    expect(source).toContain('返回会话列表');
-    expect(source).toContain("navigate('/conversations')");
+    expect(source).toContain('返回');
+    expect(source).toContain('useLocation');
+    expect(source).toContain('location.state');
+    expect(source).toContain('`/conversations/${sessionId}`');
+    expect(source).toContain("'/conversations'");
   });
 });

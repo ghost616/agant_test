@@ -22,11 +22,10 @@ describe('ConversationHistory 会话历史 (静态验证)', () => {
     expect(source).toContain("msg.role === 'user'");
   });
 
-  it('有 conversationId 时应显示「查看详情」按钮并跳转 /conversations/:conversationId/detail', () => {
+  it('「查看详情」跳转应传递 state.sessionId', () => {
     const source = readFileSync(pagePath, 'utf-8');
-    expect(source).toContain('record.conversationId');
-    expect(source).toContain('查看详情');
     expect(source).toContain('`/conversations/${record.conversationId}/detail`');
+    expect(source).toContain('state: { sessionId }');
   });
 
   it('会话列表操作应跳转 /conversations/:sessionId', () => {
@@ -35,9 +34,10 @@ describe('ConversationHistory 会话历史 (静态验证)', () => {
     expect(source).toContain('查看消息');
   });
 
-  it('应包含返回按钮（返回会话列表）', () => {
+  it('应包含返回按钮（返回）', () => {
     const source = readFileSync(pagePath, 'utf-8');
-    expect(source).toContain('返回会话列表');
+    expect(source).toContain('返回');
+    expect(source).not.toContain('返回会话列表');
     expect(source).toContain("navigate('/conversations')");
   });
 });

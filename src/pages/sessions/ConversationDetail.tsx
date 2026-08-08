@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Button, message, Table, Tag, Typography } from 'antd';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
@@ -15,7 +15,9 @@ const ROLE_LABELS: Record<string, { text: string; color: string }> = {
 
 function ConversationDetail(): JSX.Element {
   const { conversationId } = useParams<{ conversationId?: string }>();
+  const location = useLocation();
   const navigate = useNavigate();
+  const sessionId = (location.state as { sessionId?: string } | null)?.sessionId;
   const [messages, setMessages] = useState<SessionMessage[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -68,9 +70,9 @@ function ConversationDetail(): JSX.Element {
       <Button
         icon={<ArrowLeftOutlined />}
         style={{ marginBottom: 12 }}
-        onClick={() => navigate('/conversations')}
+        onClick={() => navigate(sessionId ? `/conversations/${sessionId}` : '/conversations')}
       >
-        返回会话列表
+        返回
       </Button>
       <Typography.Title level={5} style={{ marginBottom: 16 }}>
         对话详情
