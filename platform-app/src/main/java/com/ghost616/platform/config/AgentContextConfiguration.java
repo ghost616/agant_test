@@ -18,6 +18,7 @@ import com.ghost616.agentinteg.AgentAssembler;
 import com.ghost616.agentinteg.model.invoker.DefaultModelInvokerFactory;
 import com.ghost616.platform.repository.ModelConfigMapper;
 import com.ghost616.platform.repository.SessionMapper;
+import com.ghost616.platform.service.agent.DatabaseAgentLog;
 import com.ghost616.platform.service.agent.DefaultChatDataProvider;
 import com.ghost616.platform.service.agent.DefaultToolExecutionProvider;
 import com.ghost616.platform.service.agent.DefaultSubSessionCallback;
@@ -111,8 +112,9 @@ public class AgentContextConfiguration {
     }
 
     @Bean
-    public ChatService chatService(AgentAssembler agentAssembler) {
+    public ChatService chatService(AgentAssembler agentAssembler, DatabaseAgentLog databaseAgentLog) {
         ChatService chatService = agentAssembler.build().chatService();
+        agentAssembler.setAgentLog(databaseAgentLog);
         agentAssembler.refreshHooks();
         return chatService;
     }

@@ -13,6 +13,7 @@ import com.ghost616.agentinteg.AgentAssembler;
 import com.ghost616.agentbase.service.agent.invoker.SystemTool;
 import com.ghost616.platform.repository.ModelConfigMapper;
 import com.ghost616.platform.repository.SessionMapper;
+import com.ghost616.platform.service.agent.DatabaseAgentLog;
 import com.ghost616.platform.service.agent.DefaultChatDataProvider;
 import com.ghost616.platform.service.agent.DefaultSubSessionCallback;
 
@@ -51,6 +52,9 @@ class AgentContextConfigurationTest {
     @Mock
     private ToolExecutionProvider toolExecutionProvider;
 
+    @Mock
+    private DatabaseAgentLog databaseAgentLog;
+
     @Test
     void defaultChatDataProvider_正确创建实例() {
         DefaultChatDataProvider provider = config.defaultChatDataProvider(
@@ -77,7 +81,7 @@ class AgentContextConfigurationTest {
         ChatDataProvider chatDataProvider = mock(ChatDataProvider.class);
 
         AgentAssembler agentAssembler = config.agentAssembler(systemToolProvider, modelInvokerFactory, chatDataProvider, toolExecutionProvider);
-        ChatService chatService = config.chatService(agentAssembler);
+        ChatService chatService = config.chatService(agentAssembler, databaseAgentLog);
 
         assertNotNull(chatService);
     }

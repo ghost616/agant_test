@@ -237,3 +237,17 @@ CREATE TABLE IF NOT EXISTS agent_knowledge_base (
 );
 CREATE INDEX IF NOT EXISTS idx_agent_knowledge_base_agent_id ON agent_knowledge_base(agent_id);
 CREATE INDEX IF NOT EXISTS idx_agent_knowledge_base_knowledge_base_id ON agent_knowledge_base(knowledge_base_id);
+
+CREATE TABLE IF NOT EXISTS agent_log (
+    id              BIGINT PRIMARY KEY,
+    session_id      BIGINT,
+    conversation_id VARCHAR(50),
+    log_type        VARCHAR(64),
+    log_level       VARCHAR(32),
+    log_data        TEXT,
+    create_time     TIMESTAMP,
+    update_time     TIMESTAMP,
+    deleted         INTEGER DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_agent_log_session_id ON agent_log(session_id);
+CREATE INDEX IF NOT EXISTS idx_agent_log_conversation_id ON agent_log(conversation_id);

@@ -6,6 +6,7 @@ import {
   ApiOutlined,
   BookOutlined,
   CheckCircleOutlined,
+  FileTextOutlined,
   HistoryOutlined,
   MessageOutlined,
   RobotOutlined,
@@ -28,6 +29,7 @@ import AgentEvaluationList from './pages/evaluations/AgentEvaluationList';
 import EvaluationList from './pages/evaluations/EvaluationList';
 import EvaluationResultList from './pages/evaluations/EvaluationResultList';
 import EvaluationResultDetail from './pages/evaluations/EvaluationResultDetail';
+import AgentLogList from './pages/logs/AgentLogList';
 
 const { Header, Sider, Content } = Layout;
 
@@ -71,6 +73,11 @@ const MENU_ITEMS: MenuProps['items'] = [
     key: '/conversations',
     icon: <HistoryOutlined />,
     label: '会话历史',
+  },
+  {
+    key: '/logs',
+    icon: <FileTextOutlined />,
+    label: '运行日志',
   },
 ];
 
@@ -141,6 +148,7 @@ function App() {
             <Route path="/evaluations/:agentEvalId/items" element={<EvaluationList />} />
             <Route path="/evaluations/items/:evaluationId/results" element={<EvaluationResultList />} />
             <Route path="/evaluations/results/:resultId" element={<EvaluationResultDetail />} />
+            <Route path="/logs" element={<AgentLogList />} />
           </Routes>
         </Content>
       </Layout>
