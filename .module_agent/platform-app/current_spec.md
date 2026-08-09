@@ -120,6 +120,9 @@ platform-app 模块包含以下功能：
 - EvaluationResultGenerateService 生成评估结果后，调用同一模型从评估结果文本中提取最终评分数字（构建 prompt 要求仅返回数字），将提取的 finalScore 和 Evaluation.modelId 写入 EvaluationResult
 - EvaluationServiceImpl.toResultDTO 映射 EvaluationResult 的 modelId 和 finalScore 字段到 DTO
 - 评估结果删除增强：EvaluationService 新增 batchDeleteResults（@Transactional，循环调用 deleteResult 级联清理 session/message/messageToolCall/sessionVariable/sessionTool/sessionSkill）与 clearResults（按 evaluationId 查询全部 resultId 后批量删除）；EvaluationController 新增 POST /api/evaluations/results/batch-delete（@RequestBody List<Long> 批量删除）和 DELETE /api/evaluations/{evaluationId}/results（清空该评估所有结果）
+- 重命名重构：EvaluationExecutionStatusDTO 字段 executionSessionId → executionSession；EvaluationExecutionService/EvaluationResultGenerateService 相关参数名同步重命名（类型仍为 Long）；AsyncEvaluationExecutor.executeAsync 参数从 Long executionSessionId 改为 Session executionSession（从 Session 获取 thinking 透传），改用 AgentMessageProxy.sendUserMessageToSession 替代 sendUserMessage
+- EvaluationExecutionService.copyBenchmarkSession 在 setSystemPrompt 后新增 setThinking(benchmarkSession.getThinking())，执行会话透传基准会话 thinking 字段，配合 AsyncEvaluationExecutor.executeAsync 从 Session 读取 thinking
+- 恢复 executionSessionId 命名：EvaluationExecutionStatusDTO 字段名恢复为 executionSessionId（JSON 序列化键为 executionSessionId）；EvaluationExecutionService 的 generateResult/generateResultAsync/getGenerateStatus 与 EvaluationResultGenerateService.generate 参数名恢复为 executionSessionId（Long）；AsyncEvaluationExecutor.generateResultAsync 参数恢复为 Long executionSessionId，executeAsync 保留 Session executionSession 参数（仅从 Session 取 thinking 透传，改用 AgentMessageProxy.sendUserMessageToSession），内部以 Long executionSessionId 向下传递
 ## 会话管理
 
 - DefaultContextDataProvider 实现 ContextDataProvider.updateLastResponseId（更新 session 表 last_response_id）并在 loadAgentContext 的所有 AgentContextData 构造中透传 session.getLastResponseId()
@@ -158,6 +161,20 @@ platform-app 模块包含以下功能：
 - KnowledgeBaseQueryProviderImpl.searchChunks 重构：移除 contextLines 参数与上下文扩展逻辑（mergeLineRanges 行范围合并及 searchByFileAndLineRange 上下文查询已删除），方法签名对齐 agent-integration KnowledgeBaseQueryProvider 接口的 5 参（kbId/fileId/searchType/query/topK），仅保留纯搜索+按文件分组返回命中文本块（组内按 lineNumber 去重），上下文扩展职责交由 agent-integration 的 KnowledgeSearchTool 通过 getFileChunks 完成；KnowledgeBaseQueryProviderImplTest 移除 mergedRanges/nonAdjacentRanges 上下文扩展用例，上下文扩展去重用例改为组内按行号去重
 ## 消息分发
 
-- 消息分发链路（sendmessage）：MessageHandler 接口定义 getMessageName()/handle(MessageDefinition)；MessageDispatcher（实现 agent-base MessageSender，@Component）构造器按消息名建立路由表（重复名保留首个），send 按 message.getMessageName() 路由到对应处理器，null 或无处理器静默跳过
-- ConversationIdMessageHandler：订阅 MessageName.CONVERSATION_ID，收到 ConversationIdMessage 时通过 ObjectProvider 惰性获取 AgentContextManager 调用 handleConversationIdMessage() 同步 conversationId；ThreadLocal 重入保护防止 handleConversationIdMessage 内部再次 setConversationId 发送导致无限递归
-- AgentContextConfiguration.agentAssembler() 新增 MessageSender 参数（Spring 注入 MessageDispatcher），AgentAssembler 第 7 参由 null 改为 messageSender，使消息分发链路生效
+- 消息分发链路已从 platform-app 移除：MessageHandler/MessageDispatcher/ConversationIdMessageHandler 及对应测试已删除；AgentContextConfiguration.agentAssembler() 不再接收 MessageSender 参数（第 7 参传 null），platform-app 不再装配消息分发链路。MessageSender 接口仍保留在 agent-base（sendmessage 包），由 agent-base 内部按需使用
+## 智能体日志
+
+- 新增 DatabaseAgentLog（实现 agent-base 的 AgentLog 接口，@Service）：addLog 将 LogData 序列化为 JSON 存入 agent_log.log_data，从 ContextLogData 的 context 提取 sessionId（IdConverter 转 Long，解析失败返回 null）与 conversationId 写入对应列，logType/logLevel 存储枚举 code 值，通过 AgentLogMapper 持久化
+- 新增 AgentLogDTO（含 id/sessionId/sessionName/conversationId/logType/logLevel/logData/createTime 字段，sessionName 为会话名）
+- 新增 AgentLogService 接口与 AgentLogServiceImpl 实现：list 方法支持 sessionId/conversationId/logType/logLevel 筛选 + orderByDesc(createTime) 分页查询（Page 分页，默认 page=1、size=20），返回时通过 SessionMapper.selectBatchIds 批量查询 Session 关联获取 sessionName；cleanupExpiredLogs 为 @Scheduled(cron="0 0 1 * * ?") 定时任务，删除 createTime 早于当前时间 30 天的日志记录
+- 新增 AgentLogController（GET /api/agent-logs），接收 sessionId/conversationId/logType/logLevel/page/size 查询参数，返回 ApiResponse<PageResult<AgentLogDTO>>
+- AgentContextConfiguration.chatService() @Bean 增加 DatabaseAgentLog 参数，在 agentAssembler.build() 之后调用 agentAssembler.setAgentLog(databaseAgentLog) 将日志实现注册到 AgentComponentRegistry，供 agent-base 各 Service 记录日志
+- AgentLogService.list 与 AgentLogController 新增 sessionName 参数（按会话名模糊搜索）：sessionName 非空时先通过 SessionMapper.selectList(like Session.title) 查询匹配的 sessionId 集合，集合为空则直接返回空分页结果，否则在日志查询 wrapper 中追加 in(sessionId, sessionIds) 过滤；sessionName 为空白时不查询 Session，不影响原筛选逻辑
+- AgentLogDTO 新增 sessionVariables/conversationVariables 字段（会话变量/对话变量的 JSON 字符串），AgentLogServiceImpl.toDTO 同步映射
+- AgentLogServiceImpl.loadSessionNames 会话名兜底：Session.title 为 null 或空字符串时使用 String.valueOf(Session.getId()) 作为会话名，避免 sessionName 为空
+- DatabaseAgentLog.addLog 增强：当 logData 非 ContextLogData 时，通过反射调用 getSessionId()/getConversationId() 方法提取 sessionId（IdConverter 转 Long）与 conversationId（方法不存在或调用失败返回 null，不抛异常）；当 logData 为 ContextLogData 时，从 AgentExecutionContext 通过 getSessionVariableKeys+getSessionVariable 与 getConversationVariableKeys+getConversationVariable 分别构建会话变量/对话变量 Map，JSON 序列化后存入 entity 的 sessionVariables/conversationVariables 列
+- DatabaseAgentLog.addLog 适配新 LogData 类层次：新增 SessionLogData 子类处理分支（instanceof SessionLogData 直接提取 sessionId/conversationId，SessionErrorLogData 等无执行上下文日志适用），保留 ContextLogData 分支（从 context 提取，含会话/对话变量序列化）及反射兜底分支（ContextBuildLogData 等直接继承 LogData 的类型）
+- serializeLogData 通过 Jackson mix-in 排除冗余字段：新增 LogDataMixin（@JsonIgnoreProperties 排除 logLevel，日志级别已单独存储于 log_level 列）与 ContextLogDataMixin（排除 context，执行上下文冗余且体积大，会话/对话 ID 已单独提取），DatabaseAgentLog 构造函数复制注入的 ObjectMapper 并注册两个 mix-in（不污染共享 Spring Bean）
+- 测试期缺陷修复：ContextLogDataMixin 的 @JsonIgnoreProperties 需同时包含 logLevel 与 context（Jackson 在类层次上取最近派生注解且不跨层合并，若仅排除 context 会覆盖父类 LogData 的 logLevel 排除规则，导致 ContextLogData 子类 logData JSON 中 logLevel 未排除）；DatabaseAgentLogTest 10 用例全部通过
+- serializeLogData 进一步排除会话字段：新增 SessionLogDataMixin（@JsonIgnoreProperties({"logLevel","sessionId","conversationId"})），DatabaseAgentLog 构造函数注册 objectMapper.copy().addMixIn(SessionLogData.class, SessionLogDataMixin.class)，使 SessionLogData 子类（SessionErrorLogData 等）的 logData JSON 不再冗余包含会话 ID/对话 ID（已单独存储于 agent_log 表对应列）
+- addLog 反射兜底移除：非 ContextLogData/非 SessionLogData 时不再通过反射调用 getSessionId()/getConversationId()（已删除 invokeGetter 私有方法及 java.lang.reflect.Method import），改为按 logType() 强转——当 logData.logType()==LogType.CONTEXT_BUILD 时强转为 ContextBuildLogData 提取 getSessionId()（ContextBuildLogData 无 conversationId，不设置该列）

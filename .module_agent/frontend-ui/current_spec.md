@@ -97,6 +97,7 @@
   - agentEvaluation.ts: getAgentEvaluationList、getAgentEvaluation、createAgentEvaluation、updateAgentEvaluation、deleteAgentEvaluation、updateAgentEvaluationStatus
   - evaluation.ts: getEvaluationList(支持 agentEvalId 筛选)、getEvaluation、createEvaluation、updateEvaluation、deleteEvaluation、getEvaluationResults
 - EvaluationList 操作列新增"清空结果"按钮（danger 类型）：Modal.confirm 二次确认后调用 clearEvaluationResults(record.id) 清空该评估下所有评估结果，成功后 message.success 并刷新列表，失败 message.error；按钮始终可点击（后端对空列表无操作处理）
+- useEvaluationExecute FOREGROUND 模式：sendForegroundMessage 在调用 agentChatStream 前先 await fetchConversationId() 获取 conversationId，获取失败时抛出错误中止；conversationId 传入 agentChatStream 请求参数（{ sessionId, content, conversationId }）
 ## 知识库管理界面
 
 - 知识库管理页面 `/knowledge`：列表展示、名称搜索、状态筛选、新增/编辑/删除/启用禁用，"管理文件"跳转 `/knowledge/:kbId/files`
@@ -110,3 +111,13 @@
 - KnowledgeBaseList：操作列新增「ES数据重构」按钮（调用 rebuildKnowledgeBaseES，执行中 loading，rebuilding=true 时禁用）；知识库 rebuilding=true 时「管理文件」按钮禁用置灰；编辑弹窗新增向量模型下拉（listModels({modelType:'EMBEDDINGS'}) 加载 EMBEDDINGS 模型）与 ES 索引输入框，提交时空字符串归一化为 undefined
 - KnowledgeFileList：发布状态 Tag 列（UNPUBLISHED=default 灰、PUBLISHING=processing 蓝、PUBLISHED=success 绿、PENDING_PUBLISH=warning 橙、PUBLISH_ERROR=error 红）；「发布」按钮仅 UNPUBLISHED/PENDING_PUBLISH/PUBLISH_ERROR 可用，publishStatus=PUBLISHING 时显示「发布中」并 disabled，点击调用 publishKnowledgeFile；知识库 rebuilding=true 时禁用发布按钮；新增「刷新」按钮调用 refreshKnowledgeFiles 后重新拉取列表；页面加载 getKnowledgeBase 获取 rebuilding 状态
 - KnowledgeFileEdit：文件 publishStatus=PUBLISHING 时禁用 TextArea 与保存按钮，文件名旁显示「发布中，暂不可编辑」Tag
+## 日志查看界面
+
+- 运行日志页面 /logs：筛选栏含会话名搜索(Input.Search)、日志类型 Select、日志等级 Select，变更后重置到第 1 页
+- Table 列：会话名(sessionName)、对话ID(conversationId)、日志类型(中文 Tag)、日志等级(彩色 Badge: INFO=blue/ERROR=red)、日志数据(超 60 字符截断+展开按钮)、创建时间
+- 分页支持每页条数切换(20/50/100)，默认按创建时间倒序（后端排序），showTotal 展示总条数
+- 日志详情 Modal：展示会话名/对话ID/日志类型/日志等级/创建时间元信息 + 完整日志数据(<pre> JSON 美化)
+- types/log.ts 提供 AgentLog 类型、AgentLogQueryParams 查询参数、LogType/LogLevel 常量枚举（code 对齐后端枚举，label 中文）；LogType 不含 CALL_SOURCE，LogLevel 仅含 INFO/ERROR（不含 WARN）
+- AgentLogList 中 LOG_LEVEL_LABELS/LOG_LEVEL_OPTIONS 由 LogLevel 枚举自动生成，LOG_LEVEL_COLORS 仅映射 INFO/ERROR（未知等级回退 default 颜色与原始值）
+- services/log.ts 提供 listAgentLogs(params) 调用 GET /api/agent-logs 返回 PageResult<AgentLog>
+- src/types/__tests__/log.test.ts 提供 LogType/LogLevel 枚举结构静态测试（不含 CALL_SOURCE/WARN、仅 INFO/ERROR、code/label 非空）

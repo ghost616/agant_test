@@ -1,0 +1,30 @@
+package com.ghost616.agentbase.service.agent.log;
+
+import com.ghost616.agentbase.enums.LogType;
+import lombok.Getter;
+import lombok.Setter;
+
+/**
+ * 智能体请求入口日志数据。
+ */
+@Getter
+@Setter
+public class RequestEntryLogData extends LogData {
+
+    /** 会话 ID */
+    private String sessionId;
+
+    /** 智能体 ID */
+    private String agentId;
+
+    /** 模型 ID */
+    private String modelId;
+
+    /** 用户请求内容 */
+    private String content;
+
+    @Override
+    public LogType logType() {
+        return LogType.REQUEST_ENTRY;
+    }
+}

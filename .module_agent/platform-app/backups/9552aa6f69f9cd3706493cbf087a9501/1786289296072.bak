@@ -1,0 +1,27 @@
+package com.ghost616.platform.dto.evaluation;
+
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class EvaluationExecutionStatusDTO {
+
+    @JsonSerialize(using = ToStringSerializer.class)
+    private Long evaluationId;
+
+    @JsonSerialize(using = ToStringSerializer.class)
+    private Long executionSessionId;
+
+    private String status;
+
+    private Integer currentStep;
+
+    private Integer totalSteps;
+}

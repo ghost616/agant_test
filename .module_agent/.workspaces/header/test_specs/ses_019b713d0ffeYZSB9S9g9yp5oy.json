@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_019b713d0ffeYZSB9S9g9yp5oy",
+  "content": "## 待测试功能\n\n为 AgentContextManager 的 createChildSession 和 sendUserMessage 日志数据添加 conversationId。\n\n### 涉及代码文件\n- agent-base/src/main/java/com/ghost616/agentbase/service/agent/AgentContextManager.java\n- agent-base/src/test/java/com/ghost616/agentbase/service/agent/AgentContextManagerLogTest.java\n\n### 可测试功能\n1. injectVariableCallbacks() 在构建子会话上下文（parentCtx != null）时，通过 parentCtx.context().getConversationId() 获取父会话 conversationId，并传入 createChildSession/sendUserMessage 回调。\n2. createChildSession()/sendUserMessage() 私有方法签名新增 conversationId 参数，构建 ChildSessionLogData/SendMessageLogData 时通过 .conversationId() 写入。\n3. 主会话（parentCtx == null）时日志 conversationId 保持 null。\n4. 子会话上下文下 CHILD_SESSION 日志和 SEND_MESSAGE 日志携带父会话 conversationId。\n\n### 验证方式\n- 运行 AgentContextManagerLogTest 单测（含新增\"子会话上下文中createChildSession和sendUserMessage日志携带父会话conversationId\"用例）\n- 编译 agent-base 模块（mvn test-compile）确保无编译错误\n- 运行 agent-base 全量单测确保无回归",
+  "timestamp": "2026-08-09T11:34:17.577Z"
+}

@@ -7,7 +7,7 @@
     },
     {
       "path": "package.json",
-      "description": "前端 npm 配置，React 18 + Vite 5 + TypeScript 5 + antd 5 + axios + react-router-dom 6"
+      "description": "前端 npm 配置，React 18 + Vite 5 + TypeScript 5 + antd 5 + axios + react-router-dom 6。scripts 包含 dev:build（vite build --watch 监听源码变更自动编译到 dist/）与 dev:serve（node serve.js 启动静态服务），供 dev.bat 预编译开发模式使用"
     },
     {
       "path": "vite.config.ts",
@@ -43,7 +43,7 @@
     },
     {
       "path": "dev.bat",
-      "description": "Windows 开发模式一键启动脚本，新窗口启动 mvn spring-boot:run、轮询端口 8080 就绪、启动 npm run dev，前端退出后自动关闭后端进程"
+      "description": "Windows 开发模式一键启动脚本，新窗口启动 mvn spring-boot:run、轮询端口 8080 就绪、一次性 vite build 编译前端后并行启动 build watch 与静态服务（npm run dev:serve，端口 3000，/api 代理到 localhost:8080），前端退出后自动关闭 build watch 和后端进程"
     },
     {
       "path": "README.md",
@@ -56,6 +56,10 @@
     {
       "path": "platform-app/data/agent_platform.db",
       "description": "SQLite 数据库文件（运行时数据）"
+    },
+    {
+      "path": "serve.js",
+      "description": "前端静态资源服务脚本（Node 内置 http 模块）：静态托管 dist/ 目录并自动识别 MIME 类型，支持 SPA fallback（非文件路径返回 index.html），/api 请求代理到 http://localhost:8080，监听 3000 端口，供 dev.bat 预编译开发模式使用"
     }
   ]
 }

@@ -1,0 +1,50 @@
+/** 日志类型枚举，code 对应后端 LogType 枚举的 code 值 */
+export const LogType = {
+  REQUEST_ENTRY: { code: 'REQUEST_ENTRY', label: '请求入口' },
+  CALL_SOURCE: { code: 'CALL_SOURCE', label: '调用来源' },
+  ERROR_LOG: { code: 'ERROR_LOG', label: '错误日志' },
+  ROUTE: { code: 'ROUTE', label: '路由分发' },
+  MODEL_CALL: { code: 'MODEL_CALL', label: '模型调用' },
+  STREAM_EVENT: { code: 'STREAM_EVENT', label: '流式事件' },
+  HISTORY_EXPAND: { code: 'HISTORY_EXPAND', label: '历史展开' },
+  SKILL_LOAD: { code: 'SKILL_LOAD', label: '技能加载' },
+  CONTEXT_BUILD: { code: 'CONTEXT_BUILD', label: '上下文构建' },
+  CHILD_SESSION: { code: 'CHILD_SESSION', label: '子会话创建' },
+  REFRESH: { code: 'REFRESH', label: '上下文刷新' },
+  HANDLE_MESSAGE: { code: 'HANDLE_MESSAGE', label: '消息处理' },
+  CACHE_REMOVE: { code: 'CACHE_REMOVE', label: '缓存移除' },
+  SEND_MESSAGE: { code: 'SEND_MESSAGE', label: '消息发送' },
+  MESSAGE_SAVE: { code: 'MESSAGE_SAVE', label: '消息保存' },
+  MESSAGE_QUERY: { code: 'MESSAGE_QUERY', label: '消息查询' },
+  MESSAGE_ROLLBACK: { code: 'MESSAGE_ROLLBACK', label: '消息回退' },
+  TOOL_EXECUTE: { code: 'TOOL_EXECUTE', label: '工具执行' },
+  TOOL_CONTINUE: { code: 'TOOL_CONTINUE', label: '工具执行后继续' },
+} as const;
+
+/** 日志等级枚举，code 对应后端 LogLevel 枚举的 code 值 */
+export const LogLevel = {
+  INFO: { code: 'INFO', label: '信息' },
+  WARN: { code: 'WARN', label: '警告' },
+  ERROR: { code: 'ERROR', label: '错误' },
+} as const;
+
+/** 智能体日志查询参数 */
+export interface AgentLogQueryParams {
+  sessionName?: string;
+  logType?: string;
+  logLevel?: string;
+  page: number;
+  size: number;
+}
+
+/** 智能体日志，对应后端 AgentLogDTO */
+export interface AgentLog {
+  id: string;
+  sessionId?: string;
+  sessionName?: string;
+  conversationId?: string;
+  logType: string;
+  logLevel: string;
+  logData: string;
+  createTime: string;
+}

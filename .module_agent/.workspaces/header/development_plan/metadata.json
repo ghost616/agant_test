@@ -1,1 +1,10 @@
-[]
+[
+  {
+    "plan_id": "plan_e76369a1-ab16-4db1-a806-537b4c64a4fa",
+    "plan_summary": "revert executionSessionId rename while keeping conversationId/thinking fixes",
+    "starter_session_id": "ses_01aa73841ffebdqHRf5mkCnJPy",
+    "code_reviewed": false,
+    "plan_completed": true,
+    "test_passed": true
+  }
+]

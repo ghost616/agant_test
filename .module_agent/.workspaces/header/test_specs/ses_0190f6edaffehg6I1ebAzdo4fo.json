@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_0190f6edaffehg6I1ebAzdo4fo",
+  "content": "## 待测试功能说明\n\n### 变更文件\n- src/pages/logs/AgentLogList.tsx\n- src/pages/logs/__tests__/AgentLogList.test.tsx\n\n### 变更内容\n1. 移除 LOG_LEVEL_LABELS（中文标签映射）\n2. LOG_LEVEL_COLORS 改为字体颜色：INFO='#1677ff'(蓝)、ERROR='#ff4d4f'(红)\n3. LOG_LEVEL_OPTIONS 的 label 改为 code 值（'INFO'、'ERROR'）\n4. 表格列与详情弹窗中日志等级渲染改为 `<span style={{ color: LOG_LEVEL_COLORS[value], fontWeight: 500 }}>{value}</span>`，显示 INFO/ERROR 文字+彩色字体，不再使用 Badge\n5. 同步更新测试用例（日志等级列 span 渲染、未知等级回退、下拉选项 INFO/ERROR）\n\n### 需要测试的内容\n- 单元测试：运行 AgentLogList.test.tsx 全部用例通过\n- 编译检查：TypeScript 类型检查通过（无 Badge/LOG_LEVEL_LABELS 残留引用）",
+  "timestamp": "2026-08-09T14:33:11.366Z"
+}

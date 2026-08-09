@@ -1,0 +1,65 @@
+package com.ghost616.agentbase.service.agent.log;
+
+import com.ghost616.agentbase.enums.LogType;
+import com.ghost616.agentbase.service.agent.AgentExecutionContext;
+import org.junit.jupiter.api.Test;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+class ContextBuildLogDataTest {
+
+    private AgentExecutionContext createContext() {
+        return new AgentExecutionContext(
+                "s1", "agent-1", "sys_prompt", "model-1", null,
+                new ArrayList<>(), new ArrayList<>(), null,
+                new AgentExecutionContext.AgentContextMutator(),
+                new HashMap<>(), new HashMap<>(), null, "", null, null);
+    }
+
+    @Test
+    void logType应返回CONTEXT_BUILD() {
+        ContextBuildLogData data = ContextBuildLogData.builder().build();
+        assertEquals(LogType.CONTEXT_BUILD, data.logType());
+    }
+
+    @Test
+    void 字段应默认为null或false() {
+        ContextBuildLogData data = ContextBuildLogData.builder().build();
+        assertNull(data.getContext());
+        assertNull(data.getLogLevel());
+        assertNull(data.getSessionId());
+        assertNull(data.getAgentId());
+        assertNull(data.getModelId());
+        assertEquals(0, data.getToolCount());
+        assertEquals(0, data.getHistoryCount());
+        assertFalse(data.isSubSession());
+        assertFalse(data.isCacheHit());
+    }
+
+    @Test
+    void builder应正确设置继承与自有字段() {
+        AgentExecutionContext context = createContext();
+        ContextBuildLogData data = ContextBuildLogData.builder()
+                .context(context)
+                .sessionId("s1")
+                .agentId("agent-1")
+                .modelId("model-1")
+                .toolCount(3)
+                .historyCount(5)
+                .isSubSession(true)
+                .cacheHit(true)
+                .build();
+
+        assertSame(context, data.getContext());
+        assertEquals("s1", data.getSessionId());
+        assertEquals("agent-1", data.getAgentId());
+        assertEquals("model-1", data.getModelId());
+        assertEquals(3, data.getToolCount());
+        assertEquals(5, data.getHistoryCount());
+        assertTrue(data.isSubSession());
+        assertTrue(data.isCacheHit());
+    }
+}

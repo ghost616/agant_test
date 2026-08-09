@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_01a872cbfffekVGAdE7ReYS4dx",
+  "content": "## 待测试功能说明\n\n### 变更概述\n修复 AgentLogList 页面皋陶审查发现的两个问题，需回归验证。\n\n### 涉及代码文件\n1. `src/pages/logs/AgentLogList.tsx`（修改）：\n   - 修复 1：Table pagination onChange — 当 pageSize 变化（nextPageSize !== pageSize）时将 page 重置为 1，否则使用 nextPage；pageSize 始终取 nextPageSize。避免从 20 条/页切换到大页 size 时当前页超出新页数范围请求到无数据的页码\n   - 修复 2：Modal 属性 destroyOnClose 替换为 destroyOnHidden（antd 已弃用 destroyOnClose），保持原有销毁行为\n\n### 可测试功能\n1. **页面组件测试（src/pages/logs/__tests__/AgentLogList.test.tsx）**：\n   - 切换每页条数（size changer 选择 50）后重新请求携带 size=50 且 page 重置为 1\n   - 切换到第 2 页后再切换每页条数，请求 page=1 且 size 为新值\n   - 仅切换页码（pageSize 不变）时请求 page=nextPage\n   - 日志详情 Modal 渲染/打开/关闭行为不受 destroyOnHidden 影响（点击\"展开\"打开 Modal 展示完整日志、关闭后再次打开仍正常）\n   - 既有用例全部保持通过（初始加载/列渲染/筛选重置页码/展开按钮显隐等）\n2. **服务层接口测试（src/services/__tests__/log.test.ts）**：不受影响，保持通过\n3. **App 路由/菜单测试（src/__tests__/App.test.tsx）**：不受影响，保持通过\n4. **编译测试**：src/pages/logs/AgentLogList.tsx TypeScript 类型检查零错误（destroyOnHidden 属性类型检查通过）\n5. **E2E 测试（e2e/AgentLogList.spec.ts）**：分页交互与展开 Modal 用例回归通过",
+  "timestamp": "2026-08-09T08:00:04.154Z"
+}

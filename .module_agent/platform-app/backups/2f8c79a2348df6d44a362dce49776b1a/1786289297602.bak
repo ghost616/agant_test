@@ -1,0 +1,103 @@
+package com.ghost616.platform.dto.evaluation;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+class EvaluationExecutionStatusDTOTest {
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    @Test
+    void builderShouldCreateDTOWithAllFields() {
+        EvaluationExecutionStatusDTO dto = EvaluationExecutionStatusDTO.builder()
+                .evaluationId(1L)
+                .executionSessionId(100L)
+                .status("RUNNING")
+                .currentStep(2)
+                .totalSteps(5)
+                .build();
+
+        assertEquals(1L, dto.getEvaluationId());
+        assertEquals(100L, dto.getExecutionSessionId());
+        assertEquals("RUNNING", dto.getStatus());
+        assertEquals(2, dto.getCurrentStep());
+        assertEquals(5, dto.getTotalSteps());
+    }
+
+    @Test
+    void noArgsConstructorShouldCreateEmptyDTO() {
+        EvaluationExecutionStatusDTO dto = new EvaluationExecutionStatusDTO();
+        assertNull(dto.getEvaluationId());
+        assertNull(dto.getExecutionSessionId());
+        assertNull(dto.getStatus());
+        assertNull(dto.getCurrentStep());
+        assertNull(dto.getTotalSteps());
+    }
+
+    @Test
+    void allArgsConstructorShouldSetAllFields() {
+        EvaluationExecutionStatusDTO dto = new EvaluationExecutionStatusDTO(1L, 100L, "COMPLETED", 5, 5);
+        assertEquals(1L, dto.getEvaluationId());
+        assertEquals(100L, dto.getExecutionSessionId());
+        assertEquals("COMPLETED", dto.getStatus());
+        assertEquals(5, dto.getCurrentStep());
+        assertEquals(5, dto.getTotalSteps());
+    }
+
+    @Test
+    void setterShouldUpdateFields() {
+        EvaluationExecutionStatusDTO dto = new EvaluationExecutionStatusDTO();
+        dto.setEvaluationId(2L);
+        dto.setExecutionSessionId(200L);
+        dto.setStatus("FAILED");
+        dto.setCurrentStep(3);
+        dto.setTotalSteps(10);
+
+        assertEquals(2L, dto.getEvaluationId());
+        assertEquals(200L, dto.getExecutionSessionId());
+        assertEquals("FAILED", dto.getStatus());
+        assertEquals(3, dto.getCurrentStep());
+        assertEquals(10, dto.getTotalSteps());
+    }
+
+    @Test
+    void jsonSerializationShouldOutputLongFieldsAsStrings() throws Exception {
+        EvaluationExecutionStatusDTO dto = EvaluationExecutionStatusDTO.builder()
+                .evaluationId(12345L)
+                .executionSessionId(67890L)
+                .status("PENDING")
+                .currentStep(0)
+                .totalSteps(3)
+                .build();
+
+        String json = objectMapper.writeValueAsString(dto);
+        assertTrue(json.contains("\"evaluationId\":\"12345\""));
+        assertTrue(json.contains("\"executionSessionId\":\"67890\""));
+        assertTrue(json.contains("\"status\":\"PENDING\""));
+        assertTrue(json.contains("\"currentStep\":0"));
+        assertTrue(json.contains("\"totalSteps\":3"));
+    }
+
+    @Test
+    void jsonDeserializationShouldParseStringLongFields() throws Exception {
+        String json = "{\"evaluationId\":\"12345\",\"executionSessionId\":\"67890\",\"status\":\"COMPLETED\",\"currentStep\":5,\"totalSteps\":5}";
+        EvaluationExecutionStatusDTO dto = objectMapper.readValue(json, EvaluationExecutionStatusDTO.class);
+        assertEquals(12345L, dto.getEvaluationId());
+        assertEquals(67890L, dto.getExecutionSessionId());
+        assertEquals("COMPLETED", dto.getStatus());
+        assertEquals(5, dto.getCurrentStep());
+        assertEquals(5, dto.getTotalSteps());
+    }
+
+    @Test
+    void equalsAndHashCode() {
+        EvaluationExecutionStatusDTO dto1 = EvaluationExecutionStatusDTO.builder()
+                .evaluationId(1L).executionSessionId(100L).status("OK").currentStep(1).totalSteps(1).build();
+        EvaluationExecutionStatusDTO dto2 = EvaluationExecutionStatusDTO.builder()
+                .evaluationId(1L).executionSessionId(100L).status("OK").currentStep(1).totalSteps(1).build();
+        assertEquals(dto1, dto2);
+        assertEquals(dto1.hashCode(), dto2.hashCode());
+    }
+}

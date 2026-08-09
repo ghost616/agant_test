@@ -23,7 +23,7 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/config/AgentContextConfiguration.java",
-      "description": "Agent 上下文 Spring 配置类，声明 SystemToolProvider、DefaultChatDataProvider、ModelInvokerFactory、DefaultToolExecutionProvider、AgentAssembler、SessionManager、AgentContextManager、ToolManager、ModelInvokerManager、ChatService、ToolExecutionService 的 @Bean。"
+      "description": "Agent 上下文 Spring 配置类，声明 SystemToolProvider、DefaultChatDataProvider、ModelInvokerFactory、DefaultToolExecutionProvider、AgentAssembler、SessionManager、AgentContextManager、ToolManager、ModelInvokerManager、ChatService、ToolExecutionService 的 @Bean；chatService() 注入 DatabaseAgentLog 并在 agentAssembler.build() 后调用 setAgentLog 注册到 AgentComponentRegistry"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/ChatService.java",
@@ -207,7 +207,7 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/dto/evaluation/EvaluationExecutionStatusDTO.java",
-      "description": "评估执行状态 DTO，包含 evaluationId/executionSessionId/status/currentStep/totalSteps 五个字段，Long 型字段使用 ToStringSerializer 序列化"
+      "description": "评估执行状态 DTO，包含 evaluationId/executionSession/status/currentStep/totalSteps 五个字段，Long 型字段使用 ToStringSerializer 序列化"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/dto/evaluation/EvaluationSessionCreateResponse.java",
@@ -231,7 +231,7 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/evaluation/AsyncEvaluationExecutor.java",
-      "description": "异步评估执行器（独立 @Component），被 EvaluationExecutionService 注入后调用，确保 @Async 通过 Spring AOP 代理生效。执行 AgentMessageProxy 逐条用户消息、工具调用，完成后调用 EvaluationResultGenerateService"
+      "description": "异步评估执行器（独立 @Component），被 EvaluationExecutionService 注入后调用，确保 @Async 通过 Spring AOP 代理生效。executeAsync 接收 Session 作为执行会话（从 Session 获取 thinking 透传给 AgentMessageProxy），通过 AgentMessageProxy.sendUserMessageToSession 逐条发送用户消息并处理工具调用，完成后调用 EvaluationResultGenerateService"
     },
     {
       "path": "platform-app/src/main/resources/evaluation/scoring-rules.txt",
@@ -354,24 +354,36 @@
       "description": "ConversationController 单元测试（3 用例）：成功响应、24 位长度与字符集校验、两次调用 ID 不同"
     },
     {
-      "path": "platform-app/src/main/java/com/ghost616/platform/handler/MessageHandler.java",
-      "description": "sendmessage 消息处理器接口：定义 getMessageName() 声明订阅的消息类型名（对应 MessageName），handle(MessageDefinition) 处理收到的消息。由 MessageDispatcher 按消息名查找并调用。"
+      "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/DatabaseAgentLog.java",
+      "description": "基于数据库的 AgentLog 实现（@Service），实现 agent-base AgentLog 接口：addLog 将 LogData 序列化为 JSON 存入 agent_log 表 log_data 列（构造函数复制注入的 ObjectMapper 并注册 LogDataMixin/ContextLogDataMixin/SessionLogDataMixin，序列化排除 logLevel/context 字段，SessionLogData 子类额外排除 sessionId/conversationId 字段）；addLog 分支逻辑：ContextLogData 时从 context 提取 sessionId（转 Long）与 conversationId，并通过 getSessionVariableKeys+getSessionVariable / getConversationVariableKeys+getConversationVariable 构建变量 Map 序列化存入 sessionVariables/conversationVariables 列；SessionLogData 时直接提取 sessionId/conversationId；其余直接继承 LogData 的类型按 logType()==CONTEXT_BUILD 强转为 ContextBuildLogData 提取 sessionId（无反射，conversationId 不设置）；写入 logType/logLevel 枚举 code 值后通过 AgentLogMapper 持久化"
     },
     {
-      "path": "platform-app/src/main/java/com/ghost616/platform/handler/MessageDispatcher.java",
-      "description": "消息分发器：实现 agent-base MessageSender 接口，构造器接收 List<MessageHandler> 按 getMessageName() 建立路由表（重复名保留首个）；send(MessageDefinition) 按消息名路由到对应处理器，null/无处理器静默跳过（debug 日志）。注册为 Spring @Component，由 AgentContextConfiguration.agentAssembler 注入为 MessageSender 使消息分发链路生效。"
+      "path": "platform-app/src/main/java/com/ghost616/platform/dto/agent_log/AgentLogDTO.java",
+      "description": "智能体日志数据传输对象，含 id/sessionId/sessionName/conversationId/logType/logLevel/logData/sessionVariables/conversationVariables/createTime 字段；sessionName 为关联 Session 表获取的会话名（标题为空时兜底为会话 ID 字符串），sessionVariables/conversationVariables 为会话变量与对话变量的 JSON 字符串"
     },
     {
-      "path": "platform-app/src/main/java/com/ghost616/platform/handler/ConversationIdMessageHandler.java",
-      "description": "ConversationIdMessage 处理器：实现 MessageHandler，订阅 MessageName.CONVERSATION_ID。收到 ConversationIdMessage 时通过 ObjectProvider 惰性获取 AgentContextManager 并调用 handleConversationIdMessage() 同步 conversationId。ThreadLocal 重入保护防止 handleConversationIdMessage 内部再次 setConversationId 发送导致无限递归。"
+      "path": "platform-app/src/main/java/com/ghost616/platform/service/agent_log/AgentLogService.java",
+      "description": "智能体日志查询服务接口，定义 list 分页筛选查询（按 sessionId/sessionName/conversationId/logType/logLevel）与 cleanupExpiredLogs 清理方法"
     },
     {
-      "path": "platform-app/src/test/java/com/ghost616/platform/handler/ConversationIdMessageHandlerTest.java",
-      "description": "ConversationIdMessageHandler 单元测试（4 例）：getMessageName 返回 CONVERSATION_ID、handle 调用 handleConversationIdMessage、非 ConversationIdMessage 不调用 provider、重入时嵌套调用被 ThreadLocal 跳过避免递归。"
+      "path": "platform-app/src/main/java/com/ghost616/platform/service/agent_log/AgentLogServiceImpl.java",
+      "description": "智能体日志查询服务实现：list 通过 MyBatis-Plus Page 分页 + LambdaQueryWrapper 筛选并按 createTime 倒序，支持 sessionId 精确筛选与 sessionName 模糊搜索（先按 Session.title like 查 sessionId 集合，空则返回空分页，否则 IN 过滤），返回时关联 Session 表批量查询会话名 sessionName（title 为 null 或空字符串时兜底为 String.valueOf(Session.getId())），toDTO 映射 sessionVariables/conversationVariables 字段；cleanupExpiredLogs 为 @Scheduled 定时任务删除 30 天前日志"
     },
     {
-      "path": "platform-app/src/test/java/com/ghost616/platform/handler/MessageDispatcherTest.java",
-      "description": "MessageDispatcher 单元测试（3 例）：按消息名分发到对应处理器、无对应处理器静默跳过、null 消息静默跳过。"
+      "path": "platform-app/src/main/java/com/ghost616/platform/controller/AgentLogController.java",
+      "description": "智能体日志查询 REST 控制器，提供 GET /api/agent-logs 端点，接收 sessionId/sessionName/conversationId/logType/logLevel/page/size 参数返回分页日志列表"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/LogDataMixin.java",
+      "description": "LogData 的 Jackson mix-in 注解类，通过 @JsonIgnoreProperties({\"logLevel\"}) 在序列化 agent_log.log_data 时排除 logLevel 字段（日志级别已单独存储于 log_level 列）"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/ContextLogDataMixin.java",
+      "description": "ContextLogData 的 Jackson mix-in 注解类，通过 @JsonIgnoreProperties({\"logLevel\",\"context\"}) 在序列化 agent_log.log_data 时排除 logLevel 与 context 字段（logLevel 已单独存储于 log_level 列，context 执行上下文冗余且体积大、会话/对话 ID 已单独提取）。注意：Jackson @JsonIgnoreProperties 类层次不跨层合并，故需同时包含父类 LogDataMixin 排除的 logLevel，避免覆盖父类排除规则"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/SessionLogDataMixin.java",
+      "description": "SessionLogData 的 Jackson mix-in 注解类，通过 @JsonIgnoreProperties({\"logLevel\",\"sessionId\",\"conversationId\"}) 在序列化 agent_log.log_data 时排除 logLevel、sessionId 与 conversationId 字段（会话 ID/对话 ID 已单独存储于 agent_log 表对应列，日志级别已单独存储于 log_level 列）"
     }
   ]
 }

@@ -21,6 +21,8 @@ ToolExecutionProvider 接口（com.ghost616.agentbase.service.agent.ToolExecutio
 ## AgentComponentRegistry
 
 AgentComponentRegistry（com.ghost616.agentbase.core.AgentComponentRegistry），中央组件注册表，非 Spring 组件。持有所有 Provider/Manager 组件的 @Setter 注入字段，包含 contextDataProvider/messageDataProvider/toolDataProvider/chatDataProvider/modelInvokerDataProvider/systemToolProvider/modelInvokerFactory/toolManager/toolCallQueueManager/systemToolManager/sessionManager/agentContextManager/modelInvokerManager/toolExecutionTracker/toolExecutionProvider/messageSender/hookManager。每个 getter 方法通过 requireInitialized 守卫确保组件已初始化后返回，messageSender 可为 null。lastResponseId 持久化已于 2026-07-31 由 SessionDataProvider 迁移至 ContextDataProvider（sessionDataProvider 字段与 getSessionDataProvider() 已移除）。
+
+agentLog 字段（@Setter）与 getAgentLog() getter 已添加，参照 MessageSender 模式：getter 直接返回、不校验 null，供外部集成者注入智能体日志实现。
 ## HookInvoker / SystemHook / SystemPostHook
 
 
@@ -144,6 +146,7 @@ processChat 创建 Map<String, Integer> toolCallCounts 以 "toolName:arguments" 
 processChat 创建 Map<String, Integer> toolCallCounts 以 "toolName:arguments" 为 key 累计调用次数；processToolCalls 新增 Map 参数，在每次 executeTool 后合并计数，同一组合达到 5 次时 warn 日志并返回空 assistant Message 终止。保留 MAX_TOOL_ROUNDS 作为额外保障。
 
 测试覆盖 7 个用例，含振荡保护边界（count >= 5）和 MAX_TOOL_ROUNDS 极限（round > 10），全部通过。
+新增 sendUserMessageToSession(String sessionId, String content, String modelId, Boolean thinking) 方法：内部使用 SecureRandom 自动生成 24 位 conversationId（字符集 [0-9a-z_]，与 platform-app ConversationController 约定一致），构建 ChatRequest 时通过 .conversationId() 设置，随后复用 processChat 既有逻辑（聊天 + 工具循环）返回最终 assistant Message，用于父会话发起对话时标记对话归属。AgentMessageProxyTest 新增 3 个用例：conversationId 透传与格式校验（24 位 + 字符集匹配 + thinking 透传）、每次调用生成不同 conversationId、工具正常执行后返回文本。
 ## SubSessionCallback
 
 SubSessionCallback 函数式接口（com.ghost616.agentbase.service.agent.invoker），使用 @FunctionalInterface 注解，定义 execute(String sessionId, String userMessage, Boolean thinking) 方法返回 Message，作为子会话消息处理的回调契约。thinking 参数表示是否启用思考模式，可为 null 表示使用默认行为。
@@ -263,3 +266,60 @@ ModelType 枚举（com.ghost616.agentbase.enums.ModelType），定义模型的�
 ## ConversationIdMessage
 
 ConversationIdMessage 消息类，继承 SessionMessage，messageName=CONVERSATION_ID。携带 String conversationId 字段（对应会话归属的对话 ID）。由 AgentContextMutator.setConversationId() 在设置对话 ID 时触发发送，供外部系统收到消息后通过 AgentContextManager.handleConversationIdMessage() 同步更新缓存上下文。
+## 智能体日志接口框架
+
+ChatService 新增私有方法 addLog(LogData logData)：从 registry.getAgentLog() 获取 AgentLog，非 null 时调用 agentLog.addLog(logData)，调用以 try-catch 包裹，捕获异常时以 WARN 级别记录日志（含异常堆栈），确保 AgentLog 实现抛异常不会中断 chat() 主流程。chat() 入口中：context 构建后、isToolContinue 判断后，一次 addLog 调用以 RequestEntryLogData.builder() 构建完整日志（.logLevel(LogLevel.INFO)、context、sessionId、modelId=context.getModelId()、content、isToolContinue）并记录，不再拆分多次调用。
+智能体日志类型扩展：LogType 枚举新增 ERROR_LOG（错误日志）/ROUTE（路由分发）/MODEL_CALL（模型调用）/STREAM_EVENT（流式事件）/HISTORY_EXPAND（历史展开）/SKILL_LOAD（技能加载）6 个值；LogLevel 新增 WARN（警告）级别，支持错误日志以警告级别记录。
+
+新增 6 个 LogData 子类（均继承 ContextLogData，@SuperBuilder，仅 getter，无公开构造器）：
+- ErrorLogData：errorCode(String)/message(String)/exception(Throwable)，logType()=ERROR_LOG
+- RouteLogData：requestType(String)，logType()=ROUTE
+- ModelCallLogData：messageCount(int)/toolCount(int)/thinking(Boolean)，logType()=MODEL_CALL
+- StreamEventLogData：eventType(String)/hasToolCalls(Boolean)，logType()=STREAM_EVENT
+- HistoryExpandLogData：foldedCount(int)/expandedIndices(List<Integer>)，logType()=HISTORY_EXPAND
+- SkillLoadLogData：skillNames(List<String>)/skillCount(int)，logType()=SKILL_LOAD
+
+ChatService 新增 11 处 addLog 调用：
+- ERROR 级 ErrorLogData：conversationId 为空抛异常前（errorCode=PARAM_INVALID）；modelId 无配置抛异常前（errorCode=MODEL_NOT_FOUND）；parseLoadedSkills JSON 解析异常（SYSTEM_ERROR+exception）；parseExpandedIndices JSON 解析异常（SYSTEM_ERROR+exception，该方法签名新增 context 参数）；buildHistoryGroupMessage 序列化失败（WARN 级，SYSTEM_ERROR，该方法签名新增 context 参数）
+- INFO 级 RouteLogData：请求路由后记录 requestType
+- INFO 级 ModelCallLogData：chatViaChatCompletions 模型调用前记录 messageCount/toolCount/thinking
+- INFO 级 StreamEventLogData：toSseStream 首次检测到 tool calls 时记录（eventType=ToolCallDetected，compareAndSet 保证仅记录一次）；finishReason 非空时记录（StreamComplete+hasToolCalls）；doOnCancel 时记录（StreamCancelled）
+- INFO 级 HistoryExpandLogData：foldMessageGroups 实际折叠时记录 foldedCount+expandedIndices
+- INFO 级 SkillLoadLogData：buildContextSystemInfo 已加载技能非空时记录 skillNames+skillCount
+日志数据字段调整：HistoryExpandLogData 的 expandedIndices(List<Integer>) 字段改为 expandedMessages(List<String>)，记录展开的历史消息组锚点消息内容（由 buildHistoryGroupMessage 返回的 Message.content 收集），foldMessageGroups 中折叠日志 addLog 调用调整到锚点消息构建之后，收集 anchorMessages 的 content 列表作为 expandedMessages；ModelCallLogData 新增 toolNames(List<String>) 字段，记录发给模型的工具名称列表，chatViaChatCompletions 中模型调用日志 addLog 调用通过 tools.stream().map(ToolDefinition::getName) 收集传入。
+AgentContextManager 新增私有方法 addLog(LogData logData)：与 ChatService 一致，从 registry.getAgentLog() 获取 AgentLog，非 null 时调用 agentLog.addLog(logData)，调用以 try-catch 包裹，捕获异常时以 WARN 级别记录日志，确保日志实现异常不中断上下文管理主流程。
+
+智能体日志类型扩展：LogType 枚举新增 CONTEXT_BUILD（上下文构建）/CHILD_SESSION（子会话创建）/REFRESH（上下文刷新）/HANDLE_MESSAGE（消息处理）/CACHE_REMOVE（缓存移除）5 个值。
+
+新增 5 个 LogData 子类（均继承 ContextLogData，@SuperBuilder，仅 getter，无公开构造器）：
+- ContextBuildLogData：sessionId/agentId/modelId/toolCount(int)/historyCount(int)/isSubSession(boolean)/cacheHit(boolean)，logType()=CONTEXT_BUILD
+- ChildSessionLogData：parentSessionId/childSessionId/sessionName，logType()=CHILD_SESSION
+- RefreshLogData：sessionId/refreshTarget(String: HISTORY/SESSION_VARIABLES/CONVERSATION_VARIABLES/CHILD_SESSIONS)，logType()=REFRESH
+- HandleMessageLogData：sessionId/messageType(String: CHILD_CREATE_SESSION/HISTORY_MESSAGE/VARIABLE_MESSAGE/CONVERSATION_ID)，logType()=HANDLE_MESSAGE
+- CacheRemoveLogData：sessionId，logType()=CACHE_REMOVE
+
+AgentContextManager 新增 12 处 addLog 调用：
+- doBuild()：INFO 级 ContextBuildLogData 记录 sessionId/agentId/modelId/toolCount/historyCount/isSubSession/cacheHit(false)；会话未找到（ctxData 为 null）抛异常前记录 ERROR 级 ErrorLogData（errorCode=SESSION_NOT_FOUND）
+- createChildSession()：INFO 级 ChildSessionLogData 记录 parentSessionId/childSessionId/sessionName
+- refreshHistory/refreshSessionVariables/refreshConversationVariables/refreshChildSessions：INFO 级 RefreshLogData 记录 sessionId 与对应 refreshTarget（HISTORY/SESSION_VARIABLES/CONVERSATION_VARIABLES/CHILD_SESSIONS），仅缓存中存在上下文时记录
+- handleChildCreateSession/handleHistoryMessage/handleVariableMessage/handleConversationIdMessage：INFO 级 HandleMessageLogData 记录 sessionId 与对应 messageType（CHILD_CREATE_SESSION/HISTORY_MESSAGE/VARIABLE_MESSAGE/CONVERSATION_ID），仅缓存中存在上下文时记录
+- remove()：INFO 级 CacheRemoveLogData 记录 sessionId
+智能体日志类型扩展：LogType 枚举新增 MESSAGE_SAVE（消息保存）/MESSAGE_QUERY（消息查询）/MESSAGE_ROLLBACK（消息回退）/TOOL_EXECUTE（工具执行）/TOOL_CONTINUE（工具执行后继续）5 个值。
+
+新增 5 个 LogData 子类（均继承 ContextLogData，@SuperBuilder，仅 getter，无公开构造器）：
+- MessageSaveLogData：sessionId/role/contentLength(int)，logType()=MESSAGE_SAVE
+- MessageQueryLogData：sessionId/messageCount(int)，logType()=MESSAGE_QUERY
+- MessageRollbackLogData：sessionId/rollbackCount(int)，logType()=MESSAGE_ROLLBACK
+- ToolExecuteLogData：sessionId/toolCallId/toolCallName/toolCallArguments/toolType(String: system/regular/builtin)/queueStatus(String: empty/executing/failed/error)，logType()=TOOL_EXECUTE
+- ToolContinueLogData：sessionId/resultCount(int)/toolNames(List<String>)，logType()=TOOL_CONTINUE
+
+SessionManager 新增私有 addLog 方法（与 ChatService 一致）：save() 校验失败（sessionId/role/content 任一为 null）时记录 ERROR 级 ErrorLogData（errorCode=PARAM_INVALID），保存成功后记录 INFO 级 MessageSaveLogData（sessionId/role/contentLength）；getMessages() 后记录 INFO 级 MessageQueryLogData（messageCount）；rollbackToLastUserMessage() 后记录 INFO 级 MessageRollbackLogData（rollbackCount）。
+
+ToolExecutionService 新增私有 addLog 方法与 resolveToolType 辅助方法（_sys_ 前缀→system、$ 前缀→builtin、其他→regular）。executeTool 各分支记录 ToolExecuteLogData：队列为空记录 INFO empty、获取调用器异常记录 ERROR failed、invoker 不存在（非 $ 前缀）记录 ERROR error、poll 后 toolCall 为 null 记录 INFO empty、会话上下文不存在记录 ERROR error、context 停止记录 INFO empty、正常流程记录 INFO executing（同步启动与异步完成各一处）、异步执行异常记录 ERROR failed；continueAfterTools() 记录 INFO 级 ToolContinueLogData（resultCount/toolNames）。
+MessageSaveLogData 字段调整：去掉 contentLength(int)，新增 messageId(String)/content(String)/reasoning(String)/toolInfo(ToolInfo)/toolResult(String)/toolCalls(List&lt;MessageDataProvider.ToolCallData&gt;)/usage(UsageInfo)/webSearchCall(List&lt;MessageDataProvider.WebSearchCallData&gt;)/customToolCall(List&lt;MessageDataProvider.CustomToolCallData&gt;)/conversationId(String)。SessionManager.MessageSaveBuilder.save() 在 MessageSaveLogData build 调用中传入 save() 返回的 messageId 及 builder 全部字段。
+RequestEntryLogData 新增 conversationId(String) 字段：chat() 入口在构建日志前从 request.getConversationId() 提前提取 conversationId（先于 addLog 调用），通过 .conversationId() 设置到 RequestEntryLogData.builder()，避免原"先打日志后提取"的时序问题导致请求入口日志缺失对话 ID。
+LogData 类层次重构：新增 SessionLogData 抽象类（extends LogData，@SuperBuilder），字段 sessionId(String)/conversationId(String)，用于承载会话级信息；原继承 ContextLogData 的 6 个类改为继承 SessionLogData：MessageSaveLogData（移除自有 sessionId/conversationId 字段，改由父类承载）、MessageQueryLogData、MessageRollbackLogData、CacheRemoveLogData（均移除自有 sessionId 字段）、ChildSessionLogData（原 parentSessionId 字段移除，对应父类 sessionId）、SendMessageLogData（原直接继承 LogData + parentSessionId 字段，改为继承 SessionLogData，parentSessionId 对应 sessionId）。AgentContextManager 构建 ChildSessionLogData/SendMessageLogData 时改用 .sessionId(parentSessionId)。
+新增 SessionErrorLogData 类（extends SessionLogData），字段 errorCode(String)/message(String)/exception(Throwable)，logType()=ERROR_LOG，用于无 AgentExecutionContext 时替代 ErrorLogData 记录会话级错误。SessionManager.MessageSaveBuilder.save() 三处参数校验失败（sessionId/role/content 为 null）错误日志与 AgentContextManager.doBuild() 会话未找到错误日志由 ErrorLogData 改用 SessionErrorLogData（携带 sessionId/conversationId）。
+ToolExecutionService.executeTool() 重排：agentContextManager.get(sessionId) 及 null 校验前置到 peek 之前（返回 error 时不再携带工具字段），context 在方法开头获取，后续所有 ToolExecuteLogData 调用均携带 .context(context)。
+AgentContextManager.injectVariableCallbacks() 在 parentCtx != null（构建子会话上下文）时通过 parentCtx.context().getConversationId() 获取父会话 conversationId，并将其传入 createChildSession/sendUserMessage 回调；createChildSession()/sendUserMessage() 私有方法签名新增 conversationId 参数，构建 ChildSessionLogData/SendMessageLogData 时通过 .conversationId(conversationId) 携带父会话对话 ID。主会话（parentCtx == null）时 conversationId 为 null，日志 conversationId 保持 null。
+RequestEntryLogData 移除 conversationId 字段：RequestEntryLogData 构建从 chat() 方法头部（isToolContinue 判断前）移至 isToolContinue 代码块之后（此时 contextMutator.setConversationId() 已执行），context 已携带 conversationId（经 context.getConversationId() 读取），不再通过 .conversationId() 额外传入。LogType 枚举移除 CALL_SOURCE 值，枚举值由 19 个降为 18 个。

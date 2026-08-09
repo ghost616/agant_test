@@ -1,0 +1,45 @@
+package com.ghost616.agentbase.service.agent.log;
+
+import com.ghost616.agentbase.enums.LogType;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+class HandleMessageLogDataTest {
+
+    @Test
+    void logType应返回HANDLE_MESSAGE() {
+        HandleMessageLogData data = HandleMessageLogData.builder().build();
+        assertEquals(LogType.HANDLE_MESSAGE, data.logType());
+    }
+
+    @Test
+    void 字段应默认为null() {
+        HandleMessageLogData data = HandleMessageLogData.builder().build();
+        assertNull(data.getContext());
+        assertNull(data.getLogLevel());
+        assertNull(data.getSessionId());
+        assertNull(data.getMessageType());
+    }
+
+    @Test
+    void builder应正确设置继承与自有字段() {
+        HandleMessageLogData data = HandleMessageLogData.builder()
+                .sessionId("s1")
+                .messageType("HISTORY_MESSAGE")
+                .build();
+
+        assertEquals("s1", data.getSessionId());
+        assertEquals("HISTORY_MESSAGE", data.getMessageType());
+    }
+
+    @Test
+    void 不同消息类型应可设置() {
+        assertEquals("CHILD_CREATE_SESSION", HandleMessageLogData.builder()
+                .sessionId("s1").messageType("CHILD_CREATE_SESSION").build().getMessageType());
+        assertEquals("VARIABLE_MESSAGE", HandleMessageLogData.builder()
+                .sessionId("s1").messageType("VARIABLE_MESSAGE").build().getMessageType());
+        assertEquals("CONVERSATION_ID", HandleMessageLogData.builder()
+                .sessionId("s1").messageType("CONVERSATION_ID").build().getMessageType());
+    }
+}

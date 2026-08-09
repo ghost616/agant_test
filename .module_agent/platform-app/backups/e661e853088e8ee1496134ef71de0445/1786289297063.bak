@@ -1,0 +1,203 @@
+package com.ghost616.platform.service.evaluation;
+
+import com.ghost616.agentbase.dto.model.ChatRequest;
+import com.ghost616.agentbase.dto.model.ChatResponse;
+import com.ghost616.agentbase.dto.model.Message;
+import com.ghost616.agentbase.dto.model.ModelConfigData;
+import com.ghost616.agentbase.enums.ErrorCode;
+import com.ghost616.agentbase.enums.RequestType;
+import com.ghost616.agentbase.exception.BusinessException;
+import com.ghost616.agentbase.service.agent.ChatDataProvider;
+import com.ghost616.agentbase.service.agent.MessageDataProvider;
+import com.ghost616.agentbase.service.model.invoker.ModelInvoker;
+import com.ghost616.agentbase.service.model.invoker.ModelInvokerManager;
+import com.ghost616.platform.entity.Evaluation;
+import com.ghost616.platform.entity.EvaluationResult;
+import com.ghost616.platform.repository.EvaluationMapper;
+import com.ghost616.platform.repository.EvaluationResultMapper;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
+import org.springframework.core.io.ClassPathResource;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class EvaluationResultGenerateService {
+
+    private static final String SCORING_RULES;
+
+    static {
+        try {
+            ClassPathResource resource = new ClassPathResource("evaluation/scoring-rules.txt");
+            SCORING_RULES = new String(resource.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new RuntimeException("读取评分规则文件失败", e);
+        }
+    }
+
+    private final EvaluationMapper evaluationMapper;
+    private final EvaluationResultMapper evaluationResultMapper;
+    private final MessageDataProvider messageDataProvider;
+    private final ChatDataProvider chatDataProvider;
+    private final ModelInvokerManager modelInvokerManager;
+
+    public void generate(Long evaluationId, Long executionSessionId) {
+        Evaluation evaluation = evaluationMapper.selectById(evaluationId);
+        if (evaluation == null) {
+            throw new BusinessException(ErrorCode.EVALUATION_NOT_FOUND);
+        }
+
+        Long benchmarkSessionId = evaluation.getBenchmarkSessionId();
+        if (benchmarkSessionId == null) {
+            throw new BusinessException(ErrorCode.EVALUATION_NOT_FOUND);
+        }
+
+        List<MessageDataProvider.MessageDTO> benchmarkMessages = messageDataProvider.getMessages(
+                String.valueOf(benchmarkSessionId));
+        List<MessageDataProvider.MessageDTO> executionMessages = messageDataProvider.getMessages(
+                String.valueOf(executionSessionId));
+
+        ModelConfigData configData = chatDataProvider.getModelConfig(String.valueOf(evaluation.getModelId()));
+        if (configData == null) {
+            throw new BusinessException(ErrorCode.MODEL_NOT_FOUND);
+        }
+
+        ModelInvoker invoker = modelInvokerManager.getInvoker(configData);
+
+        ChatRequest chatRequest = buildChatRequest(benchmarkMessages, executionMessages, configData);
+
+        ChatResponse response;
+        try {
+            response = invoker.invoke(chatRequest);
+        } catch (Exception e) {
+            log.error("评估模型调用失败, evaluationId={}", evaluationId, e);
+            throw new BusinessException(ErrorCode.EVALUATION_RESULT_GENERATE_ERROR);
+        }
+
+        String resultContent = response != null ? response.getContent() : "";
+
+        Integer finalScore = extractFinalScore(resultContent, configData, invoker);
+
+        EvaluationResult evaluationResult = new EvaluationResult();
+        evaluationResult.setEvaluationId(evaluationId);
+        evaluationResult.setEvaluationSessionId(executionSessionId);
+        evaluationResult.setResult(resultContent);
+        evaluationResult.setExecutionStatus("COMPLETED");
+        evaluationResult.setModelId(evaluation.getModelId());
+        evaluationResult.setFinalScore(finalScore);
+        evaluationResultMapper.insert(evaluationResult);
+    }
+
+    private ChatRequest buildChatRequest(List<MessageDataProvider.MessageDTO> benchmarkMessages,
+                                         List<MessageDataProvider.MessageDTO> executionMessages,
+                                         ModelConfigData configData) {
+        String requestType = configData.requestType();
+        if (RequestType.isResponses(requestType)) {
+            return ChatRequest.builder()
+                    .instructions(buildJudgeSystemContent(benchmarkMessages, executionMessages))
+                    .messages(List.of(Message.builder()
+                            .role("user")
+                            .content("请对执行会话的回复质量进行评估。")
+                            .build()))
+                    .build();
+        }
+        if (RequestType.COMPLETIONS.getCode().equals(requestType) || requestType == null || requestType.isEmpty()) {
+            return ChatRequest.builder()
+                    .messages(buildJudgeMessages(benchmarkMessages, executionMessages))
+                    .build();
+        }
+        throw new BusinessException(ErrorCode.MODEL_UNSUPPORTED);
+    }
+
+    private List<Message> buildJudgeMessages(List<MessageDataProvider.MessageDTO> benchmarkMessages,
+                                              List<MessageDataProvider.MessageDTO> executionMessages) {
+        List<Message> messages = new ArrayList<>();
+
+        messages.add(Message.builder()
+                .role("system")
+                .content(buildJudgeSystemContent(benchmarkMessages, executionMessages))
+                .build());
+
+        messages.add(Message.builder()
+                .role("user")
+                .content("请对执行会话的回复质量进行评估。")
+                .build());
+
+        return messages;
+    }
+
+    private String buildJudgeSystemContent(List<MessageDataProvider.MessageDTO> benchmarkMessages,
+                                           List<MessageDataProvider.MessageDTO> executionMessages) {
+        StringBuilder systemContent = new StringBuilder();
+        systemContent.append("你是一个评估助手，需要对比基准会话和执行会话的对话内容，评估执行会话的回复质量。\n\n");
+
+        systemContent.append("## 基准会话消息\n");
+        if (benchmarkMessages != null && !benchmarkMessages.isEmpty()) {
+            for (MessageDataProvider.MessageDTO msg : benchmarkMessages) {
+                appendMessage(systemContent, msg);
+            }
+        } else {
+            systemContent.append("（无基准消息）\n");
+        }
+
+        systemContent.append("\n## 执行会话消息\n");
+        if (executionMessages != null && !executionMessages.isEmpty()) {
+            for (MessageDataProvider.MessageDTO msg : executionMessages) {
+                appendMessage(systemContent, msg);
+            }
+        } else {
+            systemContent.append("（无执行消息）\n");
+        }
+
+        systemContent.append("\n\n").append(SCORING_RULES);
+
+        return systemContent.toString();
+    }
+
+    private Integer extractFinalScore(String evaluationResult, ModelConfigData configData, ModelInvoker invoker) {
+        try {
+            Message scorePrompt = Message.builder()
+                    .role("user")
+                    .content("以下是评估结果文本，请仅返回一个数字（0-100之间的整数），表示最终评分：\n\n" + evaluationResult)
+                    .build();
+
+            ChatRequest scoreRequest = ChatRequest.builder()
+                    .messages(List.of(scorePrompt))
+                    .build();
+
+            ChatResponse scoreResponse = invoker.invoke(scoreRequest);
+            String scoreStr = scoreResponse != null ? scoreResponse.getContent().trim() : "";
+
+            return Integer.parseInt(scoreStr.replaceAll("[^0-9\\-]", ""));
+        } catch (Exception e) {
+            log.warn("提取最终评分失败, evaluationResult={}", evaluationResult, e);
+            return null;
+        }
+    }
+
+    private void appendMessage(StringBuilder sb, MessageDataProvider.MessageDTO msg) {
+        String role = msg.role() != null ? msg.role() : "unknown";
+        String content = msg.content() != null ? msg.content() : "";
+        sb.append("【").append(role).append("】: ").append(content).append("\n");
+
+        if (msg.toolCalls() != null && !msg.toolCalls().isEmpty()) {
+            for (int i = 0; i < msg.toolCalls().size(); i++) {
+                MessageDataProvider.ToolCallData tc = msg.toolCalls().get(i);
+                sb.append("  [工具调用 ").append(i + 1).append("] ")
+                        .append("名称=").append(tc.toolCallName())
+                        .append(", 参数=").append(tc.toolCallArguments())
+                        .append("\n");
+            }
+        }
+        if (msg.toolResult() != null && !msg.toolResult().isEmpty()) {
+            sb.append("  [工具结果]: ").append(msg.toolResult()).append("\n");
+        }
+    }
+}

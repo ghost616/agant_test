@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_01a3e9ac5ffeX65H9kgvPFRarC",
+  "content": "## 待测试功能说明\n\n本次变更为 platform-app 模块智能体日志对 agent-base 新 LogData 类层次的适配，涉及以下可测试功能与代码文件：\n\n### 涉及代码文件\n- platform-app/src/main/java/com/ghost616/platform/service/agent/DatabaseAgentLog.java（addLog 新增 SessionLogData 分支、构造函数注册 Jackson mix-in）\n- platform-app/src/main/java/com/ghost616/platform/service/agent/LogDataMixin.java（新增，排除 logLevel）\n- platform-app/src/main/java/com/ghost616/platform/service/agent/ContextLogDataMixin.java（新增，排除 context）\n- platform-app/src/test/java/com/ghost616/platform/service/agent/DatabaseAgentLogTest.java\n\n### 需测试的功能\n1. DatabaseAgentLog.addLog 对 SessionLogData 子类（如 SessionErrorLogData）通过 instanceof 提取 sessionId（转 Long）与 conversationId，logType 存枚举 code（ERROR_LOG）\n2. 保留 ContextLogData 处理逻辑：从 context 提取 sessionId/conversationId 及会话/对话变量序列化\n3. 保留反射兜底分支（直接继承 LogData 的类型如 ContextBuildLogData）\n4. serializeLogData 通过 Jackson mix-in 排除 logLevel 与 context 字段：logData JSON 不应包含 logLevel/context 字符串，同时保留 LogData 子类自有字段（如 RequestEntryLogData.sessionId）\n5. 编译：mvn 编译通过（Java 17 + Maven）\n",
+  "timestamp": "2026-08-09T10:58:03.811Z"
+}

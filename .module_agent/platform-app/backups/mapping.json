@@ -113,5 +113,16 @@
   "platform-app/src/test/java/com/ghost616/platform/service/tool/ToolConfigServiceImplTest.java": "8c4b0dc2f7c219c08b75536bb2771cec",
   "platform-app/src/main/java/com/ghost616/platform/controller/ConversationController.java": "41f3c957b8b804bbea84da9fc6ef28d2",
   "platform-app/src/test/java/com/ghost616/platform/service/agent/AgentExecutionContextTest.java": "181285b32b79c1f2a649cccec79322d8",
-  "platform-app/src/test/java/com/ghost616/platform/migration/SchemaMigrationTest.java": "d5dc7d9d8506fe131d0115e9bfc9830d"
+  "platform-app/src/test/java/com/ghost616/platform/migration/SchemaMigrationTest.java": "d5dc7d9d8506fe131d0115e9bfc9830d",
+  "platform-app/src/main/java/com/ghost616/platform/service/agent_log/AgentLogService.java": "791115527bb30f39d21ab1d161f103cf",
+  "platform-app/src/main/java/com/ghost616/platform/service/agent_log/AgentLogServiceImpl.java": "381958110ecbd0c3a00e359013bc942e",
+  "platform-app/src/main/java/com/ghost616/platform/controller/AgentLogController.java": "2dacc4759e52d68c7f139ab1098fbfd0",
+  "platform-app/src/test/java/com/ghost616/platform/service/agent_log/AgentLogServiceImplTest.java": "21008892cc7756cae14643001b88005c",
+  "platform-app/src/test/java/com/ghost616/platform/controller/AgentLogControllerTest.java": "7cc2de101f314d3d935d0d98e06db713",
+  "platform-app/src/main/java/com/ghost616/platform/dto/agent_log/AgentLogDTO.java": "298e1074fd667b6400fa2576f6646b84",
+  "platform-app/src/main/java/com/ghost616/platform/service/agent/DatabaseAgentLog.java": "a92a28050d70f62f3539bc4f8f721bfe",
+  "platform-app/src/test/java/com/ghost616/platform/dto/agent_log/AgentLogDTOTest.java": "b583d7381845a261753e634a34756085",
+  "platform-app/src/test/java/com/ghost616/platform/service/agent/DatabaseAgentLogTest.java": "34f6a8e3cb1764cd8af1a451ccfbad93",
+  "platform-app/src/main/java/com/ghost616/platform/dto/evaluation/EvaluationExecutionStatusDTO.java": "9552aa6f69f9cd3706493cbf087a9501",
+  "platform-app/src/test/java/com/ghost616/platform/dto/evaluation/EvaluationExecutionStatusDTOTest.java": "2f8c79a2348df6d44a362dce49776b1a"
 }

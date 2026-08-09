@@ -15,7 +15,7 @@
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/SessionManager.java",
-      "description": "会话管理组件，提供消息保存（MessageSaveBuilder 支持 ToolInfo toolInfo 与 UsageInfo usage 链式方法，save() 透传给 dataProvider.saveMessage）、历史消息查询和回退功能。"
+      "description": "会话管理组件，提供消息保存（MessageSaveBuilder 支持 ToolInfo toolInfo 与 UsageInfo usage 链式方法，save() 透传给 dataProvider.saveMessage）、历史消息查询和回退功能。新增私有 addLog 方法：save() 校验失败（sessionId/role/content 任一为 null）时记录 ErrorLogData(ERROR)，保存成功后记录 MessageSaveLogData(INFO)（含 save() 返回的 messageId 及 MessageSaveBuilder 全部字段）；getMessages() 记录 MessageQueryLogData(INFO)；rollbackToLastUserMessage() 记录 MessageRollbackLogData(INFO)。"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/AgentContextBuilder.java",
@@ -23,7 +23,7 @@
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/AgentContextManager.java",
-      "description": "管理会话上下文缓存 ConcurrentHashMap<String, AgentSessionContext>；doBuild 构造 AgentExecutionContext 后，若 ctxData.lastResponseId() 非空则通过 mutator.setLastResponseId() 注入会话最近响应 ID。提供 build/get/remove/addHistoryEntry 方法及 4 个刷新方法（refreshHistory/refreshSessionVariables/refreshConversationVariables/refreshChildSessions），含 sendUserMessage 消息持久化与 AgentMessageProxy 代理委托。convertMessagesToHistory 将 MessageDTO 的 ToolInfo toolInfo 直接传入 HistoryEntry，并通过 toWebSearchCall/toCustomToolCall 私有方法将 List<WebSearchCallData>/List<CustomToolCallData> 转为独立类 List<WebSearchCall>/List<CustomToolCall>。"
+      "description": "管理会话上下文缓存 ConcurrentHashMap<String, AgentSessionContext>；doBuild 构造 AgentExecutionContext 后，若 ctxData.lastResponseId() 非空则通过 mutator.setLastResponseId() 注入会话最近响应 ID。提供 build/get/remove/addHistoryEntry 方法及 4 个刷新方法（refreshHistory/refreshSessionVariables/refreshConversationVariables/refreshChildSessions），含 sendUserMessage 消息持久化与 AgentMessageProxy 代理委托。injectVariableCallbacks() 在 parentCtx != null 时获取父会话 conversationId 并传入 createChildSession/sendUserMessage 回调，两私有方法签名携带 conversationId 参数，构建 ChildSessionLogData/SendMessageLogData 日志时写入 conversationId。convertMessagesToHistory 将 MessageDTO 的 ToolInfo toolInfo 直接传入 HistoryEntry，并通过 toWebSearchCall/toCustomToolCall 私有方法将 List<WebSearchCallData>/List<CustomToolCallData> 转为独立类 List<WebSearchCall>/List<CustomToolCall>。"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/SystemTool.java",
@@ -95,7 +95,7 @@
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ChatService.java",
-      "description": "ChatService 聊天服务，非 Spring 组件。构造函数接收 AgentComponentRegistry，通过 registry 延迟获取 AgentContextManager/SessionManager/ModelInvokerManager/SystemToolManager/ToolManager/ChatDataProvider。chat(ChatRequest) 为入口路由方法，基于 RequestType 三路分发：RESPONSES 走 chatViaResponses（有状态）、RESPONSES_STATELESS 走 chatViaResponsesStateless（无状态）、COMPLETIONS/null/其他 走 chatViaChatCompletions。buildContextSystemInfo 返回 ContextSystemInfo（systemMessages/filteredLoadedSkills/loadedSkillMessages 三字段），已加载技能 prompt 消息归入 loadedSkillMessages，systemMessages 仅含可用技能列表与子会话权限说明。foldMessageGroups/filterAndFold 返回 FoldResult(messages/anchorMessages)（提升 KV Cache 命中率）：按 user 边界分组、system 前缀单独提出；foldedCount=max(0,(groups.size()-recentCount)/DEFAULT_FOLD_INTERVAL)*DEFAULT_FOLD_INTERVAL，groups<=recentCount 或 foldedCount==0 时不折叠；旧区 0..foldedCount-1 折叠为 user 首条+占位 assistant「此为历史消息索引为N，如果想要展开请调用历史消息工具」，近端区完整展开；读取 _sys_his_msgs_index 对话变量，对 <foldedCount 的索引组装【历史消息组{N}】system 锚点消息独立放入 anchorMessages（buildHistoryGroupMessage），锚点补全 assistant 推理（reasoning 行，仅 toolCalls 非空时）、tool_call 名称(参数)、tool_result 名称(id):内容。chatViaChatCompletions 最终顺序：[SYSTEM 底座prompt][SYSTEM 系统信息][折叠区+近端区][SYSTEM loadedSkills][SYSTEM 锚点][USER 当前消息]：拆包 FoldResult 后先 insertLoadedSkillMessages（最后 user 前）再 insertAnchorMessages（最后 user 前）；两者共用 findLastUserIndex，无 user 时追加列表末尾。chatViaResponses/chatViaResponsesStateless 拆包 FoldResult 并将 anchorMessages 传入 buildInstructions（在 loadedSkillMessages 之后追加锚点内容），使 Responses 系列 instructions 也包含锚点。chatViaResponses/chatViaResponsesStateless 构建模型 ChatRequest 时通过 toolManager.getBuiltinTools(configData.id()) 设置 builtinTools。buildMessageFromEntry 将 HistoryEntry 的 ToolInfo toolInfo 透传到 Message 构建器。"
+      "description": "ChatService 聊天服务，非 Spring 组件。构造函数接收 AgentComponentRegistry，通过 registry 延迟获取 AgentContextManager/SessionManager/ModelInvokerManager/SystemToolManager/ToolManager/ChatDataProvider。chat(ChatRequest) 为入口路由方法，基于 RequestType 三路分发：RESPONSES 走 chatViaResponses（有状态）、RESPONSES_STATELESS 走 chatViaResponsesStateless（无状态）、COMPLETIONS/null/其他 走 chatViaChatCompletions。buildContextSystemInfo 返回 ContextSystemInfo（systemMessages/filteredLoadedSkills/loadedSkillMessages 三字段），已加载技能 prompt 消息归入 loadedSkillMessages，systemMessages 仅含可用技能列表与子会话权限说明。foldMessageGroups/filterAndFold 返回 FoldResult(messages/anchorMessages)（提升 KV Cache 命中率）：按 user 边界分组、system 前缀单独提出；foldedCount=max(0,(groups.size()-recentCount)/DEFAULT_FOLD_INTERVAL)*DEFAULT_FOLD_INTERVAL，groups<=recentCount 或 foldedCount==0 时不折叠；旧区 0..foldedCount-1 折叠为 user 首条+占位 assistant「此为历史消息索引为N，如果想要展开请调用历史消息工具」，近端区完整展开；读取 _sys_his_msgs_index 对话变量，对 <foldedCount 的索引组装【历史消息组{N}】system 锚点消息独立放入 anchorMessages（buildHistoryGroupMessage），锚点补全 assistant 推理（reasoning 行，仅 toolCalls 非空时）、tool_call 名称(参数)、tool_result 名称(id):内容。chatViaChatCompletions 最终顺序：[SYSTEM 底座prompt][SYSTEM 系统信息][折叠区+近端区][SYSTEM loadedSkills][SYSTEM 锚点][USER 当前消息]：拆包 FoldResult 后先 insertLoadedSkillMessages（最后 user 前）再 insertAnchorMessages（最后 user 前）；两者共用 findLastUserIndex，无 user 时追加列表末尾。chatViaResponses/chatViaResponsesStateless 拆包 FoldResult 并将 anchorMessages 传入 buildInstructions（在 loadedSkillMessages 之后追加锚点内容），使 Responses 系列 instructions 也包含锚点。chatViaResponses/chatViaResponsesStateless 构建模型 ChatRequest 时通过 toolManager.getBuiltinTools(configData.id()) 设置 builtinTools。buildMessageFromEntry 将 HistoryEntry 的 ToolInfo toolInfo 透传到 Message 构建器。新增私有方法 addLog(LogData logData)：从 registry.getAgentLog() 获取 AgentLog，非 null 时调用 agentLog.addLog(logData)（try-catch 包裹，捕获异常以 WARN 级别记录日志，不中断主流程）；chat() 入口在 context 构建后、isToolContinue 判断后，一次 addLog 以 RequestEntryLogData.builder() 构建完整日志（.logLevel(LogLevel.INFO)、context、sessionId、modelId、content、isToolContinue）并记录。全流程智能体日志埋点：conversationId 为空抛异常前、modelId 无配置抛异常前、parseLoadedSkills/parseExpandedIndices JSON 解析异常、buildHistoryGroupMessage 序列化失败（WARN 级）记录 ErrorLogData；请求路由后记录 RouteLogData（requestType）；chatViaChatCompletions 模型调用前记录 ModelCallLogData（messageCount/toolCount/toolNames=工具名列表/thinking）；toSseStream 首次检测 tool calls、finishReason 非空、doOnCancel 时记录 StreamEventLogData（ToolCallDetected/StreamComplete/StreamCancelled）；foldMessageGroups 实际折叠时记录 HistoryExpandLogData（foldedCount/expandedMessages=锚点消息内容列表，由 buildHistoryGroupMessage 结果收集）；buildContextSystemInfo 已加载技能非空时记录 SkillLoadLogData（skillNames/skillCount）。parseExpandedIndices/buildHistoryGroupMessage 私有方法签名新增 context 参数以支持日志上下文。"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/ContextSerializer.java",
@@ -243,7 +243,7 @@
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ToolExecutionService.java",
-      "description": "工具执行服务。持有 HookManager 实例，triggerHooks/triggerSessionHooks/executePostHooks 委托给 hookManager。提供 setHookManager(HookManager) setter 支持外部注入共享实例。移除了原有的 chatDataProvider/systemHooks/systemPostHooks/regularPhaseHooks 字段及 refreshHooks/triggerHooks/executePostHooks 方法。在 BEFORE_TOOL_CALL/AFTER_TOOL_CALL 两处 triggerHooks 调用前增加 triggerSessionHooks 调用。continueAfterTools 中保存 tool 角色消息与构造 HistoryEntry 时使用 new ToolInfo(r.toolId(), r.toolName()) 传入工具调用信息。"
+      "description": "工具执行服务。持有 HookManager 实例，triggerHooks/triggerSessionHooks/executePostHooks 委托给 hookManager。提供 setHookManager(HookManager) setter 支持外部注入共享实例。移除了原有的 chatDataProvider/systemHooks/systemPostHooks/regularPhaseHooks 字段及 refreshHooks/triggerHooks/executePostHooks 方法。在 BEFORE_TOOL_CALL/AFTER_TOOL_CALL 两处 triggerHooks 调用前增加 triggerSessionHooks 调用。continueAfterTools 中保存 tool 角色消息与构造 HistoryEntry 时使用 new ToolInfo(r.toolId(), r.toolName()) 传入工具调用信息。新增私有 addLog 方法与 resolveToolType 辅助方法（_sys_ 前缀→system、$ 前缀→builtin、其他→regular），executeTool 各分支记录 ToolExecuteLogData（队列为空 empty、调用器异常 failed、invoker 不存在 error、会话缺失 error、停止 empty、正常 executing，异步完成/异常各记录一条），continueAfterTools 记录 ToolContinueLogData(INFO)。"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/util/JsonMapper.java",
@@ -255,7 +255,7 @@
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/AgentMessageProxy.java",
-      "description": "AgentMessageProxy 消息代理类，同步代理 sendUserMessage：调用 ChatService.chat() 收集 Flux，检测工具调用后循环执行工具并继续对话，返回最终 assistant Message。内置 toolName:arguments 组合调用计数保护，同一组合达到 5 次时终止并返回空消息。"
+      "description": "AgentMessageProxy 消息代理类，同步代理 sendUserMessage：调用 ChatService.chat() 收集 Flux，检测工具调用后循环执行工具并继续对话，返回最终 assistant Message。内置 toolName:arguments 组合调用计数保护，同一组合达到 5 次时终止并返回空消息。新增 sendUserMessageToSession(String sessionId, String content, String modelId, Boolean thinking) 方法：使用 SecureRandom 自动生成 24 位 conversationId（字符集 0-9a-z_，与 platform-app ConversationController 约定一致），构建 ChatRequest 时设置 conversationId 后复用 processChat 逻辑，用于父会话发起对话时标记对话归属。"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/SubSessionCallback.java",
@@ -347,11 +347,11 @@
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/core/AgentComponentRegistry.java",
-      "description": "中央组件注册表，非 Spring 组件。持有所有 Provider/Manager 组件的 @Setter 注入字段，包含 contextDataProvider/messageDataProvider/toolDataProvider/chatDataProvider/modelInvokerDataProvider/systemToolProvider/modelInvokerFactory/toolManager/toolCallQueueManager/systemToolManager/sessionManager/agentContextManager/modelInvokerManager/toolExecutionTracker/toolExecutionProvider/messageSender/hookManager。每个 getter 方法通过 requireInitialized 守卫确保组件已初始化后返回，messageSender 可为 null。"
+      "description": "中央组件注册表，非 Spring 组件。持有所有 Provider/Manager 组件的 @Setter 注入字段，包含 contextDataProvider/messageDataProvider/toolDataProvider/chatDataProvider/modelInvokerDataProvider/systemToolProvider/modelInvokerFactory/toolManager/toolCallQueueManager/systemToolManager/sessionManager/agentContextManager/modelInvokerManager/toolExecutionTracker/toolExecutionProvider/messageSender/hookManager/agentLog。每个 getter 方法通过 requireInitialized 守卫确保组件已初始化后返回，messageSender 与 agentLog 可为 null。"
     },
     {
       "path": "agent-base/src/test/java/com/ghost616/agentbase/service/agent/SessionManagerTest.java",
-      "description": "SessionManager 单元测试，覆盖 MessageSaveBuilder 链式构建与 sessionId/role/content 非空校验、save 调用 dataProvider，以及 updateLastResponseId/getLastResponseId/updateSessionThinking 三个方法委托 SessionDataProvider 的验证。"
+      "description": "SessionManager 单元测试，覆盖 MessageSaveBuilder 链式构建与 sessionId/role/content 非空校验、save 调用 dataProvider，以及 updateLastResponseId/getLastResponseId/updateSessionThinking 三个方法委托 SessionDataProvider 的验证。新增智能体日志用例：save 成功记录 MESSAGE_SAVE（含全字段用例）、save 校验失败记录 ERROR_LOG、getMessages 记录 MESSAGE_QUERY、rollback 记录 MESSAGE_ROLLBACK、agentLog 为 null 静默跳过、agentLog 抛异常不中断主流程。"
     },
     {
       "path": "agent-base/src/test/java/com/ghost616/agentbase/core/AgentComponentRegistryTest.java",
@@ -375,7 +375,7 @@
     },
     {
       "path": "agent-base/src/test/java/com/ghost616/agentbase/service/agent/ToolExecutionServiceTest.java",
-      "description": "ToolExecutionService 单元测试，覆盖 executeTool 工具调用执行全流程，含工具名以 $ 开头 invoker==null 时使用 BuiltinToolInvoker 透传 arguments、非 $ 前缀仍走错误分支等用例。"
+      "description": "ToolExecutionService 单元测试，覆盖 executeTool 工具调用执行全流程，含工具名以 $ 开头 invoker==null 时使用 BuiltinToolInvoker 透传 arguments、非 $ 前缀仍走错误分支等用例。新增智能体日志用例：队列为空记录 TOOL_EXECUTE(empty)、获取调用器异常记录 failed、invoker 不存在记录 error、sessionContext 不存在记录 error、正常流程记录 executing、continueAfterTools 记录 TOOL_CONTINUE、agentLog 为 null 静默跳过、agentLog 抛异常不中断主流程。"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/dto/model/ToolInfo.java",
@@ -408,6 +408,186 @@
     {
       "path": "agent-base/src/test/java/com/ghost616/agentbase/sendmessage/ConversationIdMessageTest.java",
       "description": "ConversationIdMessage 单元测试（5 例）：覆盖 MessageName.CONVERSATION_ID 常量值、构造时 sessionId/conversationId 存取、getMessageName 返回 CONVERSATION_ID、空字符串与 null conversationId 边界。"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/enums/LogLevel.java",
+      "description": "智能体日志级别枚举，定义 INFO/ERROR 两级，提供 getCode/getDescription 方法。"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/log/LogData.java",
+      "description": "智能体日志数据抽象基类，持有 LogLevel logLevel 字段（仅 getter 无 setter），声明抽象方法 logType() 返回 LogType。使用 @SuperBuilder 构建，构造器由 Lombok 生成（无公开构造器）。"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/log/AgentLog.java",
+      "description": "智能体日志接口，定义 void addLog(LogData logData) 日志写入契约，LogData 内嵌执行上下文信息。"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/enums/LogType.java",
+      "description": "智能体日志类型枚举，定义 18 个日志类型，提供 getCode/getDescription 方法。包含：REQUEST_ENTRY（请求入口）/ERROR_LOG（错误日志）/ROUTE（路由分发）/MODEL_CALL（模型调用）/STREAM_EVENT（流式事件）/HISTORY_EXPAND（历史展开）/SKILL_LOAD（技能加载）/CONTEXT_BUILD（上下文构建）/CHILD_SESSION（子会话创建）/REFRESH（上下文刷新）/HANDLE_MESSAGE（消息处理）/CACHE_REMOVE（缓存移除）/SEND_MESSAGE（消息发送）/MESSAGE_SAVE（消息保存）/MESSAGE_QUERY（消息查询）/MESSAGE_ROLLBACK（消息回退）/TOOL_EXECUTE（工具执行）/TOOL_CONTINUE（工具执行后继续）。"
+    },
+    {
+      "path": "agent-base/src/test/java/com/ghost616/agentbase/enums/LogTypeTest.java",
+      "description": "LogType 枚举测试，验证枚举可加载、枚举值数量为 19，以及各枚举值（REQUEST_ENTRY/CALL_SOURCE/ERROR_LOG/ROUTE/MODEL_CALL/STREAM_EVENT/HISTORY_EXPAND/SKILL_LOAD/CONTEXT_BUILD/CHILD_SESSION/REFRESH/HANDLE_MESSAGE/CACHE_REMOVE/SEND_MESSAGE/MESSAGE_SAVE/MESSAGE_QUERY/MESSAGE_ROLLBACK/TOOL_EXECUTE/TOOL_CONTINUE）的 code/description 正确。"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/log/RequestEntryLogData.java",
+      "description": "智能体请求入口日志数据类，继承 ContextLogData，包含 sessionId/modelId/content/isToolContinue 字段（含继承的 context/logLevel），logType() 返回 LogType.REQUEST_ENTRY。使用 @SuperBuilder 构建，仅暴露 getter。"
+    },
+    {
+      "path": "agent-base/src/test/java/com/ghost616/agentbase/service/agent/log/RequestEntryLogDataTest.java",
+      "description": "智能体请求入口日志单元测试：logType() 返回 REQUEST_ENTRY、继承字段与自有字段默认 null、builder 正确设置 context/sessionId/modelId/content/isToolContinue、isToolContinue 支持 false。"
+    },
+    {
+      "path": "agent-base/src/test/java/com/ghost616/agentbase/service/agent/ChatServiceLogTest.java",
+      "description": "ChatService 智能体日志调用测试：agentLog 未注入时静默跳过不抛异常；注入后 chat() 记录完整 RequestEntryLogData（含 context/sessionId/modelId/content，普通请求 isToolContinue=false、[tool_continue] 标记 true），并记录 RouteLogData 与 ModelCallLogData（含 toolNames 字段，空工具列表时为空）；agentLog 抛出异常时 chat() 不中断；订阅流式响应时记录 ToolCallDetected 与 StreamComplete 两个 StreamEventLogData 事件；历史折叠时记录 HistoryExpandLogData（expandedMessages 为展开锚点消息内容）。共 7 个用例。"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/log/ContextLogData.java",
+      "description": "携带智能体执行上下文的日志数据基类，继承 LogData，包含 context（AgentExecutionContext）字段，使用 @SuperBuilder 构建，仅暴露 getter。"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/log/ErrorLogData.java",
+      "description": "智能体错误日志数据类，继承 ContextLogData，包含 errorCode(String)/message(String)/exception(Throwable) 字段（含继承的 context/logLevel），logType() 返回 LogType.ERROR_LOG。使用 @SuperBuilder 构建，仅暴露 getter。"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/log/RouteLogData.java",
+      "description": "智能体请求路由日志数据类，继承 ContextLogData，包含 requestType(String) 字段（含继承的 context/logLevel），logType() 返回 LogType.ROUTE。使用 @SuperBuilder 构建，仅暴露 getter。"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/log/ModelCallLogData.java",
+      "description": "智能体模型调用日志数据类，继承 ContextLogData，包含 messageCount(int)/toolCount(int)/toolNames(List<String>)/thinking(Boolean) 字段（含继承的 context/logLevel），toolNames 记录发给模型的工具名称列表，logType() 返回 LogType.MODEL_CALL。使用 @SuperBuilder 构建，仅暴露 getter。"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/log/StreamEventLogData.java",
+      "description": "智能体流式事件日志数据类，继承 ContextLogData，包含 eventType(String)/hasToolCalls(Boolean) 字段（含继承的 context/logLevel），logType() 返回 LogType.STREAM_EVENT。使用 @SuperBuilder 构建，仅暴露 getter。"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/log/HistoryExpandLogData.java",
+      "description": "智能体历史折叠日志数据类，继承 ContextLogData，包含 foldedCount(int)/expandedMessages(List<String>) 字段（含继承的 context/logLevel），expandedMessages 记录展开的历史消息组锚点消息内容（buildHistoryGroupMessage 结果），logType() 返回 LogType.HISTORY_EXPAND。使用 @SuperBuilder 构建，仅暴露 getter。"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/log/SkillLoadLogData.java",
+      "description": "智能体技能加载日志数据类，继承 ContextLogData，包含 skillNames(List<String>)/skillCount(int) 字段（含继承的 context/logLevel），logType() 返回 LogType.SKILL_LOAD。使用 @SuperBuilder 构建，仅暴露 getter。"
+    },
+    {
+      "path": "agent-base/src/test/java/com/ghost616/agentbase/service/agent/log/ErrorLogDataTest.java",
+      "description": "智能体错误日志单元测试：logType() 返回 ERROR_LOG、字段默认 null、builder 正确设置继承 context 与自有 errorCode/message/exception 字段。"
+    },
+    {
+      "path": "agent-base/src/test/java/com/ghost616/agentbase/service/agent/log/RouteLogDataTest.java",
+      "description": "智能体路由日志单元测试：logType() 返回 ROUTE、字段默认 null、builder 正确设置继承 context 与自有 requestType 字段。"
+    },
+    {
+      "path": "agent-base/src/test/java/com/ghost616/agentbase/service/agent/log/ModelCallLogDataTest.java",
+      "description": "智能体模型调用日志单元测试：logType() 返回 MODEL_CALL、数字字段默认 0、builder 正确设置继承 context 与自有 messageCount/toolCount/toolNames/thinking 字段。"
+    },
+    {
+      "path": "agent-base/src/test/java/com/ghost616/agentbase/service/agent/log/StreamEventLogDataTest.java",
+      "description": "智能体流式事件日志单元测试：logType() 返回 STREAM_EVENT、字段默认 null、builder 正确设置继承 context 与自有 eventType/hasToolCalls 字段、hasToolCalls 支持 false。"
+    },
+    {
+      "path": "agent-base/src/test/java/com/ghost616/agentbase/service/agent/log/HistoryExpandLogDataTest.java",
+      "description": "智能体历史折叠日志单元测试：logType() 返回 HISTORY_EXPAND、数字字段默认 0、builder 正确设置继承 context 与自有 foldedCount/expandedMessages 字段。"
+    },
+    {
+      "path": "agent-base/src/test/java/com/ghost616/agentbase/service/agent/log/SkillLoadLogDataTest.java",
+      "description": "智能体技能加载日志单元测试：logType() 返回 SKILL_LOAD、数字字段默认 0、builder 正确设置继承 context 与自有 skillNames/skillCount 字段。"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/log/ContextBuildLogData.java",
+      "description": "智能体上下文构建日志数据类，继承 ContextLogData，@SuperBuilder 仅 getter。字段：sessionId/agentId/modelId/toolCount(int)/historyCount(int)/isSubSession(boolean)/cacheHit(boolean)，logType() 返回 CONTEXT_BUILD。由 AgentContextManager.doBuild 在上下文构建完成时记录。"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/log/ChildSessionLogData.java",
+      "description": "智能体子会话创建日志数据类，继承 ContextLogData，@SuperBuilder 仅 getter。字段：parentSessionId/childSessionId/sessionName，logType() 返回 CHILD_SESSION。由 AgentContextManager.createChildSession 在子会话创建成功后记录。"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/log/RefreshLogData.java",
+      "description": "智能体上下文刷新日志数据类，继承 ContextLogData，@SuperBuilder 仅 getter。字段：sessionId/refreshTarget(String: HISTORY/SESSION_VARIABLES/CONVERSATION_VARIABLES/CHILD_SESSIONS)，logType() 返回 REFRESH。由 AgentContextManager 的 4 个 refresh 方法在缓存中存在上下文时记录。"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/log/HandleMessageLogData.java",
+      "description": "智能体消息处理日志数据类，继承 ContextLogData，@SuperBuilder 仅 getter。字段：sessionId/messageType(String: CHILD_CREATE_SESSION/HISTORY_MESSAGE/VARIABLE_MESSAGE/CONVERSATION_ID)，logType() 返回 HANDLE_MESSAGE。由 AgentContextManager 的 4 个 handler 方法在缓存中存在上下文时记录。"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/log/CacheRemoveLogData.java",
+      "description": "智能体缓存移除日志数据类，继承 ContextLogData，@SuperBuilder 仅 getter。字段：sessionId，logType() 返回 CACHE_REMOVE。由 AgentContextManager.remove 在从缓存移除上下文时记录。"
+    },
+    {
+      "path": "agent-base/src/test/java/com/ghost616/agentbase/service/agent/log/ContextBuildLogDataTest.java",
+      "description": "ContextBuildLogData 单元测试，覆盖 logType 返回 CONTEXT_BUILD、字段默认值与 builder 设置（含继承 context 字段）。"
+    },
+    {
+      "path": "agent-base/src/test/java/com/ghost616/agentbase/service/agent/log/ChildSessionLogDataTest.java",
+      "description": "ChildSessionLogData 单元测试，覆盖 logType 返回 CHILD_SESSION、字段默认值与 builder 设置。"
+    },
+    {
+      "path": "agent-base/src/test/java/com/ghost616/agentbase/service/agent/log/RefreshLogDataTest.java",
+      "description": "RefreshLogData 单元测试，覆盖 logType 返回 REFRESH、字段默认值与 builder 设置、4 种刷新目标值可设置。"
+    },
+    {
+      "path": "agent-base/src/test/java/com/ghost616/agentbase/service/agent/log/HandleMessageLogDataTest.java",
+      "description": "HandleMessageLogData 单元测试，覆盖 logType 返回 HANDLE_MESSAGE、字段默认值与 builder 设置、4 种消息类型值可设置。"
+    },
+    {
+      "path": "agent-base/src/test/java/com/ghost616/agentbase/service/agent/log/CacheRemoveLogDataTest.java",
+      "description": "CacheRemoveLogData 单元测试，覆盖 logType 返回 CACHE_REMOVE、字段默认值与 builder 设置。"
+    },
+    {
+      "path": "agent-base/src/test/java/com/ghost616/agentbase/service/agent/AgentContextManagerLogTest.java",
+      "description": "AgentContextManager 日志接入集成测试，mock AgentLog 验证 12 处 addLog 调用：doBuild CONTEXT_BUILD（含 sessionId/agentId/modelId/toolCount/historyCount/isSubSession/cacheHit 字段断言、子会话、工具历史数量）、会话未找到 ErrorLogData ERROR、createChildSession CHILD_SESSION、4 个 refresh 方法 REFRESH（HISTORY/SESSION_VARIABLES/CONVERSATION_VARIABLES/CHILD_SESSIONS）、4 个 handler 方法 HANDLE_MESSAGE、remove CACHE_REMOVE；另覆盖 agentLog null 静默、缓存无上下文不记录、agentLog 抛异常不中断主流程。"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/log/MessageSaveLogData.java",
+      "description": "智能体消息保存日志数据类，继承 ContextLogData，包含 sessionId(String)/role(String)/messageId(String)/content(String)/reasoning(String)/toolInfo(ToolInfo)/toolResult(String)/toolCalls(List<ToolCallData>)/usage(UsageInfo)/webSearchCall(List<WebSearchCallData>)/customToolCall(List<CustomToolCallData>)/conversationId(String) 字段（含继承的 context/logLevel），logType() 返回 LogType.MESSAGE_SAVE。使用 @SuperBuilder 构建，仅暴露 getter。由 SessionManager.MessageSaveBuilder.save 在保存成功后记录。"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/log/MessageQueryLogData.java",
+      "description": "智能体消息查询日志数据类，继承 ContextLogData，包含 sessionId(String)/messageCount(int) 字段（含继承的 context/logLevel），logType() 返回 LogType.MESSAGE_QUERY。使用 @SuperBuilder 构建，仅暴露 getter。由 SessionManager.getMessages 在查询后记录。"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/log/MessageRollbackLogData.java",
+      "description": "智能体消息回退日志数据类，继承 ContextLogData，包含 sessionId(String)/rollbackCount(int) 字段（含继承的 context/logLevel），logType() 返回 LogType.MESSAGE_ROLLBACK。使用 @SuperBuilder 构建，仅暴露 getter。由 SessionManager.rollbackToLastUserMessage 在回退后记录。"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/log/ToolExecuteLogData.java",
+      "description": "智能体工具执行日志数据类，继承 ContextLogData，包含 sessionId/toolCallId/toolCallName/toolCallArguments/toolType(String: system/regular/builtin)/queueStatus(String: empty/executing/failed/error) 字段（含继承的 context/logLevel），logType() 返回 LogType.TOOL_EXECUTE。使用 @SuperBuilder 构建，仅暴露 getter。由 ToolExecutionService.executeTool 各分支记录。"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/log/ToolContinueLogData.java",
+      "description": "智能体工具执行后继续日志数据类，继承 ContextLogData，包含 sessionId(String)/resultCount(int)/toolNames(List<String>) 字段（含继承的 context/logLevel），logType() 返回 LogType.TOOL_CONTINUE。使用 @SuperBuilder 构建，仅暴露 getter。由 ToolExecutionService.continueAfterTools 记录。"
+    },
+    {
+      "path": "agent-base/src/test/java/com/ghost616/agentbase/service/agent/log/MessageSaveLogDataTest.java",
+      "description": "MessageSaveLogData 测试，验证 logType 返回 MESSAGE_SAVE、字符串与列表字段默认为 null、builder 正确设置继承字段与全部自有字段（messageId/content/reasoning/toolInfo/toolResult/toolCalls/usage/webSearchCall/customToolCall/conversationId）。"
+    },
+    {
+      "path": "agent-base/src/test/java/com/ghost616/agentbase/service/agent/log/MessageQueryLogDataTest.java",
+      "description": "MessageQueryLogData 测试，验证 logType 返回 MESSAGE_QUERY、数字字段默认值为 0、builder 正确设置继承与自有字段。"
+    },
+    {
+      "path": "agent-base/src/test/java/com/ghost616/agentbase/service/agent/log/MessageRollbackLogDataTest.java",
+      "description": "MessageRollbackLogData 测试，验证 logType 返回 MESSAGE_ROLLBACK、数字字段默认值为 0、builder 正确设置继承与自有字段。"
+    },
+    {
+      "path": "agent-base/src/test/java/com/ghost616/agentbase/service/agent/log/ToolExecuteLogDataTest.java",
+      "description": "ToolExecuteLogData 测试，验证 logType 返回 TOOL_EXECUTE、builder 正确设置继承与自有字段。"
+    },
+    {
+      "path": "agent-base/src/test/java/com/ghost616/agentbase/service/agent/log/ToolContinueLogDataTest.java",
+      "description": "ToolContinueLogData 测试，验证 logType 返回 TOOL_CONTINUE、数字字段默认值为 0、builder 正确设置继承与自有字段。"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/log/SessionLogData.java",
+      "description": "会话级日志数据抽象基类（extends LogData），字段 sessionId(String)/conversationId(String)，使用 @SuperBuilder。作为 MessageSaveLogData/MessageQueryLogData/MessageRollbackLogData/CacheRemoveLogData/ChildSessionLogData/SendMessageLogData/SessionErrorLogData 的共同父类。"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/log/SessionErrorLogData.java",
+      "description": "会话级错误日志数据类（extends SessionLogData），字段 errorCode(String)/message(String)/exception(Throwable)，logType()=ERROR_LOG。用于无 AgentExecutionContext 时替代 ErrorLogData 记录会话级错误，被 SessionManager/AgentContextManager 调用。"
+    },
+    {
+      "path": "agent-base/src/test/java/com/ghost616/agentbase/service/agent/log/SessionErrorLogDataTest.java",
+      "description": "SessionErrorLogData 单元测试，覆盖 logType 返回 ERROR_LOG、字段默认 null、builder 设置继承与自有字段、不继承 ContextLogData 且继承 SessionLogData。"
     }
   ]
 }

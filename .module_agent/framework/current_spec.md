@@ -30,11 +30,13 @@ schema.sql 新增 agent_skill 中间表（agent_id/skill_id 关联），结构�
 - dev.bat 后端启动命令增加 -am 参数：mvn spring-boot:run -pl platform-app -am，Maven 自动编译依赖模块 agent-base，解决依赖解析失败问题
 - dev.bat 后端启动改为两步命令：mvn install -pl agent-base -DskipTests -q 安装依赖 + mvn spring-boot:run -f platform-app/pom.xml 启动子模块，避免 -pl 对 spring-boot:run 不生效的问题
 - README.md 平台描述已更新：工具管理新增 MCP HTTP 认证方式说明；HOOK 管理补充 Spring 自动发现加载机制；智能体执行引擎补充 sendmessage 跨会话通信框架；新增三域会话授权与组件注册表描述；变量管理补充 SSE 推送说明。
+- dev.bat 开发模式已改为预编译模式：一次性 `vite build` 编译前端到 dist/，再并行启动 `vite build --watch`（监听源码变更自动增量编译）与 Node 静态服务（serve.js）。serve.js 使用 Node 内置 http 模块静态托管 dist/ 目录（自动识别 MIME 类型、SPA fallback 非文件路径返回 index.html），/api 请求代理到 http://localhost:8080，监听 3000 端口。package.json 新增 dev:build（vite build --watch）与 dev:serve（node serve.js）脚本。
 ## 文件结构
 
 ```
 pom.xml                                          -- Maven 构建文件（Spring Boot 3, JDK 17）
-package.json                                     -- 前端 npm 配置
+package.json                                     -- 前端 npm 配置（含 dev:build/dev:serve 脚本）
+serve.js                                         -- Node 静态服务脚本（托管 dist/、/api 代理、端口 3000）
 vite.config.ts                                   -- Vite 构建配置（React 插件, /api 代理）
 tsconfig.json                                    -- TypeScript 配置
 src/main/java/com/ghost616/platform/
@@ -66,6 +68,6 @@ src/index.css                                    -- 全局样式
 ```
 
 build.bat                                         -- Windows 一键编译打包脚本
-dev.bat                                           -- Windows 开发模式一键启动脚本
+dev.bat                                           -- Windows 开发模式一键启动脚本（vite build + 静态服务）
 - src/main/resources/schema.sql -- DDL 初始化脚本，model_config 表定义
 - README.md -- 项目说明文档，含技术栈、功能模块、快速启动指南、项目结构

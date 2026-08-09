@@ -1,0 +1,47 @@
+package com.ghost616.agentbase.service.agent.log;
+
+import com.ghost616.agentbase.enums.LogType;
+import com.ghost616.agentbase.service.agent.AgentExecutionContext;
+import org.junit.jupiter.api.Test;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+class MessageSaveLogDataTest {
+
+    @Test
+    void logType应返回MESSAGE_SAVE() {
+        MessageSaveLogData data = MessageSaveLogData.builder().build();
+        assertEquals(LogType.MESSAGE_SAVE, data.logType());
+    }
+
+    @Test
+    void 数字字段应默认为0() {
+        MessageSaveLogData data = MessageSaveLogData.builder().build();
+        assertEquals(0, data.getContentLength());
+        assertNull(data.getSessionId());
+        assertNull(data.getRole());
+    }
+
+    @Test
+    void builder应正确设置继承与自有字段() {
+        AgentExecutionContext context = new AgentExecutionContext(
+                "s1", "agent-1", "sys_prompt", "model-1", null,
+                new ArrayList<>(), new ArrayList<>(), null,
+                new AgentExecutionContext.AgentContextMutator(),
+                new HashMap<>(), new HashMap<>(), null, "", null, null);
+        MessageSaveLogData data = MessageSaveLogData.builder()
+                .context(context)
+                .sessionId("s1")
+                .role("user")
+                .contentLength(5)
+                .build();
+
+        assertSame(context, data.getContext());
+        assertEquals("s1", data.getSessionId());
+        assertEquals("user", data.getRole());
+        assertEquals(5, data.getContentLength());
+    }
+}

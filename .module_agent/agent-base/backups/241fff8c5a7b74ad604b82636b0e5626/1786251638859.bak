@@ -1,0 +1,38 @@
+package com.ghost616.agentbase.service.agent.log;
+
+import com.ghost616.agentbase.enums.LogType;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+class ChildSessionLogDataTest {
+
+    @Test
+    void logType应返回CHILD_SESSION() {
+        ChildSessionLogData data = ChildSessionLogData.builder().build();
+        assertEquals(LogType.CHILD_SESSION, data.logType());
+    }
+
+    @Test
+    void 字段应默认为null() {
+        ChildSessionLogData data = ChildSessionLogData.builder().build();
+        assertNull(data.getContext());
+        assertNull(data.getLogLevel());
+        assertNull(data.getParentSessionId());
+        assertNull(data.getChildSessionId());
+        assertNull(data.getSessionName());
+    }
+
+    @Test
+    void builder应正确设置继承与自有字段() {
+        ChildSessionLogData data = ChildSessionLogData.builder()
+                .parentSessionId("p1")
+                .childSessionId("c1")
+                .sessionName("子会话")
+                .build();
+
+        assertEquals("p1", data.getParentSessionId());
+        assertEquals("c1", data.getChildSessionId());
+        assertEquals("子会话", data.getSessionName());
+    }
+}

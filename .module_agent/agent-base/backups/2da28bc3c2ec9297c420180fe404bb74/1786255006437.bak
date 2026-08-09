@@ -1,0 +1,27 @@
+package com.ghost616.agentbase.service.agent.log;
+
+import com.ghost616.agentbase.enums.LogType;
+import lombok.Getter;
+import lombok.experimental.SuperBuilder;
+
+/**
+ * 智能体消息保存日志数据，记录消息持久化的关键信息。
+ */
+@Getter
+@SuperBuilder
+public class MessageSaveLogData extends ContextLogData {
+
+    /** 会话 ID */
+    private final String sessionId;
+
+    /** 消息角色 */
+    private final String role;
+
+    /** 消息内容长度 */
+    private final int contentLength;
+
+    @Override
+    public LogType logType() {
+        return LogType.MESSAGE_SAVE;
+    }
+}

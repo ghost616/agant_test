@@ -180,6 +180,26 @@
     {
       "path": "e2e/ConversationHistory.spec.ts",
       "description": "会话历史与对话详情页 E2E 测试（Playwright）：mock 会话/消息/对话接口，覆盖返回定位跳转、查看详情跳转、对话详情工具按钮（assistant toolCalls 显示「查看工具 (N)」、tool 角色「查看结果」、点击弹出 Modal 展示 JSON）、长 sessionId 截短与 Tooltip 悬浮、rowClassName 主/子会话行背景区分；含 test.describe.configure 120s 超时配置"
+    },
+    {
+      "path": "src/types/log.ts",
+      "description": "智能体日志类型定义：AgentLog 接口（对应后端 AgentLogDTO，含 id/sessionId/sessionName/conversationId/logType/logLevel/logData/createTime）、AgentLogQueryParams 分页筛选查询参数、LogType/LogLevel 常量枚举（code 对应后端 LogType/LogLevel 枚举 code 值，label 为中文显示名）"
+    },
+    {
+      "path": "src/services/log.ts",
+      "description": "智能体日志查询服务封装：listAgentLogs 调用 GET /api/agent-logs，支持会话名/日志类型/日志等级筛选与 page/size 分页，返回 PageResult<AgentLog>"
+    },
+    {
+      "path": "src/pages/logs/AgentLogList.tsx",
+      "description": "运行日志列表页面（/logs）：顶部筛选栏（会话名 Input.Search、日志类型/日志等级 Select 下拉，日志等级选项由 LogLevel 枚举自动生成），Table 展示日志列表（会话名/对话ID/日志类型中文 Tag/日志等级彩色 Badge INFO=blue/ERROR=red 未知回退 default/日志数据截断+展开按钮/创建时间），分页支持每页 20/50/100 切换默认创建时间倒序，日志详情 Modal 展示完整日志数据（JSON 美化）"
+    },
+    {
+      "path": "src/types/__tests__/log.test.ts",
+      "description": "日志类型枚举结构测试：静态读取 src/types/log.ts 源码并断言 LogType 不含 CALL_SOURCE、LogLevel 不含 WARN、LogLevel 仅 INFO/ERROR 且 code/label 非空，与源文件保持一致"
+    },
+    {
+      "path": "e2e/AgentLogList.spec.ts",
+      "description": "运行日志页面的 Playwright 端到端测试：覆盖 /logs 路由访问、表格渲染、日志类型中文 Tag 与日志等级彩色字体 span、日志详情 Modal 展开/关闭/重开、翻页请求、日志类型筛选请求。同步维护日志等级渲染断言以匹配 AgentLogList 组件实现。"
     }
   ]
 }

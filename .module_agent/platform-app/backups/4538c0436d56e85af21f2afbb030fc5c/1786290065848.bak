@@ -1,0 +1,113 @@
+package com.ghost616.platform.service.evaluation;
+
+import com.ghost616.agentbase.dto.model.Message;
+import com.ghost616.agentbase.service.agent.AgentMessageProxy;
+import com.ghost616.agentbase.service.agent.ChatService;
+import com.ghost616.agentbase.service.agent.MessageDataProvider;
+import com.ghost616.agentbase.service.agent.ToolExecutionService;
+import com.ghost616.platform.dto.evaluation.EvaluationExecutionStatusDTO;
+import com.ghost616.platform.entity.Session;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Component;
+
+import java.util.List;
+import java.util.Map;
+
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class AsyncEvaluationExecutor {
+
+    private final ChatService chatService;
+    private final ToolExecutionService toolExecutionService;
+    private final EvaluationResultGenerateService evaluationResultGenerateService;
+
+    @Async
+    public void generateResultAsync(Long evaluationId, Long executionSession,
+                                    Map<String, EvaluationExecutionStatusDTO> generateStatusMap) {
+        String statusKey = evaluationId + ":" + executionSession;
+        try {
+            evaluationResultGenerateService.generate(evaluationId, executionSession);
+            generateStatusMap.put(statusKey, EvaluationExecutionStatusDTO.builder()
+                    .evaluationId(evaluationId)
+                    .executionSession(executionSession)
+                    .status("COMPLETED")
+                    .currentStep(1)
+                    .totalSteps(1)
+                    .build());
+        } catch (Exception e) {
+            log.error("评估结果生成异常, evaluationId={}, executionSession={}", evaluationId, executionSession, e);
+            generateStatusMap.put(statusKey, EvaluationExecutionStatusDTO.builder()
+                    .evaluationId(evaluationId)
+                    .executionSession(executionSession)
+                    .status("FAILED")
+                    .currentStep(1)
+                    .totalSteps(1)
+                    .build());
+        }
+    }
+
+    @Async
+    public void executeAsync(Long evaluationId, Session executionSession,
+                             List<MessageDataProvider.MessageDTO> userMessages,
+                             Map<String, EvaluationExecutionStatusDTO> statusMap) {
+        String statusKey = String.valueOf(evaluationId);
+        AgentMessageProxy proxy = new AgentMessageProxy(chatService, toolExecutionService);
+        Long sessionId = executionSession.getId();
+
+        try {
+            int total = userMessages.size();
+            for (int i = 0; i < total; i++) {
+                MessageDataProvider.MessageDTO userMsg = userMessages.get(i);
+                String content = userMsg.content() != null ? userMsg.content() : "";
+
+                statusMap.put(statusKey, EvaluationExecutionStatusDTO.builder()
+                        .evaluationId(evaluationId)
+                        .executionSession(sessionId)
+                        .status("RUNNING")
+                        .currentStep(i + 1)
+                        .totalSteps(total)
+                        .build());
+
+                try {
+                    Message response = proxy.sendUserMessageToSession(
+                            String.valueOf(sessionId),
+                            content,
+                            null,
+                            executionSession.getThinking());
+                    log.debug("评估执行消息处理完成, sessionId={}, step={}/{}", sessionId, i + 1, total);
+                } catch (Exception e) {
+                    log.error("评估执行用户消息处理失败, sessionId={}, step={}/{}", sessionId, i + 1, total, e);
+                    statusMap.put(statusKey, EvaluationExecutionStatusDTO.builder()
+                            .evaluationId(evaluationId)
+                            .executionSession(sessionId)
+                            .status("FAILED")
+                            .currentStep(i + 1)
+                            .totalSteps(total)
+                            .build());
+                    return;
+                }
+            }
+
+            evaluationResultGenerateService.generate(evaluationId, sessionId);
+
+            statusMap.put(statusKey, EvaluationExecutionStatusDTO.builder()
+                    .evaluationId(evaluationId)
+                    .executionSession(sessionId)
+                    .status("COMPLETED")
+                    .currentStep(total)
+                    .totalSteps(total)
+                    .build());
+
+        } catch (Exception e) {
+            log.error("评估执行异常, evaluationId={}", evaluationId, e);
+            statusMap.put(statusKey, EvaluationExecutionStatusDTO.builder()
+                    .evaluationId(evaluationId)
+                    .executionSession(sessionId)
+                    .status("FAILED")
+                    .build());
+        }
+    }
+}

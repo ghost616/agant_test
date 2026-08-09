@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_018e002e6ffeRRC5TiSuaPqiWM",
+  "content": "## 待测试功能\n\n### 变更内容\n`src/pages/evaluations/hooks/useEvaluationExecute.ts`：\n1. 从 `../../../services/session` 导入 `fetchConversationId`\n2. `sendForegroundMessage` 在调用 `agentChatStream` 之前 `await fetchConversationId()` 获取 `conversationId`（获取失败时 `throw new Error('获取会话标识失败')` 中止）\n3. 将 `conversationId` 传入 `agentChatStream` 请求参数 `{ sessionId, content, conversationId }`\n\n### 涉及文件\n- `src/pages/evaluations/hooks/useEvaluationExecute.ts`\n- `src/pages/evaluations/__tests__/useEvaluationExecute.test.tsx`（同步更新：新增 fetchConversationId 导入验证、sendForegroundMessage await fetchConversationId 验证、conversationId 传参验证、获取失败抛错验证）\n\n## 测试要求\n- 运行单元测试：`npx vitest run src/pages/evaluations/__tests__/useEvaluationExecute.test.tsx`\n- 运行编译检查：`npx tsc --noEmit`（或项目配置的 typecheck 命令）\n- 验证 `sendForegroundMessage` 中 `fetchConversationId` 在 `agentChatStream` 之前被 await，且 `conversationId` 正确传入请求参数\n",
+  "timestamp": "2026-08-09T15:25:20.805Z"
+}

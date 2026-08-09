@@ -16,6 +16,7 @@
 - **ChatDataProviderProxy**：实现 ChatDataProvider.getHooks(Long sessionId) 方法，直接委托给 delegate.getHooks(sessionId)
 - **AgentAssembler**：refreshHooks() 方法中更改 hookManager.refreshHooks(chatDataProviderProxy.getHooks()) 为 hookManager.refreshHooks() 无参调用；HookManager 构造函数改为 new HookManager(registry)
 - **AgentAssembler**：移除 messageSavePostHook() 公开 getter 方法（无人调用）；Result record 和 ChatDataProviderProxy 内部仍保留对 MessageSavePostHook 的引用
+- **AgentAssembler**：新增 setAgentLog(AgentLog) 公开方法，仅当 registry 已存在（build() 之后）时设置到 registry，无自有 AgentLog 暂存字段；build() 不自动注册 agentLog
 ## 模块职责
 提供多平台模型调用器的实现（ModelInvoker）和 Agent 组件的组装能力。
 

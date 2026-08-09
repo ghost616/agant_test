@@ -39,6 +39,10 @@
     {
       "content": "browser_tool_executor.js也有AgentExecutionContext需要同步修改。SchemaMigration需要添加conversation_id字段迁移。MessageSavePostHook需要从context获取conversationId传入messageSave。ToolExecutionService保存tool消息时也需要传入conversationId。",
       "timestamp": "2026-08-08T02:02:30.796Z"
+    },
+    {
+      "content": "1. AgentAssembler不需要自己持有AgentLog字段，注册时直接设置到registry；2. LogName枚举改为日志类型枚举",
+      "timestamp": "2026-08-09T02:33:28.502Z"
     }
   ]
 }

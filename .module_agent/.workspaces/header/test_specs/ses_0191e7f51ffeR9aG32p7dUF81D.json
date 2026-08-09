@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_0191e7f51ffeR9aG32p7dUF81D",
+  "content": "# 待测试功能说明\n\n本次变更为日志模块枚举收敛：移除 LogType.CALL_SOURCE 与 LogLevel.WARN。\n\n## 涉及文件\n- src/types/log.ts：LogType 移除 CALL_SOURCE 条目；LogLevel 仅保留 INFO/ERROR（移除 WARN）\n- src/pages/logs/AgentLogList.tsx：LOG_LEVEL_COLORS 移除 WARN（仅 INFO=blue/ERROR=red）；LOG_LEVEL_LABELS/LOG_LEVEL_OPTIONS 由 LogLevel 枚举自动生成（自动仅含 INFO/ERROR）\n- src/types/__tests__/log.test.ts（新增）：静态断言 LogType 不含 CALL_SOURCE、LogLevel 仅 INFO/ERROR 不含 WARN、code/label 非空\n- src/pages/logs/__tests__/AgentLogList.test.tsx：新增未知日志等级回退 default 颜色用例、日志等级筛选下拉仅含 信息/错误 不含 警告 用例\n\n## 可测试功能点\n1. LogType 枚举不再包含 CALL_SOURCE\n2. LogLevel 枚举仅含 INFO/ERROR（不含 WARN），code/label 值正确\n3. 日志等级筛选下拉选项自动由 LogLevel 枚举生成，仅含 信息/错误，不含 警告\n4. 未知日志等级渲染回退：Badge 颜色 default、文本显示原始值\n5. 相关变更文件 TypeScript 编译无类型错误\n",
+  "timestamp": "2026-08-09T14:17:23.229Z"
+}

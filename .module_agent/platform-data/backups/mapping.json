@@ -13,5 +13,6 @@
   "platform-data/src/main/java/com/ghost616/platform/enums/SubToolType.java": "e7cbb73185b3460044d43198135465ef",
   "platform-app/src/test/java/com/ghost616/platform/enums/SubToolTypeTest.java": "51c830205e57f4b45e2cc8e7ecb793d4",
   "platform-data/src/main/java/com/ghost616/platform/entity/Message.java": "2dded1f56ad70cfd22a40e3bf3585f6d",
-  "platform-data/src/main/java/com/ghost616/platform/repository/MessageMapper.java": "bc251188a70e480991dd667cd2fa14ae"
+  "platform-data/src/main/java/com/ghost616/platform/repository/MessageMapper.java": "bc251188a70e480991dd667cd2fa14ae",
+  "platform-data/src/main/java/com/ghost616/platform/entity/AgentLogEntity.java": "3d65042debdfa4dd81c3728515628f70"
 }

@@ -1,0 +1,24 @@
+package com.ghost616.agentbase.service.agent.log;
+
+import com.ghost616.agentbase.enums.LogType;
+import lombok.Getter;
+import lombok.Setter;
+
+/**
+ * 智能体调用来源日志数据。
+ */
+@Getter
+@Setter
+public class CallSourceLogData extends LogData {
+
+    /** 会话 ID */
+    private String sessionId;
+
+    /** 是否为工具调用继续 */
+    private Boolean isToolContinue;
+
+    @Override
+    public LogType logType() {
+        return LogType.CALL_SOURCE;
+    }
+}

@@ -180,6 +180,14 @@
     {
       "path": "platform-data/src/main/java/com/ghost616/platform/enums/KnowledgeBasePublishError.java",
       "description": "知识库发布错误码枚举，位于 com.ghost616.platform.enums 包，定义 EMPTY_CONTENT/VECTOR_MODEL_NOT_CONFIGURED/KNOWLEDGE_BASE_REBUILDING/FILE_PUBLISHING/FILE_PUBLISH_FAILED 五种发布错误，含 code/message 字段，遵循模块前缀-错误类型-序号格式"
+    },
+    {
+      "path": "platform-data/src/main/java/com/ghost616/platform/entity/AgentLogEntity.java",
+      "description": "智能体日志实体类，继承 BaseEntity，映射 agent_log 表，含 sessionId(会话ID)/conversationId(对话ID)/logType(日志类型，存储 LogType 枚举 code 值)/logLevel(日志等级，存储 LogLevel 枚举 code 值)/logData(LogData 对象序列化 JSON 文本) 字段"
+    },
+    {
+      "path": "platform-data/src/main/java/com/ghost616/platform/repository/AgentLogMapper.java",
+      "description": "AgentLogEntity 的 MyBatis-Plus Mapper 接口，继承 BaseMapper"
     }
   ]
 }
