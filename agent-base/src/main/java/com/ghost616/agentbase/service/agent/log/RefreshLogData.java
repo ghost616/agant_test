@@ -11,9 +11,6 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 public class RefreshLogData extends ContextLogData {
 
-    /** 会话 ID */
-    private final String sessionId;
-
     /** 刷新目标：HISTORY/SESSION_VARIABLES/CONVERSATION_VARIABLES/CHILD_SESSIONS */
     private final String refreshTarget;
 

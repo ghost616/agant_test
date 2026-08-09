@@ -148,8 +148,9 @@ class ChatServiceLogTest {
         RequestEntryLogData logData = (RequestEntryLogData) captured.get(0);
         assertEquals(LogLevel.INFO, logData.getLogLevel());
         assertSame(harness.context, logData.getContext());
-        assertEquals(sessionId, logData.getSessionId());
+        assertEquals(sessionId, logData.getContext().getSessionId());
         assertEquals("model-1", logData.getModelId());
+        assertEquals("conv-1", logData.getConversationId());
         assertEquals("hello", logData.getContent());
         assertFalse(logData.getIsToolContinue());
     }
@@ -209,7 +210,7 @@ class ChatServiceLogTest {
         assertEquals(LogType.REQUEST_ENTRY, captured.get(0).logType());
         RequestEntryLogData logData = (RequestEntryLogData) captured.get(0);
         assertEquals(ChatService.TOOL_CONTINUE_MARKER, logData.getContent());
-        assertEquals(sessionId, logData.getSessionId());
+        assertEquals(sessionId, logData.getContext().getSessionId());
         assertTrue(logData.getIsToolContinue());
     }
 

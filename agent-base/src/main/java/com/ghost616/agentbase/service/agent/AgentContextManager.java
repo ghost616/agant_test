@@ -385,7 +385,6 @@ public class AgentContextManager {
         addLog(RefreshLogData.builder()
                 .logLevel(LogLevel.INFO)
                 .context(ctx.context())
-                .sessionId(sessionId)
                 .refreshTarget("HISTORY")
                 .build());
     }
@@ -401,7 +400,6 @@ public class AgentContextManager {
         addLog(RefreshLogData.builder()
                 .logLevel(LogLevel.INFO)
                 .context(ctx.context())
-                .sessionId(sessionId)
                 .refreshTarget("SESSION_VARIABLES")
                 .build());
     }
@@ -417,7 +415,6 @@ public class AgentContextManager {
         addLog(RefreshLogData.builder()
                 .logLevel(LogLevel.INFO)
                 .context(ctx.context())
-                .sessionId(sessionId)
                 .refreshTarget("CONVERSATION_VARIABLES")
                 .build());
     }
@@ -433,7 +430,6 @@ public class AgentContextManager {
         addLog(RefreshLogData.builder()
                 .logLevel(LogLevel.INFO)
                 .context(ctx.context())
-                .sessionId(sessionId)
                 .refreshTarget("CHILD_SESSIONS")
                 .build());
     }

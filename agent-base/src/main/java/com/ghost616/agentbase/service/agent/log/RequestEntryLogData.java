@@ -11,11 +11,11 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 public class RequestEntryLogData extends ContextLogData {
 
-    /** 会话 ID */
-    private final String sessionId;
-
     /** 模型 ID */
     private final String modelId;
+
+    /** 对话 ID */
+    private final String conversationId;
 
     /** 用户请求内容 */
     private final String content;

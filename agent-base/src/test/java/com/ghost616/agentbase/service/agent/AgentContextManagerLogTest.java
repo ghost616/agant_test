@@ -325,7 +325,7 @@ class AgentContextManagerLogTest {
 
         assertNotNull(log);
         assertEquals(LogLevel.INFO, log.getLogLevel());
-        assertEquals(sessionId, log.getSessionId());
+        assertEquals(sessionId, log.getContext().getSessionId());
         assertEquals("HISTORY", log.getRefreshTarget());
     }
 

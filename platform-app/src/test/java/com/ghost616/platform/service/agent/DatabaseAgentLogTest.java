@@ -2,13 +2,18 @@ package com.ghost616.platform.service.agent;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghost616.agentbase.enums.LogLevel;
+import com.ghost616.agentbase.enums.LogType;
 import com.ghost616.agentbase.service.agent.AgentExecutionContext;
 import com.ghost616.agentbase.service.agent.log.ContextBuildLogData;
 import com.ghost616.agentbase.service.agent.log.ContextLogData;
+import com.ghost616.agentbase.service.agent.log.LogData;
 import com.ghost616.agentbase.service.agent.log.ModelCallLogData;
 import com.ghost616.agentbase.service.agent.log.RequestEntryLogData;
+import com.ghost616.agentbase.service.agent.log.SessionErrorLogData;
 import com.ghost616.platform.entity.AgentLogEntity;
 import com.ghost616.platform.repository.AgentLogMapper;
+import lombok.Getter;
+import lombok.experimental.SuperBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -47,12 +52,36 @@ class DatabaseAgentLogTest {
                 null, "proj", List.of(), conversationId);
     }
 
+    private AgentExecutionContext buildContextWithVariables(String sessionId, String conversationId,
+                                                            Map<String, String> sessionVariables,
+                                                            Map<String, String> conversationVariables) {
+        return new AgentExecutionContext(
+                sessionId, "agent-1", "prompt", "model-1", 10,
+                List.of(), List.of(), List.of(),
+                new AgentExecutionContext.AgentContextMutator(),
+                sessionVariables, conversationVariables,
+                null, "proj", List.of(), conversationId);
+    }
+
+    @Getter
+    @SuperBuilder
+    private static class ReflectiveLogData extends LogData {
+
+        private final String sessionId;
+
+        private final String conversationId;
+
+        @Override
+        public LogType logType() {
+            return LogType.CONTEXT_BUILD;
+        }
+    }
+
     @Test
     void addLog_RequestEntryLogData_正确提取context字段并写入() {
         AgentExecutionContext context = buildContext("123", "conv-1");
         RequestEntryLogData logData = RequestEntryLogData.builder()
                 .context(context)
-                .sessionId("123")
                 .modelId("model-1")
                 .content("hello")
                 .isToolContinue(false)
@@ -69,7 +98,7 @@ class DatabaseAgentLogTest {
         assertEquals("REQUEST_ENTRY", entity.getLogType());
         assertEquals("INFO", entity.getLogLevel());
         assertNotNull(entity.getLogData());
-        assertTrue(entity.getLogData().contains("\"sessionId\":\"123\""));
+        assertTrue(entity.getLogData().contains("\"content\":\"hello\""));
     }
 
     @Test
@@ -101,7 +130,6 @@ class DatabaseAgentLogTest {
     void addLog_context为null_不设置会话字段仍可写入() {
         RequestEntryLogData logData = RequestEntryLogData.builder()
                 .context(null)
-                .sessionId("123")
                 .modelId("model-1")
                 .content("hello")
                 .isToolContinue(false)
@@ -124,7 +152,6 @@ class DatabaseAgentLogTest {
         AgentExecutionContext context = buildContext("abc", "conv-3");
         RequestEntryLogData logData = RequestEntryLogData.builder()
                 .context(context)
-                .sessionId("abc")
                 .modelId("model-1")
                 .content("hello")
                 .isToolContinue(false)
@@ -142,8 +169,8 @@ class DatabaseAgentLogTest {
     }
 
     @Test
-    void addLog_非ContextLogData_不提取context字段仍可写入() {
-        com.ghost616.agentbase.service.agent.log.LogData logData = ContextBuildLogData.builder()
+    void addLog_非ContextLogData_sessionId非数字_解析失败返回null仍可写入() {
+        LogData logData = ContextBuildLogData.builder()
                 .sessionId("s-1")
                 .agentId("a-1")
                 .modelId("m-1")
@@ -163,8 +190,133 @@ class DatabaseAgentLogTest {
         AgentLogEntity entity = captor.getValue();
         assertNull(entity.getSessionId());
         assertNull(entity.getConversationId());
+        assertNull(entity.getSessionVariables());
+        assertNull(entity.getConversationVariables());
         assertEquals("CONTEXT_BUILD", entity.getLogType());
         assertEquals("ERROR", entity.getLogLevel());
         assertNotNull(entity.getLogData());
+    }
+
+    @Test
+    void addLog_非ContextLogData_通过反射提取sessionId和conversationId() {
+        LogData logData = ReflectiveLogData.builder()
+                .sessionId("789")
+                .conversationId("conv-9")
+                .logLevel(LogLevel.INFO)
+                .build();
+        assertFalse(logData instanceof ContextLogData);
+
+        databaseAgentLog.addLog(logData);
+
+        ArgumentCaptor<AgentLogEntity> captor = ArgumentCaptor.forClass(AgentLogEntity.class);
+        verify(agentLogMapper).insert(captor.capture());
+        AgentLogEntity entity = captor.getValue();
+        assertEquals(789L, entity.getSessionId());
+        assertEquals("conv-9", entity.getConversationId());
+        assertNull(entity.getSessionVariables());
+        assertNull(entity.getConversationVariables());
+        assertEquals("CONTEXT_BUILD", entity.getLogType());
+        assertNotNull(entity.getLogData());
+    }
+
+    @Test
+    void addLog_ContextLogData_提取会话变量和对话变量并序列化() {
+        Map<String, String> sessionVars = new HashMap<>();
+        sessionVars.put("skill", "java");
+        sessionVars.put("level", "advanced");
+        Map<String, String> conversationVars = new HashMap<>();
+        conversationVars.put("topic", "logging");
+        AgentExecutionContext context = buildContextWithVariables("123", "conv-1", sessionVars, conversationVars);
+        RequestEntryLogData logData = RequestEntryLogData.builder()
+                .context(context)
+                .modelId("model-1")
+                .content("hello")
+                .isToolContinue(false)
+                .logLevel(LogLevel.INFO)
+                .build();
+
+        databaseAgentLog.addLog(logData);
+
+        ArgumentCaptor<AgentLogEntity> captor = ArgumentCaptor.forClass(AgentLogEntity.class);
+        verify(agentLogMapper).insert(captor.capture());
+        AgentLogEntity entity = captor.getValue();
+        assertEquals(123L, entity.getSessionId());
+        assertEquals("conv-1", entity.getConversationId());
+        assertNotNull(entity.getSessionVariables());
+        assertTrue(entity.getSessionVariables().contains("\"skill\":\"java\""),
+                "应包含会话变量 skill: " + entity.getSessionVariables());
+        assertTrue(entity.getSessionVariables().contains("\"level\":\"advanced\""),
+                "应包含会话变量 level: " + entity.getSessionVariables());
+        assertNotNull(entity.getConversationVariables());
+        assertTrue(entity.getConversationVariables().contains("\"topic\":\"logging\""),
+                "应包含对话变量 topic: " + entity.getConversationVariables());
+    }
+
+    @Test
+    void addLog_ContextLogData_无变量时序列化为空JSON对象() {
+        AgentExecutionContext context = buildContext("123", "conv-1");
+        RequestEntryLogData logData = RequestEntryLogData.builder()
+                .context(context)
+                .modelId("model-1")
+                .content("hello")
+                .isToolContinue(false)
+                .logLevel(LogLevel.INFO)
+                .build();
+
+        databaseAgentLog.addLog(logData);
+
+        ArgumentCaptor<AgentLogEntity> captor = ArgumentCaptor.forClass(AgentLogEntity.class);
+        verify(agentLogMapper).insert(captor.capture());
+        AgentLogEntity entity = captor.getValue();
+        assertEquals("{}", entity.getSessionVariables());
+        assertEquals("{}", entity.getConversationVariables());
+    }
+
+    @Test
+    void addLog_SessionLogData_提取sessionId和conversationId() {
+        SessionErrorLogData logData = SessionErrorLogData.builder()
+                .sessionId("789")
+                .conversationId("conv-9")
+                .errorCode("E001")
+                .message("error msg")
+                .logLevel(LogLevel.ERROR)
+                .build();
+
+        databaseAgentLog.addLog(logData);
+
+        ArgumentCaptor<AgentLogEntity> captor = ArgumentCaptor.forClass(AgentLogEntity.class);
+        verify(agentLogMapper).insert(captor.capture());
+        AgentLogEntity entity = captor.getValue();
+        assertEquals(789L, entity.getSessionId());
+        assertEquals("conv-9", entity.getConversationId());
+        assertNull(entity.getSessionVariables());
+        assertNull(entity.getConversationVariables());
+        assertEquals("ERROR_LOG", entity.getLogType());
+        assertEquals("ERROR", entity.getLogLevel());
+        assertNotNull(entity.getLogData());
+        assertFalse(entity.getLogData().contains("logLevel"), "logData 不应包含 logLevel: " + entity.getLogData());
+    }
+
+    @Test
+    void addLog_序列化logData排除logLevel和context字段() {
+        AgentExecutionContext context = buildContext("123", "conv-1");
+        RequestEntryLogData logData = RequestEntryLogData.builder()
+                .context(context)
+                .modelId("model-1")
+                .content("hello")
+                .isToolContinue(false)
+                .logLevel(LogLevel.INFO)
+                .build();
+
+        databaseAgentLog.addLog(logData);
+
+        ArgumentCaptor<AgentLogEntity> captor = ArgumentCaptor.forClass(AgentLogEntity.class);
+        verify(agentLogMapper).insert(captor.capture());
+        AgentLogEntity entity = captor.getValue();
+        assertNotNull(entity.getLogData());
+        assertFalse(entity.getLogData().contains("logLevel"), "logData 不应包含 logLevel: " + entity.getLogData());
+        assertFalse(entity.getLogData().contains("context"), "logData 不应包含 context: " + entity.getLogData());
+        assertFalse(entity.getLogData().contains("sessionId"), "logData 不应包含 sessionId: " + entity.getLogData());
+        assertEquals("INFO", entity.getLogLevel());
     }
 }

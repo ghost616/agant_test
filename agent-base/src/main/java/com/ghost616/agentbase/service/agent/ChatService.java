@@ -114,19 +114,19 @@ public class ChatService {
         AgentExecutionContext.AgentContextMutator contextMutator = sessionContext.mutator();
 
         boolean isToolContinue = TOOL_CONTINUE_MARKER.equals(content);
+        String conversationId = request.getConversationId();
 
         addLog(RequestEntryLogData.builder()
                 .logLevel(LogLevel.INFO)
                 .context(context)
-                .sessionId(sessionId)
                 .modelId(context.getModelId())
+                .conversationId(conversationId)
                 .content(content)
                 .isToolContinue(isToolContinue)
                 .build());
         if (!isToolContinue) {
             contextMutator.resetStopped();
             contextMutator.clearConversationVariables();
-            String conversationId = request.getConversationId();
             if (context.getParentSessionId() == null
                     && (conversationId == null || conversationId.isBlank())) {
                 addLog(ErrorLogData.builder()
