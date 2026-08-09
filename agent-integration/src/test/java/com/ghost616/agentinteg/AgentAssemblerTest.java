@@ -1,9 +1,11 @@
 package com.ghost616.agentinteg;
 
+import com.ghost616.agentbase.core.AgentComponentRegistry;
 import com.ghost616.agentbase.service.agent.ChatService;
 import com.ghost616.agentbase.service.agent.ToolExecutionService;
 import com.ghost616.agentbase.service.agent.invoker.HookInvoker;
 import com.ghost616.agentbase.service.agent.invoker.HookManager;
+import com.ghost616.agentbase.service.agent.log.AgentLog;
 import com.ghost616.agentbase.sendmessage.MessageSender;
 import com.ghost616.agentbase.service.agent.ChatDataProvider;
 import com.ghost616.agentbase.service.agent.ContextDataProvider;
@@ -163,6 +165,40 @@ class AgentAssemblerTest {
         agentAssembler.refreshHooks();
 
         verify(chatDataProvider, times(1)).getHooks();
+    }
+
+    // ========== AgentLog 注册验证 ==========
+
+    @Test
+    void setAgentLog_build前调用_build后registry仍为null() throws Exception {
+        AgentLog agentLog = mock(AgentLog.class);
+        agentAssembler.setAgentLog(agentLog);
+        agentAssembler.build();
+
+        assertNull(getRegistry().getAgentLog());
+    }
+
+    @Test
+    void setAgentLog_build后调用_直接注册到registry() throws Exception {
+        AgentLog agentLog = mock(AgentLog.class);
+        agentAssembler.build();
+        agentAssembler.setAgentLog(agentLog);
+
+        assertSame(agentLog, getRegistry().getAgentLog());
+    }
+
+    @Test
+    void setAgentLog_build后调用且设置null_registry为null() throws Exception {
+        agentAssembler.build();
+        agentAssembler.setAgentLog(null);
+
+        assertNull(getRegistry().getAgentLog());
+    }
+
+    private AgentComponentRegistry getRegistry() throws Exception {
+        Field registryField = AgentAssembler.class.getDeclaredField("registry");
+        registryField.setAccessible(true);
+        return (AgentComponentRegistry) registryField.get(agentAssembler);
     }
 
     private void invokeEnsureInitialized(Object service) throws Exception {

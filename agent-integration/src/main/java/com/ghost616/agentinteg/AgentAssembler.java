@@ -13,6 +13,7 @@ import com.ghost616.agentbase.service.agent.ToolDataProvider;
 import com.ghost616.agentbase.service.agent.ToolExecutionProvider;
 import com.ghost616.agentbase.service.agent.ToolExecutionService;
 import com.ghost616.agentbase.service.agent.ToolExecutionTracker;
+import com.ghost616.agentbase.service.agent.log.AgentLog;
 import com.ghost616.agentbase.service.agent.invoker.HistoryQuerySystemTool;
 import com.ghost616.agentbase.service.agent.invoker.HookInvoker;
 import com.ghost616.agentbase.service.agent.invoker.HookManager;
@@ -80,6 +81,12 @@ public class AgentAssembler {
     public void refreshHooks() {
         if (hookManager != null) {
             hookManager.refreshHooks();
+        }
+    }
+
+    public void setAgentLog(AgentLog agentLog) {
+        if (registry != null) {
+            registry.setAgentLog(agentLog);
         }
     }
 

@@ -15,6 +15,7 @@ import com.ghost616.agentbase.service.agent.invoker.ToolCallQueueManager;
 import com.ghost616.agentbase.service.agent.invoker.ToolManager;
 import com.ghost616.agentbase.service.model.invoker.ModelInvokerFactory;
 import com.ghost616.agentbase.service.model.invoker.ModelInvokerDataProvider;
+import com.ghost616.agentbase.service.agent.log.AgentLog;
 import com.ghost616.agentbase.service.model.invoker.ModelInvokerManager;
 import com.ghost616.agentbase.sendmessage.MessageSender;
 import lombok.Setter;
@@ -50,6 +51,9 @@ public class AgentComponentRegistry {
 
     @Setter
     private MessageSender messageSender;
+
+    @Setter
+    private AgentLog agentLog;
 
     private <T> T requireInitialized(T value, String name) {
         if (value == null) {
@@ -124,5 +128,9 @@ public class AgentComponentRegistry {
 
     public MessageSender getMessageSender() {
         return messageSender;
+    }
+
+    public AgentLog getAgentLog() {
+        return agentLog;
     }
 }
