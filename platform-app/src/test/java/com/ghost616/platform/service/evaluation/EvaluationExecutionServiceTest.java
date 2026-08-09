@@ -14,6 +14,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
@@ -136,6 +137,28 @@ class EvaluationExecutionServiceTest {
             assertEquals("PENDING", result.getStatus());
             assertEquals(0, result.getCurrentStep());
             assertEquals(1, result.getTotalSteps());
+        }
+
+        @Test
+        void normalExecution_shouldPassThroughThinkingToExecutionSession() {
+            Evaluation evaluation = createEvaluation(BENCHMARK_SESSION_ID);
+            when(evaluationMapper.selectById(EVALUATION_ID)).thenReturn(evaluation);
+            when(messageDataProvider.getMessages(String.valueOf(BENCHMARK_SESSION_ID)))
+                    .thenReturn(List.of(createUserMessage("test message")));
+            Session benchmarkSession = createBenchmarkSession();
+            benchmarkSession.setThinking(Boolean.TRUE);
+            when(sessionMapper.selectById(BENCHMARK_SESSION_ID)).thenReturn(benchmarkSession);
+            doAnswer(inv -> {
+                Session s = inv.getArgument(0);
+                s.setId(EXECUTION_SESSION_ID);
+                return null;
+            }).when(sessionMapper).insert(any(Session.class));
+
+            service.execute(EVALUATION_ID);
+
+            ArgumentCaptor<Session> captor = ArgumentCaptor.forClass(Session.class);
+            verify(sessionMapper).insert(captor.capture());
+            assertEquals(Boolean.TRUE, captor.getValue().getThinking());
         }
 
         @Test

@@ -100,10 +100,22 @@ public class ToolExecutionService {
 
     public ToolExecutionResult executeTool(String sessionId) {
         ensureInitialized();
+        AgentContextManager.AgentSessionContext sessionCtx = agentContextManager.get(sessionId);
+        if (sessionCtx == null) {
+            addLog(ToolExecuteLogData.builder()
+                    .logLevel(LogLevel.ERROR)
+                    .sessionId(sessionId)
+                    .queueStatus("error")
+                    .build());
+            return new ToolExecutionResult("error", null, null, null, false, "session not found");
+        }
+        AgentExecutionContext context = sessionCtx.context();
+
         MessageDataProvider.ToolCallData peekData = toolCallQueueManager.peek(sessionId);
         if (peekData == null) {
             addLog(ToolExecuteLogData.builder()
                     .logLevel(LogLevel.INFO)
+                    .context(context)
                     .sessionId(sessionId)
                     .queueStatus("empty")
                     .build());
@@ -123,6 +135,7 @@ public class ToolExecutionService {
             log.error("sessionId={} 获取工具调用器失败, toolName={}", sessionId, peekToolCallName, e);
             addLog(ToolExecuteLogData.builder()
                     .logLevel(LogLevel.ERROR)
+                    .context(context)
                     .sessionId(sessionId)
                     .toolCallId(peekData.toolCallId())
                     .toolCallName(peekToolCallName)
@@ -145,6 +158,7 @@ public class ToolExecutionService {
                 toolExecutionTracker.setDone(sessionId, peekData.toolCallId(), errorResult);
                 addLog(ToolExecuteLogData.builder()
                         .logLevel(LogLevel.ERROR)
+                        .context(context)
                         .sessionId(sessionId)
                         .toolCallId(peekData.toolCallId())
                         .toolCallName(peekToolCallName)
@@ -163,26 +177,13 @@ public class ToolExecutionService {
         if (toolCall == null) {
             addLog(ToolExecuteLogData.builder()
                     .logLevel(LogLevel.INFO)
+                    .context(context)
                     .sessionId(sessionId)
                     .queueStatus("empty")
                     .build());
             return new ToolExecutionResult("empty", null, null, null, false, null);
         }
 
-        AgentContextManager.AgentSessionContext sessionCtx = agentContextManager.get(sessionId);
-        if (sessionCtx == null) {
-            addLog(ToolExecuteLogData.builder()
-                    .logLevel(LogLevel.ERROR)
-                    .sessionId(sessionId)
-                    .toolCallId(toolCall.toolCallId())
-                    .toolCallName(toolCall.toolCallName())
-                    .toolCallArguments(toolCall.toolCallArguments())
-                    .toolType(resolveToolType(toolCall.toolCallName()))
-                    .queueStatus("error")
-                    .build());
-            return new ToolExecutionResult("error", null, null, null, false, "session not found");
-        }
-        AgentExecutionContext context = sessionCtx.context();
         if (context.isStopped()) {
             toolCallQueueManager.clear(sessionId);
             toolExecutionTracker.clear(sessionId);

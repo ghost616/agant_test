@@ -27,4 +27,10 @@ public class AgentLogEntity extends BaseEntity {
 
     @TableField("log_data")
     private String logData;
+
+    @TableField("session_variables")
+    private String sessionVariables;
+
+    @TableField("conversation_variables")
+    private String conversationVariables;
 }

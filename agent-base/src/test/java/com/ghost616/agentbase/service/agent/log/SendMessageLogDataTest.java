@@ -17,7 +17,8 @@ class SendMessageLogDataTest {
     void 字段应默认为null() {
         SendMessageLogData data = SendMessageLogData.builder().build();
         assertNull(data.getLogLevel());
-        assertNull(data.getParentSessionId());
+        assertNull(data.getSessionId());
+        assertNull(data.getConversationId());
         assertNull(data.getChildSessionId());
         assertNull(data.getContent());
         assertNull(data.getModelId());
@@ -27,14 +28,14 @@ class SendMessageLogDataTest {
     @Test
     void builder应正确设置字段() {
         SendMessageLogData data = SendMessageLogData.builder()
-                .parentSessionId("s1")
+                .sessionId("s1")
                 .childSessionId("c1")
                 .content("hello")
                 .modelId("300")
                 .thinking(true)
                 .build();
 
-        assertEquals("s1", data.getParentSessionId());
+        assertEquals("s1", data.getSessionId());
         assertEquals("c1", data.getChildSessionId());
         assertEquals("hello", data.getContent());
         assertEquals("300", data.getModelId());
@@ -45,5 +46,6 @@ class SendMessageLogDataTest {
     void 不应继承ContextLogData() {
         SendMessageLogData data = SendMessageLogData.builder().build();
         assertFalse(ContextLogData.class.isAssignableFrom(data.getClass()));
+        assertTrue(SessionLogData.class.isAssignableFrom(data.getClass()));
     }
 }

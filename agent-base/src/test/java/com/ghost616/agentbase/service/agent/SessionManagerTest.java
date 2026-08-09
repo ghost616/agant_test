@@ -8,11 +8,11 @@ import com.ghost616.agentbase.enums.LogLevel;
 import com.ghost616.agentbase.enums.LogType;
 import com.ghost616.agentbase.exception.BusinessException;
 import com.ghost616.agentbase.service.agent.log.AgentLog;
-import com.ghost616.agentbase.service.agent.log.ErrorLogData;
 import com.ghost616.agentbase.service.agent.log.LogData;
 import com.ghost616.agentbase.service.agent.log.MessageQueryLogData;
 import com.ghost616.agentbase.service.agent.log.MessageRollbackLogData;
 import com.ghost616.agentbase.service.agent.log.MessageSaveLogData;
+import com.ghost616.agentbase.service.agent.log.SessionErrorLogData;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -187,8 +187,10 @@ class SessionManagerTest {
         verify(agentLog).addLog(captor.capture());
         LogData logData = captor.getValue();
         assertEquals(LogType.ERROR_LOG, logData.logType());
-        ErrorLogData errorLog = (ErrorLogData) logData;
+        SessionErrorLogData errorLog = (SessionErrorLogData) logData;
         assertEquals(LogLevel.ERROR, errorLog.getLogLevel());
+        assertNull(errorLog.getSessionId());
+        assertNull(errorLog.getConversationId());
         assertEquals(ErrorCode.PARAM_INVALID.getCode(), errorLog.getErrorCode());
         assertTrue(errorLog.getMessage().contains("sessionId 不能为空"));
     }

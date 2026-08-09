@@ -11,10 +11,7 @@ import java.util.List;
  */
 @Getter
 @SuperBuilder
-public class ChildSessionLogData extends ContextLogData {
-
-    /** 父会话 ID */
-    private final String parentSessionId;
+public class ChildSessionLogData extends SessionLogData {
 
     /** 子会话 ID */
     private final String childSessionId;

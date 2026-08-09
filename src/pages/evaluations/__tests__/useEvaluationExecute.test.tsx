@@ -46,6 +46,11 @@ describe('useEvaluationExecute 导入', () => {
     expect(source).toContain('continueChatStream');
   });
 
+  it('应导入 fetchConversationId', () => {
+    const source = readFileSync(hookPath, 'utf-8');
+    expect(source).toContain('fetchConversationId');
+  });
+
   it('应导入 executeBrowserTool', () => {
     const source = readFileSync(hookPath, 'utf-8');
     expect(source).toContain('executeBrowserTool');
@@ -155,6 +160,32 @@ describe('useEvaluationExecute 执行逻辑', () => {
   it('FOREGROUND 模式每次循环应显示第 i/N 次分隔', () => {
     const source = readFileSync(hookPath, 'utf-8');
     expect(source).toContain('========== 第 ${i + 1}/${evaluation.executionCount} 次执行 ==========');
+  });
+});
+
+describe('useEvaluationExecute FOREGROUND conversationId (静态验证)', () => {
+  it('sendForegroundMessage 应在调用 agentChatStream 前 await fetchConversationId()', () => {
+    const source = readFileSync(hookPath, 'utf-8');
+    const sendBlock = source.match(/const sendForegroundMessage[\s\S]*?\}\s*,\s*\[runToolCycle\]\s*,?\s*\)\s*;/);
+    expect(sendBlock).not.toBeNull();
+    if (sendBlock) {
+      expect(sendBlock[0]).toContain('conversationId = await fetchConversationId();');
+      expect(sendBlock[0]).toContain('agentChatStream(');
+    }
+  });
+
+  it('sendForegroundMessage 应把 conversationId 传入 agentChatStream 请求参数', () => {
+    const source = readFileSync(hookPath, 'utf-8');
+    const sendBlock = source.match(/const sendForegroundMessage[\s\S]*?\}\s*,\s*\[runToolCycle\]\s*,?\s*\)\s*;/);
+    expect(sendBlock).not.toBeNull();
+    if (sendBlock) {
+      expect(sendBlock[0]).toContain('{ sessionId, content, conversationId }');
+    }
+  });
+
+  it('sendForegroundMessage 获取 conversationId 失败时应抛出错误', () => {
+    const source = readFileSync(hookPath, 'utf-8');
+    expect(source).toContain("throw new Error('获取会话标识失败')");
   });
 });
 

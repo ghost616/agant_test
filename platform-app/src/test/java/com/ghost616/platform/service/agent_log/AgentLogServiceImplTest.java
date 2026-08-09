@@ -155,6 +155,76 @@ class AgentLogServiceImplTest {
     }
 
     @Test
+    void list_session标题为null或空时sessionName兜底为id字符串() {
+        when(agentLogMapper.selectPage(any(Page.class), any(Wrapper.class))).thenAnswer(inv -> {
+            Page<AgentLogEntity> page = inv.getArgument(0);
+            page.setRecords(List.of(
+                    buildEntity(1L, 10L, "conv-1", "ROUTE", "INFO",
+                            LocalDateTime.of(2026, 8, 9, 0, 0)),
+                    buildEntity(2L, 20L, "conv-2", "ROUTE", "INFO",
+                            LocalDateTime.of(2026, 8, 9, 0, 0))));
+            page.setTotal(2);
+            return page;
+        });
+        Session session1 = new Session();
+        session1.setId(10L);
+        session1.setTitle(null);
+        Session session2 = new Session();
+        session2.setId(20L);
+        session2.setTitle("");
+        when(sessionMapper.selectBatchIds(anyCollection())).thenReturn(List.of(session1, session2));
+
+        PageResult<AgentLogDTO> result = agentLogService.list(null, null, null, null, null, 1, 20);
+
+        assertEquals(2, result.getList().size());
+        assertEquals("10", result.getList().get(0).getSessionName());
+        assertEquals("20", result.getList().get(1).getSessionName());
+    }
+
+    @Test
+    void list_session标题为空白时仍使用标题() {
+        when(agentLogMapper.selectPage(any(Page.class), any(Wrapper.class))).thenAnswer(inv -> {
+            Page<AgentLogEntity> page = inv.getArgument(0);
+            page.setRecords(List.of(
+                    buildEntity(1L, 10L, "conv-1", "ROUTE", "INFO",
+                            LocalDateTime.of(2026, 8, 9, 0, 0))));
+            page.setTotal(1);
+            return page;
+        });
+        Session session = new Session();
+        session.setId(10L);
+        session.setTitle("   ");
+        when(sessionMapper.selectBatchIds(anyCollection())).thenReturn(List.of(session));
+
+        PageResult<AgentLogDTO> result = agentLogService.list(null, null, null, null, null, 1, 20);
+
+        assertEquals("   ", result.getList().get(0).getSessionName());
+    }
+
+    @Test
+    void list_DTO映射sessionVariables和conversationVariables() {
+        when(agentLogMapper.selectPage(any(Page.class), any(Wrapper.class))).thenAnswer(inv -> {
+            Page<AgentLogEntity> page = inv.getArgument(0);
+            AgentLogEntity entity = buildEntity(1L, 10L, "conv-1", "ROUTE", "INFO",
+                    LocalDateTime.of(2026, 8, 9, 0, 0));
+            entity.setSessionVariables("{\"skill\":\"java\"}");
+            entity.setConversationVariables("{\"topic\":\"log\"}");
+            page.setRecords(List.of(entity));
+            page.setTotal(1);
+            return page;
+        });
+        Session session = new Session();
+        session.setId(10L);
+        session.setTitle("测试会话");
+        when(sessionMapper.selectBatchIds(anyCollection())).thenReturn(List.of(session));
+
+        PageResult<AgentLogDTO> result = agentLogService.list(null, null, null, null, null, 1, 20);
+
+        assertEquals("{\"skill\":\"java\"}", result.getList().get(0).getSessionVariables());
+        assertEquals("{\"topic\":\"log\"}", result.getList().get(0).getConversationVariables());
+    }
+
+    @Test
     void list_session不存在时sessionName为null() {
         when(agentLogMapper.selectPage(any(Page.class), any(Wrapper.class))).thenAnswer(inv -> {
             Page<AgentLogEntity> page = inv.getArgument(0);

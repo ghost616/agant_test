@@ -108,6 +108,10 @@ class ToolExecutionServiceTest {
 
     @Test
     void executeTool_队列为空时返回empty() {
+        AgentContextManager.AgentSessionContext sessionCtx = mock(AgentContextManager.AgentSessionContext.class);
+        AgentExecutionContext context = mock(AgentExecutionContext.class);
+        when(sessionCtx.context()).thenReturn(context);
+        when(agentContextManager.get(sessionId)).thenReturn(sessionCtx);
         when(toolCallQueueManager.peek(sessionId)).thenReturn(null);
 
         ToolExecutionService.ToolExecutionResult result = toolExecutionService.executeTool(sessionId);
@@ -164,6 +168,10 @@ class ToolExecutionServiceTest {
 
     @Test
     void executeTool_invoker为null时消费队列_hasMore为false() {
+        AgentContextManager.AgentSessionContext sessionCtx = mock(AgentContextManager.AgentSessionContext.class);
+        AgentExecutionContext context = mock(AgentExecutionContext.class);
+        when(sessionCtx.context()).thenReturn(context);
+        when(agentContextManager.get(sessionId)).thenReturn(sessionCtx);
         MessageDataProvider.ToolCallData peekData = new MessageDataProvider.ToolCallData("tid3", "unknownTool", "{}");
         when(toolCallQueueManager.peek(sessionId)).thenReturn(peekData);
         when(toolManager.getInvoker(sessionId, "unknownTool")).thenReturn(null);
@@ -183,6 +191,10 @@ class ToolExecutionServiceTest {
 
     @Test
     void executeTool_invoker为null时消费队列_hasMore为true() {
+        AgentContextManager.AgentSessionContext sessionCtx = mock(AgentContextManager.AgentSessionContext.class);
+        AgentExecutionContext context = mock(AgentExecutionContext.class);
+        when(sessionCtx.context()).thenReturn(context);
+        when(agentContextManager.get(sessionId)).thenReturn(sessionCtx);
         MessageDataProvider.ToolCallData peekData = new MessageDataProvider.ToolCallData("tidx", "unknownTool", "{}");
         when(toolCallQueueManager.peek(sessionId)).thenReturn(peekData);
         when(toolManager.getInvoker(sessionId, "unknownTool")).thenReturn(null);
@@ -199,6 +211,10 @@ class ToolExecutionServiceTest {
 
     @Test
     void executeTool_invoker为null时poll后无pending则hasMore为false() {
+        AgentContextManager.AgentSessionContext sessionCtx = mock(AgentContextManager.AgentSessionContext.class);
+        AgentExecutionContext context = mock(AgentExecutionContext.class);
+        when(sessionCtx.context()).thenReturn(context);
+        when(agentContextManager.get(sessionId)).thenReturn(sessionCtx);
         MessageDataProvider.ToolCallData peekData = new MessageDataProvider.ToolCallData("tidy", "unknownTool", "{}");
         when(toolCallQueueManager.peek(sessionId)).thenReturn(peekData);
         when(toolManager.getInvoker(sessionId, "unknownTool")).thenReturn(null);
@@ -242,6 +258,10 @@ class ToolExecutionServiceTest {
 
     @Test
     void executeTool_非_$前缀且invoker为null时写入工具调用器不存在错误() {
+        AgentContextManager.AgentSessionContext sessionCtx = mock(AgentContextManager.AgentSessionContext.class);
+        AgentExecutionContext context = mock(AgentExecutionContext.class);
+        when(sessionCtx.context()).thenReturn(context);
+        when(agentContextManager.get(sessionId)).thenReturn(sessionCtx);
         MessageDataProvider.ToolCallData peekData = new MessageDataProvider.ToolCallData("tidErr", "unknownTool", "{}");
         when(toolCallQueueManager.peek(sessionId)).thenReturn(peekData);
         when(toolManager.getInvoker(sessionId, "unknownTool")).thenReturn(null);
@@ -257,6 +277,10 @@ class ToolExecutionServiceTest {
 
     @Test
     void executeTool_获取调用器抛出异常时返回failed() {
+        AgentContextManager.AgentSessionContext sessionCtx = mock(AgentContextManager.AgentSessionContext.class);
+        AgentExecutionContext context = mock(AgentExecutionContext.class);
+        when(sessionCtx.context()).thenReturn(context);
+        when(agentContextManager.get(sessionId)).thenReturn(sessionCtx);
         MessageDataProvider.ToolCallData peekData = new MessageDataProvider.ToolCallData("tid4", "_sys_broken", "{}");
         when(toolCallQueueManager.peek(sessionId)).thenReturn(peekData);
         when(systemToolManager.getSystemTool("broken")).thenThrow(new RuntimeException("connection error"));
@@ -269,20 +293,14 @@ class ToolExecutionServiceTest {
     }
 
     @Test
-    void executeTool_poll后sessionContext为null时返回error() {
-        MessageDataProvider.ToolCallData peekData = new MessageDataProvider.ToolCallData("tid5", "myTool", "{}");
-        when(toolCallQueueManager.peek(sessionId)).thenReturn(peekData);
-        ToolInvoker invoker = mock(ToolInvoker.class);
-        when(toolManager.getInvoker(sessionId, "myTool")).thenReturn(invoker);
-
-        MessageDataProvider.ToolCallData pollData = new MessageDataProvider.ToolCallData("tid5", "myTool", "{}");
-        when(toolCallQueueManager.poll(sessionId)).thenReturn(pollData);
+    void executeTool_sessionContext为null时返回error() {
         when(agentContextManager.get(sessionId)).thenReturn(null);
 
         ToolExecutionService.ToolExecutionResult result = toolExecutionService.executeTool(sessionId);
 
         assertEquals("error", result.status());
         assertEquals("session not found", result.message());
+        verify(toolCallQueueManager, never()).peek(sessionId);
     }
 
     @Test
@@ -449,6 +467,10 @@ class ToolExecutionServiceTest {
 
     @Test
     void executeTool_队列为空时记录empty日志() {
+        AgentContextManager.AgentSessionContext sessionCtx = mock(AgentContextManager.AgentSessionContext.class);
+        AgentExecutionContext context = mock(AgentExecutionContext.class);
+        when(sessionCtx.context()).thenReturn(context);
+        when(agentContextManager.get(sessionId)).thenReturn(sessionCtx);
         when(toolCallQueueManager.peek(sessionId)).thenReturn(null);
 
         toolExecutionService.executeTool(sessionId);
@@ -460,11 +482,16 @@ class ToolExecutionServiceTest {
         ToolExecuteLogData toolLog = (ToolExecuteLogData) logData;
         assertEquals(LogLevel.INFO, toolLog.getLogLevel());
         assertEquals(sessionId, toolLog.getSessionId());
+        assertSame(context, toolLog.getContext());
         assertEquals("empty", toolLog.getQueueStatus());
     }
 
     @Test
     void executeTool_获取调用器异常时记录failed日志() {
+        AgentContextManager.AgentSessionContext sessionCtx = mock(AgentContextManager.AgentSessionContext.class);
+        AgentExecutionContext context = mock(AgentExecutionContext.class);
+        when(sessionCtx.context()).thenReturn(context);
+        when(agentContextManager.get(sessionId)).thenReturn(sessionCtx);
         MessageDataProvider.ToolCallData peekData = new MessageDataProvider.ToolCallData("tid4", "_sys_broken", "{}");
         when(toolCallQueueManager.peek(sessionId)).thenReturn(peekData);
         when(systemToolManager.getSystemTool("broken")).thenThrow(new RuntimeException("connection error"));
@@ -477,6 +504,7 @@ class ToolExecutionServiceTest {
         assertEquals(LogType.TOOL_EXECUTE, logData.logType());
         ToolExecuteLogData toolLog = (ToolExecuteLogData) logData;
         assertEquals(LogLevel.ERROR, toolLog.getLogLevel());
+        assertSame(context, toolLog.getContext());
         assertEquals("tid4", toolLog.getToolCallId());
         assertEquals("_sys_broken", toolLog.getToolCallName());
         assertEquals("system", toolLog.getToolType());
@@ -485,6 +513,10 @@ class ToolExecutionServiceTest {
 
     @Test
     void executeTool_invoker不存在时记录error日志() {
+        AgentContextManager.AgentSessionContext sessionCtx = mock(AgentContextManager.AgentSessionContext.class);
+        AgentExecutionContext context = mock(AgentExecutionContext.class);
+        when(sessionCtx.context()).thenReturn(context);
+        when(agentContextManager.get(sessionId)).thenReturn(sessionCtx);
         MessageDataProvider.ToolCallData peekData = new MessageDataProvider.ToolCallData("tidErr", "unknownTool", "{}");
         when(toolCallQueueManager.peek(sessionId)).thenReturn(peekData);
         when(toolManager.getInvoker(sessionId, "unknownTool")).thenReturn(null);
@@ -499,6 +531,7 @@ class ToolExecutionServiceTest {
         assertEquals(LogType.TOOL_EXECUTE, logData.logType());
         ToolExecuteLogData toolLog = (ToolExecuteLogData) logData;
         assertEquals(LogLevel.ERROR, toolLog.getLogLevel());
+        assertSame(context, toolLog.getContext());
         assertEquals("tidErr", toolLog.getToolCallId());
         assertEquals("unknownTool", toolLog.getToolCallName());
         assertEquals("regular", toolLog.getToolType());
@@ -507,11 +540,6 @@ class ToolExecutionServiceTest {
 
     @Test
     void executeTool_sessionContext不存在时记录error日志() {
-        MessageDataProvider.ToolCallData peekData = new MessageDataProvider.ToolCallData("tid5", "myTool", "{}");
-        when(toolCallQueueManager.peek(sessionId)).thenReturn(peekData);
-        when(toolManager.getInvoker(sessionId, "myTool")).thenReturn(mock(ToolInvoker.class));
-        when(toolCallQueueManager.poll(sessionId)).thenReturn(peekData);
-        when(toolCallQueueManager.hasPending(sessionId)).thenReturn(false);
         when(agentContextManager.get(sessionId)).thenReturn(null);
 
         toolExecutionService.executeTool(sessionId);
@@ -522,9 +550,10 @@ class ToolExecutionServiceTest {
         assertEquals(LogType.TOOL_EXECUTE, logData.logType());
         ToolExecuteLogData toolLog = (ToolExecuteLogData) logData;
         assertEquals(LogLevel.ERROR, toolLog.getLogLevel());
-        assertEquals("tid5", toolLog.getToolCallId());
-        assertEquals("myTool", toolLog.getToolCallName());
-        assertEquals("regular", toolLog.getToolType());
+        assertEquals(sessionId, toolLog.getSessionId());
+        assertNull(toolLog.getToolCallId());
+        assertNull(toolLog.getToolCallName());
+        assertNull(toolLog.getToolType());
         assertEquals("error", toolLog.getQueueStatus());
     }
 
@@ -604,6 +633,10 @@ class ToolExecutionServiceTest {
     @Test
     void agentLog为null时addLog静默跳过() {
         registry.setAgentLog(null);
+        AgentContextManager.AgentSessionContext sessionCtx = mock(AgentContextManager.AgentSessionContext.class);
+        AgentExecutionContext context = mock(AgentExecutionContext.class);
+        when(sessionCtx.context()).thenReturn(context);
+        when(agentContextManager.get(sessionId)).thenReturn(sessionCtx);
         when(toolCallQueueManager.peek(sessionId)).thenReturn(null);
 
         toolExecutionService.executeTool(sessionId);
@@ -614,6 +647,10 @@ class ToolExecutionServiceTest {
     @Test
     void agentLog抛异常时不中断主流程() {
         doThrow(new RuntimeException("log failure")).when(agentLog).addLog(any());
+        AgentContextManager.AgentSessionContext sessionCtx = mock(AgentContextManager.AgentSessionContext.class);
+        AgentExecutionContext context = mock(AgentExecutionContext.class);
+        when(sessionCtx.context()).thenReturn(context);
+        when(agentContextManager.get(sessionId)).thenReturn(sessionCtx);
         when(toolCallQueueManager.peek(sessionId)).thenReturn(null);
 
         assertDoesNotThrow(() -> toolExecutionService.executeTool(sessionId));

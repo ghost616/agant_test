@@ -6,10 +6,13 @@ import com.ghost616.agentbase.dto.model.Message;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.codec.ServerSentEvent;
 import reactor.core.publisher.Flux;
+
+import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -17,6 +20,8 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class AgentMessageProxyTest {
+
+    private static final Pattern CONVERSATION_ID_PATTERN = Pattern.compile("^[0-9a-z_]+$");
 
     @Mock
     private ChatService chatService;
@@ -145,5 +150,70 @@ class AgentMessageProxyTest {
 
         assertEquals("assistant", result.getRole());
         assertEquals("", result.getContent());
+    }
+
+    @Test
+    void sendUserMessageToSession_自动生成24位conversationId并透传() {
+        ServerSentEvent<ChatChunk> event = ServerSentEvent.<ChatChunk>builder()
+                .data(ChatChunk.builder().delta("Reply").hasToolCalls(false).build())
+                .build();
+        when(chatService.chat(any())).thenReturn(Flux.just(event));
+
+        Message result = proxy.sendUserMessageToSession(sessionId, "Hi", modelId, true);
+
+        assertEquals("assistant", result.getRole());
+        assertEquals("Reply", result.getContent());
+
+        ArgumentCaptor<ChatRequest> captor = ArgumentCaptor.forClass(ChatRequest.class);
+        verify(chatService).chat(captor.capture());
+        ChatRequest request = captor.getValue();
+        assertEquals(sessionId, request.getSessionId());
+        assertEquals("Hi", request.getContent());
+        assertEquals(modelId, request.getModelId());
+        assertEquals(Boolean.TRUE, request.getThinking());
+        assertNotNull(request.getConversationId());
+        assertEquals(24, request.getConversationId().length());
+        assertTrue(CONVERSATION_ID_PATTERN.matcher(request.getConversationId()).matches());
+    }
+
+    @Test
+    void sendUserMessageToSession_每次调用生成不同conversationId() {
+        ServerSentEvent<ChatChunk> event = ServerSentEvent.<ChatChunk>builder()
+                .data(ChatChunk.builder().delta("Reply").hasToolCalls(false).build())
+                .build();
+        when(chatService.chat(any())).thenReturn(Flux.just(event));
+
+        proxy.sendUserMessageToSession(sessionId, "Hi", modelId, null);
+        proxy.sendUserMessageToSession(sessionId, "Hi", modelId, null);
+
+        ArgumentCaptor<ChatRequest> captor = ArgumentCaptor.forClass(ChatRequest.class);
+        verify(chatService, times(2)).chat(captor.capture());
+        assertNotEquals(captor.getAllValues().get(0).getConversationId(),
+                captor.getAllValues().get(1).getConversationId());
+    }
+
+    @Test
+    void sendUserMessageToSession_工具正常执行后返回文本() {
+        ServerSentEvent<ChatChunk> toolEvent = ServerSentEvent.<ChatChunk>builder()
+                .data(ChatChunk.builder().hasToolCalls(true).build())
+                .build();
+        ServerSentEvent<ChatChunk> textEvent = ServerSentEvent.<ChatChunk>builder()
+                .data(ChatChunk.builder().delta("Result text").hasToolCalls(false).build())
+                .build();
+        when(chatService.chat(any())).thenReturn(Flux.just(toolEvent));
+        when(toolExecutionService.continueAfterTools(any())).thenReturn(Flux.just(textEvent));
+        ToolExecutionService.ToolExecutionResult execResult = new ToolExecutionService.ToolExecutionResult(
+                "executing", "tid1", "myTool", "{}", false, null);
+        when(toolExecutionService.executeTool(any())).thenReturn(execResult);
+        ToolExecutionService.ToolStatusResult statusResult = new ToolExecutionService.ToolStatusResult(
+                "done", "tid1", "myTool", "{}", false, null);
+        when(toolExecutionService.getToolStatus(any(), any())).thenReturn(statusResult);
+
+        Message result = proxy.sendUserMessageToSession(sessionId, "Hi", modelId, null);
+
+        assertEquals("assistant", result.getRole());
+        assertEquals("Result text", result.getContent());
+        verify(toolExecutionService).executeTool(any());
+        verify(toolExecutionService).continueAfterTools(any());
     }
 }

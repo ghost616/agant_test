@@ -9,10 +9,7 @@ import lombok.experimental.SuperBuilder;
  */
 @Getter
 @SuperBuilder
-public class SendMessageLogData extends LogData {
-
-    /** 父会话 ID */
-    private final String parentSessionId;
+public class SendMessageLogData extends SessionLogData {
 
     /** 子会话 ID */
     private final String childSessionId;

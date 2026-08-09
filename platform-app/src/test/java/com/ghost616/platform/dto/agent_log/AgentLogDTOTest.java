@@ -52,6 +52,45 @@ class AgentLogDTOTest {
     }
 
     @Test
+    void builder构造_含sessionVariables和conversationVariables字段() {
+        AgentLogDTO dto = AgentLogDTO.builder()
+                .id(1L)
+                .sessionId(2L)
+                .sessionName("会话")
+                .sessionVariables("{\"skill\":\"java\"}")
+                .conversationVariables("{\"topic\":\"log\"}")
+                .build();
+
+        assertEquals("{\"skill\":\"java\"}", dto.getSessionVariables());
+        assertEquals("{\"topic\":\"log\"}", dto.getConversationVariables());
+    }
+
+    @Test
+    void builder构造_sessionVariables可为null() {
+        AgentLogDTO dto = AgentLogDTO.builder()
+                .id(1L)
+                .sessionId(2L)
+                .build();
+
+        assertNull(dto.getSessionVariables());
+        assertNull(dto.getConversationVariables());
+    }
+
+    @Test
+    void 序列化包含变量字段() throws Exception {
+        AgentLogDTO dto = AgentLogDTO.builder()
+                .id(1L)
+                .sessionId(2L)
+                .sessionVariables("{\"skill\":\"java\"}")
+                .conversationVariables("{\"topic\":\"log\"}")
+                .build();
+
+        String json = objectMapper.writeValueAsString(dto);
+        assertTrue(json.contains("sessionVariables"), "应包含 sessionVariables: " + json);
+        assertTrue(json.contains("conversationVariables"), "应包含 conversationVariables: " + json);
+    }
+
+    @Test
     void id序列化为字符串() throws Exception {
         AgentLogDTO dto = AgentLogDTO.builder()
                 .id(1234567890123456789L)

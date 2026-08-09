@@ -129,7 +129,9 @@ public class SchemaMigration implements ApplicationRunner {
                 new Migration("knowledge_file", "deleted", "INTEGER", "0"),
                 new Migration("agent_knowledge_base", "id", "BIGINT", null),
                 new Migration("agent_knowledge_base", "agent_id", "BIGINT", null),
-                new Migration("agent_knowledge_base", "knowledge_base_id", "BIGINT", null)
+                new Migration("agent_knowledge_base", "knowledge_base_id", "BIGINT", null),
+                new Migration("agent_log", "session_variables", "TEXT", null),
+                new Migration("agent_log", "conversation_variables", "TEXT", null)
         );
 
         for (Migration migration : migrations) {

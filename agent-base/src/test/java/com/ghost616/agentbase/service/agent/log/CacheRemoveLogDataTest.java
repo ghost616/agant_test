@@ -16,17 +16,20 @@ class CacheRemoveLogDataTest {
     @Test
     void 字段应默认为null() {
         CacheRemoveLogData data = CacheRemoveLogData.builder().build();
-        assertNull(data.getContext());
+        assertTrue(SessionLogData.class.isAssignableFrom(data.getClass()));
         assertNull(data.getLogLevel());
         assertNull(data.getSessionId());
+        assertNull(data.getConversationId());
     }
 
     @Test
     void builder应正确设置继承与自有字段() {
         CacheRemoveLogData data = CacheRemoveLogData.builder()
                 .sessionId("s1")
+                .conversationId("conv-1")
                 .build();
 
         assertEquals("s1", data.getSessionId());
+        assertEquals("conv-1", data.getConversationId());
     }
 }

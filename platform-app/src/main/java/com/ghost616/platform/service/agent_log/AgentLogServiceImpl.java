@@ -104,7 +104,15 @@ public class AgentLogServiceImpl implements AgentLogService {
         }
         List<Session> sessions = sessionMapper.selectBatchIds(sessionIds);
         return sessions.stream()
-                .collect(Collectors.toMap(Session::getId, Session::getTitle, (a, b) -> a));
+                .collect(Collectors.toMap(Session::getId, this::resolveSessionName, (a, b) -> a));
+    }
+
+    private String resolveSessionName(Session session) {
+        String title = session.getTitle();
+        if (title == null || title.isEmpty()) {
+            return String.valueOf(session.getId());
+        }
+        return title;
     }
 
     private AgentLogDTO toDTO(AgentLogEntity entity, Map<Long, String> sessionNameMap) {
@@ -116,6 +124,8 @@ public class AgentLogServiceImpl implements AgentLogService {
                 .logType(entity.getLogType())
                 .logLevel(entity.getLogLevel())
                 .logData(entity.getLogData())
+                .sessionVariables(entity.getSessionVariables())
+                .conversationVariables(entity.getConversationVariables())
                 .createTime(entity.getCreateTime())
                 .build();
     }

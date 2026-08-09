@@ -5,6 +5,7 @@ import com.ghost616.agentbase.service.agent.ChatService;
 import com.ghost616.agentbase.service.agent.MessageDataProvider;
 import com.ghost616.agentbase.service.agent.ToolExecutionService;
 import com.ghost616.platform.dto.evaluation.EvaluationExecutionStatusDTO;
+import com.ghost616.platform.entity.Session;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -84,8 +85,11 @@ class AsyncEvaluationExecutorTest {
         @Test
         void successfulExecution_shouldUpdateStatusToCompleted() {
             Map<String, EvaluationExecutionStatusDTO> statusMap = new ConcurrentHashMap<>();
+            Session executionSession = new Session();
+            executionSession.setId(EXECUTION_SESSION_ID);
+            executionSession.setThinking(Boolean.TRUE);
 
-            executor.executeAsync(EVALUATION_ID, EXECUTION_SESSION_ID, java.util.List.of(), statusMap);
+            executor.executeAsync(EVALUATION_ID, executionSession, java.util.List.of(), statusMap);
 
             EvaluationExecutionStatusDTO status = statusMap.get(String.valueOf(EVALUATION_ID));
             assertNotNull(status);

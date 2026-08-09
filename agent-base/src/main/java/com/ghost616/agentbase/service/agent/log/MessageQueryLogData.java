@@ -9,10 +9,7 @@ import lombok.experimental.SuperBuilder;
  */
 @Getter
 @SuperBuilder
-public class MessageQueryLogData extends ContextLogData {
-
-    /** 会话 ID */
-    private final String sessionId;
+public class MessageQueryLogData extends SessionLogData {
 
     /** 查询到的消息数量 */
     private final int messageCount;

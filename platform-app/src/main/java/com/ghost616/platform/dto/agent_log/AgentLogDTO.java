@@ -35,5 +35,11 @@ public class AgentLogDTO {
 
     private String logData;
 
+    /** 会话变量 JSON 字符串 */
+    private String sessionVariables;
+
+    /** 对话变量 JSON 字符串 */
+    private String conversationVariables;
+
     private LocalDateTime createTime;
 }

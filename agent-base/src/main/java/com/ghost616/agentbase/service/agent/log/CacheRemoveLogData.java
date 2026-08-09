@@ -9,10 +9,7 @@ import lombok.experimental.SuperBuilder;
  */
 @Getter
 @SuperBuilder
-public class CacheRemoveLogData extends ContextLogData {
-
-    /** 会话 ID */
-    private final String sessionId;
+public class CacheRemoveLogData extends SessionLogData {
 
     @Override
     public LogType logType() {

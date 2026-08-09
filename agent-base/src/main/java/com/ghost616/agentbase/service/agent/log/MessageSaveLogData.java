@@ -14,10 +14,7 @@ import java.util.List;
  */
 @Getter
 @SuperBuilder
-public class MessageSaveLogData extends ContextLogData {
-
-    /** 会话 ID */
-    private final String sessionId;
+public class MessageSaveLogData extends SessionLogData {
 
     /** 消息角色 */
     private final String role;
@@ -48,9 +45,6 @@ public class MessageSaveLogData extends ContextLogData {
 
     /** 自定义工具调用列表 */
     private final List<MessageDataProvider.CustomToolCallData> customToolCall;
-
-    /** 对话 ID */
-    private final String conversationId;
 
     @Override
     public LogType logType() {

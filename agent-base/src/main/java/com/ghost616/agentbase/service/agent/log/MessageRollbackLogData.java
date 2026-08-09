@@ -9,10 +9,7 @@ import lombok.experimental.SuperBuilder;
  */
 @Getter
 @SuperBuilder
-public class MessageRollbackLogData extends ContextLogData {
-
-    /** 会话 ID */
-    private final String sessionId;
+public class MessageRollbackLogData extends SessionLogData {
 
     /** 回退的消息数量 */
     private final int rollbackCount;

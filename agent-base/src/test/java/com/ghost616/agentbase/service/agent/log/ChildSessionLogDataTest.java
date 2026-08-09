@@ -18,9 +18,10 @@ class ChildSessionLogDataTest {
     @Test
     void 字段应默认为null() {
         ChildSessionLogData data = ChildSessionLogData.builder().build();
-        assertNull(data.getContext());
+        assertTrue(SessionLogData.class.isAssignableFrom(data.getClass()));
         assertNull(data.getLogLevel());
-        assertNull(data.getParentSessionId());
+        assertNull(data.getSessionId());
+        assertNull(data.getConversationId());
         assertNull(data.getChildSessionId());
         assertNull(data.getSessionName());
         assertNull(data.getDescription());
@@ -33,7 +34,7 @@ class ChildSessionLogDataTest {
     @Test
     void builder应正确设置继承与自有字段() {
         ChildSessionLogData data = ChildSessionLogData.builder()
-                .parentSessionId("p1")
+                .sessionId("p1")
                 .childSessionId("c1")
                 .sessionName("子会话")
                 .description("子会话描述")
@@ -43,7 +44,7 @@ class ChildSessionLogDataTest {
                 .prompt("子会话提示词")
                 .build();
 
-        assertEquals("p1", data.getParentSessionId());
+        assertEquals("p1", data.getSessionId());
         assertEquals("c1", data.getChildSessionId());
         assertEquals("子会话", data.getSessionName());
         assertEquals("子会话描述", data.getDescription());

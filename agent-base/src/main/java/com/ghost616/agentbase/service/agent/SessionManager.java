@@ -9,11 +9,11 @@ import com.ghost616.agentbase.enums.ErrorCode;
 import com.ghost616.agentbase.enums.LogLevel;
 import com.ghost616.agentbase.exception.BusinessException;
 import com.ghost616.agentbase.service.agent.log.AgentLog;
-import com.ghost616.agentbase.service.agent.log.ErrorLogData;
 import com.ghost616.agentbase.service.agent.log.LogData;
 import com.ghost616.agentbase.service.agent.log.MessageQueryLogData;
 import com.ghost616.agentbase.service.agent.log.MessageRollbackLogData;
 import com.ghost616.agentbase.service.agent.log.MessageSaveLogData;
+import com.ghost616.agentbase.service.agent.log.SessionErrorLogData;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -127,24 +127,29 @@ public class SessionManager {
 
         public String save() {
             if (sessionId == null) {
-                addLog(ErrorLogData.builder()
+                addLog(SessionErrorLogData.builder()
                         .logLevel(LogLevel.ERROR)
+                        .conversationId(conversationId)
                         .errorCode(ErrorCode.PARAM_INVALID.getCode())
                         .message("sessionId 不能为空")
                         .build());
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "sessionId 不能为空");
             }
             if (role == null) {
-                addLog(ErrorLogData.builder()
+                addLog(SessionErrorLogData.builder()
                         .logLevel(LogLevel.ERROR)
+                        .sessionId(sessionId)
+                        .conversationId(conversationId)
                         .errorCode(ErrorCode.PARAM_INVALID.getCode())
                         .message("role 不能为空")
                         .build());
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "role 不能为空");
             }
             if (content == null) {
-                addLog(ErrorLogData.builder()
+                addLog(SessionErrorLogData.builder()
                         .logLevel(LogLevel.ERROR)
+                        .sessionId(sessionId)
+                        .conversationId(conversationId)
                         .errorCode(ErrorCode.PARAM_INVALID.getCode())
                         .message("content 不能为空")
                         .build());

@@ -245,6 +245,8 @@ CREATE TABLE IF NOT EXISTS agent_log (
     log_type        VARCHAR(64),
     log_level       VARCHAR(32),
     log_data        TEXT,
+    session_variables      TEXT,
+    conversation_variables TEXT,
     create_time     TIMESTAMP,
     update_time     TIMESTAMP,
     deleted         INTEGER DEFAULT 0

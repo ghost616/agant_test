@@ -1,11 +1,7 @@
 package com.ghost616.agentbase.service.agent.log;
 
 import com.ghost616.agentbase.enums.LogType;
-import com.ghost616.agentbase.service.agent.AgentExecutionContext;
 import org.junit.jupiter.api.Test;
-
-import java.util.ArrayList;
-import java.util.HashMap;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -22,23 +18,20 @@ class MessageQueryLogDataTest {
         MessageQueryLogData data = MessageQueryLogData.builder().build();
         assertEquals(0, data.getMessageCount());
         assertNull(data.getSessionId());
+        assertNull(data.getConversationId());
+        assertTrue(SessionLogData.class.isAssignableFrom(data.getClass()));
     }
 
     @Test
     void builder应正确设置继承与自有字段() {
-        AgentExecutionContext context = new AgentExecutionContext(
-                "s1", "agent-1", "sys_prompt", "model-1", null,
-                new ArrayList<>(), new ArrayList<>(), null,
-                new AgentExecutionContext.AgentContextMutator(),
-                new HashMap<>(), new HashMap<>(), null, "", null, null);
         MessageQueryLogData data = MessageQueryLogData.builder()
-                .context(context)
                 .sessionId("s1")
+                .conversationId("conv-1")
                 .messageCount(10)
                 .build();
 
-        assertSame(context, data.getContext());
         assertEquals("s1", data.getSessionId());
+        assertEquals("conv-1", data.getConversationId());
         assertEquals(10, data.getMessageCount());
     }
 }
