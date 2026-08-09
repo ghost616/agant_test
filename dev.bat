@@ -49,13 +49,26 @@ echo [WARN] Backend not ready after 2 minutes, starting frontend anyway...
 
 :start_frontend
 echo.
-echo [5/5] Starting frontend dev server (port 3000, /api -^> localhost:8080)...
-call npm run dev
+echo [5/5] Building frontend (vite build)...
+call npx vite build
+if errorlevel 1 (
+    echo [ERROR] Frontend build failed
+    taskkill /fi "WINDOWTITLE eq AgentPlatformBackend*" /f >nul 2>&1
+    del "%TEMP%\agent_platform_backend.bat" >nul 2>&1
+    pause
+    exit /b 1
+)
+
+echo.
+echo Starting build watch and static server (port 3000, /api -^> localhost:8080)...
+start "AgentPlatformBuildWatch" cmd /k "chcp 65001 >nul && npm run dev:build"
+call npm run dev:serve
 
 echo.
 echo ========================================
-echo   Frontend stopped. Shutting down backend...
+echo   Frontend stopped. Shutting down build watch and backend...
 echo ========================================
+taskkill /fi "WINDOWTITLE eq AgentPlatformBuildWatch*" /f >nul 2>&1
 taskkill /fi "WINDOWTITLE eq AgentPlatformBackend*" /f >nul 2>&1
 del "%TEMP%\agent_platform_backend.bat" >nul 2>&1
 echo Dev mode stopped.
