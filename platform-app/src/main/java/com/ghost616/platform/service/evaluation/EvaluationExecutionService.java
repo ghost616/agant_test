@@ -71,7 +71,7 @@ public class EvaluationExecutionService {
         executionStatusMap.put(statusKey, statusDTO);
         statusTimestamps.put(statusKey, System.currentTimeMillis());
 
-        asyncEvaluationExecutor.executeAsync(evaluationId, executionSession.getId(), userMessages, executionStatusMap);
+        asyncEvaluationExecutor.executeAsync(evaluationId, executionSession, userMessages, executionStatusMap);
 
         return statusDTO;
     }
@@ -177,6 +177,7 @@ public class EvaluationExecutionService {
         newSession.setModelId(benchmarkSession.getModelId());
         newSession.setTitle(benchmarkSession.getTitle() + "_exec");
         newSession.setSystemPrompt(benchmarkSession.getSystemPrompt());
+        newSession.setThinking(benchmarkSession.getThinking());
         newSession.setIsEvaluation(true);
         sessionMapper.insert(newSession);
 

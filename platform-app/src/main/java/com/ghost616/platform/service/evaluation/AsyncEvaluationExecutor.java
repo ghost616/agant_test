@@ -6,6 +6,7 @@ import com.ghost616.agentbase.service.agent.ChatService;
 import com.ghost616.agentbase.service.agent.MessageDataProvider;
 import com.ghost616.agentbase.service.agent.ToolExecutionService;
 import com.ghost616.platform.dto.evaluation.EvaluationExecutionStatusDTO;
+import com.ghost616.platform.entity.Session;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -49,11 +50,12 @@ public class AsyncEvaluationExecutor {
     }
 
     @Async
-    public void executeAsync(Long evaluationId, Long executionSessionId,
+    public void executeAsync(Long evaluationId, Session executionSession,
                              List<MessageDataProvider.MessageDTO> userMessages,
                              Map<String, EvaluationExecutionStatusDTO> statusMap) {
         String statusKey = String.valueOf(evaluationId);
         AgentMessageProxy proxy = new AgentMessageProxy(chatService, toolExecutionService);
+        Long executionSessionId = executionSession.getId();
 
         try {
             int total = userMessages.size();
@@ -70,11 +72,11 @@ public class AsyncEvaluationExecutor {
                         .build());
 
                 try {
-                    Message response = proxy.sendUserMessage(
+                    Message response = proxy.sendUserMessageToSession(
                             String.valueOf(executionSessionId),
                             content,
                             null,
-                            null);
+                            executionSession.getThinking());
                     log.debug("评估执行消息处理完成, sessionId={}, step={}/{}", executionSessionId, i + 1, total);
                 } catch (Exception e) {
                     log.error("评估执行用户消息处理失败, sessionId={}, step={}/{}", executionSessionId, i + 1, total, e);

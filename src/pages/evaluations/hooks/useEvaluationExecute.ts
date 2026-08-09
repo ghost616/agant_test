@@ -8,7 +8,15 @@ import {
   generateEvalResult,
   getGenerateStatus,
 } from '../../../services/evaluation';
-import { agentChatStream, completeSubSession, continueChatStream, executeTools, getSubSessionData, getToolStatus } from '../../../services/session';
+import {
+  agentChatStream,
+  completeSubSession,
+  continueChatStream,
+  executeTools,
+  fetchConversationId,
+  getSubSessionData,
+  getToolStatus,
+} from '../../../services/session';
 import { executeBrowserTool } from '../../../services/toolExecutor';
 
 const sleep = (ms: number): Promise<void> =>
@@ -340,9 +348,16 @@ export function useEvaluationExecute(): {
       const toolLoopCount = { current: 0 };
       const MAX_TOOL_LOOPS = 10;
 
+      let conversationId: string;
+      try {
+        conversationId = await fetchConversationId();
+      } catch {
+        throw new Error('获取会话标识失败');
+      }
+
       return new Promise<void>((resolve, reject) => {
         const controller = agentChatStream(
-          { sessionId, content },
+          { sessionId, content, conversationId },
           {
             onDelta: (text) => {
               const last = logLines[logLines.length - 1];

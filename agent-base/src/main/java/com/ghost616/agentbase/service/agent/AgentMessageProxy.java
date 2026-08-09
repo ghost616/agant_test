@@ -8,6 +8,7 @@ import org.springframework.http.codec.ServerSentEvent;
 import reactor.core.publisher.Flux;
 import reactor.core.scheduler.Schedulers;
 
+import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,6 +18,9 @@ public class AgentMessageProxy {
 
     private static final long TOOL_WAIT_TIMEOUT_MS = 60_000;
     private static final long TOOL_POLL_INTERVAL_MS = 200;
+    private static final char[] CONVERSATION_ID_CHARS = "0123456789abcdefghijklmnopqrstuvwxyz_".toCharArray();
+    private static final int CONVERSATION_ID_LENGTH = 24;
+    private static final SecureRandom RANDOM = new SecureRandom();
     private final ChatService chatService;
     private final ToolExecutionService toolExecutionService;
 
@@ -33,6 +37,34 @@ public class AgentMessageProxy {
                 .thinking(thinking)
                 .build();
         return processChat(request);
+    }
+
+    /**
+     * 向会话发送用户消息，自动生成 24 位 conversationId 标识对话归属。
+     *
+     * @param sessionId 会话 ID
+     * @param content   用户消息内容
+     * @param modelId   模型 ID（可为 null）
+     * @param thinking  是否启用思考模式（可为 null 表示默认行为）
+     * @return 最终 assistant 回复消息
+     */
+    public Message sendUserMessageToSession(String sessionId, String content, String modelId, Boolean thinking) {
+        ChatRequest request = ChatRequest.builder()
+                .sessionId(sessionId)
+                .content(content)
+                .modelId(modelId)
+                .thinking(thinking)
+                .conversationId(generateConversationId())
+                .build();
+        return processChat(request);
+    }
+
+    private static String generateConversationId() {
+        StringBuilder sb = new StringBuilder(CONVERSATION_ID_LENGTH);
+        for (int i = 0; i < CONVERSATION_ID_LENGTH; i++) {
+            sb.append(CONVERSATION_ID_CHARS[RANDOM.nextInt(CONVERSATION_ID_CHARS.length)]);
+        }
+        return sb.toString();
     }
 
     private Message processChat(ChatRequest request) {
