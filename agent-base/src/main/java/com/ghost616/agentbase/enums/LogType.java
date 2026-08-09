@@ -18,7 +18,12 @@ public enum LogType {
     REFRESH("REFRESH", "上下文刷新"),
     HANDLE_MESSAGE("HANDLE_MESSAGE", "消息处理"),
     CACHE_REMOVE("CACHE_REMOVE", "缓存移除"),
-    SEND_MESSAGE("SEND_MESSAGE", "消息发送");
+    SEND_MESSAGE("SEND_MESSAGE", "消息发送"),
+    MESSAGE_SAVE("MESSAGE_SAVE", "消息保存"),
+    MESSAGE_QUERY("MESSAGE_QUERY", "消息查询"),
+    MESSAGE_ROLLBACK("MESSAGE_ROLLBACK", "消息回退"),
+    TOOL_EXECUTE("TOOL_EXECUTE", "工具执行"),
+    TOOL_CONTINUE("TOOL_CONTINUE", "工具执行后继续");
 
     private final String code;
     private final String description;

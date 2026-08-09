@@ -6,8 +6,17 @@ import com.ghost616.agentbase.core.AgentComponentRegistry;
 import com.ghost616.agentbase.dto.model.ToolInfo;
 import com.ghost616.agentbase.dto.model.UsageInfo;
 import com.ghost616.agentbase.enums.ErrorCode;
+import com.ghost616.agentbase.enums.LogLevel;
 import com.ghost616.agentbase.exception.BusinessException;
+import com.ghost616.agentbase.service.agent.log.AgentLog;
+import com.ghost616.agentbase.service.agent.log.ErrorLogData;
+import com.ghost616.agentbase.service.agent.log.LogData;
+import com.ghost616.agentbase.service.agent.log.MessageQueryLogData;
+import com.ghost616.agentbase.service.agent.log.MessageRollbackLogData;
+import com.ghost616.agentbase.service.agent.log.MessageSaveLogData;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class SessionManager {
 
     private final AgentComponentRegistry registry;
@@ -25,6 +34,17 @@ public class SessionManager {
                     dataProvider = registry.getMessageDataProvider();
                     initialized = true;
                 }
+            }
+        }
+    }
+
+    private void addLog(LogData logData) {
+        AgentLog agentLog = registry.getAgentLog();
+        if (agentLog != null) {
+            try {
+                agentLog.addLog(logData);
+            } catch (Exception e) {
+                log.warn("记录智能体日志失败: {}", e.getMessage(), e);
             }
         }
     }
@@ -107,26 +127,69 @@ public class SessionManager {
 
         public String save() {
             if (sessionId == null) {
+                addLog(ErrorLogData.builder()
+                        .logLevel(LogLevel.ERROR)
+                        .errorCode(ErrorCode.PARAM_INVALID.getCode())
+                        .message("sessionId 不能为空")
+                        .build());
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "sessionId 不能为空");
             }
             if (role == null) {
+                addLog(ErrorLogData.builder()
+                        .logLevel(LogLevel.ERROR)
+                        .errorCode(ErrorCode.PARAM_INVALID.getCode())
+                        .message("role 不能为空")
+                        .build());
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "role 不能为空");
             }
             if (content == null) {
+                addLog(ErrorLogData.builder()
+                        .logLevel(LogLevel.ERROR)
+                        .errorCode(ErrorCode.PARAM_INVALID.getCode())
+                        .message("content 不能为空")
+                        .build());
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "content 不能为空");
             }
-            return dataProvider.saveMessage(sessionId, role, content, reasoning,
+            String messageId = dataProvider.saveMessage(sessionId, role, content, reasoning,
                     toolInfo, toolResult, toolCalls, usage, webSearchCall, customToolCall, conversationId);
+            addLog(MessageSaveLogData.builder()
+                    .logLevel(LogLevel.INFO)
+                    .sessionId(sessionId)
+                    .role(role)
+                    .messageId(messageId)
+                    .content(content)
+                    .reasoning(reasoning)
+                    .toolInfo(toolInfo)
+                    .toolResult(toolResult)
+                    .toolCalls(toolCalls)
+                    .usage(usage)
+                    .webSearchCall(webSearchCall)
+                    .customToolCall(customToolCall)
+                    .conversationId(conversationId)
+                    .build());
+            return messageId;
         }
     }
 
     public List<MessageDataProvider.MessageDTO> getMessages(String sessionId) {
         ensureInitialized();
-        return dataProvider.getMessages(sessionId);
+        List<MessageDataProvider.MessageDTO> messages = dataProvider.getMessages(sessionId);
+        addLog(MessageQueryLogData.builder()
+                .logLevel(LogLevel.INFO)
+                .sessionId(sessionId)
+                .messageCount(messages == null ? 0 : messages.size())
+                .build());
+        return messages;
     }
 
     public int rollbackToLastUserMessage(String sessionId) {
         ensureInitialized();
-        return dataProvider.rollbackToLastUserMessage(sessionId);
+        int rollbackCount = dataProvider.rollbackToLastUserMessage(sessionId);
+        addLog(MessageRollbackLogData.builder()
+                .logLevel(LogLevel.INFO)
+                .sessionId(sessionId)
+                .rollbackCount(rollbackCount)
+                .build());
+        return rollbackCount;
     }
 }

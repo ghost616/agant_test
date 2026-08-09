@@ -5,6 +5,8 @@ import com.ghost616.agentbase.dto.chat.ChatRequest;
 import com.ghost616.agentbase.dto.model.ChatChunk;
 import com.ghost616.agentbase.dto.model.ToolInfo;
 import com.ghost616.agentbase.enums.HookPhase;
+import com.ghost616.agentbase.enums.LogLevel;
+import com.ghost616.agentbase.enums.LogType;
 import com.ghost616.agentbase.service.agent.invoker.BuiltinToolInvoker;
 import com.ghost616.agentbase.service.agent.invoker.HookData;
 import com.ghost616.agentbase.service.agent.invoker.HookManager;
@@ -13,6 +15,10 @@ import com.ghost616.agentbase.service.agent.invoker.SystemToolManager;
 import com.ghost616.agentbase.service.agent.invoker.ToolCallQueueManager;
 import com.ghost616.agentbase.service.agent.invoker.ToolInvoker;
 import com.ghost616.agentbase.service.agent.invoker.ToolManager;
+import com.ghost616.agentbase.service.agent.log.AgentLog;
+import com.ghost616.agentbase.service.agent.log.LogData;
+import com.ghost616.agentbase.service.agent.log.ToolContinueLogData;
+import com.ghost616.agentbase.service.agent.log.ToolExecuteLogData;
 import com.ghost616.agentbase.util.JsonMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -49,6 +55,8 @@ class ToolExecutionServiceTest {
     private ToolExecutionTracker toolExecutionTracker;
     @Mock
     private ChatDataProvider chatDataProvider;
+    @Mock
+    private AgentLog agentLog;
 
     private AgentComponentRegistry registry;
     private ToolExecutionService toolExecutionService;
@@ -66,6 +74,7 @@ class ToolExecutionServiceTest {
         registry.setAgentContextManager(agentContextManager);
         registry.setToolExecutionTracker(toolExecutionTracker);
         registry.setChatDataProvider(chatDataProvider);
+        registry.setAgentLog(agentLog);
         toolExecutionService = new ToolExecutionService(registry, chatService);
     }
 
@@ -434,5 +443,179 @@ class ToolExecutionServiceTest {
 
         verify(sessionManager, never()).messageSave();
         verify(agentContextManager, never()).addHistoryEntry(any(), any());
+    }
+
+    // ========== 智能体日志 ==========
+
+    @Test
+    void executeTool_队列为空时记录empty日志() {
+        when(toolCallQueueManager.peek(sessionId)).thenReturn(null);
+
+        toolExecutionService.executeTool(sessionId);
+
+        ArgumentCaptor<LogData> captor = ArgumentCaptor.forClass(LogData.class);
+        verify(agentLog).addLog(captor.capture());
+        LogData logData = captor.getValue();
+        assertEquals(LogType.TOOL_EXECUTE, logData.logType());
+        ToolExecuteLogData toolLog = (ToolExecuteLogData) logData;
+        assertEquals(LogLevel.INFO, toolLog.getLogLevel());
+        assertEquals(sessionId, toolLog.getSessionId());
+        assertEquals("empty", toolLog.getQueueStatus());
+    }
+
+    @Test
+    void executeTool_获取调用器异常时记录failed日志() {
+        MessageDataProvider.ToolCallData peekData = new MessageDataProvider.ToolCallData("tid4", "_sys_broken", "{}");
+        when(toolCallQueueManager.peek(sessionId)).thenReturn(peekData);
+        when(systemToolManager.getSystemTool("broken")).thenThrow(new RuntimeException("connection error"));
+
+        toolExecutionService.executeTool(sessionId);
+
+        ArgumentCaptor<LogData> captor = ArgumentCaptor.forClass(LogData.class);
+        verify(agentLog).addLog(captor.capture());
+        LogData logData = captor.getValue();
+        assertEquals(LogType.TOOL_EXECUTE, logData.logType());
+        ToolExecuteLogData toolLog = (ToolExecuteLogData) logData;
+        assertEquals(LogLevel.ERROR, toolLog.getLogLevel());
+        assertEquals("tid4", toolLog.getToolCallId());
+        assertEquals("_sys_broken", toolLog.getToolCallName());
+        assertEquals("system", toolLog.getToolType());
+        assertEquals("failed", toolLog.getQueueStatus());
+    }
+
+    @Test
+    void executeTool_invoker不存在时记录error日志() {
+        MessageDataProvider.ToolCallData peekData = new MessageDataProvider.ToolCallData("tidErr", "unknownTool", "{}");
+        when(toolCallQueueManager.peek(sessionId)).thenReturn(peekData);
+        when(toolManager.getInvoker(sessionId, "unknownTool")).thenReturn(null);
+        when(toolCallQueueManager.poll(sessionId)).thenReturn(peekData);
+        when(toolCallQueueManager.hasPending(sessionId)).thenReturn(false);
+
+        toolExecutionService.executeTool(sessionId);
+
+        ArgumentCaptor<LogData> captor = ArgumentCaptor.forClass(LogData.class);
+        verify(agentLog).addLog(captor.capture());
+        LogData logData = captor.getValue();
+        assertEquals(LogType.TOOL_EXECUTE, logData.logType());
+        ToolExecuteLogData toolLog = (ToolExecuteLogData) logData;
+        assertEquals(LogLevel.ERROR, toolLog.getLogLevel());
+        assertEquals("tidErr", toolLog.getToolCallId());
+        assertEquals("unknownTool", toolLog.getToolCallName());
+        assertEquals("regular", toolLog.getToolType());
+        assertEquals("error", toolLog.getQueueStatus());
+    }
+
+    @Test
+    void executeTool_sessionContext不存在时记录error日志() {
+        MessageDataProvider.ToolCallData peekData = new MessageDataProvider.ToolCallData("tid5", "myTool", "{}");
+        when(toolCallQueueManager.peek(sessionId)).thenReturn(peekData);
+        when(toolManager.getInvoker(sessionId, "myTool")).thenReturn(mock(ToolInvoker.class));
+        when(toolCallQueueManager.poll(sessionId)).thenReturn(peekData);
+        when(toolCallQueueManager.hasPending(sessionId)).thenReturn(false);
+        when(agentContextManager.get(sessionId)).thenReturn(null);
+
+        toolExecutionService.executeTool(sessionId);
+
+        ArgumentCaptor<LogData> captor = ArgumentCaptor.forClass(LogData.class);
+        verify(agentLog).addLog(captor.capture());
+        LogData logData = captor.getValue();
+        assertEquals(LogType.TOOL_EXECUTE, logData.logType());
+        ToolExecuteLogData toolLog = (ToolExecuteLogData) logData;
+        assertEquals(LogLevel.ERROR, toolLog.getLogLevel());
+        assertEquals("tid5", toolLog.getToolCallId());
+        assertEquals("myTool", toolLog.getToolCallName());
+        assertEquals("regular", toolLog.getToolType());
+        assertEquals("error", toolLog.getQueueStatus());
+    }
+
+    @Test
+    void executeTool_正常流程记录executing日志() {
+        MessageDataProvider.ToolCallData peekData = new MessageDataProvider.ToolCallData("tid7", "normalTool", "{\"key\":\"val\"}");
+        when(toolCallQueueManager.peek(sessionId)).thenReturn(peekData);
+        ToolInvoker invoker = mock(ToolInvoker.class);
+        when(toolManager.getInvoker(sessionId, "normalTool")).thenReturn(invoker);
+
+        MessageDataProvider.ToolCallData pollData = new MessageDataProvider.ToolCallData("tid7", "normalTool", "{\"key\":\"val\"}");
+        when(toolCallQueueManager.poll(sessionId)).thenReturn(pollData);
+        when(toolCallQueueManager.hasPending(sessionId)).thenReturn(true);
+        AgentContextManager.AgentSessionContext sessionCtx = mock(AgentContextManager.AgentSessionContext.class);
+        AgentExecutionContext context = mock(AgentExecutionContext.class);
+        when(sessionCtx.context()).thenReturn(context);
+        when(context.isStopped()).thenReturn(false);
+        when(agentContextManager.get(sessionId)).thenReturn(sessionCtx);
+
+        toolExecutionService.executeTool(sessionId);
+
+        ArgumentCaptor<LogData> captor = ArgumentCaptor.forClass(LogData.class);
+        verify(agentLog, atLeastOnce()).addLog(captor.capture());
+        ToolExecuteLogData toolLog = captor.getAllValues().stream()
+                .filter(l -> l.logType() == LogType.TOOL_EXECUTE)
+                .map(l -> (ToolExecuteLogData) l)
+                .filter(l -> "executing".equals(l.getQueueStatus()))
+                .findFirst().orElse(null);
+
+        assertNotNull(toolLog);
+        assertEquals(LogLevel.INFO, toolLog.getLogLevel());
+        assertSame(context, toolLog.getContext());
+        assertEquals("tid7", toolLog.getToolCallId());
+        assertEquals("normalTool", toolLog.getToolCallName());
+        assertEquals("{\"key\":\"val\"}", toolLog.getToolCallArguments());
+        assertEquals("regular", toolLog.getToolType());
+    }
+
+    @Test
+    void continueAfterTools应记录TOOL_CONTINUE日志() {
+        AgentContextManager.AgentSessionContext sessionCtx = mock(AgentContextManager.AgentSessionContext.class);
+        AgentExecutionContext context = mock(AgentExecutionContext.class);
+        when(sessionCtx.context()).thenReturn(context);
+        when(context.isStopped()).thenReturn(false);
+        when(agentContextManager.get(sessionId)).thenReturn(sessionCtx);
+
+        ToolExecutionTracker.ToolResult toolResult = new ToolExecutionTracker.ToolResult(
+                "tid10", "doneTool", "{}", "result_ok");
+        when(toolExecutionTracker.getAndClearResults(sessionId)).thenReturn(List.of(toolResult));
+
+        SessionManager.MessageSaveBuilder saveBuilder = mock(SessionManager.MessageSaveBuilder.class);
+        when(saveBuilder.sessionId(any())).thenReturn(saveBuilder);
+        when(saveBuilder.role(any())).thenReturn(saveBuilder);
+        when(saveBuilder.content(any())).thenReturn(saveBuilder);
+        when(saveBuilder.toolInfo(any())).thenReturn(saveBuilder);
+        when(saveBuilder.toolResult(any())).thenReturn(saveBuilder);
+        when(saveBuilder.conversationId(any())).thenReturn(saveBuilder);
+        when(saveBuilder.save()).thenReturn("100");
+        when(sessionManager.messageSave()).thenReturn(saveBuilder);
+
+        when(chatService.chat(any())).thenReturn(Flux.empty());
+
+        toolExecutionService.continueAfterTools(sessionId);
+
+        ArgumentCaptor<LogData> captor = ArgumentCaptor.forClass(LogData.class);
+        verify(agentLog).addLog(captor.capture());
+        LogData logData = captor.getValue();
+        assertEquals(LogType.TOOL_CONTINUE, logData.logType());
+        ToolContinueLogData continueLog = (ToolContinueLogData) logData;
+        assertEquals(LogLevel.INFO, continueLog.getLogLevel());
+        assertSame(context, continueLog.getContext());
+        assertEquals(sessionId, continueLog.getSessionId());
+        assertEquals(1, continueLog.getResultCount());
+        assertEquals(List.of("doneTool"), continueLog.getToolNames());
+    }
+
+    @Test
+    void agentLog为null时addLog静默跳过() {
+        registry.setAgentLog(null);
+        when(toolCallQueueManager.peek(sessionId)).thenReturn(null);
+
+        toolExecutionService.executeTool(sessionId);
+
+        verify(agentLog, never()).addLog(any());
+    }
+
+    @Test
+    void agentLog抛异常时不中断主流程() {
+        doThrow(new RuntimeException("log failure")).when(agentLog).addLog(any());
+        when(toolCallQueueManager.peek(sessionId)).thenReturn(null);
+
+        assertDoesNotThrow(() -> toolExecutionService.executeTool(sessionId));
     }
 }

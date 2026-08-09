@@ -11,8 +11,8 @@ class LogTypeTest {
     }
 
     @Test
-    void 枚举值数量应为14() {
-        assertEquals(14, LogType.values().length);
+    void 枚举值数量应为19() {
+        assertEquals(19, LogType.values().length);
     }
 
     @Test
@@ -31,6 +31,11 @@ class LogTypeTest {
         assertNotNull(LogType.HANDLE_MESSAGE);
         assertNotNull(LogType.CACHE_REMOVE);
         assertNotNull(LogType.SEND_MESSAGE);
+        assertNotNull(LogType.MESSAGE_SAVE);
+        assertNotNull(LogType.MESSAGE_QUERY);
+        assertNotNull(LogType.MESSAGE_ROLLBACK);
+        assertNotNull(LogType.TOOL_EXECUTE);
+        assertNotNull(LogType.TOOL_CONTINUE);
     }
 
     @Test
@@ -115,5 +120,35 @@ class LogTypeTest {
     void SEND_MESSAGE的code与description应正确() {
         assertEquals("SEND_MESSAGE", LogType.SEND_MESSAGE.getCode());
         assertEquals("消息发送", LogType.SEND_MESSAGE.getDescription());
+    }
+
+    @Test
+    void MESSAGE_SAVE的code与description应正确() {
+        assertEquals("MESSAGE_SAVE", LogType.MESSAGE_SAVE.getCode());
+        assertEquals("消息保存", LogType.MESSAGE_SAVE.getDescription());
+    }
+
+    @Test
+    void MESSAGE_QUERY的code与description应正确() {
+        assertEquals("MESSAGE_QUERY", LogType.MESSAGE_QUERY.getCode());
+        assertEquals("消息查询", LogType.MESSAGE_QUERY.getDescription());
+    }
+
+    @Test
+    void MESSAGE_ROLLBACK的code与description应正确() {
+        assertEquals("MESSAGE_ROLLBACK", LogType.MESSAGE_ROLLBACK.getCode());
+        assertEquals("消息回退", LogType.MESSAGE_ROLLBACK.getDescription());
+    }
+
+    @Test
+    void TOOL_EXECUTE的code与description应正确() {
+        assertEquals("TOOL_EXECUTE", LogType.TOOL_EXECUTE.getCode());
+        assertEquals("工具执行", LogType.TOOL_EXECUTE.getDescription());
+    }
+
+    @Test
+    void TOOL_CONTINUE的code与description应正确() {
+        assertEquals("TOOL_CONTINUE", LogType.TOOL_CONTINUE.getCode());
+        assertEquals("工具执行后继续", LogType.TOOL_CONTINUE.getDescription());
     }
 }

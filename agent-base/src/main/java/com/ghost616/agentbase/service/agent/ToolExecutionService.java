@@ -2,6 +2,7 @@ package com.ghost616.agentbase.service.agent;
 
 import com.ghost616.agentbase.core.AgentComponentRegistry;
 import com.ghost616.agentbase.dto.chat.ChatRequest;
+import com.ghost616.agentbase.enums.LogLevel;
 import com.ghost616.agentbase.util.JsonMapper;
 import com.ghost616.agentbase.dto.model.ChatChunk;
 import com.ghost616.agentbase.dto.model.ToolInfo;
@@ -14,6 +15,10 @@ import com.ghost616.agentbase.service.agent.invoker.ToolCallQueueManager;
 import com.ghost616.agentbase.service.agent.invoker.ToolHookContext;
 import com.ghost616.agentbase.service.agent.invoker.ToolInvoker;
 import com.ghost616.agentbase.service.agent.invoker.ToolManager;
+import com.ghost616.agentbase.service.agent.log.AgentLog;
+import com.ghost616.agentbase.service.agent.log.LogData;
+import com.ghost616.agentbase.service.agent.log.ToolContinueLogData;
+import com.ghost616.agentbase.service.agent.log.ToolExecuteLogData;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.codec.ServerSentEvent;
 import reactor.core.publisher.Flux;
@@ -61,6 +66,30 @@ public class ToolExecutionService {
         }
     }
 
+    private void addLog(LogData logData) {
+        AgentLog agentLog = registry.getAgentLog();
+        if (agentLog != null) {
+            try {
+                agentLog.addLog(logData);
+            } catch (Exception e) {
+                log.warn("记录智能体日志失败: {}", e.getMessage(), e);
+            }
+        }
+    }
+
+    private String resolveToolType(String toolName) {
+        if (toolName == null) {
+            return null;
+        }
+        if (toolName.startsWith("_sys_")) {
+            return "system";
+        }
+        if (toolName.startsWith("$")) {
+            return "builtin";
+        }
+        return "regular";
+    }
+
     public record ToolExecutionResult(String status, String toolId, String toolName,
                                       String arguments, boolean hasMore, String message) {
     }
@@ -73,6 +102,11 @@ public class ToolExecutionService {
         ensureInitialized();
         MessageDataProvider.ToolCallData peekData = toolCallQueueManager.peek(sessionId);
         if (peekData == null) {
+            addLog(ToolExecuteLogData.builder()
+                    .logLevel(LogLevel.INFO)
+                    .sessionId(sessionId)
+                    .queueStatus("empty")
+                    .build());
             return new ToolExecutionResult("empty", null, null, null, false, null);
         }
 
@@ -87,6 +121,15 @@ public class ToolExecutionService {
             }
         } catch (Exception e) {
             log.error("sessionId={} 获取工具调用器失败, toolName={}", sessionId, peekToolCallName, e);
+            addLog(ToolExecuteLogData.builder()
+                    .logLevel(LogLevel.ERROR)
+                    .sessionId(sessionId)
+                    .toolCallId(peekData.toolCallId())
+                    .toolCallName(peekToolCallName)
+                    .toolCallArguments(peekData.toolCallArguments())
+                    .toolType(resolveToolType(peekToolCallName))
+                    .queueStatus("failed")
+                    .build());
             return new ToolExecutionResult("failed", peekData.toolCallId(), peekToolCallName,
                     peekData.toolCallArguments(), toolCallQueueManager.hasPending(sessionId), e.getMessage());
         }
@@ -100,6 +143,15 @@ public class ToolExecutionService {
                 String errorResult = "{\"status\":\"error\",\"errMsg\":\"工具调用器不存在\"}";
                 toolExecutionTracker.setExecuting(sessionId, peekData.toolCallId(), peekToolCallName, peekData.toolCallArguments(), hasMore);
                 toolExecutionTracker.setDone(sessionId, peekData.toolCallId(), errorResult);
+                addLog(ToolExecuteLogData.builder()
+                        .logLevel(LogLevel.ERROR)
+                        .sessionId(sessionId)
+                        .toolCallId(peekData.toolCallId())
+                        .toolCallName(peekToolCallName)
+                        .toolCallArguments(peekData.toolCallArguments())
+                        .toolType(resolveToolType(peekToolCallName))
+                        .queueStatus("error")
+                        .build());
                 return new ToolExecutionResult("executing", peekData.toolCallId(), peekToolCallName,
                         peekData.toolCallArguments(), hasMore, null);
             }
@@ -109,17 +161,37 @@ public class ToolExecutionService {
         boolean hasMore = toolCallQueueManager.hasPending(sessionId);
 
         if (toolCall == null) {
+            addLog(ToolExecuteLogData.builder()
+                    .logLevel(LogLevel.INFO)
+                    .sessionId(sessionId)
+                    .queueStatus("empty")
+                    .build());
             return new ToolExecutionResult("empty", null, null, null, false, null);
         }
 
         AgentContextManager.AgentSessionContext sessionCtx = agentContextManager.get(sessionId);
         if (sessionCtx == null) {
+            addLog(ToolExecuteLogData.builder()
+                    .logLevel(LogLevel.ERROR)
+                    .sessionId(sessionId)
+                    .toolCallId(toolCall.toolCallId())
+                    .toolCallName(toolCall.toolCallName())
+                    .toolCallArguments(toolCall.toolCallArguments())
+                    .toolType(resolveToolType(toolCall.toolCallName()))
+                    .queueStatus("error")
+                    .build());
             return new ToolExecutionResult("error", null, null, null, false, "session not found");
         }
         AgentExecutionContext context = sessionCtx.context();
         if (context.isStopped()) {
             toolCallQueueManager.clear(sessionId);
             toolExecutionTracker.clear(sessionId);
+            addLog(ToolExecuteLogData.builder()
+                    .logLevel(LogLevel.INFO)
+                    .context(context)
+                    .sessionId(sessionId)
+                    .queueStatus("empty")
+                    .build());
             return new ToolExecutionResult("empty", null, null, null, false, null);
         }
 
@@ -130,6 +202,17 @@ public class ToolExecutionService {
         final AgentExecutionContext capturedContext = context;
 
         toolExecutionTracker.setExecuting(sessionId, toolCallId, toolCallName, toolCallArguments, hasMore);
+
+        addLog(ToolExecuteLogData.builder()
+                .logLevel(LogLevel.INFO)
+                .context(context)
+                .sessionId(sessionId)
+                .toolCallId(toolCallId)
+                .toolCallName(toolCallName)
+                .toolCallArguments(toolCallArguments)
+                .toolType(resolveToolType(toolCallName))
+                .queueStatus("executing")
+                .build());
 
         HookData beforeHookData = new HookData(new ToolHookContext(toolCallId, toolCallName, toolCallArguments, null));
         hookManager.triggerSessionHooks(sessionId, HookPhase.BEFORE_TOOL_CALL, capturedContext, beforeHookData);
@@ -146,9 +229,30 @@ public class ToolExecutionService {
                 hookManager.triggerHooks(HookPhase.AFTER_TOOL_CALL, capturedContext, afterHookData);
                 hookManager.executePostHooks(capturedContext, afterHookData);
 
+                addLog(ToolExecuteLogData.builder()
+                        .logLevel(LogLevel.INFO)
+                        .context(capturedContext)
+                        .sessionId(sessionId)
+                        .toolCallId(toolCallId)
+                        .toolCallName(toolCallName)
+                        .toolCallArguments(toolCallArguments)
+                        .toolType(resolveToolType(toolCallName))
+                        .queueStatus("executing")
+                        .build());
+
                 return res;
             } catch (Exception e) {
                 log.error("sessionId={} 工具执行异常, toolName={}", sessionId, toolCallName, e);
+                addLog(ToolExecuteLogData.builder()
+                        .logLevel(LogLevel.ERROR)
+                        .context(capturedContext)
+                        .sessionId(sessionId)
+                        .toolCallId(toolCallId)
+                        .toolCallName(toolCallName)
+                        .toolCallArguments(toolCallArguments)
+                        .toolType(resolveToolType(toolCallName))
+                        .queueStatus("failed")
+                        .build());
                 String errMsg;
                 try {
                     errMsg = "{\"status\":\"error\",\"errMsg\":" + JsonMapper.MAPPER.writeValueAsString(e.getMessage()) + "}";
@@ -185,6 +289,14 @@ public class ToolExecutionService {
         String conversationId = sessionCtx != null ? sessionCtx.context().getConversationId() : null;
 
         List<ToolExecutionTracker.ToolResult> results = toolExecutionTracker.getAndClearResults(sessionId);
+
+        addLog(ToolContinueLogData.builder()
+                .logLevel(LogLevel.INFO)
+                .context(sessionCtx != null ? sessionCtx.context() : null)
+                .sessionId(sessionId)
+                .resultCount(results.size())
+                .toolNames(results.stream().map(ToolExecutionTracker.ToolResult::toolName).toList())
+                .build());
 
         for (ToolExecutionTracker.ToolResult r : results) {
             try {
