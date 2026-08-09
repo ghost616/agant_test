@@ -25,6 +25,7 @@ AI 智能体调试与管理平台，基于 opencode + DeepSeek 及 module_agent 
 - **知识库管理** — 知识库 CRUD、文件上传与 Markdown 编辑、ES 索引自动生成、发布状态管理、智能体-知识库绑定
 - **对话ID** — 用户每次发送消息生成唯一对话ID，串联同一轮对话的父子会话所有消息；作用包括会话历史查看完整对话链、对话详情按时间序展示、工具调用配对，并为归档分析提供基础
 - **会话历史** — 页面展示主会话列表，点击进入用户消息列表，有对话ID的消息可进入对话详情页；详情页表格区分父/子会话，支持 Markdown 渲染、工具调用/结果关联展示、弹窗对话流浏览
+- **智能体日志** — AgentLog 接口定义日志写入契约，LogData 为日志数据抽象基类（含日志级别与日志类型）；继承体系为 LogData → ContextLogData → 18 个子类（覆盖模型调用、工具执行、消息处理、上下文构建、错误等场景）；全部采用 Builder 模式构建且不可变；日志实现通过 AgentComponentRegistry 注册获取；已覆盖 ChatService、AgentContextManager、SessionManager、ToolExecutionService 四个核心类共 45 处日志点
 
 ## 快速启动
 
