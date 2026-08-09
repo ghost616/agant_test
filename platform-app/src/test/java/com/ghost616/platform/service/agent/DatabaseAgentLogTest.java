@@ -2,7 +2,6 @@ package com.ghost616.platform.service.agent;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghost616.agentbase.enums.LogLevel;
-import com.ghost616.agentbase.enums.LogType;
 import com.ghost616.agentbase.service.agent.AgentExecutionContext;
 import com.ghost616.agentbase.service.agent.log.ContextBuildLogData;
 import com.ghost616.agentbase.service.agent.log.ContextLogData;
@@ -12,8 +11,6 @@ import com.ghost616.agentbase.service.agent.log.RequestEntryLogData;
 import com.ghost616.agentbase.service.agent.log.SessionErrorLogData;
 import com.ghost616.platform.entity.AgentLogEntity;
 import com.ghost616.platform.repository.AgentLogMapper;
-import lombok.Getter;
-import lombok.experimental.SuperBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -61,20 +58,6 @@ class DatabaseAgentLogTest {
                 new AgentExecutionContext.AgentContextMutator(),
                 sessionVariables, conversationVariables,
                 null, "proj", List.of(), conversationId);
-    }
-
-    @Getter
-    @SuperBuilder
-    private static class ReflectiveLogData extends LogData {
-
-        private final String sessionId;
-
-        private final String conversationId;
-
-        @Override
-        public LogType logType() {
-            return LogType.CONTEXT_BUILD;
-        }
     }
 
     @Test
@@ -198,10 +181,16 @@ class DatabaseAgentLogTest {
     }
 
     @Test
-    void addLog_非ContextLogData_通过反射提取sessionId和conversationId() {
-        LogData logData = ReflectiveLogData.builder()
+    void addLog_非ContextLogData_按logType强转为ContextBuildLogData提取sessionId() {
+        LogData logData = ContextBuildLogData.builder()
                 .sessionId("789")
-                .conversationId("conv-9")
+                .agentId("a-1")
+                .modelId("m-1")
+                .toolCount(2)
+                .historyCount(5)
+                .isSubSession(false)
+                .cacheHit(false)
+                .sessionVariables(Map.of())
                 .logLevel(LogLevel.INFO)
                 .build();
         assertFalse(logData instanceof ContextLogData);
@@ -212,7 +201,7 @@ class DatabaseAgentLogTest {
         verify(agentLogMapper).insert(captor.capture());
         AgentLogEntity entity = captor.getValue();
         assertEquals(789L, entity.getSessionId());
-        assertEquals("conv-9", entity.getConversationId());
+        assertNull(entity.getConversationId());
         assertNull(entity.getSessionVariables());
         assertNull(entity.getConversationVariables());
         assertEquals("CONTEXT_BUILD", entity.getLogType());
@@ -295,6 +284,8 @@ class DatabaseAgentLogTest {
         assertEquals("ERROR", entity.getLogLevel());
         assertNotNull(entity.getLogData());
         assertFalse(entity.getLogData().contains("logLevel"), "logData 不应包含 logLevel: " + entity.getLogData());
+        assertFalse(entity.getLogData().contains("sessionId"), "logData 不应包含 sessionId: " + entity.getLogData());
+        assertFalse(entity.getLogData().contains("conversationId"), "logData 不应包含 conversationId: " + entity.getLogData());
     }
 
     @Test
