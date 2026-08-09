@@ -11,8 +11,8 @@ class LogTypeTest {
     }
 
     @Test
-    void 枚举值数量应为8() {
-        assertEquals(8, LogType.values().length);
+    void 枚举值数量应为14() {
+        assertEquals(14, LogType.values().length);
     }
 
     @Test
@@ -25,6 +25,12 @@ class LogTypeTest {
         assertNotNull(LogType.STREAM_EVENT);
         assertNotNull(LogType.HISTORY_EXPAND);
         assertNotNull(LogType.SKILL_LOAD);
+        assertNotNull(LogType.CONTEXT_BUILD);
+        assertNotNull(LogType.CHILD_SESSION);
+        assertNotNull(LogType.REFRESH);
+        assertNotNull(LogType.HANDLE_MESSAGE);
+        assertNotNull(LogType.CACHE_REMOVE);
+        assertNotNull(LogType.SEND_MESSAGE);
     }
 
     @Test
@@ -73,5 +79,41 @@ class LogTypeTest {
     void SKILL_LOAD的code与description应正确() {
         assertEquals("SKILL_LOAD", LogType.SKILL_LOAD.getCode());
         assertEquals("技能加载", LogType.SKILL_LOAD.getDescription());
+    }
+
+    @Test
+    void CONTEXT_BUILD的code与description应正确() {
+        assertEquals("CONTEXT_BUILD", LogType.CONTEXT_BUILD.getCode());
+        assertEquals("上下文构建", LogType.CONTEXT_BUILD.getDescription());
+    }
+
+    @Test
+    void CHILD_SESSION的code与description应正确() {
+        assertEquals("CHILD_SESSION", LogType.CHILD_SESSION.getCode());
+        assertEquals("子会话创建", LogType.CHILD_SESSION.getDescription());
+    }
+
+    @Test
+    void REFRESH的code与description应正确() {
+        assertEquals("REFRESH", LogType.REFRESH.getCode());
+        assertEquals("上下文刷新", LogType.REFRESH.getDescription());
+    }
+
+    @Test
+    void HANDLE_MESSAGE的code与description应正确() {
+        assertEquals("HANDLE_MESSAGE", LogType.HANDLE_MESSAGE.getCode());
+        assertEquals("消息处理", LogType.HANDLE_MESSAGE.getDescription());
+    }
+
+    @Test
+    void CACHE_REMOVE的code与description应正确() {
+        assertEquals("CACHE_REMOVE", LogType.CACHE_REMOVE.getCode());
+        assertEquals("缓存移除", LogType.CACHE_REMOVE.getDescription());
+    }
+
+    @Test
+    void SEND_MESSAGE的code与description应正确() {
+        assertEquals("SEND_MESSAGE", LogType.SEND_MESSAGE.getCode());
+        assertEquals("消息发送", LogType.SEND_MESSAGE.getDescription());
     }
 }

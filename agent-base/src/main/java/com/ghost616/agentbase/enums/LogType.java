@@ -12,7 +12,13 @@ public enum LogType {
     MODEL_CALL("MODEL_CALL", "模型调用"),
     STREAM_EVENT("STREAM_EVENT", "流式事件"),
     HISTORY_EXPAND("HISTORY_EXPAND", "历史展开"),
-    SKILL_LOAD("SKILL_LOAD", "技能加载");
+    SKILL_LOAD("SKILL_LOAD", "技能加载"),
+    CONTEXT_BUILD("CONTEXT_BUILD", "上下文构建"),
+    CHILD_SESSION("CHILD_SESSION", "子会话创建"),
+    REFRESH("REFRESH", "上下文刷新"),
+    HANDLE_MESSAGE("HANDLE_MESSAGE", "消息处理"),
+    CACHE_REMOVE("CACHE_REMOVE", "缓存移除"),
+    SEND_MESSAGE("SEND_MESSAGE", "消息发送");
 
     private final String code;
     private final String description;
