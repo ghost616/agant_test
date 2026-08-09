@@ -150,7 +150,7 @@ class ChatServiceLogTest {
         assertSame(harness.context, logData.getContext());
         assertEquals(sessionId, logData.getContext().getSessionId());
         assertEquals("model-1", logData.getModelId());
-        assertEquals("conv-1", logData.getConversationId());
+        assertEquals("conv-1", logData.getContext().getConversationId());
         assertEquals("hello", logData.getContent());
         assertFalse(logData.getIsToolContinue());
     }

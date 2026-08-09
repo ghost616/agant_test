@@ -1,7 +1,6 @@
 /** 日志类型枚举，code 对应后端 LogType 枚举的 code 值 */
 export const LogType = {
   REQUEST_ENTRY: { code: 'REQUEST_ENTRY', label: '请求入口' },
-  CALL_SOURCE: { code: 'CALL_SOURCE', label: '调用来源' },
   ERROR_LOG: { code: 'ERROR_LOG', label: '错误日志' },
   ROUTE: { code: 'ROUTE', label: '路由分发' },
   MODEL_CALL: { code: 'MODEL_CALL', label: '模型调用' },
@@ -24,7 +23,6 @@ export const LogType = {
 /** 日志等级枚举，code 对应后端 LogLevel 枚举的 code 值 */
 export const LogLevel = {
   INFO: { code: 'INFO', label: '信息' },
-  WARN: { code: 'WARN', label: '警告' },
   ERROR: { code: 'ERROR', label: '错误' },
 } as const;
 
@@ -46,5 +44,7 @@ export interface AgentLog {
   logType: string;
   logLevel: string;
   logData: string;
+  sessionVariables?: string;
+  conversationVariables?: string;
   createTime: string;
 }

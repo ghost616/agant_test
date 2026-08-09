@@ -24,7 +24,6 @@ Object.values(LogLevel).forEach((item) => {
 
 const LOG_LEVEL_COLORS: Record<string, string> = {
   INFO: 'blue',
-  WARN: 'orange',
   ERROR: 'red',
 };
 
@@ -58,6 +57,9 @@ function AgentLogList(): JSX.Element {
   const [pageSize, setPageSize] = useState(20);
   const [total, setTotal] = useState(0);
   const [detailLog, setDetailLog] = useState<AgentLog | null>(null);
+  const [detailVariable, setDetailVariable] = useState<{ title: string; content: string } | null>(
+    null,
+  );
 
   const fetchList = useCallback(async () => {
     setLoading(true);
@@ -97,7 +99,7 @@ function AgentLogList(): JSX.Element {
     setPage(1);
   };
 
-  const renderLogData = (value: string, record: AgentLog): React.ReactNode => {
+  const renderExpandableText = (value: string, onExpand: () => void): React.ReactNode => {
     const truncated = value.length > LOG_DATA_PREVIEW_LENGTH;
     const preview = truncated
       ? `${value.slice(0, LOG_DATA_PREVIEW_LENGTH)}...`
@@ -110,12 +112,19 @@ function AgentLogList(): JSX.Element {
           {preview}
         </Typography.Text>
         {truncated && (
-          <Button type="link" size="small" onClick={() => setDetailLog(record)}>
+          <Button type="link" size="small" onClick={onExpand}>
             展开
           </Button>
         )}
       </Space>
     );
+  };
+
+  const renderVariableCell = (value: string | undefined, title: string): React.ReactNode => {
+    if (!value) {
+      return '-';
+    }
+    return renderExpandableText(value, () => setDetailVariable({ title, content: value }));
   };
 
   const columns: ColumnsType<AgentLog> = [
@@ -153,7 +162,19 @@ function AgentLogList(): JSX.Element {
       title: '日志数据',
       dataIndex: 'logData',
       width: 360,
-      render: (value: string, record: AgentLog) => renderLogData(value, record),
+      render: (value: string, record: AgentLog) => renderExpandableText(value, () => setDetailLog(record)),
+    },
+    {
+      title: '会话变量',
+      dataIndex: 'sessionVariables',
+      width: 240,
+      render: (value?: string) => renderVariableCell(value, '会话变量'),
+    },
+    {
+      title: '对话变量',
+      dataIndex: 'conversationVariables',
+      width: 240,
+      render: (value?: string) => renderVariableCell(value, '对话变量'),
     },
     {
       title: '创建时间',
@@ -194,7 +215,7 @@ function AgentLogList(): JSX.Element {
         columns={columns}
         dataSource={dataSource}
         loading={loading}
-        scroll={{ x: 1150 }}
+        scroll={{ x: 1630 }}
         pagination={{
           current: page,
           pageSize,
@@ -255,6 +276,38 @@ function AgentLogList(): JSX.Element {
               {formatLogData(detailLog.logData)}
             </pre>
           </div>
+        )}
+      </Modal>
+
+      <Modal
+        title={detailVariable ? `${detailVariable.title}详情` : '变量详情'}
+        open={detailVariable !== null}
+        onCancel={() => setDetailVariable(null)}
+        footer={
+          <Button type="primary" onClick={() => setDetailVariable(null)}>
+            关闭
+          </Button>
+        }
+        width={720}
+        destroyOnHidden
+      >
+        {detailVariable && (
+          <pre
+            style={{
+              background: '#1e1e1e',
+              color: '#d4d4d4',
+              padding: 12,
+              borderRadius: 4,
+              maxHeight: 480,
+              overflow: 'auto',
+              fontFamily: 'monospace',
+              fontSize: 13,
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-all',
+            }}
+          >
+            {formatLogData(detailVariable.content)}
+          </pre>
         )}
       </Modal>
     </div>

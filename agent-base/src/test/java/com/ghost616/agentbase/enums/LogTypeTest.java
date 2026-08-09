@@ -11,14 +11,13 @@ class LogTypeTest {
     }
 
     @Test
-    void 枚举值数量应为19() {
-        assertEquals(19, LogType.values().length);
+    void 枚举值数量应为18() {
+        assertEquals(18, LogType.values().length);
     }
 
     @Test
-    void 应包含请求入口与调用来源枚举值() {
+    void 应包含请求入口枚举值() {
         assertNotNull(LogType.REQUEST_ENTRY);
-        assertNotNull(LogType.CALL_SOURCE);
         assertNotNull(LogType.ERROR_LOG);
         assertNotNull(LogType.ROUTE);
         assertNotNull(LogType.MODEL_CALL);
@@ -42,12 +41,6 @@ class LogTypeTest {
     void REQUEST_ENTRY的code与description应正确() {
         assertEquals("REQUEST_ENTRY", LogType.REQUEST_ENTRY.getCode());
         assertEquals("请求入口", LogType.REQUEST_ENTRY.getDescription());
-    }
-
-    @Test
-    void CALL_SOURCE的code与description应正确() {
-        assertEquals("CALL_SOURCE", LogType.CALL_SOURCE.getCode());
-        assertEquals("调用来源", LogType.CALL_SOURCE.getDescription());
     }
 
     @Test

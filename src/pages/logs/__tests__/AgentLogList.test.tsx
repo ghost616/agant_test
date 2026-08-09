@@ -70,7 +70,7 @@ describe('AgentLogList 初始加载与表格渲染', () => {
     });
   });
 
-  it('渲染表格列（会话名/对话ID/日志类型/日志等级/日志数据/创建时间）', async () => {
+  it('渲染表格列（会话名/对话ID/日志类型/日志等级/日志数据/会话变量/对话变量/创建时间）', async () => {
     renderComponent();
     await waitFor(() => {
       expect(screen.getAllByText('会话A').length).toBeGreaterThan(0);
@@ -79,7 +79,16 @@ describe('AgentLogList 初始加载与表格渲染', () => {
     const headerTexts = Array.from(
       document.querySelectorAll('.ant-table-thead th'),
     ).map((el) => el?.textContent ?? '');
-    for (const title of ['会话名', '对话ID', '日志类型', '日志等级', '日志数据', '创建时间']) {
+    for (const title of [
+      '会话名',
+      '对话ID',
+      '日志类型',
+      '日志等级',
+      '日志数据',
+      '会话变量',
+      '对话变量',
+      '创建时间',
+    ]) {
       expect(headerTexts).toContain(title);
     }
     expect(screen.getAllByText('conv-1').length).toBeGreaterThan(0);
@@ -92,6 +101,42 @@ describe('AgentLogList 初始加载与表格渲染', () => {
     expect(tag.closest('.ant-tag')).toBeTruthy();
     const badge = screen.getByText('信息');
     expect(badge.closest('.ant-badge')).toBeTruthy();
+  });
+
+  it('未知日志等级回退显示原始值，颜色使用 default', async () => {
+    mocks.listAgentLogs.mockResolvedValue(defaultMockResult({ logLevel: 'UNKNOWN' }));
+
+    renderComponent();
+    await screen.findByText('会话A');
+
+    const badge = screen.getByText('UNKNOWN');
+    expect(badge.closest('.ant-badge')).toBeTruthy();
+  });
+});
+
+describe('AgentLogList 日志等级选项（由 LogLevel 枚举生成）', () => {
+  beforeEach(() => {
+    mocks.listAgentLogs.mockReset();
+    mocks.listAgentLogs.mockResolvedValue(defaultMockResult());
+  });
+
+  it('日志等级筛选下拉仅含 信息/错误，不含 警告', async () => {
+    renderComponent();
+    await screen.findByText('会话A');
+
+    const placeholder = screen.getByText('日志等级', {
+      selector: '.ant-select-selection-placeholder',
+    });
+    fireEvent.mouseDown(placeholder);
+
+    await waitFor(() => {
+      const options = Array.from(
+        document.querySelectorAll('.ant-select-item-option-content'),
+      ).map((el) => el?.textContent?.trim() ?? '');
+      expect(options).toContain('信息');
+      expect(options).toContain('错误');
+      expect(options).not.toContain('警告');
+    });
   });
 });
 
@@ -152,6 +197,80 @@ describe('AgentLogList 日志数据展开', () => {
       expect(document.querySelector('.ant-modal-footer .ant-btn')).toBeTruthy();
     });
     expect(document.body.textContent).toContain('非常长的日志内容');
+  });
+});
+
+describe('AgentLogList 会话变量与对话变量列', () => {
+  beforeEach(() => {
+    mocks.listAgentLogs.mockReset();
+  });
+
+  it('会话变量为空时显示占位符 -', async () => {
+    mocks.listAgentLogs.mockResolvedValue(defaultMockResult());
+
+    renderComponent();
+    await screen.findByText('会话A');
+
+    const dashCells = Array.from(document.querySelectorAll('.ant-table-tbody td')).filter(
+      (el) => el?.textContent?.trim() === '-',
+    );
+    expect(dashCells.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('会话变量/对话变量超长时显示省略与展开按钮，点击弹出变量详情 Modal', async () => {
+    const longVars = JSON.stringify({ key: '很长的变量内容'.repeat(20) });
+    mocks.listAgentLogs.mockResolvedValue(
+      defaultMockResult({ sessionVariables: longVars, conversationVariables: longVars }),
+    );
+
+    renderComponent();
+
+    const expandBtns = await screen.findAllByRole('button', { name: '展开' });
+    expect(expandBtns).toHaveLength(2);
+
+    fireEvent.click(expandBtns[0]);
+
+    await waitFor(() => {
+      expect(screen.getByText('会话变量详情')).toBeTruthy();
+    });
+    expect(document.body.textContent).toContain('很长的变量内容');
+  });
+
+  it('变量详情 Modal 关闭后重新打开对话变量仍正常（destroyOnHidden）', async () => {
+    const longVars = JSON.stringify({ key: '另一个很长的变量内容'.repeat(20) });
+    mocks.listAgentLogs.mockResolvedValue(
+      defaultMockResult({ sessionVariables: longVars, conversationVariables: longVars }),
+    );
+
+    renderComponent();
+    const expandBtns = await screen.findAllByRole('button', { name: '展开' });
+
+    fireEvent.click(expandBtns[0]);
+    await waitFor(() => {
+      expect(screen.getByText('会话变量详情')).toBeTruthy();
+    });
+    const closeBtn = document.querySelector(
+      '.ant-modal-footer .ant-btn',
+    ) as HTMLElement;
+    fireEvent.click(closeBtn);
+
+    const expandBtnsAgain = await screen.findAllByRole('button', { name: '展开' });
+    fireEvent.click(expandBtnsAgain[1]);
+    await waitFor(() => {
+      expect(screen.getByText('对话变量详情')).toBeTruthy();
+    });
+    expect(document.body.textContent).toContain('另一个很长的变量内容');
+  });
+
+  it('变量内容较短时不显示展开按钮', async () => {
+    mocks.listAgentLogs.mockResolvedValue(
+      defaultMockResult({ sessionVariables: '{"a":1}', conversationVariables: '{}' }),
+    );
+
+    renderComponent();
+    await screen.findByText('会话A');
+
+    expect(screen.queryByRole('button', { name: '展开' })).toBeNull();
   });
 });
 

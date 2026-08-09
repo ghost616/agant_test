@@ -116,14 +116,6 @@ public class ChatService {
         boolean isToolContinue = TOOL_CONTINUE_MARKER.equals(content);
         String conversationId = request.getConversationId();
 
-        addLog(RequestEntryLogData.builder()
-                .logLevel(LogLevel.INFO)
-                .context(context)
-                .modelId(context.getModelId())
-                .conversationId(conversationId)
-                .content(content)
-                .isToolContinue(isToolContinue)
-                .build());
         if (!isToolContinue) {
             contextMutator.resetStopped();
             contextMutator.clearConversationVariables();
@@ -149,6 +141,14 @@ public class ChatService {
                     null, null, null);
             contextMutator.addHistoryEntry(userEntry);
         }
+
+        addLog(RequestEntryLogData.builder()
+                .logLevel(LogLevel.INFO)
+                .context(context)
+                .modelId(context.getModelId())
+                .content(content)
+                .isToolContinue(isToolContinue)
+                .build());
 
         if (modelId != null && !modelId.equals(context.getModelId())) {
             chatDataProvider.updateSessionModelId(sessionId, modelId);
