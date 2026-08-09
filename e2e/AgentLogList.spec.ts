@@ -63,7 +63,7 @@ test.describe('AgentLogList 运行日志页面', () => {
     await expect(page.locator('.ant-table-tbody').getByText('conv-1')).toBeVisible();
   });
 
-  test('日志类型显示中文 Tag，日志等级显示 Badge', async ({ page }) => {
+  test('日志类型显示中文 Tag，日志等级显示彩色字体', async ({ page }) => {
     await page.goto('/logs');
     await page.waitForSelector('.ant-table');
 
@@ -71,9 +71,14 @@ test.describe('AgentLogList 运行日志页面', () => {
     await expect(modelCallTag).toBeVisible();
 
     const firstRow = page.locator('.ant-table-tbody tr[data-row-key]').first();
-    await expect(firstRow.locator('.ant-badge').getByText('信息')).toBeVisible();
+    const infoSpan = firstRow.locator('span', { hasText: 'INFO' });
+    await expect(infoSpan).toBeVisible();
+    await expect(infoSpan).toHaveCSS('color', 'rgb(22, 119, 255)');
+
     const secondRow = page.locator('.ant-table-tbody tr[data-row-key]').nth(1);
-    await expect(secondRow.locator('.ant-badge').getByText('错误')).toBeVisible();
+    const errorSpan = secondRow.locator('span', { hasText: 'ERROR' });
+    await expect(errorSpan).toBeVisible();
+    await expect(errorSpan).toHaveCSS('color', 'rgb(255, 77, 79)');
   });
 
   test('点击展开按钮弹出日志详情 Modal 展示完整数据', async ({ page }) => {

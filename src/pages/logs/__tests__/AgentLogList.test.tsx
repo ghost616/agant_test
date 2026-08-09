@@ -94,23 +94,25 @@ describe('AgentLogList 初始加载与表格渲染', () => {
     expect(screen.getAllByText('conv-1').length).toBeGreaterThan(0);
   });
 
-  it('日志类型列显示中文标签 Tag，日志等级列显示彩色 Badge', async () => {
+  it('日志类型列显示中文标签 Tag，日志等级列显示彩色字体 span', async () => {
     renderComponent();
 
     const tag = await screen.findByText('路由分发');
     expect(tag.closest('.ant-tag')).toBeTruthy();
-    const badge = screen.getByText('信息');
-    expect(badge.closest('.ant-badge')).toBeTruthy();
+    const level = screen.getByText('INFO');
+    expect(level.tagName).toBe('SPAN');
+    expect(level.getAttribute('style')).toContain('color: rgb(22, 119, 255)');
   });
 
-  it('未知日志等级回退显示原始值，颜色使用 default', async () => {
+  it('未知日志等级回退显示原始值（无颜色映射时仅显示文字）', async () => {
     mocks.listAgentLogs.mockResolvedValue(defaultMockResult({ logLevel: 'UNKNOWN' }));
 
     renderComponent();
     await screen.findByText('会话A');
 
-    const badge = screen.getByText('UNKNOWN');
-    expect(badge.closest('.ant-badge')).toBeTruthy();
+    const level = screen.getByText('UNKNOWN');
+    expect(level.tagName).toBe('SPAN');
+    expect(level.getAttribute('style')).not.toContain('color');
   });
 });
 
@@ -120,7 +122,7 @@ describe('AgentLogList 日志等级选项（由 LogLevel 枚举生成）', () =>
     mocks.listAgentLogs.mockResolvedValue(defaultMockResult());
   });
 
-  it('日志等级筛选下拉仅含 信息/错误，不含 警告', async () => {
+  it('日志等级筛选下拉仅含 INFO/ERROR，不含 警告', async () => {
     renderComponent();
     await screen.findByText('会话A');
 
@@ -133,8 +135,8 @@ describe('AgentLogList 日志等级选项（由 LogLevel 枚举生成）', () =>
       const options = Array.from(
         document.querySelectorAll('.ant-select-item-option-content'),
       ).map((el) => el?.textContent?.trim() ?? '');
-      expect(options).toContain('信息');
-      expect(options).toContain('错误');
+      expect(options).toContain('INFO');
+      expect(options).toContain('ERROR');
       expect(options).not.toContain('警告');
     });
   });

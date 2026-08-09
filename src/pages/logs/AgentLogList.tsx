@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Badge, Button, Input, message, Modal, Select, Space, Table, Tag, Typography } from 'antd';
+import { Button, Input, message, Modal, Select, Space, Table, Tag, Typography } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import type { AgentLog } from '../../types/log';
 import { LogLevel, LogType } from '../../types/log';
@@ -17,19 +17,14 @@ const LOG_TYPE_OPTIONS = Object.values(LogType).map((item) => ({
   label: item.label,
 }));
 
-const LOG_LEVEL_LABELS: Record<string, string> = {};
-Object.values(LogLevel).forEach((item) => {
-  LOG_LEVEL_LABELS[item.code] = item.label;
-});
-
 const LOG_LEVEL_COLORS: Record<string, string> = {
-  INFO: 'blue',
-  ERROR: 'red',
+  INFO: '#1677ff',
+  ERROR: '#ff4d4f',
 };
 
 const LOG_LEVEL_OPTIONS = Object.values(LogLevel).map((item) => ({
   value: item.code,
-  label: item.label,
+  label: item.code,
 }));
 
 const LOG_DATA_PREVIEW_LENGTH = 60;
@@ -155,7 +150,7 @@ function AgentLogList(): JSX.Element {
       dataIndex: 'logLevel',
       width: 110,
       render: (value: string) => (
-        <Badge color={LOG_LEVEL_COLORS[value] || 'default'} text={LOG_LEVEL_LABELS[value] || value} />
+        <span style={{ color: LOG_LEVEL_COLORS[value], fontWeight: 500 }}>{value}</span>
       ),
     },
     {
@@ -252,10 +247,11 @@ function AgentLogList(): JSX.Element {
               <span>
                 日志类型：{LOG_TYPE_LABELS[detailLog.logType] || detailLog.logType}　
                 日志等级：
-                <Badge
-                  color={LOG_LEVEL_COLORS[detailLog.logLevel] || 'default'}
-                  text={LOG_LEVEL_LABELS[detailLog.logLevel] || detailLog.logLevel}
-                />
+                <span
+                  style={{ color: LOG_LEVEL_COLORS[detailLog.logLevel], fontWeight: 500 }}
+                >
+                  {detailLog.logLevel}
+                </span>
               </span>
               <span>创建时间：{detailLog.createTime}</span>
             </Space>
