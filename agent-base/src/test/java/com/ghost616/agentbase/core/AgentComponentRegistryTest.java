@@ -2,8 +2,6 @@ package com.ghost616.agentbase.core;
 
 import com.ghost616.agentbase.service.agent.log.AgentLog;
 import com.ghost616.agentbase.service.agent.log.LogData;
-import com.ghost616.agentbase.service.agent.AgentExecutionContext;
-import com.ghost616.agentbase.enums.LogType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
@@ -30,7 +28,7 @@ class AgentComponentRegistryTest {
     void setAgentLog后getAgentLog应返回设置实例() {
         AgentLog agentLog = new AgentLog() {
             @Override
-            public void addLog(AgentExecutionContext context, LogData logData) {
+            public void addLog(LogData logData) {
             }
         };
         registry.setAgentLog(agentLog);

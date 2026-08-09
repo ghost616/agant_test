@@ -1,8 +1,5 @@
 package com.ghost616.agentbase.service.agent.log;
 
-import com.ghost616.agentbase.enums.LogLevel;
-import com.ghost616.agentbase.enums.LogType;
-import com.ghost616.agentbase.service.agent.AgentExecutionContext;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -10,16 +7,10 @@ class AgentLogTest {
 
     @Test
     void addLog应能被实现并被调用() {
-        AgentExecutionContext context = null;
-        LogData logData = new LogData() {
-            @Override
-            public LogType logType() {
-                return null;
-            }
-        };
+        LogData logData = RequestEntryLogData.builder().build();
         final boolean[] called = {false};
-        AgentLog agentLog = (ctx, data) -> called[0] = true;
-        agentLog.addLog(context, logData);
+        AgentLog agentLog = data -> called[0] = true;
+        agentLog.addLog(logData);
         assertTrue(called[0]);
     }
 }

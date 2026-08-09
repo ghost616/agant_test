@@ -3,17 +3,17 @@ package com.ghost616.agentbase.service.agent.log;
 import com.ghost616.agentbase.enums.LogLevel;
 import com.ghost616.agentbase.enums.LogType;
 import lombok.Getter;
-import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 
 /**
  * 智能体日志数据抽象基类。
  */
 @Getter
-@Setter
+@SuperBuilder
 public abstract class LogData {
 
     /** 日志级别 */
-    private LogLevel logLevel;
+    private final LogLevel logLevel;
 
     /**
      * 日志类型。

@@ -20,6 +20,9 @@ import reactor.core.publisher.Flux;
 
 import com.ghost616.agentbase.service.agent.invoker.HookData;
 import com.ghost616.agentbase.service.agent.invoker.HookManager;
+import com.ghost616.agentbase.service.agent.log.AgentLog;
+import com.ghost616.agentbase.service.agent.log.LogData;
+import com.ghost616.agentbase.service.agent.log.RequestEntryLogData;
 import com.ghost616.agentbase.service.model.invoker.ModelInvokerManager;
 
 import com.ghost616.agentbase.dto.chat.ChatRequest;
@@ -31,6 +34,7 @@ import com.ghost616.agentbase.dto.skill.SkillConfigDTO;
 import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
 import com.ghost616.agentbase.enums.ErrorCode;
 import com.ghost616.agentbase.enums.HookPhase;
+import com.ghost616.agentbase.enums.LogLevel;
 import com.ghost616.agentbase.enums.RequestType;
 import com.ghost616.agentbase.enums.SessionAuthType;
 import com.ghost616.agentbase.exception.BusinessException;
@@ -81,6 +85,17 @@ public class ChatService {
         }
     }
 
+    private void addLog(LogData logData) {
+        AgentLog agentLog = registry.getAgentLog();
+        if (agentLog != null) {
+            try {
+                agentLog.addLog(logData);
+            } catch (Exception e) {
+                log.warn("记录智能体日志失败: {}", e.getMessage(), e);
+            }
+        }
+    }
+
     public Flux<ServerSentEvent<ChatChunk>> chat(ChatRequest request) {
         ensureInitialized();
         String sessionId = request.getSessionId();
@@ -94,6 +109,14 @@ public class ChatService {
 
         boolean isToolContinue = TOOL_CONTINUE_MARKER.equals(content);
 
+        addLog(RequestEntryLogData.builder()
+                .logLevel(LogLevel.INFO)
+                .context(context)
+                .sessionId(sessionId)
+                .modelId(context.getModelId())
+                .content(content)
+                .isToolContinue(isToolContinue)
+                .build());
         if (!isToolContinue) {
             contextMutator.resetStopped();
             contextMutator.clearConversationVariables();
