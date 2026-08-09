@@ -23,11 +23,11 @@ import com.ghost616.agentbase.service.agent.log.AgentLog;
 import com.ghost616.agentbase.service.agent.log.CacheRemoveLogData;
 import com.ghost616.agentbase.service.agent.log.ChildSessionLogData;
 import com.ghost616.agentbase.service.agent.log.ContextBuildLogData;
-import com.ghost616.agentbase.service.agent.log.ErrorLogData;
 import com.ghost616.agentbase.service.agent.log.HandleMessageLogData;
 import com.ghost616.agentbase.service.agent.log.LogData;
 import com.ghost616.agentbase.service.agent.log.RefreshLogData;
 import com.ghost616.agentbase.service.agent.log.SendMessageLogData;
+import com.ghost616.agentbase.service.agent.log.SessionErrorLogData;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -114,8 +114,9 @@ public class AgentContextManager {
         private AgentSessionContext doBuild() {
             ContextDataProvider.AgentContextData ctxData = dataProvider.loadAgentContext(sessionId);
             if (ctxData == null) {
-                addLog(ErrorLogData.builder()
+                addLog(SessionErrorLogData.builder()
                         .logLevel(LogLevel.ERROR)
+                        .sessionId(sessionId)
                         .errorCode(ErrorCode.SESSION_NOT_FOUND.getCode())
                         .message("会话上下文构建失败: 会话未找到: " + sessionId)
                         .build());
@@ -212,8 +213,10 @@ public class AgentContextManager {
         private void injectVariableCallbacks(AgentExecutionContext.AgentContextMutator mutator,
                                               String sessionId, String parentSessionId,
                                               AgentSessionContext parentCtx) {
+            String conversationId = null;
             if (parentSessionId != null && parentCtx != null) {
                 AgentExecutionContext parentContext = parentCtx.context();
+                conversationId = parentContext.getConversationId();
                 mutator.sessionVarPutCallback = parentContext::putSessionVariable;
                 mutator.sessionVarRemoveCallback = parentContext::removeSessionVariable;
                 mutator.conversationVarPutCallback = parentContext::putConversationVariable;
@@ -233,22 +236,24 @@ public class AgentContextManager {
                 mutator.conversationVarRemoveCallback = (key) ->
                         dataProvider.deleteSessionVariable(sessionId, key);
             }
+            final String capturedConversationId = conversationId;
             mutator.createChildSessionCallback = (psId, sessionName, description, modelId,
                                                     toolIds, skillIds, prompt) ->
                     createChildSession(psId, sessionName, description, modelId,
-                            toolIds, skillIds, prompt);
+                            toolIds, skillIds, prompt, capturedConversationId);
             mutator.sendUserMessageCallback = (childSessionId, content, modelId, thinking) ->
-                    sendUserMessage(sessionId, childSessionId, content, modelId, thinking);
+                    sendUserMessage(sessionId, childSessionId, content, modelId, thinking, capturedConversationId);
 
         }
     }
 
     private String createChildSession(String parentSessionId, String sessionName, String description, String modelId,
-                                       List<String> toolIds, List<String> skillIds, String prompt) {
+                                       List<String> toolIds, List<String> skillIds, String prompt, String conversationId) {
         String childSessionId = dataProvider.createChildSession(parentSessionId, sessionName, description, modelId, toolIds, skillIds, prompt);
         addLog(ChildSessionLogData.builder()
                 .logLevel(LogLevel.INFO)
-                .parentSessionId(parentSessionId)
+                .sessionId(parentSessionId)
+                .conversationId(conversationId)
                 .childSessionId(childSessionId)
                 .sessionName(sessionName)
                 .description(description)
@@ -260,14 +265,15 @@ public class AgentContextManager {
         return childSessionId;
     }
 
-    private Message sendUserMessage(String parentSessionId, String childSessionId, String content, String modelId, Boolean thinking) {
+    private Message sendUserMessage(String parentSessionId, String childSessionId, String content, String modelId, Boolean thinking, String conversationId) {
         Message result = null;
         if (agentMessageProxy != null) {
             result = agentMessageProxy.sendUserMessage(childSessionId, content, modelId, thinking);
         }
         addLog(SendMessageLogData.builder()
                 .logLevel(LogLevel.INFO)
-                .parentSessionId(parentSessionId)
+                .sessionId(parentSessionId)
+                .conversationId(conversationId)
                 .childSessionId(childSessionId)
                 .content(content)
                 .modelId(modelId)

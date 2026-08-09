@@ -14,11 +14,11 @@ import com.ghost616.agentbase.service.agent.log.AgentLog;
 import com.ghost616.agentbase.service.agent.log.CacheRemoveLogData;
 import com.ghost616.agentbase.service.agent.log.ChildSessionLogData;
 import com.ghost616.agentbase.service.agent.log.ContextBuildLogData;
-import com.ghost616.agentbase.service.agent.log.ErrorLogData;
 import com.ghost616.agentbase.service.agent.log.HandleMessageLogData;
 import com.ghost616.agentbase.service.agent.log.LogData;
 import com.ghost616.agentbase.service.agent.log.RefreshLogData;
 import com.ghost616.agentbase.service.agent.log.SendMessageLogData;
+import com.ghost616.agentbase.service.agent.log.SessionErrorLogData;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -204,8 +204,9 @@ class AgentContextManagerLogTest {
         LogData logData = captor.getValue();
 
         assertEquals(LogType.ERROR_LOG, logData.logType());
-        ErrorLogData errorLog = (ErrorLogData) logData;
+        SessionErrorLogData errorLog = (SessionErrorLogData) logData;
         assertEquals(LogLevel.ERROR, errorLog.getLogLevel());
+        assertEquals(sessionId, errorLog.getSessionId());
         assertEquals("SESSION-001", errorLog.getErrorCode());
         assertTrue(errorLog.getMessage().contains(sessionId));
     }
@@ -231,7 +232,8 @@ class AgentContextManagerLogTest {
 
         assertNotNull(log);
         assertEquals(LogLevel.INFO, log.getLogLevel());
-        assertEquals(parentId, log.getParentSessionId());
+        assertEquals(parentId, log.getSessionId());
+        assertNull(log.getConversationId());
         assertEquals(newChildId, log.getChildSessionId());
         assertEquals("child", log.getSessionName());
         assertEquals("desc", log.getDescription());
@@ -257,11 +259,54 @@ class AgentContextManagerLogTest {
 
         assertNotNull(log);
         assertEquals(LogLevel.INFO, log.getLogLevel());
-        assertEquals(sessionId, log.getParentSessionId());
+        assertEquals(sessionId, log.getSessionId());
+        assertNull(log.getConversationId());
         assertEquals("99", log.getChildSessionId());
         assertEquals("hello", log.getContent());
         assertEquals("300", log.getModelId());
         assertTrue(log.getThinking());
+    }
+
+    @Test
+    void 子会话上下文中createChildSession和sendUserMessage日志携带父会话conversationId() {
+        String parentId = "1";
+        String childId = "2";
+        when(dataProvider.loadAgentContext(parentId)).thenReturn(
+                new ContextDataProvider.AgentContextData(agentId, "parent", "200", 10, List.of(), Map.of(), null, null, null, null));
+        when(dataProvider.loadAgentContext(childId)).thenReturn(
+                new ContextDataProvider.AgentContextData(agentId, "child", "200", 10, List.of(), Map.of(), parentId, null, null, null));
+        when(sessionManager.getMessages(anyString())).thenReturn(List.of());
+        when(toolManager.getSessionTools(anyString(), anyBoolean())).thenReturn(List.of());
+
+        AgentContextManager.AgentSessionContext parentCtx = agentContextManager.build(parentId).build();
+        parentCtx.mutator().setConversationId("conv-100");
+
+        AgentContextManager.AgentSessionContext childCtx = agentContextManager.build(childId).build();
+
+        when(dataProvider.createChildSession(eq(parentId), eq("child"), eq("desc"), eq("300"),
+                any(), any(), any())).thenReturn("99");
+
+        String newChildId = childCtx.mutator().createChildSessionCallback.create(parentId, "child", "desc", "300",
+                List.of("t1"), List.of("s1"), "prompt");
+        childCtx.context().sendUserMessage("88", "hello", "300", true);
+
+        assertEquals("99", newChildId);
+        ArgumentCaptor<LogData> captor = ArgumentCaptor.forClass(LogData.class);
+        verify(agentLog, atLeastOnce()).addLog(captor.capture());
+
+        ChildSessionLogData childLog = captor.getAllValues().stream()
+                .filter(l -> l.logType() == LogType.CHILD_SESSION)
+                .map(l -> (ChildSessionLogData) l)
+                .findFirst().orElse(null);
+        assertNotNull(childLog);
+        assertEquals("conv-100", childLog.getConversationId());
+
+        SendMessageLogData sendLog = captor.getAllValues().stream()
+                .filter(l -> l.logType() == LogType.SEND_MESSAGE)
+                .map(l -> (SendMessageLogData) l)
+                .findFirst().orElse(null);
+        assertNotNull(sendLog);
+        assertEquals("conv-100", sendLog.getConversationId());
     }
 
     @Test
