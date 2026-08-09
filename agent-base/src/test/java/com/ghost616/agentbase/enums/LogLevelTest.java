@@ -36,13 +36,29 @@ class LogLevelTest {
     }
 
     @Test
-    void 枚举值数量应为2() {
-        assertEquals(2, LogLevel.values().length);
+    void WARN枚举应存在() {
+        assertNotNull(LogLevel.WARN);
+    }
+
+    @Test
+    void WARN的getCode应返回WARN() {
+        assertEquals("WARN", LogLevel.WARN.getCode());
+    }
+
+    @Test
+    void WARN的getDescription应返回警告() {
+        assertEquals("警告", LogLevel.WARN.getDescription());
+    }
+
+    @Test
+    void 枚举值数量应为3() {
+        assertEquals(3, LogLevel.values().length);
     }
 
     @Test
     void 按名称valueOf应能解析() {
         assertEquals(LogLevel.INFO, LogLevel.valueOf("INFO"));
+        assertEquals(LogLevel.WARN, LogLevel.valueOf("WARN"));
         assertEquals(LogLevel.ERROR, LogLevel.valueOf("ERROR"));
     }
 }

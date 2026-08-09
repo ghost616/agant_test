@@ -21,8 +21,14 @@ import reactor.core.publisher.Flux;
 import com.ghost616.agentbase.service.agent.invoker.HookData;
 import com.ghost616.agentbase.service.agent.invoker.HookManager;
 import com.ghost616.agentbase.service.agent.log.AgentLog;
+import com.ghost616.agentbase.service.agent.log.ErrorLogData;
+import com.ghost616.agentbase.service.agent.log.HistoryExpandLogData;
 import com.ghost616.agentbase.service.agent.log.LogData;
+import com.ghost616.agentbase.service.agent.log.ModelCallLogData;
 import com.ghost616.agentbase.service.agent.log.RequestEntryLogData;
+import com.ghost616.agentbase.service.agent.log.RouteLogData;
+import com.ghost616.agentbase.service.agent.log.SkillLoadLogData;
+import com.ghost616.agentbase.service.agent.log.StreamEventLogData;
 import com.ghost616.agentbase.service.model.invoker.ModelInvokerManager;
 
 import com.ghost616.agentbase.dto.chat.ChatRequest;
@@ -123,6 +129,12 @@ public class ChatService {
             String conversationId = request.getConversationId();
             if (context.getParentSessionId() == null
                     && (conversationId == null || conversationId.isBlank())) {
+                addLog(ErrorLogData.builder()
+                        .logLevel(LogLevel.ERROR)
+                        .context(context)
+                        .errorCode(ErrorCode.PARAM_INVALID.getCode())
+                        .message("conversationId 不能为空")
+                        .build());
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "conversationId 不能为空");
             }
             contextMutator.setConversationId(conversationId);
@@ -146,6 +158,12 @@ public class ChatService {
         String finalModelId = (modelId != null) ? modelId : context.getModelId();
         ModelConfigData configData = chatDataProvider.getModelConfig(finalModelId);
         if (configData == null) {
+            addLog(ErrorLogData.builder()
+                    .logLevel(LogLevel.ERROR)
+                    .context(context)
+                    .errorCode(ErrorCode.MODEL_NOT_FOUND.getCode())
+                    .message("模型配置不存在: " + finalModelId)
+                    .build());
             throw new BusinessException(ErrorCode.MODEL_NOT_FOUND);
         }
 
@@ -153,6 +171,11 @@ public class ChatService {
         hookManager.triggerHooks(HookPhase.SESSION_START, context, new HookData((ChatChunk) null));
 
         String requestType = configData.requestType();
+        addLog(RouteLogData.builder()
+                .logLevel(LogLevel.INFO)
+                .context(context)
+                .requestType(requestType)
+                .build());
         if (RequestType.RESPONSES.getCode().equals(requestType)) {
             return chatViaResponses(request, context, contextMutator, sessionId, configData);
         }
@@ -198,6 +221,15 @@ public class ChatService {
                         .thinking(request.getThinking())
                         .builtinTools(toolManager.getBuiltinTools(configData.id()))
                         .build();
+
+        addLog(ModelCallLogData.builder()
+                .logLevel(LogLevel.INFO)
+                .context(context)
+                .messageCount(messages.size())
+                .toolCount(tools.size())
+                .toolNames(tools.stream().map(ToolDefinition::getName).collect(Collectors.toList()))
+                .thinking(request.getThinking())
+                .build());
 
         Flux<ChatChunk> stream = invoker.invokeStream(chatRequest);
 
@@ -426,6 +458,14 @@ public class ChatService {
                         .role("system")
                         .content(sb.toString())
                         .build());
+                addLog(SkillLoadLogData.builder()
+                        .logLevel(LogLevel.INFO)
+                        .context(context)
+                        .skillNames(filteredLoadedSkills.stream()
+                                .map(SkillConfigDTO::getName)
+                                .collect(Collectors.toList()))
+                        .skillCount(filteredLoadedSkills.size())
+                        .build());
             }
         }
 
@@ -584,13 +624,26 @@ public class ChatService {
                 .takeWhile(chunk -> !context.isStopped())
                 .doOnNext(chunk -> {
                     if (chunk.getToolCalls() != null && !chunk.getToolCalls().isEmpty()) {
-                        hasToolCalls.set(true);
+                        if (hasToolCalls.compareAndSet(false, true)) {
+                            addLog(StreamEventLogData.builder()
+                                    .logLevel(LogLevel.INFO)
+                                    .context(context)
+                                    .eventType("ToolCallDetected")
+                                    .hasToolCalls(true)
+                                    .build());
+                        }
                     }
                     if (chunk.getResponseId() != null) {
                         contextMutator.setLastResponseId(chunk.getResponseId());
                     }
                     if (chunk.getFinishReason() != null) {
                         chunk.setHasToolCalls(hasToolCalls.get());
+                        addLog(StreamEventLogData.builder()
+                                .logLevel(LogLevel.INFO)
+                                .context(context)
+                                .eventType("StreamComplete")
+                                .hasToolCalls(hasToolCalls.get())
+                                .build());
                     }
                     hookManager.triggerSessionHooks(sessionId, HookPhase.BEFORE_MESSAGE_SEND, context, new HookData(chunk));
                     hookManager.triggerHooks(HookPhase.BEFORE_MESSAGE_SEND, context, new HookData(chunk));
@@ -607,7 +660,15 @@ public class ChatService {
                     hookManager.triggerHooks(HookPhase.AFTER_MESSAGE_RECEIVE, context, new HookData(completeChunk));
                     hookManager.executePostHooks(context, new HookData(completeChunk));
                 })
-                .doOnCancel(() -> contextMutator.setStopped());
+                .doOnCancel(() -> {
+                    addLog(StreamEventLogData.builder()
+                            .logLevel(LogLevel.INFO)
+                            .context(context)
+                            .eventType("StreamCancelled")
+                            .hasToolCalls(hasToolCalls.get())
+                            .build());
+                    contextMutator.setStopped();
+                });
     }
 
     private List<SkillConfigDTO> parseLoadedSkills(AgentExecutionContext context, List<SkillConfigDTO> skills) {
@@ -620,6 +681,13 @@ public class ChatService {
             loadedNames = JsonMapper.MAPPER.readValue(json, new TypeReference<List<String>>() {});
         } catch (Exception e) {
             log.debug("解析 _sys_loading_SKILLS 失败: {}", json, e);
+            addLog(ErrorLogData.builder()
+                    .logLevel(LogLevel.ERROR)
+                    .context(context)
+                    .errorCode(ErrorCode.SYSTEM_ERROR.getCode())
+                    .message("解析已加载技能列表失败")
+                    .exception(e)
+                    .build());
             return List.of();
         }
         if (loadedNames == null || loadedNames.isEmpty()) {
@@ -644,7 +712,7 @@ public class ChatService {
         }
 
         Set<Integer> expandedIndices = parseExpandedIndices(
-                context.getConversationVariable(HistoryQuerySystemTool.VAR_NAME));
+                context.getConversationVariable(HistoryQuerySystemTool.VAR_NAME), context);
 
         List<Message> prefix = new ArrayList<>();
         int startIndex = 0;
@@ -693,18 +761,28 @@ public class ChatService {
         }
 
         List<Message> anchorMessages = new ArrayList<>();
+        List<String> expandedMessages = new ArrayList<>();
         List<Integer> sortedIndices = new ArrayList<>(expandedIndices);
         Collections.sort(sortedIndices);
         for (int index : sortedIndices) {
             if (index >= 0 && index < foldedCount) {
-                anchorMessages.add(buildHistoryGroupMessage(groups.get(index), index));
+                Message anchor = buildHistoryGroupMessage(groups.get(index), index, context);
+                anchorMessages.add(anchor);
+                expandedMessages.add(anchor.getContent());
             }
         }
+
+        addLog(HistoryExpandLogData.builder()
+                .logLevel(LogLevel.INFO)
+                .context(context)
+                .foldedCount(foldedCount)
+                .expandedMessages(expandedMessages)
+                .build());
 
         return new FoldResult(result, anchorMessages);
     }
 
-    private Message buildHistoryGroupMessage(List<Message> group, int groupIndex) {
+    private Message buildHistoryGroupMessage(List<Message> group, int groupIndex, AgentExecutionContext context) {
         StringBuilder sb = new StringBuilder();
         sb.append(HISTORY_GROUP_PREFIX).append(groupIndex).append("】完整内容如下：\n");
         for (Message message : group) {
@@ -712,6 +790,13 @@ public class ChatService {
                 sb.append(JsonMapper.MAPPER.writeValueAsString(toHistoryGroupJson(message))).append("\n");
             } catch (Exception e) {
                 log.warn("序列化历史组消息失败: {}", e.getMessage());
+                addLog(ErrorLogData.builder()
+                        .logLevel(LogLevel.WARN)
+                        .context(context)
+                        .errorCode(ErrorCode.SYSTEM_ERROR.getCode())
+                        .message("序列化历史组消息失败")
+                        .exception(e)
+                        .build());
             }
         }
         return Message.builder()
@@ -756,7 +841,7 @@ public class ChatService {
         return json;
     }
 
-    private Set<Integer> parseExpandedIndices(String jsonStr) {
+    private Set<Integer> parseExpandedIndices(String jsonStr, AgentExecutionContext context) {
         if (jsonStr == null || jsonStr.isBlank()) {
             return Collections.emptySet();
         }
@@ -766,6 +851,13 @@ public class ChatService {
             return new HashSet<>(list);
         } catch (Exception e) {
             log.debug("解析 _sys_his_msgs_index 失败: {}", jsonStr, e);
+            addLog(ErrorLogData.builder()
+                    .logLevel(LogLevel.ERROR)
+                    .context(context)
+                    .errorCode(ErrorCode.SYSTEM_ERROR.getCode())
+                    .message("解析历史消息展开索引失败")
+                    .exception(e)
+                    .build());
             return Collections.emptySet();
         }
     }

@@ -6,6 +6,7 @@ package com.ghost616.agentbase.enums;
 public enum LogLevel {
 
     INFO("INFO", "信息"),
+    WARN("WARN", "警告"),
     ERROR("ERROR", "错误");
 
     private final String code;
