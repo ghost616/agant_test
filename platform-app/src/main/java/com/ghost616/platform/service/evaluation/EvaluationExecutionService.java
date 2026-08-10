@@ -76,6 +76,7 @@ public class EvaluationExecutionService {
         asyncEvaluationExecutor.executeAsync(evaluationId, executionSession, userMessages, executionStatusMap);
 
         String sessionId = String.valueOf(executionSession.getId());
+        String cacheId = null;
         while (true) {
             try {
                 Thread.sleep(200);
@@ -87,7 +88,14 @@ public class EvaluationExecutionService {
             if (current != null && "FAILED".equals(current.getStatus())) {
                 return current;
             }
-            if (!defaultChatDataCacheProvider.getCacheIdsBySessionId(sessionId).isEmpty()) {
+            if (cacheId == null) {
+                List<String> cacheIds = defaultChatDataCacheProvider.getCacheIdsBySessionId(sessionId);
+                if (cacheIds.isEmpty()) {
+                    continue;
+                }
+                cacheId = cacheIds.get(0);
+            }
+            if (defaultChatDataCacheProvider.getMaxChunkIndex(cacheId) > 0) {
                 break;
             }
         }

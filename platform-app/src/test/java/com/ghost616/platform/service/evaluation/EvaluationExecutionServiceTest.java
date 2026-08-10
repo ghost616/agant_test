@@ -71,6 +71,7 @@ class EvaluationExecutionServiceTest {
         when(sessionSkillMapper.selectList(any())).thenReturn(List.of());
         when(defaultChatDataCacheProvider.getCacheIdsBySessionId(anyString()))
                 .thenReturn(List.of("cache-1"));
+        when(defaultChatDataCacheProvider.getMaxChunkIndex(anyString())).thenReturn(1);
     }
 
     private Evaluation createEvaluation(Long benchmarkSessionId) {
@@ -168,6 +169,54 @@ class EvaluationExecutionServiceTest {
             assertNotNull(result);
             assertEquals("PENDING", result.getStatus());
             verify(defaultChatDataCacheProvider).getCacheIdsBySessionId(String.valueOf(EXECUTION_SESSION_ID));
+            verify(defaultChatDataCacheProvider).getMaxChunkIndex("cache-1");
+        }
+
+        @Test
+        void polling_cacheListEmpty_shouldContinuePollingUntilCacheAvailable() {
+            Evaluation evaluation = createEvaluation(BENCHMARK_SESSION_ID);
+            when(evaluationMapper.selectById(EVALUATION_ID)).thenReturn(evaluation);
+            when(messageDataProvider.getMessages(String.valueOf(BENCHMARK_SESSION_ID)))
+                    .thenReturn(List.of(createUserMessage("test message")));
+            when(sessionMapper.selectById(BENCHMARK_SESSION_ID)).thenReturn(createBenchmarkSession());
+            doAnswer(inv -> {
+                Session s = inv.getArgument(0);
+                s.setId(EXECUTION_SESSION_ID);
+                return null;
+            }).when(sessionMapper).insert(any(Session.class));
+            when(defaultChatDataCacheProvider.getCacheIdsBySessionId(String.valueOf(EXECUTION_SESSION_ID)))
+                    .thenReturn(List.of(), List.of("cache-1"));
+            when(defaultChatDataCacheProvider.getMaxChunkIndex("cache-1")).thenReturn(1);
+
+            EvaluationExecutionStatusDTO result = service.execute(EVALUATION_ID);
+
+            assertNotNull(result);
+            assertEquals("PENDING", result.getStatus());
+            verify(defaultChatDataCacheProvider, times(2))
+                    .getCacheIdsBySessionId(String.valueOf(EXECUTION_SESSION_ID));
+            verify(defaultChatDataCacheProvider).getMaxChunkIndex("cache-1");
+        }
+
+        @Test
+        void polling_cacheExistsDataNotWritten_shouldKeepPollingUntilDataWritten() {
+            Evaluation evaluation = createEvaluation(BENCHMARK_SESSION_ID);
+            when(evaluationMapper.selectById(EVALUATION_ID)).thenReturn(evaluation);
+            when(messageDataProvider.getMessages(String.valueOf(BENCHMARK_SESSION_ID)))
+                    .thenReturn(List.of(createUserMessage("test message")));
+            when(sessionMapper.selectById(BENCHMARK_SESSION_ID)).thenReturn(createBenchmarkSession());
+            doAnswer(inv -> {
+                Session s = inv.getArgument(0);
+                s.setId(EXECUTION_SESSION_ID);
+                return null;
+            }).when(sessionMapper).insert(any(Session.class));
+            when(defaultChatDataCacheProvider.getMaxChunkIndex("cache-1")).thenReturn(0, 1);
+
+            EvaluationExecutionStatusDTO result = service.execute(EVALUATION_ID);
+
+            assertNotNull(result);
+            assertEquals("PENDING", result.getStatus());
+            verify(defaultChatDataCacheProvider).getCacheIdsBySessionId(String.valueOf(EXECUTION_SESSION_ID));
+            verify(defaultChatDataCacheProvider, times(2)).getMaxChunkIndex("cache-1");
         }
 
         @Test
