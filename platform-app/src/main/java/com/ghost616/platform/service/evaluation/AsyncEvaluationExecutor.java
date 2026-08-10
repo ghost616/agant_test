@@ -2,6 +2,7 @@ package com.ghost616.platform.service.evaluation;
 
 import com.ghost616.agentbase.dto.model.Message;
 import com.ghost616.agentbase.service.agent.AgentMessageProxy;
+import com.ghost616.agentbase.service.agent.ChatDataCacheManager;
 import com.ghost616.agentbase.service.agent.ChatService;
 import com.ghost616.agentbase.service.agent.MessageDataProvider;
 import com.ghost616.agentbase.service.agent.ToolExecutionService;
@@ -23,6 +24,7 @@ public class AsyncEvaluationExecutor {
     private final ChatService chatService;
     private final ToolExecutionService toolExecutionService;
     private final EvaluationResultGenerateService evaluationResultGenerateService;
+    private final ChatDataCacheManager chatDataCacheManager;
 
     @Async
     public void generateResultAsync(Long evaluationId, Long executionSessionId,
@@ -55,6 +57,7 @@ public class AsyncEvaluationExecutor {
                              Map<String, EvaluationExecutionStatusDTO> statusMap) {
         String statusKey = String.valueOf(evaluationId);
         AgentMessageProxy proxy = new AgentMessageProxy(chatService, toolExecutionService);
+        proxy.setChatDataCacheManager(chatDataCacheManager);
         Long executionSessionId = executionSession.getId();
 
         try {

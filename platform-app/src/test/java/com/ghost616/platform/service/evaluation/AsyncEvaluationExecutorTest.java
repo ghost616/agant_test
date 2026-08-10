@@ -1,6 +1,6 @@
 package com.ghost616.platform.service.evaluation;
 
-import com.ghost616.agentbase.service.agent.AgentMessageProxy;
+import com.ghost616.agentbase.service.agent.ChatDataCacheManager;
 import com.ghost616.agentbase.service.agent.ChatService;
 import com.ghost616.agentbase.service.agent.MessageDataProvider;
 import com.ghost616.agentbase.service.agent.ToolExecutionService;
@@ -28,6 +28,8 @@ class AsyncEvaluationExecutorTest {
     private ToolExecutionService toolExecutionService;
     @Mock
     private EvaluationResultGenerateService evaluationResultGenerateService;
+    @Mock
+    private ChatDataCacheManager chatDataCacheManager;
 
     private AsyncEvaluationExecutor executor;
 
@@ -38,7 +40,7 @@ class AsyncEvaluationExecutorTest {
     @BeforeEach
     void setUp() {
         executor = new AsyncEvaluationExecutor(
-                chatService, toolExecutionService, evaluationResultGenerateService);
+                chatService, toolExecutionService, evaluationResultGenerateService, chatDataCacheManager);
     }
 
     @Nested

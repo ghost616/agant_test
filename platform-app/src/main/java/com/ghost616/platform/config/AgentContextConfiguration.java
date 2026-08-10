@@ -20,6 +20,7 @@ import com.ghost616.agentinteg.model.invoker.DefaultModelInvokerFactory;
 import com.ghost616.platform.repository.ModelConfigMapper;
 import com.ghost616.platform.repository.SessionMapper;
 import com.ghost616.platform.service.agent.DatabaseAgentLog;
+import com.ghost616.platform.service.agent.DefaultChatDataCacheProvider;
 import com.ghost616.platform.service.agent.DefaultChatDataProvider;
 import com.ghost616.platform.service.agent.DefaultToolExecutionProvider;
 import com.ghost616.platform.service.agent.DefaultSubSessionCallback;
@@ -115,15 +116,19 @@ public class AgentContextConfiguration {
     @Bean
     public ChatService chatService(AgentAssembler agentAssembler, DatabaseAgentLog databaseAgentLog) {
         ChatService chatService = agentAssembler.build().chatService();
-        ChatDataCacheManager cacheManager = new ChatDataCacheManager(
-                new com.ghost616.platform.service.agent.DefaultChatDataCacheProvider());
-        agentAssembler.setChatDataCacheManager(cacheManager);
-        if (databaseAgentLog != null) {
-            cacheManager.setAgentLog(databaseAgentLog);
-        }
         agentAssembler.setAgentLog(databaseAgentLog);
         agentAssembler.refreshHooks();
         return chatService;
+    }
+
+    @Bean
+    public ChatDataCacheManager chatDataCacheManager(DatabaseAgentLog databaseAgentLog) {
+        DefaultChatDataCacheProvider provider = new DefaultChatDataCacheProvider();
+        ChatDataCacheManager cacheManager = new ChatDataCacheManager(provider);
+        if (databaseAgentLog != null) {
+            cacheManager.setAgentLog(databaseAgentLog);
+        }
+        return cacheManager;
     }
 
     @Bean

@@ -21,7 +21,6 @@ import com.ghost616.platform.service.agent.DefaultSubSessionCallback;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationContext;
@@ -90,38 +89,20 @@ class AgentContextConfigurationTest {
     }
 
     @Test
-    void chatService_缓存管理器已注册并注入日志() {
-        SystemToolProvider systemToolProvider = mock(SystemToolProvider.class);
-        ModelInvokerFactory modelInvokerFactory = mock(ModelInvokerFactory.class);
-        ChatDataProvider chatDataProvider = mock(ChatDataProvider.class);
+    void chatDataCacheManager_正确创建并注入日志() {
+        ChatDataCacheManager cacheManager = config.chatDataCacheManager(databaseAgentLog);
 
-        AgentAssembler agentAssembler = spy(config.agentAssembler(systemToolProvider, modelInvokerFactory, chatDataProvider, toolExecutionProvider));
-        ChatService chatService = config.chatService(agentAssembler, databaseAgentLog);
-
-        assertNotNull(chatService);
-        ArgumentCaptor<ChatDataCacheManager> captor = ArgumentCaptor.forClass(ChatDataCacheManager.class);
-        verify(agentAssembler).setChatDataCacheManager(captor.capture());
-        assertNotNull(captor.getValue());
-
-        captor.getValue().startCache("session-1", "conv-1");
+        assertNotNull(cacheManager);
+        cacheManager.startCache("session-1", "conv-1");
         verify(databaseAgentLog).addLog(any(LogData.class));
     }
 
     @Test
-    void chatService_DatabaseAgentLog为null时_不设置缓存管理器日志() {
-        SystemToolProvider systemToolProvider = mock(SystemToolProvider.class);
-        ModelInvokerFactory modelInvokerFactory = mock(ModelInvokerFactory.class);
-        ChatDataProvider chatDataProvider = mock(ChatDataProvider.class);
+    void chatDataCacheManager_DatabaseAgentLog为null时_不设置缓存管理器日志() {
+        ChatDataCacheManager cacheManager = config.chatDataCacheManager(null);
 
-        AgentAssembler agentAssembler = spy(config.agentAssembler(systemToolProvider, modelInvokerFactory, chatDataProvider, toolExecutionProvider));
-        ChatService chatService = config.chatService(agentAssembler, null);
-
-        assertNotNull(chatService);
-        ArgumentCaptor<ChatDataCacheManager> captor = ArgumentCaptor.forClass(ChatDataCacheManager.class);
-        verify(agentAssembler).setChatDataCacheManager(captor.capture());
-        assertNotNull(captor.getValue());
-
-        captor.getValue().startCache("session-1", "conv-1");
+        assertNotNull(cacheManager);
+        cacheManager.startCache("session-1", "conv-1");
         verify(databaseAgentLog, never()).addLog(any(LogData.class));
     }
 
