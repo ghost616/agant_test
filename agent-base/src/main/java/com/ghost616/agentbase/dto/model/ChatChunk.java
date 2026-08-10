@@ -7,6 +7,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import com.ghost616.agentbase.enums.FinishReason;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -19,7 +21,7 @@ public class ChatChunk {
 
     private List<ToolCallDelta> toolCalls;
 
-    private String finishReason;
+    private FinishReason finishReason;
 
     private Boolean hasToolCalls;
 

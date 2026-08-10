@@ -25,6 +25,7 @@ import com.ghost616.agentbase.dto.model.ToolDefinition;
 import com.ghost616.agentbase.dto.model.UsageInfo;
 import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
 import com.ghost616.agentbase.enums.ErrorCode;
+import com.ghost616.agentbase.enums.FinishReason;
 import com.ghost616.agentbase.exception.BusinessException;
 import com.ghost616.agentbase.service.model.invoker.ModelInvoker;
 
@@ -111,7 +112,7 @@ public class OllamaInvoker implements ModelInvoker {
                         if (!hasContent.get()) {
                             log.debug("Ollama model {} stream produced no content", modelName);
                         }
-                        return Mono.just(ChatChunk.builder().finishReason("stop").build());
+                        return Mono.just(ChatChunk.builder().finishReason(FinishReason.STOP).build());
                     }))
                     .onErrorResume(this::handleStreamError);
         } catch (BusinessException e) {
@@ -228,7 +229,7 @@ public class OllamaInvoker implements ModelInvoker {
             }
             JsonNode doneReasonNode = root.get("done_reason");
             if (doneReasonNode != null && !doneReasonNode.isNull()) {
-                builder.finishReason(doneReasonNode.asText());
+                builder.finishReason(mapDoneReason(doneReasonNode.asText()));
             }
             JsonNode evalCount = root.get("eval_count");
             JsonNode promptEvalCount = root.get("prompt_eval_count");
@@ -256,12 +257,23 @@ public class OllamaInvoker implements ModelInvoker {
         } else {
             errorMsg = "模型请求失败: " + ex.getMessage();
         }
-        return Flux.just(ChatChunk.builder().delta(errorMsg).finishReason("error").build());
+        return Flux.just(ChatChunk.builder().delta(errorMsg).finishReason(FinishReason.ERROR).build());
     }
 
     private String truncate(String s, int maxLen) {
         if (s == null) return "";
         return s.length() <= maxLen ? s : s.substring(0, maxLen) + "...";
+    }
+
+    private FinishReason mapDoneReason(String doneReason) {
+        if (doneReason == null || doneReason.isBlank()) {
+            return null;
+        }
+        return switch (doneReason) {
+            case "stop", "load", "unload" -> FinishReason.STOP;
+            case "error" -> FinishReason.ERROR;
+            default -> FinishReason.fromCode(doneReason);
+        };
     }
 
     private ChatChunk parseStreamChunk(String json) {
@@ -278,8 +290,8 @@ public class OllamaInvoker implements ModelInvoker {
             JsonNode doneNode = root.get("done");
             if (doneNode != null && doneNode.asBoolean()) {
                 JsonNode doneReasonNode = root.get("done_reason");
-                builder.finishReason(doneReasonNode != null && !doneReasonNode.isNull()
-                        ? doneReasonNode.asText() : "stop");
+                builder.finishReason(mapDoneReason(doneReasonNode != null && !doneReasonNode.isNull()
+                        ? doneReasonNode.asText() : "stop"));
                 JsonNode evalCount = root.get("eval_count");
                 JsonNode promptEvalCount = root.get("prompt_eval_count");
                 if (evalCount != null || promptEvalCount != null) {

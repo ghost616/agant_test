@@ -29,6 +29,7 @@ import com.ghost616.agentbase.dto.model.ToolDefinition;
 import com.ghost616.agentbase.dto.model.UsageInfo;
 import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
 import com.ghost616.agentbase.enums.ErrorCode;
+import com.ghost616.agentbase.enums.FinishReason;
 import com.ghost616.agentbase.exception.BusinessException;
 import com.ghost616.agentbase.service.model.invoker.ModelInvoker;
 
@@ -126,7 +127,7 @@ public class AnthropicInvoker implements ModelInvoker {
                             log.debug("Anthropic model {} stream produced no content", modelName);
                         }
                         ChatChunk.ChatChunkBuilder stopBuilder = ChatChunk.builder()
-                                .finishReason(stopReason[0] != null ? stopReason[0] : "end_turn");
+                                .finishReason(mapStopReason(stopReason[0]));
                         if (usageHolder[0] != null) {
                             stopBuilder.usage(usageHolder[0]);
                         }
@@ -198,12 +199,25 @@ public class AnthropicInvoker implements ModelInvoker {
         } else {
             errorMsg = "模型请求失败: " + ex.getMessage();
         }
-        return Flux.just(ChatChunk.builder().delta(errorMsg).finishReason("error").build());
+        return Flux.just(ChatChunk.builder().delta(errorMsg).finishReason(FinishReason.ERROR).build());
     }
 
     private String truncate(String s, int maxLen) {
         if (s == null) return "";
         return s.length() <= maxLen ? s : s.substring(0, maxLen) + "...";
+    }
+
+    private FinishReason mapStopReason(String stopReason) {
+        if (stopReason == null || stopReason.isBlank()) {
+            return FinishReason.STOP;
+        }
+        return switch (stopReason) {
+            case "end_turn", "stop_sequence" -> FinishReason.STOP;
+            case "max_tokens" -> FinishReason.LENGTH;
+            case "tool_use" -> FinishReason.TOOL_CALLS;
+            case "error" -> FinishReason.ERROR;
+            default -> FinishReason.fromCode(stopReason);
+        };
     }
 
     private Map<String, Object> buildRequestBody(ChatRequest request, boolean stream) {
@@ -338,9 +352,8 @@ public class AnthropicInvoker implements ModelInvoker {
                 builder.toolCalls(toolCalls);
             }
             JsonNode stopReasonNode = root.get("stop_reason");
-            if (stopReasonNode != null && !stopReasonNode.isNull()) {
-                builder.finishReason(stopReasonNode.asText());
-            }
+            builder.finishReason(mapStopReason(stopReasonNode != null && !stopReasonNode.isNull()
+                    ? stopReasonNode.asText() : null));
             JsonNode usageNode = root.get("usage");
             if (usageNode != null) {
                 builder.usage(UsageInfo.builder()

@@ -1,6 +1,7 @@
 package com.ghost616.agentinteg.model.invoker;
 
 import com.ghost616.agentbase.dto.model.ChatChunk;
+import com.ghost616.agentbase.enums.FinishReason;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -46,7 +47,7 @@ class OllamaInvokerTest {
 
         assertNotNull(chunk);
         assertEquals("Hello", chunk.getDelta());
-        assertEquals("stop", chunk.getFinishReason());
+        assertEquals(FinishReason.STOP, chunk.getFinishReason());
         assertNotNull(chunk.getUsage());
         assertEquals(10, chunk.getUsage().getPromptTokens());
         assertEquals(50, chunk.getUsage().getCompletionTokens());
@@ -65,7 +66,7 @@ class OllamaInvokerTest {
 
         assertNotNull(chunk);
         assertEquals("Hi", chunk.getDelta());
-        assertEquals("stop", chunk.getFinishReason());
+        assertEquals(FinishReason.STOP, chunk.getFinishReason());
         assertNull(chunk.getUsage());
     }
 
@@ -110,7 +111,7 @@ class OllamaInvokerTest {
         ChatChunk chunk = parseStreamChunk(json);
 
         assertNotNull(chunk);
-        assertEquals("stop", chunk.getFinishReason());
+        assertEquals(FinishReason.STOP, chunk.getFinishReason());
         assertEquals(25, chunk.getUsage().getPromptTokens());
         assertNull(chunk.getUsage().getCompletionTokens());
     }
@@ -137,8 +138,29 @@ class OllamaInvokerTest {
 
         assertNotNull(chunk);
         assertNull(chunk.getDelta());
-        assertEquals("stop", chunk.getFinishReason());
+        assertEquals(FinishReason.STOP, chunk.getFinishReason());
         assertEquals(5, chunk.getUsage().getPromptTokens());
         assertEquals(30, chunk.getUsage().getCompletionTokens());
+    }
+
+    private FinishReason mapDoneReason(String doneReason) throws Exception {
+        Method method = OllamaInvoker.class.getDeclaredMethod("mapDoneReason", String.class);
+        method.setAccessible(true);
+        return (FinishReason) method.invoke(invoker, doneReason);
+    }
+
+    @Test
+    void mapDoneReasonMapsKnownValues() throws Exception {
+        assertEquals(FinishReason.STOP, mapDoneReason("stop"));
+        assertEquals(FinishReason.STOP, mapDoneReason("load"));
+        assertEquals(FinishReason.STOP, mapDoneReason("unload"));
+        assertEquals(FinishReason.ERROR, mapDoneReason("error"));
+    }
+
+    @Test
+    void mapDoneReasonUnknownOrBlankReturnsNull() throws Exception {
+        assertNull(mapDoneReason("unknown"));
+        assertNull(mapDoneReason(""));
+        assertNull(mapDoneReason(null));
     }
 }

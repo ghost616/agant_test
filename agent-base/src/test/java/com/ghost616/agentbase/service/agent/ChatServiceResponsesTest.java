@@ -9,6 +9,7 @@ import com.ghost616.agentbase.dto.model.ToolDefinition;
 import com.ghost616.agentbase.dto.model.ToolInfo;
 import com.ghost616.agentbase.dto.skill.SkillConfigDTO;
 import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
+import com.ghost616.agentbase.enums.FinishReason;
 import com.ghost616.agentbase.enums.HookPhase;
 import com.ghost616.agentbase.enums.RequestType;
 import com.ghost616.agentbase.service.agent.invoker.HookData;
@@ -264,7 +265,7 @@ class ChatServiceResponsesTest {
         TestHarness harness = new TestHarness("sys_prompt", List.of(), List.of(), null, List.of());
         when(systemToolManager.getToolDefinitions()).thenReturn(List.of());
 
-        ChatChunk chunk = ChatChunk.builder().delta("hi").finishReason("stop").build();
+        ChatChunk chunk = ChatChunk.builder().delta("hi").finishReason(FinishReason.STOP).build();
 
         ChatRequest apiRequest = ChatRequest.builder().sessionId(sessionId).content("hello").conversationId("conv-1").build();
         executeChat(apiRequest, harness, RequestType.RESPONSES.getCode(), Flux.just(chunk));

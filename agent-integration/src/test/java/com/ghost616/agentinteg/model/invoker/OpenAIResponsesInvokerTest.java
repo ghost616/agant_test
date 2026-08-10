@@ -12,6 +12,7 @@ import com.ghost616.agentbase.dto.model.UsageInfo;
 import com.ghost616.agentbase.dto.model.WebSearchCall;
 import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
 import com.ghost616.agentbase.dto.model.ModelConfigData;
+import com.ghost616.agentbase.enums.FinishReason;
 import com.ghost616.agentbase.enums.RequestType;
 import com.ghost616.agentbase.service.model.invoker.ModelInvoker;
 import org.junit.jupiter.api.BeforeEach;
@@ -65,7 +66,7 @@ class OpenAIResponsesInvokerTest {
         assertEquals("fc_1", response.getToolCalls().get(0).getId());
         assertEquals("get_weather", response.getToolCalls().get(0).getName());
         assertEquals("{\"city\":\"beijing\"}", response.getToolCalls().get(0).getArguments());
-        assertEquals("stop", response.getFinishReason());
+        assertEquals(FinishReason.STOP, response.getFinishReason());
         assertNotNull(response.getUsage());
         assertEquals(10, response.getUsage().getPromptTokens());
         assertEquals(20, response.getUsage().getCompletionTokens());
@@ -82,7 +83,7 @@ class OpenAIResponsesInvokerTest {
         assertNotNull(response);
         assertNull(response.getContent());
         assertNull(response.getToolCalls());
-        assertEquals("length", response.getFinishReason());
+        assertEquals(FinishReason.LENGTH, response.getFinishReason());
         assertEquals("resp_1", response.getResponseId());
     }
 
@@ -223,7 +224,7 @@ class OpenAIResponsesInvokerTest {
         ChatChunk chunk = invoker.parseStreamEvent(event).blockFirst();
 
         assertNotNull(chunk);
-        assertEquals("stop", chunk.getFinishReason());
+        assertEquals(FinishReason.STOP, chunk.getFinishReason());
         assertEquals("r1", chunk.getResponseId());
         assertNotNull(chunk.getUsage());
         assertEquals(1, chunk.getUsage().getPromptTokens());
@@ -461,5 +462,27 @@ class OpenAIResponsesInvokerTest {
 
     private ModelConfigData platformConfig(String platformType, String requestType) {
         return new ModelConfigData("1", "key", "url", "model", 0.7, 2048, platformType, requestType);
+    }
+
+    private FinishReason mapFinishReason(String status) throws Exception {
+        java.lang.reflect.Method method =
+                OpenAIResponsesInvoker.class.getDeclaredMethod("mapFinishReason", String.class);
+        method.setAccessible(true);
+        return (FinishReason) method.invoke(invoker, status);
+    }
+
+    @Test
+    void mapFinishReasonMapsAllStatuses() throws Exception {
+        assertEquals(FinishReason.STOP, mapFinishReason("completed"));
+        assertEquals(FinishReason.LENGTH, mapFinishReason("incomplete"));
+        assertEquals(FinishReason.ERROR, mapFinishReason("failed"));
+        assertEquals(FinishReason.CANCELLED, mapFinishReason("cancelled"));
+    }
+
+    @Test
+    void mapFinishReasonUnknownOrBlankReturnsNull() throws Exception {
+        assertNull(mapFinishReason("unknown"));
+        assertNull(mapFinishReason(""));
+        assertNull(mapFinishReason(null));
     }
 }

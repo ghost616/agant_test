@@ -6,6 +6,7 @@ import com.ghost616.agentbase.dto.model.Message;
 import com.ghost616.agentbase.dto.model.ModelConfigData;
 import com.ghost616.agentbase.dto.model.ToolCall;
 import com.ghost616.agentbase.dto.model.ToolInfo;
+import com.ghost616.agentbase.enums.FinishReason;
 import com.ghost616.agentbase.enums.HookPhase;
 import com.ghost616.agentbase.service.agent.invoker.HookData;
 import com.ghost616.agentbase.service.agent.invoker.HookManager;
@@ -148,7 +149,7 @@ class ChatServiceTest {
         when(systemToolManager.getToolDefinitions()).thenReturn(java.util.Collections.emptyList());
         when(chatDataProvider.getModelConfig(any())).thenReturn(new ModelConfigData("1", "key", "url", "model", 0.7, 4096, "openai", null));
         when(modelInvokerManager.getInvoker(any())).thenReturn(modelInvoker);
-        com.ghost616.agentbase.dto.model.ChatChunk chunk = com.ghost616.agentbase.dto.model.ChatChunk.builder().delta("hi").finishReason("stop").build();
+        com.ghost616.agentbase.dto.model.ChatChunk chunk = com.ghost616.agentbase.dto.model.ChatChunk.builder().delta("hi").finishReason(FinishReason.STOP).build();
         when(modelInvoker.invokeStream(any())).thenReturn(Flux.just(chunk));
 
         chatService.chat(request).subscribe();

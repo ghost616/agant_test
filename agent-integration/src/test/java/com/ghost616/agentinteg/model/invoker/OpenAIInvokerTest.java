@@ -1,11 +1,13 @@
 package com.ghost616.agentinteg.model.invoker;
 
 import com.ghost616.agentbase.dto.model.ChatChunk;
+import com.ghost616.agentbase.dto.model.ChatResponse;
 import com.ghost616.agentbase.dto.model.EmbeddingRequest;
 import com.ghost616.agentbase.dto.model.EmbeddingResponse;
 import com.ghost616.agentbase.dto.model.Message;
 import com.ghost616.agentbase.dto.model.ToolInfo;
 import com.ghost616.agentbase.dto.model.UsageInfo;
+import com.ghost616.agentbase.enums.FinishReason;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -46,7 +48,7 @@ class OpenAIInvokerTest {
 
         assertNotNull(chunk);
         assertEquals("Hello", chunk.getDelta());
-        assertEquals("stop", chunk.getFinishReason());
+        assertEquals(FinishReason.STOP, chunk.getFinishReason());
         assertNotNull(chunk.getUsage());
         assertEquals(10, chunk.getUsage().getPromptTokens());
         assertEquals(20, chunk.getUsage().getCompletionTokens());
@@ -301,5 +303,34 @@ class OpenAIInvokerTest {
     @Test
     void parseEmbeddingResponseMalformedJsonThrows() {
         assertThrows(Exception.class, () -> invoker.parseEmbeddingResponse("{invalid"));
+    }
+
+    @Test
+    void parseStreamChunkMapsFinishReasonValues() {
+        assertEquals(FinishReason.LENGTH, invoker.parseStreamChunk(
+                "{\"choices\":[{\"delta\":{},\"finish_reason\":\"length\"}]}").getFinishReason());
+        assertEquals(FinishReason.TOOL_CALLS, invoker.parseStreamChunk(
+                "{\"choices\":[{\"delta\":{},\"finish_reason\":\"tool_calls\"}]}").getFinishReason());
+        assertEquals(FinishReason.CONTENT_FILTER, invoker.parseStreamChunk(
+                "{\"choices\":[{\"delta\":{},\"finish_reason\":\"content_filter\"}]}").getFinishReason());
+        assertNull(invoker.parseStreamChunk(
+                "{\"choices\":[{\"delta\":{},\"finish_reason\":\"unknown\"}]}").getFinishReason());
+    }
+
+    @Test
+    void parseResponseMapsStopFinishReason() {
+        String json = "{\"choices\":[{\"message\":{\"content\":\"hi\"},\"finish_reason\":\"stop\"}]}";
+
+        ChatResponse response = invoker.parseResponse(json);
+
+        assertEquals(FinishReason.STOP, response.getFinishReason());
+    }
+
+    @Test
+    void handleStreamErrorReturnsErrorFinishReason() {
+        ChatChunk chunk = invoker.handleStreamError(new RuntimeException("boom")).blockFirst();
+
+        assertEquals(FinishReason.ERROR, chunk.getFinishReason());
+        assertNotNull(chunk.getDelta());
     }
 }

@@ -16,6 +16,7 @@ import com.ghost616.agentbase.dto.model.ToolCall;
 import com.ghost616.agentbase.dto.model.ToolCallDelta;
 import com.ghost616.agentbase.dto.model.UsageInfo;
 import com.ghost616.agentbase.dto.model.WebSearchCall;
+import com.ghost616.agentbase.enums.FinishReason;
 import com.ghost616.agentbase.enums.HookPhase;
 import com.ghost616.agentbase.service.agent.AgentContextManager;
 import com.ghost616.agentbase.service.agent.AgentExecutionContext;
@@ -82,7 +83,7 @@ public class MessageSavePostHook implements SystemPostHook {
         }
         String sessionId = ctx.getSessionId();
 
-        if ("stop".equals(chunk.getFinishReason())) {
+        if (FinishReason.STOP.equals(chunk.getFinishReason())) {
             SessionBuffer sb = buffers.remove(sessionId);
             if (sb == null) {
                 return;

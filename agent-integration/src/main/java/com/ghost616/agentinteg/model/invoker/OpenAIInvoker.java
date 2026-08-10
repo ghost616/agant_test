@@ -29,6 +29,7 @@ import com.ghost616.agentbase.dto.model.ToolDefinition;
 import com.ghost616.agentbase.dto.model.UsageInfo;
 import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
 import com.ghost616.agentbase.enums.ErrorCode;
+import com.ghost616.agentbase.enums.FinishReason;
 import com.ghost616.agentbase.exception.BusinessException;
 import com.ghost616.agentbase.service.model.invoker.ModelInvoker;
 
@@ -108,7 +109,7 @@ public class OpenAIInvoker implements ModelInvoker {
                         .concatMap(chunkRaw -> {
                             if ("[DONE]".equals(chunkRaw)) {
                                 return Mono.just(ChatChunk.builder()
-                                        .finishReason("stop").build());
+                                        .finishReason(FinishReason.STOP).build());
                             }
                             if (chunkRaw.startsWith("{")) {
                                 return Mono.just(parseStreamChunk(chunkRaw));
@@ -368,7 +369,7 @@ public class OpenAIInvoker implements ModelInvoker {
                 }
                 JsonNode finishReasonNode = firstChoice.get("finish_reason");
                 if (finishReasonNode != null && !finishReasonNode.isNull()) {
-                    builder.finishReason(finishReasonNode.asText());
+                    builder.finishReason(FinishReason.fromCode(finishReasonNode.asText()));
                 }
             }
             JsonNode usageNode = root.get("usage");
@@ -398,7 +399,7 @@ public class OpenAIInvoker implements ModelInvoker {
         } else {
             errorMsg = "模型请求失败: " + ex.getMessage();
         }
-        return Flux.just(ChatChunk.builder().delta(errorMsg).finishReason("error").build());
+        return Flux.just(ChatChunk.builder().delta(errorMsg).finishReason(FinishReason.ERROR).build());
     }
 
     private String truncate(String s, int maxLen) {
@@ -414,7 +415,7 @@ public class OpenAIInvoker implements ModelInvoker {
                 String errorMsg = errorNode.has("message")
                         ? errorNode.get("message").asText() : errorNode.toString();
                 log.error("Stream chunk contains error from model {}: {}", modelName, errorMsg);
-                return ChatChunk.builder().delta(errorMsg).finishReason("error").build();
+                return ChatChunk.builder().delta(errorMsg).finishReason(FinishReason.ERROR).build();
             }
             JsonNode choices = root.get("choices");
             if (choices != null && choices.isArray() && choices.size() > 0) {
@@ -461,7 +462,7 @@ public class OpenAIInvoker implements ModelInvoker {
                 }
                 JsonNode finishNode = firstChoice.get("finish_reason");
                 if (finishNode != null && !finishNode.isNull()) {
-                    builder.finishReason(finishNode.asText());
+                    builder.finishReason(FinishReason.fromCode(finishNode.asText()));
                 }
                 JsonNode usageNode = root.get("usage");
                 if (usageNode != null) {

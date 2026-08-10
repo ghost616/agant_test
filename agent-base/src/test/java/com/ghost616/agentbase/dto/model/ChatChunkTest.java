@@ -3,7 +3,12 @@ package com.ghost616.agentbase.dto.model;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghost616.agentbase.enums.FinishReason;
+
 class ChatChunkTest {
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     @Test
     void setAndGetUsage() {
@@ -32,7 +37,7 @@ class ChatChunkTest {
 
         ChatChunk chunk = ChatChunk.builder()
                 .delta("Hello")
-                .finishReason("stop")
+                .finishReason(FinishReason.STOP)
                 .usage(usage)
                 .build();
 
@@ -41,7 +46,7 @@ class ChatChunkTest {
         assertEquals(200, chunk.getUsage().getCompletionTokens());
         assertEquals(300, chunk.getUsage().getTotalTokens());
         assertEquals("Hello", chunk.getDelta());
-        assertEquals("stop", chunk.getFinishReason());
+        assertEquals(FinishReason.STOP, chunk.getFinishReason());
     }
 
     @Test
@@ -71,5 +76,16 @@ class ChatChunkTest {
         assertEquals(50, chunk.getUsage().getPromptTokens());
         assertNull(chunk.getUsage().getCompletionTokens());
         assertNull(chunk.getUsage().getTotalTokens());
+    }
+
+    @Test
+    void finishReason字段序列化应输出小写code() throws Exception {
+        ChatChunk chunk = ChatChunk.builder().delta("hi").finishReason(FinishReason.STOP).build();
+        String json = OBJECT_MAPPER.writeValueAsString(chunk);
+        assertTrue(json.contains("\"finishReason\":\"stop\""), "实际序列化结果: " + json);
+
+        ChatChunk errorChunk = ChatChunk.builder().finishReason(FinishReason.ERROR).build();
+        String errorJson = OBJECT_MAPPER.writeValueAsString(errorChunk);
+        assertTrue(errorJson.contains("\"finishReason\":\"error\""), "实际序列化结果: " + errorJson);
     }
 }

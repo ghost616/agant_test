@@ -27,6 +27,7 @@ import com.ghost616.agentbase.dto.model.UsageInfo;
 import com.ghost616.agentbase.dto.model.WebSearchCall;
 import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
 import com.ghost616.agentbase.enums.ErrorCode;
+import com.ghost616.agentbase.enums.FinishReason;
 import com.ghost616.agentbase.exception.BusinessException;
 import com.ghost616.agentbase.service.model.invoker.ModelInvoker;
 
@@ -442,16 +443,16 @@ public class OpenAIResponsesInvoker implements ModelInvoker {
         return results;
     }
 
-    private String mapFinishReason(String status) {
+    private FinishReason mapFinishReason(String status) {
         if (status == null || status.isBlank()) {
             return null;
         }
         return switch (status) {
-            case "completed" -> "stop";
-            case "incomplete" -> "length";
-            case "failed" -> "error";
-            case "cancelled" -> "cancelled";
-            default -> status;
+            case "completed" -> FinishReason.STOP;
+            case "incomplete" -> FinishReason.LENGTH;
+            case "failed" -> FinishReason.ERROR;
+            case "cancelled" -> FinishReason.CANCELLED;
+            default -> FinishReason.fromCode(status);
         };
     }
 
@@ -464,7 +465,7 @@ public class OpenAIResponsesInvoker implements ModelInvoker {
         } else {
             errorMsg = "模型请求失败: " + ex.getMessage();
         }
-        return Flux.just(ChatChunk.builder().delta(errorMsg).finishReason("error").build());
+        return Flux.just(ChatChunk.builder().delta(errorMsg).finishReason(FinishReason.ERROR).build());
     }
 
     private String truncate(String s, int maxLen) {

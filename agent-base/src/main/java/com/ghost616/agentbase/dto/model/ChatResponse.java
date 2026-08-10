@@ -7,6 +7,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import com.ghost616.agentbase.enums.FinishReason;
+
 /**
  * 对话响应 DTO。
  */
@@ -26,7 +28,7 @@ public class ChatResponse {
     private UsageInfo usage;
 
     /** 结束原因（stop/length/tool_calls 等） */
-    private String finishReason;
+    private FinishReason finishReason;
 
     /** 响应 ID（Responses API 返回值，供下一轮续接使用） */
     private String responseId;

@@ -5,6 +5,7 @@ import com.ghost616.agentbase.dto.chat.ChatRequest;
 import com.ghost616.agentbase.dto.model.ChatChunk;
 import com.ghost616.agentbase.dto.model.ModelConfigData;
 import com.ghost616.agentbase.dto.model.ToolCallDelta;
+import com.ghost616.agentbase.enums.FinishReason;
 import com.ghost616.agentbase.enums.LogLevel;
 import com.ghost616.agentbase.enums.LogType;
 import com.ghost616.agentbase.service.agent.invoker.HistoryQuerySystemTool;
@@ -239,7 +240,7 @@ class ChatServiceLogTest {
         ChatChunk toolChunk = ChatChunk.builder()
                 .toolCalls(List.of(ToolCallDelta.builder().id("tc1").name("get_weather").build()))
                 .build();
-        ChatChunk finishChunk = ChatChunk.builder().finishReason("stop").build();
+        ChatChunk finishChunk = ChatChunk.builder().finishReason(FinishReason.STOP).build();
         setupChatPipeline(harness, Flux.just(toolChunk, finishChunk));
 
         ChatRequest request = ChatRequest.builder()

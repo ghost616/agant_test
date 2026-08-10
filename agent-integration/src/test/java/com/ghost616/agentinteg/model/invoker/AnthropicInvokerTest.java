@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghost616.agentbase.dto.model.ChatChunk;
 import com.ghost616.agentbase.dto.model.UsageInfo;
+import com.ghost616.agentbase.enums.FinishReason;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -175,5 +176,31 @@ class AnthropicInvokerTest {
                 .verifyComplete();
 
         assertEquals("tool_use", stopReason[0]);
+    }
+
+    private FinishReason mapStopReason(String stopReason) throws Exception {
+        Method method = AnthropicInvoker.class.getDeclaredMethod("mapStopReason", String.class);
+        method.setAccessible(true);
+        return (FinishReason) method.invoke(invoker, stopReason);
+    }
+
+    @Test
+    void mapStopReasonMapsKnownValues() throws Exception {
+        assertEquals(FinishReason.STOP, mapStopReason("end_turn"));
+        assertEquals(FinishReason.STOP, mapStopReason("stop_sequence"));
+        assertEquals(FinishReason.LENGTH, mapStopReason("max_tokens"));
+        assertEquals(FinishReason.TOOL_CALLS, mapStopReason("tool_use"));
+        assertEquals(FinishReason.ERROR, mapStopReason("error"));
+    }
+
+    @Test
+    void mapStopReasonNullOrBlankMapsToStop() throws Exception {
+        assertEquals(FinishReason.STOP, mapStopReason(null));
+        assertEquals(FinishReason.STOP, mapStopReason(""));
+    }
+
+    @Test
+    void mapStopReasonUnknownFallsBackToFromCode() throws Exception {
+        assertNull(mapStopReason("unknown"));
     }
 }

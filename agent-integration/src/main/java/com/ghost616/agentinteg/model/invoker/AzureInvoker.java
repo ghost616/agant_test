@@ -14,6 +14,7 @@ import com.ghost616.agentbase.dto.model.ChatChunk;
 import com.ghost616.agentbase.dto.model.ChatRequest;
 import com.ghost616.agentbase.dto.model.ChatResponse;
 import com.ghost616.agentbase.enums.ErrorCode;
+import com.ghost616.agentbase.enums.FinishReason;
 import com.ghost616.agentbase.exception.BusinessException;
 
 
@@ -84,7 +85,7 @@ public class AzureInvoker extends OpenAIInvoker {
                         .concatMap(chunkRaw -> {
                             if ("[DONE]".equals(chunkRaw)) {
                                 return Mono.just(ChatChunk.builder()
-                                        .finishReason("stop").build());
+                                        .finishReason(FinishReason.STOP).build());
                             }
                             if (chunkRaw.startsWith("{")) {
                                 return Mono.just(parseStreamChunk(chunkRaw));
