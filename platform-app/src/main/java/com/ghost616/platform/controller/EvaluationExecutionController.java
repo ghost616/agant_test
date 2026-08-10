@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/evaluations")
@@ -47,5 +48,12 @@ public class EvaluationExecutionController {
             return Flux.empty();
         }
         return chatDataCacheManager.getStream(cacheIds.get(0), 0);
+    }
+
+    @GetMapping("/session/{executionSessionId}/cache/status")
+    public ApiResponse<Map<String, Boolean>> cacheStatus(@PathVariable Long executionSessionId) {
+        String sessionId = String.valueOf(executionSessionId);
+        List<String> cacheIds = defaultChatDataCacheProvider.getCacheIdsBySessionId(sessionId);
+        return ApiResponse.success(Map.of("hasCache", !cacheIds.isEmpty()));
     }
 }

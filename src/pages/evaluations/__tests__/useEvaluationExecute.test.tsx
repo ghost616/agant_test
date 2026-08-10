@@ -10,9 +10,10 @@ describe('useEvaluationExecute 导入', () => {
     expect(source).toContain('executeEvaluation');
   });
 
-  it('应导入 getExecutionStatus', () => {
+  it('应导入 getEvaluationCacheStatus 和 getEvaluationStream', () => {
     const source = readFileSync(hookPath, 'utf-8');
-    expect(source).toContain('getExecutionStatus');
+    expect(source).toContain('getEvaluationCacheStatus');
+    expect(source).toContain('getEvaluationStream');
   });
 
   it('应导入 createEvalSession', () => {
@@ -106,17 +107,24 @@ describe('useEvaluationExecute 导出', () => {
 });
 
 describe('useEvaluationExecute 执行逻辑', () => {
-  it('BACKGROUND 模式应调 executeEvaluation 并轮询', () => {
+  it('BACKGROUND 模式应调 executeEvaluation 并连接流式接口', () => {
     const source = readFileSync(hookPath, 'utf-8');
     expect(source).toContain("executionType === 'BACKGROUND'");
     expect(source).toContain('executeEvaluation(evaluationId)');
-    expect(source).toContain('pollExecutionStatus(evaluationId)');
+    expect(source).toContain('executionSessionId');
+    expect(source).toContain('getEvaluationStream');
   });
 
-  it('BACKGROUND 模式轮询应检查 completed 和 error 状态', () => {
+  it('BACKGROUND 模式流结束应调用 check 接口判断 hasCache', () => {
     const source = readFileSync(hookPath, 'utf-8');
-    expect(source).toContain("status.status.toUpperCase() === 'COMPLETED'");
-    expect(source).toContain("status.status.toUpperCase() === 'ERROR'");
+    expect(source).toContain('getEvaluationCacheStatus(executionSessionId)');
+    expect(source).toContain('hasCache = cacheStatus.hasCache');
+  });
+
+  it('BACKGROUND 模式 hasCache 为 true 时继续循环连接 stream', () => {
+    const source = readFileSync(hookPath, 'utf-8');
+    expect(source).toContain('while (hasCache && executingRef.current)');
+    expect(source).toContain('streamEvaluation(executionSessionId, logLines)');
   });
 
   it('FOREGROUND 模式应创建会话然后逐条发送消息', () => {

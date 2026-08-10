@@ -23,7 +23,7 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/config/AgentContextConfiguration.java",
-      "description": "Agent 上下文 Spring 配置类，声明 SystemToolProvider、DefaultChatDataProvider、ModelInvokerFactory、DefaultToolExecutionProvider、AgentAssembler、SessionManager、AgentContextManager、ToolManager、ModelInvokerManager、ChatService、ToolExecutionService 的 @Bean；chatService() 注入 DatabaseAgentLog 并在 agentAssembler.build() 后调用 setAgentLog 注册到 AgentComponentRegistry"
+      "description": "Agent 上下文 Spring 配置类，声明 SystemToolProvider、DefaultChatDataProvider、DefaultChatDataCacheProvider、ModelInvokerFactory、DefaultToolExecutionProvider、AgentAssembler、SessionManager、AgentContextManager、ToolManager、ModelInvokerManager、ChatService、ChatDataCacheManager、ToolExecutionService 的 @Bean；chatService() 注入 DatabaseAgentLog，在 agentAssembler.build() 后调用 setAgentLog 注册到 AgentComponentRegistry 并调用 refreshHooks；defaultChatDataCacheProvider() 返回 new DefaultChatDataCacheProvider()；chatDataCacheManager(DatabaseAgentLog, DefaultChatDataCacheProvider) 注入 provider 包装为 ChatDataCacheManager，DatabaseAgentLog 非 null 时调用 cacheManager.setAgentLog 注入日志"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/ChatService.java",
@@ -223,7 +223,7 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/controller/EvaluationExecutionController.java",
-      "description": "评估后台执行控制器，路径 /api/evaluations，提供 POST /{id}/execute（异步执行）和 GET /{id}/execute/status（状态轮询）两个端点"
+      "description": "评估后台执行控制器（路径 /api/evaluations），注入 EvaluationExecutionService、ChatDataCacheManager、DefaultChatDataCacheProvider。POST /{id}/execute 异步执行评估、GET /{id}/execute/status 状态轮询、GET /session/{executionSessionId}/stream（text/event-stream）通过 defaultChatDataCacheProvider.getCacheIdsBySessionId 取首个 cacheId 调用 chatDataCacheManager.getStream 返回 SSE 流，无缓存时返回空 Flux；GET /session/{executionSessionId}/cache/status 通过 getCacheIdsBySessionId 判断缓存是否存在，返回 ApiResponse<Map<String, Boolean>> 含 hasCache 布尔值"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/controller/EvaluationSessionController.java",
@@ -231,7 +231,7 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/evaluation/AsyncEvaluationExecutor.java",
-      "description": "异步评估执行器（独立 @Component），被 EvaluationExecutionService 注入后调用，确保 @Async 通过 Spring AOP 代理生效。executeAsync 接收 Session 作为执行会话（从 Session 获取 thinking 透传给 AgentMessageProxy），通过 AgentMessageProxy.sendUserMessageToSession 逐条发送用户消息并处理工具调用，完成后调用 EvaluationResultGenerateService"
+      "description": "异步评估执行器（独立 @Component），被 EvaluationExecutionService 注入后调用，确保 @Async 通过 Spring AOP 代理生效。executeAsync 接收 Session 作为执行会话（从 Session 获取 thinking 透传给 AgentMessageProxy），注入 ChatDataCacheManager 并在创建 AgentMessageProxy 后调用 proxy.setChatDataCacheManager，通过 AgentMessageProxy.sendUserMessageToSession 逐条发送用户消息并处理工具调用，完成后调用 EvaluationResultGenerateService"
     },
     {
       "path": "platform-app/src/main/resources/evaluation/scoring-rules.txt",
@@ -384,6 +384,14 @@
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/SessionLogDataMixin.java",
       "description": "SessionLogData 的 Jackson mix-in 注解类，通过 @JsonIgnoreProperties({\"logLevel\",\"sessionId\",\"conversationId\"}) 在序列化 agent_log.log_data 时排除 logLevel、sessionId 与 conversationId 字段（会话 ID/对话 ID 已单独存储于 agent_log 表对应列，日志级别已单独存储于 log_level 列）"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultChatDataCacheProvider.java",
+      "description": "聊天数据缓存默认实现，基于内存 ConcurrentHashMap 提供流式聊天片段的缓存管理。以 cacheId 为键存储缓存条目（CacheEntry 含 sessionId/conversationId/createdAtMillis），提供 sessionId:conversationId 到 cacheId 的反向映射；实现 ChatDataCacheProvider 接口的 createCache/cacheExists/isCacheDone/getCacheId/getCacheSessionInfo/getMaxChunkIndex/appendChunk/removeCache/getChunks；新增 getCacheIdsBySessionId(String sessionId) 按 createdAtMillis 升序（同毫秒按 conversationId 兜底）返回指定会话的 cacheId 列表"
+    },
+    {
+      "path": "platform-app/src/test/java/com/ghost616/platform/controller/EvaluationExecutionControllerTest.java",
+      "description": "EvaluationExecutionController 单元测试：Mockito 注入 EvaluationExecutionService/ChatDataCacheManager/DefaultChatDataCacheProvider，覆盖 execute（调用服务返回结果）、getStatus（调用服务返回结果）、stream 三场景（有缓存返回缓存流、无缓存返回空 Flux 且不调用 getStream、有多个缓存取第一个 cacheId）、cacheStatus 两场景（有缓存 hasCache=true、无缓存 hasCache=false）"
     }
   ]
 }

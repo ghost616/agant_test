@@ -7,7 +7,10 @@ import type {
   ExecutionStatusResponse,
   EvalSessionCreateResponse,
   GenerateStatusResponse,
+  CacheStatusResponse,
 } from '../types/evaluation';
+import type { StreamCallbacks } from './session';
+import { processSSEStream } from './session';
 import api from './api';
 
 export async function getEvaluationList(
@@ -56,8 +59,11 @@ export async function getEvaluationResults(
   return res.data.data;
 }
 
-export async function executeEvaluation(id: string): Promise<void> {
-  await api.post(`/evaluations/${id}/execute`);
+export async function executeEvaluation(id: string): Promise<ExecutionStatusResponse> {
+  const res = await api.post<ApiResponse<ExecutionStatusResponse>>(
+    `/evaluations/${id}/execute`,
+  );
+  return res.data.data;
 }
 
 export async function getExecutionStatus(
@@ -65,6 +71,44 @@ export async function getExecutionStatus(
 ): Promise<ExecutionStatusResponse> {
   const res = await api.get<ApiResponse<ExecutionStatusResponse>>(
     `/evaluations/${id}/execute/status`,
+  );
+  return res.data.data;
+}
+
+export function getEvaluationStream(
+  executionSessionId: string,
+  callbacks: StreamCallbacks,
+): AbortController {
+  const controller = new AbortController();
+
+  const run = async (): Promise<void> => {
+    try {
+      const response = await fetch(
+        `/api/evaluations/session/${executionSessionId}/stream`,
+        {
+          method: 'GET',
+          signal: controller.signal,
+        },
+      );
+      await processSSEStream(response, callbacks);
+    } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        callbacks.onDone(false);
+        return;
+      }
+      callbacks.onError(err instanceof Error ? err : new Error(String(err)));
+    }
+  };
+
+  run();
+  return controller;
+}
+
+export async function getEvaluationCacheStatus(
+  executionSessionId: string,
+): Promise<CacheStatusResponse> {
+  const res = await api.get<ApiResponse<CacheStatusResponse>>(
+    `/evaluations/session/${executionSessionId}/cache/status`,
   );
   return res.data.data;
 }

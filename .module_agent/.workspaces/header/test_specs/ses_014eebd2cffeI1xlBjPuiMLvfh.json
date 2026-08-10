@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_014eebd2cffeI1xlBjPuiMLvfh",
+  "content": "## 待测试功能\n\n变更模块：agent-base（AgentMessageProxy.buildToolResultChunk 补充 toolId 字段）\n\n### 涉及文件\n- agent-base/src/main/java/com/ghost616/agentbase/service/agent/AgentMessageProxy.java\n- agent-base/src/test/java/com/ghost616/agentbase/service/agent/AgentMessageProxyTest.java\n\n### 需要测试的功能\n\nbuildToolResultChunk 构建的工具执行结果缓存块 delta 为 JSON 格式，需包含 toolId 字段：\n- 格式：{\"toolName\":\"...\",\"toolId\":\"...\",\"arguments\":\"...\",\"result\":\"...\"}\n- toolId 来源于 execResult.toolId()\n- 与 ToolExecutionService.messageSave 的 toolInfo（toolCallId/toolName）和 toolResult（toolName/arguments/result）格式保持一致\n\n### 测试用例清单（AgentMessageProxyTest）\n以下三个用例的 JSON delta 断言需验证包含 \"\\\"toolId\\\":\\\"tid1\\\"\"：\n- sendUserMessage_缓存管理器存在时_工具流程缓存工具结果块与continue流块\n- sendUserMessage_缓存管理器存在时_工具流程结束块不入缓存且工具终止时追加STOP\n- sendUserMessage_缓存管理器存在时_工具等待期间追加空块\n\n其余用例保持通过（回归）。\n\n### 验证要求\n- 编译：agent-base 模块 test-compile 通过\n- 运行：AgentMessageProxyTest 全部用例通过\n- 回归：agent-base 全量单测通过",
+  "timestamp": "2026-08-10T11:13:56.724Z"
+}

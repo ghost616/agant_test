@@ -6,5 +6,77 @@
     "code_reviewed": false,
     "plan_completed": true,
     "test_passed": true
+  },
+  {
+    "plan_id": "plan_947915e9-bb1a-4489-ac4f-1352258f54d6",
+    "plan_summary": "pollNewChunks 移除 isCacheDone 判断",
+    "starter_session_id": "ses_0168b7778ffeZm7AZsEiDToWIV",
+    "code_reviewed": false,
+    "plan_completed": false,
+    "test_passed": false
+  },
+  {
+    "plan_id": "plan_feb1b3d3-768d-4885-89b1-c7e90722ca5e",
+    "plan_summary": "appendChunk done 拦截 + getChunks 边界校验",
+    "starter_session_id": "ses_0168b7778ffeZm7AZsEiDToWIV",
+    "code_reviewed": false,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_97fa062b-8e3c-4f50-b89f-b4003f8bd84d",
+    "plan_summary": "AgentContextConfiguration 注册 DefaultChatDataCacheProvider",
+    "starter_session_id": "ses_0168b7778ffeZm7AZsEiDToWIV",
+    "code_reviewed": false,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_78b614d8-34b6-45d9-829e-71dd35f0d354",
+    "plan_summary": "DefaultChatDataCacheProvider 内联创建，移除 @Bean",
+    "starter_session_id": "ses_0168b7778ffeZm7AZsEiDToWIV",
+    "code_reviewed": false,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_1b4764e5-f4e5-472d-800d-4a40d0c7f7ec",
+    "plan_summary": "ChatDataCacheManager 独立 Bean + AsyncEvaluationExecutor 注入",
+    "starter_session_id": "ses_0168b7778ffeZm7AZsEiDToWIV",
+    "code_reviewed": false,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_58983fc3-b9aa-467e-8746-06393b89c457",
+    "plan_summary": "DefaultChatDataCacheProvider 按会话ID获取缓存ID列表 + Spring Bean",
+    "starter_session_id": "ses_0168b7778ffeZm7AZsEiDToWIV",
+    "code_reviewed": false,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_ccb2ccb2-7db5-451d-a980-85cda2c21080",
+    "plan_summary": "新增评估执行流式数据接口",
+    "starter_session_id": "ses_0168b7778ffeZm7AZsEiDToWIV",
+    "code_reviewed": false,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_fb57ed96-c554-4007-aabb-52722583d45c",
+    "plan_summary": "EvaluationExecutionController 新增 cache/status 端点",
+    "starter_session_id": "ses_014325f5affeGRRX6gR74IuKLz",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_210c8a65-c10a-4253-942e-6d4ab9385fa0",
+    "plan_summary": "评估执行前端流式交互循环 stream-check 模式",
+    "starter_session_id": "ses_014325f5affeGRRX6gR74IuKLz",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
   }
 ]

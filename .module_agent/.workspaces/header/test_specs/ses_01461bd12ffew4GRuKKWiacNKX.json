@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_01461bd12ffew4GRuKKWiacNKX",
+  "content": "## 待测试功能\n\n本次变更涉及 EvaluationExecutionController 新增 SSE 流式端点，需测试以下功能及代码文件：\n\n1. EvaluationExecutionController（platform-app/src/main/java/com/ghost616/platform/controller/EvaluationExecutionController.java）\n   - 注入 ChatDataCacheManager 和 DefaultChatDataCacheProvider\n   - 新增 GET /api/evaluations/session/{executionSessionId}/stream 端点，produces = MediaType.TEXT_EVENT_STREAM_VALUE\n   - 实现逻辑：String sessionId = String.valueOf(executionSessionId)，调用 defaultChatDataCacheProvider.getCacheIdsBySessionId(sessionId)，取第一个 cacheId，若列表为空返回空 Flux，否则调用 chatDataCacheManager.getStream(cacheId, 0) 返回\n   - 原有 execute 与 getStatus 端点保持不变\n\n2. 测试文件（新建）：\n   - platform-app/src/test/java/com/ghost616/platform/controller/EvaluationExecutionControllerTest.java：execute/getStatus 原有端点 + stream 三个场景（有缓存返回流、无缓存返回空 Flux 且不调用 getStream、有多个缓存取第一个）\n\n## 需要验证\n\n- 编译：platform-app 模块编译通过（涉及 Controller 构造函数变更）\n- 单元测试：EvaluationExecutionControllerTest 通过\n- 回归：评估管理相关测试无回归（EvaluationExecutionService 依赖等）",
+  "timestamp": "2026-08-10T12:54:37.915Z"
+}

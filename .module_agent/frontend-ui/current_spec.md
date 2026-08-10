@@ -98,6 +98,10 @@
   - evaluation.ts: getEvaluationList(支持 agentEvalId 筛选)、getEvaluation、createEvaluation、updateEvaluation、deleteEvaluation、getEvaluationResults
 - EvaluationList 操作列新增"清空结果"按钮（danger 类型）：Modal.confirm 二次确认后调用 clearEvaluationResults(record.id) 清空该评估下所有评估结果，成功后 message.success 并刷新列表，失败 message.error；按钮始终可点击（后端对空列表无操作处理）
 - useEvaluationExecute FOREGROUND 模式：sendForegroundMessage 在调用 agentChatStream 前先 await fetchConversationId() 获取 conversationId，获取失败时抛出错误中止；conversationId 传入 agentChatStream 请求参数（{ sessionId, content, conversationId }）
+- useEvaluationExecute BACKGROUND 模式改为流式交互（stream→check→stream→check 循环）：executeEvaluation 返回 ExecutionStatusResponse（含 executionSessionId），拿到 executionSessionId 后用 getEvaluationStream 连接 GET /evaluations/session/{executionSessionId}/stream（SSE，复用 processSSEStream），onDelta/onReasoning 增量追加到前台日志显示区域；流结束后调用 getEvaluationCacheStatus（GET /evaluations/session/{executionSessionId}/cache/status）判断 hasCache，为 true 则继续连接 stream，直到 hasCache=false；执行完成后刷新结果列表
+- evaluation.ts 服务层新增：executeEvaluation 改为返回 ExecutionStatusResponse；getEvaluationStream（fetch + processSSEStream，返回 AbortController）；getEvaluationCacheStatus（返回 CacheStatusResponse { hasCache }）；types/evaluation.ts 新增 CacheStatusResponse，ExecutionStatusResponse 扩展 evaluationId/executionSessionId 可选字段
+- session.ts 导出 processSSEStream/StreamCallbacks/ChatChunk 供 evaluation.ts 复用
+- EvaluationResultList 执行日志 Modal 标题由「前台执行」改为「执行日志」（BACKGROUND/FOREGROUND 共用）
 ## 知识库管理界面
 
 - 知识库管理页面 `/knowledge`：列表展示、名称搜索、状态筛选、新增/编辑/删除/启用禁用，"管理文件"跳转 `/knowledge/:kbId/files`

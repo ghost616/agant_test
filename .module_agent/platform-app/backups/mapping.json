@@ -124,5 +124,9 @@
   "platform-app/src/test/java/com/ghost616/platform/dto/agent_log/AgentLogDTOTest.java": "b583d7381845a261753e634a34756085",
   "platform-app/src/test/java/com/ghost616/platform/service/agent/DatabaseAgentLogTest.java": "34f6a8e3cb1764cd8af1a451ccfbad93",
   "platform-app/src/main/java/com/ghost616/platform/dto/evaluation/EvaluationExecutionStatusDTO.java": "9552aa6f69f9cd3706493cbf087a9501",
-  "platform-app/src/test/java/com/ghost616/platform/dto/evaluation/EvaluationExecutionStatusDTOTest.java": "2f8c79a2348df6d44a362dce49776b1a"
+  "platform-app/src/test/java/com/ghost616/platform/dto/evaluation/EvaluationExecutionStatusDTOTest.java": "2f8c79a2348df6d44a362dce49776b1a",
+  "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultChatDataCacheProvider.java": "5d25f47603a49eb4e3fd0209560acbb1",
+  "platform-app/src/test/java/com/ghost616/platform/service/agent/DefaultChatDataCacheProviderTest.java": "1ab189105f286c5a08dbc187076d91c0",
+  "platform-app/src/main/java/com/ghost616/platform/controller/EvaluationExecutionController.java": "7a3b05efe1f52cd599b93bf011d28bfd",
+  "platform-app/src/test/java/com/ghost616/platform/controller/EvaluationExecutionControllerTest.java": "b23785367df92754eb0992619f2c5388"
 }

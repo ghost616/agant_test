@@ -1,0 +1,34 @@
+package com.ghost616.agentbase.dto.model;
+
+import org.junit.jupiter.api.Test;
+
+import com.ghost616.agentbase.enums.FinishReason;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+
+class ChatResponseTest {
+
+    @Test
+    void builderShouldSetFinishReason() {
+        ChatResponse response = ChatResponse.builder()
+                .content("hi")
+                .finishReason(FinishReason.LENGTH)
+                .build();
+
+        assertEquals(FinishReason.LENGTH, response.getFinishReason());
+    }
+
+    @Test
+    void finishReasonShouldBeNullByDefault() {
+        ChatResponse response = new ChatResponse();
+        assertNull(response.getFinishReason());
+    }
+
+    @Test
+    void setterAndGetterShouldWork() {
+        ChatResponse response = new ChatResponse();
+        response.setFinishReason(FinishReason.TOOL_CALLS);
+        assertEquals(FinishReason.TOOL_CALLS, response.getFinishReason());
+    }
+}

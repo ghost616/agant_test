@@ -20,9 +20,11 @@ createInvoker 方法 CUSTOM 分支：当 toolConfig.getToolType() 为 CUSTOM 时
 ToolExecutionProvider 接口（com.ghost616.agentbase.service.agent.ToolExecutionProvider），定义工具调用队列和执行追踪的统一契约。包含 enqueue/poll/peek/hasPending/clearQueue 五个队列方法与 updateExecution/clearTracking/getCurrentExecution/getAndClearResults 四个执行追踪方法。返回类型引用 ToolExecutionTracker.ToolExecutionStatus 和 ToolExecutionTracker.ToolResult 内部 record。平台实现类 DefaultToolExecutionProvider（com.ghost616.platform.service.agent）内部持有队列 ConcurrentHashMap 和追踪 ConcurrentHashMap，承担原 ToolCallQueueManager 和 ToolExecutionTracker 的 Map 存储职责。
 ## AgentComponentRegistry
 
-AgentComponentRegistry（com.ghost616.agentbase.core.AgentComponentRegistry），中央组件注册表，非 Spring 组件。持有所有 Provider/Manager 组件的 @Setter 注入字段，包含 contextDataProvider/messageDataProvider/toolDataProvider/chatDataProvider/modelInvokerDataProvider/systemToolProvider/modelInvokerFactory/toolManager/toolCallQueueManager/systemToolManager/sessionManager/agentContextManager/modelInvokerManager/toolExecutionTracker/toolExecutionProvider/messageSender/hookManager。每个 getter 方法通过 requireInitialized 守卫确保组件已初始化后返回，messageSender 可为 null。lastResponseId 持久化已于 2026-07-31 由 SessionDataProvider 迁移至 ContextDataProvider（sessionDataProvider 字段与 getSessionDataProvider() 已移除）。
+AgentComponentRegistry（com.ghost616.agentbase.core.AgentComponentRegistry），中央组件注册表，非 Spring 组件。持有所有 Provider/Manager 组件的 @Setter 注入字段，包含 contextDataProvider/messageDataProvider/toolDataProvider/chatDataProvider/modelInvokerDataProvider/systemToolProvider/modelInvokerFactory/toolManager/toolCallQueueManager/systemToolManager/sessionManager/agentContextManager/modelInvokerManager/toolExecutionTracker/toolExecutionProvider/messageSender/hookManager/agentLog/chatDataCacheManager。每个 getter 方法通过 requireInitialized 守卫确保组件已初始化后返回，messageSender 与 agentLog 可为 null。lastResponseId 持久化已于 2026-07-31 由 SessionDataProvider 迁移至 ContextDataProvider（sessionDataProvider 字段与 getSessionDataProvider() 已移除）。
 
 agentLog 字段（@Setter）与 getAgentLog() getter 已添加，参照 MessageSender 模式：getter 直接返回、不校验 null，供外部集成者注入智能体日志实现。
+
+chatDataCacheManager 字段（@Setter）与 getChatDataCacheManager() getter 已添加，参照 messageSender/agentLog 可选模式：getter 直接返回字段值、不抛 requireInitialized 异常，供外部集成者注入聊天数据缓存管理器。
 ## HookInvoker / SystemHook / SystemPostHook
 
 
@@ -147,6 +149,12 @@ processChat 创建 Map<String, Integer> toolCallCounts 以 "toolName:arguments" 
 
 测试覆盖 7 个用例，含振荡保护边界（count >= 5）和 MAX_TOOL_ROUNDS 极限（round > 10），全部通过。
 新增 sendUserMessageToSession(String sessionId, String content, String modelId, Boolean thinking) 方法：内部使用 SecureRandom 自动生成 24 位 conversationId（字符集 [0-9a-z_]，与 platform-app ConversationController 约定一致），构建 ChatRequest 时通过 .conversationId() 设置，随后复用 processChat 既有逻辑（聊天 + 工具循环）返回最终 assistant Message，用于父会话发起对话时标记对话归属。AgentMessageProxyTest 新增 3 个用例：conversationId 透传与格式校验（24 位 + 字符集匹配 + thinking 透传）、每次调用生成不同 conversationId、工具正常执行后返回文本。
+新增 sendUserMessageToSession(String sessionId, String content, String modelId, Boolean thinking) 方法：内部使用 SecureRandom 自动生成 24 位 conversationId（字符集 [0-9a-z_]，与 platform-app ConversationController 约定一致），构建 ChatRequest 时通过 .conversationId() 设置，随后复用 processChat 既有逻辑（聊天 + 工具循环）返回最终 assistant Message，用于父会话发起对话时标记对话归属。AgentMessageProxyTest 新增 3 个用例：conversationId 透传与格式校验（24 位 + 字符集匹配 + thinking 透传）、每次调用生成不同 conversationId、工具正常执行后返回文本。
+
+新增 private ChatDataCacheManager chatDataCacheManager 字段与 public setChatDataCacheManager(ChatDataCacheManager) setter 方法（同包 service.agent 下无需 import），供外部注入聊天数据缓存管理器。
+流数据缓存逻辑：processChat 在 collectList 获取 events 后，若 chatDataCacheManager 非 null，调用 startCache(sessionId, conversationId) 创建缓存并遍历 events 通过 cacheEvents 追加块（跳过 finishReason 非 null 的结束块），将 cacheId 透传给 processToolCalls；processToolCalls 新增 String cacheId 参数，工具执行完成（execResult 非 empty）后通过 buildToolResultChunk 构建工具执行结果块（delta 含工具名与执行结果摘要，摘要优先取 getToolStatus 结果，异常回退 execResult.message）追加到缓存，continueAfterTools 流同样 cacheEvents 缓存块并跳过结束块，递归调用透传 cacheId；processChat 返回 Message 前若 chatDataCacheManager 非 null 追加 finishReason=STOP 的结束块。sendUserMessage 未设置 conversationId 时 startCache 第二参传 null，由 provider 实现方决定 key 处理。
+流数据缓存逻辑重构：generateConversationId 改为返回时间戳字符串（String.valueOf(System.currentTimeMillis())）。processChat 开头若 request.getConversationId() 为空则生成时间戳并 setConversationId 到 request；流式处理分支：无 chatDataCacheManager 时保持 flux.collectList().block() 原逻辑，有 chatDataCacheManager 时 startCache 创建缓存后改用 flux.doOnNext(event -> 提取 chunk，finishReason 为 null 则 appendChunk).collectList().block() 实现流式追加缓存的同时阻塞获取完整列表。waitForToolCompletion 增加 cacheId 参数，轮询等待期间每次 sleep 前追加空 ChatChunk（delta 为空）到缓存，让流消费端感知工具执行进行中。buildToolResultChunk 仿照 ToolExecutionService.messageSave() 逻辑构建结构化 delta：Map 含 toolName/arguments/result 三键，经 JsonMapper.MAPPER.writeValueAsString 序列化为 JSON 字符串（与 messageSave 的 toolResult 格式一致），序列化失败时回退为工具名与结果摘要拼接。
+buildToolResultChunk 补充 toolId：构建的 JSON delta 增加 toolId 字段，格式为 {"toolName":"...","toolId":"...","arguments":"...","result":"..."}，与 ToolExecutionService.messageSave 的 toolInfo（toolCallId/toolName）和 toolResult（toolName/arguments/result）保持一致。
 ## SubSessionCallback
 
 SubSessionCallback 函数式接口（com.ghost616.agentbase.service.agent.invoker），使用 @FunctionalInterface 注解，定义 execute(String sessionId, String userMessage, Boolean thinking) 方法返回 Message，作为子会话消息处理的回调契约。thinking 参数表示是否启用思考模式，可为 null 表示使用默认行为。
@@ -220,6 +228,9 @@ ToolDataProvider（com.ghost616.agentbase.service.agent.ToolDataProvider），�
 - dto.model.ChatRequest 新增 List<Map&lt;String, Object&gt;> builtinTools 字段（内置工具列表，如 web_search，每项为工具配置键值对）
 - ChatChunk 新增 webSearchCall、customToolCall 两个字段，分别引用独立类 WebSearchCall（itemId/outputIndex/results，results 为 List 每项含 title/url/snippet）和 CustomToolCall（itemId/outputIndex/input/output）
 - WebSearchCall（含内部类 WebSearchResult：title/url/snippet）与 CustomToolCall 已由原 ChatChunk 静态内部类抽取为独立 DTO 类（com.ghost616.agentbase.dto.model），供 ChatChunk、AgentExecutionContext.HistoryEntry、MessageSavePostHook、AgentContextManager 共同引用
+
+- ChatChunk 与 ChatResponse 的 finishReason 字段类型由 String 改为 FinishReason 枚举（com.ghost616.agentbase.enums.FinishReason）
+
 ## 模型请求类型
 
 RequestType 枚举（com.ghost616.agentbase.enums.RequestType），定义模型请求分发方式。包含 RESPONSES("responses", "Responses（有状态）")、RESPONSES_STATELESS("responses_stateless", "Responses（无状态）")、COMPLETIONS("completions", "Chat Completions") 三个值，提供 getCode()/getDescription() 方法及静态 isResponses(String code) 判断（仅对 responses 与 responses_stateless 返回 true，排除 completions）。ModelConfigData.isResponsesType() 委托该方法。
@@ -323,3 +334,18 @@ LogData 类层次重构：新增 SessionLogData 抽象类（extends LogData，@S
 ToolExecutionService.executeTool() 重排：agentContextManager.get(sessionId) 及 null 校验前置到 peek 之前（返回 error 时不再携带工具字段），context 在方法开头获取，后续所有 ToolExecuteLogData 调用均携带 .context(context)。
 AgentContextManager.injectVariableCallbacks() 在 parentCtx != null（构建子会话上下文）时通过 parentCtx.context().getConversationId() 获取父会话 conversationId，并将其传入 createChildSession/sendUserMessage 回调；createChildSession()/sendUserMessage() 私有方法签名新增 conversationId 参数，构建 ChildSessionLogData/SendMessageLogData 时通过 .conversationId(conversationId) 携带父会话对话 ID。主会话（parentCtx == null）时 conversationId 为 null，日志 conversationId 保持 null。
 RequestEntryLogData 移除 conversationId 字段：RequestEntryLogData 构建从 chat() 方法头部（isToolContinue 判断前）移至 isToolContinue 代码块之后（此时 contextMutator.setConversationId() 已执行），context 已携带 conversationId（经 context.getConversationId() 读取），不再通过 .conversationId() 额外传入。LogType 枚举移除 CALL_SOURCE 值，枚举值由 19 个降为 18 个。
+## 聊天数据缓存
+
+聊天数据缓存基础设施（com.ghost616.agentbase.service.agent），用于缓存流式聊天片段并支持按序号区间回溯读取为 SSE 流。
+
+ChatDataCacheProvider 接口定义缓存契约：createCache(sessionId, conversationId) 创建缓存并返回缓存 ID（相同会话与对话已存在时返回 null）、cacheExists(cacheId) 判断缓存是否存在、cacheExists(sessionId, conversationId) 按会话+对话判断缓存是否存在、isCacheDone(cacheId) 判断缓存是否已结束（实现方跟踪状态）、getCacheId(sessionId, conversationId) 按会话+对话返回缓存 ID、getCacheSessionInfo(cacheId) 按缓存 ID 返回 CacheSessionInfo（含 sessionId/conversationId，缓存不存在时返回 null）、getMaxChunkIndex(cacheId) 获取最大块序号（无数据返回 -1）、appendChunk(cacheId, chunk) 追加聊天块、removeCache(cacheId) 删除缓存、getChunks(cacheId, startIndex, endIndex) 读取指定序号范围（含两端）的聊天块列表。
+
+CacheSessionInfo record（com.ghost616.agentbase.service.agent），包含 String sessionId 与 String conversationId 两个字段，承载缓存所属的会话与对话 ID，由 ChatDataCacheProvider.getCacheSessionInfo(cacheId) 返回。
+
+ChatDataCacheManager 通过构造函数注入 ChatDataCacheProvider，提供五个方法：getCacheId(sessionId, conversationId) 委托 provider 按会话+对话返回缓存 ID；startCache(sessionId, conversationId) 先调用 provider.cacheExists(sessionId, conversationId) 判断缓存是否已存在，存在则抛 BusinessException(DUPLICATE_KEY)，否则调用 provider.createCache 创建缓存并返回缓存 ID（返回 null 时同样抛 DUPLICATE_KEY）；appendChunk(cacheId, chunk) 校验 provider.cacheExists(cacheId) 不存在抛 NOT_FOUND、provider.isCacheDone(cacheId) 已结束抛 PARAM_INVALID，校验通过后委托 provider 追加聊天块；removeCache(cacheId) 委托 provider 删除缓存；getStream(cacheId, startIndex) 校验缓存存在后，从 getChunks 读取块逐个输出并检查 finishReason，若所有可用块均未遇到 finishReason 非 null 的块，则用 Flux.interval(1ms) 轮询 getChunks 获取新增块逐块输出并检查 finishReason，仅通过块中 finishReason 判定流结束（遇到 finishReason 非 null 的块则终止），5 分钟内无新数据时生成 finishReason=ERROR 结束块并终止流；缓存不存在抛 NOT_FOUND、无数据抛 NOT_FOUND、startIndex 大于最大序号抛 PARAM_INVALID。
+
+智能体日志能力（LogType 新增 CHAT_CACHE("CHAT_CACHE", "对话数据缓存")）：新建 ChatCacheLogData（com.ghost616.agentbase.service.agent.log，继承 SessionLogData，@SuperBuilder，含 cacheId 与 operation 字段，logType()=CHAT_CACHE）。ChatDataCacheManager 新增 private AgentLog agentLog 字段与 setAgentLog 注入方法、addLog 私有方法（agentLog 非 null 时以 try-catch 调用 addLog，异常不中断主流程）及 addCacheLog 辅助方法，在关键节点记录 ChatCacheLogData（logLevel INFO/ERROR，operation 为 CACHE_START/CACHE_APPEND/CACHE_REMOVE/CACHE_STREAM）：startCache 各日志 operation=CACHE_START；appendChunk 校验失败 ERROR 日志 operation=CACHE_APPEND，成功日志仅首个块（chunk.index==0 或 provider.getMaxChunkIndex==0）与结束块（chunk.finishReason!=null）时记录；removeCache operation=CACHE_REMOVE；getStream 起止（doFinally）operation=CACHE_STREAM。仅持有 cacheId 时通过 provider.getCacheSessionInfo(cacheId) 返回的 CacheSessionInfo 解析会话/对话 ID 构造日志。
+## 模型响应结束原因
+
+FinishReason 枚举（com.ghost616.agentbase.enums.FinishReason），定义模型响应的结束原因。包含 STOP("stop", "正常结束")、LENGTH("length", "达到长度限制")、TOOL_CALLS("tool_calls", "触发工具调用")、CONTENT_FILTER("content_filter", "内容被过滤")、ERROR("error", "发生错误")、CANCELLED("cancelled", "被取消") 六个值。code 字段使用 @EnumValue 标注，提供 getCode()/getDescription() 方法及静态 fromCode(String code) 转换（未知/为 null 时返回 null）。供 ChatChunk/ChatResponse 的 finishReason 字段引用。
+- FinishReason 枚举的 getCode() 方法标注 @JsonValue 注解（com.fasterxml.jackson.annotation.JsonValue），使枚举序列化为小写 code（如 "stop"/"error"）而非大写枚举名，保持与前端 SSE 消费端 chunk.finishReason === 'stop'/'error' 协议一致；反序列化仍走 fromCode 或依赖 JSON 值匹配（@JsonValue 同时影响序列化与反序列化）

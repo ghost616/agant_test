@@ -17,6 +17,8 @@
 - **AgentAssembler**：refreshHooks() 方法中更改 hookManager.refreshHooks(chatDataProviderProxy.getHooks()) 为 hookManager.refreshHooks() 无参调用；HookManager 构造函数改为 new HookManager(registry)
 - **AgentAssembler**：移除 messageSavePostHook() 公开 getter 方法（无人调用）；Result record 和 ChatDataProviderProxy 内部仍保留对 MessageSavePostHook 的引用
 - **AgentAssembler**：新增 setAgentLog(AgentLog) 公开方法，仅当 registry 已存在（build() 之后）时设置到 registry，无自有 AgentLog 暂存字段；build() 不自动注册 agentLog
+- **AgentAssembler**：新增 setChatDataCacheManager(ChatDataCacheManager) 公开方法，参考 setAgentLog 模式，仅当 registry 已存在（build() 之后）时设置到 registry，无自有 ChatDataCacheManager 暂存字段；build() 不自动注册 chatDataCacheManager
+- **AgentAssembler**：新增 private AgentMessageProxy agentMessageProxy 字段保留 build() 创建的引用；setChatDataCacheManager(ChatDataCacheManager) 方法在设置 registry 后，若 agentMessageProxy 非 null 则调用 agentMessageProxy.setChatDataCacheManager(chatDataCacheManager) 透传
 ## 模块职责
 提供多平台模型调用器的实现（ModelInvoker）和 Agent 组件的组装能力。
 
@@ -75,3 +77,4 @@
   - **KnowledgeSearchTool**（default_tool_rag_search）：参数 knowledgeBaseId(必填)/fileId/searchType(必填，enum VECTOR/FULLTEXT/HYBRID)/query(必填)/searchLimit(默认10)/contextLines(默认3)。调用 searchChunks 获取纯匹配结果后，用 contextLines 扩大每个 chunk 的行范围（line-contextLines ~ line+contextLines，下限 1），将同文件重叠/相邻行范围经 mergeRanges 合并后逐个调用 provider.getFileChunks() 获取上下文文本块；随后按 (knowledgeBaseId, fileId) 分组到 LinkedHashMap，组内按 lineNumber 去重（LinkedHashMap putIfAbsent 保持插入顺序）后按行号升序合并连续行号块，返回 List\<{knowledgeBaseId, fileId, chunks}\> 结构。
   - **KnowledgeFileChunkTool**（default_tool_rag_file_chunk）：参数 knowledgeBaseId(必填)/fileId(必填)/startLine(默认0)/endLine(默认文件最大行数)。endLine 未传时通过 searchFiles 解析文件 maxLineCount，找不到则用 Integer.MAX_VALUE，调用 getFileChunks 后将 chunkList 按行号升序合并为纯文本字符串返回（块之间以换行分隔，null/空列表返回空字符串）。
 - 以上工具错误 JSON 序列化使用 JsonMapper。
+- **ID 类型统一为 String**：KnowledgeBaseInfo.kbId、FileInfo.fileId、TextChunkWithFile.knowledgeBaseId/fileId 由 Long 改为 String；KnowledgeBaseQueryProvider 的 searchFiles(kbId,...)/searchChunks(kbId, fileId,...)/getFileChunks(kbId, fileId,...) 三个方法 Long 参数改为 String；三个工具类（KnowledgeFileInfoTool/KnowledgeSearchTool/KnowledgeFileChunkTool）execute 解析参数改为 JsonNode.asText()（兼容数字与字符串输入），参数 schema 中 knowledgeBaseId/fileId 类型由 integer 改为 string。

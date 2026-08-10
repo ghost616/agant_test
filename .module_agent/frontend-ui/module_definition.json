@@ -43,7 +43,7 @@
     },
     {
       "path": "src/services/session.ts",
-      "description": "会话相关 API 封装，包括列表/创建/获取/删除会话、获取子会话列表（listChildSessions）、获取历史消息（getSessionMessages）、按 conversationId 获取对话消息（getConversationMessages，GET /api/conversations/{conversationId}/messages）、SSE 流式聊天（agentChatStream/continueChatStream）、工具执行（executeTools/getToolStatus）、工具执行状态轮询（pollToolStatus）、回滚会话（rollbackSession）、停止 AI 回复（stopChat）、子会话回调工具（getSubSessionData/completeSubSession）以及 SubSessionData 类型定义；fetchConversationId（GET /conversation-id 获取新 conversationId）；ChatRequest 类型来源于 types/session.ts；ExecuteToolsResult 和 ToolStatusResult 接口新增 needsSubSessionFlow 可选字段；ChatChunk 接口新增 responseId/webSearchCall/customToolCall 字段（webSearchCall 为 WebSearchCall[] 数组）、StreamCallbacks 新增 onResponseId/onWebSearchCall 回调（processSSEStream 解析 chunk.responseId 与 chunk.webSearchCall 数组并回调）、agentChatStream 新增 previousResponseId 参数且参数类型改为 ChatRequest（Responses 有状态模式多轮续接透传，conversationId 用户发送前获取传入）；新增 SessionContextBasic 类型与 getSessionContextBasic API（GET /api/context/{sessionId}/basic 获取会话上下文基础信息含 lastResponseId）"
+      "description": "会话相关 API 封装，包括列表/创建/获取/删除会话、获取子会话列表（listChildSessions）、获取历史消息（getSessionMessages）、按 conversationId 获取对话消息（getConversationMessages，GET /api/conversations/{conversationId}/messages）、SSE 流式聊天（agentChatStream/continueChatStream）、工具执行（executeTools/getToolStatus）、工具执行状态轮询（pollToolStatus）、回滚会话（rollbackSession）、停止 AI 回复（stopChat）、子会话回调工具（getSubSessionData/completeSubSession）以及 SubSessionData 类型定义；fetchConversationId（GET /conversation-id 获取新 conversationId）；ChatRequest 类型来源于 types/session.ts；ExecuteToolsResult 和 ToolStatusResult 接口新增 needsSubSessionFlow 可选字段；ChatChunk 接口新增 responseId/webSearchCall/customToolCall 字段（webSearchCall 为 WebSearchCall[] 数组）、StreamCallbacks 新增 onResponseId/onWebSearchCall 回调（processSSEStream 解析 chunk.responseId 与 chunk.webSearchCall 数组并回调）、agentChatStream 新增 previousResponseId 参数且参数类型改为 ChatRequest（Responses 有状态模式多轮续接透传，conversationId 用户发送前获取传入）；新增 SessionContextBasic 类型与 getSessionContextBasic API（GET /api/context/{sessionId}/basic 获取会话上下文基础信息含 lastResponseId）；导出 ChatChunk/StreamCallbacks/processSSEStream 供评估流式接口等复用"
     },
     {
       "path": "src/pages/sessions/SessionList.tsx",
@@ -83,11 +83,11 @@
     },
     {
       "path": "src/types/evaluation.ts",
-      "description": "评估管理类型定义，含 Evaluation（含 agentEvalId/agentId/agentName）/EvaluationCreateRequest（含 agentEvalId）/EvaluationUpdateRequest/EvaluationResult 接口"
+      "description": "评估管理类型定义，含 Evaluation（含 agentEvalId/agentId/agentName）/EvaluationCreateRequest（含 agentEvalId）/EvaluationUpdateRequest/EvaluationResult 接口；ExecutionStatusResponse 含 evaluationId/executionSessionId 可选字段；CacheStatusResponse（hasCache）接口；EvalSessionCreateResponse/GenerateStatusResponse 接口"
     },
     {
       "path": "src/services/evaluation.ts",
-      "description": "评估管理 API 服务封装，含列表（支持 agentEvalId 筛选参数）/CRUD/评估结果查询接口"
+      "description": "评估管理 API 服务封装：评估 CRUD/列表（支持 agentEvalId 筛选）/评估结果查询（getEvaluationResults/getEvaluationResult/deleteEvaluationResult/batchDeleteEvaluationResults/clearEvaluationResults）；评估执行流式接口：executeEvaluation 返回 ExecutionStatusResponse（含 executionSessionId，POST /evaluations/{id}/execute）、getExecutionStatus（GET /evaluations/{id}/execute/status）、getEvaluationStream（fetch + 复用 processSSEStream 连接 GET /evaluations/session/{executionSessionId}/stream，返回 AbortController）、getEvaluationCacheStatus（GET /evaluations/session/{executionSessionId}/cache/status 返回 CacheStatusResponse）；前台评估 createEvalSession/generateEvalResult/getGenerateStatus"
     },
     {
       "path": "src/pages/evaluations/EvaluationList.tsx",
@@ -95,7 +95,7 @@
     },
     {
       "path": "src/pages/evaluations/EvaluationResultList.tsx",
-      "description": "评估结果历史列表页面组件，从路由参数获取 evaluationId，展示评估结果列表，含执行按钮（提示功能开发中），回退按钮根据 agentEvalId 导航回 /evaluations/:agentEvalId/items"
+      "description": "评估结果历史列表页面组件，从路由参数获取 evaluationId，展示评估结果列表，含执行按钮（调用 useEvaluationExecute 的 execute，传入 fetchData 作为完成刷新回调），返回按钮根据 agentEvalId 导航回 /evaluations/:agentEvalId/items，批量删除/清空按钮（Modal.confirm 二次确认），执行日志 Modal（标题「执行日志」，BACKGROUND/FOREGROUND 共用，展示 foregroundLog）"
     },
     {
       "path": "src/types/agentEvaluation.ts",
@@ -115,7 +115,7 @@
     },
     {
       "path": "src/pages/evaluations/hooks/useEvaluationExecute.ts",
-      "description": "评估执行核心逻辑 hook，封装 runToolCycle/sendForegroundMessage/execute 等方法及 executing/executionProgress/foregroundModalVisible/foregroundLog/foregroundLogRef/handleCancelForeground 状态"
+      "description": "评估执行核心逻辑 hook，封装 streamEvaluation/streamBackground/pollGenerateStatus/runToolCycle/sendForegroundMessage/execute 等方法及 executing/executionProgress/foregroundModalVisible/foregroundLog/foregroundLogRef/handleCancelForeground 状态；BACKGROUND 模式采用 stream→check 循环（executeEvaluation 返回 executionSessionId 后连接 getEvaluationStream 流式接收，流结束调 getEvaluationCacheStatus 判断 hasCache，true 则继续连接直到 false），FOREGROUND 模式创建会话逐条发送消息并生成结果；执行完成后刷新结果列表"
     },
     {
       "path": "src/pages/evaluations/__tests__/useEvaluationExecute.test.tsx",

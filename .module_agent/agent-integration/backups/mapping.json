@@ -34,5 +34,12 @@
   "platform-app/src/main/java/com/ghost616/platform/service/knowledge/KnowledgeBaseQueryProviderImpl.java": "b5e53d922f0be697b49aaeeb5f73a1fd",
   "platform-app/src/main/java/com/ghost616/platform/service/search/KnowledgeSearchClient.java": "d6305e9f6a4b6915cc20e37a9e31062f",
   "platform-app/src/test/java/com/ghost616/platform/service/knowledge/KnowledgeBaseQueryProviderImplTest.java": "ea4ae3329fa2ee35b21c622870c82c04",
-  "platform-app/src/test/java/com/ghost616/platform/service/search/KnowledgeSearchClientTest.java": "7a02de941de510e42125727d55b6f7b2"
+  "platform-app/src/test/java/com/ghost616/platform/service/search/KnowledgeSearchClientTest.java": "7a02de941de510e42125727d55b6f7b2",
+  "agent-integration/src/main/java/com/ghost616/agentinteg/knowledge/FileInfo.java": "92745a6aaf689013db0d9cda48ae0dec",
+  "agent-integration/src/main/java/com/ghost616/agentinteg/knowledge/KnowledgeBaseInfo.java": "ac0181face0b29601f17c552aa6f74b3",
+  "agent-integration/src/main/java/com/ghost616/agentinteg/knowledge/TextChunkWithFile.java": "219f9cc5e8d73af5ea1aa87cdb95ae09",
+  "agent-integration/src/test/java/com/ghost616/agentinteg/tool/KnowledgeFileInfoToolTest.java": "000356e1f6188ab5a3da1eed008b6682",
+  "agent-integration/src/main/java/com/ghost616/agentinteg/model/invoker/AzureInvoker.java": "d6902f40da538338d23a7be1e5084943",
+  "agent-integration/src/test/java/com/ghost616/agentinteg/model/invoker/OpenAIInvokerTest.java": "de7862abcfce43dd97de7a5eea791ab8",
+  "agent-integration/src/test/java/com/ghost616/agentinteg/model/invoker/OllamaInvokerTest.java": "6d0e7f4ea72a0afda795c5a8fd58ddf2"
 }

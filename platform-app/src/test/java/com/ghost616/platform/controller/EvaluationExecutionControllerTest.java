@@ -15,6 +15,7 @@ import org.springframework.http.codec.ServerSentEvent;
 import reactor.core.publisher.Flux;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -113,5 +114,31 @@ class EvaluationExecutionControllerTest {
         verify(defaultChatDataCacheProvider).getCacheIdsBySessionId("200");
         verify(chatDataCacheManager).getStream("cache-1", 0);
         verify(chatDataCacheManager, never()).getStream("cache-2", 0);
+    }
+
+    @Test
+    void cacheStatus_存在缓存_hasCache为true() {
+        when(defaultChatDataCacheProvider.getCacheIdsBySessionId("200"))
+                .thenReturn(List.of("cache-1"));
+
+        ApiResponse<Map<String, Boolean>> response = controller.cacheStatus(200L);
+
+        assertNotNull(response);
+        assertTrue(response.isSuccess());
+        assertEquals(Boolean.TRUE, response.getData().get("hasCache"));
+        verify(defaultChatDataCacheProvider).getCacheIdsBySessionId("200");
+    }
+
+    @Test
+    void cacheStatus_无缓存_hasCache为false() {
+        when(defaultChatDataCacheProvider.getCacheIdsBySessionId("200"))
+                .thenReturn(List.of());
+
+        ApiResponse<Map<String, Boolean>> response = controller.cacheStatus(200L);
+
+        assertNotNull(response);
+        assertTrue(response.isSuccess());
+        assertEquals(Boolean.FALSE, response.getData().get("hasCache"));
+        verify(defaultChatDataCacheProvider).getCacheIdsBySessionId("200");
     }
 }

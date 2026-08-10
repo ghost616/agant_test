@@ -1,0 +1,10 @@
+{
+  "plan_id": "plan_feb1b3d3-768d-4885-89b1-c7e90722ca5e",
+  "module_name": "platform-app",
+  "development_plan": "DefaultChatDataCacheProvider 两处修复：\n\n1. appendChunk：synchronized 块内追加前先判断 entry.done，若已为 true 则直接 return 不追加块，防止高并发下结束块之后继续追加\n\n2. getChunks：追加前校验 startIndex 和 endIndex 边界，若 startIndex < 0 或 endIndex < startIndex 或 startIndex >= chunks.size()，返回空列表；endIndex 取 min(endIndex, chunks.size()-1)\n\n同步更新对应测试用例覆盖这两处边界场景",
+  "session_id": "ses_014947e1dffertwjhvubIR5P74",
+  "modified_files": [
+    "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultChatDataCacheProvider.java",
+    "platform-app/src/test/java/com/ghost616/platform/service/agent/DefaultChatDataCacheProviderTest.java"
+  ]
+}

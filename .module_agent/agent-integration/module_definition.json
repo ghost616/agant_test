@@ -31,7 +31,7 @@
     },
     {
       "path": "agent-integration/src/main/java/com/ghost616/agentinteg/AgentAssembler.java",
-      "description": "AgentAssembler 组件组装工厂类，接收 DataProvider/ModelInvokerFactory 等依赖，build() 方法通过 AgentComponentRegistry 统一装配 ChatService/ToolExecutionService/AgentMessageProxy 实例；创建共享 HookManager 实例并通过 setter 注入 ChatService 和 ToolExecutionService；暴露 refreshHooks() 供外部调用刷新 hooks；暴露 setAgentLog(AgentLog) 支持注册智能体日志实现（仅在 registry 已存在时直接设置，build 前调用不生效）；registry 不对外暴露"
+      "description": "AgentAssembler 组件组装工厂类，接收 DataProvider/ModelInvokerFactory 等依赖，build() 方法通过 AgentComponentRegistry 统一装配 ChatService/ToolExecutionService/AgentMessageProxy 实例，并保留 agentMessageProxy 引用；创建共享 HookManager 实例并通过 setter 注入 ChatService 和 ToolExecutionService；暴露 refreshHooks() 供外部调用刷新 hooks；暴露 setAgentLog(AgentLog) 支持注册智能体日志实现；暴露 setChatDataCacheManager(ChatDataCacheManager) 支持注册聊天数据缓存管理器（均在 registry 已存在时直接设置，build 前调用不生效），且设置后透传给 agentMessageProxy；registry 不对外暴露"
     },
     {
       "path": "src/main/java/com/ghost616/agentinteg/tool/SubSessionCallbackSystemTool.java",
@@ -168,6 +168,10 @@
     {
       "path": "agent-integration/src/test/java/com/ghost616/agentinteg/AgentAssemblerTest.java",
       "description": "AgentAssembler 组装类的单元测试：验证 build() 多次调用返回相同 Result/chatService/toolExecutionService、各组件 getter 在 build 前后返回非 null/null、HookManager 共享实例与 refreshHooks 委托调用、setAgentLog 注册智能体日志（build 前暂存 build 后注册、build 后直接注册、设置 null）"
+    },
+    {
+      "path": "agent-integration/src/test/java/com/ghost616/agentinteg/model/invoker/AnthropicInvokerTest.java",
+      "description": "AnthropicInvoker 单元测试：通过反射调用 handleStreamEvent 验证 message_delta 事件中 stop_reason 捕获与 usage 解析（含 usage 缺失/部分/null 分支），以及 mapStopReason 映射（end_turn/stop_sequence→STOP、max_tokens→LENGTH、tool_use→TOOL_CALLS、error→ERROR、null/blank→STOP、未知→null）"
     }
   ]
 }

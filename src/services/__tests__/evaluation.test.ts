@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 const mockPost = vi.hoisted(() => vi.fn());
 const mockGet = vi.hoisted(() => vi.fn());
@@ -24,6 +24,8 @@ import {
   deleteEvaluationResult,
   batchDeleteEvaluationResults,
   clearEvaluationResults,
+  getEvaluationCacheStatus,
+  getEvaluationStream,
 } from '../evaluation';
 
 describe('executeEvaluation', () => {
@@ -31,18 +33,20 @@ describe('executeEvaluation', () => {
     mockPost.mockReset();
   });
 
-  it('应调用 POST /evaluations/{id}/execute 并返回 Promise<void>', async () => {
-    mockPost.mockResolvedValueOnce(undefined);
-    await executeEvaluation('eval-123');
+  it('应调用 POST /evaluations/{id}/execute 并返回 executionSessionId', async () => {
+    const fakeStatus = { evaluationId: 'eval-123', executionSessionId: 'exec-1', status: 'PENDING', currentStep: 0, totalSteps: 3 };
+    mockPost.mockResolvedValueOnce({ data: { data: fakeStatus } });
+    const result = await executeEvaluation('eval-123');
     expect(mockPost).toHaveBeenCalledWith('/evaluations/eval-123/execute');
+    expect(result.executionSessionId).toBe('exec-1');
   });
 
   it('应正确处理不同 id', async () => {
-    mockPost.mockResolvedValueOnce(undefined);
+    mockPost.mockResolvedValueOnce({ data: { data: { evaluationId: 'id-a', executionSessionId: 'exec-a', status: 'PENDING', currentStep: 0, totalSteps: 1 } } });
     await executeEvaluation('id-a');
     expect(mockPost).toHaveBeenCalledWith('/evaluations/id-a/execute');
 
-    mockPost.mockResolvedValueOnce(undefined);
+    mockPost.mockResolvedValueOnce({ data: { data: { evaluationId: 'id-b', executionSessionId: 'exec-b', status: 'PENDING', currentStep: 0, totalSteps: 1 } } });
     await executeEvaluation('id-b');
     expect(mockPost).toHaveBeenCalledWith('/evaluations/id-b/execute');
   });
@@ -85,6 +89,69 @@ describe('getExecutionStatus', () => {
   it('应在 API 失败时抛出错误', async () => {
     mockGet.mockRejectedValueOnce(new Error('Network Error'));
     await expect(getExecutionStatus('eval-123')).rejects.toThrow('Network Error');
+  });
+});
+
+describe('getEvaluationCacheStatus', () => {
+  beforeEach(() => {
+    mockGet.mockReset();
+  });
+
+  it('应调用 GET /evaluations/session/{executionSessionId}/cache/status 并返回 hasCache', async () => {
+    mockGet.mockResolvedValueOnce({ data: { data: { hasCache: true } } });
+    const result = await getEvaluationCacheStatus('exec-1');
+    expect(mockGet).toHaveBeenCalledWith('/evaluations/session/exec-1/cache/status');
+    expect(result.hasCache).toBe(true);
+  });
+
+  it('应返回 hasCache 为 false 的响应', async () => {
+    mockGet.mockResolvedValueOnce({ data: { data: { hasCache: false } } });
+    const result = await getEvaluationCacheStatus('exec-2');
+    expect(result.hasCache).toBe(false);
+  });
+
+  it('应在 API 失败时抛出错误', async () => {
+    mockGet.mockRejectedValueOnce(new Error('Network Error'));
+    await expect(getEvaluationCacheStatus('exec-1')).rejects.toThrow('Network Error');
+  });
+});
+
+describe('getEvaluationStream', () => {
+  const originalFetch = globalThis.fetch;
+
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  it('应连接 /api/evaluations/session/{executionSessionId}/stream 并复用 processSSEStream', async () => {
+    const mockResponse = {
+      ok: true,
+      status: 200,
+      body: {
+        getReader: (): { read: () => Promise<{ done: boolean; value?: Uint8Array }> } => ({
+          read: () => Promise.resolve({ done: true }),
+        }),
+      },
+    } as unknown as Response;
+    const mockFetch = vi.fn().mockResolvedValue(mockResponse);
+    globalThis.fetch = mockFetch as typeof fetch;
+
+    const onDelta = vi.fn();
+    const onDone = vi.fn();
+    const controller = getEvaluationStream('exec-1', {
+      onDelta,
+      onReasoning: () => {},
+      onDone,
+      onError: () => {},
+    });
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      '/api/evaluations/session/exec-1/stream',
+      expect.objectContaining({ method: 'GET', signal: controller.signal }),
+    );
+
+    await new Promise((r) => setTimeout(r, 0));
+    expect(onDone).toHaveBeenCalledWith(false);
   });
 });
 

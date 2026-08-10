@@ -245,7 +245,7 @@ function EvaluationResultList(): JSX.Element {
       />
 
       <Modal
-        title="前台执行"
+        title="执行日志"
         open={foregroundModalVisible}
         onCancel={handleCancelForeground}
         footer={

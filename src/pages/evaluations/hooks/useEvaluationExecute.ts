@@ -3,9 +3,10 @@ import { message } from 'antd';
 import type { Evaluation } from '../../../types/evaluation';
 import {
   executeEvaluation,
-  getExecutionStatus,
   createEvalSession,
   generateEvalResult,
+  getEvaluationCacheStatus,
+  getEvaluationStream,
   getGenerateStatus,
 } from '../../../services/evaluation';
 import {
@@ -45,20 +46,51 @@ export function useEvaluationExecute(): {
     }
   }, [foregroundLog]);
 
-  const pollExecutionStatus = useCallback(
-    async (id: string): Promise<void> => {
-      while (executingRef.current) {
-        const status = await getExecutionStatus(id);
-        setExecutionProgress(
-          `进度: ${status.currentStep}/${status.totalSteps}`,
-        );
-        if (status.status.toUpperCase() === 'COMPLETED' || status.status.toUpperCase() === 'ERROR') {
-          return;
-        }
-        await sleep(2000);
-      }
+  const streamEvaluation = useCallback(
+    async (executionSessionId: string, logLines: string[]): Promise<void> => {
+      return new Promise<void>((resolve, reject) => {
+        const controller = getEvaluationStream(executionSessionId, {
+          onDelta: (text) => {
+            const last = logLines[logLines.length - 1];
+            if (last?.startsWith('[AI]')) {
+              logLines[logLines.length - 1] = last + text;
+            } else {
+              logLines.push(`[AI] ${text}`);
+            }
+            setForegroundLog([...logLines]);
+          },
+          onReasoning: (text) => {
+            const last = logLines[logLines.length - 1];
+            if (last?.startsWith('[思考]')) {
+              logLines[logLines.length - 1] = last + text;
+            } else {
+              logLines.push(`[思考] ${text}`);
+            }
+            setForegroundLog([...logLines]);
+          },
+          onDone: () => resolve(),
+          onError: (err) => reject(err),
+        });
+        abortRef.current = controller;
+      });
     },
     [],
+  );
+
+  const streamBackground = useCallback(
+    async (
+      executionSessionId: string,
+      logLines: string[],
+    ): Promise<void> => {
+      let hasCache = true;
+      while (hasCache && executingRef.current) {
+        await streamEvaluation(executionSessionId, logLines);
+        if (!executingRef.current) return;
+        const cacheStatus = await getEvaluationCacheStatus(executionSessionId);
+        hasCache = cacheStatus.hasCache;
+      }
+    },
+    [streamEvaluation],
   );
 
   const pollGenerateStatus = useCallback(
@@ -410,13 +442,28 @@ export function useEvaluationExecute(): {
 
       try {
         if (executionType === 'BACKGROUND') {
+          setForegroundLog([]);
+          setForegroundModalVisible(true);
+          const logLines: string[] = [];
+
           for (let i = 0; i < evaluation.executionCount; i++) {
             if (!executingRef.current) break;
+            logLines.push(`\n========== 第 ${i + 1}/${evaluation.executionCount} 次执行 ==========`);
+            setForegroundLog([...logLines]);
             setExecutionProgress(`执行中(第 ${i + 1}/${evaluation.executionCount} 次)...`);
-            await executeEvaluation(evaluationId);
-            await pollExecutionStatus(evaluationId);
+
+            const execResult = await executeEvaluation(evaluationId);
+            const executionSessionId = execResult.executionSessionId;
+            if (executionSessionId) {
+              logLines.push(`执行会话: ${executionSessionId}`);
+              setForegroundLog([...logLines]);
+              await streamBackground(executionSessionId, logLines);
+            }
           }
-          message.success('后台执行完成');
+
+          if (executingRef.current) {
+            message.success('后台执行完成');
+          }
         } else {
           setForegroundLog([]);
           setForegroundModalVisible(true);
@@ -471,13 +518,11 @@ export function useEvaluationExecute(): {
         if (onRefresh) {
           await onRefresh();
         }
-        if (executionType !== 'BACKGROUND') {
-          await sleep(1500);
-          setForegroundModalVisible(false);
-        }
+        await sleep(1500);
+        setForegroundModalVisible(false);
       }
     },
-    [pollExecutionStatus, pollGenerateStatus, sendForegroundMessage],
+    [pollGenerateStatus, sendForegroundMessage, streamBackground],
   );
 
   const handleCancelForeground = (): void => {

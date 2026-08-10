@@ -120,5 +120,13 @@
   "agent-base/src/test/java/com/ghost616/agentbase/service/agent/log/MessageRollbackLogDataTest.java": "5931c43d33dd682f43216d095966711d",
   "agent-base/src/test/java/com/ghost616/agentbase/service/agent/log/CacheRemoveLogDataTest.java": "8d90852b6877c5355d791b665efaed8b",
   "agent-base/src/main/java/com/ghost616/agentbase/service/agent/log/RefreshLogData.java": "6f47fd146dcc71616369a61a18f88dc8",
-  "agent-base/src/test/java/com/ghost616/agentbase/service/agent/log/RefreshLogDataTest.java": "220f9c74ec42567cc406489f9d79dd62"
+  "agent-base/src/test/java/com/ghost616/agentbase/service/agent/log/RefreshLogDataTest.java": "220f9c74ec42567cc406489f9d79dd62",
+  "agent-base/src/test/java/com/ghost616/agentbase/dto/model/ChatChunkTest.java": "83c625c1bb84c5e056f3bc572f64411a",
+  "agent-base/src/main/java/com/ghost616/agentbase/enums/FinishReason.java": "8c96b23ff2e17786e4dca08ef87f0fd1",
+  "agent-base/src/test/java/com/ghost616/agentbase/enums/FinishReasonTest.java": "8b0640f2f622b9a7ee7ab30ddaff800b",
+  "agent-base/src/test/java/com/ghost616/agentbase/dto/model/ChatResponseTest.java": "07c84533b96a9de327ead47fb5b97447",
+  "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ChatDataCacheProvider.java": "0d1e8efe69ce804301efffc854d986bf",
+  "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ChatDataCacheManager.java": "7955c4bfb479f1947df6acda012abcbc",
+  "agent-base/src/test/java/com/ghost616/agentbase/service/agent/ChatDataCacheManagerTest.java": "03d789955524c280c85b3262a0519eb1",
+  "agent-base/src/main/java/com/ghost616/agentbase/service/agent/log/ChatCacheLogData.java": "fff5cc04ace4ff212be0b83e060ad9d9"
 }

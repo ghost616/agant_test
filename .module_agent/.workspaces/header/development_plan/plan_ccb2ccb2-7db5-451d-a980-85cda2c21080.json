@@ -1,0 +1,10 @@
+{
+  "plan_id": "plan_ccb2ccb2-7db5-451d-a980-85cda2c21080",
+  "module_name": "platform-app",
+  "development_plan": "EvaluationExecutionController 新增 SSE 流式端点：\n\n1. 添加 ChatDataCacheManager 和 DefaultChatDataCacheProvider 注入\n\n2. 新增 GET /api/evaluations/session/{executionSessionId}/stream 端点，produces = MediaType.TEXT_EVENT_STREAM_VALUE\n\n3. 实现逻辑：String sessionId = String.valueOf(executionSessionId)，调用 defaultChatDataCacheProvider.getCacheIdsBySessionId(sessionId)，取第一个 cacheId，若为空返回空 Flux，否则调用 chatDataCacheManager.getStream(cacheId, 0) 返回\n\n4. 同步更新测试",
+  "session_id": "ses_01461bd12ffew4GRuKKWiacNKX",
+  "modified_files": [
+    "platform-app/src/main/java/com/ghost616/platform/controller/EvaluationExecutionController.java",
+    "platform-app/src/test/java/com/ghost616/platform/controller/EvaluationExecutionControllerTest.java"
+  ]
+}

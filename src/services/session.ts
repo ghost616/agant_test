@@ -50,7 +50,7 @@ export async function getConversationMessages(conversationId: string): Promise<S
   return res.data.data;
 }
 
-interface ChatChunk {
+export interface ChatChunk {
   delta?: string;
   reasoning?: string;
   responseId?: string;
@@ -60,7 +60,7 @@ interface ChatChunk {
   customToolCall?: Record<string, unknown>;
 }
 
-interface StreamCallbacks {
+export interface StreamCallbacks {
   onDelta: (text: string) => void;
   onReasoning: (text: string) => void;
   onResponseId?: (id: string) => void;
@@ -69,7 +69,7 @@ interface StreamCallbacks {
   onError: (err: Error) => void;
 }
 
-async function processSSEStream(
+export async function processSSEStream(
   response: Response,
   callbacks: StreamCallbacks,
 ): Promise<void> {

@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_0154553bdfferfqa13kID8LzYT",
+  "content": "## 待测试功能\n\n变更内容：AgentMessageProxy 新增 ChatDataCacheManager 可选注入支持。\n\n涉及代码文件：\n- agent-base/src/main/java/com/ghost616/agentbase/service/agent/AgentMessageProxy.java\n- agent-base/src/test/java/com/ghost616/agentbase/service/agent/AgentMessageProxyTest.java\n\n可测试功能：\n1. AgentMessageProxy 编译通过（Java 17）\n2. setChatDataCacheManager() 方法可正常调用，注入的 ChatDataCacheManager 实例被保存到字段\n3. AgentMessageProxyTest 全量用例通过（含新增 setter 用例与既有 sendUserMessage/sendUserMessageToSession 用例，无回归）",
+  "timestamp": "2026-08-10T09:23:00.168Z"
+}
