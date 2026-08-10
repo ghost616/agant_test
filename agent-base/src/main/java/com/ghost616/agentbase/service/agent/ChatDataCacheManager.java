@@ -3,7 +3,11 @@ package com.ghost616.agentbase.service.agent;
 import com.ghost616.agentbase.dto.model.ChatChunk;
 import com.ghost616.agentbase.enums.ErrorCode;
 import com.ghost616.agentbase.enums.FinishReason;
+import com.ghost616.agentbase.enums.LogLevel;
 import com.ghost616.agentbase.exception.BusinessException;
+import com.ghost616.agentbase.service.agent.log.AgentLog;
+import com.ghost616.agentbase.service.agent.log.ChatCacheLogData;
+import com.ghost616.agentbase.service.agent.log.LogData;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.codec.ServerSentEvent;
 import reactor.core.publisher.Flux;
@@ -27,10 +31,22 @@ public class ChatDataCacheManager {
     /** 轮询无新数据超时时间，超时后生成 finishReason=ERROR 的结束块并终止流 */
     private static final long POLL_TIMEOUT_MS = Duration.ofMinutes(5).toMillis();
 
+    /** 缓存操作类型常量 */
+    private static final String OPERATION_CACHE_START = "CACHE_START";
+    private static final String OPERATION_CACHE_APPEND = "CACHE_APPEND";
+    private static final String OPERATION_CACHE_REMOVE = "CACHE_REMOVE";
+    private static final String OPERATION_CACHE_STREAM = "CACHE_STREAM";
+
     private final ChatDataCacheProvider provider;
+
+    private AgentLog agentLog;
 
     public ChatDataCacheManager(ChatDataCacheProvider provider) {
         this.provider = provider;
+    }
+
+    public void setAgentLog(AgentLog agentLog) {
+        this.agentLog = agentLog;
     }
 
     /**
@@ -56,13 +72,16 @@ public class ChatDataCacheManager {
     public String startCache(String sessionId, String conversationId) {
         if (provider.cacheExists(sessionId, conversationId)) {
             log.warn("缓存已存在, sessionId={}, conversationId={}", sessionId, conversationId);
+            addCacheLog(LogLevel.ERROR, OPERATION_CACHE_START, null, sessionId, conversationId);
             throw new BusinessException(ErrorCode.DUPLICATE_KEY, "缓存已存在");
         }
         String cacheId = provider.createCache(sessionId, conversationId);
         if (cacheId == null) {
             log.warn("创建缓存失败, sessionId={}, conversationId={}", sessionId, conversationId);
+            addCacheLog(LogLevel.ERROR, OPERATION_CACHE_START, null, sessionId, conversationId);
             throw new BusinessException(ErrorCode.DUPLICATE_KEY, "缓存已存在");
         }
+        addCacheLog(LogLevel.INFO, OPERATION_CACHE_START, cacheId, sessionId, conversationId);
         return cacheId;
     }
 
@@ -76,12 +95,22 @@ public class ChatDataCacheManager {
      */
     public void appendChunk(String cacheId, ChatChunk chunk) {
         if (!provider.cacheExists(cacheId)) {
+            addCacheLog(LogLevel.ERROR, OPERATION_CACHE_APPEND, cacheId, null, null);
             throw new BusinessException(ErrorCode.NOT_FOUND, "缓存不存在");
         }
         if (provider.isCacheDone(cacheId)) {
+            addCacheLog(LogLevel.ERROR, OPERATION_CACHE_APPEND, cacheId, null, null);
             throw new BusinessException(ErrorCode.PARAM_INVALID, "缓存已结束");
         }
         provider.appendChunk(cacheId, chunk);
+        if (agentLog != null) {
+            boolean isFirstChunk = (chunk.getIndex() != null && chunk.getIndex() == 0)
+                    || provider.getMaxChunkIndex(cacheId) == 0;
+            boolean isEndChunk = chunk.getFinishReason() != null;
+            if (isFirstChunk || isEndChunk) {
+                addCacheLog(LogLevel.INFO, OPERATION_CACHE_APPEND, cacheId, null, null);
+            }
+        }
     }
 
     /**
@@ -90,6 +119,7 @@ public class ChatDataCacheManager {
      * @param cacheId 缓存 ID
      */
     public void removeCache(String cacheId) {
+        addCacheLog(LogLevel.INFO, OPERATION_CACHE_REMOVE, cacheId, null, null);
         provider.removeCache(cacheId);
     }
 
@@ -116,6 +146,8 @@ public class ChatDataCacheManager {
             throw new BusinessException(ErrorCode.PARAM_INVALID, "起始序号超过最大序号");
         }
 
+        addCacheLog(LogLevel.INFO, OPERATION_CACHE_STREAM, cacheId, null, null);
+
         AtomicReference<Integer> lastIndex = new AtomicReference<>(startIndex - 1);
         AtomicBoolean finished = new AtomicBoolean(false);
         AtomicLong lastDataTick = new AtomicLong(0);
@@ -133,7 +165,8 @@ public class ChatDataCacheManager {
                     .concatWith(pollNewChunks(cacheId, lastIndex, finished, lastDataTick));
         });
 
-        return chunkFlux.map(chunk -> ServerSentEvent.<ChatChunk>builder().data(chunk).build());
+        return chunkFlux.map(chunk -> ServerSentEvent.<ChatChunk>builder().data(chunk).build())
+                .doFinally(signalType -> addCacheLog(LogLevel.INFO, OPERATION_CACHE_STREAM, cacheId, null, null));
     }
 
     /**
@@ -176,5 +209,49 @@ public class ChatDataCacheManager {
                     }
                     return Flux.empty();
                 });
+    }
+
+    /**
+     * 记录一条智能体日志，agentLog 为 null 时静默跳过，实现抛异常不影响主流程。
+     */
+    private void addLog(LogData logData) {
+        if (agentLog != null) {
+            try {
+                agentLog.addLog(logData);
+            } catch (Exception e) {
+                log.warn("记录智能体日志失败: {}", e.getMessage(), e);
+            }
+        }
+    }
+
+    /**
+     * 构建并记录聊天数据缓存日志。仅持有 cacheId 时通过 provider 解析会话/对话 ID。
+     */
+    private void addCacheLog(LogLevel logLevel, String operation, String cacheId, String sessionId, String conversationId) {
+        if (agentLog == null) {
+            return;
+        }
+        if (cacheId != null && (sessionId == null || conversationId == null)) {
+            try {
+                CacheSessionInfo info = provider.getCacheSessionInfo(cacheId);
+                if (info != null) {
+                    if (sessionId == null) {
+                        sessionId = info.sessionId();
+                    }
+                    if (conversationId == null) {
+                        conversationId = info.conversationId();
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("根据缓存 ID 获取会话/对话信息失败: {}", e.getMessage(), e);
+            }
+        }
+        addLog(ChatCacheLogData.builder()
+                .logLevel(logLevel)
+                .operation(operation)
+                .sessionId(sessionId)
+                .conversationId(conversationId)
+                .cacheId(cacheId)
+                .build());
     }
 }

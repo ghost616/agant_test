@@ -7,6 +7,7 @@ import com.ghost616.agentbase.service.agent.invoker.HookInvoker;
 import com.ghost616.agentbase.service.agent.invoker.HookManager;
 import com.ghost616.agentbase.service.agent.log.AgentLog;
 import com.ghost616.agentbase.sendmessage.MessageSender;
+import com.ghost616.agentbase.service.agent.ChatDataCacheManager;
 import com.ghost616.agentbase.service.agent.ChatDataProvider;
 import com.ghost616.agentbase.service.agent.ContextDataProvider;
 import com.ghost616.agentbase.service.agent.MessageDataProvider;
@@ -193,6 +194,50 @@ class AgentAssemblerTest {
         agentAssembler.setAgentLog(null);
 
         assertNull(getRegistry().getAgentLog());
+    }
+
+    // ========== ChatDataCacheManager 注册验证 ==========
+
+    @Test
+    void setChatDataCacheManager_build前调用_build后registry仍为null() throws Exception {
+        ChatDataCacheManager chatDataCacheManager = mock(ChatDataCacheManager.class);
+        agentAssembler.setChatDataCacheManager(chatDataCacheManager);
+        agentAssembler.build();
+
+        assertNull(getRegistry().getChatDataCacheManager());
+    }
+
+    @Test
+    void setChatDataCacheManager_build后调用_直接注册到registry() throws Exception {
+        ChatDataCacheManager chatDataCacheManager = mock(ChatDataCacheManager.class);
+        agentAssembler.build();
+        agentAssembler.setChatDataCacheManager(chatDataCacheManager);
+
+        assertSame(chatDataCacheManager, getRegistry().getChatDataCacheManager());
+    }
+
+    @Test
+    void setChatDataCacheManager_build后调用且设置null_registry为null() throws Exception {
+        agentAssembler.build();
+        agentAssembler.setChatDataCacheManager(null);
+
+        assertNull(getRegistry().getChatDataCacheManager());
+    }
+
+    @Test
+    void setChatDataCacheManager_build后调用_透传给agentMessageProxy() throws Exception {
+        ChatDataCacheManager chatDataCacheManager = mock(ChatDataCacheManager.class);
+        agentAssembler.build();
+        agentAssembler.setChatDataCacheManager(chatDataCacheManager);
+
+        Field proxyField = AgentAssembler.class.getDeclaredField("agentMessageProxy");
+        proxyField.setAccessible(true);
+        Object agentMessageProxy = proxyField.get(agentAssembler);
+        assertNotNull(agentMessageProxy);
+
+        Field cacheField = agentMessageProxy.getClass().getDeclaredField("chatDataCacheManager");
+        cacheField.setAccessible(true);
+        assertSame(chatDataCacheManager, cacheField.get(agentMessageProxy));
     }
 
     private AgentComponentRegistry getRegistry() throws Exception {

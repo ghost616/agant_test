@@ -4,6 +4,7 @@ import com.ghost616.agentbase.core.AgentComponentRegistry;
 import com.ghost616.agentbase.dto.model.ModelConfigData;
 import com.ghost616.agentbase.service.agent.AgentContextManager;
 import com.ghost616.agentbase.service.agent.AgentMessageProxy;
+import com.ghost616.agentbase.service.agent.ChatDataCacheManager;
 import com.ghost616.agentbase.service.agent.ChatDataProvider;
 import com.ghost616.agentbase.service.agent.ChatService;
 import com.ghost616.agentbase.service.agent.ContextDataProvider;
@@ -51,6 +52,7 @@ public class AgentAssembler {
     private ChatDataProviderProxy chatDataProviderProxy;
     private Result cachedResult;
     private HookManager hookManager;
+    private AgentMessageProxy agentMessageProxy;
     private boolean built = false;
 
     public AgentAssembler(ContextDataProvider contextDataProvider,
@@ -90,6 +92,15 @@ public class AgentAssembler {
         }
     }
 
+    public void setChatDataCacheManager(ChatDataCacheManager chatDataCacheManager) {
+        if (registry != null) {
+            registry.setChatDataCacheManager(chatDataCacheManager);
+        }
+        if (agentMessageProxy != null) {
+            agentMessageProxy.setChatDataCacheManager(chatDataCacheManager);
+        }
+    }
+
     public Result build() {
         if (built) {
             return cachedResult;
@@ -124,6 +135,7 @@ public class AgentAssembler {
         registry.setHookManager(this.hookManager);
 
         AgentMessageProxy agentMessageProxy = new AgentMessageProxy(chatService, toolExecutionService);
+        this.agentMessageProxy = agentMessageProxy;
         registry.getAgentContextManager().setAgentMessageProxy(agentMessageProxy);
 
         cachedResult = new Result(chatService, toolExecutionService, chatDataProviderProxy.getMessageSavePostHook());

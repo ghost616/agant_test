@@ -23,10 +23,15 @@ public class AgentMessageProxy {
     private static final SecureRandom RANDOM = new SecureRandom();
     private final ChatService chatService;
     private final ToolExecutionService toolExecutionService;
+    private ChatDataCacheManager chatDataCacheManager;
 
     public AgentMessageProxy(ChatService chatService, ToolExecutionService toolExecutionService) {
         this.chatService = chatService;
         this.toolExecutionService = toolExecutionService;
+    }
+
+    public void setChatDataCacheManager(ChatDataCacheManager chatDataCacheManager) {
+        this.chatDataCacheManager = chatDataCacheManager;
     }
 
     public Message sendUserMessage(String childSessionId, String content, String modelId, Boolean thinking) {

@@ -3,10 +3,15 @@ package com.ghost616.agentbase.service.agent;
 import com.ghost616.agentbase.dto.model.ChatChunk;
 import com.ghost616.agentbase.enums.ErrorCode;
 import com.ghost616.agentbase.enums.FinishReason;
+import com.ghost616.agentbase.enums.LogLevel;
+import com.ghost616.agentbase.enums.LogType;
 import com.ghost616.agentbase.exception.BusinessException;
+import com.ghost616.agentbase.service.agent.log.AgentLog;
+import com.ghost616.agentbase.service.agent.log.ChatCacheLogData;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.codec.ServerSentEvent;
@@ -17,10 +22,12 @@ import java.time.Duration;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -29,6 +36,9 @@ class ChatDataCacheManagerTest {
 
     @Mock
     private ChatDataCacheProvider provider;
+
+    @Mock
+    private AgentLog agentLog;
 
     private ChatDataCacheManager manager;
 
@@ -248,5 +258,183 @@ class ChatDataCacheManagerTest {
 
         assertEquals(ErrorCode.PARAM_INVALID, ex.getErrorCode());
         verify(provider, never()).getChunks(any(), anyInt(), anyInt());
+    }
+
+    @Test
+    void startCache_shouldLogOnSuccess() {
+        manager.setAgentLog(agentLog);
+        when(provider.cacheExists(sessionId, conversationId)).thenReturn(false);
+        when(provider.createCache(sessionId, conversationId)).thenReturn(cacheId);
+
+        manager.startCache(sessionId, conversationId);
+
+        ArgumentCaptor<ChatCacheLogData> captor = ArgumentCaptor.forClass(ChatCacheLogData.class);
+        verify(agentLog).addLog(captor.capture());
+        ChatCacheLogData logData = captor.getValue();
+        assertEquals(LogLevel.INFO, logData.getLogLevel());
+        assertEquals(LogType.CHAT_CACHE, logData.logType());
+        assertEquals("CACHE_START", logData.getOperation());
+        assertEquals(sessionId, logData.getSessionId());
+        assertEquals(conversationId, logData.getConversationId());
+        assertEquals(cacheId, logData.getCacheId());
+        verify(provider, never()).getCacheSessionInfo(any());
+    }
+
+    @Test
+    void startCache_whenCacheAlreadyExists_shouldLogError() {
+        manager.setAgentLog(agentLog);
+        when(provider.cacheExists(sessionId, conversationId)).thenReturn(true);
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> manager.startCache(sessionId, conversationId));
+
+        assertEquals(ErrorCode.DUPLICATE_KEY, ex.getErrorCode());
+        ArgumentCaptor<ChatCacheLogData> captor = ArgumentCaptor.forClass(ChatCacheLogData.class);
+        verify(agentLog).addLog(captor.capture());
+        ChatCacheLogData logData = captor.getValue();
+        assertEquals(LogLevel.ERROR, logData.getLogLevel());
+        assertEquals("CACHE_START", logData.getOperation());
+        assertEquals(sessionId, logData.getSessionId());
+        assertEquals(conversationId, logData.getConversationId());
+        assertNull(logData.getCacheId());
+    }
+
+    @Test
+    void appendChunk_shouldLogOnSuccess() {
+        manager.setAgentLog(agentLog);
+        ChatChunk chunk = chunk(0);
+        when(provider.cacheExists(cacheId)).thenReturn(true);
+        when(provider.isCacheDone(cacheId)).thenReturn(false);
+        when(provider.getCacheSessionInfo(cacheId)).thenReturn(new CacheSessionInfo(sessionId, conversationId));
+
+        manager.appendChunk(cacheId, chunk);
+
+        verify(provider).appendChunk(cacheId, chunk);
+        ArgumentCaptor<ChatCacheLogData> captor = ArgumentCaptor.forClass(ChatCacheLogData.class);
+        verify(agentLog).addLog(captor.capture());
+        ChatCacheLogData logData = captor.getValue();
+        assertEquals(LogLevel.INFO, logData.getLogLevel());
+        assertEquals("CACHE_APPEND", logData.getOperation());
+        assertEquals(cacheId, logData.getCacheId());
+        assertEquals(sessionId, logData.getSessionId());
+        assertEquals(conversationId, logData.getConversationId());
+        verify(provider).getCacheSessionInfo(cacheId);
+    }
+
+    @Test
+    void appendChunk_whenCacheNotExists_shouldLogError() {
+        manager.setAgentLog(agentLog);
+        when(provider.cacheExists(cacheId)).thenReturn(false);
+        when(provider.getCacheSessionInfo(cacheId)).thenReturn(new CacheSessionInfo(sessionId, conversationId));
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> manager.appendChunk(cacheId, chunk(0)));
+
+        assertEquals(ErrorCode.NOT_FOUND, ex.getErrorCode());
+        verify(provider, never()).appendChunk(any(), any());
+        ArgumentCaptor<ChatCacheLogData> captor = ArgumentCaptor.forClass(ChatCacheLogData.class);
+        verify(agentLog).addLog(captor.capture());
+        ChatCacheLogData logData = captor.getValue();
+        assertEquals(LogLevel.ERROR, logData.getLogLevel());
+        assertEquals("CACHE_APPEND", logData.getOperation());
+        assertEquals(cacheId, logData.getCacheId());
+        assertEquals(sessionId, logData.getSessionId());
+        assertEquals(conversationId, logData.getConversationId());
+    }
+
+    @Test
+    void appendChunk_whenCacheDone_shouldLogError() {
+        manager.setAgentLog(agentLog);
+        when(provider.cacheExists(cacheId)).thenReturn(true);
+        when(provider.isCacheDone(cacheId)).thenReturn(true);
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> manager.appendChunk(cacheId, chunk(0)));
+
+        assertEquals(ErrorCode.PARAM_INVALID, ex.getErrorCode());
+        verify(provider, never()).appendChunk(any(), any());
+        ArgumentCaptor<ChatCacheLogData> captor = ArgumentCaptor.forClass(ChatCacheLogData.class);
+        verify(agentLog).addLog(captor.capture());
+        ChatCacheLogData logData = captor.getValue();
+        assertEquals(LogLevel.ERROR, logData.getLogLevel());
+        assertEquals("CACHE_APPEND", logData.getOperation());
+        assertEquals(cacheId, logData.getCacheId());
+    }
+
+    @Test
+    void appendChunk_whenNotFirstOrEndChunk_shouldNotLog() {
+        manager.setAgentLog(agentLog);
+        ChatChunk chunk = chunk(1);
+        when(provider.cacheExists(cacheId)).thenReturn(true);
+        when(provider.isCacheDone(cacheId)).thenReturn(false);
+        when(provider.getMaxChunkIndex(cacheId)).thenReturn(1);
+
+        manager.appendChunk(cacheId, chunk);
+
+        verify(provider).appendChunk(cacheId, chunk);
+        verify(agentLog, never()).addLog(any(ChatCacheLogData.class));
+    }
+
+    @Test
+    void appendChunk_whenEndChunk_shouldLog() {
+        manager.setAgentLog(agentLog);
+        ChatChunk chunk = chunkWithFinish(5, FinishReason.STOP);
+        when(provider.cacheExists(cacheId)).thenReturn(true);
+        when(provider.isCacheDone(cacheId)).thenReturn(false);
+        when(provider.getMaxChunkIndex(cacheId)).thenReturn(5);
+        when(provider.getCacheSessionInfo(cacheId)).thenReturn(new CacheSessionInfo(sessionId, conversationId));
+
+        manager.appendChunk(cacheId, chunk);
+
+        verify(provider).appendChunk(cacheId, chunk);
+        ArgumentCaptor<ChatCacheLogData> captor = ArgumentCaptor.forClass(ChatCacheLogData.class);
+        verify(agentLog).addLog(captor.capture());
+        ChatCacheLogData logData = captor.getValue();
+        assertEquals(LogLevel.INFO, logData.getLogLevel());
+        assertEquals("CACHE_APPEND", logData.getOperation());
+        assertEquals(cacheId, logData.getCacheId());
+        assertEquals(sessionId, logData.getSessionId());
+        assertEquals(conversationId, logData.getConversationId());
+    }
+
+    @Test
+    void removeCache_shouldLog() {
+        manager.setAgentLog(agentLog);
+        when(provider.getCacheSessionInfo(cacheId)).thenReturn(new CacheSessionInfo(sessionId, conversationId));
+
+        manager.removeCache(cacheId);
+
+        verify(provider).removeCache(cacheId);
+        ArgumentCaptor<ChatCacheLogData> captor = ArgumentCaptor.forClass(ChatCacheLogData.class);
+        verify(agentLog).addLog(captor.capture());
+        ChatCacheLogData logData = captor.getValue();
+        assertEquals(LogLevel.INFO, logData.getLogLevel());
+        assertEquals("CACHE_REMOVE", logData.getOperation());
+        assertEquals(cacheId, logData.getCacheId());
+        assertEquals(sessionId, logData.getSessionId());
+        assertEquals(conversationId, logData.getConversationId());
+    }
+
+    @Test
+    void getStream_shouldLogStartAndEnd() {
+        manager.setAgentLog(agentLog);
+        when(provider.cacheExists(cacheId)).thenReturn(true);
+        when(provider.getMaxChunkIndex(cacheId)).thenReturn(0);
+        when(provider.getChunks(cacheId, 0, 0)).thenReturn(List.of(chunkWithFinish(0, FinishReason.STOP)));
+        when(provider.getCacheSessionInfo(cacheId)).thenReturn(new CacheSessionInfo(sessionId, conversationId));
+
+        StepVerifier.create(manager.getStream(cacheId, 0))
+                .assertNext(ev -> assertEquals(0, ev.data().getIndex()))
+                .verifyComplete();
+
+        ArgumentCaptor<ChatCacheLogData> captor = ArgumentCaptor.forClass(ChatCacheLogData.class);
+        verify(agentLog, times(2)).addLog(captor.capture());
+        for (ChatCacheLogData logData : captor.getAllValues()) {
+            assertEquals(LogLevel.INFO, logData.getLogLevel());
+            assertEquals("CACHE_STREAM", logData.getOperation());
+            assertEquals(cacheId, logData.getCacheId());
+            assertEquals(sessionId, logData.getSessionId());
+            assertEquals(conversationId, logData.getConversationId());
+        }
     }
 }

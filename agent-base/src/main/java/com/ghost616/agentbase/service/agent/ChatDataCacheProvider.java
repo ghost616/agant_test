@@ -55,6 +55,14 @@ public interface ChatDataCacheProvider {
     String getCacheId(String sessionId, String conversationId);
 
     /**
+     * 按缓存 ID 返回缓存所属的会话与对话信息。
+     *
+     * @param cacheId 缓存 ID
+     * @return 缓存会话信息（sessionId/conversationId），缓存不存在时返回 null
+     */
+    CacheSessionInfo getCacheSessionInfo(String cacheId);
+
+    /**
      * 获取缓存中最大块序号，无数据时返回 -1。
      *
      * @param cacheId 缓存 ID

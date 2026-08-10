@@ -1,6 +1,7 @@
 package com.ghost616.agentbase.core;
 
 import com.ghost616.agentbase.service.agent.AgentContextManager;
+import com.ghost616.agentbase.service.agent.ChatDataCacheManager;
 import com.ghost616.agentbase.service.agent.ChatDataProvider;
 import com.ghost616.agentbase.service.agent.ContextDataProvider;
 import com.ghost616.agentbase.service.agent.MessageDataProvider;
@@ -54,6 +55,9 @@ public class AgentComponentRegistry {
 
     @Setter
     private AgentLog agentLog;
+
+    @Setter
+    private ChatDataCacheManager chatDataCacheManager;
 
     private <T> T requireInitialized(T value, String name) {
         if (value == null) {
@@ -132,5 +136,9 @@ public class AgentComponentRegistry {
 
     public AgentLog getAgentLog() {
         return agentLog;
+    }
+
+    public ChatDataCacheManager getChatDataCacheManager() {
+        return chatDataCacheManager;
     }
 }

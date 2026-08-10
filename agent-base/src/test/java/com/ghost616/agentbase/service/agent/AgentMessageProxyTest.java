@@ -12,6 +12,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.codec.ServerSentEvent;
 import reactor.core.publisher.Flux;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -35,6 +37,56 @@ class AgentMessageProxyTest {
     @BeforeEach
     void setUp() {
         proxy = new AgentMessageProxy(chatService, toolExecutionService);
+    }
+
+    @Test
+    void setChatDataCacheManager后字段应被设置() {
+        ChatDataCacheManager manager = new ChatDataCacheManager(new ChatDataCacheProvider() {
+            @Override
+            public String createCache(String sessionId, String conversationId) {
+                return null;
+            }
+
+            @Override
+            public boolean cacheExists(String cacheId) {
+                return false;
+            }
+
+            @Override
+            public boolean cacheExists(String sessionId, String conversationId) {
+                return false;
+            }
+
+            @Override
+            public boolean isCacheDone(String cacheId) {
+                return false;
+            }
+
+            @Override
+            public String getCacheId(String sessionId, String conversationId) {
+                return null;
+            }
+
+            @Override
+            public int getMaxChunkIndex(String cacheId) {
+                return -1;
+            }
+
+            @Override
+            public void appendChunk(String cacheId, ChatChunk chunk) {
+            }
+
+            @Override
+            public void removeCache(String cacheId) {
+            }
+
+            @Override
+            public List<ChatChunk> getChunks(String cacheId, int startIndex, int endIndex) {
+                return Collections.emptyList();
+            }
+        });
+        proxy.setChatDataCacheManager(manager);
+        assertEquals(manager, getPrivateField(proxy, "chatDataCacheManager"));
     }
 
     @Test
@@ -215,5 +267,15 @@ class AgentMessageProxyTest {
         assertEquals("Result text", result.getContent());
         verify(toolExecutionService).executeTool(any());
         verify(toolExecutionService).continueAfterTools(any());
+    }
+
+    private static Object getPrivateField(Object target, String fieldName) {
+        try {
+            java.lang.reflect.Field field = target.getClass().getDeclaredField(fieldName);
+            field.setAccessible(true);
+            return field.get(target);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }

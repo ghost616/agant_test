@@ -22,7 +22,8 @@ public enum LogType {
     MESSAGE_QUERY("MESSAGE_QUERY", "消息查询"),
     MESSAGE_ROLLBACK("MESSAGE_ROLLBACK", "消息回退"),
     TOOL_EXECUTE("TOOL_EXECUTE", "工具执行"),
-    TOOL_CONTINUE("TOOL_CONTINUE", "工具执行后继续");
+    TOOL_CONTINUE("TOOL_CONTINUE", "工具执行后继续"),
+    CHAT_CACHE("CHAT_CACHE", "对话数据缓存");
 
     private final String code;
     private final String description;

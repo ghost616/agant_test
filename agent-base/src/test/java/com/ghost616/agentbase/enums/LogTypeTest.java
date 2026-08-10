@@ -11,8 +11,8 @@ class LogTypeTest {
     }
 
     @Test
-    void 枚举值数量应为18() {
-        assertEquals(18, LogType.values().length);
+    void 枚举值数量应为19() {
+        assertEquals(19, LogType.values().length);
     }
 
     @Test
@@ -35,6 +35,7 @@ class LogTypeTest {
         assertNotNull(LogType.MESSAGE_ROLLBACK);
         assertNotNull(LogType.TOOL_EXECUTE);
         assertNotNull(LogType.TOOL_CONTINUE);
+        assertNotNull(LogType.CHAT_CACHE);
     }
 
     @Test
@@ -143,5 +144,11 @@ class LogTypeTest {
     void TOOL_CONTINUE的code与description应正确() {
         assertEquals("TOOL_CONTINUE", LogType.TOOL_CONTINUE.getCode());
         assertEquals("工具执行后继续", LogType.TOOL_CONTINUE.getDescription());
+    }
+
+    @Test
+    void CHAT_CACHE的code与description应正确() {
+        assertEquals("CHAT_CACHE", LogType.CHAT_CACHE.getCode());
+        assertEquals("对话数据缓存", LogType.CHAT_CACHE.getDescription());
     }
 }
