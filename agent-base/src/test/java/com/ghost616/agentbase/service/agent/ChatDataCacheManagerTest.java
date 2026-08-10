@@ -237,38 +237,14 @@ class ChatDataCacheManagerTest {
     }
 
     @Test
-    void getStream_whenNoData_shouldPollForNewChunksUntilFinishReason() {
-        when(provider.cacheExists(cacheId)).thenReturn(true);
-        when(provider.getMaxChunkIndex(cacheId)).thenReturn(-1).thenReturn(0).thenReturn(1);
-        when(provider.getChunks(cacheId, 0, 0)).thenReturn(List.of(chunk(0)));
-        when(provider.getChunks(cacheId, 1, 1))
-                .thenReturn(List.of(chunkWithFinish(1, FinishReason.STOP)));
-
-        StepVerifier.withVirtualTime(() -> manager.getStream(cacheId, 0))
-                .thenAwait(Duration.ofMillis(100))
-                .assertNext(ev -> assertEquals(0, ev.data().getIndex()))
-                .thenAwait(Duration.ofMillis(100))
-                .assertNext(ev -> {
-                    assertEquals(1, ev.data().getIndex());
-                    assertEquals(FinishReason.STOP, ev.data().getFinishReason());
-                })
-                .verifyComplete();
-        verify(provider).getChunks(cacheId, 0, 0);
-        verify(provider).getChunks(cacheId, 1, 1);
-    }
-
-    @Test
-    void getStream_whenNoDataAndNothingArrives_shouldEmitErrorFinishChunk() {
+    void getStream_whenNoData_shouldThrowNotFound() {
         when(provider.cacheExists(cacheId)).thenReturn(true);
         when(provider.getMaxChunkIndex(cacheId)).thenReturn(-1);
 
-        StepVerifier.withVirtualTime(() -> manager.getStream(cacheId, 0))
-                .thenAwait(Duration.ofMillis(300_100))
-                .assertNext(ev -> {
-                    assertEquals(FinishReason.ERROR, ev.data().getFinishReason());
-                    assertEquals(0, ev.data().getIndex());
-                })
-                .verifyComplete();
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> manager.getStream(cacheId, 0));
+
+        assertEquals(ErrorCode.NOT_FOUND, ex.getErrorCode());
         verify(provider, never()).getChunks(any(), anyInt(), anyInt());
     }
 

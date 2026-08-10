@@ -125,22 +125,24 @@ public class ChatDataCacheManager {
 
     /**
      * 从缓存读取从 startIndex 开始的聊天块并转为 SSE 流返回。
-     * 缓存不存在或 startIndex 大于最大序号时抛出 {@link BusinessException}；
-     * 缓存存在但暂无数据时，将 lastIndex 初始化为 -1 直接进入轮询，等待数据写入后输出。
+     * 缓存不存在、缓存无数据（maxIndex < 0）或 startIndex 大于最大序号时抛出 {@link BusinessException}。
      * 逐个输出已缓存的块并检查 finishReason，若所有可用块均未结束则轮询获取新增块，
      * 直至遇到 finishReason 非 null 的块或超时（生成 finishReason=ERROR 结束块）。
      *
      * @param cacheId    缓存 ID
      * @param startIndex 起始序号
      * @return SSE 聊天块流
-     * @throws BusinessException 缓存不存在或起始序号越界
+     * @throws BusinessException 缓存不存在、缓存无数据或起始序号越界
      */
     public Flux<ServerSentEvent<ChatChunk>> getStream(String cacheId, int startIndex) {
         if (!provider.cacheExists(cacheId)) {
             throw new BusinessException(ErrorCode.NOT_FOUND, "缓存不存在");
         }
         int maxIndex = provider.getMaxChunkIndex(cacheId);
-        if (maxIndex >= 0 && startIndex > maxIndex) {
+        if (maxIndex < 0) {
+            throw new BusinessException(ErrorCode.NOT_FOUND, "缓存无数据");
+        }
+        if (startIndex > maxIndex) {
             throw new BusinessException(ErrorCode.PARAM_INVALID, "起始序号超过最大序号");
         }
 
@@ -151,10 +153,6 @@ public class ChatDataCacheManager {
         AtomicLong lastDataTick = new AtomicLong(0);
 
         Flux<ChatChunk> chunkFlux = Flux.defer(() -> {
-            if (maxIndex < 0) {
-                lastIndex.set(-1);
-                return pollNewChunks(cacheId, lastIndex, finished, lastDataTick);
-            }
             List<ChatChunk> chunks = provider.getChunks(cacheId, startIndex, maxIndex);
             lastIndex.set(maxIndex);
             for (ChatChunk chunk : chunks) {
