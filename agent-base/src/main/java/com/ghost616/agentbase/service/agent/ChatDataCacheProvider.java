@@ -29,6 +29,32 @@ public interface ChatDataCacheProvider {
     boolean cacheExists(String cacheId);
 
     /**
+     * 按会话与对话判断缓存是否存在。
+     *
+     * @param sessionId      会话 ID
+     * @param conversationId 对话 ID
+     * @return 存在返回 true，否则返回 false
+     */
+    boolean cacheExists(String sessionId, String conversationId);
+
+    /**
+     * 判断缓存是否已结束（数据写入完成）。
+     *
+     * @param cacheId 缓存 ID
+     * @return 已结束返回 true，否则返回 false
+     */
+    boolean isCacheDone(String cacheId);
+
+    /**
+     * 按会话与对话返回缓存 ID。
+     *
+     * @param sessionId      会话 ID
+     * @param conversationId 对话 ID
+     * @return 缓存 ID，不存在时返回 null
+     */
+    String getCacheId(String sessionId, String conversationId);
+
+    /**
      * 获取缓存中最大块序号，无数据时返回 -1。
      *
      * @param cacheId 缓存 ID

@@ -2,6 +2,7 @@ package com.ghost616.agentbase.service.agent;
 
 import com.ghost616.agentbase.dto.model.ChatChunk;
 import com.ghost616.agentbase.enums.ErrorCode;
+import com.ghost616.agentbase.enums.FinishReason;
 import com.ghost616.agentbase.exception.BusinessException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -12,6 +13,7 @@ import org.springframework.http.codec.ServerSentEvent;
 import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
 
+import java.time.Duration;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -43,34 +45,76 @@ class ChatDataCacheManagerTest {
         return ChatChunk.builder().index(index).delta("delta-" + index).build();
     }
 
+    private ChatChunk chunkWithFinish(int index, FinishReason finishReason) {
+        return ChatChunk.builder().index(index).delta("delta-" + index).finishReason(finishReason).build();
+    }
+
+    @Test
+    void getCacheId_shouldDelegateToProvider() {
+        when(provider.getCacheId(sessionId, conversationId)).thenReturn(cacheId);
+
+        String actual = manager.getCacheId(sessionId, conversationId);
+
+        assertEquals(cacheId, actual);
+        verify(provider).getCacheId(sessionId, conversationId);
+    }
+
     @Test
     void startCache_shouldReturnCacheId() {
+        when(provider.cacheExists(sessionId, conversationId)).thenReturn(false);
         when(provider.createCache(sessionId, conversationId)).thenReturn(cacheId);
 
         String actual = manager.startCache(sessionId, conversationId);
 
         assertEquals(cacheId, actual);
+        verify(provider).cacheExists(sessionId, conversationId);
         verify(provider).createCache(sessionId, conversationId);
     }
 
     @Test
     void startCache_whenCacheAlreadyExists_shouldThrowDuplicateKey() {
-        when(provider.createCache(sessionId, conversationId)).thenReturn(null);
+        when(provider.cacheExists(sessionId, conversationId)).thenReturn(true);
 
         BusinessException ex = assertThrows(BusinessException.class,
                 () -> manager.startCache(sessionId, conversationId));
 
         assertEquals(ErrorCode.DUPLICATE_KEY, ex.getErrorCode());
-        verify(provider).createCache(sessionId, conversationId);
+        verify(provider).cacheExists(sessionId, conversationId);
+        verify(provider, never()).createCache(any(), any());
     }
 
     @Test
     void appendChunk_shouldDelegateToProvider() {
         ChatChunk chunk = chunk(0);
+        when(provider.cacheExists(cacheId)).thenReturn(true);
+        when(provider.isCacheDone(cacheId)).thenReturn(false);
 
         manager.appendChunk(cacheId, chunk);
 
         verify(provider).appendChunk(cacheId, chunk);
+    }
+
+    @Test
+    void appendChunk_whenCacheNotExists_shouldThrowNotFound() {
+        when(provider.cacheExists(cacheId)).thenReturn(false);
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> manager.appendChunk(cacheId, chunk(0)));
+
+        assertEquals(ErrorCode.NOT_FOUND, ex.getErrorCode());
+        verify(provider, never()).appendChunk(any(), any());
+    }
+
+    @Test
+    void appendChunk_whenCacheDone_shouldThrowParamInvalid() {
+        when(provider.cacheExists(cacheId)).thenReturn(true);
+        when(provider.isCacheDone(cacheId)).thenReturn(true);
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> manager.appendChunk(cacheId, chunk(0)));
+
+        assertEquals(ErrorCode.PARAM_INVALID, ex.getErrorCode());
+        verify(provider, never()).appendChunk(any(), any());
     }
 
     @Test
@@ -82,7 +126,7 @@ class ChatDataCacheManagerTest {
 
     @Test
     void getStream_shouldReturnSseEventsForChunkRange() {
-        List<ChatChunk> chunks = List.of(chunk(0), chunk(1), chunk(2));
+        List<ChatChunk> chunks = List.of(chunk(0), chunk(1), chunkWithFinish(2, FinishReason.STOP));
         when(provider.cacheExists(cacheId)).thenReturn(true);
         when(provider.getMaxChunkIndex(cacheId)).thenReturn(2);
         when(provider.getChunks(cacheId, 0, 2)).thenReturn(chunks);
@@ -92,22 +136,82 @@ class ChatDataCacheManagerTest {
         StepVerifier.create(flux)
                 .assertNext(ev -> assertEquals(0, ev.data().getIndex()))
                 .assertNext(ev -> assertEquals(1, ev.data().getIndex()))
-                .assertNext(ev -> assertEquals(2, ev.data().getIndex()))
+                .assertNext(ev -> {
+                    assertEquals(2, ev.data().getIndex());
+                    assertEquals(FinishReason.STOP, ev.data().getFinishReason());
+                })
                 .verifyComplete();
         verify(provider).getChunks(cacheId, 0, 2);
     }
 
     @Test
     void getStream_whenStartIndexEqualsMaxIndex_shouldReturnSingleEvent() {
-        List<ChatChunk> chunks = List.of(chunk(1));
+        List<ChatChunk> chunks = List.of(chunkWithFinish(1, FinishReason.STOP));
         when(provider.cacheExists(cacheId)).thenReturn(true);
         when(provider.getMaxChunkIndex(cacheId)).thenReturn(1);
         when(provider.getChunks(cacheId, 1, 1)).thenReturn(chunks);
 
         StepVerifier.create(manager.getStream(cacheId, 1))
-                .assertNext(ev -> assertEquals(1, ev.data().getIndex()))
+                .assertNext(ev -> {
+                    assertEquals(1, ev.data().getIndex());
+                    assertEquals(FinishReason.STOP, ev.data().getFinishReason());
+                })
                 .verifyComplete();
         verify(provider).getChunks(cacheId, 1, 1);
+    }
+
+    @Test
+    void getStream_whenInitialChunksContainFinishReason_shouldComplete() {
+        List<ChatChunk> chunks = List.of(chunk(0), chunkWithFinish(1, FinishReason.STOP));
+        when(provider.cacheExists(cacheId)).thenReturn(true);
+        when(provider.getMaxChunkIndex(cacheId)).thenReturn(1);
+        when(provider.getChunks(cacheId, 0, 1)).thenReturn(chunks);
+
+        StepVerifier.create(manager.getStream(cacheId, 0))
+                .assertNext(ev -> assertEquals(0, ev.data().getIndex()))
+                .assertNext(ev -> {
+                    assertEquals(1, ev.data().getIndex());
+                    assertEquals(FinishReason.STOP, ev.data().getFinishReason());
+                })
+                .verifyComplete();
+        verify(provider).getChunks(cacheId, 0, 1);
+        verify(provider, never()).isCacheDone(cacheId);
+    }
+
+    @Test
+    void getStream_shouldPollForNewChunksUntilFinishReason() {
+        when(provider.cacheExists(cacheId)).thenReturn(true);
+        when(provider.getMaxChunkIndex(cacheId)).thenReturn(0).thenReturn(1);
+        when(provider.getChunks(cacheId, 0, 0)).thenReturn(List.of(chunk(0)));
+        when(provider.getChunks(cacheId, 1, 1))
+                .thenReturn(List.of(chunkWithFinish(1, FinishReason.STOP)));
+
+        StepVerifier.withVirtualTime(() -> manager.getStream(cacheId, 0))
+                .assertNext(ev -> assertEquals(0, ev.data().getIndex()))
+                .thenAwait(Duration.ofMillis(100))
+                .assertNext(ev -> {
+                    assertEquals(1, ev.data().getIndex());
+                    assertEquals(FinishReason.STOP, ev.data().getFinishReason());
+                })
+                .verifyComplete();
+        verify(provider).getChunks(cacheId, 0, 0);
+        verify(provider).getChunks(cacheId, 1, 1);
+    }
+
+    @Test
+    void getStream_whenNoNewDataForTimeout_shouldEmitErrorFinishChunk() {
+        when(provider.cacheExists(cacheId)).thenReturn(true);
+        when(provider.getMaxChunkIndex(cacheId)).thenReturn(0);
+        when(provider.getChunks(cacheId, 0, 0)).thenReturn(List.of(chunk(0)));
+
+        StepVerifier.withVirtualTime(() -> manager.getStream(cacheId, 0))
+                .assertNext(ev -> assertEquals(0, ev.data().getIndex()))
+                .thenAwait(Duration.ofMillis(300_100))
+                .assertNext(ev -> {
+                    assertEquals(FinishReason.ERROR, ev.data().getFinishReason());
+                    assertEquals(1, ev.data().getIndex());
+                })
+                .verifyComplete();
     }
 
     @Test
