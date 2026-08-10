@@ -45,9 +45,6 @@ export interface EvaluationResult {
 export interface ExecutionStatusResponse {
   evaluationId?: string;
   executionSessionId?: string;
-  status: string;
-  currentStep: number;
-  totalSteps: number;
 }
 
 export interface CacheStatusResponse {

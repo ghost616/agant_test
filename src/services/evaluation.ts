@@ -66,15 +66,6 @@ export async function executeEvaluation(id: string): Promise<ExecutionStatusResp
   return res.data.data;
 }
 
-export async function getExecutionStatus(
-  id: string,
-): Promise<ExecutionStatusResponse> {
-  const res = await api.get<ApiResponse<ExecutionStatusResponse>>(
-    `/evaluations/${id}/execute/status`,
-  );
-  return res.data.data;
-}
-
 export function getEvaluationStream(
   executionSessionId: string,
   callbacks: StreamCallbacks,

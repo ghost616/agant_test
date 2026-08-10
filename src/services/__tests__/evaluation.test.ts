@@ -16,7 +16,6 @@ vi.mock('../api', () => ({
 
 import {
   executeEvaluation,
-  getExecutionStatus,
   createEvalSession,
   generateEvalResult,
   getGenerateStatus,
@@ -34,7 +33,7 @@ describe('executeEvaluation', () => {
   });
 
   it('应调用 POST /evaluations/{id}/execute 并返回 executionSessionId', async () => {
-    const fakeStatus = { evaluationId: 'eval-123', executionSessionId: 'exec-1', status: 'PENDING', currentStep: 0, totalSteps: 3 };
+    const fakeStatus = { evaluationId: 'eval-123', executionSessionId: 'exec-1' };
     mockPost.mockResolvedValueOnce({ data: { data: fakeStatus } });
     const result = await executeEvaluation('eval-123');
     expect(mockPost).toHaveBeenCalledWith('/evaluations/eval-123/execute');
@@ -42,11 +41,11 @@ describe('executeEvaluation', () => {
   });
 
   it('应正确处理不同 id', async () => {
-    mockPost.mockResolvedValueOnce({ data: { data: { evaluationId: 'id-a', executionSessionId: 'exec-a', status: 'PENDING', currentStep: 0, totalSteps: 1 } } });
+    mockPost.mockResolvedValueOnce({ data: { data: { evaluationId: 'id-a', executionSessionId: 'exec-a' } } });
     await executeEvaluation('id-a');
     expect(mockPost).toHaveBeenCalledWith('/evaluations/id-a/execute');
 
-    mockPost.mockResolvedValueOnce({ data: { data: { evaluationId: 'id-b', executionSessionId: 'exec-b', status: 'PENDING', currentStep: 0, totalSteps: 1 } } });
+    mockPost.mockResolvedValueOnce({ data: { data: { evaluationId: 'id-b', executionSessionId: 'exec-b' } } });
     await executeEvaluation('id-b');
     expect(mockPost).toHaveBeenCalledWith('/evaluations/id-b/execute');
   });
@@ -54,41 +53,6 @@ describe('executeEvaluation', () => {
   it('应在 API 失败时抛出错误', async () => {
     mockPost.mockRejectedValueOnce(new Error('Network Error'));
     await expect(executeEvaluation('eval-123')).rejects.toThrow('Network Error');
-  });
-});
-
-describe('getExecutionStatus', () => {
-  beforeEach(() => {
-    mockGet.mockReset();
-  });
-
-  it('应调用 GET /evaluations/{id}/execute/status 并返回状态', async () => {
-    const fakeStatus = { status: 'running', currentStep: 1, totalSteps: 5 };
-    mockGet.mockResolvedValueOnce({ data: { data: fakeStatus } });
-    const result = await getExecutionStatus('eval-123');
-    expect(mockGet).toHaveBeenCalledWith('/evaluations/eval-123/execute/status');
-    expect(result).toEqual(fakeStatus);
-  });
-
-  it('应返回 completed 状态', async () => {
-    const fakeStatus = { status: 'completed', currentStep: 5, totalSteps: 5 };
-    mockGet.mockResolvedValueOnce({ data: { data: fakeStatus } });
-    const result = await getExecutionStatus('eval-123');
-    expect(result.status).toBe('completed');
-    expect(result.currentStep).toBe(5);
-    expect(result.totalSteps).toBe(5);
-  });
-
-  it('应返回 error 状态', async () => {
-    const fakeStatus = { status: 'error', currentStep: 3, totalSteps: 5 };
-    mockGet.mockResolvedValueOnce({ data: { data: fakeStatus } });
-    const result = await getExecutionStatus('eval-123');
-    expect(result.status).toBe('error');
-  });
-
-  it('应在 API 失败时抛出错误', async () => {
-    mockGet.mockRejectedValueOnce(new Error('Network Error'));
-    await expect(getExecutionStatus('eval-123')).rejects.toThrow('Network Error');
   });
 });
 
