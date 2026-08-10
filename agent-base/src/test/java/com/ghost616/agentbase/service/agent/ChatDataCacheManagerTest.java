@@ -210,13 +210,20 @@ class ChatDataCacheManagerTest {
 
     @Test
     void getStream_whenNoNewDataForTimeout_shouldEmitErrorFinishChunk() {
+        manager.setPollTimeoutMs(100);
         when(provider.cacheExists(cacheId)).thenReturn(true);
         when(provider.getMaxChunkIndex(cacheId)).thenReturn(0);
         when(provider.getChunks(cacheId, 0, 0)).thenReturn(List.of(chunk(0)));
 
-        StepVerifier.withVirtualTime(() -> manager.getStream(cacheId, 0))
+        StepVerifier.create(manager.getStream(cacheId, 0))
                 .assertNext(ev -> assertEquals(0, ev.data().getIndex()))
-                .thenAwait(Duration.ofMillis(300_100))
+                .then(() -> {
+                    try {
+                        Thread.sleep(500);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                })
                 .assertNext(ev -> {
                     assertEquals(FinishReason.ERROR, ev.data().getFinishReason());
                     assertEquals(1, ev.data().getIndex());

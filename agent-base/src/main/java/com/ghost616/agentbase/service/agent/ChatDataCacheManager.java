@@ -41,12 +41,23 @@ public class ChatDataCacheManager {
 
     private AgentLog agentLog;
 
+    private long pollTimeoutMs = POLL_TIMEOUT_MS;
+
     public ChatDataCacheManager(ChatDataCacheProvider provider) {
         this.provider = provider;
     }
 
     public void setAgentLog(AgentLog agentLog) {
         this.agentLog = agentLog;
+    }
+
+    /**
+     * 设置轮询无新数据超时时间，默认使用 {@link #POLL_TIMEOUT_MS}。供测试缩短超时验证。
+     *
+     * @param pollTimeoutMs 超时毫秒数
+     */
+    void setPollTimeoutMs(long pollTimeoutMs) {
+        this.pollTimeoutMs = pollTimeoutMs;
     }
 
     /**
@@ -150,7 +161,7 @@ public class ChatDataCacheManager {
 
         AtomicReference<Integer> lastIndex = new AtomicReference<>(startIndex - 1);
         AtomicBoolean finished = new AtomicBoolean(false);
-        AtomicLong lastDataTick = new AtomicLong(0);
+        AtomicLong lastDataTick = new AtomicLong(System.currentTimeMillis());
 
         Flux<ChatChunk> chunkFlux = Flux.defer(() -> {
             List<ChatChunk> chunks = provider.getChunks(cacheId, startIndex, maxIndex);
@@ -189,7 +200,7 @@ public class ChatDataCacheManager {
                     if (currentMax >= from) {
                         List<ChatChunk> newChunks = provider.getChunks(cacheId, from, currentMax);
                         lastIndex.set(currentMax);
-                        lastDataTick.set(tick);
+                        lastDataTick.set(System.currentTimeMillis());
                         for (ChatChunk chunk : newChunks) {
                             if (chunk.getFinishReason() != null) {
                                 finished.set(true);
@@ -198,7 +209,7 @@ public class ChatDataCacheManager {
                         }
                         return Flux.fromIterable(newChunks);
                     }
-                    if (tick - lastDataTick.get() >= POLL_TIMEOUT_MS) {
+                    if (System.currentTimeMillis() - lastDataTick.get() >= pollTimeoutMs) {
                         log.warn("轮询超时无新数据, cacheId={}, lastIndex={}", cacheId, lastIndex.get());
                         ChatChunk errorChunk = ChatChunk.builder()
                                 .index(lastIndex.get() + 1)
