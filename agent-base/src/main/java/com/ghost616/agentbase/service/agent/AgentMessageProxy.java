@@ -3,12 +3,13 @@ package com.ghost616.agentbase.service.agent;
 import com.ghost616.agentbase.dto.chat.ChatRequest;
 import com.ghost616.agentbase.dto.model.ChatChunk;
 import com.ghost616.agentbase.dto.model.Message;
+import com.ghost616.agentbase.enums.FinishReason;
+import com.ghost616.agentbase.util.JsonMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.codec.ServerSentEvent;
 import reactor.core.publisher.Flux;
 import reactor.core.scheduler.Schedulers;
 
-import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,9 +19,6 @@ public class AgentMessageProxy {
 
     private static final long TOOL_WAIT_TIMEOUT_MS = 60_000;
     private static final long TOOL_POLL_INTERVAL_MS = 200;
-    private static final char[] CONVERSATION_ID_CHARS = "0123456789abcdefghijklmnopqrstuvwxyz_".toCharArray();
-    private static final int CONVERSATION_ID_LENGTH = 24;
-    private static final SecureRandom RANDOM = new SecureRandom();
     private final ChatService chatService;
     private final ToolExecutionService toolExecutionService;
     private ChatDataCacheManager chatDataCacheManager;
@@ -65,32 +63,51 @@ public class AgentMessageProxy {
     }
 
     private static String generateConversationId() {
-        StringBuilder sb = new StringBuilder(CONVERSATION_ID_LENGTH);
-        for (int i = 0; i < CONVERSATION_ID_LENGTH; i++) {
-            sb.append(CONVERSATION_ID_CHARS[RANDOM.nextInt(CONVERSATION_ID_CHARS.length)]);
-        }
-        return sb.toString();
+        return String.valueOf(System.currentTimeMillis());
     }
 
     private Message processChat(ChatRequest request) {
         checkReactorThread();
+        if (request.getConversationId() == null || request.getConversationId().isEmpty()) {
+            request.setConversationId(generateConversationId());
+        }
         Flux<ServerSentEvent<ChatChunk>> flux = chatService.chat(request);
-        List<ServerSentEvent<ChatChunk>> events = flux.collectList().block();
+
+        List<ServerSentEvent<ChatChunk>> events;
+        String cacheId = null;
+        if (chatDataCacheManager != null) {
+            cacheId = chatDataCacheManager.startCache(request.getSessionId(), request.getConversationId());
+            final String lambdaCacheId = cacheId;
+            events = flux.doOnNext(event -> {
+                ChatChunk chunk = event.data();
+                if (chunk != null && chunk.getFinishReason() == null) {
+                    chatDataCacheManager.appendChunk(lambdaCacheId, chunk);
+                }
+            }).collectList().block();
+        } else {
+            events = flux.collectList().block();
+        }
 
         CollectedResult result = collectContent(events);
 
+        Message message;
         if (result.hasToolCalls()) {
             Map<String, Integer> toolCallCounts = new HashMap<>();
-            return processToolCalls(request.getSessionId(), toolCallCounts);
+            message = processToolCalls(request.getSessionId(), toolCallCounts, cacheId);
+        } else {
+            message = Message.builder()
+                    .role("assistant")
+                    .content(result.content())
+                    .build();
         }
 
-        return Message.builder()
-                .role("assistant")
-                .content(result.content())
-                .build();
+        if (chatDataCacheManager != null) {
+            chatDataCacheManager.appendChunk(cacheId, ChatChunk.builder().finishReason(FinishReason.STOP).build());
+        }
+        return message;
     }
 
-    private Message processToolCalls(String sessionId, Map<String, Integer> toolCallCounts) {
+    private Message processToolCalls(String sessionId, Map<String, Integer> toolCallCounts, String cacheId) {
         while (true) {
             ToolExecutionService.ToolExecutionResult execResult = toolExecutionService.executeTool(sessionId);
             String status = execResult.status();
@@ -98,9 +115,13 @@ public class AgentMessageProxy {
                 break;
             }
             if ("executing".equals(status)) {
-                waitForToolCompletion(sessionId, execResult.toolId());
+                waitForToolCompletion(sessionId, execResult.toolId(), cacheId);
             } else {
                 log.warn("sessionId={} 工具执行返回非预期状态: {} toolId={}", sessionId, status, execResult.toolId());
+            }
+
+            if (chatDataCacheManager != null && cacheId != null) {
+                chatDataCacheManager.appendChunk(cacheId, buildToolResultChunk(sessionId, execResult));
             }
 
             String toolKey = execResult.toolName() + ":" + execResult.arguments();
@@ -122,10 +143,14 @@ public class AgentMessageProxy {
         Flux<ServerSentEvent<ChatChunk>> contFlux = toolExecutionService.continueAfterTools(sessionId);
         List<ServerSentEvent<ChatChunk>> contEvents = contFlux.collectList().block();
 
+        if (chatDataCacheManager != null && cacheId != null) {
+            cacheEvents(contEvents, cacheId);
+        }
+
         CollectedResult contResult = collectContent(contEvents);
 
         if (contResult.hasToolCalls()) {
-            return processToolCalls(sessionId, toolCallCounts);
+            return processToolCalls(sessionId, toolCallCounts, cacheId);
         }
 
         return Message.builder()
@@ -134,13 +159,16 @@ public class AgentMessageProxy {
                 .build();
     }
 
-    private void waitForToolCompletion(String sessionId, String toolId) {
+    private void waitForToolCompletion(String sessionId, String toolId, String cacheId) {
         long deadline = System.currentTimeMillis() + TOOL_WAIT_TIMEOUT_MS;
         while (System.currentTimeMillis() < deadline) {
             ToolExecutionService.ToolStatusResult status = toolExecutionService.getToolStatus(sessionId, toolId);
             String s = status.status();
             if ("idle".equals(s) || "done".equals(s) || "failed".equals(s)) {
                 return;
+            }
+            if (chatDataCacheManager != null && cacheId != null) {
+                chatDataCacheManager.appendChunk(cacheId, ChatChunk.builder().delta("").build());
             }
             try {
                 Thread.sleep(TOOL_POLL_INTERVAL_MS);
@@ -155,6 +183,53 @@ public class AgentMessageProxy {
     private static void checkReactorThread() {
         if (Schedulers.isInNonBlockingThread()) {
             throw new IllegalStateException("AgentMessageProxy.block() 不能在 Reactor 非阻塞线程中调用");
+        }
+    }
+
+    /**
+     * 将事件列表中的聊天块追加到缓存，跳过 finishReason 非 null 的结束块。
+     *
+     * @param events  流式事件列表（可能为 null）
+     * @param cacheId 缓存 ID
+     */
+    private void cacheEvents(List<ServerSentEvent<ChatChunk>> events, String cacheId) {
+        if (events == null) {
+            return;
+        }
+        for (ServerSentEvent<ChatChunk> event : events) {
+            ChatChunk chunk = event.data();
+            if (chunk != null && chunk.getFinishReason() == null) {
+                chatDataCacheManager.appendChunk(cacheId, chunk);
+            }
+        }
+    }
+
+    /**
+     * 构建工具执行结果缓存块，delta 为 JSON 格式（含 toolName、toolId、arguments、result），与 messageSave 的 toolInfo 和 toolResult 格式一致。
+     */
+    private ChatChunk buildToolResultChunk(String sessionId, ToolExecutionService.ToolExecutionResult execResult) {
+        String result = execResult.message();
+        if (execResult.toolId() != null) {
+            try {
+                ToolExecutionService.ToolStatusResult status =
+                        toolExecutionService.getToolStatus(sessionId, execResult.toolId());
+                if (status != null && status.result() != null && !status.result().isEmpty()) {
+                    result = status.result();
+                }
+            } catch (Exception e) {
+                log.warn("sessionId={} 获取工具执行结果失败 toolId={}", sessionId, execResult.toolId(), e);
+            }
+        }
+        Map<String, String> toolResultMap = new HashMap<>();
+        toolResultMap.put("toolName", execResult.toolName());
+        toolResultMap.put("toolId", execResult.toolId());
+        toolResultMap.put("arguments", execResult.arguments());
+        toolResultMap.put("result", result);
+        try {
+            return ChatChunk.builder().delta(JsonMapper.MAPPER.writeValueAsString(toolResultMap)).build();
+        } catch (Exception e) {
+            log.warn("sessionId={} 序列化工具执行结果失败 toolId={}", sessionId, execResult.toolId(), e);
+            return ChatChunk.builder().delta(execResult.toolName() + (result != null ? ": " + result : "")).build();
         }
     }
 

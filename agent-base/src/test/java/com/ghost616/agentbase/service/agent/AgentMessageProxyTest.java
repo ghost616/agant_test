@@ -3,6 +3,7 @@ package com.ghost616.agentbase.service.agent;
 import com.ghost616.agentbase.dto.chat.ChatRequest;
 import com.ghost616.agentbase.dto.model.ChatChunk;
 import com.ghost616.agentbase.dto.model.Message;
+import com.ghost616.agentbase.enums.FinishReason;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -14,7 +15,6 @@ import reactor.core.publisher.Flux;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -23,12 +23,12 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class AgentMessageProxyTest {
 
-    private static final Pattern CONVERSATION_ID_PATTERN = Pattern.compile("^[0-9a-z_]+$");
-
     @Mock
     private ChatService chatService;
     @Mock
     private ToolExecutionService toolExecutionService;
+    @Mock
+    private ChatDataCacheManager chatDataCacheManager;
 
     private AgentMessageProxy proxy;
     private final String sessionId = "1";
@@ -64,6 +64,11 @@ class AgentMessageProxyTest {
 
             @Override
             public String getCacheId(String sessionId, String conversationId) {
+                return null;
+            }
+
+            @Override
+            public CacheSessionInfo getCacheSessionInfo(String cacheId) {
                 return null;
             }
 
@@ -205,7 +210,7 @@ class AgentMessageProxyTest {
     }
 
     @Test
-    void sendUserMessageToSession_自动生成24位conversationId并透传() {
+    void sendUserMessageToSession_自动生成时间戳conversationId并透传() {
         ServerSentEvent<ChatChunk> event = ServerSentEvent.<ChatChunk>builder()
                 .data(ChatChunk.builder().delta("Reply").hasToolCalls(false).build())
                 .build();
@@ -224,12 +229,28 @@ class AgentMessageProxyTest {
         assertEquals(modelId, request.getModelId());
         assertEquals(Boolean.TRUE, request.getThinking());
         assertNotNull(request.getConversationId());
-        assertEquals(24, request.getConversationId().length());
-        assertTrue(CONVERSATION_ID_PATTERN.matcher(request.getConversationId()).matches());
+        assertTrue(request.getConversationId().matches("\\d+"));
     }
 
     @Test
-    void sendUserMessageToSession_每次调用生成不同conversationId() {
+    void sendUserMessage_未设置conversationId时自动生成时间戳conversationId() {
+        ServerSentEvent<ChatChunk> event = ServerSentEvent.<ChatChunk>builder()
+                .data(ChatChunk.builder().delta("Reply").hasToolCalls(false).build())
+                .build();
+        when(chatService.chat(any())).thenReturn(Flux.just(event));
+
+        proxy.sendUserMessage(sessionId, "Hi", modelId, null);
+
+        ArgumentCaptor<ChatRequest> captor = ArgumentCaptor.forClass(ChatRequest.class);
+        verify(chatService).chat(captor.capture());
+        ChatRequest request = captor.getValue();
+        assertNotNull(request.getConversationId());
+        assertTrue(request.getConversationId().matches("\\d+"));
+        assertEquals(sessionId, request.getSessionId());
+    }
+
+    @Test
+    void sendUserMessageToSession_每次调用生成的conversationId为时间戳() {
         ServerSentEvent<ChatChunk> event = ServerSentEvent.<ChatChunk>builder()
                 .data(ChatChunk.builder().delta("Reply").hasToolCalls(false).build())
                 .build();
@@ -240,8 +261,10 @@ class AgentMessageProxyTest {
 
         ArgumentCaptor<ChatRequest> captor = ArgumentCaptor.forClass(ChatRequest.class);
         verify(chatService, times(2)).chat(captor.capture());
-        assertNotEquals(captor.getAllValues().get(0).getConversationId(),
-                captor.getAllValues().get(1).getConversationId());
+        for (ChatRequest request : captor.getAllValues()) {
+            assertNotNull(request.getConversationId());
+            assertTrue(request.getConversationId().matches("\\d+"));
+        }
     }
 
     @Test
@@ -267,6 +290,178 @@ class AgentMessageProxyTest {
         assertEquals("Result text", result.getContent());
         verify(toolExecutionService).executeTool(any());
         verify(toolExecutionService).continueAfterTools(any());
+    }
+
+    @Test
+    void sendUserMessage_无缓存管理器时_不调用缓存方法() {
+        ServerSentEvent<ChatChunk> event = ServerSentEvent.<ChatChunk>builder()
+                .data(ChatChunk.builder().delta("Hello").hasToolCalls(false).build())
+                .build();
+        when(chatService.chat(any())).thenReturn(Flux.just(event));
+
+        Message result = proxy.sendUserMessage(sessionId, "Hi", modelId, null);
+
+        assertEquals("Hello", result.getContent());
+        verify(chatDataCacheManager, never()).startCache(any(), any());
+        verify(chatDataCacheManager, never()).appendChunk(any(), any());
+    }
+
+    @Test
+    void sendUserMessage_缓存管理器存在时_创建缓存追加块并追加STOP结束块() {
+        proxy.setChatDataCacheManager(chatDataCacheManager);
+        when(chatDataCacheManager.startCache(eq(sessionId), any())).thenReturn("cache-1");
+        ServerSentEvent<ChatChunk> textEvent = ServerSentEvent.<ChatChunk>builder()
+                .data(ChatChunk.builder().delta("Hello").hasToolCalls(false).build())
+                .build();
+        ServerSentEvent<ChatChunk> endEvent = ServerSentEvent.<ChatChunk>builder()
+                .data(ChatChunk.builder().delta("").finishReason(FinishReason.STOP).build())
+                .build();
+        when(chatService.chat(any())).thenReturn(Flux.just(textEvent, endEvent));
+
+        Message result = proxy.sendUserMessage(sessionId, "Hi", modelId, null);
+
+        assertEquals("Hello", result.getContent());
+        verify(chatDataCacheManager).startCache(eq(sessionId), any());
+        ArgumentCaptor<ChatChunk> captor = ArgumentCaptor.forClass(ChatChunk.class);
+        verify(chatDataCacheManager, times(2)).appendChunk(eq("cache-1"), captor.capture());
+        List<ChatChunk> chunks = captor.getAllValues();
+        assertEquals("Hello", chunks.get(0).getDelta());
+        assertNull(chunks.get(0).getFinishReason());
+        assertNull(chunks.get(1).getDelta());
+        assertEquals(FinishReason.STOP, chunks.get(1).getFinishReason());
+    }
+
+    @Test
+    void sendUserMessage_缓存管理器存在时_工具流程缓存工具结果块与continue流块() {
+        proxy.setChatDataCacheManager(chatDataCacheManager);
+        when(chatDataCacheManager.startCache(eq(sessionId), any())).thenReturn("cache-1");
+        ServerSentEvent<ChatChunk> toolEvent = ServerSentEvent.<ChatChunk>builder()
+                .data(ChatChunk.builder().hasToolCalls(true).build())
+                .build();
+        ServerSentEvent<ChatChunk> textEvent = ServerSentEvent.<ChatChunk>builder()
+                .data(ChatChunk.builder().delta("Result text").hasToolCalls(false).build())
+                .build();
+        when(chatService.chat(any())).thenReturn(Flux.just(toolEvent));
+        when(toolExecutionService.continueAfterTools(any())).thenReturn(Flux.just(textEvent));
+        ToolExecutionService.ToolExecutionResult execResult = new ToolExecutionService.ToolExecutionResult(
+                "executing", "tid1", "myTool", "{}", false, null);
+        when(toolExecutionService.executeTool(any())).thenReturn(execResult);
+        ToolExecutionService.ToolStatusResult statusResult = new ToolExecutionService.ToolStatusResult(
+                "done", "tid1", "myTool", "{}", false, "tool result");
+        when(toolExecutionService.getToolStatus(any(), any())).thenReturn(statusResult);
+
+        Message result = proxy.sendUserMessage(sessionId, "Hi", modelId, null);
+
+        assertEquals("Result text", result.getContent());
+        verify(chatDataCacheManager).startCache(eq(sessionId), any());
+        ArgumentCaptor<ChatChunk> captor = ArgumentCaptor.forClass(ChatChunk.class);
+        verify(chatDataCacheManager, times(4)).appendChunk(eq("cache-1"), captor.capture());
+        List<ChatChunk> chunks = captor.getAllValues();
+        assertTrue(chunks.get(0).getHasToolCalls());
+        assertTrue(chunks.get(1).getDelta().contains("\"toolName\":\"myTool\""));
+        assertTrue(chunks.get(1).getDelta().contains("\"toolId\":\"tid1\""));
+        assertTrue(chunks.get(1).getDelta().contains("\"result\":\"tool result\""));
+        assertEquals("Result text", chunks.get(2).getDelta());
+        assertEquals(FinishReason.STOP, chunks.get(3).getFinishReason());
+    }
+
+    @Test
+    void sendUserMessage_缓存管理器存在时_工具流程结束块不入缓存且工具终止时追加STOP() {
+        proxy.setChatDataCacheManager(chatDataCacheManager);
+        when(chatDataCacheManager.startCache(eq(sessionId), any())).thenReturn("cache-1");
+        ServerSentEvent<ChatChunk> toolEvent = ServerSentEvent.<ChatChunk>builder()
+                .data(ChatChunk.builder().hasToolCalls(true).build())
+                .build();
+        ServerSentEvent<ChatChunk> contTextEvent = ServerSentEvent.<ChatChunk>builder()
+                .data(ChatChunk.builder().delta("cont text").hasToolCalls(false).build())
+                .build();
+        ServerSentEvent<ChatChunk> contEndEvent = ServerSentEvent.<ChatChunk>builder()
+                .data(ChatChunk.builder().delta("").finishReason(FinishReason.STOP).build())
+                .build();
+        when(chatService.chat(any())).thenReturn(Flux.just(toolEvent));
+        when(toolExecutionService.continueAfterTools(any())).thenReturn(Flux.just(contTextEvent, contEndEvent));
+        ToolExecutionService.ToolExecutionResult execResult = new ToolExecutionService.ToolExecutionResult(
+                "executing", "tid1", "myTool", "{}", false, null);
+        when(toolExecutionService.executeTool(any())).thenReturn(execResult);
+        ToolExecutionService.ToolStatusResult statusResult = new ToolExecutionService.ToolStatusResult(
+                "done", "tid1", "myTool", "{}", false, "tool result");
+        when(toolExecutionService.getToolStatus(any(), any())).thenReturn(statusResult);
+
+        Message result = proxy.sendUserMessage(sessionId, "Hi", modelId, null);
+
+        assertEquals("cont text", result.getContent());
+        ArgumentCaptor<ChatChunk> captor = ArgumentCaptor.forClass(ChatChunk.class);
+        verify(chatDataCacheManager, times(4)).appendChunk(eq("cache-1"), captor.capture());
+        List<ChatChunk> chunks = captor.getAllValues();
+        assertTrue(chunks.get(0).getHasToolCalls());
+        assertTrue(chunks.get(1).getDelta().contains("\"toolName\":\"myTool\""));
+        assertTrue(chunks.get(1).getDelta().contains("\"toolId\":\"tid1\""));
+        assertEquals("cont text", chunks.get(2).getDelta());
+        assertEquals(FinishReason.STOP, chunks.get(3).getFinishReason());
+    }
+
+    @Test
+    void sendUserMessage_缓存管理器存在时_工具振荡保护终止追加STOP结束块() {
+        proxy.setChatDataCacheManager(chatDataCacheManager);
+        when(chatDataCacheManager.startCache(eq(sessionId), any())).thenReturn("cache-1");
+        ServerSentEvent<ChatChunk> toolEvent = ServerSentEvent.<ChatChunk>builder()
+                .data(ChatChunk.builder().hasToolCalls(true).build())
+                .build();
+        when(chatService.chat(any())).thenReturn(Flux.just(toolEvent));
+        ToolExecutionService.ToolExecutionResult execResult = new ToolExecutionService.ToolExecutionResult(
+                "executing", "tid1", "repeatedTool", "{\"x\":1}", true, null);
+        when(toolExecutionService.executeTool(any())).thenReturn(execResult);
+        ToolExecutionService.ToolStatusResult statusResult = new ToolExecutionService.ToolStatusResult(
+                "done", "tid1", "repeatedTool", "{\"x\":1}", false, "r");
+        when(toolExecutionService.getToolStatus(any(), any())).thenReturn(statusResult);
+
+        Message result = proxy.sendUserMessage(sessionId, "Hi", modelId, null);
+
+        assertEquals("", result.getContent());
+        verify(toolExecutionService, times(5)).executeTool(any());
+        verify(toolExecutionService, never()).continueAfterTools(any());
+        ArgumentCaptor<ChatChunk> captor = ArgumentCaptor.forClass(ChatChunk.class);
+        verify(chatDataCacheManager, times(7)).appendChunk(eq("cache-1"), captor.capture());
+        List<ChatChunk> chunks = captor.getAllValues();
+        assertEquals(FinishReason.STOP, chunks.get(chunks.size() - 1).getFinishReason());
+    }
+
+    @Test
+    void sendUserMessage_缓存管理器存在时_工具等待期间追加空块() {
+        proxy.setChatDataCacheManager(chatDataCacheManager);
+        when(chatDataCacheManager.startCache(eq(sessionId), any())).thenReturn("cache-1");
+        ServerSentEvent<ChatChunk> toolEvent = ServerSentEvent.<ChatChunk>builder()
+                .data(ChatChunk.builder().hasToolCalls(true).build())
+                .build();
+        ServerSentEvent<ChatChunk> textEvent = ServerSentEvent.<ChatChunk>builder()
+                .data(ChatChunk.builder().delta("final").hasToolCalls(false).build())
+                .build();
+        when(chatService.chat(any())).thenReturn(Flux.just(toolEvent));
+        when(toolExecutionService.continueAfterTools(any())).thenReturn(Flux.just(textEvent));
+        ToolExecutionService.ToolExecutionResult execResult = new ToolExecutionService.ToolExecutionResult(
+                "executing", "tid1", "myTool", "{}", false, null);
+        when(toolExecutionService.executeTool(any())).thenReturn(execResult);
+        ToolExecutionService.ToolStatusResult executingResult = new ToolExecutionService.ToolStatusResult(
+                "executing", "tid1", "myTool", "{}", false, null);
+        ToolExecutionService.ToolStatusResult doneResult = new ToolExecutionService.ToolStatusResult(
+                "done", "tid1", "myTool", "{}", false, "tool result");
+        when(toolExecutionService.getToolStatus(any(), any()))
+                .thenReturn(executingResult)
+                .thenReturn(doneResult)
+                .thenReturn(doneResult);
+
+        Message result = proxy.sendUserMessage(sessionId, "Hi", modelId, null);
+
+        assertEquals("final", result.getContent());
+        ArgumentCaptor<ChatChunk> captor = ArgumentCaptor.forClass(ChatChunk.class);
+        verify(chatDataCacheManager, times(5)).appendChunk(eq("cache-1"), captor.capture());
+        List<ChatChunk> chunks = captor.getAllValues();
+        assertTrue(chunks.get(0).getHasToolCalls());
+        assertEquals("", chunks.get(1).getDelta());
+        assertTrue(chunks.get(2).getDelta().contains("\"toolName\":\"myTool\""));
+        assertTrue(chunks.get(2).getDelta().contains("\"toolId\":\"tid1\""));
+        assertEquals("final", chunks.get(3).getDelta());
+        assertEquals(FinishReason.STOP, chunks.get(4).getFinishReason());
     }
 
     private static Object getPrivateField(Object target, String fieldName) {
