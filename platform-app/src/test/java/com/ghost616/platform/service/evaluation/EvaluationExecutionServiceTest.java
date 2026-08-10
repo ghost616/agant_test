@@ -10,6 +10,7 @@ import com.ghost616.platform.repository.EvaluationMapper;
 import com.ghost616.platform.repository.SessionMapper;
 import com.ghost616.platform.repository.SessionSkillMapper;
 import com.ghost616.platform.repository.SessionToolMapper;
+import com.ghost616.platform.service.agent.DefaultChatDataCacheProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -21,9 +22,13 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
@@ -45,6 +50,8 @@ class EvaluationExecutionServiceTest {
     private EvaluationResultGenerateService evaluationResultGenerateService;
     @Mock
     private AsyncEvaluationExecutor asyncEvaluationExecutor;
+    @Mock
+    private DefaultChatDataCacheProvider defaultChatDataCacheProvider;
 
     private EvaluationExecutionService service;
 
@@ -57,10 +64,13 @@ class EvaluationExecutionServiceTest {
         service = spy(new EvaluationExecutionService(
                 evaluationMapper, sessionMapper, sessionToolMapper,
                 sessionSkillMapper, messageDataProvider,
-                evaluationResultGenerateService, asyncEvaluationExecutor
+                evaluationResultGenerateService, asyncEvaluationExecutor,
+                defaultChatDataCacheProvider
         ));
         when(sessionToolMapper.selectList(any())).thenReturn(List.of());
         when(sessionSkillMapper.selectList(any())).thenReturn(List.of());
+        when(defaultChatDataCacheProvider.getCacheIdsBySessionId(anyString()))
+                .thenReturn(List.of("cache-1"));
     }
 
     private Evaluation createEvaluation(Long benchmarkSessionId) {
@@ -137,6 +147,61 @@ class EvaluationExecutionServiceTest {
             assertEquals("PENDING", result.getStatus());
             assertEquals(0, result.getCurrentStep());
             assertEquals(1, result.getTotalSteps());
+            verify(defaultChatDataCacheProvider).getCacheIdsBySessionId(String.valueOf(EXECUTION_SESSION_ID));
+        }
+
+        @Test
+        void polling_cacheAvailable_shouldReturnStatusDTO() {
+            Evaluation evaluation = createEvaluation(BENCHMARK_SESSION_ID);
+            when(evaluationMapper.selectById(EVALUATION_ID)).thenReturn(evaluation);
+            when(messageDataProvider.getMessages(String.valueOf(BENCHMARK_SESSION_ID)))
+                    .thenReturn(List.of(createUserMessage("test message")));
+            when(sessionMapper.selectById(BENCHMARK_SESSION_ID)).thenReturn(createBenchmarkSession());
+            doAnswer(inv -> {
+                Session s = inv.getArgument(0);
+                s.setId(EXECUTION_SESSION_ID);
+                return null;
+            }).when(sessionMapper).insert(any(Session.class));
+
+            EvaluationExecutionStatusDTO result = service.execute(EVALUATION_ID);
+
+            assertNotNull(result);
+            assertEquals("PENDING", result.getStatus());
+            verify(defaultChatDataCacheProvider).getCacheIdsBySessionId(String.valueOf(EXECUTION_SESSION_ID));
+        }
+
+        @Test
+        void polling_statusFailed_shouldReturnFailedStatus() {
+            Evaluation evaluation = createEvaluation(BENCHMARK_SESSION_ID);
+            when(evaluationMapper.selectById(EVALUATION_ID)).thenReturn(evaluation);
+            when(messageDataProvider.getMessages(String.valueOf(BENCHMARK_SESSION_ID)))
+                    .thenReturn(List.of(createUserMessage("test message")));
+            when(sessionMapper.selectById(BENCHMARK_SESSION_ID)).thenReturn(createBenchmarkSession());
+            doAnswer(inv -> {
+                Session s = inv.getArgument(0);
+                s.setId(EXECUTION_SESSION_ID);
+                return null;
+            }).when(sessionMapper).insert(any(Session.class));
+            when(defaultChatDataCacheProvider.getCacheIdsBySessionId(String.valueOf(EXECUTION_SESSION_ID)))
+                    .thenReturn(List.of());
+            doAnswer(inv -> {
+                Session s = inv.getArgument(1);
+                @SuppressWarnings("unchecked")
+                Map<String, EvaluationExecutionStatusDTO> map = inv.getArgument(3);
+                map.put(String.valueOf(EVALUATION_ID), EvaluationExecutionStatusDTO.builder()
+                        .evaluationId(EVALUATION_ID)
+                        .executionSessionId(s.getId())
+                        .status("FAILED")
+                        .currentStep(1)
+                        .totalSteps(1)
+                        .build());
+                return null;
+            }).when(asyncEvaluationExecutor).executeAsync(eq(EVALUATION_ID), any(Session.class), anyList(), anyMap());
+
+            EvaluationExecutionStatusDTO result = service.execute(EVALUATION_ID);
+
+            assertNotNull(result);
+            assertEquals("FAILED", result.getStatus());
         }
 
         @Test

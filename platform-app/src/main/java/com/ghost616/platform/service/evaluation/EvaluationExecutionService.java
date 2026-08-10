@@ -13,6 +13,7 @@ import com.ghost616.platform.repository.EvaluationMapper;
 import com.ghost616.platform.repository.SessionMapper;
 import com.ghost616.platform.repository.SessionSkillMapper;
 import com.ghost616.platform.repository.SessionToolMapper;
+import com.ghost616.platform.service.agent.DefaultChatDataCacheProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -38,6 +39,7 @@ public class EvaluationExecutionService {
     private final MessageDataProvider messageDataProvider;
     private final EvaluationResultGenerateService evaluationResultGenerateService;
     private final AsyncEvaluationExecutor asyncEvaluationExecutor;
+    private final DefaultChatDataCacheProvider defaultChatDataCacheProvider;
 
     private final Map<String, EvaluationExecutionStatusDTO> executionStatusMap = new ConcurrentHashMap<>();
     private final Map<String, Long> statusTimestamps = new ConcurrentHashMap<>();
@@ -72,6 +74,23 @@ public class EvaluationExecutionService {
         statusTimestamps.put(statusKey, System.currentTimeMillis());
 
         asyncEvaluationExecutor.executeAsync(evaluationId, executionSession, userMessages, executionStatusMap);
+
+        String sessionId = String.valueOf(executionSession.getId());
+        while (true) {
+            try {
+                Thread.sleep(200);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+            EvaluationExecutionStatusDTO current = executionStatusMap.get(statusKey);
+            if (current != null && "FAILED".equals(current.getStatus())) {
+                return current;
+            }
+            if (!defaultChatDataCacheProvider.getCacheIdsBySessionId(sessionId).isEmpty()) {
+                break;
+            }
+        }
 
         return statusDTO;
     }
