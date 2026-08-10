@@ -16,7 +16,6 @@ import com.ghost616.agentbase.service.agent.invoker.SystemTool;
 import com.ghost616.platform.repository.ModelConfigMapper;
 import com.ghost616.platform.repository.SessionMapper;
 import com.ghost616.platform.service.agent.DatabaseAgentLog;
-import com.ghost616.platform.service.agent.DefaultChatDataCacheProvider;
 import com.ghost616.platform.service.agent.DefaultChatDataProvider;
 import com.ghost616.platform.service.agent.DefaultSubSessionCallback;
 
@@ -68,13 +67,6 @@ class AgentContextConfigurationTest {
     }
 
     @Test
-    void defaultChatDataCacheProvider_正确创建实例() {
-        DefaultChatDataCacheProvider provider = config.defaultChatDataCacheProvider();
-
-        assertNotNull(provider);
-    }
-
-    @Test
     void agentAssembler_正确创建实例() {
         SystemToolProvider systemToolProvider = mock(SystemToolProvider.class);
         ModelInvokerFactory modelInvokerFactory = mock(ModelInvokerFactory.class);
@@ -90,10 +82,9 @@ class AgentContextConfigurationTest {
         SystemToolProvider systemToolProvider = mock(SystemToolProvider.class);
         ModelInvokerFactory modelInvokerFactory = mock(ModelInvokerFactory.class);
         ChatDataProvider chatDataProvider = mock(ChatDataProvider.class);
-        DefaultChatDataCacheProvider cacheProvider = config.defaultChatDataCacheProvider();
 
         AgentAssembler agentAssembler = config.agentAssembler(systemToolProvider, modelInvokerFactory, chatDataProvider, toolExecutionProvider);
-        ChatService chatService = config.chatService(agentAssembler, databaseAgentLog, cacheProvider);
+        ChatService chatService = config.chatService(agentAssembler, databaseAgentLog);
 
         assertNotNull(chatService);
     }
@@ -103,10 +94,9 @@ class AgentContextConfigurationTest {
         SystemToolProvider systemToolProvider = mock(SystemToolProvider.class);
         ModelInvokerFactory modelInvokerFactory = mock(ModelInvokerFactory.class);
         ChatDataProvider chatDataProvider = mock(ChatDataProvider.class);
-        DefaultChatDataCacheProvider cacheProvider = config.defaultChatDataCacheProvider();
 
         AgentAssembler agentAssembler = spy(config.agentAssembler(systemToolProvider, modelInvokerFactory, chatDataProvider, toolExecutionProvider));
-        ChatService chatService = config.chatService(agentAssembler, databaseAgentLog, cacheProvider);
+        ChatService chatService = config.chatService(agentAssembler, databaseAgentLog);
 
         assertNotNull(chatService);
         ArgumentCaptor<ChatDataCacheManager> captor = ArgumentCaptor.forClass(ChatDataCacheManager.class);
@@ -122,10 +112,9 @@ class AgentContextConfigurationTest {
         SystemToolProvider systemToolProvider = mock(SystemToolProvider.class);
         ModelInvokerFactory modelInvokerFactory = mock(ModelInvokerFactory.class);
         ChatDataProvider chatDataProvider = mock(ChatDataProvider.class);
-        DefaultChatDataCacheProvider cacheProvider = config.defaultChatDataCacheProvider();
 
         AgentAssembler agentAssembler = spy(config.agentAssembler(systemToolProvider, modelInvokerFactory, chatDataProvider, toolExecutionProvider));
-        ChatService chatService = config.chatService(agentAssembler, null, cacheProvider);
+        ChatService chatService = config.chatService(agentAssembler, null);
 
         assertNotNull(chatService);
         ArgumentCaptor<ChatDataCacheManager> captor = ArgumentCaptor.forClass(ChatDataCacheManager.class);
