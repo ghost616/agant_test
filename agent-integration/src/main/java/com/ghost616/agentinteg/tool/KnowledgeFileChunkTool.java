@@ -42,8 +42,8 @@ public class KnowledgeFileChunkTool extends CustomToolInvoker {
                         {
                           "type": "object",
                           "properties": {
-                            "knowledgeBaseId": { "type": "integer", "description": "知识库 ID" },
-                            "fileId": { "type": "integer", "description": "文件 ID" },
+                            "knowledgeBaseId": { "type": "string", "description": "知识库 ID" },
+                            "fileId": { "type": "string", "description": "文件 ID" },
                             "startLine": { "type": "integer", "description": "起始行号，默认 0" },
                             "endLine": { "type": "integer", "description": "结束行号，默认文件最大行数" }
                           },
@@ -57,15 +57,15 @@ public class KnowledgeFileChunkTool extends CustomToolInvoker {
         try {
             JsonNode root = JSON_MAPPER.readTree(arguments);
             JsonNode kbIdNode = root.get("knowledgeBaseId");
-            if (kbIdNode == null || kbIdNode.isNull() || !kbIdNode.canConvertToLong()) {
+            if (kbIdNode == null || kbIdNode.isNull() || kbIdNode.asText().isBlank()) {
                 return "{\"status\":\"error\",\"errMsg\":\"缺少 knowledgeBaseId 参数\"}";
             }
             JsonNode fileIdNode = root.get("fileId");
-            if (fileIdNode == null || fileIdNode.isNull() || !fileIdNode.canConvertToLong()) {
+            if (fileIdNode == null || fileIdNode.isNull() || fileIdNode.asText().isBlank()) {
                 return "{\"status\":\"error\",\"errMsg\":\"缺少 fileId 参数\"}";
             }
-            Long knowledgeBaseId = kbIdNode.asLong();
-            Long fileId = fileIdNode.asLong();
+            String knowledgeBaseId = kbIdNode.asText();
+            String fileId = fileIdNode.asText();
             int startLine = root.has("startLine") && root.get("startLine").canConvertToInt()
                     ? root.get("startLine").asInt() : DEFAULT_START_LINE;
             int endLine = root.has("endLine") && root.get("endLine").canConvertToInt()
@@ -102,7 +102,7 @@ public class KnowledgeFileChunkTool extends CustomToolInvoker {
         }
     }
 
-    private int resolveFileMaxLine(Long knowledgeBaseId, Long fileId) {
+    private int resolveFileMaxLine(String knowledgeBaseId, String fileId) {
         List<FileInfo> files = provider.searchFiles(knowledgeBaseId, null, MAX_FILE_LOOKUP_LIMIT);
         if (files != null) {
             for (FileInfo file : files) {

@@ -23,7 +23,7 @@ public interface KnowledgeBaseQueryProvider {
      * @param limit    返回数量上限
      * @return 文件信息列表（仅已发布到 ES 的文件）
      */
-    List<FileInfo> searchFiles(Long kbId, String fileName, int limit);
+    List<FileInfo> searchFiles(String kbId, String fileName, int limit);
 
     /**
      * 搜索知识库文本块，返回匹配的文本块列表（含文件信息）。
@@ -36,7 +36,7 @@ public interface KnowledgeBaseQueryProvider {
      * @param topK       返回数量上限
      * @return 文本块列表
      */
-    List<TextChunkWithFile> searchChunks(Long kbId, Long fileId, SearchType searchType, String query, int topK);
+    List<TextChunkWithFile> searchChunks(String kbId, String fileId, SearchType searchType, String query, int topK);
 
     /**
      * 获取指定文件中某个行号范围内的文本块。
@@ -47,5 +47,5 @@ public interface KnowledgeBaseQueryProvider {
      * @param endLine   结束行号
      * @return 文本块
      */
-    TextChunkWithFile getFileChunks(Long kbId, Long fileId, int startLine, int endLine);
+    TextChunkWithFile getFileChunks(String kbId, String fileId, int startLine, int endLine);
 }

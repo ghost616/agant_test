@@ -76,12 +76,12 @@ class KnowledgeSearchToolTest {
                 }
                 """;
         TextChunkWithFile withFile = new TextChunkWithFile(
-                100L, 2L, "a.txt", List.of(new TextChunk(5, "line5"), new TextChunk(6, "line6"), new TextChunk(8, "line8")));
-        when(provider.searchChunks(100L, null, SearchType.VECTOR, "hello", 5)).thenReturn(List.of(withFile));
-        TextChunkWithFile context = new TextChunkWithFile(100L, 2L, "a.txt",
+                "100", "2", "a.txt", List.of(new TextChunk(5, "line5"), new TextChunk(6, "line6"), new TextChunk(8, "line8")));
+        when(provider.searchChunks("100", null, SearchType.VECTOR, "hello", 5)).thenReturn(List.of(withFile));
+        TextChunkWithFile context = new TextChunkWithFile("100", "2", "a.txt",
                 List.of(new TextChunk(5, "line5"), new TextChunk(6, "line6"),
                         new TextChunk(7, "line7"), new TextChunk(8, "line8")));
-        when(provider.getFileChunks(100L, 2L, 2, 11)).thenReturn(context);
+        when(provider.getFileChunks("100", "2", 2, 11)).thenReturn(context);
 
         String result = tool.execute(ctx, arguments);
         JsonNode root = MAPPER.readTree(result);
@@ -94,8 +94,8 @@ class KnowledgeSearchToolTest {
         assertEquals("a.txt", file.get("fileName").asText());
         assertEquals(1, file.get("chunks").size());
         assertEquals("line5\nline6\nline7\nline8", file.get("chunks").get(0).asText());
-        verify(provider).searchChunks(100L, null, SearchType.VECTOR, "hello", 5);
-        verify(provider).getFileChunks(100L, 2L, 2, 11);
+        verify(provider).searchChunks("100", null, SearchType.VECTOR, "hello", 5);
+        verify(provider).getFileChunks("100", "2", 2, 11);
     }
 
     @Test
@@ -108,18 +108,18 @@ class KnowledgeSearchToolTest {
                 }
                 """;
         TextChunkWithFile withFile1 = new TextChunkWithFile(
-                100L, 2L, "a.txt", List.of(new TextChunk(5, "line5"), new TextChunk(6, "line6")));
+                "100", "2", "a.txt", List.of(new TextChunk(5, "line5"), new TextChunk(6, "line6")));
         TextChunkWithFile withFile2 = new TextChunkWithFile(
-                100L, 2L, "a.txt", List.of(new TextChunk(7, "line7")));
+                "100", "2", "a.txt", List.of(new TextChunk(7, "line7")));
         TextChunkWithFile withFile3 = new TextChunkWithFile(
-                100L, 3L, "b.txt", List.of(new TextChunk(1, "b1")));
-        when(provider.searchChunks(100L, null, SearchType.VECTOR, "hello", 10))
+                "100", "3", "b.txt", List.of(new TextChunk(1, "b1")));
+        when(provider.searchChunks("100", null, SearchType.VECTOR, "hello", 10))
                 .thenReturn(List.of(withFile1, withFile2, withFile3));
-        when(provider.getFileChunks(100L, 2L, 2, 9)).thenReturn(new TextChunkWithFile(100L, 2L, "a.txt",
+        when(provider.getFileChunks("100", "2", 2, 9)).thenReturn(new TextChunkWithFile("100", "2", "a.txt",
                 List.of(new TextChunk(5, "line5"), new TextChunk(6, "line6"), new TextChunk(7, "line7"))));
-        when(provider.getFileChunks(100L, 2L, 4, 10)).thenReturn(new TextChunkWithFile(100L, 2L, "a.txt",
+        when(provider.getFileChunks("100", "2", 4, 10)).thenReturn(new TextChunkWithFile("100", "2", "a.txt",
                 List.of(new TextChunk(7, "line7"))));
-        when(provider.getFileChunks(100L, 3L, 1, 4)).thenReturn(new TextChunkWithFile(100L, 3L, "b.txt",
+        when(provider.getFileChunks("100", "3", 1, 4)).thenReturn(new TextChunkWithFile("100", "3", "b.txt",
                 List.of(new TextChunk(1, "b1"))));
 
         String result = tool.execute(ctx, arguments);
@@ -134,9 +134,9 @@ class KnowledgeSearchToolTest {
         JsonNode file3 = root.get(1);
         assertEquals(3, file3.get("fileId").asLong());
         assertEquals(1, file3.get("chunks").size());
-        verify(provider).getFileChunks(100L, 2L, 2, 9);
-        verify(provider).getFileChunks(100L, 2L, 4, 10);
-        verify(provider).getFileChunks(100L, 3L, 1, 4);
+        verify(provider).getFileChunks("100", "2", 2, 9);
+        verify(provider).getFileChunks("100", "2", 4, 10);
+        verify(provider).getFileChunks("100", "3", 1, 4);
     }
 
     @Test
@@ -149,14 +149,14 @@ class KnowledgeSearchToolTest {
                 }
                 """;
         TextChunkWithFile withFile1 = new TextChunkWithFile(
-                100L, 2L, "a.txt", List.of(new TextChunk(5, "line5"), new TextChunk(6, "first6")));
+                "100", "2", "a.txt", List.of(new TextChunk(5, "line5"), new TextChunk(6, "first6")));
         TextChunkWithFile withFile2 = new TextChunkWithFile(
-                100L, 2L, "a.txt", List.of(new TextChunk(6, "second6"), new TextChunk(7, "line7")));
-        when(provider.searchChunks(100L, null, SearchType.VECTOR, "hello", 10))
+                "100", "2", "a.txt", List.of(new TextChunk(6, "second6"), new TextChunk(7, "line7")));
+        when(provider.searchChunks("100", null, SearchType.VECTOR, "hello", 10))
                 .thenReturn(List.of(withFile1, withFile2));
-        when(provider.getFileChunks(100L, 2L, 2, 9)).thenReturn(new TextChunkWithFile(100L, 2L, "a.txt",
+        when(provider.getFileChunks("100", "2", 2, 9)).thenReturn(new TextChunkWithFile("100", "2", "a.txt",
                 List.of(new TextChunk(5, "line5"), new TextChunk(6, "first6"), new TextChunk(7, "line7"))));
-        when(provider.getFileChunks(100L, 2L, 3, 10)).thenReturn(new TextChunkWithFile(100L, 2L, "a.txt",
+        when(provider.getFileChunks("100", "2", 3, 10)).thenReturn(new TextChunkWithFile("100", "2", "a.txt",
                 List.of(new TextChunk(6, "second6"), new TextChunk(7, "line7"))));
 
         String result = tool.execute(ctx, arguments);
@@ -166,8 +166,8 @@ class KnowledgeSearchToolTest {
         JsonNode file = root.get(0);
         assertEquals(1, file.get("chunks").size());
         assertEquals("line5\nfirst6\nline7", file.get("chunks").get(0).asText());
-        verify(provider).getFileChunks(100L, 2L, 2, 9);
-        verify(provider).getFileChunks(100L, 2L, 3, 10);
+        verify(provider).getFileChunks("100", "2", 2, 9);
+        verify(provider).getFileChunks("100", "2", 3, 10);
     }
 
     @Test
@@ -180,9 +180,9 @@ class KnowledgeSearchToolTest {
                 }
                 """;
         TextChunkWithFile withFile = new TextChunkWithFile(
-                100L, 2L, "a.txt", List.of(new TextChunk(5, "line5")));
-        when(provider.searchChunks(100L, null, SearchType.VECTOR, "hello", 10)).thenReturn(List.of(withFile));
-        when(provider.getFileChunks(100L, 2L, 2, 8)).thenReturn(null);
+                "100", "2", "a.txt", List.of(new TextChunk(5, "line5")));
+        when(provider.searchChunks("100", null, SearchType.VECTOR, "hello", 10)).thenReturn(List.of(withFile));
+        when(provider.getFileChunks("100", "2", 2, 8)).thenReturn(null);
 
         String result = tool.execute(ctx, arguments);
         JsonNode root = MAPPER.readTree(result);
@@ -190,7 +190,7 @@ class KnowledgeSearchToolTest {
         assertTrue(root.isArray());
         assertEquals(1, root.size());
         assertEquals(0, root.get(0).get("chunks").size());
-        verify(provider).getFileChunks(100L, 2L, 2, 8);
+        verify(provider).getFileChunks("100", "2", 2, 8);
     }
 
     @Test
@@ -202,13 +202,13 @@ class KnowledgeSearchToolTest {
                   "query": "world"
                 }
                 """;
-        when(provider.searchChunks(100L, null, SearchType.FULLTEXT, "world", 10)).thenReturn(List.of());
+        when(provider.searchChunks("100", null, SearchType.FULLTEXT, "world", 10)).thenReturn(List.of());
 
         String result = tool.execute(ctx, arguments);
 
         assertNotNull(result);
-        verify(provider).searchChunks(100L, null, SearchType.FULLTEXT, "world", 10);
-        verify(provider, never()).getFileChunks(anyLong(), anyLong(), anyInt(), anyInt());
+        verify(provider).searchChunks("100", null, SearchType.FULLTEXT, "world", 10);
+        verify(provider, never()).getFileChunks(anyString(), anyString(), anyInt(), anyInt());
     }
 
     @Test
@@ -220,12 +220,12 @@ class KnowledgeSearchToolTest {
                   "query": "world"
                 }
                 """;
-        when(provider.searchChunks(100L, null, SearchType.FULLTEXT, "world", 10)).thenReturn(List.of());
+        when(provider.searchChunks("100", null, SearchType.FULLTEXT, "world", 10)).thenReturn(List.of());
 
         String result = tool.execute(ctx, arguments);
 
         assertNotNull(result);
-        verify(provider).searchChunks(100L, null, SearchType.FULLTEXT, "world", 10);
+        verify(provider).searchChunks("100", null, SearchType.FULLTEXT, "world", 10);
     }
 
     @Test
@@ -238,11 +238,11 @@ class KnowledgeSearchToolTest {
                   "query": "test"
                 }
                 """;
-        when(provider.searchChunks(100L, 7L, SearchType.HYBRID, "test", 10)).thenReturn(List.of());
+        when(provider.searchChunks("100", "7", SearchType.HYBRID, "test", 10)).thenReturn(List.of());
 
         tool.execute(ctx, arguments);
 
-        verify(provider).searchChunks(100L, 7L, SearchType.HYBRID, "test", 10);
+        verify(provider).searchChunks("100", "7", SearchType.HYBRID, "test", 10);
     }
 
     @Test
@@ -251,7 +251,7 @@ class KnowledgeSearchToolTest {
 
         assertTrue(result.contains("error"));
         assertTrue(result.contains("knowledgeBaseId"));
-        verify(provider, never()).searchChunks(anyLong(), any(), any(), anyString(), anyInt());
+        verify(provider, never()).searchChunks(anyString(), any(), any(), anyString(), anyInt());
     }
 
     @Test
@@ -261,7 +261,7 @@ class KnowledgeSearchToolTest {
 
         assertTrue(result1.contains("error"));
         assertTrue(result2.contains("error"));
-        verify(provider, never()).searchChunks(anyLong(), any(), any(), anyString(), anyInt());
+        verify(provider, never()).searchChunks(anyString(), any(), any(), anyString(), anyInt());
     }
 
     @Test
@@ -270,7 +270,7 @@ class KnowledgeSearchToolTest {
 
         assertTrue(result.contains("error"));
         assertTrue(result.contains("searchType"));
-        verify(provider, never()).searchChunks(anyLong(), any(), any(), anyString(), anyInt());
+        verify(provider, never()).searchChunks(anyString(), any(), any(), anyString(), anyInt());
     }
 
     @Test
@@ -282,7 +282,7 @@ class KnowledgeSearchToolTest {
                   "query": "hello"
                 }
                 """;
-        when(provider.searchChunks(100L, null, SearchType.VECTOR, "hello", 10))
+        when(provider.searchChunks("100", null, SearchType.VECTOR, "hello", 10))
                 .thenThrow(new RuntimeException("搜索失败"));
 
         String result = tool.execute(ctx, arguments);
@@ -301,7 +301,7 @@ class KnowledgeSearchToolTest {
                 }
                 """;
         String specialMsg = "搜索失败: \"引号\" \n 第二行 \\ 反斜杠";
-        when(provider.searchChunks(100L, null, SearchType.VECTOR, "hello", 10))
+        when(provider.searchChunks("100", null, SearchType.VECTOR, "hello", 10))
                 .thenThrow(new RuntimeException(specialMsg));
 
         String result = tool.execute(ctx, arguments);

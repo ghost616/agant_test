@@ -63,15 +63,15 @@ class KnowledgeFileInfoToolTest {
                   "searchLimit": 5
                 }
                 """;
-        FileInfo file = new FileInfo(2L, "readme.md", "说明文档", 120);
-        when(provider.searchFiles(100L, "readme", 5)).thenReturn(List.of(file));
+        FileInfo file = new FileInfo("2", "readme.md", "说明文档", 120);
+        when(provider.searchFiles("100", "readme", 5)).thenReturn(List.of(file));
 
         String result = tool.execute(ctx, arguments);
 
-        assertTrue(result.contains("\"fileId\":2"));
+        assertTrue(result.contains("\"fileId\":\"2\""));
         assertTrue(result.contains("\"fileName\":\"readme.md\""));
         assertTrue(result.contains("\"maxLineCount\":120"));
-        verify(provider).searchFiles(100L, "readme", 5);
+        verify(provider).searchFiles("100", "readme", 5);
     }
 
     @Test
@@ -82,16 +82,16 @@ class KnowledgeFileInfoToolTest {
                   "fileId": 2
                 }
                 """;
-        FileInfo file2 = new FileInfo(2L, "b.txt", "文档2", 50);
-        FileInfo file3 = new FileInfo(3L, "c.txt", "文档3", 80);
-        when(provider.searchFiles(100L, null, 10)).thenReturn(List.of(file2, file3));
+        FileInfo file2 = new FileInfo("2", "b.txt", "文档2", 50);
+        FileInfo file3 = new FileInfo("3", "c.txt", "文档3", 80);
+        when(provider.searchFiles("100", null, 10)).thenReturn(List.of(file2, file3));
 
         String result = tool.execute(ctx, arguments);
 
-        assertTrue(result.contains("\"fileId\":2"));
-        assertFalse(result.contains("\"fileId\":3"));
+        assertTrue(result.contains("\"fileId\":\"2\""));
+        assertFalse(result.contains("\"fileId\":\"3\""));
         assertFalse(result.contains("c.txt"));
-        verify(provider).searchFiles(100L, null, 10);
+        verify(provider).searchFiles("100", null, 10);
     }
 
     @Test
@@ -102,8 +102,8 @@ class KnowledgeFileInfoToolTest {
                   "fileId": 99
                 }
                 """;
-        when(provider.searchFiles(100L, null, 10)).thenReturn(List.of(
-                new FileInfo(2L, "b.txt", "文档2", 50)));
+        when(provider.searchFiles("100", null, 10)).thenReturn(List.of(
+                new FileInfo("2", "b.txt", "文档2", 50)));
 
         String result = tool.execute(ctx, arguments);
 
@@ -115,12 +115,12 @@ class KnowledgeFileInfoToolTest {
     @Test
     void execute_未传searchLimit时使用默认值10() throws Exception {
         String arguments = "{\"knowledgeBaseId\": 100}";
-        when(provider.searchFiles(100L, null, 10)).thenReturn(List.of());
+        when(provider.searchFiles("100", null, 10)).thenReturn(List.of());
 
         String result = tool.execute(ctx, arguments);
 
         assertNotNull(result);
-        verify(provider).searchFiles(100L, null, 10);
+        verify(provider).searchFiles("100", null, 10);
     }
 
     @Test
@@ -129,13 +129,13 @@ class KnowledgeFileInfoToolTest {
 
         assertTrue(result.contains("error"));
         assertTrue(result.contains("knowledgeBaseId"));
-        verify(provider, never()).searchFiles(anyLong(), anyString(), anyInt());
+        verify(provider, never()).searchFiles(anyString(), anyString(), anyInt());
     }
 
     @Test
     void execute_provider抛出异常_返回错误JSON() throws Exception {
         String arguments = "{\"knowledgeBaseId\": 100}";
-        when(provider.searchFiles(eq(100L), isNull(), eq(10))).thenThrow(new RuntimeException("搜索失败"));
+        when(provider.searchFiles(eq("100"), isNull(), eq(10))).thenThrow(new RuntimeException("搜索失败"));
 
         String result = tool.execute(ctx, arguments);
 
@@ -147,7 +147,7 @@ class KnowledgeFileInfoToolTest {
     void execute_provider异常消息含特殊字符_返回合法JSON() throws Exception {
         String arguments = "{\"knowledgeBaseId\": 100}";
         String specialMsg = "搜索失败: \"引号\" \n 第二行 \\ 反斜杠";
-        when(provider.searchFiles(eq(100L), isNull(), eq(10))).thenThrow(new RuntimeException(specialMsg));
+        when(provider.searchFiles(eq("100"), isNull(), eq(10))).thenThrow(new RuntimeException(specialMsg));
 
         String result = tool.execute(ctx, arguments);
 

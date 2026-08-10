@@ -79,8 +79,8 @@ public class KnowledgeBaseQueryProviderImpl implements KnowledgeBaseQueryProvide
         for (AgentKnowledgeBase binding : bindings) {
             KnowledgeBase knowledgeBase = knowledgeBaseMapper.selectById(binding.getKnowledgeBaseId());
             if (knowledgeBase != null) {
-                infos.add(new KnowledgeBaseInfo(knowledgeBase.getId(), knowledgeBase.getName(),
-                        knowledgeBase.getDescription()));
+                infos.add(new KnowledgeBaseInfo(IdConverter.toString(knowledgeBase.getId()),
+                        knowledgeBase.getName(), knowledgeBase.getDescription()));
             }
         }
         return infos;
@@ -95,9 +95,13 @@ public class KnowledgeBaseQueryProviderImpl implements KnowledgeBaseQueryProvide
      * @return 文件信息列表（仅已发布到 ES 的文件）
      */
     @Override
-    public List<FileInfo> searchFiles(Long kbId, String fileName, int limit) {
+    public List<FileInfo> searchFiles(String kbId, String fileName, int limit) {
+        Long kbIdLong = IdConverter.parse(kbId);
+        if (kbIdLong == null) {
+            return List.of();
+        }
         LambdaQueryWrapper<KnowledgeFile> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(KnowledgeFile::getKnowledgeBaseId, kbId)
+        wrapper.eq(KnowledgeFile::getKnowledgeBaseId, kbIdLong)
                 .eq(KnowledgeFile::getPublishStatus, PublishStatus.PUBLISHED);
         if (StringUtils.isNotBlank(fileName)) {
             wrapper.like(KnowledgeFile::getFileName, fileName);
@@ -109,8 +113,8 @@ public class KnowledgeBaseQueryProviderImpl implements KnowledgeBaseQueryProvide
         }
         wrapper.last("LIMIT " + effectiveLimit);
         return knowledgeFileMapper.selectList(wrapper).stream()
-                .map(file -> new FileInfo(file.getId(), file.getFileName(), file.getFileDescription(),
-                        computeLineCount(file.getFileContent())))
+                .map(file -> new FileInfo(IdConverter.toString(file.getId()), file.getFileName(),
+                        file.getFileDescription(), computeLineCount(file.getFileContent())))
                 .toList();
     }
 
@@ -126,14 +130,19 @@ public class KnowledgeBaseQueryProviderImpl implements KnowledgeBaseQueryProvide
      * @return 文本块列表
      */
     @Override
-    public List<TextChunkWithFile> searchChunks(Long kbId, Long fileId, SearchType searchType, String query,
+    public List<TextChunkWithFile> searchChunks(String kbId, String fileId, SearchType searchType, String query,
                                                 int topK) {
-        KnowledgeBase knowledgeBase = knowledgeBaseMapper.selectById(kbId);
+        Long kbIdLong = IdConverter.parse(kbId);
+        if (kbIdLong == null) {
+            return List.of();
+        }
+        Long fileIdLong = IdConverter.parse(fileId);
+        KnowledgeBase knowledgeBase = knowledgeBaseMapper.selectById(kbIdLong);
         if (knowledgeBase == null || StringUtils.isBlank(knowledgeBase.getEsIndex())) {
             return List.of();
         }
         String indexName = knowledgeBase.getEsIndex();
-        List<TextChunk> matched = search(indexName, kbId, fileId, knowledgeBase, searchType, query, topK);
+        List<TextChunk> matched = search(indexName, kbIdLong, fileIdLong, knowledgeBase, searchType, query, topK);
         if (matched.isEmpty()) {
             return List.of();
         }
@@ -152,7 +161,8 @@ public class KnowledgeBaseQueryProviderImpl implements KnowledgeBaseQueryProvide
                 dedup.putIfAbsent(chunk.getLineNumber(),
                         new TextChunkWithFile.TextChunk(chunk.getLineNumber(), chunk.getText()));
             }
-            results.add(new TextChunkWithFile(kbId, fileIdKey, fileName, new ArrayList<>(dedup.values())));
+            results.add(new TextChunkWithFile(kbId, IdConverter.toString(fileIdKey), fileName,
+                    new ArrayList<>(dedup.values())));
         }
         return results;
     }
@@ -167,15 +177,20 @@ public class KnowledgeBaseQueryProviderImpl implements KnowledgeBaseQueryProvide
      * @return 文本块，知识库或索引缺失时返回 null
      */
     @Override
-    public TextChunkWithFile getFileChunks(Long kbId, Long fileId, int startLine, int endLine) {
-        KnowledgeBase knowledgeBase = knowledgeBaseMapper.selectById(kbId);
+    public TextChunkWithFile getFileChunks(String kbId, String fileId, int startLine, int endLine) {
+        Long kbIdLong = IdConverter.parse(kbId);
+        Long fileIdLong = IdConverter.parse(fileId);
+        if (kbIdLong == null || fileIdLong == null) {
+            return null;
+        }
+        KnowledgeBase knowledgeBase = knowledgeBaseMapper.selectById(kbIdLong);
         if (knowledgeBase == null || StringUtils.isBlank(knowledgeBase.getEsIndex())) {
             return null;
         }
-        KnowledgeFile file = knowledgeFileMapper.selectById(fileId);
-        String fileName = file != null ? file.getFileName() : String.valueOf(fileId);
+        KnowledgeFile file = knowledgeFileMapper.selectById(fileIdLong);
+        String fileName = file != null ? file.getFileName() : fileId;
         List<TextChunk> chunks = knowledgeSearchClient.searchByFileAndLineRange(
-                knowledgeBase.getEsIndex(), kbId, fileId, startLine, endLine);
+                knowledgeBase.getEsIndex(), kbIdLong, fileIdLong, startLine, endLine);
         List<TextChunkWithFile.TextChunk> chunkList = chunks.stream()
                 .map(chunk -> new TextChunkWithFile.TextChunk(chunk.getLineNumber(), chunk.getText()))
                 .toList();

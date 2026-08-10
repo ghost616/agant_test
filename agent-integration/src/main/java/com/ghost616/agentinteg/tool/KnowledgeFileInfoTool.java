@@ -37,8 +37,8 @@ public class KnowledgeFileInfoTool extends CustomToolInvoker {
                         {
                           "type": "object",
                           "properties": {
-                            "knowledgeBaseId": { "type": "integer", "description": "知识库 ID" },
-                            "fileId": { "type": "integer", "description": "文件 ID，可选" },
+                            "knowledgeBaseId": { "type": "string", "description": "知识库 ID" },
+                            "fileId": { "type": "string", "description": "文件 ID，可选" },
                             "fileName": { "type": "string", "description": "文件名关键字" },
                             "searchLimit": { "type": "integer", "description": "返回数量上限，默认 10" }
                           },
@@ -52,12 +52,13 @@ public class KnowledgeFileInfoTool extends CustomToolInvoker {
         try {
             JsonNode root = JSON_MAPPER.readTree(arguments);
             JsonNode kbIdNode = root.get("knowledgeBaseId");
-            if (kbIdNode == null || kbIdNode.isNull() || !kbIdNode.canConvertToLong()) {
+            if (kbIdNode == null || kbIdNode.isNull() || kbIdNode.asText().isBlank()) {
                 return "{\"status\":\"error\",\"errMsg\":\"缺少 knowledgeBaseId 参数\"}";
             }
-            Long knowledgeBaseId = kbIdNode.asLong();
-            Long fileId = root.has("fileId") && root.get("fileId").canConvertToLong()
-                    ? root.get("fileId").asLong() : null;
+            String knowledgeBaseId = kbIdNode.asText();
+            String fileId = root.has("fileId") && !root.get("fileId").isNull()
+                    && !root.get("fileId").asText().isBlank()
+                    ? root.get("fileId").asText() : null;
             String fileName = root.has("fileName") && !root.get("fileName").isNull()
                     ? root.get("fileName").asText() : null;
             int searchLimit = root.has("searchLimit") && root.get("searchLimit").canConvertToInt()

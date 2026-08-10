@@ -7,6 +7,8 @@ import com.ghost616.agentbase.enums.ToolType;
 import com.ghost616.agentbase.service.agent.invoker.CustomToolInvoker;
 import com.ghost616.agentbase.service.agent.ToolDataProvider.SessionToolInfo;
 import com.ghost616.agentinteg.knowledge.KnowledgeBaseQueryProvider;
+import com.ghost616.agentinteg.knowledge.SearchType;
+import com.ghost616.agentinteg.knowledge.TextChunkWithFile;
 import com.ghost616.agentinteg.model.PlatformType;
 import com.ghost616.agentinteg.tool.BrowserToolCallback;
 import com.ghost616.agentinteg.tool.BrowserToolInvoker;
@@ -356,6 +358,33 @@ class DefaultToolDataProviderTest {
 
             assertInstanceOf(KnowledgeBaseInfoTool.class, result);
             verify(toolConfigService, never()).getById(anyLong());
+        }
+
+        @Test
+        @DisplayName("CUSTOM + RAG_KNOWLEDGE 知识库搜索工具执行时以 String ID 调用 Provider")
+        void ragKnowledgeSearch_execute_shouldUseStringIds() {
+            ToolConfigDTO config = createToolConfigWithName(ToolType.CUSTOM, KnowledgeSearchTool.TOOL_NAME);
+            ToolDetailDTO detail = createToolDetail(SubToolType.RAG_KNOWLEDGE);
+            when(toolConfigService.getById(toolId)).thenReturn(detail);
+            when(knowledgeBaseQueryProviderProvider.getObject()).thenReturn(knowledgeBaseQueryProvider);
+            when(knowledgeBaseQueryProvider.searchChunks("100", null, SearchType.VECTOR, "hello", 5))
+                    .thenReturn(List.of(new TextChunkWithFile("100", "2", "a.txt",
+                            List.of(new TextChunkWithFile.TextChunk(5, "line5")))));
+
+            CustomToolInvoker invoker = provider.getCustomInvoker(config);
+
+            assertInstanceOf(KnowledgeSearchTool.class, invoker);
+            String result = invoker.execute(null, """
+                    {
+                      "knowledgeBaseId": "100",
+                      "searchType": "VECTOR",
+                      "query": "hello",
+                      "searchLimit": 5
+                    }
+                    """);
+
+            assertNotNull(result);
+            verify(knowledgeBaseQueryProvider).searchChunks("100", null, SearchType.VECTOR, "hello", 5);
         }
     }
 

@@ -55,12 +55,12 @@ class KnowledgeBaseInfoToolTest {
     @Test
     void execute_正常路径_使用ctx会话ID返回知识库信息列表() throws Exception {
         when(ctx.getSessionId()).thenReturn("s1");
-        KnowledgeBaseInfo info = new KnowledgeBaseInfo(1L, "kb-name", "kb-desc");
+        KnowledgeBaseInfo info = new KnowledgeBaseInfo("1", "kb-name", "kb-desc");
         when(provider.getKnowledgeBaseInfo("s1")).thenReturn(List.of(info));
 
         String result = tool.execute(ctx, "{}");
 
-        assertTrue(result.contains("\"kbId\":1"));
+        assertTrue(result.contains("\"kbId\":\"1\""));
         assertTrue(result.contains("\"kbName\":\"kb-name\""));
         assertTrue(result.contains("\"kbDescription\":\"kb-desc\""));
         verify(provider).getKnowledgeBaseInfo("s1");

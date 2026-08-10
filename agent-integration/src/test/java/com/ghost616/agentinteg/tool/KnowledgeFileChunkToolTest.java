@@ -69,13 +69,13 @@ class KnowledgeFileChunkToolTest {
                 }
                 """;
         TextChunkWithFile withFile = new TextChunkWithFile(
-                100L, 2L, "a.txt", List.of(new TextChunk(0, "line0"), new TextChunk(1, "line1")));
-        when(provider.getFileChunks(100L, 2L, 0, 10)).thenReturn(withFile);
+                "100", "2", "a.txt", List.of(new TextChunk(0, "line0"), new TextChunk(1, "line1")));
+        when(provider.getFileChunks("100", "2", 0, 10)).thenReturn(withFile);
 
         String result = tool.execute(ctx, arguments);
 
         assertEquals("line0\nline1", result);
-        verify(provider).getFileChunks(100L, 2L, 0, 10);
+        verify(provider).getFileChunks("100", "2", 0, 10);
     }
 
     @Test
@@ -89,8 +89,8 @@ class KnowledgeFileChunkToolTest {
                 }
                 """;
         TextChunkWithFile withFile = new TextChunkWithFile(
-                100L, 2L, "a.txt", List.of(new TextChunk(3, "line3"), new TextChunk(1, "line1")));
-        when(provider.getFileChunks(100L, 2L, 0, 10)).thenReturn(withFile);
+                "100", "2", "a.txt", List.of(new TextChunk(3, "line3"), new TextChunk(1, "line1")));
+        when(provider.getFileChunks("100", "2", 0, 10)).thenReturn(withFile);
 
         String result = tool.execute(ctx, arguments);
 
@@ -107,7 +107,7 @@ class KnowledgeFileChunkToolTest {
                   "endLine": 10
                 }
                 """;
-        when(provider.getFileChunks(100L, 2L, 0, 10)).thenReturn(null);
+        when(provider.getFileChunks("100", "2", 0, 10)).thenReturn(null);
 
         String result = tool.execute(ctx, arguments);
 
@@ -124,8 +124,8 @@ class KnowledgeFileChunkToolTest {
                   "endLine": 10
                 }
                 """;
-        when(provider.getFileChunks(100L, 2L, 0, 10)).thenReturn(
-                new TextChunkWithFile(100L, 2L, "a.txt", List.of()));
+        when(provider.getFileChunks("100", "2", 0, 10)).thenReturn(
+                new TextChunkWithFile("100", "2", "a.txt", List.of()));
 
         String result = tool.execute(ctx, arguments);
 
@@ -141,12 +141,12 @@ class KnowledgeFileChunkToolTest {
                   "endLine": 50
                 }
                 """;
-        when(provider.getFileChunks(100L, 2L, 0, 50)).thenReturn(
-                new TextChunkWithFile(100L, 2L, "a.txt", List.of()));
+        when(provider.getFileChunks("100", "2", 0, 50)).thenReturn(
+                new TextChunkWithFile("100", "2", "a.txt", List.of()));
 
         tool.execute(ctx, arguments);
 
-        verify(provider).getFileChunks(100L, 2L, 0, 50);
+        verify(provider).getFileChunks("100", "2", 0, 50);
     }
 
     @Test
@@ -157,15 +157,15 @@ class KnowledgeFileChunkToolTest {
                   "fileId": 2
                 }
                 """;
-        FileInfo file = new FileInfo(2L, "a.txt", "文档", 120);
-        when(provider.searchFiles(100L, null, 1000)).thenReturn(List.of(file));
-        when(provider.getFileChunks(100L, 2L, 0, 120)).thenReturn(
-                new TextChunkWithFile(100L, 2L, "a.txt", List.of()));
+        FileInfo file = new FileInfo("2", "a.txt", "文档", 120);
+        when(provider.searchFiles("100", null, 1000)).thenReturn(List.of(file));
+        when(provider.getFileChunks("100", "2", 0, 120)).thenReturn(
+                new TextChunkWithFile("100", "2", "a.txt", List.of()));
 
         tool.execute(ctx, arguments);
 
-        verify(provider).searchFiles(100L, null, 1000);
-        verify(provider).getFileChunks(100L, 2L, 0, 120);
+        verify(provider).searchFiles("100", null, 1000);
+        verify(provider).getFileChunks("100", "2", 0, 120);
     }
 
     @Test
@@ -176,13 +176,13 @@ class KnowledgeFileChunkToolTest {
                   "fileId": 999
                 }
                 """;
-        when(provider.searchFiles(100L, null, 1000)).thenReturn(List.of());
-        when(provider.getFileChunks(100L, 999L, 0, Integer.MAX_VALUE)).thenReturn(
-                new TextChunkWithFile(100L, 999L, "x.txt", List.of()));
+        when(provider.searchFiles("100", null, 1000)).thenReturn(List.of());
+        when(provider.getFileChunks("100", "999", 0, Integer.MAX_VALUE)).thenReturn(
+                new TextChunkWithFile("100", "999", "x.txt", List.of()));
 
         tool.execute(ctx, arguments);
 
-        verify(provider).getFileChunks(100L, 999L, 0, Integer.MAX_VALUE);
+        verify(provider).getFileChunks("100", "999", 0, Integer.MAX_VALUE);
     }
 
     @Test
@@ -192,7 +192,7 @@ class KnowledgeFileChunkToolTest {
 
         assertTrue(result1.contains("error"));
         assertTrue(result2.contains("error"));
-        verify(provider, never()).getFileChunks(anyLong(), anyLong(), anyInt(), anyInt());
+        verify(provider, never()).getFileChunks(anyString(), anyString(), anyInt(), anyInt());
     }
 
     @Test
@@ -205,7 +205,7 @@ class KnowledgeFileChunkToolTest {
                   "endLine": 10
                 }
                 """;
-        when(provider.getFileChunks(100L, 2L, 0, 10)).thenThrow(new RuntimeException("查询失败"));
+        when(provider.getFileChunks("100", "2", 0, 10)).thenThrow(new RuntimeException("查询失败"));
 
         String result = tool.execute(ctx, arguments);
 
@@ -224,7 +224,7 @@ class KnowledgeFileChunkToolTest {
                 }
                 """;
         String specialMsg = "查询失败: \"引号\" \n 第二行 \\ 反斜杠";
-        when(provider.getFileChunks(100L, 2L, 0, 10)).thenThrow(new RuntimeException(specialMsg));
+        when(provider.getFileChunks("100", "2", 0, 10)).thenThrow(new RuntimeException(specialMsg));
 
         String result = tool.execute(ctx, arguments);
 

@@ -43,8 +43,8 @@ public class KnowledgeSearchTool extends CustomToolInvoker {
                         {
                           "type": "object",
                           "properties": {
-                            "knowledgeBaseId": { "type": "integer", "description": "知识库 ID" },
-                            "fileId": { "type": "integer", "description": "文件 ID，不传表示不限文件" },
+                            "knowledgeBaseId": { "type": "string", "description": "知识库 ID" },
+                            "fileId": { "type": "string", "description": "文件 ID，不传表示不限文件" },
                             "searchType": { "type": "string", "enum": ["VECTOR", "FULLTEXT", "HYBRID"], "description": "搜索类型" },
                             "query": { "type": "string", "description": "查询关键字" },
                             "searchLimit": { "type": "integer", "description": "返回数量上限，默认 10" },
@@ -60,12 +60,13 @@ public class KnowledgeSearchTool extends CustomToolInvoker {
         try {
             JsonNode root = JSON_MAPPER.readTree(arguments);
             JsonNode kbIdNode = root.get("knowledgeBaseId");
-            if (kbIdNode == null || kbIdNode.isNull() || !kbIdNode.canConvertToLong()) {
+            if (kbIdNode == null || kbIdNode.isNull() || kbIdNode.asText().isBlank()) {
                 return "{\"status\":\"error\",\"errMsg\":\"缺少 knowledgeBaseId 参数\"}";
             }
-            Long knowledgeBaseId = kbIdNode.asLong();
-            Long fileId = root.has("fileId") && root.get("fileId").canConvertToLong()
-                    ? root.get("fileId").asLong() : null;
+            String knowledgeBaseId = kbIdNode.asText();
+            String fileId = root.has("fileId") && !root.get("fileId").isNull()
+                    && !root.get("fileId").asText().isBlank()
+                    ? root.get("fileId").asText() : null;
             String searchTypeText = root.has("searchType") && !root.get("searchType").isNull()
                     ? root.get("searchType").asText() : null;
             String query = root.has("query") && !root.get("query").isNull()
@@ -175,7 +176,7 @@ public class KnowledgeSearchTool extends CustomToolInvoker {
         return new ArrayList<>(unique.values());
     }
 
-    private record FileKey(Long knowledgeBaseId, Long fileId) {
+    private record FileKey(String knowledgeBaseId, String fileId) {
     }
 
     private List<String> mergeContinuousChunks(List<TextChunk> chunks) {
