@@ -72,7 +72,12 @@ public class DefaultChatDataCacheProvider implements ChatDataCacheProvider {
     @Override
     public boolean isCacheDone(String cacheId) {
         CacheEntry entry = caches.get(cacheId);
-        return entry != null && entry.done;
+        if (entry == null) {
+            return false;
+        }
+        synchronized (entry) {
+            return entry.done;
+        }
     }
 
     @Override
@@ -104,7 +109,9 @@ public class DefaultChatDataCacheProvider implements ChatDataCacheProvider {
         if (entry == null) {
             return -1;
         }
-        return entry.chunks.size() - 1;
+        synchronized (entry) {
+            return entry.chunks.size() - 1;
+        }
     }
 
     @Override
@@ -138,10 +145,12 @@ public class DefaultChatDataCacheProvider implements ChatDataCacheProvider {
         if (entry == null) {
             return List.of();
         }
-        if (startIndex < 0 || endIndex < startIndex || startIndex >= entry.chunks.size()) {
-            return List.of();
+        synchronized (entry) {
+            if (startIndex < 0 || endIndex < startIndex || startIndex >= entry.chunks.size()) {
+                return List.of();
+            }
+            int safeEndIndex = Math.min(endIndex, entry.chunks.size() - 1);
+            return new ArrayList<>(entry.chunks.subList(startIndex, safeEndIndex + 1));
         }
-        int safeEndIndex = Math.min(endIndex, entry.chunks.size() - 1);
-        return new ArrayList<>(entry.chunks.subList(startIndex, safeEndIndex + 1));
     }
 }

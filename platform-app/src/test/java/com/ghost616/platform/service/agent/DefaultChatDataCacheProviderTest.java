@@ -6,7 +6,13 @@ import com.ghost616.agentbase.service.agent.CacheSessionInfo;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -330,5 +336,111 @@ class DefaultChatDataCacheProviderTest {
         assertEquals(4, chunks.size());
         assertEquals("c1", chunks.get(0).getDelta());
         assertEquals("c4", chunks.get(3).getDelta());
+    }
+
+    @Test
+    void 并发追加与读取_无异常且块数量正确() throws Exception {
+        String cacheId = provider.createCache("session-1", "conv-1");
+        int writerCount = 4;
+        int chunksPerWriter = 100;
+        int readerCount = 2;
+        ExecutorService pool = Executors.newFixedThreadPool(writerCount + readerCount);
+        CountDownLatch start = new CountDownLatch(1);
+
+        try {
+            List<Future<?>> futures = new ArrayList<>();
+            for (int w = 0; w < writerCount; w++) {
+                final int writer = w;
+                futures.add(pool.submit(() -> {
+                    try {
+                        start.await();
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        return;
+                    }
+                    for (int i = 0; i < chunksPerWriter; i++) {
+                        provider.appendChunk(cacheId, chunk("w" + writer + "-c" + i, null));
+                    }
+                }));
+            }
+            for (int r = 0; r < readerCount; r++) {
+                futures.add(pool.submit(() -> {
+                    try {
+                        start.await();
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        return;
+                    }
+                    for (int i = 0; i < 500; i++) {
+                        int maxIndex = provider.getMaxChunkIndex(cacheId);
+                        if (maxIndex >= 0) {
+                            provider.getChunks(cacheId, 0, maxIndex);
+                        }
+                        provider.isCacheDone(cacheId);
+                    }
+                }));
+            }
+            start.countDown();
+            for (Future<?> future : futures) {
+                future.get(30, TimeUnit.SECONDS);
+            }
+
+            assertEquals(writerCount * chunksPerWriter, provider.getMaxChunkIndex(cacheId) + 1);
+            assertFalse(provider.isCacheDone(cacheId));
+        } finally {
+            pool.shutdownNow();
+        }
+    }
+
+    @Test
+    void 并发追加带结束标记_读操作可见done状态() throws Exception {
+        String cacheId = provider.createCache("session-1", "conv-1");
+        int writerCount = 4;
+        int chunksPerWriter = 100;
+        ExecutorService pool = Executors.newFixedThreadPool(writerCount + 1);
+        CountDownLatch start = new CountDownLatch(1);
+
+        try {
+            List<Future<?>> futures = new ArrayList<>();
+            for (int w = 0; w < writerCount; w++) {
+                final int writer = w;
+                futures.add(pool.submit(() -> {
+                    try {
+                        start.await();
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        return;
+                    }
+                    for (int i = 0; i < chunksPerWriter; i++) {
+                        boolean last = writer == writerCount - 1 && i == chunksPerWriter - 1;
+                        provider.appendChunk(cacheId, chunk("w" + writer + "-c" + i, last ? FinishReason.STOP : null));
+                    }
+                }));
+            }
+            futures.add(pool.submit(() -> {
+                try {
+                    start.await();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    return;
+                }
+                for (int i = 0; i < 500; i++) {
+                    int maxIndex = provider.getMaxChunkIndex(cacheId);
+                    if (maxIndex >= 0) {
+                        provider.getChunks(cacheId, 0, maxIndex);
+                    }
+                    provider.isCacheDone(cacheId);
+                }
+            }));
+            start.countDown();
+            for (Future<?> future : futures) {
+                future.get(30, TimeUnit.SECONDS);
+            }
+
+            assertTrue(provider.isCacheDone(cacheId));
+            assertEquals(writerCount * chunksPerWriter, provider.getMaxChunkIndex(cacheId) + 1);
+        } finally {
+            pool.shutdownNow();
+        }
     }
 }
