@@ -84,6 +84,66 @@ class DefaultChatDataCacheProviderTest {
     }
 
     @Test
+    void getCacheIdsBySessionId_无匹配会话_返回空列表() {
+        provider.createCache("session-1", "conv-1");
+
+        List<String> cacheIds = provider.getCacheIdsBySessionId("other-session");
+
+        assertNotNull(cacheIds);
+        assertTrue(cacheIds.isEmpty());
+    }
+
+    @Test
+    void getCacheIdsBySessionId_匹配会话_返回全部缓存ID() {
+        String id1 = provider.createCache("session-1", "conv-1");
+        String id2 = provider.createCache("session-1", "conv-2");
+        provider.createCache("session-2", "conv-1");
+
+        List<String> cacheIds = provider.getCacheIdsBySessionId("session-1");
+
+        assertEquals(2, cacheIds.size());
+        assertTrue(cacheIds.contains(id1));
+        assertTrue(cacheIds.contains(id2));
+    }
+
+    @Test
+    void getCacheIdsBySessionId_按创建时间升序返回() {
+        String first = provider.createCache("session-1", "conv-1");
+        String second = provider.createCache("session-1", "conv-2");
+        String third = provider.createCache("session-1", "conv-3");
+
+        List<String> cacheIds = provider.getCacheIdsBySessionId("session-1");
+
+        assertEquals(3, cacheIds.size());
+        assertEquals(first, cacheIds.get(0));
+        assertEquals(second, cacheIds.get(1));
+        assertEquals(third, cacheIds.get(2));
+    }
+
+    @Test
+    void getCacheIdsBySessionId_不包含其他会话的缓存() {
+        String id = provider.createCache("session-1", "conv-1");
+        provider.createCache("session-2", "conv-9");
+
+        List<String> cacheIds = provider.getCacheIdsBySessionId("session-1");
+
+        assertEquals(1, cacheIds.size());
+        assertEquals(id, cacheIds.get(0));
+    }
+
+    @Test
+    void getCacheIdsBySessionId_已删除缓存不返回() {
+        String id = provider.createCache("session-1", "conv-1");
+        provider.createCache("session-1", "conv-2");
+        provider.removeCache(id);
+
+        List<String> cacheIds = provider.getCacheIdsBySessionId("session-1");
+
+        assertEquals(1, cacheIds.size());
+        assertEquals(provider.getCacheId("session-1", "conv-2"), cacheIds.get(0));
+    }
+
+    @Test
     void getCacheSessionInfo_缓存存在_返回会话信息() {
         String cacheId = provider.createCache("session-1", "conv-1");
 

@@ -1,9 +1,12 @@
 package com.ghost616.platform.service.agent;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import com.ghost616.agentbase.dto.model.ChatChunk;
 import com.ghost616.agentbase.service.agent.CacheSessionInfo;
@@ -28,10 +31,12 @@ public class DefaultChatDataCacheProvider implements ChatDataCacheProvider {
         private boolean done;
         private final String sessionId;
         private final String conversationId;
+        private final long createdAtMillis;
 
         private CacheEntry(String sessionId, String conversationId) {
             this.sessionId = sessionId;
             this.conversationId = conversationId;
+            this.createdAtMillis = System.currentTimeMillis();
         }
     }
 
@@ -73,6 +78,15 @@ public class DefaultChatDataCacheProvider implements ChatDataCacheProvider {
     @Override
     public String getCacheId(String sessionId, String conversationId) {
         return keyMap.get(key(sessionId, conversationId));
+    }
+
+    public List<String> getCacheIdsBySessionId(String sessionId) {
+        return caches.entrySet().stream()
+                .filter(e -> sessionId.equals(e.getValue().sessionId))
+                .sorted(Comparator.comparingLong((Map.Entry<String, CacheEntry> e) -> e.getValue().createdAtMillis)
+                        .thenComparing(e -> e.getValue().conversationId))
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toList());
     }
 
     @Override

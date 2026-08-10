@@ -122,9 +122,14 @@ public class AgentContextConfiguration {
     }
 
     @Bean
-    public ChatDataCacheManager chatDataCacheManager(DatabaseAgentLog databaseAgentLog) {
-        DefaultChatDataCacheProvider provider = new DefaultChatDataCacheProvider();
-        ChatDataCacheManager cacheManager = new ChatDataCacheManager(provider);
+    public DefaultChatDataCacheProvider defaultChatDataCacheProvider() {
+        return new DefaultChatDataCacheProvider();
+    }
+
+    @Bean
+    public ChatDataCacheManager chatDataCacheManager(DatabaseAgentLog databaseAgentLog,
+                                                     DefaultChatDataCacheProvider defaultChatDataCacheProvider) {
+        ChatDataCacheManager cacheManager = new ChatDataCacheManager(defaultChatDataCacheProvider);
         if (databaseAgentLog != null) {
             cacheManager.setAgentLog(databaseAgentLog);
         }

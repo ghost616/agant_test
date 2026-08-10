@@ -16,6 +16,7 @@ import com.ghost616.agentbase.service.agent.invoker.SystemTool;
 import com.ghost616.platform.repository.ModelConfigMapper;
 import com.ghost616.platform.repository.SessionMapper;
 import com.ghost616.platform.service.agent.DatabaseAgentLog;
+import com.ghost616.platform.service.agent.DefaultChatDataCacheProvider;
 import com.ghost616.platform.service.agent.DefaultChatDataProvider;
 import com.ghost616.platform.service.agent.DefaultSubSessionCallback;
 
@@ -89,8 +90,16 @@ class AgentContextConfigurationTest {
     }
 
     @Test
+    void defaultChatDataCacheProvider_正确创建实例() {
+        DefaultChatDataCacheProvider provider = config.defaultChatDataCacheProvider();
+
+        assertNotNull(provider);
+    }
+
+    @Test
     void chatDataCacheManager_正确创建并注入日志() {
-        ChatDataCacheManager cacheManager = config.chatDataCacheManager(databaseAgentLog);
+        DefaultChatDataCacheProvider provider = config.defaultChatDataCacheProvider();
+        ChatDataCacheManager cacheManager = config.chatDataCacheManager(databaseAgentLog, provider);
 
         assertNotNull(cacheManager);
         cacheManager.startCache("session-1", "conv-1");
@@ -99,7 +108,8 @@ class AgentContextConfigurationTest {
 
     @Test
     void chatDataCacheManager_DatabaseAgentLog为null时_不设置缓存管理器日志() {
-        ChatDataCacheManager cacheManager = config.chatDataCacheManager(null);
+        DefaultChatDataCacheProvider provider = config.defaultChatDataCacheProvider();
+        ChatDataCacheManager cacheManager = config.chatDataCacheManager(null, provider);
 
         assertNotNull(cacheManager);
         cacheManager.startCache("session-1", "conv-1");
