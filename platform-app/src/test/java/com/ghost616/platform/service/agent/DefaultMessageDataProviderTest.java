@@ -1,6 +1,8 @@
 package com.ghost616.platform.service.agent;
 
+import com.baomidou.mybatisplus.core.MybatisConfiguration;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import com.ghost616.agentbase.dto.model.ToolInfo;
 import com.ghost616.agentbase.dto.model.UsageInfo;
 import com.ghost616.agentbase.exception.BusinessException;
@@ -24,6 +26,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.apache.ibatis.builder.MapperBuilderAssistant;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -62,6 +65,7 @@ class DefaultMessageDataProviderTest {
 
     @BeforeEach
     void setUp() {
+        TableInfoHelper.initTableInfo(new MapperBuilderAssistant(new MybatisConfiguration(), ""), Message.class);
         provider = new DefaultMessageDataProvider(messageMapper, messageToolCallMapper,
                 messageToolCallService, sessionMapper, agentConfigMapper);
     }
@@ -890,13 +894,14 @@ class DefaultMessageDataProviderTest {
     @Test
     void getMessages_memoryEnabled_组数超过阈值_仅返回最近memoryGroupCount组() {
         mockMemoryAgent(true, 2);
+        when(messageMapper.countUserMessages(10L)).thenReturn(3L);
+        when(messageMapper.findNthUserSequenceNum(10L, 0)).thenReturn(1);
+        when(messageMapper.findNthUserSequenceNum(10L, 1)).thenReturn(3);
         List<Message> messages = List.of(
-                buildMessage(1L, "user", "u1", 1),
-                buildMessage(2L, "assistant", "a1", 2),
-                buildMessage(3L, "user", "u2", 3),
-                buildMessage(4L, "assistant", "a2", 4),
-                buildMessage(5L, "user", "u3", 5),
-                buildMessage(6L, "assistant", "a3", 6)
+                buildMessage(4L, "user", "u2", 3),
+                buildMessage(5L, "assistant", "a2", 4),
+                buildMessage(6L, "user", "u3", 5),
+                buildMessage(7L, "assistant", "a3", 6)
         );
         when(messageMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(messages);
         when(messageToolCallMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Collections.emptyList());
@@ -911,8 +916,31 @@ class DefaultMessageDataProviderTest {
     }
 
     @Test
+    void getMessages_memoryEnabled_组数超过阈值_按skipGroups调用findNth并添加ge条件() {
+        mockMemoryAgent(true, 2);
+        when(messageMapper.countUserMessages(10L)).thenReturn(5L);
+        when(messageMapper.findNthUserSequenceNum(10L, 0)).thenReturn(1);
+        when(messageMapper.findNthUserSequenceNum(10L, 3)).thenReturn(7);
+        when(messageMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Collections.emptyList());
+
+        provider.getMessages("10");
+
+        verify(messageMapper).countUserMessages(10L);
+        verify(messageMapper).findNthUserSequenceNum(10L, 0);
+        verify(messageMapper).findNthUserSequenceNum(10L, 3);
+        verify(messageMapper, never()).findNthUserSequenceNum(10L, 2);
+
+        ArgumentCaptor<LambdaQueryWrapper<Message>> captor = ArgumentCaptor.forClass(LambdaQueryWrapper.class);
+        verify(messageMapper).selectList(captor.capture());
+        String sql = captor.getValue().getTargetSql();
+        assertTrue(sql.contains("sequence_num >= ?"));
+        assertTrue(sql.contains("sequence_num < ?"));
+    }
+
+    @Test
     void getMessages_memoryEnabled_组数不足阈值_返回全部() {
         mockMemoryAgent(true, 5);
+        when(messageMapper.countUserMessages(10L)).thenReturn(2L);
         List<Message> messages = List.of(
                 buildMessage(1L, "user", "u1", 1),
                 buildMessage(2L, "assistant", "a1", 2),
@@ -927,15 +955,17 @@ class DefaultMessageDataProviderTest {
         assertEquals("u1", result.get(0).content());
         assertEquals("a1", result.get(1).content());
         assertEquals("u2", result.get(2).content());
+        verify(messageMapper, never()).findNthUserSequenceNum(anyLong(), anyInt());
     }
 
     @Test
     void getMessages_memoryEnabled_第一个user之前的消息保留() {
         mockMemoryAgent(true, 1);
+        when(messageMapper.countUserMessages(10L)).thenReturn(2L);
+        when(messageMapper.findNthUserSequenceNum(10L, 0)).thenReturn(2);
+        when(messageMapper.findNthUserSequenceNum(10L, 1)).thenReturn(4);
         List<Message> messages = List.of(
                 buildMessage(1L, "system", "sys", 1),
-                buildMessage(2L, "user", "u1", 2),
-                buildMessage(3L, "assistant", "a1", 3),
                 buildMessage(4L, "user", "u2", 4),
                 buildMessage(5L, "assistant", "a2", 5)
         );
@@ -953,6 +983,7 @@ class DefaultMessageDataProviderTest {
     @Test
     void getMessages_memoryEnabled_无user消息_返回全部() {
         mockMemoryAgent(true, 1);
+        when(messageMapper.countUserMessages(10L)).thenReturn(0L);
         List<Message> messages = List.of(
                 buildMessage(1L, "system", "sys", 1)
         );

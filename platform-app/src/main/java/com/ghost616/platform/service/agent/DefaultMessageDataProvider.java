@@ -160,63 +160,40 @@ public class DefaultMessageDataProvider implements MessageDataProvider {
     @Override
     public List<MessageDTO> getMessages(String sessionId) {
         Long sid = IdConverter.parse(sessionId);
+        TruncationBounds bounds = resolveMemoryTruncationBounds(sid);
         LambdaQueryWrapper<Message> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Message::getSessionId, sid)
-                .eq(Message::getRollback, false)
-                .orderByAsc(Message::getSequenceNum);
+                .eq(Message::getRollback, false);
+        if (bounds != null) {
+            wrapper.and(w -> w.lt(Message::getSequenceNum, bounds.firstUserSeq())
+                    .or()
+                    .ge(Message::getSequenceNum, bounds.keepFromSeq()));
+        }
+        wrapper.orderByAsc(Message::getSequenceNum);
         List<Message> messages = messageMapper.selectList(wrapper);
-        List<Message> truncated = truncateByMemory(messages, sid);
-        return toMessageDTOs(truncated);
+        return toMessageDTOs(messages);
     }
 
-    private List<Message> truncateByMemory(List<Message> messages, Long sessionId) {
+    private TruncationBounds resolveMemoryTruncationBounds(Long sessionId) {
         AgentConfig agentConfig = resolveAgentConfig(sessionId);
         if (agentConfig == null || !Boolean.TRUE.equals(agentConfig.getMemoryEnabled())
                 || agentConfig.getMemoryGroupCount() == null || agentConfig.getMemoryGroupCount() <= 0) {
-            return messages;
+            return null;
         }
-
-        int firstUserIndex = -1;
-        for (int i = 0; i < messages.size(); i++) {
-            if ("user".equals(messages.get(i).getRole())) {
-                firstUserIndex = i;
-                break;
-            }
+        Long totalGroups = messageMapper.countUserMessages(sessionId);
+        if (totalGroups == null || totalGroups <= agentConfig.getMemoryGroupCount()) {
+            return null;
         }
-        if (firstUserIndex < 0) {
-            return messages;
+        int skipGroups = totalGroups.intValue() - agentConfig.getMemoryGroupCount();
+        Integer firstUserSeq = messageMapper.findNthUserSequenceNum(sessionId, 0);
+        Integer keepFromSeq = messageMapper.findNthUserSequenceNum(sessionId, skipGroups);
+        if (firstUserSeq == null || keepFromSeq == null) {
+            return null;
         }
-
-        List<Message> prefix = messages.subList(0, firstUserIndex);
-        List<Message> body = new ArrayList<>(messages.subList(firstUserIndex, messages.size()));
-
-        int totalGroups = 0;
-        for (Message message : body) {
-            if ("user".equals(message.getRole())) {
-                totalGroups++;
-            }
-        }
-        if (totalGroups <= agentConfig.getMemoryGroupCount()) {
-            return messages;
-        }
-
-        int skipGroups = totalGroups - agentConfig.getMemoryGroupCount();
-        int keepFrom = 0;
-        int groupIndex = 0;
-        for (int i = 0; i < body.size(); i++) {
-            if ("user".equals(body.get(i).getRole())) {
-                if (groupIndex == skipGroups) {
-                    keepFrom = i;
-                    break;
-                }
-                groupIndex++;
-            }
-        }
-
-        List<Message> result = new ArrayList<>(prefix);
-        result.addAll(body.subList(keepFrom, body.size()));
-        return result;
+        return new TruncationBounds(firstUserSeq, keepFromSeq);
     }
+
+    private record TruncationBounds(int firstUserSeq, int keepFromSeq) {}
 
     private AgentConfig resolveAgentConfig(Long sessionId) {
         if (sessionId == null) {
