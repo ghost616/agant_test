@@ -128,7 +128,7 @@ function AgentLogList(): JSX.Element {
       dataIndex: 'sessionName',
       width: 160,
       ellipsis: true,
-      render: (value?: string) => value || '-',
+      render: (value?: string, record?: AgentLog) => value || record?.sessionId || '-',
     },
     {
       title: '对话ID',

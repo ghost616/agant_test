@@ -114,6 +114,38 @@ describe('AgentLogList 初始加载与表格渲染', () => {
     expect(level.tagName).toBe('SPAN');
     expect(level.getAttribute('style')).not.toContain('color');
   });
+
+  it('会话名为空时展示会话 ID', async () => {
+    mocks.listAgentLogs.mockResolvedValue(
+      defaultMockResult({ sessionName: undefined, sessionId: '100' }),
+    );
+
+    renderComponent();
+    await waitFor(() => {
+      const firstCells = Array.from(
+        document.querySelectorAll('.ant-table-tbody td:first-child'),
+      );
+      const sessionNameCells = firstCells.map((el) => el?.textContent?.trim());
+      expect(sessionNameCells).toContain('100');
+    });
+
+    expect(screen.queryByText('会话A')).toBeNull();
+  });
+
+  it('会话名与会话 ID 均为空时展示占位符 -', async () => {
+    mocks.listAgentLogs.mockResolvedValue(
+      defaultMockResult({ sessionName: undefined, sessionId: undefined }),
+    );
+
+    renderComponent();
+    await waitFor(() => {
+      const firstCells = Array.from(
+        document.querySelectorAll('.ant-table-tbody td:first-child'),
+      );
+      const sessionNameCells = firstCells.map((el) => el?.textContent?.trim());
+      expect(sessionNameCells).toContain('-');
+    });
+  });
 });
 
 describe('AgentLogList 日志等级选项（由 LogLevel 枚举生成）', () => {
