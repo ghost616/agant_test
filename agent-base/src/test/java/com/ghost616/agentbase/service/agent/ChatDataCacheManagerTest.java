@@ -24,8 +24,10 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -212,10 +214,12 @@ class ChatDataCacheManagerTest {
 
     @Test
     void getStream_whenNoNewDataForTimeout_shouldEmitErrorFinishChunk() {
+        manager.setAgentLog(agentLog);
         manager.setPollTimeoutMs(100);
         when(provider.cacheExists(cacheId)).thenReturn(true);
         when(provider.getMaxChunkIndex(cacheId)).thenReturn(0);
         when(provider.getChunks(cacheId, 0, 0)).thenReturn(List.of(chunk(0)));
+        when(provider.getCacheSessionInfo(cacheId)).thenReturn(new CacheSessionInfo(sessionId, conversationId));
 
         StepVerifier.create(manager.getStream(cacheId, 0))
                 .assertNext(ev -> assertEquals(0, ev.data().getIndex()))
@@ -231,6 +235,14 @@ class ChatDataCacheManagerTest {
                     assertEquals(1, ev.data().getIndex());
                 })
                 .verifyComplete();
+
+        ArgumentCaptor<ChatCacheLogData> captor = ArgumentCaptor.forClass(ChatCacheLogData.class);
+        verify(agentLog, atLeastOnce()).addLog(captor.capture());
+        boolean timeoutLogged = captor.getAllValues().stream()
+                .anyMatch(l -> l.getLogLevel() == LogLevel.WARN
+                        && "CACHE_STREAM".equals(l.getOperation())
+                        && cacheId.equals(l.getCacheId()));
+        assertTrue(timeoutLogged);
     }
 
     @Test
@@ -437,13 +449,20 @@ class ChatDataCacheManagerTest {
                 .verifyComplete();
 
         ArgumentCaptor<ChatCacheLogData> captor = ArgumentCaptor.forClass(ChatCacheLogData.class);
-        verify(agentLog, times(2)).addLog(captor.capture());
+        verify(agentLog, times(3)).addLog(captor.capture());
+        boolean dataArrivalLogged = false;
         for (ChatCacheLogData logData : captor.getAllValues()) {
             assertEquals(LogLevel.INFO, logData.getLogLevel());
             assertEquals("CACHE_STREAM", logData.getOperation());
             assertEquals(cacheId, logData.getCacheId());
             assertEquals(sessionId, logData.getSessionId());
             assertEquals(conversationId, logData.getConversationId());
+            if (logData.getFrom() != null) {
+                assertEquals(0, logData.getFrom());
+                assertEquals(0, logData.getCurrentMax());
+                dataArrivalLogged = true;
+            }
         }
+        assertTrue(dataArrivalLogged);
     }
 }

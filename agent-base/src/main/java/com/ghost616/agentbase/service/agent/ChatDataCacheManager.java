@@ -172,6 +172,7 @@ public class ChatDataCacheManager {
                     int from = lastIndex.get() + 1;
                     int currentMax = provider.getMaxChunkIndex(cacheId);
                     if (currentMax >= from) {
+                        addCacheLog(LogLevel.INFO, OPERATION_CACHE_STREAM, cacheId, null, null, from, currentMax);
                         List<ChatChunk> newChunks = provider.getChunks(cacheId, from, currentMax);
                         lastIndex.set(currentMax);
                         lastDataTick.set(System.currentTimeMillis());
@@ -185,6 +186,7 @@ public class ChatDataCacheManager {
                     }
                     if (System.currentTimeMillis() - lastDataTick.get() >= pollTimeoutMs) {
                         log.warn("轮询超时无新数据, cacheId={}, lastIndex={}", cacheId, lastIndex.get());
+                        addCacheLog(LogLevel.WARN, OPERATION_CACHE_STREAM, cacheId, null, null);
                         ChatChunk errorChunk = ChatChunk.builder()
                                 .index(lastIndex.get() + 1)
                                 .finishReason(FinishReason.ERROR)
@@ -215,6 +217,14 @@ public class ChatDataCacheManager {
      * 构建并记录聊天数据缓存日志。仅持有 cacheId 时通过 provider 解析会话/对话 ID。
      */
     private void addCacheLog(LogLevel logLevel, String operation, String cacheId, String sessionId, String conversationId) {
+        addCacheLog(logLevel, operation, cacheId, sessionId, conversationId, null, null);
+    }
+
+    /**
+     * 构建并记录聊天数据缓存日志，可携带本次拉取序号范围。仅持有 cacheId 时通过 provider 解析会话/对话 ID。
+     */
+    private void addCacheLog(LogLevel logLevel, String operation, String cacheId, String sessionId, String conversationId,
+                             Integer from, Integer currentMax) {
         if (agentLog == null) {
             return;
         }
@@ -239,6 +249,8 @@ public class ChatDataCacheManager {
                 .sessionId(sessionId)
                 .conversationId(conversationId)
                 .cacheId(cacheId)
+                .from(from)
+                .currentMax(currentMax)
                 .build());
     }
 }
