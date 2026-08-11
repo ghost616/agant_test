@@ -137,7 +137,7 @@ public class ChatDataCacheManager {
     /**
      * 从缓存读取从 startIndex 开始的聊天块并转为 SSE 流返回。
      * 缓存不存在、缓存无数据（maxIndex < 0）或 startIndex 大于最大序号时抛出 {@link BusinessException}。
-     * 逐个输出已缓存的块并检查 finishReason，若所有可用块均未结束则轮询获取新增块，
+     * 通过统一的轮询循环驱动：初始数据与新增块均按 lastIndex+1 起拉取并检查 finishReason，
      * 直至遇到 finishReason 非 null 的块或超时（生成 finishReason=ERROR 结束块）。
      *
      * @param cacheId    缓存 ID
@@ -163,32 +163,6 @@ public class ChatDataCacheManager {
         AtomicBoolean finished = new AtomicBoolean(false);
         AtomicLong lastDataTick = new AtomicLong(System.currentTimeMillis());
 
-        Flux<ChatChunk> chunkFlux = Flux.defer(() -> {
-            List<ChatChunk> chunks = provider.getChunks(cacheId, startIndex, maxIndex);
-            lastIndex.set(maxIndex);
-            for (ChatChunk chunk : chunks) {
-                if (chunk.getFinishReason() != null) {
-                    finished.set(true);
-                    break;
-                }
-            }
-            return Flux.fromIterable(chunks)
-                    .concatWith(pollNewChunks(cacheId, lastIndex, finished, lastDataTick));
-        });
-
-        return chunkFlux.map(chunk -> ServerSentEvent.<ChatChunk>builder().data(chunk).build())
-                .doFinally(signalType -> addCacheLog(LogLevel.INFO, OPERATION_CACHE_STREAM, cacheId, null, null));
-    }
-
-    /**
-     * 轮询获取缓存中新增的聊天块，逐块输出并检查 finishReason。
-     * 仅通过块中 finishReason 判定流结束，超过 {@link #POLL_TIMEOUT_MS} 未获取到新数据则生成 finishReason=ERROR 结束块并终止。
-     */
-    private Flux<ChatChunk> pollNewChunks(String cacheId, AtomicReference<Integer> lastIndex,
-                                          AtomicBoolean finished, AtomicLong lastDataTick) {
-        if (finished.get()) {
-            return Flux.empty();
-        }
         return Flux.interval(POLL_INTERVAL)
                 .takeUntil(tick -> finished.get())
                 .concatMap(tick -> {
@@ -219,7 +193,9 @@ public class ChatDataCacheManager {
                         return Flux.just(errorChunk);
                     }
                     return Flux.empty();
-                });
+                })
+                .map(chunk -> ServerSentEvent.<ChatChunk>builder().data(chunk).build())
+                .doFinally(signalType -> addCacheLog(LogLevel.INFO, OPERATION_CACHE_STREAM, cacheId, null, null));
     }
 
     /**

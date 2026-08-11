@@ -191,12 +191,14 @@ class ChatDataCacheManagerTest {
     @Test
     void getStream_shouldPollForNewChunksUntilFinishReason() {
         when(provider.cacheExists(cacheId)).thenReturn(true);
-        when(provider.getMaxChunkIndex(cacheId)).thenReturn(0).thenReturn(1);
+        when(provider.getMaxChunkIndex(cacheId)).thenReturn(0).thenReturn(0).thenReturn(1);
         when(provider.getChunks(cacheId, 0, 0)).thenReturn(List.of(chunk(0)));
         when(provider.getChunks(cacheId, 1, 1))
                 .thenReturn(List.of(chunkWithFinish(1, FinishReason.STOP)));
 
         StepVerifier.withVirtualTime(() -> manager.getStream(cacheId, 0))
+                .expectSubscription()
+                .thenAwait(Duration.ofMillis(1))
                 .assertNext(ev -> assertEquals(0, ev.data().getIndex()))
                 .thenAwait(Duration.ofMillis(100))
                 .assertNext(ev -> {
