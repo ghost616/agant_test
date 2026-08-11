@@ -152,6 +152,7 @@ class ChatDataCacheManagerTest {
                     assertEquals(2, ev.data().getIndex());
                     assertEquals(FinishReason.STOP, ev.data().getFinishReason());
                 })
+                .assertNext(ev -> assertNull(ev.data().getIndex()))
                 .verifyComplete();
         verify(provider).getChunks(cacheId, 0, 2);
     }
@@ -168,6 +169,7 @@ class ChatDataCacheManagerTest {
                     assertEquals(1, ev.data().getIndex());
                     assertEquals(FinishReason.STOP, ev.data().getFinishReason());
                 })
+                .assertNext(ev -> assertNull(ev.data().getIndex()))
                 .verifyComplete();
         verify(provider).getChunks(cacheId, 1, 1);
     }
@@ -185,6 +187,7 @@ class ChatDataCacheManagerTest {
                     assertEquals(1, ev.data().getIndex());
                     assertEquals(FinishReason.STOP, ev.data().getFinishReason());
                 })
+                .assertNext(ev -> assertNull(ev.data().getIndex()))
                 .verifyComplete();
         verify(provider).getChunks(cacheId, 0, 1);
         verify(provider, never()).isCacheDone(cacheId);
@@ -207,6 +210,7 @@ class ChatDataCacheManagerTest {
                     assertEquals(1, ev.data().getIndex());
                     assertEquals(FinishReason.STOP, ev.data().getFinishReason());
                 })
+                .assertNext(ev -> assertNull(ev.data().getIndex()))
                 .verifyComplete();
         verify(provider).getChunks(cacheId, 0, 0);
         verify(provider).getChunks(cacheId, 1, 1);
@@ -230,10 +234,12 @@ class ChatDataCacheManagerTest {
                         Thread.currentThread().interrupt();
                     }
                 })
+                .thenConsumeWhile(ev -> ev.data().getIndex() == null)
                 .assertNext(ev -> {
                     assertEquals(FinishReason.ERROR, ev.data().getFinishReason());
                     assertEquals(1, ev.data().getIndex());
                 })
+                .assertNext(ev -> assertNull(ev.data().getIndex()))
                 .verifyComplete();
 
         ArgumentCaptor<ChatCacheLogData> captor = ArgumentCaptor.forClass(ChatCacheLogData.class);
@@ -446,6 +452,7 @@ class ChatDataCacheManagerTest {
 
         StepVerifier.create(manager.getStream(cacheId, 0))
                 .assertNext(ev -> assertEquals(0, ev.data().getIndex()))
+                .assertNext(ev -> assertNull(ev.data().getIndex()))
                 .verifyComplete();
 
         ArgumentCaptor<ChatCacheLogData> captor = ArgumentCaptor.forClass(ChatCacheLogData.class);

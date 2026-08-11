@@ -167,7 +167,7 @@ public class ChatDataCacheManager {
                 .takeUntil(tick -> finished.get())
                 .concatMap(tick -> {
                     if (finished.get()) {
-                        return Flux.empty();
+                        return Flux.just(new ChatChunk());
                     }
                     int from = lastIndex.get() + 1;
                     int currentMax = provider.getMaxChunkIndex(cacheId);
@@ -194,7 +194,7 @@ public class ChatDataCacheManager {
                         finished.set(true);
                         return Flux.just(errorChunk);
                     }
-                    return Flux.empty();
+                    return Flux.just(new ChatChunk());
                 })
                 .map(chunk -> ServerSentEvent.<ChatChunk>builder().data(chunk).build())
                 .doFinally(signalType -> addCacheLog(LogLevel.INFO, OPERATION_CACHE_STREAM, cacheId, null, null));
