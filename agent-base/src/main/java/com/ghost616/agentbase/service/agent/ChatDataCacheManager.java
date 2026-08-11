@@ -13,10 +13,10 @@ import org.springframework.http.codec.ServerSentEvent;
 import reactor.core.publisher.Flux;
 
 import java.time.Duration;
+import java.util.ArrayDeque;
+import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.Queue;
 
 /**
  * 聊天数据缓存管理器，封装流式聊天片段的缓存生命周期与读取逻辑。
@@ -137,7 +137,8 @@ public class ChatDataCacheManager {
     /**
      * 从缓存读取从 startIndex 开始的聊天块并转为 SSE 流返回。
      * 缓存不存在、缓存无数据（maxIndex < 0）或 startIndex 大于最大序号时抛出 {@link BusinessException}。
-     * 通过统一的轮询循环驱动：初始数据与新增块均按 lastIndex+1 起拉取并检查 finishReason，
+     * 通过自定义 {@link Iterator} 同步轮询驱动：初始数据与新增块均按 lastIndex+1 起拉取并检查 finishReason，
+     * 无新数据时 sleep 一个轮询间隔并输出空数据块保持流活跃，
      * 直至遇到 finishReason 非 null 的块或超时（生成 finishReason=ERROR 结束块）。
      *
      * @param cacheId    缓存 ID
@@ -159,45 +160,72 @@ public class ChatDataCacheManager {
 
         addCacheLog(LogLevel.INFO, OPERATION_CACHE_STREAM, cacheId, null, null);
 
-        AtomicReference<Integer> lastIndex = new AtomicReference<>(startIndex - 1);
-        AtomicBoolean finished = new AtomicBoolean(false);
-        AtomicLong lastDataTick = new AtomicLong(System.currentTimeMillis());
-
-        return Flux.interval(POLL_INTERVAL)
-                .takeUntil(tick -> finished.get())
-                .concatMap(tick -> {
-                    if (finished.get()) {
-                        return Flux.just(new ChatChunk());
-                    }
-                    int from = lastIndex.get() + 1;
-                    int currentMax = provider.getMaxChunkIndex(cacheId);
-                    if (currentMax >= from) {
-                        addCacheLog(LogLevel.INFO, OPERATION_CACHE_STREAM, cacheId, null, null, from, currentMax);
-                        List<ChatChunk> newChunks = provider.getChunks(cacheId, from, currentMax);
-                        lastIndex.set(currentMax);
-                        lastDataTick.set(System.currentTimeMillis());
-                        for (ChatChunk chunk : newChunks) {
-                            if (chunk.getFinishReason() != null) {
-                                finished.set(true);
-                                break;
-                            }
-                        }
-                        return Flux.fromIterable(newChunks);
-                    }
-                    if (System.currentTimeMillis() - lastDataTick.get() >= pollTimeoutMs) {
-                        log.warn("轮询超时无新数据, cacheId={}, lastIndex={}", cacheId, lastIndex.get());
-                        addCacheLog(LogLevel.WARN, OPERATION_CACHE_STREAM, cacheId, null, null);
-                        ChatChunk errorChunk = ChatChunk.builder()
-                                .index(lastIndex.get() + 1)
-                                .finishReason(FinishReason.ERROR)
-                                .build();
-                        finished.set(true);
-                        return Flux.just(errorChunk);
-                    }
-                    return Flux.just(new ChatChunk());
-                })
+        return Flux.fromIterable(() -> new StreamIterator(cacheId, startIndex))
                 .map(chunk -> ServerSentEvent.<ChatChunk>builder().data(chunk).build())
                 .doFinally(signalType -> addCacheLog(LogLevel.INFO, OPERATION_CACHE_STREAM, cacheId, null, null));
+    }
+
+    /**
+     * 同步轮询迭代器，从 lastIndex+1 起拉取缓存新增块，无新数据时 sleep 并输出空数据块。
+     */
+    private final class StreamIterator implements Iterator<ChatChunk> {
+
+        private final String cacheId;
+        private final Queue<ChatChunk> pending = new ArrayDeque<>();
+        private int lastIndex;
+        private long lastDataTick = System.currentTimeMillis();
+        private boolean finished = false;
+        private boolean timedOut = false;
+
+        private StreamIterator(String cacheId, int startIndex) {
+            this.cacheId = cacheId;
+            this.lastIndex = startIndex - 1;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return !pending.isEmpty() || (!finished && !timedOut);
+        }
+
+        @Override
+        public ChatChunk next() {
+            if (!pending.isEmpty()) {
+                return pending.poll();
+            }
+            int from = lastIndex + 1;
+            int currentMax = provider.getMaxChunkIndex(cacheId);
+            if (currentMax >= from) {
+                addCacheLog(LogLevel.INFO, OPERATION_CACHE_STREAM, cacheId, null, null, from, currentMax);
+                List<ChatChunk> newChunks = provider.getChunks(cacheId, from, currentMax);
+                lastIndex = currentMax;
+                lastDataTick = System.currentTimeMillis();
+                for (ChatChunk chunk : newChunks) {
+                    if (chunk.getFinishReason() != null) {
+                        finished = true;
+                        break;
+                    }
+                }
+                pending.addAll(newChunks);
+                return pending.poll();
+            }
+            if (System.currentTimeMillis() - lastDataTick >= pollTimeoutMs) {
+                log.warn("轮询超时无新数据, cacheId={}, lastIndex={}", cacheId, lastIndex);
+                addCacheLog(LogLevel.WARN, OPERATION_CACHE_STREAM, cacheId, null, null);
+                ChatChunk errorChunk = ChatChunk.builder()
+                        .index(lastIndex + 1)
+                        .finishReason(FinishReason.ERROR)
+                        .build();
+                finished = true;
+                timedOut = true;
+                return errorChunk;
+            }
+            try {
+                Thread.sleep(POLL_INTERVAL.toMillis());
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            return new ChatChunk();
+        }
     }
 
     /**

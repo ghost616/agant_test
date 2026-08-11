@@ -18,7 +18,6 @@ import org.springframework.http.codec.ServerSentEvent;
 import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
 
-import java.time.Duration;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -152,7 +151,6 @@ class ChatDataCacheManagerTest {
                     assertEquals(2, ev.data().getIndex());
                     assertEquals(FinishReason.STOP, ev.data().getFinishReason());
                 })
-                .assertNext(ev -> assertNull(ev.data().getIndex()))
                 .verifyComplete();
         verify(provider).getChunks(cacheId, 0, 2);
     }
@@ -169,7 +167,6 @@ class ChatDataCacheManagerTest {
                     assertEquals(1, ev.data().getIndex());
                     assertEquals(FinishReason.STOP, ev.data().getFinishReason());
                 })
-                .assertNext(ev -> assertNull(ev.data().getIndex()))
                 .verifyComplete();
         verify(provider).getChunks(cacheId, 1, 1);
     }
@@ -187,7 +184,6 @@ class ChatDataCacheManagerTest {
                     assertEquals(1, ev.data().getIndex());
                     assertEquals(FinishReason.STOP, ev.data().getFinishReason());
                 })
-                .assertNext(ev -> assertNull(ev.data().getIndex()))
                 .verifyComplete();
         verify(provider).getChunks(cacheId, 0, 1);
         verify(provider, never()).isCacheDone(cacheId);
@@ -201,16 +197,12 @@ class ChatDataCacheManagerTest {
         when(provider.getChunks(cacheId, 1, 1))
                 .thenReturn(List.of(chunkWithFinish(1, FinishReason.STOP)));
 
-        StepVerifier.withVirtualTime(() -> manager.getStream(cacheId, 0))
-                .expectSubscription()
-                .thenAwait(Duration.ofMillis(1))
+        StepVerifier.create(manager.getStream(cacheId, 0))
                 .assertNext(ev -> assertEquals(0, ev.data().getIndex()))
-                .thenAwait(Duration.ofMillis(100))
                 .assertNext(ev -> {
                     assertEquals(1, ev.data().getIndex());
                     assertEquals(FinishReason.STOP, ev.data().getFinishReason());
                 })
-                .assertNext(ev -> assertNull(ev.data().getIndex()))
                 .verifyComplete();
         verify(provider).getChunks(cacheId, 0, 0);
         verify(provider).getChunks(cacheId, 1, 1);
@@ -227,19 +219,11 @@ class ChatDataCacheManagerTest {
 
         StepVerifier.create(manager.getStream(cacheId, 0))
                 .assertNext(ev -> assertEquals(0, ev.data().getIndex()))
-                .then(() -> {
-                    try {
-                        Thread.sleep(500);
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                    }
-                })
                 .thenConsumeWhile(ev -> ev.data().getIndex() == null)
                 .assertNext(ev -> {
                     assertEquals(FinishReason.ERROR, ev.data().getFinishReason());
                     assertEquals(1, ev.data().getIndex());
                 })
-                .assertNext(ev -> assertNull(ev.data().getIndex()))
                 .verifyComplete();
 
         ArgumentCaptor<ChatCacheLogData> captor = ArgumentCaptor.forClass(ChatCacheLogData.class);
@@ -452,7 +436,6 @@ class ChatDataCacheManagerTest {
 
         StepVerifier.create(manager.getStream(cacheId, 0))
                 .assertNext(ev -> assertEquals(0, ev.data().getIndex()))
-                .assertNext(ev -> assertNull(ev.data().getIndex()))
                 .verifyComplete();
 
         ArgumentCaptor<ChatCacheLogData> captor = ArgumentCaptor.forClass(ChatCacheLogData.class);
