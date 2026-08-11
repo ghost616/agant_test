@@ -28,6 +28,10 @@ public class AgentCreateRequest {
 
     private Integer recentMessageCount;
 
+    private Boolean memoryEnabled;
+
+    private Integer memoryGroupCount;
+
     private List<AgentToolItem> tools;
 
     private List<AgentSkillItem> skills;

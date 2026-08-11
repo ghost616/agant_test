@@ -41,6 +41,8 @@ const MOCK_AGENT_WITH_KB = {
   skills: [],
   knowledgeBases: [{ id: 'kb-100', name: '测试知识库A' }],
   recentMessageCount: 10,
+  memoryEnabled: true,
+  memoryGroupCount: 20,
   createTime: '2026-08-01T00:00:00',
   updateTime: '2026-08-01T00:00:00',
 };
@@ -198,5 +200,107 @@ test.describe('智能体管理页 - 绑定知识库', () => {
     ]);
     const payload = request.postDataJSON();
     expect(payload.knowledgeBaseIds).toEqual(['kb-100', 'kb-101']);
+  });
+});
+
+function memorySwitch(page: Page) {
+  return page
+    .locator('.ant-modal .ant-form-item')
+    .filter({ hasText: '记忆功能' })
+    .locator('.ant-switch');
+}
+
+function memoryGroupCountInput(page: Page) {
+  return page
+    .locator('.ant-modal .ant-form-item')
+    .filter({ hasText: '保留记忆数量' })
+    .locator('.ant-input-number');
+}
+
+test.describe('智能体管理页 - 记忆功能', () => {
+  test.setTimeout(120000);
+  test.beforeEach(async ({ page }) => {
+    await setupMocks(page);
+    await page.goto('/agents', { waitUntil: 'domcontentloaded', timeout: 120000 });
+    await page.waitForSelector('.ant-table', { timeout: 60000 });
+  });
+
+  test('新增弹窗存在记忆功能 Switch 与保留记忆数量 InputNumber', async ({ page }) => {
+    await page.getByRole('button', { name: '新增智能体' }).click();
+    await page.locator('.ant-modal').waitFor();
+
+    await expect(memorySwitch(page)).toBeVisible();
+    await expect(memoryGroupCountInput(page)).toBeVisible();
+  });
+
+  test('记忆功能关闭时保留记忆数量输入框 disabled，开启时可编辑', async ({ page }) => {
+    await page.getByRole('button', { name: '新增智能体' }).click();
+    await page.locator('.ant-modal').waitFor();
+
+    await expect(memoryGroupCountInput(page)).toHaveClass(/ant-input-number-disabled/);
+
+    await memorySwitch(page).click();
+    await expect(memoryGroupCountInput(page)).not.toHaveClass(/ant-input-number-disabled/);
+  });
+
+  test('记忆功能开启后输入大于 100 的值不被限制（无 max 上限）', async ({ page }) => {
+    await page.getByRole('button', { name: '新增智能体' }).click();
+    await page.locator('.ant-modal').waitFor();
+
+    await memorySwitch(page).click();
+    const input = memoryGroupCountInput(page).locator('input');
+    await input.fill('150');
+    await expect(input).toHaveValue('150');
+
+    await input.press('Tab');
+    await expect(input).toHaveValue('150');
+  });
+
+  test('新增提交时 POST payload 携带 memoryEnabled 与 memoryGroupCount', async ({ page }) => {
+    await page.getByRole('button', { name: '新增智能体' }).click();
+    await page.locator('.ant-modal').waitFor();
+    await page.locator('.ant-modal').getByLabel('名称').fill('记忆智能体');
+    await memorySwitch(page).click();
+
+    const [request] = await Promise.all([
+      page.waitForRequest(
+        (req) => req.method() === 'POST' && req.url().includes('/api/agents'),
+      ),
+      (async () => {
+        await page.locator('.ant-modal-footer .ant-btn-primary').click();
+      })(),
+    ]);
+    const payload = request.postDataJSON();
+    expect(payload.memoryEnabled).toBe(true);
+    expect(payload.memoryGroupCount).toBe(30);
+  });
+
+  test('编辑弹窗回填 memoryEnabled/memoryGroupCount 值', async ({ page }) => {
+    const row = page.getByRole('row', { name: /绑定知识库智能体/ });
+    await row.getByRole('button', { name: '编辑' }).click();
+    await page.locator('.ant-modal').waitFor();
+
+    await expect(memorySwitch(page)).toHaveClass(/ant-switch-checked/);
+    const input = memoryGroupCountInput(page).locator('input');
+    await expect(input).toHaveValue('20');
+  });
+
+  test('编辑提交时 PUT payload 携带 memoryEnabled 与 memoryGroupCount', async ({ page }) => {
+    const row = page.getByRole('row', { name: /绑定知识库智能体/ });
+    await row.getByRole('button', { name: '编辑' }).click();
+    await page.locator('.ant-modal').waitFor();
+
+    const [request] = await Promise.all([
+      page.waitForRequest(
+        (req) =>
+          req.method() === 'PUT' && req.url().includes(`/api/agents/${AGENT_ID}`),
+      ),
+      (async () => {
+        await page.locator('.ant-modal-footer .ant-btn-primary').click();
+      })(),
+    ]);
+    const payload = request.postDataJSON();
+    expect(payload.memoryEnabled).toBe(true);
+    expect(payload.memoryGroupCount).toBe(20);
   });
 });

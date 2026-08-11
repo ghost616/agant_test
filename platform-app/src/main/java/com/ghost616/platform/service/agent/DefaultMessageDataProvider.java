@@ -1,20 +1,23 @@
 package com.ghost616.platform.service.agent;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.ghost616.platform.entity.Message;
-import com.ghost616.platform.entity.MessageToolCall;
-import com.ghost616.agentbase.enums.ErrorCode;
-import com.ghost616.agentbase.exception.BusinessException;
-import com.ghost616.platform.repository.MessageMapper;
-import com.ghost616.platform.repository.MessageToolCallMapper;
 import com.ghost616.agentbase.dto.model.ToolInfo;
 import com.ghost616.agentbase.dto.model.UsageInfo;
+import com.ghost616.agentbase.enums.ErrorCode;
+import com.ghost616.agentbase.exception.BusinessException;
 import com.ghost616.agentbase.service.agent.MessageDataProvider;
-import com.ghost616.agentbase.service.agent.MessageDataProvider.ToolCallData;
-import com.ghost616.agentbase.service.agent.MessageDataProvider.MessageDTO;
-import com.ghost616.agentbase.service.agent.MessageDataProvider.WebSearchCallData;
 import com.ghost616.agentbase.service.agent.MessageDataProvider.CustomToolCallData;
+import com.ghost616.agentbase.service.agent.MessageDataProvider.MessageDTO;
+import com.ghost616.agentbase.service.agent.MessageDataProvider.ToolCallData;
+import com.ghost616.agentbase.service.agent.MessageDataProvider.WebSearchCallData;
 import com.ghost616.agentbase.util.JsonMapper;
+import com.ghost616.platform.entity.AgentConfig;
+import com.ghost616.platform.entity.Message;
+import com.ghost616.platform.entity.MessageToolCall;
+import com.ghost616.platform.entity.Session;
+import com.ghost616.platform.repository.AgentConfigMapper;
+import com.ghost616.platform.repository.MessageMapper;
+import com.ghost616.platform.repository.MessageToolCallMapper;
 import com.ghost616.platform.repository.SessionMapper;
 import com.ghost616.platform.util.IdConverter;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +26,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 
@@ -31,10 +35,30 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class DefaultMessageDataProvider implements MessageDataProvider {
 
+    private static final long AGENT_CONFIG_CACHE_TTL_MILLIS = 60_000L;
+    private static final int AGENT_CONFIG_CACHE_MAX_SIZE = 2000;
+
+    private final ConcurrentHashMap<Long, AgentConfigCacheEntry> agentConfigCache = new ConcurrentHashMap<>();
+
     private final MessageMapper messageMapper;
     private final MessageToolCallMapper messageToolCallMapper;
     private final MessageToolCallService messageToolCallService;
     private final SessionMapper sessionMapper;
+    private final AgentConfigMapper agentConfigMapper;
+
+    private static final class AgentConfigCacheEntry {
+        private final AgentConfig agentConfig;
+        private long expireAt;
+
+        private AgentConfigCacheEntry(AgentConfig agentConfig, long expireAt) {
+            this.agentConfig = agentConfig;
+            this.expireAt = expireAt;
+        }
+
+        private boolean isExpired() {
+            return System.currentTimeMillis() > expireAt;
+        }
+    }
 
     @Override
     public String saveMessage(String sessionId, String role, String content, String reasoning,
@@ -141,7 +165,85 @@ public class DefaultMessageDataProvider implements MessageDataProvider {
                 .eq(Message::getRollback, false)
                 .orderByAsc(Message::getSequenceNum);
         List<Message> messages = messageMapper.selectList(wrapper);
-        return toMessageDTOs(messages);
+        List<Message> truncated = truncateByMemory(messages, sid);
+        return toMessageDTOs(truncated);
+    }
+
+    private List<Message> truncateByMemory(List<Message> messages, Long sessionId) {
+        AgentConfig agentConfig = resolveAgentConfig(sessionId);
+        if (agentConfig == null || !Boolean.TRUE.equals(agentConfig.getMemoryEnabled())
+                || agentConfig.getMemoryGroupCount() == null || agentConfig.getMemoryGroupCount() <= 0) {
+            return messages;
+        }
+
+        int firstUserIndex = -1;
+        for (int i = 0; i < messages.size(); i++) {
+            if ("user".equals(messages.get(i).getRole())) {
+                firstUserIndex = i;
+                break;
+            }
+        }
+        if (firstUserIndex < 0) {
+            return messages;
+        }
+
+        List<Message> prefix = messages.subList(0, firstUserIndex);
+        List<Message> body = new ArrayList<>(messages.subList(firstUserIndex, messages.size()));
+
+        int totalGroups = 0;
+        for (Message message : body) {
+            if ("user".equals(message.getRole())) {
+                totalGroups++;
+            }
+        }
+        if (totalGroups <= agentConfig.getMemoryGroupCount()) {
+            return messages;
+        }
+
+        int skipGroups = totalGroups - agentConfig.getMemoryGroupCount();
+        int keepFrom = 0;
+        int groupIndex = 0;
+        for (int i = 0; i < body.size(); i++) {
+            if ("user".equals(body.get(i).getRole())) {
+                if (groupIndex == skipGroups) {
+                    keepFrom = i;
+                    break;
+                }
+                groupIndex++;
+            }
+        }
+
+        List<Message> result = new ArrayList<>(prefix);
+        result.addAll(body.subList(keepFrom, body.size()));
+        return result;
+    }
+
+    private AgentConfig resolveAgentConfig(Long sessionId) {
+        if (sessionId == null) {
+            return null;
+        }
+        AgentConfigCacheEntry entry = agentConfigCache.get(sessionId);
+        if (entry != null && !entry.isExpired()) {
+            return entry.agentConfig;
+        }
+        AgentConfig agentConfig = loadAgentConfig(sessionId);
+        putAgentConfigCache(sessionId, agentConfig);
+        return agentConfig;
+    }
+
+    private void putAgentConfigCache(Long sessionId, AgentConfig agentConfig) {
+        if (agentConfigCache.size() >= AGENT_CONFIG_CACHE_MAX_SIZE) {
+            agentConfigCache.entrySet().removeIf(entry -> entry.getValue().isExpired());
+        }
+        agentConfigCache.put(sessionId, new AgentConfigCacheEntry(agentConfig, System.currentTimeMillis() + AGENT_CONFIG_CACHE_TTL_MILLIS));
+    }
+
+    private AgentConfig loadAgentConfig(Long sessionId) {
+        Session session = sessionMapper.selectById(sessionId);
+        if (session == null || session.getAgentId() == null) {
+            return null;
+        }
+        return agentConfigMapper.selectById(session.getAgentId());
     }
 
     public List<MessageDTO> toMessageDTOs(List<Message> messages) {

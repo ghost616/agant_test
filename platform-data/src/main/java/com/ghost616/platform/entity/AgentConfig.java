@@ -27,4 +27,10 @@ public class AgentConfig extends BaseEntity {
 
     @TableField("recent_message_count")
     private Integer recentMessageCount = 10;
+
+    @TableField("memory_enabled")
+    private Boolean memoryEnabled = false;
+
+    @TableField("memory_group_count")
+    private Integer memoryGroupCount = 30;
 }

@@ -200,3 +200,45 @@ describe('AgentList 绑定知识库 (静态验证)', () => {
     }
   });
 });
+
+describe('AgentList 记忆功能 (静态验证)', () => {
+  it('表单应包含记忆功能 Switch（memoryEnabled，valuePropName=checked）', () => {
+    const source = readFileSync(resolve(__dirname, '../AgentList.tsx'), 'utf-8');
+    expect(source).toContain('Form.Item\n            name="memoryEnabled"');
+    expect(source).toContain('valuePropName="checked"');
+    expect(source).toContain('<Switch />');
+  });
+
+  it('表单应包含记忆分组数量 InputNumber（memoryGroupCount，min=1，无 max 上限，宽度 100%）', () => {
+    const source = readFileSync(resolve(__dirname, '../AgentList.tsx'), 'utf-8');
+    expect(source).toContain('name="memoryGroupCount"');
+    const block = source.match(/name="memoryGroupCount"[\s\S]*?<\/Form.Item>/);
+    expect(block).not.toBeNull();
+    if (block) {
+      expect(block[0]).toContain('min={1}');
+      expect(block[0]).not.toContain('max={100}');
+      expect(block[0]).toContain("style={{ width: '100%' }}");
+    }
+  });
+
+  it('memoryGroupCount 默认值为 30', () => {
+    const source = readFileSync(resolve(__dirname, '../AgentList.tsx'), 'utf-8');
+    expect(source).toContain('initialValue={30}');
+  });
+
+  it('应通过 Form.useWatch 监听 memoryEnabled 实现联动', () => {
+    const source = readFileSync(resolve(__dirname, '../AgentList.tsx'), 'utf-8');
+    expect(source).toContain("const memoryEnabled = Form.useWatch('memoryEnabled', form)");
+  });
+
+  it('memoryEnabled 关闭时 memoryGroupCount 输入框 disabled', () => {
+    const source = readFileSync(resolve(__dirname, '../AgentList.tsx'), 'utf-8');
+    expect(source).toContain('disabled={!memoryEnabled}');
+  });
+
+  it('编辑时回填 memoryEnabled/memoryGroupCount', () => {
+    const source = readFileSync(resolve(__dirname, '../AgentList.tsx'), 'utf-8');
+    expect(source).toContain('memoryEnabled: editingAgent.memoryEnabled');
+    expect(source).toContain('memoryGroupCount: editingAgent.memoryGroupCount');
+  });
+});

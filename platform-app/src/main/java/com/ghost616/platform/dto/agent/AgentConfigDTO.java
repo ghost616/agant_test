@@ -31,6 +31,8 @@ public class AgentConfigDTO {
     private Long modelId;
     private CommonStatus status;
     private Integer recentMessageCount;
+    private Boolean memoryEnabled;
+    private Integer memoryGroupCount;
     private List<AgentToolItem> tools;
     private List<AgentSkillItem> skills;
     private List<KnowledgeBaseDTO> knowledgeBases;

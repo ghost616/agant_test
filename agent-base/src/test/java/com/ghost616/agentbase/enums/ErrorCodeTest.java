@@ -1,0 +1,29 @@
+package com.ghost616.agentbase.enums;
+
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class ErrorCodeTest {
+
+    @Test
+    void agentMemoryGroupInvalidCode() {
+        assertEquals("AGENT-CONFIG-003", ErrorCode.AGENT_MEMORY_GROUP_INVALID.getCode());
+    }
+
+    @Test
+    void agentMemoryGroupInvalidMessage() {
+        assertEquals("记忆节点组序号必须大于等于最近消息数量的3倍",
+                ErrorCode.AGENT_MEMORY_GROUP_INVALID.getMessage());
+    }
+
+    @Test
+    void codeUniquenessAmongAgentConfigCodes() {
+        long distinct = java.util.Arrays.stream(ErrorCode.values())
+                .filter(e -> e.getCode().startsWith("AGENT-CONFIG-"))
+                .map(ErrorCode::getCode)
+                .distinct()
+                .count();
+        assertEquals(3, distinct, "AGENT-CONFIG codes should be unique (001/002/003)");
+    }
+}

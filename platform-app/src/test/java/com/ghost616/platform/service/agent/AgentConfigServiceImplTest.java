@@ -50,6 +50,7 @@ class AgentConfigServiceImplTest {
     @Captor private ArgumentCaptor<AgentTool> agentToolCaptor;
     @Captor private ArgumentCaptor<AgentSkill> agentSkillCaptor;
     @Captor private ArgumentCaptor<List<AgentKnowledgeBase>> agentKnowledgeBaseListCaptor;
+    @Captor private ArgumentCaptor<AgentConfig> agentConfigCaptor;
 
     private AgentConfigServiceImpl service;
 
@@ -289,6 +290,82 @@ class AgentConfigServiceImplTest {
 
             verify(agentKnowledgeBaseService, never()).saveBatch(any());
         }
+
+        @Test
+        @DisplayName("memoryEnabled 为 null 时默认 memoryEnabled=false、memoryGroupCount=30")
+        void create_memoryNull_defaultsApplied() {
+            mockInsertSetsId();
+            mockToDTOReturns(List.of(), List.of());
+            when(agentConfigMapper.selectCount(any())).thenReturn(0L);
+
+            AgentCreateRequest req = AgentCreateRequest.builder()
+                    .name("new-agent")
+                    .build();
+
+            AgentConfigDTO dto = service.create(req);
+
+            verify(agentConfigMapper).insert(agentConfigCaptor.capture());
+            assertEquals(false, agentConfigCaptor.getValue().getMemoryEnabled());
+            assertEquals(30, agentConfigCaptor.getValue().getMemoryGroupCount());
+            assertEquals(false, dto.getMemoryEnabled());
+            assertEquals(30, dto.getMemoryGroupCount());
+        }
+
+        @Test
+        @DisplayName("memoryEnabled=true 且 memoryGroupCount 满足阈值时创建成功")
+        void create_memoryValid_created() {
+            mockInsertSetsId();
+            mockToDTOReturns(List.of(), List.of());
+            when(agentConfigMapper.selectCount(any())).thenReturn(0L);
+
+            AgentCreateRequest req = AgentCreateRequest.builder()
+                    .name("new-agent")
+                    .recentMessageCount(5)
+                    .memoryEnabled(true)
+                    .memoryGroupCount(15)
+                    .build();
+
+            service.create(req);
+
+            verify(agentConfigMapper).insert(agentConfigCaptor.capture());
+            assertEquals(true, agentConfigCaptor.getValue().getMemoryEnabled());
+            assertEquals(15, agentConfigCaptor.getValue().getMemoryGroupCount());
+        }
+
+        @Test
+        @DisplayName("memoryEnabled=true 且 memoryGroupCount 小于 recentMessageCount×3 时抛出 AGENT-CONFIG-003")
+        void create_memoryGroupCountTooSmall_throws() {
+            when(agentConfigMapper.selectCount(any())).thenReturn(0L);
+
+            AgentCreateRequest req = AgentCreateRequest.builder()
+                    .name("new-agent")
+                    .recentMessageCount(5)
+                    .memoryEnabled(true)
+                    .memoryGroupCount(14)
+                    .build();
+
+            BusinessException ex = assertThrows(BusinessException.class, () -> service.create(req));
+            assertEquals(ErrorCode.AGENT_MEMORY_GROUP_INVALID, ex.getErrorCode());
+        }
+
+        @Test
+        @DisplayName("memoryEnabled=false 时即使 memoryGroupCount 不满足阈值也不校验")
+        void create_memoryDisabled_skipsValidation() {
+            mockInsertSetsId();
+            mockToDTOReturns(List.of(), List.of());
+            when(agentConfigMapper.selectCount(any())).thenReturn(0L);
+
+            AgentCreateRequest req = AgentCreateRequest.builder()
+                    .name("new-agent")
+                    .recentMessageCount(10)
+                    .memoryEnabled(false)
+                    .memoryGroupCount(5)
+                    .build();
+
+            service.create(req);
+
+            verify(agentConfigMapper).insert(any(AgentConfig.class));
+        }
     }
 
     @Nested
@@ -467,6 +544,95 @@ class AgentConfigServiceImplTest {
 
             verify(agentKnowledgeBaseService, never()).remove(any());
             verify(agentKnowledgeBaseService, never()).saveBatch(any());
+        }
+
+        @Test
+        @DisplayName("memoryEnabled=true 且 memoryGroupCount 满足阈值时更新成功")
+        void update_memoryValid_updated() {
+            when(agentConfigMapper.selectById(EXISTING_AGENT_ID)).thenReturn(createAgentEntity());
+            mockToDTOReturns(List.of(), List.of());
+
+            AgentUpdateRequest req = AgentUpdateRequest.builder()
+                    .name("updated")
+                    .recentMessageCount(5)
+                    .memoryEnabled(true)
+                    .memoryGroupCount(15)
+                    .build();
+
+            service.update(EXISTING_AGENT_ID, req);
+
+            verify(agentConfigMapper).updateById(agentConfigCaptor.capture());
+            assertEquals(true, agentConfigCaptor.getValue().getMemoryEnabled());
+            assertEquals(15, agentConfigCaptor.getValue().getMemoryGroupCount());
+        }
+
+        @Test
+        @DisplayName("memoryEnabled=true 且 memoryGroupCount 小于 recentMessageCount×3 时抛出 AGENT-CONFIG-003")
+        void update_memoryGroupCountTooSmall_throws() {
+            when(agentConfigMapper.selectById(EXISTING_AGENT_ID)).thenReturn(createAgentEntity());
+
+            AgentUpdateRequest req = AgentUpdateRequest.builder()
+                    .name("updated")
+                    .recentMessageCount(5)
+                    .memoryEnabled(true)
+                    .memoryGroupCount(14)
+                    .build();
+
+            BusinessException ex = assertThrows(BusinessException.class, () -> service.update(EXISTING_AGENT_ID, req));
+            assertEquals(ErrorCode.AGENT_MEMORY_GROUP_INVALID, ex.getErrorCode());
+        }
+
+        @Test
+        @DisplayName("仅更新 memoryEnabled 时基于实体现有 recentMessageCount/memoryGroupCount 校验")
+        void update_onlyMemoryEnabled_validatesAgainstEntity() {
+            AgentConfig entity = createAgentEntity();
+            entity.setRecentMessageCount(5);
+            entity.setMemoryGroupCount(15);
+            when(agentConfigMapper.selectById(EXISTING_AGENT_ID)).thenReturn(entity);
+            mockToDTOReturns(List.of(), List.of());
+
+            AgentUpdateRequest req = AgentUpdateRequest.builder()
+                    .memoryEnabled(true)
+                    .build();
+
+            service.update(EXISTING_AGENT_ID, req);
+
+            verify(agentConfigMapper).updateById(agentConfigCaptor.capture());
+            assertEquals(true, agentConfigCaptor.getValue().getMemoryEnabled());
+        }
+
+        @Test
+        @DisplayName("仅更新 memoryEnabled 时基于实体现有值校验失败抛出 AGENT-CONFIG-003")
+        void update_onlyMemoryEnabled_invalidEntity_throws() {
+            AgentConfig entity = createAgentEntity();
+            entity.setRecentMessageCount(10);
+            entity.setMemoryGroupCount(5);
+            when(agentConfigMapper.selectById(EXISTING_AGENT_ID)).thenReturn(entity);
+
+            AgentUpdateRequest req = AgentUpdateRequest.builder()
+                    .memoryEnabled(true)
+                    .build();
+
+            BusinessException ex = assertThrows(BusinessException.class, () -> service.update(EXISTING_AGENT_ID, req));
+            assertEquals(ErrorCode.AGENT_MEMORY_GROUP_INVALID, ex.getErrorCode());
+        }
+
+        @Test
+        @DisplayName("memoryEnabled=false 时不触发校验")
+        void update_memoryDisabled_skipsValidation() {
+            when(agentConfigMapper.selectById(EXISTING_AGENT_ID)).thenReturn(createAgentEntity());
+            mockToDTOReturns(List.of(), List.of());
+
+            AgentUpdateRequest req = AgentUpdateRequest.builder()
+                    .name("updated")
+                    .recentMessageCount(10)
+                    .memoryEnabled(false)
+                    .memoryGroupCount(5)
+                    .build();
+
+            service.update(EXISTING_AGENT_ID, req);
+
+            verify(agentConfigMapper).updateById(any(AgentConfig.class));
         }
     }
 

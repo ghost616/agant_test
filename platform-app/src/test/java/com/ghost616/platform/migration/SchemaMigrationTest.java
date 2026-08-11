@@ -96,7 +96,7 @@ class SchemaMigrationTest {
         when(jdbcTemplate.update(anyString())).thenReturn(0);
 
         assertDoesNotThrow(() -> createMigration().run(applicationArguments));
-        verify(jdbcTemplate, times(82)).execute(anyString());
+        verify(jdbcTemplate, times(84)).execute(anyString());
     }
 
     @Test
@@ -106,7 +106,7 @@ class SchemaMigrationTest {
         when(jdbcTemplate.update(anyString())).thenReturn(0);
 
         assertDoesNotThrow(() -> createMigration().run(applicationArguments));
-        verify(jdbcTemplate, times(82)).execute(anyString());
+        verify(jdbcTemplate, times(84)).execute(anyString());
     }
 
     @Test
@@ -116,7 +116,7 @@ class SchemaMigrationTest {
         when(jdbcTemplate.update(anyString())).thenReturn(0);
 
         assertDoesNotThrow(() -> createMigration().run(applicationArguments));
-        verify(jdbcTemplate, times(82)).execute(anyString());
+        verify(jdbcTemplate, times(84)).execute(anyString());
     }
 
     @Test
@@ -126,7 +126,7 @@ class SchemaMigrationTest {
 
         createMigration().run(applicationArguments);
 
-        verify(jdbcTemplate, times(82)).execute(sqlCaptor.capture());
+        verify(jdbcTemplate, times(84)).execute(sqlCaptor.capture());
         List<String> sqls = sqlCaptor.getAllValues();
 
         assertTrue(sqls.stream().anyMatch(s -> s.contains("DEFAULT 0")));
@@ -140,7 +140,7 @@ class SchemaMigrationTest {
 
         createMigration().run(applicationArguments);
 
-        verify(jdbcTemplate, times(82)).execute(sqlCaptor.capture());
+        verify(jdbcTemplate, times(84)).execute(sqlCaptor.capture());
         long defaultCount = sqlCaptor.getAllValues().stream()
                 .filter(s -> s.contains("DEFAULT")).count();
         assertTrue(defaultCount > 0 && defaultCount < 80);
@@ -153,7 +153,7 @@ class SchemaMigrationTest {
 
         createMigration().run(applicationArguments);
 
-        verify(jdbcTemplate, times(82)).execute(sqlCaptor.capture());
+        verify(jdbcTemplate, times(84)).execute(sqlCaptor.capture());
         assertTrue(sqlCaptor.getAllValues().stream()
                 .anyMatch(s -> s.contains("total_token_used") && s.contains("BIGINT")));
     }
@@ -165,7 +165,7 @@ class SchemaMigrationTest {
 
         createMigration().run(applicationArguments);
 
-        verify(jdbcTemplate, times(82)).execute(sqlCaptor.capture());
+        verify(jdbcTemplate, times(84)).execute(sqlCaptor.capture());
         assertTrue(sqlCaptor.getAllValues().stream()
                 .anyMatch(s -> s.contains("token_usage") && s.contains("TEXT")));
     }
@@ -177,7 +177,7 @@ class SchemaMigrationTest {
 
         createMigration().run(applicationArguments);
 
-        verify(jdbcTemplate, times(82)).execute(sqlCaptor.capture());
+        verify(jdbcTemplate, times(84)).execute(sqlCaptor.capture());
         assertTrue(sqlCaptor.getAllValues().stream()
                 .anyMatch(s -> s.contains("agent_log") && s.contains("session_variables") && s.contains("TEXT")),
                 "should generate ALTER TABLE agent_log ADD COLUMN session_variables TEXT");
@@ -190,7 +190,7 @@ class SchemaMigrationTest {
 
         createMigration().run(applicationArguments);
 
-        verify(jdbcTemplate, times(82)).execute(sqlCaptor.capture());
+        verify(jdbcTemplate, times(84)).execute(sqlCaptor.capture());
         assertTrue(sqlCaptor.getAllValues().stream()
                 .anyMatch(s -> s.contains("agent_log") && s.contains("conversation_variables") && s.contains("TEXT")),
                 "should generate ALTER TABLE agent_log ADD COLUMN conversation_variables TEXT");

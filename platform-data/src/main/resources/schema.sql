@@ -101,6 +101,8 @@ CREATE TABLE IF NOT EXISTS agent_config (
     create_time             TIMESTAMP,
     update_time             TIMESTAMP,
     recent_message_count    INTEGER DEFAULT 10,
+    memory_enabled          TINYINT(1) DEFAULT 0,
+    memory_group_count      INTEGER DEFAULT 30,
     deleted                 INTEGER DEFAULT 0
 );
 

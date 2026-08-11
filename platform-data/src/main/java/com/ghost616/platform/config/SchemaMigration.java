@@ -54,6 +54,8 @@ public class SchemaMigration implements ApplicationRunner {
                 new Migration("session_variable", "update_time", "TIMESTAMP", null),
                 new Migration("session_variable", "deleted", "INTEGER", "0"),
                 new Migration("agent_config", "recent_message_count", "INTEGER", "10"),
+                new Migration("agent_config", "memory_enabled", "TINYINT(1)", "0"),
+                new Migration("agent_config", "memory_group_count", "INTEGER", "30"),
                 new Migration("message", "tool_result", "TEXT", null),
                 new Migration("session", "parent_session_id", "BIGINT", null),
                 new Migration("session", "is_child", "TINYINT(1)", "0"),

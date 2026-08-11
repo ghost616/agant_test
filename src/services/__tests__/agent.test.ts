@@ -105,6 +105,27 @@ describe('createAgent', () => {
     await createAgent(formData);
     expect(mockPost).toHaveBeenCalledWith('/agents', formData);
   });
+
+  it('应透传 memoryEnabled/memoryGroupCount 到 POST /agents', async () => {
+    const newAgent = { id: 'new-3', name: 'agent-with-memory', tools: [], skills: [], status: 'ENABLED' };
+    const formData = {
+      name: 'agent-with-memory',
+      memoryEnabled: true,
+      memoryGroupCount: 20,
+    };
+    mockPost.mockResolvedValueOnce({ data: { data: newAgent } });
+    await createAgent(formData);
+    expect(mockPost).toHaveBeenCalledWith('/agents', formData);
+  });
+
+  it('createAgent 应逐字段透传 memoryEnabled=false 与 memoryGroupCount', async () => {
+    const newAgent = { id: 'new-4', name: 'agent-no-memory', tools: [], skills: [], status: 'ENABLED' };
+    mockPost.mockResolvedValueOnce({ data: { data: newAgent } });
+    await createAgent({ name: 'agent-no-memory', memoryEnabled: false, memoryGroupCount: 5 });
+    const [url, body] = mockPost.mock.calls[0];
+    expect(url).toBe('/agents');
+    expect(body).toMatchObject({ memoryEnabled: false, memoryGroupCount: 5 });
+  });
 });
 
 describe('updateAgent', () => {
@@ -126,6 +147,18 @@ describe('updateAgent', () => {
     const formData = {
       name: 'updated',
       knowledgeBaseIds: ['kb-200'],
+    };
+    mockPut.mockResolvedValueOnce({ data: { data: updated } });
+    await updateAgent('a1', formData);
+    expect(mockPut).toHaveBeenCalledWith('/agents/a1', formData);
+  });
+
+  it('应透传 memoryEnabled/memoryGroupCount 到 PUT /agents/{id}', async () => {
+    const updated = { id: 'a1', name: 'updated', tools: [], skills: [], status: 'ENABLED' };
+    const formData = {
+      name: 'updated',
+      memoryEnabled: true,
+      memoryGroupCount: 30,
     };
     mockPut.mockResolvedValueOnce({ data: { data: updated } });
     await updateAgent('a1', formData);

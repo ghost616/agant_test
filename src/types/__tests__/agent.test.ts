@@ -62,4 +62,40 @@ describe('Agent 类型定义', () => {
       expect(formBlock[0]).not.toContain('knowledgeBases?: KnowledgeBaseItem[]');
     }
   });
+
+  it('AgentConfig 接口应包含 memoryEnabled?: boolean 字段', () => {
+    const source = readFileSync(resolve(__dirname, '../agent.ts'), 'utf-8');
+    const configBlock = source.match(/interface AgentConfig[\s\S]*?\n\}/);
+    expect(configBlock).not.toBeNull();
+    if (configBlock) {
+      expect(configBlock[0]).toContain('memoryEnabled?: boolean');
+    }
+  });
+
+  it('AgentConfig 接口应包含 memoryGroupCount?: number 字段', () => {
+    const source = readFileSync(resolve(__dirname, '../agent.ts'), 'utf-8');
+    const configBlock = source.match(/interface AgentConfig[\s\S]*?\n\}/);
+    expect(configBlock).not.toBeNull();
+    if (configBlock) {
+      expect(configBlock[0]).toContain('memoryGroupCount?: number');
+    }
+  });
+
+  it('AgentFormData 接口应包含 memoryEnabled?: boolean 字段', () => {
+    const source = readFileSync(resolve(__dirname, '../agent.ts'), 'utf-8');
+    const formBlock = source.match(/interface AgentFormData[\s\S]*?\n\}/);
+    expect(formBlock).not.toBeNull();
+    if (formBlock) {
+      expect(formBlock[0]).toContain('memoryEnabled?: boolean');
+    }
+  });
+
+  it('AgentFormData 接口应包含 memoryGroupCount?: number 字段', () => {
+    const source = readFileSync(resolve(__dirname, '../agent.ts'), 'utf-8');
+    const formBlock = source.match(/interface AgentFormData[\s\S]*?\n\}/);
+    expect(formBlock).not.toBeNull();
+    if (formBlock) {
+      expect(formBlock[0]).toContain('memoryGroupCount?: number');
+    }
+  });
 });

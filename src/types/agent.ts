@@ -18,6 +18,8 @@ export interface AgentConfig {
   skills: { skillId: string; sessionAuth: SessionAuthType }[];
   knowledgeBases?: KnowledgeBaseItem[];
   recentMessageCount?: number;
+  memoryEnabled?: boolean;
+  memoryGroupCount?: number;
   createTime: string;
   updateTime: string;
 }
@@ -31,6 +33,8 @@ export interface AgentFormData {
   skills?: { skillId: string; sessionAuth: SessionAuthType }[];
   knowledgeBaseIds?: string[];
   recentMessageCount?: number;
+  memoryEnabled?: boolean;
+  memoryGroupCount?: number;
 }
 
 export interface AgentListParams {

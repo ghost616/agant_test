@@ -73,6 +73,9 @@ public class AgentConfigServiceImpl implements AgentConfigService {
     public AgentConfigDTO create(AgentCreateRequest request) {
         checkNameDuplicate(request.getName(), null);
 
+        validateMemoryConfig(request.getMemoryEnabled(), request.getMemoryGroupCount(),
+                request.getRecentMessageCount());
+
         if (request.getSkills() != null && !request.getSkills().isEmpty()) {
             validateSkillIds(request.getSkills());
         }
@@ -83,6 +86,8 @@ public class AgentConfigServiceImpl implements AgentConfigService {
         entity.setSystemPrompt(request.getSystemPrompt());
         entity.setModelId(request.getModelId());
         entity.setRecentMessageCount(request.getRecentMessageCount());
+        entity.setMemoryEnabled(request.getMemoryEnabled() != null ? request.getMemoryEnabled() : false);
+        entity.setMemoryGroupCount(request.getMemoryGroupCount() != null ? request.getMemoryGroupCount() : 30);
         entity.setStatus(CommonStatus.ENABLED);
 
         agentConfigMapper.insert(entity);
@@ -146,6 +151,17 @@ public class AgentConfigServiceImpl implements AgentConfigService {
         if (request.getRecentMessageCount() != null) {
             entity.setRecentMessageCount(request.getRecentMessageCount());
         }
+        if (request.getMemoryEnabled() != null) {
+            entity.setMemoryEnabled(request.getMemoryEnabled());
+        }
+        if (request.getMemoryGroupCount() != null) {
+            entity.setMemoryGroupCount(request.getMemoryGroupCount());
+        }
+
+        validateMemoryConfig(
+                request.getMemoryEnabled() != null ? request.getMemoryEnabled() : entity.getMemoryEnabled(),
+                request.getMemoryGroupCount() != null ? request.getMemoryGroupCount() : entity.getMemoryGroupCount(),
+                request.getRecentMessageCount() != null ? request.getRecentMessageCount() : entity.getRecentMessageCount());
 
         agentConfigMapper.updateById(entity);
 
@@ -236,6 +252,17 @@ public class AgentConfigServiceImpl implements AgentConfigService {
         return toDTO(entity);
     }
 
+    private void validateMemoryConfig(Boolean memoryEnabled, Integer memoryGroupCount, Integer recentMessageCount) {
+        if (!Boolean.TRUE.equals(memoryEnabled)) {
+            return;
+        }
+        int effectiveGroupCount = memoryGroupCount != null ? memoryGroupCount : 30;
+        int effectiveRecentCount = recentMessageCount != null ? recentMessageCount : 10;
+        if (effectiveGroupCount < effectiveRecentCount * 3) {
+            throw new BusinessException(ErrorCode.AGENT_MEMORY_GROUP_INVALID);
+        }
+    }
+
     private void checkNameDuplicate(String name, Long excludeId) {
         LambdaQueryWrapper<AgentConfig> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(AgentConfig::getName, name);
@@ -272,6 +299,8 @@ public class AgentConfigServiceImpl implements AgentConfigService {
                 .modelId(entity.getModelId())
                 .status(entity.getStatus())
                 .recentMessageCount(entity.getRecentMessageCount())
+                .memoryEnabled(entity.getMemoryEnabled())
+                .memoryGroupCount(entity.getMemoryGroupCount())
                 .tools(tools)
                 .skills(skills)
                 .knowledgeBases(knowledgeBases)

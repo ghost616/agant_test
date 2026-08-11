@@ -142,6 +142,7 @@ function AgentList(): JSX.Element {
   const [editingAgent, setEditingAgent] = useState<AgentConfig | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [form] = Form.useForm<AgentFormData>();
+  const memoryEnabled = Form.useWatch('memoryEnabled', form);
 
   const [modelList, setModelList] = useState<ModelConfig[]>([]);
   const [toolList, setToolList] = useState<ToolConfig[]>([]);
@@ -232,6 +233,8 @@ function AgentList(): JSX.Element {
       skills: editingAgent.skills,
       knowledgeBaseIds: editingAgent.knowledgeBases?.map((kb) => kb.id),
       recentMessageCount: editingAgent.recentMessageCount,
+      memoryEnabled: editingAgent.memoryEnabled,
+      memoryGroupCount: editingAgent.memoryGroupCount,
     });
   }, [editingAgent, modalVisible, form]);
 
@@ -512,6 +515,25 @@ function AgentList(): JSX.Element {
               placeholder="请输入最近消息数量"
               min={1}
               max={100}
+              style={{ width: '100%' }}
+            />
+          </Form.Item>
+          <Form.Item
+            name="memoryEnabled"
+            label="记忆功能"
+            valuePropName="checked"
+          >
+            <Switch />
+          </Form.Item>
+          <Form.Item
+            name="memoryGroupCount"
+            label="保留记忆数量"
+            initialValue={30}
+          >
+            <InputNumber
+              placeholder="请输入保留记忆数量"
+              min={1}
+              disabled={!memoryEnabled}
               style={{ width: '100%' }}
             />
           </Form.Item>
