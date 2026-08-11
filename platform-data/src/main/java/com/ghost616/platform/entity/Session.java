@@ -40,4 +40,7 @@ public class Session extends BaseEntity {
 
     @TableField("thinking")
     private Boolean thinking;
+
+    @TableField("memory_point_sequence_num")
+    private Integer memoryPointSequenceNum;
 }

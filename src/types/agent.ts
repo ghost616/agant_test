@@ -20,6 +20,7 @@ export interface AgentConfig {
   recentMessageCount?: number;
   memoryEnabled?: boolean;
   memoryGroupCount?: number;
+  vectorModelId?: string;
   createTime: string;
   updateTime: string;
 }
@@ -35,6 +36,7 @@ export interface AgentFormData {
   recentMessageCount?: number;
   memoryEnabled?: boolean;
   memoryGroupCount?: number;
+  vectorModelId?: string;
 }
 
 export interface AgentListParams {

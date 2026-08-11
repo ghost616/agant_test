@@ -33,4 +33,7 @@ public class AgentConfig extends BaseEntity {
 
     @TableField("memory_group_count")
     private Integer memoryGroupCount = 30;
+
+    @TableField("vector_model_id")
+    private Long vectorModelId;
 }

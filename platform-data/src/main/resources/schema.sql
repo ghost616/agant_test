@@ -46,6 +46,7 @@ CREATE TABLE IF NOT EXISTS session (
     total_token_used BIGINT,
     last_response_id VARCHAR(50),
     is_evaluation    TINYINT(1) DEFAULT 0,
+    memory_point_sequence_num INTEGER,
     create_time      TIMESTAMP,
     update_time      TIMESTAMP,
     deleted          INTEGER DEFAULT 0
@@ -103,6 +104,7 @@ CREATE TABLE IF NOT EXISTS agent_config (
     recent_message_count    INTEGER DEFAULT 10,
     memory_enabled          TINYINT(1) DEFAULT 0,
     memory_group_count      INTEGER DEFAULT 30,
+    vector_model_id         BIGINT,
     deleted                 INTEGER DEFAULT 0
 );
 

@@ -11,11 +11,9 @@ import com.ghost616.agentbase.service.agent.MessageDataProvider.MessageDTO;
 import com.ghost616.agentbase.service.agent.MessageDataProvider.ToolCallData;
 import com.ghost616.agentbase.service.agent.MessageDataProvider.WebSearchCallData;
 import com.ghost616.agentbase.util.JsonMapper;
-import com.ghost616.platform.entity.AgentConfig;
 import com.ghost616.platform.entity.Message;
 import com.ghost616.platform.entity.MessageToolCall;
 import com.ghost616.platform.entity.Session;
-import com.ghost616.platform.repository.AgentConfigMapper;
 import com.ghost616.platform.repository.MessageMapper;
 import com.ghost616.platform.repository.MessageToolCallMapper;
 import com.ghost616.platform.repository.SessionMapper;
@@ -35,23 +33,22 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class DefaultMessageDataProvider implements MessageDataProvider {
 
-    private static final long AGENT_CONFIG_CACHE_TTL_MILLIS = 60_000L;
-    private static final int AGENT_CONFIG_CACHE_MAX_SIZE = 2000;
+    private static final long MEMORY_POINT_CACHE_TTL_MILLIS = 60_000L;
+    private static final int MEMORY_POINT_CACHE_MAX_SIZE = 2000;
 
-    private final ConcurrentHashMap<Long, AgentConfigCacheEntry> agentConfigCache = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Long, MemoryPointCacheEntry> memoryPointCache = new ConcurrentHashMap<>();
 
     private final MessageMapper messageMapper;
     private final MessageToolCallMapper messageToolCallMapper;
     private final MessageToolCallService messageToolCallService;
     private final SessionMapper sessionMapper;
-    private final AgentConfigMapper agentConfigMapper;
 
-    private static final class AgentConfigCacheEntry {
-        private final AgentConfig agentConfig;
+    private static final class MemoryPointCacheEntry {
+        private final Integer memoryPointSequenceNum;
         private long expireAt;
 
-        private AgentConfigCacheEntry(AgentConfig agentConfig, long expireAt) {
-            this.agentConfig = agentConfig;
+        private MemoryPointCacheEntry(Integer memoryPointSequenceNum, long expireAt) {
+            this.memoryPointSequenceNum = memoryPointSequenceNum;
             this.expireAt = expireAt;
         }
 
@@ -160,67 +157,38 @@ public class DefaultMessageDataProvider implements MessageDataProvider {
     @Override
     public List<MessageDTO> getMessages(String sessionId) {
         Long sid = IdConverter.parse(sessionId);
-        TruncationBounds bounds = resolveMemoryTruncationBounds(sid);
+        Integer memoryPoint = resolveMemoryPoint(sid);
         LambdaQueryWrapper<Message> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Message::getSessionId, sid)
                 .eq(Message::getRollback, false);
-        if (bounds != null) {
-            wrapper.and(w -> w.lt(Message::getSequenceNum, bounds.firstUserSeq())
-                    .or()
-                    .ge(Message::getSequenceNum, bounds.keepFromSeq()));
+        if (memoryPoint != null) {
+            wrapper.ge(Message::getSequenceNum, memoryPoint);
         }
         wrapper.orderByAsc(Message::getSequenceNum);
         List<Message> messages = messageMapper.selectList(wrapper);
         return toMessageDTOs(messages);
     }
 
-    private TruncationBounds resolveMemoryTruncationBounds(Long sessionId) {
-        AgentConfig agentConfig = resolveAgentConfig(sessionId);
-        if (agentConfig == null || !Boolean.TRUE.equals(agentConfig.getMemoryEnabled())
-                || agentConfig.getMemoryGroupCount() == null || agentConfig.getMemoryGroupCount() <= 0) {
-            return null;
-        }
-        Long totalGroups = messageMapper.countUserMessages(sessionId);
-        if (totalGroups == null || totalGroups <= agentConfig.getMemoryGroupCount()) {
-            return null;
-        }
-        int skipGroups = totalGroups.intValue() - agentConfig.getMemoryGroupCount();
-        Integer firstUserSeq = messageMapper.findNthUserSequenceNum(sessionId, 0);
-        Integer keepFromSeq = messageMapper.findNthUserSequenceNum(sessionId, skipGroups);
-        if (firstUserSeq == null || keepFromSeq == null) {
-            return null;
-        }
-        return new TruncationBounds(firstUserSeq, keepFromSeq);
-    }
-
-    private record TruncationBounds(int firstUserSeq, int keepFromSeq) {}
-
-    private AgentConfig resolveAgentConfig(Long sessionId) {
+    private Integer resolveMemoryPoint(Long sessionId) {
         if (sessionId == null) {
             return null;
         }
-        AgentConfigCacheEntry entry = agentConfigCache.get(sessionId);
+        MemoryPointCacheEntry entry = memoryPointCache.get(sessionId);
         if (entry != null && !entry.isExpired()) {
-            return entry.agentConfig;
+            return entry.memoryPointSequenceNum;
         }
-        AgentConfig agentConfig = loadAgentConfig(sessionId);
-        putAgentConfigCache(sessionId, agentConfig);
-        return agentConfig;
-    }
-
-    private void putAgentConfigCache(Long sessionId, AgentConfig agentConfig) {
-        if (agentConfigCache.size() >= AGENT_CONFIG_CACHE_MAX_SIZE) {
-            agentConfigCache.entrySet().removeIf(entry -> entry.getValue().isExpired());
-        }
-        agentConfigCache.put(sessionId, new AgentConfigCacheEntry(agentConfig, System.currentTimeMillis() + AGENT_CONFIG_CACHE_TTL_MILLIS));
-    }
-
-    private AgentConfig loadAgentConfig(Long sessionId) {
         Session session = sessionMapper.selectById(sessionId);
-        if (session == null || session.getAgentId() == null) {
-            return null;
+        Integer memoryPoint = session != null ? session.getMemoryPointSequenceNum() : null;
+        putMemoryPointCache(sessionId, memoryPoint);
+        return memoryPoint;
+    }
+
+    private void putMemoryPointCache(Long sessionId, Integer memoryPointSequenceNum) {
+        if (memoryPointCache.size() >= MEMORY_POINT_CACHE_MAX_SIZE) {
+            memoryPointCache.entrySet().removeIf(entry -> entry.getValue().isExpired());
         }
-        return agentConfigMapper.selectById(session.getAgentId());
+        memoryPointCache.put(sessionId, new MemoryPointCacheEntry(memoryPointSequenceNum,
+                System.currentTimeMillis() + MEMORY_POINT_CACHE_TTL_MILLIS));
     }
 
     public List<MessageDTO> toMessageDTOs(List<Message> messages) {

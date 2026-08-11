@@ -74,7 +74,7 @@ public class AgentConfigServiceImpl implements AgentConfigService {
         checkNameDuplicate(request.getName(), null);
 
         validateMemoryConfig(request.getMemoryEnabled(), request.getMemoryGroupCount(),
-                request.getRecentMessageCount());
+                request.getRecentMessageCount(), request.getVectorModelId());
 
         if (request.getSkills() != null && !request.getSkills().isEmpty()) {
             validateSkillIds(request.getSkills());
@@ -88,6 +88,7 @@ public class AgentConfigServiceImpl implements AgentConfigService {
         entity.setRecentMessageCount(request.getRecentMessageCount());
         entity.setMemoryEnabled(request.getMemoryEnabled() != null ? request.getMemoryEnabled() : false);
         entity.setMemoryGroupCount(request.getMemoryGroupCount() != null ? request.getMemoryGroupCount() : 30);
+        entity.setVectorModelId(request.getVectorModelId());
         entity.setStatus(CommonStatus.ENABLED);
 
         agentConfigMapper.insert(entity);
@@ -157,11 +158,15 @@ public class AgentConfigServiceImpl implements AgentConfigService {
         if (request.getMemoryGroupCount() != null) {
             entity.setMemoryGroupCount(request.getMemoryGroupCount());
         }
+        if (request.getVectorModelId() != null) {
+            entity.setVectorModelId(request.getVectorModelId());
+        }
 
         validateMemoryConfig(
                 request.getMemoryEnabled() != null ? request.getMemoryEnabled() : entity.getMemoryEnabled(),
                 request.getMemoryGroupCount() != null ? request.getMemoryGroupCount() : entity.getMemoryGroupCount(),
-                request.getRecentMessageCount() != null ? request.getRecentMessageCount() : entity.getRecentMessageCount());
+                request.getRecentMessageCount() != null ? request.getRecentMessageCount() : entity.getRecentMessageCount(),
+                request.getVectorModelId() != null ? request.getVectorModelId() : entity.getVectorModelId());
 
         agentConfigMapper.updateById(entity);
 
@@ -252,9 +257,13 @@ public class AgentConfigServiceImpl implements AgentConfigService {
         return toDTO(entity);
     }
 
-    private void validateMemoryConfig(Boolean memoryEnabled, Integer memoryGroupCount, Integer recentMessageCount) {
+    private void validateMemoryConfig(Boolean memoryEnabled, Integer memoryGroupCount, Integer recentMessageCount,
+                                      Long vectorModelId) {
         if (!Boolean.TRUE.equals(memoryEnabled)) {
             return;
+        }
+        if (vectorModelId == null) {
+            throw new BusinessException(ErrorCode.AGENT_MEMORY_VECTOR_MODEL_REQUIRED);
         }
         int effectiveGroupCount = memoryGroupCount != null ? memoryGroupCount : 30;
         int effectiveRecentCount = recentMessageCount != null ? recentMessageCount : 10;
@@ -301,6 +310,7 @@ public class AgentConfigServiceImpl implements AgentConfigService {
                 .recentMessageCount(entity.getRecentMessageCount())
                 .memoryEnabled(entity.getMemoryEnabled())
                 .memoryGroupCount(entity.getMemoryGroupCount())
+                .vectorModelId(entity.getVectorModelId())
                 .tools(tools)
                 .skills(skills)
                 .knowledgeBases(knowledgeBases)

@@ -33,6 +33,8 @@ public class AgentConfigDTO {
     private Integer recentMessageCount;
     private Boolean memoryEnabled;
     private Integer memoryGroupCount;
+    @JsonSerialize(using = ToStringSerializer.class)
+    private Long vectorModelId;
     private List<AgentToolItem> tools;
     private List<AgentSkillItem> skills;
     private List<KnowledgeBaseDTO> knowledgeBases;

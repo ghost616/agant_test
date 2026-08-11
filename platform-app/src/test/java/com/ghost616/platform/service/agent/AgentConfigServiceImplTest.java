@@ -323,6 +323,7 @@ class AgentConfigServiceImplTest {
                     .recentMessageCount(5)
                     .memoryEnabled(true)
                     .memoryGroupCount(15)
+                    .vectorModelId(50L)
                     .build();
 
             service.create(req);
@@ -330,6 +331,23 @@ class AgentConfigServiceImplTest {
             verify(agentConfigMapper).insert(agentConfigCaptor.capture());
             assertEquals(true, agentConfigCaptor.getValue().getMemoryEnabled());
             assertEquals(15, agentConfigCaptor.getValue().getMemoryGroupCount());
+            assertEquals(50L, agentConfigCaptor.getValue().getVectorModelId());
+        }
+
+        @Test
+        @DisplayName("memoryEnabled=true 且 vectorModelId 为空时抛出 AGENT-CONFIG-004")
+        void create_memoryEnabledWithoutVectorModel_throws() {
+            when(agentConfigMapper.selectCount(any())).thenReturn(0L);
+
+            AgentCreateRequest req = AgentCreateRequest.builder()
+                    .name("new-agent")
+                    .recentMessageCount(5)
+                    .memoryEnabled(true)
+                    .memoryGroupCount(15)
+                    .build();
+
+            BusinessException ex = assertThrows(BusinessException.class, () -> service.create(req));
+            assertEquals(ErrorCode.AGENT_MEMORY_VECTOR_MODEL_REQUIRED, ex.getErrorCode());
         }
 
         @Test
@@ -342,6 +360,7 @@ class AgentConfigServiceImplTest {
                     .recentMessageCount(5)
                     .memoryEnabled(true)
                     .memoryGroupCount(14)
+                    .vectorModelId(50L)
                     .build();
 
             BusinessException ex = assertThrows(BusinessException.class, () -> service.create(req));
@@ -557,6 +576,7 @@ class AgentConfigServiceImplTest {
                     .recentMessageCount(5)
                     .memoryEnabled(true)
                     .memoryGroupCount(15)
+                    .vectorModelId(50L)
                     .build();
 
             service.update(EXISTING_AGENT_ID, req);
@@ -564,6 +584,23 @@ class AgentConfigServiceImplTest {
             verify(agentConfigMapper).updateById(agentConfigCaptor.capture());
             assertEquals(true, agentConfigCaptor.getValue().getMemoryEnabled());
             assertEquals(15, agentConfigCaptor.getValue().getMemoryGroupCount());
+            assertEquals(50L, agentConfigCaptor.getValue().getVectorModelId());
+        }
+
+        @Test
+        @DisplayName("memoryEnabled=true 且 vectorModelId 为空时抛出 AGENT-CONFIG-004")
+        void update_memoryEnabledWithoutVectorModel_throws() {
+            when(agentConfigMapper.selectById(EXISTING_AGENT_ID)).thenReturn(createAgentEntity());
+
+            AgentUpdateRequest req = AgentUpdateRequest.builder()
+                    .name("updated")
+                    .recentMessageCount(5)
+                    .memoryEnabled(true)
+                    .memoryGroupCount(15)
+                    .build();
+
+            BusinessException ex = assertThrows(BusinessException.class, () -> service.update(EXISTING_AGENT_ID, req));
+            assertEquals(ErrorCode.AGENT_MEMORY_VECTOR_MODEL_REQUIRED, ex.getErrorCode());
         }
 
         @Test
@@ -576,6 +613,7 @@ class AgentConfigServiceImplTest {
                     .recentMessageCount(5)
                     .memoryEnabled(true)
                     .memoryGroupCount(14)
+                    .vectorModelId(50L)
                     .build();
 
             BusinessException ex = assertThrows(BusinessException.class, () -> service.update(EXISTING_AGENT_ID, req));
@@ -588,6 +626,7 @@ class AgentConfigServiceImplTest {
             AgentConfig entity = createAgentEntity();
             entity.setRecentMessageCount(5);
             entity.setMemoryGroupCount(15);
+            entity.setVectorModelId(50L);
             when(agentConfigMapper.selectById(EXISTING_AGENT_ID)).thenReturn(entity);
             mockToDTOReturns(List.of(), List.of());
 
@@ -607,6 +646,7 @@ class AgentConfigServiceImplTest {
             AgentConfig entity = createAgentEntity();
             entity.setRecentMessageCount(10);
             entity.setMemoryGroupCount(5);
+            entity.setVectorModelId(50L);
             when(agentConfigMapper.selectById(EXISTING_AGENT_ID)).thenReturn(entity);
 
             AgentUpdateRequest req = AgentUpdateRequest.builder()

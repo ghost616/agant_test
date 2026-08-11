@@ -145,6 +145,7 @@ function AgentList(): JSX.Element {
   const memoryEnabled = Form.useWatch('memoryEnabled', form);
 
   const [modelList, setModelList] = useState<ModelConfig[]>([]);
+  const [vectorModelList, setVectorModelList] = useState<ModelConfig[]>([]);
   const [toolList, setToolList] = useState<ToolConfig[]>([]);
   const [skillList, setSkillList] = useState<SkillConfig[]>([]);
   const [knowledgeBaseList, setKnowledgeBaseList] = useState<KnowledgeBase[]>([]);
@@ -169,13 +170,15 @@ function AgentList(): JSX.Element {
 
   const fetchRefData = useCallback(async () => {
     try {
-      const [models, tools, skills, knowledgeBases] = await Promise.all([
+      const [models, vectorModels, tools, skills, knowledgeBases] = await Promise.all([
         listModels({ modelType: 'LLM' }),
+        listModels({ modelType: 'EMBEDDINGS' }),
         listTools({}),
         listSkills({}),
         listKnowledgeBases({}),
       ]);
       setModelList(models);
+      setVectorModelList(vectorModels);
       setToolList(tools);
       setSkillList(skills);
       setKnowledgeBaseList(knowledgeBases);
@@ -235,6 +238,7 @@ function AgentList(): JSX.Element {
       recentMessageCount: editingAgent.recentMessageCount,
       memoryEnabled: editingAgent.memoryEnabled,
       memoryGroupCount: editingAgent.memoryGroupCount,
+      vectorModelId: editingAgent.vectorModelId,
     });
   }, [editingAgent, modalVisible, form]);
 
@@ -268,6 +272,9 @@ function AgentList(): JSX.Element {
       values = await form.validateFields();
     } catch {
       return;
+    }
+    if (!values.memoryEnabled) {
+      values.vectorModelId = undefined;
     }
 
     setSubmitting(true);
@@ -535,6 +542,22 @@ function AgentList(): JSX.Element {
               min={1}
               disabled={!memoryEnabled}
               style={{ width: '100%' }}
+            />
+          </Form.Item>
+          <Form.Item
+            name="vectorModelId"
+            label="向量模型"
+            hidden={!memoryEnabled}
+          >
+            <Select
+              placeholder="请选择向量模型"
+              allowClear
+              showSearch
+              optionFilterProp="label"
+              options={vectorModelList.map((m) => ({
+                value: m.id,
+                label: m.name,
+              }))}
             />
           </Form.Item>
         </Form>

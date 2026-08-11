@@ -11,11 +11,9 @@ import com.ghost616.agentbase.service.agent.MessageDataProvider.ToolCallData;
 import com.ghost616.agentbase.service.agent.MessageDataProvider.CustomToolCallData;
 import com.ghost616.agentbase.service.agent.MessageDataProvider.WebSearchCallData;
 import com.ghost616.agentbase.service.agent.MessageDataProvider.WebSearchResultData;
-import com.ghost616.platform.entity.AgentConfig;
 import com.ghost616.platform.entity.Message;
 import com.ghost616.platform.entity.MessageToolCall;
 import com.ghost616.platform.entity.Session;
-import com.ghost616.platform.repository.AgentConfigMapper;
 import com.ghost616.platform.repository.MessageMapper;
 import com.ghost616.platform.repository.MessageToolCallMapper;
 import com.ghost616.platform.repository.SessionMapper;
@@ -52,9 +50,6 @@ class DefaultMessageDataProviderTest {
     @Mock
     private SessionMapper sessionMapper;
 
-    @Mock
-    private AgentConfigMapper agentConfigMapper;
-
     @Captor
     private ArgumentCaptor<Message> messageCaptor;
 
@@ -67,7 +62,7 @@ class DefaultMessageDataProviderTest {
     void setUp() {
         TableInfoHelper.initTableInfo(new MapperBuilderAssistant(new MybatisConfiguration(), ""), Message.class);
         provider = new DefaultMessageDataProvider(messageMapper, messageToolCallMapper,
-                messageToolCallService, sessionMapper, agentConfigMapper);
+                messageToolCallService, sessionMapper);
     }
 
     @Test
@@ -879,129 +874,17 @@ class DefaultMessageDataProviderTest {
         return msg;
     }
 
-    private void mockMemoryAgent(boolean memoryEnabled, Integer memoryGroupCount) {
+    private void mockSession() {
         Session session = new Session();
         session.setId(10L);
-        session.setAgentId(5L);
         when(sessionMapper.selectById(10L)).thenReturn(session);
-        AgentConfig agentConfig = new AgentConfig();
-        agentConfig.setId(5L);
-        agentConfig.setMemoryEnabled(memoryEnabled);
-        agentConfig.setMemoryGroupCount(memoryGroupCount);
-        when(agentConfigMapper.selectById(5L)).thenReturn(agentConfig);
     }
 
     @Test
-    void getMessages_memoryEnabled_组数超过阈值_仅返回最近memoryGroupCount组() {
-        mockMemoryAgent(true, 2);
-        when(messageMapper.countUserMessages(10L)).thenReturn(3L);
-        when(messageMapper.findNthUserSequenceNum(10L, 0)).thenReturn(1);
-        when(messageMapper.findNthUserSequenceNum(10L, 1)).thenReturn(3);
-        List<Message> messages = List.of(
-                buildMessage(4L, "user", "u2", 3),
-                buildMessage(5L, "assistant", "a2", 4),
-                buildMessage(6L, "user", "u3", 5),
-                buildMessage(7L, "assistant", "a3", 6)
-        );
-        when(messageMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(messages);
-        when(messageToolCallMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Collections.emptyList());
-
-        List<MessageDTO> result = provider.getMessages("10");
-
-        assertEquals(4, result.size());
-        assertEquals("u2", result.get(0).content());
-        assertEquals("a2", result.get(1).content());
-        assertEquals("u3", result.get(2).content());
-        assertEquals("a3", result.get(3).content());
-    }
-
-    @Test
-    void getMessages_memoryEnabled_组数超过阈值_按skipGroups调用findNth并添加ge条件() {
-        mockMemoryAgent(true, 2);
-        when(messageMapper.countUserMessages(10L)).thenReturn(5L);
-        when(messageMapper.findNthUserSequenceNum(10L, 0)).thenReturn(1);
-        when(messageMapper.findNthUserSequenceNum(10L, 3)).thenReturn(7);
-        when(messageMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Collections.emptyList());
-
-        provider.getMessages("10");
-
-        verify(messageMapper).countUserMessages(10L);
-        verify(messageMapper).findNthUserSequenceNum(10L, 0);
-        verify(messageMapper).findNthUserSequenceNum(10L, 3);
-        verify(messageMapper, never()).findNthUserSequenceNum(10L, 2);
-
-        ArgumentCaptor<LambdaQueryWrapper<Message>> captor = ArgumentCaptor.forClass(LambdaQueryWrapper.class);
-        verify(messageMapper).selectList(captor.capture());
-        String sql = captor.getValue().getTargetSql();
-        assertTrue(sql.contains("sequence_num >= ?"));
-        assertTrue(sql.contains("sequence_num < ?"));
-    }
-
-    @Test
-    void getMessages_memoryEnabled_组数不足阈值_返回全部() {
-        mockMemoryAgent(true, 5);
-        when(messageMapper.countUserMessages(10L)).thenReturn(2L);
-        List<Message> messages = List.of(
-                buildMessage(1L, "user", "u1", 1),
-                buildMessage(2L, "assistant", "a1", 2),
-                buildMessage(3L, "user", "u2", 3)
-        );
-        when(messageMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(messages);
-        when(messageToolCallMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Collections.emptyList());
-
-        List<MessageDTO> result = provider.getMessages("10");
-
-        assertEquals(3, result.size());
-        assertEquals("u1", result.get(0).content());
-        assertEquals("a1", result.get(1).content());
-        assertEquals("u2", result.get(2).content());
-        verify(messageMapper, never()).findNthUserSequenceNum(anyLong(), anyInt());
-    }
-
-    @Test
-    void getMessages_memoryEnabled_第一个user之前的消息保留() {
-        mockMemoryAgent(true, 1);
-        when(messageMapper.countUserMessages(10L)).thenReturn(2L);
-        when(messageMapper.findNthUserSequenceNum(10L, 0)).thenReturn(2);
-        when(messageMapper.findNthUserSequenceNum(10L, 1)).thenReturn(4);
-        List<Message> messages = List.of(
-                buildMessage(1L, "system", "sys", 1),
-                buildMessage(4L, "user", "u2", 4),
-                buildMessage(5L, "assistant", "a2", 5)
-        );
-        when(messageMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(messages);
-        when(messageToolCallMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Collections.emptyList());
-
-        List<MessageDTO> result = provider.getMessages("10");
-
-        assertEquals(3, result.size());
-        assertEquals("sys", result.get(0).content());
-        assertEquals("u2", result.get(1).content());
-        assertEquals("a2", result.get(2).content());
-    }
-
-    @Test
-    void getMessages_memoryEnabled_无user消息_返回全部() {
-        mockMemoryAgent(true, 1);
-        when(messageMapper.countUserMessages(10L)).thenReturn(0L);
-        List<Message> messages = List.of(
-                buildMessage(1L, "system", "sys", 1)
-        );
-        when(messageMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(messages);
-        when(messageToolCallMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Collections.emptyList());
-
-        List<MessageDTO> result = provider.getMessages("10");
-
-        assertEquals(1, result.size());
-    }
-
-    @Test
-    void getMessages_session找不到agent_按无失忆处理返回全部() {
+    void getMessages_session无agentId_返回全部() {
         Session session = new Session();
         session.setId(10L);
-        session.setAgentId(5L);
         when(sessionMapper.selectById(10L)).thenReturn(session);
-        when(agentConfigMapper.selectById(5L)).thenReturn(null);
         List<Message> messages = List.of(
                 buildMessage(1L, "user", "u1", 1),
                 buildMessage(2L, "assistant", "a1", 2),
@@ -1016,7 +899,7 @@ class DefaultMessageDataProviderTest {
     }
 
     @Test
-    void getMessages_session不存在_按无失忆处理返回全部() {
+    void getMessages_session不存在_返回全部() {
         when(sessionMapper.selectById(10L)).thenReturn(null);
         List<Message> messages = List.of(
                 buildMessage(1L, "user", "u1", 1),
@@ -1031,24 +914,25 @@ class DefaultMessageDataProviderTest {
     }
 
     @Test
-    void getMessages_memoryEnabled为false_按无失忆处理返回全部() {
-        mockMemoryAgent(false, 1);
-        List<Message> messages = List.of(
-                buildMessage(1L, "user", "u1", 1),
-                buildMessage(2L, "assistant", "a1", 2),
-                buildMessage(3L, "user", "u2", 3)
-        );
-        when(messageMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(messages);
-        when(messageToolCallMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Collections.emptyList());
+    void getMessages_memoryPoint非空_添加ge过滤条件() {
+        Session session = new Session();
+        session.setId(10L);
+        session.setAgentId(5L);
+        session.setMemoryPointSequenceNum(4);
+        when(sessionMapper.selectById(10L)).thenReturn(session);
+        when(messageMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Collections.emptyList());
 
-        List<MessageDTO> result = provider.getMessages("10");
+        provider.getMessages("10");
 
-        assertEquals(3, result.size());
+        ArgumentCaptor<LambdaQueryWrapper<Message>> captor = ArgumentCaptor.forClass(LambdaQueryWrapper.class);
+        verify(messageMapper).selectList(captor.capture());
+        String sql = captor.getValue().getTargetSql();
+        assertTrue(sql.contains("sequence_num >= ?"));
     }
 
     @Test
-    void getMessages_memoryGroupCount为null或0_按无失忆处理返回全部() {
-        mockMemoryAgent(true, null);
+    void getMessages_memoryPoint为null_不添加ge过滤条件() {
+        mockSession();
         List<Message> messages = List.of(
                 buildMessage(1L, "user", "u1", 1),
                 buildMessage(2L, "assistant", "a1", 2)
@@ -1056,19 +940,22 @@ class DefaultMessageDataProviderTest {
         when(messageMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(messages);
         when(messageToolCallMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Collections.emptyList());
 
-        List<MessageDTO> result = provider.getMessages("10");
+        provider.getMessages("10");
 
-        assertEquals(2, result.size());
+        ArgumentCaptor<LambdaQueryWrapper<Message>> captor = ArgumentCaptor.forClass(LambdaQueryWrapper.class);
+        verify(messageMapper).selectList(captor.capture());
+        String sql = captor.getValue().getTargetSql();
+        assertFalse(sql.contains("sequence_num >= ?"));
     }
 
-    private java.util.concurrent.ConcurrentHashMap<Long, Object> getAgentConfigCache() throws Exception {
-        java.lang.reflect.Field field = DefaultMessageDataProvider.class.getDeclaredField("agentConfigCache");
+    private java.util.concurrent.ConcurrentHashMap<Long, Object> getMemoryPointCache() throws Exception {
+        java.lang.reflect.Field field = DefaultMessageDataProvider.class.getDeclaredField("memoryPointCache");
         field.setAccessible(true);
         return (java.util.concurrent.ConcurrentHashMap<Long, Object>) field.get(provider);
     }
 
     private void expireAllCacheEntries() throws Exception {
-        java.util.concurrent.ConcurrentHashMap<Long, Object> cache = getAgentConfigCache();
+        java.util.concurrent.ConcurrentHashMap<Long, Object> cache = getMemoryPointCache();
         for (Object entry : cache.values()) {
             java.lang.reflect.Field expireField = entry.getClass().getDeclaredField("expireAt");
             expireField.setAccessible(true);
@@ -1077,8 +964,8 @@ class DefaultMessageDataProviderTest {
     }
 
     @Test
-    void getMessages_缓存命中_仅查询一次session和agentConfig() throws Exception {
-        mockMemoryAgent(true, 5);
+    void getMessages_缓存命中_仅查询一次session() throws Exception {
+        mockSession();
         List<Message> messages = List.of(
                 buildMessage(1L, "user", "u1", 1),
                 buildMessage(2L, "assistant", "a1", 2)
@@ -1090,12 +977,11 @@ class DefaultMessageDataProviderTest {
         provider.getMessages("10");
 
         verify(sessionMapper, times(1)).selectById(10L);
-        verify(agentConfigMapper, times(1)).selectById(5L);
     }
 
     @Test
-    void getMessages_缓存过期_重新查询session和agentConfig() throws Exception {
-        mockMemoryAgent(true, 5);
+    void getMessages_缓存过期_重新查询session() throws Exception {
+        mockSession();
         List<Message> messages = List.of(
                 buildMessage(1L, "user", "u1", 1),
                 buildMessage(2L, "assistant", "a1", 2)
@@ -1108,7 +994,6 @@ class DefaultMessageDataProviderTest {
         provider.getMessages("10");
 
         verify(sessionMapper, times(2)).selectById(10L);
-        verify(agentConfigMapper, times(2)).selectById(5L);
     }
 
     @Test
@@ -1121,16 +1006,6 @@ class DefaultMessageDataProviderTest {
         session11.setId(11L);
         session11.setAgentId(6L);
         when(sessionMapper.selectById(11L)).thenReturn(session11);
-        AgentConfig agent5 = new AgentConfig();
-        agent5.setId(5L);
-        agent5.setMemoryEnabled(true);
-        agent5.setMemoryGroupCount(5);
-        when(agentConfigMapper.selectById(5L)).thenReturn(agent5);
-        AgentConfig agent6 = new AgentConfig();
-        agent6.setId(6L);
-        agent6.setMemoryEnabled(true);
-        agent6.setMemoryGroupCount(5);
-        when(agentConfigMapper.selectById(6L)).thenReturn(agent6);
 
         List<Message> messages = List.of(
                 buildMessage(1L, "user", "u1", 1),
@@ -1144,8 +1019,6 @@ class DefaultMessageDataProviderTest {
 
         verify(sessionMapper).selectById(10L);
         verify(sessionMapper).selectById(11L);
-        verify(agentConfigMapper).selectById(5L);
-        verify(agentConfigMapper).selectById(6L);
     }
 
     @Test

@@ -30,6 +30,8 @@ public class AgentUpdateRequest {
 
     private Integer memoryGroupCount;
 
+    private Long vectorModelId;
+
     private List<AgentToolItem> tools;
 
     private List<AgentSkillItem> skills;
