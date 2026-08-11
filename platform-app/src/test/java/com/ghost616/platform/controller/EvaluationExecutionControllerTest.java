@@ -117,35 +117,38 @@ class EvaluationExecutionControllerTest {
     }
 
     @Test
-    void cacheStatus_缓存存在但无数据_hasCache为false且cacheId为null() {
+    void cacheStatus_缓存数据延迟到达_轮询直到maxIndex大于0后返回() {
         when(defaultChatDataCacheProvider.getCacheIdsBySessionId("200"))
                 .thenReturn(List.of("cache-1"));
-        when(defaultChatDataCacheProvider.getMaxChunkIndex("cache-1")).thenReturn(0);
+        when(defaultChatDataCacheProvider.getMaxChunkIndex("cache-1"))
+                .thenReturn(-1, 0, 3);
 
         ApiResponse<Map<String, Object>> response = controller.cacheStatus("200");
 
         assertNotNull(response);
         assertTrue(response.isSuccess());
-        assertEquals(Boolean.FALSE, response.getData().get("hasCache"));
-        assertNull(response.getData().get("cacheId"));
-        verify(defaultChatDataCacheProvider).getCacheIdsBySessionId("200");
-        verify(defaultChatDataCacheProvider).getMaxChunkIndex("cache-1");
+        assertEquals(Boolean.TRUE, response.getData().get("hasCache"));
+        assertEquals("cache-1", response.getData().get("cacheId"));
+        verify(defaultChatDataCacheProvider, atLeast(3)).getMaxChunkIndex("cache-1");
     }
 
     @Test
-    void cacheStatus_缓存存在但maxIndex为负一_hasCache为false且cacheId为null() {
+    void cacheStatus_轮询被中断_恢复中断标记并返回缓存ID() {
         when(defaultChatDataCacheProvider.getCacheIdsBySessionId("200"))
                 .thenReturn(List.of("cache-1"));
-        when(defaultChatDataCacheProvider.getMaxChunkIndex("cache-1")).thenReturn(-1);
+        when(defaultChatDataCacheProvider.getMaxChunkIndex("cache-1"))
+                .thenAnswer(invocation -> {
+                    Thread.currentThread().interrupt();
+                    return 0;
+                });
 
         ApiResponse<Map<String, Object>> response = controller.cacheStatus("200");
 
         assertNotNull(response);
         assertTrue(response.isSuccess());
-        assertEquals(Boolean.FALSE, response.getData().get("hasCache"));
-        assertNull(response.getData().get("cacheId"));
-        verify(defaultChatDataCacheProvider).getCacheIdsBySessionId("200");
-        verify(defaultChatDataCacheProvider).getMaxChunkIndex("cache-1");
+        assertEquals(Boolean.TRUE, response.getData().get("hasCache"));
+        assertEquals("cache-1", response.getData().get("cacheId"));
+        assertTrue(Thread.currentThread().interrupted());
     }
 
     @Test

@@ -46,8 +46,21 @@ public class EvaluationExecutionController {
     @GetMapping("/cache/status")
     public ApiResponse<Map<String, Object>> cacheStatus(@RequestParam String sessionId) {
         List<String> cacheIds = defaultChatDataCacheProvider.getCacheIdsBySessionId(sessionId);
-        boolean hasCache = !cacheIds.isEmpty()
-                && defaultChatDataCacheProvider.getMaxChunkIndex(cacheIds.get(0)) > 0;
+        boolean hasCache = !cacheIds.isEmpty();
+        if (hasCache) {
+            String cacheId = cacheIds.get(0);
+            while (true) {
+                try {
+                    Thread.sleep(200);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+                if (defaultChatDataCacheProvider.getMaxChunkIndex(cacheId) > 0) {
+                    break;
+                }
+            }
+        }
         Map<String, Object> data = new HashMap<>();
         data.put("hasCache", hasCache);
         data.put("cacheId", hasCache ? cacheIds.get(0) : null);
