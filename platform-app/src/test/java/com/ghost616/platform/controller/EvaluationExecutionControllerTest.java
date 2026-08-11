@@ -101,9 +101,10 @@ class EvaluationExecutionControllerTest {
     }
 
     @Test
-    void cacheStatus_存在缓存_hasCache为true且返回第一个缓存ID() {
+    void cacheStatus_存在缓存且有数据_hasCache为true且返回第一个缓存ID() {
         when(defaultChatDataCacheProvider.getCacheIdsBySessionId("200"))
                 .thenReturn(List.of("cache-1", "cache-2"));
+        when(defaultChatDataCacheProvider.getMaxChunkIndex("cache-1")).thenReturn(3);
 
         ApiResponse<Map<String, Object>> response = controller.cacheStatus("200");
 
@@ -112,10 +113,43 @@ class EvaluationExecutionControllerTest {
         assertEquals(Boolean.TRUE, response.getData().get("hasCache"));
         assertEquals("cache-1", response.getData().get("cacheId"));
         verify(defaultChatDataCacheProvider).getCacheIdsBySessionId("200");
+        verify(defaultChatDataCacheProvider).getMaxChunkIndex("cache-1");
     }
 
     @Test
-    void cacheStatus_无缓存_hasCache为false且cacheId为null() {
+    void cacheStatus_缓存存在但无数据_hasCache为false且cacheId为null() {
+        when(defaultChatDataCacheProvider.getCacheIdsBySessionId("200"))
+                .thenReturn(List.of("cache-1"));
+        when(defaultChatDataCacheProvider.getMaxChunkIndex("cache-1")).thenReturn(0);
+
+        ApiResponse<Map<String, Object>> response = controller.cacheStatus("200");
+
+        assertNotNull(response);
+        assertTrue(response.isSuccess());
+        assertEquals(Boolean.FALSE, response.getData().get("hasCache"));
+        assertNull(response.getData().get("cacheId"));
+        verify(defaultChatDataCacheProvider).getCacheIdsBySessionId("200");
+        verify(defaultChatDataCacheProvider).getMaxChunkIndex("cache-1");
+    }
+
+    @Test
+    void cacheStatus_缓存存在但maxIndex为负一_hasCache为false且cacheId为null() {
+        when(defaultChatDataCacheProvider.getCacheIdsBySessionId("200"))
+                .thenReturn(List.of("cache-1"));
+        when(defaultChatDataCacheProvider.getMaxChunkIndex("cache-1")).thenReturn(-1);
+
+        ApiResponse<Map<String, Object>> response = controller.cacheStatus("200");
+
+        assertNotNull(response);
+        assertTrue(response.isSuccess());
+        assertEquals(Boolean.FALSE, response.getData().get("hasCache"));
+        assertNull(response.getData().get("cacheId"));
+        verify(defaultChatDataCacheProvider).getCacheIdsBySessionId("200");
+        verify(defaultChatDataCacheProvider).getMaxChunkIndex("cache-1");
+    }
+
+    @Test
+    void cacheStatus_无缓存_hasCache为false且cacheId为null且不查询maxIndex() {
         when(defaultChatDataCacheProvider.getCacheIdsBySessionId("200"))
                 .thenReturn(List.of());
 
@@ -126,6 +160,7 @@ class EvaluationExecutionControllerTest {
         assertEquals(Boolean.FALSE, response.getData().get("hasCache"));
         assertNull(response.getData().get("cacheId"));
         verify(defaultChatDataCacheProvider).getCacheIdsBySessionId("200");
+        verify(defaultChatDataCacheProvider, never()).getMaxChunkIndex(anyString());
     }
 
     @Test
