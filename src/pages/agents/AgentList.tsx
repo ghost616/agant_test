@@ -536,11 +536,11 @@ function AgentList(): JSX.Element {
             name="memoryGroupCount"
             label="保留记忆数量"
             initialValue={30}
+            hidden={!memoryEnabled}
           >
             <InputNumber
               placeholder="请输入保留记忆数量"
               min={1}
-              disabled={!memoryEnabled}
               style={{ width: '100%' }}
             />
           </Form.Item>
