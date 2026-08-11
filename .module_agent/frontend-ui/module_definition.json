@@ -83,11 +83,11 @@
     },
     {
       "path": "src/types/evaluation.ts",
-      "description": "评估管理类型定义，含 Evaluation（含 agentEvalId/agentId/agentName）/EvaluationCreateRequest（含 agentEvalId）/EvaluationUpdateRequest/EvaluationResult 接口；ExecutionStatusResponse 含 evaluationId/executionSessionId 可选字段；CacheStatusResponse（hasCache）接口；EvalSessionCreateResponse/GenerateStatusResponse 接口"
+      "description": "评估管理类型定义，含 Evaluation（含 agentEvalId/agentId/agentName）/EvaluationCreateRequest（含 agentEvalId）/EvaluationUpdateRequest/EvaluationResult 接口；ExecutionStatusResponse 仅含 evaluationId/executionSessionId 可选字段（已移除 status/currentStep/totalSteps 轮询字段）；CacheStatusResponse（hasCache + cacheId 可选字段，cacheId 供流式消费与清理缓存）接口；EvalSessionCreateResponse/GenerateStatusResponse 接口"
     },
     {
       "path": "src/services/evaluation.ts",
-      "description": "评估管理 API 服务封装：评估 CRUD/列表（支持 agentEvalId 筛选）/评估结果查询（getEvaluationResults/getEvaluationResult/deleteEvaluationResult/batchDeleteEvaluationResults/clearEvaluationResults）；评估执行流式接口：executeEvaluation 返回 ExecutionStatusResponse（含 executionSessionId，POST /evaluations/{id}/execute）、getExecutionStatus（GET /evaluations/{id}/execute/status）、getEvaluationStream（fetch + 复用 processSSEStream 连接 GET /evaluations/session/{executionSessionId}/stream，返回 AbortController）、getEvaluationCacheStatus（GET /evaluations/session/{executionSessionId}/cache/status 返回 CacheStatusResponse）；前台评估 createEvalSession/generateEvalResult/getGenerateStatus"
+      "description": "评估管理 API 服务封装：评估 CRUD/列表（支持 agentEvalId 筛选）/评估结果查询（getEvaluationResults/getEvaluationResult/deleteEvaluationResult/batchDeleteEvaluationResults/clearEvaluationResults）；评估执行流式接口：executeEvaluation 返回 ExecutionStatusResponse（含 executionSessionId，POST /evaluations/{id}/execute）、getEvaluationStream（fetch + 复用 processSSEStream 连接 GET /api/evaluations/cache/{cacheId}/stream，返回 AbortController）、getEvaluationCacheStatus（GET /evaluations/cache/status?sessionId=xxx 返回 CacheStatusResponse { hasCache, cacheId? }）、removeEvaluationCache（DELETE /evaluations/cache/{cacheId} 清理缓存，对齐后端 EvaluationExecutionController @RequestMapping(/api/evaluations) 前缀）；前台评估 createEvalSession/generateEvalResult/getGenerateStatus；已移除 getExecutionStatus（GET /evaluations/{id}/execute/status 轮询接口）"
     },
     {
       "path": "src/pages/evaluations/EvaluationList.tsx",
@@ -115,7 +115,7 @@
     },
     {
       "path": "src/pages/evaluations/hooks/useEvaluationExecute.ts",
-      "description": "评估执行核心逻辑 hook，封装 streamEvaluation/streamBackground/pollGenerateStatus/runToolCycle/sendForegroundMessage/execute 等方法及 executing/executionProgress/foregroundModalVisible/foregroundLog/foregroundLogRef/handleCancelForeground 状态；BACKGROUND 模式采用 stream→check 循环（executeEvaluation 返回 executionSessionId 后连接 getEvaluationStream 流式接收，流结束调 getEvaluationCacheStatus 判断 hasCache，true 则继续连接直到 false），FOREGROUND 模式创建会话逐条发送消息并生成结果；执行完成后刷新结果列表"
+      "description": "评估执行核心逻辑 hook，封装 streamEvaluation/streamBackground/pollGenerateStatus/runToolCycle/sendForegroundMessage/execute 等方法及 executing/executionProgress/foregroundModalVisible/foregroundLog/foregroundLogRef/handleCancelForeground 状态；BACKGROUND 模式采用 status→stream(cacheId)→remove(cacheId)→status 循环（先 getEvaluationCacheStatus 判断 hasCache 获取 cacheId，有缓存则 getEvaluationStream 流式接收、流结束 removeEvaluationCache 清理后回到 status 循环直到 hasCache=false），FOREGROUND 模式创建会话逐条发送消息并生成结果；执行完成后刷新结果列表"
     },
     {
       "path": "src/pages/evaluations/__tests__/useEvaluationExecute.test.tsx",

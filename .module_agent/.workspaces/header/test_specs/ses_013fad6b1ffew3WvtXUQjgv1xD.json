@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_013fad6b1ffew3WvtXUQjgv1xD",
+  "content": "## 待测试功能\n\n模块：agent-base\n\n### 变更内容\nChatDataCacheManager.getStream 修复：当缓存存在但无数据（provider.getMaxChunkIndex 返回 -1）时，不再抛 BusinessException(NOT_FOUND)，改为将 lastIndex 初始化为 -1 并直接进入 pollNewChunks 轮询等待数据写入。startIndex 越界校验（PARAM_INVALID）仅在 maxIndex >= 0 时生效。\n\n### 涉及文件\n1. agent-base/src/main/java/com/ghost616/agentbase/service/agent/ChatDataCacheManager.java\n   - getStream(String cacheId, int startIndex) 方法：maxIndex < 0 时不抛异常，进入轮询；maxIndex >= 0 且 startIndex > maxIndex 时抛 PARAM_INVALID；缓存不存在仍抛 NOT_FOUND。\n2. agent-base/src/test/java/com/ghost616/agentbase/service/agent/ChatDataCacheManagerTest.java\n   - 新增用例：\n     a. getStream_whenNoData_shouldPollForNewChunksUntilFinishReason：maxIndex 由 -1 变为 0、1，验证轮询等待数据写入后逐块输出直至 STOP 结束。\n     b. getStream_whenNoDataAndNothingArrives_shouldEmitErrorFinishChunk：maxIndex 一直为 -1，超时后生成 finishReason=ERROR 结束块（index=0）。\n   - 删除原 getStream_whenNoData_shouldThrowNotFound 用例。\n\n### 验证要求\n1. 编译：agent-base 模块 test-compile 通过（Java 17，Maven）。\n2. 单元测试：ChatDataCacheManagerTest 全部用例通过（含既有 getStream 轮询/超时/越界/缓存不存在用例，无回归）。",
+  "timestamp": "2026-08-10T14:14:27.144Z"
+}

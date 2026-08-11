@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_0114c3010ffevX5kBzzp5oIES2",
+  "content": "## 跨模块集成修复 — 评估缓存接口补齐 /evaluations 前缀\n\n### 变更文件\n- src/services/evaluation.ts：\n  - getEvaluationStream：fetch URL 由 `/api/cache/{cacheId}/stream` 改为 `/api/evaluations/cache/{cacheId}/stream`\n  - getEvaluationCacheStatus：api.get 路径由 `/cache/status` 改为 `/evaluations/cache/status`（仍携带 params: { sessionId }）\n  - removeEvaluationCache：api.delete 路径由 `/cache/{cacheId}` 改为 `/evaluations/cache/{cacheId}`\n- src/services/__tests__/evaluation.test.ts：三个接口断言路径同步更新为上述新路径\n\n### 需要测试的功能\n1. 接口测试：getEvaluationCacheStatus 请求路径为 GET /evaluations/cache/status 且携带 sessionId 参数；getEvaluationStream 请求路径为 /api/evaluations/cache/{cacheId}/stream；removeEvaluationCache 请求路径为 DELETE /evaluations/cache/{cacheId}\n2. 编译测试：变更文件 TypeScript 类型检查零错误（tsc）\n3. 单元测试：src/services/__tests__/evaluation.test.ts 全部用例通过\n\n### 其他\n- 检查是否存在其他文件硬编码 /cache/ 或 /cache/status 旧路径未同步",
+  "timestamp": "2026-08-11T03:18:31.089Z"
+}

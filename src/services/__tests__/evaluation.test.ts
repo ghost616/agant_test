@@ -25,6 +25,7 @@ import {
   clearEvaluationResults,
   getEvaluationCacheStatus,
   getEvaluationStream,
+  removeEvaluationCache,
 } from '../evaluation';
 
 describe('executeEvaluation', () => {
@@ -61,17 +62,30 @@ describe('getEvaluationCacheStatus', () => {
     mockGet.mockReset();
   });
 
-  it('应调用 GET /evaluations/session/{executionSessionId}/cache/status 并返回 hasCache', async () => {
+  it('应调用 GET /evaluations/cache/status?sessionId=xxx 并返回 hasCache', async () => {
     mockGet.mockResolvedValueOnce({ data: { data: { hasCache: true } } });
     const result = await getEvaluationCacheStatus('exec-1');
-    expect(mockGet).toHaveBeenCalledWith('/evaluations/session/exec-1/cache/status');
+    expect(mockGet).toHaveBeenCalledWith('/evaluations/cache/status', {
+      params: { sessionId: 'exec-1' },
+    });
     expect(result.hasCache).toBe(true);
   });
 
   it('应返回 hasCache 为 false 的响应', async () => {
     mockGet.mockResolvedValueOnce({ data: { data: { hasCache: false } } });
     const result = await getEvaluationCacheStatus('exec-2');
+    expect(mockGet).toHaveBeenCalledWith('/evaluations/cache/status', {
+      params: { sessionId: 'exec-2' },
+    });
     expect(result.hasCache).toBe(false);
+  });
+
+  it('应返回 cacheId 字段', async () => {
+    mockGet.mockResolvedValueOnce({
+      data: { data: { hasCache: true, cacheId: 'cache-1' } },
+    });
+    const result = await getEvaluationCacheStatus('exec-1');
+    expect(result.cacheId).toBe('cache-1');
   });
 
   it('应在 API 失败时抛出错误', async () => {
@@ -87,7 +101,7 @@ describe('getEvaluationStream', () => {
     globalThis.fetch = originalFetch;
   });
 
-  it('应连接 /api/evaluations/session/{executionSessionId}/stream 并复用 processSSEStream', async () => {
+  it('应连接 /api/evaluations/cache/{cacheId}/stream 并复用 processSSEStream', async () => {
     const mockResponse = {
       ok: true,
       status: 200,
@@ -102,7 +116,7 @@ describe('getEvaluationStream', () => {
 
     const onDelta = vi.fn();
     const onDone = vi.fn();
-    const controller = getEvaluationStream('exec-1', {
+    const controller = getEvaluationStream('cache-1', {
       onDelta,
       onReasoning: () => {},
       onDone,
@@ -110,12 +124,39 @@ describe('getEvaluationStream', () => {
     });
 
     expect(mockFetch).toHaveBeenCalledWith(
-      '/api/evaluations/session/exec-1/stream',
+      '/api/evaluations/cache/cache-1/stream',
       expect.objectContaining({ method: 'GET', signal: controller.signal }),
     );
 
     await new Promise((r) => setTimeout(r, 0));
     expect(onDone).toHaveBeenCalledWith(false);
+  });
+});
+
+describe('removeEvaluationCache', () => {
+  beforeEach(() => {
+    mockDelete.mockReset();
+  });
+
+  it('应调用 DELETE /evaluations/cache/{cacheId} 并返回 Promise<void>', async () => {
+    mockDelete.mockResolvedValueOnce(undefined);
+    await removeEvaluationCache('cache-1');
+    expect(mockDelete).toHaveBeenCalledWith('/evaluations/cache/cache-1');
+  });
+
+  it('应正确处理不同 cacheId 参数', async () => {
+    mockDelete.mockResolvedValueOnce(undefined);
+    await removeEvaluationCache('cache-a');
+    expect(mockDelete).toHaveBeenCalledWith('/evaluations/cache/cache-a');
+
+    mockDelete.mockResolvedValueOnce(undefined);
+    await removeEvaluationCache('cache-b');
+    expect(mockDelete).toHaveBeenCalledWith('/evaluations/cache/cache-b');
+  });
+
+  it('应在 API 失败时抛出错误', async () => {
+    mockDelete.mockRejectedValueOnce(new Error('Network Error'));
+    await expect(removeEvaluationCache('cache-1')).rejects.toThrow('Network Error');
   });
 });
 

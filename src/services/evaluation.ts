@@ -67,20 +67,17 @@ export async function executeEvaluation(id: string): Promise<ExecutionStatusResp
 }
 
 export function getEvaluationStream(
-  executionSessionId: string,
+  cacheId: string,
   callbacks: StreamCallbacks,
 ): AbortController {
   const controller = new AbortController();
 
   const run = async (): Promise<void> => {
     try {
-      const response = await fetch(
-        `/api/evaluations/session/${executionSessionId}/stream`,
-        {
-          method: 'GET',
-          signal: controller.signal,
-        },
-      );
+      const response = await fetch(`/api/evaluations/cache/${cacheId}/stream`, {
+        method: 'GET',
+        signal: controller.signal,
+      });
       await processSSEStream(response, callbacks);
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') {
@@ -96,12 +93,19 @@ export function getEvaluationStream(
 }
 
 export async function getEvaluationCacheStatus(
-  executionSessionId: string,
+  sessionId: string,
 ): Promise<CacheStatusResponse> {
   const res = await api.get<ApiResponse<CacheStatusResponse>>(
-    `/evaluations/session/${executionSessionId}/cache/status`,
+    '/evaluations/cache/status',
+    {
+      params: { sessionId },
+    },
   );
   return res.data.data;
+}
+
+export async function removeEvaluationCache(cacheId: string): Promise<void> {
+  await api.delete(`/evaluations/cache/${cacheId}`);
 }
 
 export async function createEvalSession(

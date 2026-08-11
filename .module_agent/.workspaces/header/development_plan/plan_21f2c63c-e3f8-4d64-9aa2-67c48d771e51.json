@@ -1,0 +1,10 @@
+{
+  "plan_id": "plan_21f2c63c-e3f8-4d64-9aa2-67c48d771e51",
+  "module_name": "platform-app",
+  "development_plan": "EvaluationExecutionService 修改：\n\n1. 注入 DefaultChatDataCacheProvider\n\n2. execute 方法：在 asyncEvaluationExecutor.executeAsync(...) 之后，添加轮询逻辑：\n   - String sessionId = String.valueOf(executionSession.getId())\n   - 循环：Thread.sleep(200ms)，调用 defaultChatDataCacheProvider.getCacheIdsBySessionId(sessionId)，若列表非空则跳出循环返回 statusDTO\n   - 每次循环检查 executionStatusMap 中的 statusDTO 是否变为 FAILED，若 FAILED 则跳出返回\n\n3. 同步更新测试中相关 mock",
+  "session_id": "ses_01461bd12ffew4GRuKKWiacNKX",
+  "modified_files": [
+    "platform-app/src/main/java/com/ghost616/platform/service/evaluation/EvaluationExecutionService.java",
+    "platform-app/src/test/java/com/ghost616/platform/service/evaluation/EvaluationExecutionServiceTest.java"
+  ]
+}

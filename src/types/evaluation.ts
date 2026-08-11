@@ -49,6 +49,7 @@ export interface ExecutionStatusResponse {
 
 export interface CacheStatusResponse {
   hasCache: boolean;
+  cacheId?: string;
 }
 
 export interface GenerateStatusResponse {

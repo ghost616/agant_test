@@ -1,0 +1,20 @@
+[
+  {
+    "plan_id": "plan_3948bd17-2d57-466c-9d99-4117e27ab927",
+    "plan": "评估缓存流式接口改造",
+    "modified_files": [
+      "src/services/__tests__/evaluation.test.ts"
+    ],
+    "summary": "更新了 src/services/__tests__/evaluation.test.ts：getEvaluationCacheStatus 断言改为 /cache/status + sessionId 参数并补充 cacheId 用例，getEvaluationStream 断言改为 /api/cache/{cacheId}/stream，新增 removeEvaluationCache 测试",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_0f005743-d0c9-4a30-85d7-1ea19927b628",
+    "plan": "修复评估缓存接口缺少 /evaluations 前缀",
+    "modified_files": [
+      "src/services/__tests__/evaluation.test.ts"
+    ],
+    "summary": "更新了 src/services/__tests__/evaluation.test.ts：getEvaluationCacheStatus 断言路径改为 /evaluations/cache/status、getEvaluationStream 断言改为 /api/evaluations/cache/{cacheId}/stream、removeEvaluationCache 断言改为 /evaluations/cache/{cacheId}",
+    "errors": []
+  }
+]

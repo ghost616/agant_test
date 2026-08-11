@@ -9,13 +9,16 @@ import com.ghost616.platform.service.evaluation.EvaluationExecutionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.codec.ServerSentEvent;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -40,20 +43,24 @@ public class EvaluationExecutionController {
         return ApiResponse.success(result);
     }
 
-    @GetMapping(value = "/session/{executionSessionId}/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public Flux<ServerSentEvent<ChatChunk>> stream(@PathVariable Long executionSessionId) {
-        String sessionId = String.valueOf(executionSessionId);
+    @GetMapping("/cache/status")
+    public ApiResponse<Map<String, Object>> cacheStatus(@RequestParam String sessionId) {
         List<String> cacheIds = defaultChatDataCacheProvider.getCacheIdsBySessionId(sessionId);
-        if (cacheIds.isEmpty()) {
-            return Flux.empty();
-        }
-        return chatDataCacheManager.getStream(cacheIds.get(0), 0);
+        boolean hasCache = !cacheIds.isEmpty();
+        Map<String, Object> data = new HashMap<>();
+        data.put("hasCache", hasCache);
+        data.put("cacheId", hasCache ? cacheIds.get(0) : null);
+        return ApiResponse.success(data);
     }
 
-    @GetMapping("/session/{executionSessionId}/cache/status")
-    public ApiResponse<Map<String, Boolean>> cacheStatus(@PathVariable Long executionSessionId) {
-        String sessionId = String.valueOf(executionSessionId);
-        List<String> cacheIds = defaultChatDataCacheProvider.getCacheIdsBySessionId(sessionId);
-        return ApiResponse.success(Map.of("hasCache", !cacheIds.isEmpty()));
+    @GetMapping(value = "/cache/{cacheId}/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public Flux<ServerSentEvent<ChatChunk>> stream(@PathVariable String cacheId) {
+        return chatDataCacheManager.getStream(cacheId, 0);
+    }
+
+    @DeleteMapping("/cache/{cacheId}")
+    public ApiResponse<Void> removeCache(@PathVariable String cacheId) {
+        defaultChatDataCacheProvider.removeCache(cacheId);
+        return ApiResponse.success(null);
     }
 }

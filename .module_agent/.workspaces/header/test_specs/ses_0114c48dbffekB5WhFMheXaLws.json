@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_0114c48dbffekB5WhFMheXaLws",
+  "content": "## 待测试功能\n\nEvaluationExecutionController 缓存 API 重构（platform-app 模块）：\n\n1. **GET /api/evaluations/cache/status?sessionId=xxx**：通过 DefaultChatDataCacheProvider.getCacheIdsBySessionId 判断缓存是否存在，返回 ApiResponse<Map<String,Object>> 含 hasCache 布尔值与 cacheId 字符串；cacheId 取 getCacheIdsBySessionId 第一个；无缓存时 hasCache=false、cacheId=null\n2. **GET /api/evaluations/cache/{cacheId}/stream**：直接调用 chatDataCacheManager.getStream(cacheId, 0) 返回 SSE 流（不再通过 sessionId 查询缓存列表）\n3. **DELETE /api/evaluations/cache/{cacheId}**：调用 defaultChatDataCacheProvider.removeCache(cacheId) 删除缓存\n4. 旧端点 GET /api/evaluations/session/{executionSessionId}/stream 与 GET /api/evaluations/session/{executionSessionId}/cache/status 已删除\n\n涉及文件：\n- platform-app/src/main/java/com/ghost616/platform/controller/EvaluationExecutionController.java\n- platform-app/src/test/java/com/ghost616/platform/controller/EvaluationExecutionControllerTest.java",
+  "timestamp": "2026-08-11T02:46:07.241Z"
+}

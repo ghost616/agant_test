@@ -8,6 +8,7 @@ import {
   getEvaluationCacheStatus,
   getEvaluationStream,
   getGenerateStatus,
+  removeEvaluationCache,
 } from '../../../services/evaluation';
 import {
   agentChatStream,
@@ -47,9 +48,9 @@ export function useEvaluationExecute(): {
   }, [foregroundLog]);
 
   const streamEvaluation = useCallback(
-    async (executionSessionId: string, logLines: string[]): Promise<void> => {
+    async (cacheId: string, logLines: string[]): Promise<void> => {
       return new Promise<void>((resolve, reject) => {
-        const controller = getEvaluationStream(executionSessionId, {
+        const controller = getEvaluationStream(cacheId, {
           onDelta: (text) => {
             const last = logLines[logLines.length - 1];
             if (last?.startsWith('[AI]')) {
@@ -84,10 +85,12 @@ export function useEvaluationExecute(): {
     ): Promise<void> => {
       let hasCache = true;
       while (hasCache && executingRef.current) {
-        await streamEvaluation(executionSessionId, logLines);
-        if (!executingRef.current) return;
         const cacheStatus = await getEvaluationCacheStatus(executionSessionId);
         hasCache = cacheStatus.hasCache;
+        if (!hasCache || !cacheStatus.cacheId) break;
+        await streamEvaluation(cacheStatus.cacheId, logLines);
+        if (!executingRef.current) return;
+        await removeEvaluationCache(cacheStatus.cacheId);
       }
     },
     [streamEvaluation],

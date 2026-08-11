@@ -1,12 +1,15 @@
 {
-  "platform-app": [
-    "ses_01461bd12ffew4GRuKKWiacNKX",
-    "ses_014322749ffe24k4abAdKReVS7"
-  ],
-  "frontend-ui": [
-    "ses_0142fea08ffeRx5VrRyRcFgRqT"
-  ],
   "_checked": [
     "ses_014325f5affeGRRX6gR74IuKLz"
+  ],
+  "platform-app": [
+    "ses_013d77cecffe686QadDSHxvA3Q",
+    "ses_0114c48dbffekB5WhFMheXaLws"
+  ],
+  "agent-base": [
+    "ses_013b78e49ffeUSUIPhXhykKajr"
+  ],
+  "frontend-ui": [
+    "ses_0114c3010ffevX5kBzzp5oIES2"
   ]
 }

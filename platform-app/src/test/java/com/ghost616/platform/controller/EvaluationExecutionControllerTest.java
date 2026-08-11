@@ -74,71 +74,66 @@ class EvaluationExecutionControllerTest {
     }
 
     @Test
-    void stream_存在缓存_返回缓存流() {
-        when(defaultChatDataCacheProvider.getCacheIdsBySessionId("200"))
-                .thenReturn(List.of("cache-1"));
+    void stream_直接调用getStream并返回缓存流() {
         ChatChunk chunk = ChatChunk.builder().delta("test").build();
         Flux<ServerSentEvent<ChatChunk>> expectedFlux = Flux.just(
                 ServerSentEvent.builder(chunk).build());
         when(chatDataCacheManager.getStream("cache-1", 0)).thenReturn(expectedFlux);
 
-        Flux<ServerSentEvent<ChatChunk>> result = controller.stream(200L);
+        Flux<ServerSentEvent<ChatChunk>> result = controller.stream("cache-1");
 
         assertNotNull(result);
-        verify(defaultChatDataCacheProvider).getCacheIdsBySessionId("200");
         verify(chatDataCacheManager).getStream("cache-1", 0);
     }
 
     @Test
-    void stream_无缓存_返回空Flux且不调用getStream() {
-        when(defaultChatDataCacheProvider.getCacheIdsBySessionId("200"))
-                .thenReturn(List.of());
+    void stream_不再查询getCacheIdsBySessionId() {
+        ChatChunk chunk = ChatChunk.builder().delta("test").build();
+        Flux<ServerSentEvent<ChatChunk>> expectedFlux = Flux.just(
+                ServerSentEvent.builder(chunk).build());
+        when(chatDataCacheManager.getStream("cache-1", 0)).thenReturn(expectedFlux);
 
-        Flux<ServerSentEvent<ChatChunk>> result = controller.stream(200L);
+        Flux<ServerSentEvent<ChatChunk>> result = controller.stream("cache-1");
 
         assertNotNull(result);
-        verify(defaultChatDataCacheProvider).getCacheIdsBySessionId("200");
-        verify(chatDataCacheManager, never()).getStream(anyString(), anyInt());
+        verify(defaultChatDataCacheProvider, never()).getCacheIdsBySessionId(anyString());
+        verify(chatDataCacheManager).getStream("cache-1", 0);
     }
 
     @Test
-    void stream_有多个缓存_取第一个缓存ID() {
+    void cacheStatus_存在缓存_hasCache为true且返回第一个缓存ID() {
         when(defaultChatDataCacheProvider.getCacheIdsBySessionId("200"))
                 .thenReturn(List.of("cache-1", "cache-2"));
-        when(chatDataCacheManager.getStream("cache-1", 0))
-                .thenReturn(Flux.empty());
 
-        Flux<ServerSentEvent<ChatChunk>> result = controller.stream(200L);
-
-        assertNotNull(result);
-        verify(defaultChatDataCacheProvider).getCacheIdsBySessionId("200");
-        verify(chatDataCacheManager).getStream("cache-1", 0);
-        verify(chatDataCacheManager, never()).getStream("cache-2", 0);
-    }
-
-    @Test
-    void cacheStatus_存在缓存_hasCache为true() {
-        when(defaultChatDataCacheProvider.getCacheIdsBySessionId("200"))
-                .thenReturn(List.of("cache-1"));
-
-        ApiResponse<Map<String, Boolean>> response = controller.cacheStatus(200L);
+        ApiResponse<Map<String, Object>> response = controller.cacheStatus("200");
 
         assertNotNull(response);
         assertTrue(response.isSuccess());
         assertEquals(Boolean.TRUE, response.getData().get("hasCache"));
+        assertEquals("cache-1", response.getData().get("cacheId"));
         verify(defaultChatDataCacheProvider).getCacheIdsBySessionId("200");
     }
 
     @Test
-    void cacheStatus_无缓存_hasCache为false() {
+    void cacheStatus_无缓存_hasCache为false且cacheId为null() {
         when(defaultChatDataCacheProvider.getCacheIdsBySessionId("200"))
                 .thenReturn(List.of());
 
-        ApiResponse<Map<String, Boolean>> response = controller.cacheStatus(200L);
+        ApiResponse<Map<String, Object>> response = controller.cacheStatus("200");
 
         assertNotNull(response);
         assertTrue(response.isSuccess());
         assertEquals(Boolean.FALSE, response.getData().get("hasCache"));
+        assertNull(response.getData().get("cacheId"));
         verify(defaultChatDataCacheProvider).getCacheIdsBySessionId("200");
+    }
+
+    @Test
+    void removeCache_调用provider删除缓存() {
+        ApiResponse<Void> response = controller.removeCache("cache-1");
+
+        assertNotNull(response);
+        assertTrue(response.isSuccess());
+        verify(defaultChatDataCacheProvider).removeCache("cache-1");
     }
 }

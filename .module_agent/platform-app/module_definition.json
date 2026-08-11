@@ -215,7 +215,7 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/evaluation/EvaluationExecutionService.java",
-      "description": "评估后台执行服务：接收 evaluationId 异步执行评估，验证基准会话有用户消息，复制基准会话数据创建执行会话，通过 AgentMessageProxy 逐条执行用户消息（含工具调用），完成后调用 EvaluationResultGenerateService 生成评估结果。维护内存状态 Map 供状态轮询。提供 createExecutionSession 和 generateResult 方法供前台控制器调用。"
+      "description": "评估后台执行服务（EvaluationExecutionService，@Service）：接收 evaluationId 执行异步评估，验证基准会话有用户消息（过滤 rollback 消息），复制基准会话数据创建执行会话（透传 thinking），通过 AsyncEvaluationExecutor 逐条执行用户消息。execute 异步提交后轮询等待：每次 sleep 200ms，先检查 FAILED 状态直接返回，否则通过 defaultChatDataCacheProvider.getCacheIdsBySessionId 获取第一个 cacheId（列表为空则继续轮询），再通过 getMaxChunkIndex(cacheId) > 0 判断数据已写入后退出轮询返回初始 statusDTO。提供 getStatus/createExecutionSession/generateResult/generateResultAsync/getGenerateStatus 方法，内存 ConcurrentHashMap 管理执行与生成状态，TTL(1h)+@Scheduled 清理过期状态"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/evaluation/EvaluationResultGenerateService.java",
@@ -223,7 +223,7 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/controller/EvaluationExecutionController.java",
-      "description": "评估后台执行控制器（路径 /api/evaluations），注入 EvaluationExecutionService、ChatDataCacheManager、DefaultChatDataCacheProvider。POST /{id}/execute 异步执行评估、GET /{id}/execute/status 状态轮询、GET /session/{executionSessionId}/stream（text/event-stream）通过 defaultChatDataCacheProvider.getCacheIdsBySessionId 取首个 cacheId 调用 chatDataCacheManager.getStream 返回 SSE 流，无缓存时返回空 Flux；GET /session/{executionSessionId}/cache/status 通过 getCacheIdsBySessionId 判断缓存是否存在，返回 ApiResponse<Map<String, Boolean>> 含 hasCache 布尔值"
+      "description": "评估后台执行控制器（路径 /api/evaluations），注入 EvaluationExecutionService、ChatDataCacheManager、DefaultChatDataCacheProvider。POST /{id}/execute 异步执行评估、GET /{id}/execute/status 状态轮询；缓存 API：GET /cache/status?sessionId=xxx 通过 defaultChatDataCacheProvider.getCacheIdsBySessionId 判断缓存是否存在并返回首个 cacheId（返回 ApiResponse<Map<String,Object>> 含 hasCache 布尔值与 cacheId 字符串，无缓存时 cacheId 为 null）、GET /cache/{cacheId}/stream（text/event-stream）直接调用 chatDataCacheManager.getStream(cacheId, 0) 返回 SSE 流、DELETE /cache/{cacheId} 调用 defaultChatDataCacheProvider.removeCache(cacheId) 删除缓存"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/controller/EvaluationSessionController.java",
@@ -391,7 +391,15 @@
     },
     {
       "path": "platform-app/src/test/java/com/ghost616/platform/controller/EvaluationExecutionControllerTest.java",
-      "description": "EvaluationExecutionController 单元测试：Mockito 注入 EvaluationExecutionService/ChatDataCacheManager/DefaultChatDataCacheProvider，覆盖 execute（调用服务返回结果）、getStatus（调用服务返回结果）、stream 三场景（有缓存返回缓存流、无缓存返回空 Flux 且不调用 getStream、有多个缓存取第一个 cacheId）、cacheStatus 两场景（有缓存 hasCache=true、无缓存 hasCache=false）"
+      "description": "EvaluationExecutionController 单元测试：Mockito 注入 EvaluationExecutionService/ChatDataCacheManager/DefaultChatDataCacheProvider，覆盖 execute（调用服务返回结果）、getStatus（调用服务返回结果）、stream 直接调用 getStream(cacheId,0)（含不再查询 getCacheIdsBySessionId 场景）、cacheStatus 两场景（有缓存 hasCache=true 且返回第一个缓存ID、无缓存 hasCache=false 且 cacheId 为 null）、removeCache（调用 provider 删除缓存）"
+    },
+    {
+      "path": "platform-app/src/test/java/com/ghost616/platform/service/evaluation/EvaluationExecutionServiceTest.java",
+      "description": "EvaluationExecutionService 单元测试：Mockito 注入 evaluationMapper/sessionMapper/sessionToolMapper/sessionSkillMapper/messageDataProvider/evaluationResultGenerateService/asyncEvaluationExecutor/defaultChatDataCacheProvider，覆盖 execute（评估不存在/基准会话ID为空/无用户消息/正常执行返回状态DTO/轮询缓存可用/轮询缓存列表空继续轮询/轮询数据未写入继续轮询/轮询FAILED返回/thinking透传/rollback过滤）、getStatus、createExecutionSession、generateResult、generateResultAsync、getGenerateStatus、cleanupStaleStatuses"
+    },
+    {
+      "path": "platform-app/src/test/java/com/ghost616/platform/service/agent/DefaultChatDataCacheProviderTest.java",
+      "description": "DefaultChatDataCacheProvider 单元测试：覆盖 createCache/cacheExists/isCacheDone/getCacheId/getCacheIdsBySessionId/getCacheSessionInfo/getMaxChunkIndex/appendChunk/removeCache/getChunks 全部公共方法（含缓存不存在、边界、越界截断、已结束不再追加等场景），并新增并发测试用例（ExecutorService + CountDownLatch 多写多读验证线程安全与 done 状态可见性）"
     }
   ]
 }

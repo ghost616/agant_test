@@ -64,17 +64,97 @@
     "test_passed": true
   },
   {
-    "plan_id": "plan_fb57ed96-c554-4007-aabb-52722583d45c",
-    "plan_summary": "EvaluationExecutionController 新增 cache/status 端点",
-    "starter_session_id": "ses_014325f5affeGRRX6gR74IuKLz",
+    "plan_id": "plan_21f2c63c-e3f8-4d64-9aa2-67c48d771e51",
+    "plan_summary": "execute 方法轮询等待 cacheId 生成",
+    "starter_session_id": "ses_0168b7778ffeZm7AZsEiDToWIV",
+    "code_reviewed": false,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_f6c14a8b-d446-4206-aae4-455a886814c4",
+    "plan_summary": "移除 execute/status 轮询",
+    "starter_session_id": "ses_0168b7778ffeZm7AZsEiDToWIV",
+    "code_reviewed": false,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_1295d886-76c5-4e74-a178-634d1c1af908",
+    "plan_summary": "getStream maxIndex<0 恢复抛异常",
+    "starter_session_id": "ses_0168b7778ffeZm7AZsEiDToWIV",
+    "code_reviewed": false,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_e66d3864-1141-40ef-91ad-c702432ed48e",
+    "plan_summary": "CacheEntry 读同步保护",
+    "starter_session_id": "ses_0168b7778ffeZm7AZsEiDToWIV",
+    "code_reviewed": false,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_34401339-4e83-4a6d-99e5-bad7b1d0cadb",
+    "plan_summary": "修复 pollNewChunks 超时判断使用真实时间戳",
+    "starter_session_id": "ses_0168b7778ffeZm7AZsEiDToWIV",
+    "code_reviewed": false,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_aeb16abf-f0b4-4a31-8808-458053c07685",
+    "plan_summary": "getStream 统一 interval+concatMap 结构",
+    "starter_session_id": "ses_0168b7778ffeZm7AZsEiDToWIV",
+    "code_reviewed": false,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_11110962-b080-4634-ab7c-6ef0b37e57ad",
+    "plan_summary": "concatMap 添加 logData 日志",
+    "starter_session_id": "ses_0168b7778ffeZm7AZsEiDToWIV",
+    "code_reviewed": false,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_10e15e47-f47c-4063-b8dd-732e989d21ce",
+    "plan_summary": "Flux.empty() 改为空数据块",
+    "starter_session_id": "ses_0168b7778ffeZm7AZsEiDToWIV",
+    "code_reviewed": false,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_4b2ffb1d-4693-4930-97e5-053115dea314",
+    "plan_summary": "Flux.interval 改为 Flux.fromIterable 自定义 Iterator",
+    "starter_session_id": "ses_0168b7778ffeZm7AZsEiDToWIV",
+    "code_reviewed": false,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_3e85d7e7-e58c-4b99-90f7-1c40254d1c48",
+    "plan_summary": "EvaluationExecutionController 重构 API：cache/status 与 stream 端点改造，新增 DELETE cache 端点，删除旧端点，同步更新测试",
+    "starter_session_id": "ses_0114cbcb1ffe7vIecu1yT6bjNd",
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
   },
   {
-    "plan_id": "plan_210c8a65-c10a-4253-942e-6d4ab9385fa0",
-    "plan_summary": "评估执行前端流式交互循环 stream-check 模式",
-    "starter_session_id": "ses_014325f5affeGRRX6gR74IuKLz",
+    "plan_id": "plan_3948bd17-2d57-466c-9d99-4117e27ab927",
+    "plan_summary": "evaluation.ts 与 useEvaluationExecute.ts 更新 API 调用并新增 removeEvaluationCache，同步更新测试",
+    "starter_session_id": "ses_0114cbcb1ffe7vIecu1yT6bjNd",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_0f005743-d0c9-4a30-85d7-1ea19927b628",
+    "plan_summary": "修复前端 evaluation.ts 缓存接口路径缺少 /evaluations 前缀导致的 404",
+    "starter_session_id": "ses_0114cbcb1ffe7vIecu1yT6bjNd",
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true

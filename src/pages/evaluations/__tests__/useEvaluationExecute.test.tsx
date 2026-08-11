@@ -16,6 +16,11 @@ describe('useEvaluationExecute 导入', () => {
     expect(source).toContain('getEvaluationStream');
   });
 
+  it('应导入 removeEvaluationCache', () => {
+    const source = readFileSync(hookPath, 'utf-8');
+    expect(source).toContain('removeEvaluationCache');
+  });
+
   it('应导入 createEvalSession', () => {
     const source = readFileSync(hookPath, 'utf-8');
     expect(source).toContain('createEvalSession');
@@ -115,16 +120,24 @@ describe('useEvaluationExecute 执行逻辑', () => {
     expect(source).toContain('getEvaluationStream');
   });
 
-  it('BACKGROUND 模式流结束应调用 check 接口判断 hasCache', () => {
+  it('BACKGROUND 模式先调用 status 接口判断 hasCache', () => {
     const source = readFileSync(hookPath, 'utf-8');
+    expect(source).toContain('while (hasCache && executingRef.current)');
     expect(source).toContain('getEvaluationCacheStatus(executionSessionId)');
     expect(source).toContain('hasCache = cacheStatus.hasCache');
   });
 
-  it('BACKGROUND 模式 hasCache 为 true 时继续循环连接 stream', () => {
+  it('BACKGROUND 模式 hasCache 为 true 时用 cacheId 连接 stream', () => {
     const source = readFileSync(hookPath, 'utf-8');
-    expect(source).toContain('while (hasCache && executingRef.current)');
-    expect(source).toContain('streamEvaluation(executionSessionId, logLines)');
+    expect(source).toContain('streamEvaluation(cacheStatus.cacheId, logLines)');
+    expect(source).toContain('!hasCache || !cacheStatus.cacheId');
+  });
+
+  it('BACKGROUND 模式 stream 结束后应 remove cache 再回到 status 循环', () => {
+    const source = readFileSync(hookPath, 'utf-8');
+    expect(source).toContain('removeEvaluationCache(cacheStatus.cacheId)');
+    expect(source).toContain('streamEvaluation(cacheStatus.cacheId, logLines)');
+    expect(source).toContain('getEvaluationCacheStatus(executionSessionId)');
   });
 
   it('FOREGROUND 模式应创建会话然后逐条发送消息', () => {

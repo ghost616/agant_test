@@ -1,0 +1,11 @@
+{
+  "plan_id": "plan_f6c14a8b-d446-4206-aae4-455a886814c4",
+  "module_name": "frontend-ui",
+  "development_plan": "移除前端 evaluation execute 轮询逻辑：\n\n1. useEvaluationExecute.ts：BACKGROUND 模式中删除 pollExecutionStatus 调用和 getExecutionStatus API 调用。POST /execute 返回后直接进入 stream→check 循环。\n\n2. evaluation.ts：删除 getExecutionStatus API 函数（GET /api/evaluations/{id}/execute/status 调用）。\n\n3. evaluation.ts types：移除 ExecutionStatusResponse 类型中不再使用的字段（如有）。\n\n4. 同步更新测试用例",
+  "session_id": "ses_0140a4db9ffeTp910VAM7NBc4H",
+  "modified_files": [
+    "src/services/evaluation.ts",
+    "src/types/evaluation.ts",
+    "src/services/__tests__/evaluation.test.ts"
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "plan_id": "plan_0f005743-d0c9-4a30-85d7-1ea19927b628",
+  "module_name": "frontend-ui",
+  "development_plan": "修复跨模块集成问题：后端 EvaluationExecutionController 端点位于 /api/evaluations 前缀下（@RequestMapping(\"/api/evaluations\")），实际端点为：GET /api/evaluations/cache/status?sessionId=xxx、GET /api/evaluations/cache/{cacheId}/stream、DELETE /api/evaluations/cache/{cacheId}。而前端 src/services/evaluation.ts 中的调用缺少 /evaluations 前缀：1. getEvaluationStream 中 fetch 直连改为 `/api/evaluations/cache/${cacheId}/stream`；2. getEvaluationCacheStatus 改为 api.get('/evaluations/cache/status', ...)；3. removeEvaluationCache 改为 api.delete(`/evaluations/cache/${cacheId}`)。同步更新 src/services/__tests__/evaluation.test.ts 中的断言路径以匹配新路径。",
+  "session_id": "ses_0114c3010ffevX5kBzzp5oIES2",
+  "modified_files": [
+    "src/services/evaluation.ts",
+    "src/services/__tests__/evaluation.test.ts"
+  ]
+}
