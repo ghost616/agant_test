@@ -1,0 +1,9 @@
+{
+  "plan_id": "plan_1b015488-a28f-4ef7-940a-cc4983c56e0e",
+  "module_name": "framework",
+  "development_plan": "README.md 第 3 行\"AI 智能体调试与管理平台，基于 opencode + DeepSeek 及 module_agent 插件开发...\"替换为平台定位的一句话描述，如\"可视化的 AI 智能体构建与管理平台，通过配置即可完成智能体创建、工具挂载、知识库检索与自动评估，无需编码\"",
+  "session_id": "ses_00bc0a481ffe068e2oY1in15mi",
+  "modified_files": [
+    "README.md"
+  ]
+}
