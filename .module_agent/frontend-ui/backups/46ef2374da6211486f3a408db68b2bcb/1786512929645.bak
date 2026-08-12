@@ -108,7 +108,7 @@ function App() {
             fontWeight: 'bold',
           }}
         >
-          Agent 低代码平台
+          Agent 调试平台
         </div>
         <Menu
           theme="dark"
@@ -126,7 +126,7 @@ function App() {
             borderBottom: '1px solid #f0f0f0',
           }}
         >
-          <h2 style={{ margin: 0 }}>智能化 Agent 低代码平台</h2>
+          <h2 style={{ margin: 0 }}>智能化 Agent 调试平台</h2>
         </Header>
         <Content style={{ margin: 24 }}>
           <Routes>

@@ -1,0 +1,11 @@
+[
+  {
+    "plan_id": "plan_e18d1a7e-e9fa-4b7d-b0ad-477158467fe3",
+    "plan": "App.tsx 标题文本替换",
+    "modified_files": [
+      "src/App.tsx"
+    ],
+    "summary": "已完成 App.tsx 两处标题替换",
+    "errors": []
+  }
+]
