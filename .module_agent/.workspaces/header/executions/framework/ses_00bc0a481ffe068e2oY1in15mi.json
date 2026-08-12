@@ -7,5 +7,14 @@
     ],
     "summary": "执行总结：已修改 README.md 第 28/29 行，将「智能体日志」与「运行日志」两条目从实现细节描述精简为功能层描述。移除内容：AgentLog/LogData 类名、LogData → ContextLogData/SessionLogData → 19 个子类继承体系、Builder 模式、AgentComponentRegistry 注册、DatabaseAgentLog、MyBatis-Plus、agent_log 表名及字段（session_id/conversation_id/log_type/log_level/log_data/session_variables/conversation_variables）、45 处日志点、定时任务每日 1 点 cron 细节、分页 20/50/100 与 JSON 美化等。保留功能描述：日志覆盖运行全流程关键环节（模型调用/工具执行/消息处理/上下文构建/会话/错误）、日志类型与等级、持久化存储与查询、按会话名搜索/类型等级筛选/分页展示/详情展开查看、30 天前历史日志自动清理。\n\n测试总结：纯文档修改，不涉及代码逻辑，无单元/接口/编译/E2E 测试适用。测试通过（跳过 0 项）",
     "errors": []
+  },
+  {
+    "plan_id": "plan_19f0b621-dad3-45d6-b144-706f72cbb752",
+    "plan": "简化 README.md 功能模块列表所有条目的技术细节",
+    "modified_files": [
+      "README.md"
+    ],
+    "summary": "执行总结：已精简 README.md 功能模块列表 9 个条目为功能层面描述。移除内容：LLM 模型管理「模型调用器」、工具管理 Bearer Token/API Key 认证方式与 BROWSER 子工具类型、HOOK 管理 HookInvoker/SystemHook/MessageSavePostHook 类名及六个生命周期枚举值、执行引擎 sendmessage 框架名与 5 种消息类型、子会话 callback_sub_session 工具名、三域授权 ALL/PARENT/CHILD 枚举值、组件注册表 AgentComponentRegistry 及 Provider/Manager/Invoker 接口名。保留功能：各模块的增删改查、关联配置、执行能力、作用域、通信能力、自动加载机制、查询展示等。其余条目（SKILL、智能体配置、智能体评估、知识库、对话ID、会话历史、智能体日志、运行日志）原已为功能层描述或本次已同步简化。\n\n测试总结：纯文档修改，不涉及代码逻辑，无单元/接口/编译/E2E 测试适用。测试通过（跳过 0 项）",
+    "errors": []
   }
 ]
