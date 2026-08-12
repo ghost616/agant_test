@@ -238,5 +238,13 @@
     "code_reviewed": false,
     "plan_completed": true,
     "test_passed": true
+  },
+  {
+    "plan_id": "plan_abd081af-45ad-4a9d-a6c9-8a6210b07f9f",
+    "plan_summary": "README新增application配置说明",
+    "starter_session_id": "ses_00c9a6a87ffetUtC5ZjBU5QoRN",
+    "code_reviewed": false,
+    "plan_completed": true,
+    "test_passed": true
   }
 ]

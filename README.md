@@ -63,6 +63,17 @@ build.bat
 
 编译前端并打包为 Spring Boot 可执行 JAR。
 
+## 工程配置
+
+核心配置集中在 `platform-app/src/main/resources/application.yml`：
+
+| 配置项 | 默认值 | 说明 |
+|--------|--------|------|
+| 服务端口 | `8080` | `server.port`，后端 HTTP 服务监听端口 |
+| SQLite 数据库 | `data/agent_platform.db` | `spring.datasource.url`，数据库文件路径（相对运行目录） |
+| Elasticsearch | `localhost:9200` | `elasticsearch.host/port`，知识库检索服务连接地址 |
+| 日志级别 | `INFO` | `logging.level.root` 与 `com.ghost616.platform`，全局及平台包日志级别 |
+
 ## 项目结构
 
 ```
