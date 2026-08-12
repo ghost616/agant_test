@@ -7,6 +7,7 @@
 - **AgentLogEntity**：智能体日志实体，继承 BaseEntity，映射 agent_log 表，含 sessionId(会话ID)/conversationId(对话ID)/logType(日志类型，存储 LogType 枚举 code 值)/logLevel(日志等级，存储 LogLevel 枚举 code 值)/logData(LogData 对象序列化 JSON 文本) 字段
 - **AgentConfig**：智能体配置实体，继承 BaseEntity，映射 agent_config 表，含 name/description/systemPrompt/modelId/status/recentMessageCount/memoryEnabled/memoryGroupCount/vectorModelId（关联 model_config.id）字段
 - **Session**：会话实体，继承 BaseEntity，映射 session 表，含 agentId/modelId/title/systemPrompt/parentSessionId/isChild/description/totalTokenUsed/lastResponseId/isEvaluation/thinking/memoryPointSequenceNum 字段
+- **AggregationType**：聚合类型枚举（GROUP/DAILY），@EnumValue 标记 code 字段
 ## 数据访问层
 
 - **MessageMapper**：继承 BaseMapper\<Message\>，额外提供 rollbackBySessionIdAndGeSequenceNum 批量更新方法、selectByConversationId 按会话查询未回滚消息（按创建时间升序）、countUserMessages 统计会话下 user 角色未回滚消息总数、findNthUserSequenceNum 查找会话内第 n 个 user 未回滚消息的 sequenceNum（按 sequence_num 升序，LIMIT 1 OFFSET n）

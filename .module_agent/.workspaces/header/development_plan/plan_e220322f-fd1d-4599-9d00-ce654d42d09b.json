@@ -1,0 +1,14 @@
+{
+  "plan_id": "plan_e220322f-fd1d-4599-9d00-ce654d42d09b",
+  "module_name": "platform-app",
+  "development_plan": "记忆聚合按天模式与 aggregationType 字段：\n1. SessionMemoryDocument 新增 aggregationType（AggregationType 枚举，ES 存 keyword）字段\n2. SessionMemoryESClient：createIndex mapping 新增 aggregationType/keyword 字段；新增 checkDailyExists(sessionId, startTime, endTime) 方法查询 ES 是否已有该时间段 DAILY 文档（term sessionId + term aggregationType=DAILY + range aggregationStartTime lte endTime and aggregationEndTime gte startTime 重叠判断）\n3. SessionMemoryService：aggregateSessionMemories() 和 triggerSessionMemory() 中同时调用原 group 聚合 + 新增 daily 聚合；daily 聚合逻辑：以当前时间截断秒为基准，往前推 24h 计算起止时间戳，查询该时间段内消息，按同样流程 buildMemoryDocuments（aggregationType=DAILY），构建时填充 aggregationStartTime/aggregationEndTime 为时间戳范围，先 checkDailyExists 防重再写入\n4. 同步更新测试文件",
+  "session_id": "ses_00c02f983ffeaJuIjy6Hf3gwI8",
+  "modified_files": [
+    "platform-app/src/main/java/com/ghost616/platform/model/SessionMemoryDocument.java",
+    "platform-app/src/main/java/com/ghost616/platform/service/search/SessionMemoryESClient.java",
+    "platform-app/src/main/java/com/ghost616/platform/service/memory/SessionMemoryService.java",
+    "platform-app/src/test/java/com/ghost616/platform/model/SessionMemoryDocumentTest.java",
+    "platform-app/src/test/java/com/ghost616/platform/service/search/SessionMemoryESClientTest.java",
+    "platform-app/src/test/java/com/ghost616/platform/service/memory/SessionMemoryServiceTest.java"
+  ]
+}

@@ -3,9 +3,6 @@ package com.ghost616.platform.service.search;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.mapping.DenseVectorSimilarity;
 import co.elastic.clients.elasticsearch.core.BulkRequest;
-import co.elastic.clients.elasticsearch.core.SearchResponse;
-import co.elastic.clients.elasticsearch.core.search.Hit;
-import com.ghost616.platform.enums.AggregationType;
 import com.ghost616.platform.model.SessionMemoryDocument;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -39,7 +36,7 @@ public class SessionMemoryESClient {
     }
 
     /**
-     * 创建索引 session_memory，mapping 包含 sessionId/keyword、聚合类型/keyword、聚合序号/integer、聚合文本/text(ik)、向量/dense_vector(cosine)。
+     * 创建索引 session_memory，mapping 包含 sessionId/keyword、聚合序号/integer、聚合文本/text(ik)、向量/dense_vector(cosine)。
      */
     public void createIndex() {
         try {
@@ -50,7 +47,6 @@ public class SessionMemoryESClient {
                     .index(INDEX_NAME)
                     .mappings(m -> m
                             .properties("sessionId", p -> p.keyword(k -> k))
-                            .properties("aggregationType", p -> p.keyword(k -> k))
                             .properties("aggregationStartSeq", p -> p.integer(i -> i))
                             .properties("aggregationEndSeq", p -> p.integer(i -> i))
                             .properties("aggregationStartTime", p -> p.long_(l -> l))
@@ -90,41 +86,6 @@ public class SessionMemoryESClient {
         }
     }
 
-    /**
-     * 检查指定会话在给定时间段内是否已存在按日聚合（DAILY）文档。
-     * 重叠判断采用半开区间：checkStartTime &lt; 文档 aggregationEndTime 且 checkEndTime &gt; 文档 aggregationStartTime，
-     * 即文档 startTime &lt; checkEndTime 且文档 endTime &gt; checkStartTime，避免相邻自然日边界重叠误判。
-     *
-     * @param sessionId 会话 ID（字符串形式）
-     * @param startTime 时间段起始时间戳（半开区间起点，不含）
-     * @param endTime   时间段结束时间戳（半开区间终点，不含）
-     * @return 已存在 DAILY 文档返回 true
-     */
-    public boolean checkDailyExists(String sessionId, long startTime, long endTime) {
-        ensureIndex();
-        try {
-            SearchResponse<SessionMemoryDocument> response = elasticsearchClient.search(s -> s
-                            .index(INDEX_NAME)
-                            .query(q -> q.bool(b -> b
-                                    .must(m -> m.term(t -> t.field("sessionId").value(sessionId)))
-                                    .must(m -> m.term(t -> t.field("aggregationType").value(AggregationType.DAILY.getCode())))
-                                    .must(m -> m.range(r -> r
-                                            .number(n -> n
-                                                    .field("aggregationStartTime")
-                                                    .lt((double) endTime))))
-                                    .must(m -> m.range(r -> r
-                                            .number(n -> n
-                                                    .field("aggregationEndTime")
-                                                    .gt((double) startTime))))))
-                            .size(1),
-                    SessionMemoryDocument.class);
-            List<Hit<SessionMemoryDocument>> hits = response.hits().hits();
-            return hits != null && !hits.isEmpty();
-        } catch (IOException e) {
-            throw new IllegalStateException("检查按日记忆文档是否存在失败: " + INDEX_NAME, e);
-        }
-    }
-
     private void ensureIndex() {
         if (!indexExists()) {
             createIndex();
@@ -132,7 +93,6 @@ public class SessionMemoryESClient {
     }
 
     private String buildDocId(SessionMemoryDocument document) {
-        return document.getSessionId() + "_" + document.getAggregationType() + "_"
-                + document.getAggregationStartSeq() + "_" + document.getAggregationEndSeq();
+        return document.getSessionId() + "_" + document.getAggregationStartSeq() + "_" + document.getAggregationEndSeq();
     }
 }

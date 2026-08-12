@@ -1,6 +1,5 @@
 package com.ghost616.platform.model;
 
-import com.ghost616.platform.enums.AggregationType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -19,9 +18,6 @@ public class SessionMemoryDocument {
 
     /** 会话 ID（字符串形式，与索引 keyword 映射一致） */
     private String sessionId;
-
-    /** 聚合类型（GROUP=分组聚合、DAILY=按日聚合，ES 存 keyword） */
-    private AggregationType aggregationType;
 
     /** 聚合起始消息序号（含） */
     private Integer aggregationStartSeq;

@@ -218,16 +218,6 @@ class SessionMemoryESClientTest {
         assertTrue(query.isBool(), "应为 bool 查询");
         assertNotNull(query.bool().must());
         assertEquals(4, query.bool().must().size());
-
-        Query startRange = query.bool().must().get(2);
-        assertTrue(startRange.isRange(), "第3个条件应为 aggregationStartTime range");
-        assertNotNull(startRange.range().number().lt(), "aggregationStartTime 应使用 lt（半开区间终点）");
-        assertNull(startRange.range().number().lte(), "aggregationStartTime 不应使用 lte");
-
-        Query endRange = query.bool().must().get(3);
-        assertTrue(endRange.isRange(), "第4个条件应为 aggregationEndTime range");
-        assertNotNull(endRange.range().number().gt(), "aggregationEndTime 应使用 gt（半开区间起点）");
-        assertNull(endRange.range().number().gte(), "aggregationEndTime 不应使用 gte");
     }
 
     @Test

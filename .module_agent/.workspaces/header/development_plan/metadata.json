@@ -182,5 +182,53 @@
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": false
+  },
+  {
+    "plan_id": "plan_19c596d3-166e-4716-a8d3-ac93cec8a9c6",
+    "plan_summary": "新增 AggregationType 枚举",
+    "starter_session_id": "ses_00c04d75fffeFWKlPvDYZ4U16R",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_e220322f-fd1d-4599-9d00-ce654d42d09b",
+    "plan_summary": "记忆聚合按天模式与 aggregationType 字段",
+    "starter_session_id": "ses_00c04d75fffeFWKlPvDYZ4U16R",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_f38a3494-2c3d-4fdc-8ea4-7308ab66e489",
+    "plan_summary": "按天聚合改为自然日窗口",
+    "starter_session_id": "ses_00c9a6a87ffetUtC5ZjBU5QoRN",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_9b4698ab-11aa-46b0-87d4-67ac799987c5",
+    "plan_summary": "按天聚合改为自然日窗口+半开区间防重",
+    "starter_session_id": "ses_00c9a6a87ffetUtC5ZjBU5QoRN",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": false
+  },
+  {
+    "plan_id": "plan_8c9a1707-c034-426d-9df4-2ac52c1cfa2c",
+    "plan_summary": "按时聚合改为一次性全量摘要",
+    "starter_session_id": "ses_00c9a6a87ffetUtC5ZjBU5QoRN",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_c5892966-b43c-4dc7-bf36-dc0e261a7d1a",
+    "plan_summary": "按天聚合改为一次性全量摘要",
+    "starter_session_id": "ses_00c9a6a87ffetUtC5ZjBU5QoRN",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": false
   }
 ]

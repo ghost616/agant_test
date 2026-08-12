@@ -1,6 +1,5 @@
 package com.ghost616.platform.model;
 
-import com.ghost616.platform.enums.AggregationType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -16,7 +15,6 @@ class SessionMemoryDocumentTest {
     void builder_shouldSetAllFields() {
         SessionMemoryDocument doc = SessionMemoryDocument.builder()
                 .sessionId("100")
-                .aggregationType(AggregationType.GROUP)
                 .aggregationStartSeq(1)
                 .aggregationEndSeq(5)
                 .aggregationStartTime(1000L)
@@ -26,7 +24,6 @@ class SessionMemoryDocumentTest {
                 .build();
 
         assertEquals("100", doc.getSessionId());
-        assertEquals(AggregationType.GROUP, doc.getAggregationType());
         assertEquals(1, doc.getAggregationStartSeq());
         assertEquals(5, doc.getAggregationEndSeq());
         assertEquals(1000L, doc.getAggregationStartTime());
@@ -40,7 +37,6 @@ class SessionMemoryDocumentTest {
         SessionMemoryDocument doc = new SessionMemoryDocument();
 
         assertNull(doc.getSessionId());
-        assertNull(doc.getAggregationType());
         assertNull(doc.getAggregationStartSeq());
         assertNull(doc.getAggregationEndSeq());
         assertNull(doc.getAggregationStartTime());
@@ -51,11 +47,9 @@ class SessionMemoryDocumentTest {
 
     @Test
     void allArgsConstructor_shouldPopulateFields() {
-        SessionMemoryDocument doc = new SessionMemoryDocument(
-                "200", AggregationType.DAILY, 3, 8, 3000L, 8000L, "摘要", List.of(0.5f));
+        SessionMemoryDocument doc = new SessionMemoryDocument("200", 3, 8, 3000L, 8000L, "摘要", List.of(0.5f));
 
         assertEquals("200", doc.getSessionId());
-        assertEquals(AggregationType.DAILY, doc.getAggregationType());
         assertEquals(3, doc.getAggregationStartSeq());
         assertEquals(8, doc.getAggregationEndSeq());
         assertEquals(3000L, doc.getAggregationStartTime());

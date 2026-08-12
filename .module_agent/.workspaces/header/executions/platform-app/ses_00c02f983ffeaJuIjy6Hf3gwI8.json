@@ -1,0 +1,16 @@
+[
+  {
+    "plan_id": "plan_e220322f-fd1d-4599-9d00-ce654d42d09b",
+    "plan": "记忆聚合按天模式与 aggregationType 字段",
+    "modified_files": [
+      "platform-app/src/main/java/com/ghost616/platform/model/SessionMemoryDocument.java",
+      "platform-app/src/main/java/com/ghost616/platform/service/search/SessionMemoryESClient.java",
+      "platform-app/src/main/java/com/ghost616/platform/service/memory/SessionMemoryService.java",
+      "platform-app/src/test/java/com/ghost616/platform/model/SessionMemoryDocumentTest.java",
+      "platform-app/src/test/java/com/ghost616/platform/service/search/SessionMemoryESClientTest.java",
+      "platform-app/src/test/java/com/ghost616/platform/service/memory/SessionMemoryServiceTest.java"
+    ],
+    "summary": "已修改 SessionMemoryDocument/SessionMemoryESClient/SessionMemoryService 及 3 个测试文件",
+    "errors": []
+  }
+]

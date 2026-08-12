@@ -1,0 +1,11 @@
+[
+  {
+    "plan_id": "plan_19c596d3-166e-4716-a8d3-ac93cec8a9c6",
+    "plan": "新增 AggregationType 枚举（com.ghost616.platform.enums），包含 GROUP 和 DAILY 两个值",
+    "modified_files": [
+      "platform-data/src/main/java/com/ghost616/platform/enums/AggregationType.java"
+    ],
+    "summary": "测试全部通过：编译通过、AggregationTypeTest 2/2、模块回归 50/50，不影响其他模块",
+    "errors": []
+  }
+]

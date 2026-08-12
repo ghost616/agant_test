@@ -1,0 +1,10 @@
+{
+  "plan_id": "plan_8c9a1707-c034-426d-9df4-2ac52c1cfa2c",
+  "module_name": "platform-app",
+  "development_plan": "SessionMemoryService 按天聚合改为一次性全量摘要，而非分组聚合：新增 buildDailyMemoryDocument 方法，接收当天全部消息列表，提取所有非空消息内容拼接为全量文本，调用 LLM 生成单条摘要再向量化，生成唯一一个 SessionMemoryDocument（aggregationType=DAILY）。processDailyAggregation 改为调用 buildDailyMemoryDocument 替代 buildMemoryDocuments。更新测试用例。",
+  "session_id": "ses_00c2225dfffe2gdkbhbuNubjL4",
+  "modified_files": [
+    "platform-app/src/main/java/com/ghost616/platform/service/memory/SessionMemoryService.java",
+    "platform-app/src/test/java/com/ghost616/platform/service/memory/SessionMemoryServiceTest.java"
+  ]
+}

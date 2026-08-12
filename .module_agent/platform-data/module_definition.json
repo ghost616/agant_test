@@ -216,6 +216,10 @@
     {
       "path": "platform-data/src/test/java/com/ghost616/platform/exception/BusinessExceptionTest.java",
       "description": "BusinessException 单元测试，校验对 BaseException 的继承及单参/双参构造行为"
+    },
+    {
+      "path": "platform-data/src/main/java/com/ghost616/platform/enums/AggregationType.java",
+      "description": "聚合类型枚举（com.ghost616.platform.enums.AggregationType），包含 GROUP（分组聚合）、DAILY（按日聚合）两个值，@EnumValue 标记 code 字段，提供 getCode/getDescription"
     }
   ]
 }

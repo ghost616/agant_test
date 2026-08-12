@@ -12,7 +12,6 @@ import com.ghost616.platform.entity.AgentConfig;
 import com.ghost616.platform.entity.Message;
 import com.ghost616.platform.entity.ModelConfig;
 import com.ghost616.platform.entity.Session;
-import com.ghost616.platform.enums.AggregationType;
 import com.ghost616.platform.enums.ErrorCode;
 import com.ghost616.platform.exception.BusinessException;
 import com.ghost616.platform.model.SessionMemoryDocument;
@@ -27,8 +26,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import java.time.Instant;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -61,11 +58,6 @@ public class SessionMemoryService {
     /** LLM 大组汇总系统提示词 */
     private static final String SYSTEM_GROUP_SUMMARY_PROMPT =
             "你是对话摘要助手。下面是同一主题下的若干对话片段概要，请将其汇总为一段连贯的中文摘要，"
-                    + "保留关键事实、用户意图与结论，不超过 300 字。";
-
-    /** LLM 按日全量摘要系统提示词 */
-    private static final String SYSTEM_DAILY_SUMMARY_PROMPT =
-            "你是对话摘要助手。下面是某会话一天内的全部对话内容，请将其汇总为一段连贯的中文摘要，"
                     + "保留关键事实、用户意图与结论，不超过 300 字。";
 
     /** 主题归类行格式：序号. 主题（序号 + 点/顿号 + 主题） */
@@ -148,11 +140,7 @@ public class SessionMemoryService {
             log.warn("会话记忆聚合跳过：未配置向量模型, sessionId={}", session.getId());
             return;
         }
-        processGroupAggregation(session, agentConfig);
-        processDailyAggregation(session, agentConfig);
-    }
 
-    private void processGroupAggregation(Session session, AgentConfig agentConfig) {
         Integer oldPoint = session.getMemoryPointSequenceNum();
         Integer newPoint = resolveNewMemoryPoint(session.getId(), agentConfig);
         if (newPoint == null) {
@@ -179,8 +167,7 @@ public class SessionMemoryService {
         }
 
         List<SessionMemoryDocument> documents = buildMemoryDocuments(
-                session.getId(), newMessages, llmInvoker, embedInvoker, agentConfig,
-                AggregationType.GROUP, null, null);
+                session.getId(), newMessages, llmInvoker, embedInvoker, agentConfig);
         if (documents.isEmpty()) {
             return;
         }
@@ -192,43 +179,6 @@ public class SessionMemoryService {
         Integer archivedEndSeq = documents.get(documents.size() - 1).getAggregationEndSeq();
         log.info("会话记忆聚合完成, sessionId={}, startSeq={}, endSeq={}, memoryPoint={}, memoryCount={}",
                 session.getId(), oldPoint == null ? 1 : oldPoint + 1, archivedEndSeq, newPoint, documents.size());
-    }
-
-    private void processDailyAggregation(Session session, AgentConfig agentConfig) {
-        LocalDate today = LocalDate.now();
-        long endTime = toEpochMillis(today.atStartOfDay());
-        long startTime = toEpochMillis(today.minusDays(1).atStartOfDay());
-
-        if (sessionMemoryESClient.checkDailyExists(IdConverter.toString(session.getId()), startTime, endTime)) {
-            log.info("会话按日记忆已存在，跳过聚合, sessionId={}", session.getId());
-            return;
-        }
-
-        List<Message> dailyMessages = queryMessagesByTimeRange(session.getId(), startTime, endTime);
-        if (dailyMessages.isEmpty()) {
-            return;
-        }
-
-        ModelInvoker llmInvoker = resolveLlmInvoker(session, agentConfig);
-        if (llmInvoker == null) {
-            log.warn("会话按日记忆聚合跳过：会话 LLM 模型不可用, sessionId={}", session.getId());
-            return;
-        }
-        ModelInvoker embedInvoker = resolveEmbedInvoker(agentConfig);
-        if (embedInvoker == null) {
-            log.warn("会话按日记忆聚合跳过：向量模型不可用, sessionId={}", session.getId());
-            return;
-        }
-
-        SessionMemoryDocument document = buildDailyMemoryDocument(
-                session.getId(), dailyMessages, llmInvoker, embedInvoker, agentConfig, startTime, endTime);
-        if (document == null) {
-            return;
-        }
-
-        sessionMemoryESClient.batchSave(List.of(document));
-        log.info("会话按日记忆聚合完成, sessionId={}, startTime={}, endTime={}, memoryCount=1",
-                session.getId(), startTime, endTime);
     }
 
     private List<Long> queryMemoryEnabledAgentIds() {
@@ -272,20 +222,6 @@ public class SessionMemoryService {
         return messageMapper.selectList(wrapper);
     }
 
-    private List<Message> queryMessagesByTimeRange(Long sessionId, long startTime, long endTime) {
-        LambdaQueryWrapper<Message> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(Message::getSessionId, sessionId)
-                .eq(Message::getRollback, false)
-                .ge(Message::getCreateTime, toLocalDateTime(startTime))
-                .lt(Message::getCreateTime, toLocalDateTime(endTime))
-                .orderByAsc(Message::getSequenceNum);
-        return messageMapper.selectList(wrapper);
-    }
-
-    private LocalDateTime toLocalDateTime(long epochMillis) {
-        return LocalDateTime.ofInstant(Instant.ofEpochMilli(epochMillis), ZoneId.systemDefault());
-    }
-
     private ModelInvoker resolveLlmInvoker(Session session, AgentConfig agentConfig) {
         Long modelId = session.getModelId() != null ? session.getModelId() : agentConfig.getModelId();
         if (modelId == null) {
@@ -321,8 +257,7 @@ public class SessionMemoryService {
 
     private List<SessionMemoryDocument> buildMemoryDocuments(Long sessionId, List<Message> messages,
                                                              ModelInvoker llmInvoker, ModelInvoker embedInvoker,
-                                                             AgentConfig agentConfig, AggregationType aggregationType,
-                                                             Long windowStartTime, Long windowEndTime) {
+                                                             AgentConfig agentConfig) {
         List<List<Message>> groups = groupByUser(messages);
         if (groups.isEmpty()) {
             return List.of();
@@ -362,11 +297,10 @@ public class SessionMemoryService {
             }
             documents.add(SessionMemoryDocument.builder()
                     .sessionId(IdConverter.toString(sessionId))
-                    .aggregationType(aggregationType)
                     .aggregationStartSeq(topicGroup.get(0).startSeq())
                     .aggregationEndSeq(topicGroup.get(topicGroup.size() - 1).endSeq())
-                    .aggregationStartTime(windowStartTime != null ? windowStartTime : topicGroup.get(0).startTime())
-                    .aggregationEndTime(windowEndTime != null ? windowEndTime : topicGroup.get(topicGroup.size() - 1).endTime())
+                    .aggregationStartTime(topicGroup.get(0).startTime())
+                    .aggregationEndTime(topicGroup.get(topicGroup.size() - 1).endTime())
                     .aggregationText(summary)
                     .vector(vector)
                     .build());
@@ -375,55 +309,6 @@ public class SessionMemoryService {
     }
 
     private record GroupSummary(int startSeq, int endSeq, Long startTime, Long endTime, String summary) {}
-
-    /**
-     * 构建按日全量摘要文档：将当天全部非空消息内容拼接为全量文本，调用 LLM 生成单条摘要后向量化，
-     * 生成唯一一个 aggregationType=DAILY 的 SessionMemoryDocument。
-     *
-     * @return 生成的文档，若全量文本/摘要/向量为空返回 null
-     */
-    private SessionMemoryDocument buildDailyMemoryDocument(Long sessionId, List<Message> messages,
-                                                           ModelInvoker llmInvoker, ModelInvoker embedInvoker,
-                                                           AgentConfig agentConfig, long startTime, long endTime) {
-        String fullContent = extractAllContent(messages);
-        if (fullContent == null || fullContent.isBlank()) {
-            return null;
-        }
-        String summary = summarizeDailyContent(llmInvoker, fullContent);
-        if (summary == null || summary.isBlank()) {
-            return null;
-        }
-        List<Float> vector = embedText(embedInvoker, agentConfig, summary);
-        if (vector == null || vector.isEmpty()) {
-            return null;
-        }
-        return SessionMemoryDocument.builder()
-                .sessionId(IdConverter.toString(sessionId))
-                .aggregationType(AggregationType.DAILY)
-                .aggregationStartSeq(messages.get(0).getSequenceNum())
-                .aggregationEndSeq(messages.get(messages.size() - 1).getSequenceNum())
-                .aggregationStartTime(startTime)
-                .aggregationEndTime(endTime)
-                .aggregationText(summary)
-                .vector(vector)
-                .build();
-    }
-
-    private String extractAllContent(List<Message> messages) {
-        StringBuilder content = new StringBuilder();
-        for (Message m : messages) {
-            String text = m.getContent() != null ? m.getContent() : "";
-            if (text.isBlank()) {
-                continue;
-            }
-            content.append(text).append("\n");
-        }
-        return content.toString().trim();
-    }
-
-    private String summarizeDailyContent(ModelInvoker invoker, String fullContent) {
-        return invokeLlm(invoker, SYSTEM_DAILY_SUMMARY_PROMPT, fullContent);
-    }
 
     private List<List<Message>> groupByUser(List<Message> messages) {
         List<List<Message>> groups = new ArrayList<>();
