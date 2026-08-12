@@ -146,14 +146,14 @@ test.describe('记忆回看 MemoryList 页面', () => {
     await setupMocks(page);
   });
 
-  test('/memory 路由可访问，侧边栏存在记忆回看菜单，仅展示 memoryEnabled 智能体会话', async ({ page }) => {
+  test('/memory 路由可访问，侧边栏存在记忆回看菜单，展示全部会话（不受 memoryEnabled 过滤）', async ({ page }) => {
     await page.goto('/memory');
     await page.waitForSelector('.ant-table');
 
     await expect(page.locator('.ant-menu').getByText('记忆回看')).toBeVisible();
 
     await expect(page.locator('.ant-table-tbody').getByText('记忆会话')).toBeVisible();
-    await expect(page.locator('.ant-table-tbody').getByText('普通会话')).toHaveCount(0);
+    await expect(page.locator('.ant-table-tbody').getByText('普通会话')).toBeVisible();
   });
 
   test('表格渲染智能体名与最近消息时间（末条消息 createTime）', async ({ page }) => {
@@ -161,9 +161,9 @@ test.describe('记忆回看 MemoryList 页面', () => {
     await page.waitForSelector('.ant-table');
 
     await expect(page.locator('.ant-table-tbody').getByText('记忆智能体')).toBeVisible();
-    await expect(page.locator('.ant-table-tbody').getByText('普通智能体')).toHaveCount(0);
+    await expect(page.locator('.ant-table-tbody').getByText('普通智能体')).toBeVisible();
     await expect(
-      page.locator('.ant-table-tbody').getByText('2026-08-10 10:00:00'),
+      page.locator('.ant-table-tbody').getByText('2026-08-10 10:00:00').first(),
     ).toBeVisible();
 
     const headerTexts = await page.locator('.ant-table-thead th').allTextContents();
@@ -179,6 +179,7 @@ test.describe('记忆回看 MemoryList 页面', () => {
     await page
       .locator('.ant-table-tbody')
       .getByRole('button', { name: '按日聚合' })
+      .first()
       .click();
 
     await page.waitForURL('**/memory/1/DAILY');
@@ -196,6 +197,7 @@ test.describe('记忆回看 MemoryList 页面', () => {
     await page
       .locator('.ant-table-tbody')
       .getByRole('button', { name: '按分类聚合' })
+      .first()
       .click();
 
     await page.waitForURL('**/memory/1/GROUP');

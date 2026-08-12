@@ -150,3 +150,4 @@
 [2026-08-12T09:41:07.864Z] [session: ses_00ac34e59ffeWMwRWhCyqKhr5L] MemoryDetail.tsx GROUP 聚合列标题由「起始行-结束行」改为「起始-结束」
 [2026-08-12T09:41:23.746Z] [session: ses_00ac34e59ffeWMwRWhCyqKhr5L] MemoryDetail.test.tsx 与 e2e/Memory.spec.ts 同步更新：断言文本「起始行-结束行」改为「起始-结束」
 [2026-08-12T09:50:42.906Z] [session: ses_00ac34e59ffeWMwRWhCyqKhr5L] e2e/Memory.spec.ts 由离朱测试修复历史遗留断言：MemoryList 移除 memoryEnabled 过滤后，「普通会话」断言改为两会话均可见；按钮定位改用 .first() 避免 strict mode 冲突（MemoryDetail 列标题变更任务中附带）
+[2026-08-12T13:08:43.456Z] [session: ses_00ac34e59ffeWMwRWhCyqKhr5L] MemoryList.tsx 恢复 memoryEnabled 过滤条件：会话列表仅展示 agentMap[session.agentId]?.memoryEnabled === true 的会话；同步恢复 MemoryList.test.tsx 过滤断言与 e2e/Memory.spec.ts 断言（普通会话不可见、定位器去除 .first()）

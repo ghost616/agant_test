@@ -19,5 +19,16 @@
     ],
     "summary": "已改 MemoryDetail.tsx GROUP 列标题为「起始-结束」，并同步更新 MemoryDetail.test.tsx 与 e2e/Memory.spec.ts 断言",
     "errors": []
+  },
+  {
+    "plan_id": "plan_b30742b5-4bbd-4aa4-a26e-7130797ee55b",
+    "plan": "MemoryList.tsx 恢复 memoryEnabled 过滤条件，仅展示 memoryEnabled=true 会话",
+    "modified_files": [
+      "src/pages/memory/MemoryList.tsx",
+      "src/pages/memory/__tests__/MemoryList.test.tsx",
+      "e2e/Memory.spec.ts"
+    ],
+    "summary": "已恢复 MemoryList.tsx memoryEnabled 过滤条件，同步恢复 MemoryList.test.tsx 与 e2e/Memory.spec.ts 断言",
+    "errors": []
   }
 ]

@@ -350,5 +350,13 @@
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
+  },
+  {
+    "plan_id": "plan_b30742b5-4bbd-4aa4-a26e-7130797ee55b",
+    "plan_summary": "MemoryList恢复memoryEnabled过滤",
+    "starter_session_id": "ses_00c9a6a87ffetUtC5ZjBU5QoRN",
+    "code_reviewed": false,
+    "plan_completed": true,
+    "test_passed": true
   }
 ]

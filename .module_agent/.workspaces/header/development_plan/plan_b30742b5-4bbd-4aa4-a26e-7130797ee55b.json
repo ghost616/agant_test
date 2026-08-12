@@ -1,0 +1,11 @@
+{
+  "plan_id": "plan_b30742b5-4bbd-4aa4-a26e-7130797ee55b",
+  "module_name": "frontend-ui",
+  "development_plan": "MemoryList.tsx 恢复 memoryEnabled 过滤条件，仅展示 agentMap[session.agentId]?.memoryEnabled === true 的会话，同步更新测试文件断言",
+  "session_id": "ses_00ac34e59ffeWMwRWhCyqKhr5L",
+  "modified_files": [
+    "src/pages/memory/MemoryList.tsx",
+    "src/pages/memory/__tests__/MemoryList.test.tsx",
+    "e2e/Memory.spec.ts"
+  ]
+}

@@ -1,5 +1,5 @@
 {
   "session_id": "ses_00ac34e59ffeWMwRWhCyqKhr5L",
-  "content": "## 待测试功能说明\n\n本次变更涉及 `src/pages/memory/MemoryDetail.tsx`、`src/pages/memory/__tests__/MemoryDetail.test.tsx`、`e2e/Memory.spec.ts`。\n\n功能：记忆聚合列表页 `/memory/:sessionId/:type`，按分类聚合（GROUP）类型的列标题由「起始行-结束行」改为「起始-结束」。\n\n变更内容：\n- MemoryDetail.tsx：GROUP 分支列 title 由 '起始行-结束行' 改为 '起始-结束'（数据渲染逻辑不变，仍为 aggregationStartSeq - aggregationEndSeq）。\n- MemoryDetail.test.tsx：两个相关断言文本同步更新（DAILY 不显示「起始-结束」、GROUP 显示「起始-结束」）。\n- e2e/Memory.spec.ts：按分类聚合 e2e 用例断言改为检查「起始-结束」。\n\n需要测试验证：\n1. MemoryDetail 组件单元测试通过（Vitest，断言列标题为「起始-结束」）\n2. TypeScript 编译/类型检查通过（tsc）\n3. e2e 用例文本更新后无引用遗漏",
-  "timestamp": "2026-08-12T09:41:27.996Z"
+  "content": "## 待测试功能说明\n\n本次变更涉及 `src/pages/memory/MemoryList.tsx`、`src/pages/memory/__tests__/MemoryList.test.tsx`、`e2e/Memory.spec.ts`。\n\n功能：记忆回看会话列表页 `/memory` 恢复 memoryEnabled 过滤条件，仅展示 agentMap[session.agentId]?.memoryEnabled === true 的智能体会话（即仅展示开启了记忆功能的会话）。\n\n变更内容：\n- MemoryList.tsx：重新加入 `sessions.filter(session => agentMap[session.agentId]?.memoryEnabled === true)` 过滤逻辑，仅对过滤后的会话渲染；组件 JSDoc 恢复为「展示已开启记忆功能的智能体会话」。\n- MemoryList.test.tsx：过滤相关断言恢复——「仅展示 memoryEnabled=true 智能体的会话，过滤 memoryEnabled=false 会话」「智能体未开启 memoryEnabled（缺省 false）时会话被过滤」。\n- e2e/Memory.spec.ts：恢复过滤断言——「普通会话」toHaveCount(0)、「普通智能体」toHaveCount(0)，按钮定位器去除 .first()（因仅一行会话渲染）。\n\n需要测试验证：\n1. MemoryList 组件单元测试通过（Vitest）\n2. TypeScript 编译/类型检查通过（tsc）\n3. e2e/Memory.spec.ts 断言通过（Playwright）\n4. 组件渲染行为：仅 memoryEnabled=true 会话被展示，memoryEnabled=false 或缺省会话被过滤",
+  "timestamp": "2026-08-12T13:08:50.141Z"
 }

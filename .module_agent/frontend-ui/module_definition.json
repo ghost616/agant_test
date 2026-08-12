@@ -215,7 +215,7 @@
     },
     {
       "path": "src/pages/memory/MemoryList.tsx",
-      "description": "记忆回看会话列表页 /memory：并行调用 listSessions 与 listAgents，展示全部会话（不按 memoryEnabled 过滤，任何会话均可回看），表格显示会话名称/智能体名/最近消息时间（getSessionMessages 取末条消息 createTime），每条操作提供「按日聚合」（跳转 /memory/:sessionId/DAILY）与「按分类聚合」（跳转 /memory/:sessionId/GROUP）按钮，Table pagination=false"
+      "description": "记忆回看会话列表页 /memory：并行调用 listSessions 与 listAgents，过滤 memoryEnabled=true 智能体会话（agentMap[session.agentId]?.memoryEnabled === true），表格显示会话名称/智能体名/最近消息时间（getSessionMessages 取末条消息 createTime），每条操作提供「按日聚合」（跳转 /memory/:sessionId/DAILY）与「按分类聚合」（跳转 /memory/:sessionId/GROUP）按钮，Table pagination=false"
     },
     {
       "path": "src/pages/memory/MemoryDetail.tsx",

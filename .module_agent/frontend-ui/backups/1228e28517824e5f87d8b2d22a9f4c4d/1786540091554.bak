@@ -13,7 +13,7 @@ interface MemorySession extends Session {
 }
 
 /**
- * 记忆回看会话列表页：展示已开启记忆功能的智能体会话，
+ * 记忆回看会话列表页：展示全部会话，
  * 每条提供「按日聚合」与「按分类聚合」入口。
  */
 function MemoryList(): JSX.Element {
@@ -30,12 +30,8 @@ function MemoryList(): JSX.Element {
         agentMap[agent.id] = agent;
       });
 
-      const memorySessions = sessions.filter(
-        (session) => agentMap[session.agentId]?.memoryEnabled === true,
-      );
-
       const rows = await Promise.all(
-        memorySessions.map(async (session): Promise<MemorySession> => {
+        sessions.map(async (session): Promise<MemorySession> => {
           let lastMessageTime: string | undefined;
           try {
             const messages = await getSessionMessages(session.id);

@@ -96,7 +96,7 @@ function renderComponent() {
   return render(<MemoryList />);
 }
 
-describe('MemoryList 并行加载与过滤', () => {
+describe('MemoryList 并行加载与展示', () => {
   beforeEach(() => {
     defaultMocks();
   });
@@ -110,7 +110,7 @@ describe('MemoryList 并行加载与过滤', () => {
     expect(mocks.getSessionMessages).toHaveBeenCalledWith('1');
   });
 
-  it('仅展示 memoryEnabled=true 智能体的会话，过滤 memoryEnabled=false 会话', async () => {
+  it('展示所有会话，不受 memoryEnabled 过滤影响（memoryEnabled=false 也展示）', async () => {
     mocks.listSessions.mockResolvedValue([
       makeSession({ id: '1', agentId: 'a1', title: '记忆会话' }),
       makeSession({ id: '2', agentId: 'a2', title: '普通会话' }),
@@ -124,17 +124,17 @@ describe('MemoryList 并行加载与过滤', () => {
     await waitFor(() => {
       expect(screen.getByText('记忆会话')).toBeTruthy();
     });
-    expect(screen.queryByText('普通会话')).toBeNull();
+    expect(screen.getByText('普通会话')).toBeTruthy();
   });
 
-  it('智能体未开启 memoryEnabled（缺省 false）时会话被过滤', async () => {
+  it('智能体未开启 memoryEnabled（缺省 false）时会话仍被展示并加载消息', async () => {
     mocks.listAgents.mockResolvedValue([makeAgent({ id: 'a1', name: '智能体A' })]);
 
     renderComponent();
     await waitFor(() => {
-      expect(mocks.getSessionMessages).not.toHaveBeenCalled();
+      expect(screen.getByText('会话A')).toBeTruthy();
     });
-    expect(screen.queryByText('会话A')).toBeNull();
+    expect(mocks.getSessionMessages).toHaveBeenCalledWith('1');
   });
 });
 
