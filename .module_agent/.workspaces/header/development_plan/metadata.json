@@ -166,53 +166,5 @@
     "code_reviewed": false,
     "plan_completed": true,
     "test_passed": true
-  },
-  {
-    "plan_id": "plan_dd53f971-c15b-45b6-a379-ed2a701889e3",
-    "plan_summary": "platform-data: 新建 ErrorCode 枚举 + 移入 BaseException/BusinessException",
-    "starter_session_id": "ses_00c71e105ffeukYHiBKMO6GNO6",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": true
-  },
-  {
-    "plan_id": "plan_7ef4eb6b-daea-4e83-b87d-dd4b118926f6",
-    "plan_summary": "agent-base: ErrorCode 重构为 AgentErrorCode + 新建 AgentException，删除 BaseException/BusinessException",
-    "starter_session_id": "ses_00c71e105ffeukYHiBKMO6GNO6",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": true
-  },
-  {
-    "plan_id": "plan_d553dfb0-080a-4521-a3ec-224c6c779904",
-    "plan_summary": "agent-integration: 6 个 ModelInvoker 导入适配 AgentErrorCode/AgentException",
-    "starter_session_id": "ses_00c71e105ffeukYHiBKMO6GNO6",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": true
-  },
-  {
-    "plan_id": "plan_2d6e066b-afd9-43c9-9859-da6535289beb",
-    "plan_summary": "platform-app: ErrorCode import 迁移到 platform-data + 记忆摘要触发接口",
-    "starter_session_id": "ses_00c71e105ffeukYHiBKMO6GNO6",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": true
-  },
-  {
-    "plan_id": "plan_09f9230a-2da1-407a-a99b-cbc19e0279c8",
-    "plan_summary": "精简 ErrorCode 枚举至 platform-app/platform-data 实际使用的 31 个码",
-    "starter_session_id": "ses_00c9a6a87ffetUtC5ZjBU5QoRN",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": true
-  },
-  {
-    "plan_id": "plan_451c9aff-9a93-4558-9f37-e4ad31c17fbb",
-    "plan_summary": "ErrorCode 枚举精简",
-    "starter_session_id": "ses_00c9a6a87ffetUtC5ZjBU5QoRN",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": false
   }
 ]
