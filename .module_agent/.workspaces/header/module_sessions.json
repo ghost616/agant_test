@@ -2,19 +2,5 @@
   "_checked": [
     "ses_014325f5affeGRRX6gR74IuKLz",
     "ses_00fe4714bffeBPYz5eB92yAJvz"
-  ],
-  "platform-app": [
-    "ses_00c2225dfffe2gdkbhbuNubjL4",
-    "ses_00c02f983ffeaJuIjy6Hf3gwI8"
-  ],
-  "platform-data": [
-    "ses_00c04b12dffeLLZto01mATHTe6"
-  ],
-  "framework": [
-    "ses_00bc0a481ffe068e2oY1in15mi",
-    "ses_00b880890ffeSjY7pu1wtKkLE4"
-  ],
-  "frontend-ui": [
-    "ses_00b881abfffeQ8foZzX7PbK6hc"
   ]
 }

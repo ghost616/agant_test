@@ -1,9 +1,0 @@
-{
-  "plan_id": "plan_19c596d3-166e-4716-a8d3-ac93cec8a9c6",
-  "module_name": "platform-data",
-  "development_plan": "新增 AggregationType 枚举（com.ghost616.platform.enums），包含 GROUP 和 DAILY 两个值",
-  "session_id": "ses_00c04b12dffeLLZto01mATHTe6",
-  "modified_files": [
-    "platform-data/src/main/java/com/ghost616/platform/enums/AggregationType.java"
-  ]
-}
