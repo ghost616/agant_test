@@ -270,5 +270,21 @@
     "code_reviewed": false,
     "plan_completed": true,
     "test_passed": true
+  },
+  {
+    "plan_id": "plan_5536b63b-5f9c-46a7-a496-e7c9768ae87c",
+    "plan_summary": "README去掉DeepSeek仅限描述",
+    "starter_session_id": "ses_00c9a6a87ffetUtC5ZjBU5QoRN",
+    "code_reviewed": false,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_0e60b84d-48cf-425c-b29a-a228cb7b7738",
+    "plan_summary": "README执行流程精简技术细节",
+    "starter_session_id": "ses_00c9a6a87ffetUtC5ZjBU5QoRN",
+    "code_reviewed": false,
+    "plan_completed": true,
+    "test_passed": true
   }
 ]

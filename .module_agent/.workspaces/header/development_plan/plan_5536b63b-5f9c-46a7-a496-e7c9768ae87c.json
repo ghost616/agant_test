@@ -1,0 +1,9 @@
+{
+  "plan_id": "plan_5536b63b-5f9c-46a7-a496-e7c9768ae87c",
+  "module_name": "framework",
+  "development_plan": "README.md LLM 模型管理条目删除\"当前仅 DeepSeek 已完成连通性验证及全流程测试\"",
+  "session_id": "ses_00bc0a481ffe068e2oY1in15mi",
+  "modified_files": [
+    "README.md"
+  ]
+}

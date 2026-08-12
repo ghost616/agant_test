@@ -62,3 +62,5 @@
 [2026-08-12T04:58:06.299Z] [session: ses_00bc0a481ffe068e2oY1in15mi] [2026-08-12] README.md 功能模块「三域会话授权」条目改为易理解的功能表述：工具和技能支持三种会话作用域——所有会话可用、只能父会话使用、只能子会话使用
 [2026-08-12T05:03:12.202Z] [session: ses_00bc0a481ffe068e2oY1in15mi] [2026-08-12] README.md 功能模块列表调整：①删除「组件注册表」条目；②在「知识库管理」条目下新增「知识库搜索」条目：智能体通过内置工具搜索知识库内容
 [2026-08-12T05:08:57.103Z] [session: ses_00bc0a481ffe068e2oY1in15mi] [2026-08-12] README.md 功能模块条目补充：①「知识库管理」补充发布流程（创建知识库 → 上传或编辑文件 → 发布到 ES）；②「知识库搜索」补充搜索流程（智能体绑定知识库后自动注入搜索工具 → 支持向量/全文/混合三种检索方式 → 返回搜索结果）
+[2026-08-12T05:19:38.623Z] [session: ses_00bc0a481ffe068e2oY1in15mi] [2026-08-12] README.md LLM 模型管理条目删除「当前仅 DeepSeek 已完成连通性验证及全流程测试」说明
+[2026-08-12T05:24:01.357Z] [session: ses_00bc0a481ffe068e2oY1in15mi] [2026-08-12] README.md 智能体执行流程 8 步骤精简技术细节，保留功能流程描述。移除：模块名（agent-integration/agent-base）、类名（ModelInvoker/JavaToolInvoker/TypeScriptToolInvoker/PythonToolInvoker/McpHttpToolInvoker/LoadSkillsSystemTool/UnloadSkillsSystemTool/VariableProxy）、系统工具名（_sys_history_query/_sys_load_skills/_sys_unload_skills）、变量名（_sys_his_msgs_index）、表名（session_variable）、字段名（recentMessageCount）、技术框架名（sendmessage）、协议细节（PUT/REMOVE 语义）
