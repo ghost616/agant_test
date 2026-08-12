@@ -68,3 +68,4 @@
 [2026-08-12T05:36:00.910Z] [session: ses_00b880890ffeSjY7pu1wtKkLE4] [2026-08-12] 全局替换 "Agent 调试平台" 为 "Agent 低代码平台"：README.md 标题、index.html 页面标题、pom.xml 项目 description
 [2026-08-12T05:46:11.447Z] [session: ses_00bc0a481ffe068e2oY1in15mi] [2026-08-12] README.md 第 3 行平台简介替换为定位描述：可视化的 AI 智能体构建与管理平台，通过配置即可完成智能体创建、工具挂载、知识库检索与自动评估，无需编码
 [2026-08-12T07:11:59.457Z] [session: ses_00b2ff46dffez8FivOaB2SZOMy] README.md 新增"工程配置"章节：以表格简要介绍 application.yml 核心配置（服务端口 8080、SQLite 数据库路径 data/agent_platform.db、Elasticsearch 连接 localhost:9200、日志级别 INFO），配置路径为 platform-app/src/main/resources/application.yml
+[2026-08-12T07:20:09.569Z] [session: ses_00b2ff46dffez8FivOaB2SZOMy] README.md 工程配置章节将 SQLite 数据库行改为可配置的关系型数据库描述：默认内置 SQLite（data/agent_platform.db），可修改 spring.datasource 连接 URL 与驱动替换为 MySQL/PostgreSQL 等其他关系型数据库

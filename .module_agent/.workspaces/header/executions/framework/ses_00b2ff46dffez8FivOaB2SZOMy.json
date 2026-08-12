@@ -7,5 +7,14 @@
     ],
     "summary": "README.md 新增\"工程配置\"章节，以表格简要介绍 application.yml 核心配置：服务端口（8080）、SQLite 数据库路径（data/agent_platform.db）、Elasticsearch 连接（localhost:9200）、日志级别（INFO），并注明配置文件路径为 platform-app/src/main/resources/application.yml",
     "errors": []
+  },
+  {
+    "plan_id": "plan_c840c62d-b0b9-4457-a3b2-63bf2dd158dc",
+    "plan": "README.md 工程配置章节去掉 SQLite 硬绑定，改为可配置的关系型数据库描述（默认内置 SQLite，可替换为其他数据库）",
+    "modified_files": [
+      "README.md"
+    ],
+    "summary": "README.md 工程配置章节的 SQLite 数据库行已改为可配置的关系型数据库描述：默认值标注为 SQLite（data/agent_platform.db），说明修改 spring.datasource 连接 URL 与驱动即可替换为 MySQL/PostgreSQL 等其他关系型数据库",
+    "errors": []
   }
 ]

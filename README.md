@@ -70,7 +70,7 @@ build.bat
 | 配置项 | 默认值 | 说明 |
 |--------|--------|------|
 | 服务端口 | `8080` | `server.port`，后端 HTTP 服务监听端口 |
-| SQLite 数据库 | `data/agent_platform.db` | `spring.datasource.url`，数据库文件路径（相对运行目录） |
+| 关系型数据库 | SQLite（`data/agent_platform.db`） | `spring.datasource` 数据源配置；默认内置 SQLite，可通过修改连接 URL 与驱动替换为 MySQL / PostgreSQL 等其他关系型数据库 |
 | Elasticsearch | `localhost:9200` | `elasticsearch.host/port`，知识库检索服务连接地址 |
 | 日志级别 | `INFO` | `logging.level.root` 与 `com.ghost616.platform`，全局及平台包日志级别 |
 

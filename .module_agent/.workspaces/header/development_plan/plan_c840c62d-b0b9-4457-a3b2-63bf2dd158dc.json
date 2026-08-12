@@ -1,0 +1,9 @@
+{
+  "plan_id": "plan_c840c62d-b0b9-4457-a3b2-63bf2dd158dc",
+  "module_name": "framework",
+  "development_plan": "README.md 工程配置章节去掉 SQLite 硬绑定，改为可配置的关系型数据库描述（默认内置 SQLite，可替换为其他数据库）",
+  "session_id": "ses_00b2ff46dffez8FivOaB2SZOMy",
+  "modified_files": [
+    "README.md"
+  ]
+}
