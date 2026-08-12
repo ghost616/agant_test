@@ -1,0 +1,11 @@
+[
+  {
+    "plan_id": "plan_41627d0d-3b71-49bc-8635-5684420dfa72",
+    "plan": "简化 README.md 智能体日志与运行日志条目，隐藏实现细节",
+    "modified_files": [
+      "README.md"
+    ],
+    "summary": "执行总结：已修改 README.md 第 28/29 行，将「智能体日志」与「运行日志」两条目从实现细节描述精简为功能层描述。移除内容：AgentLog/LogData 类名、LogData → ContextLogData/SessionLogData → 19 个子类继承体系、Builder 模式、AgentComponentRegistry 注册、DatabaseAgentLog、MyBatis-Plus、agent_log 表名及字段（session_id/conversation_id/log_type/log_level/log_data/session_variables/conversation_variables）、45 处日志点、定时任务每日 1 点 cron 细节、分页 20/50/100 与 JSON 美化等。保留功能描述：日志覆盖运行全流程关键环节（模型调用/工具执行/消息处理/上下文构建/会话/错误）、日志类型与等级、持久化存储与查询、按会话名搜索/类型等级筛选/分页展示/详情展开查看、30 天前历史日志自动清理。\n\n测试总结：纯文档修改，不涉及代码逻辑，无单元/接口/编译/E2E 测试适用。测试通过（跳过 0 项）",
+    "errors": []
+  }
+]

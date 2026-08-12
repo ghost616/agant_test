@@ -230,5 +230,13 @@
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": false
+  },
+  {
+    "plan_id": "plan_41627d0d-3b71-49bc-8635-5684420dfa72",
+    "plan_summary": "README日志行隐藏技术细节突出功能",
+    "starter_session_id": "ses_00c9a6a87ffetUtC5ZjBU5QoRN",
+    "code_reviewed": false,
+    "plan_completed": true,
+    "test_passed": true
   }
 ]
