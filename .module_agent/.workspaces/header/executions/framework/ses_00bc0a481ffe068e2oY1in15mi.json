@@ -61,5 +61,14 @@
     ],
     "summary": "执行总结：已精简智能体执行流程 8 个步骤为功能流程描述。具体变更：①上下文加载（保留原样，本已为功能描述）；②消息组装（recentMessageCount → 历史消息数量限制，_sys_history_query/_sys_his_msgs_index → 内置系统工具设置对话变量）；③技能注入（_sys_load_skills（LoadSkillsSystemTool）/ _sys_unload_skills（UnloadSkillsSystemTool）→ 内置系统工具）；④HOOK 触发（保留原样）；⑤模型调用（agent-integration 模块 ModelInvoker → 自动匹配对应的模型调用实现）；⑥工具调度（agent-base 模块及四个工具调用器类名 → 按工具类型调用对应执行器）；⑦变量管理（session_variable 表 → 持久化存储，VariableProxy → 统一变量读写接口，sendmessage/PUT/REMOVE → 实时推送/新增/更新/移除语义）；⑧流式推送（保留原样）。\n\n测试总结：纯文档修改，不涉及代码逻辑，无测试适用。测试通过（跳过 0 项）",
     "errors": []
+  },
+  {
+    "plan_id": "plan_a5584b47-0043-4b00-b8da-c5ff66b6c814",
+    "plan": "精简智能体评估流程与浏览器工具执行原理的技术细节",
+    "modified_files": [
+      "README.md"
+    ],
+    "summary": "执行总结：①智能体评估流程——步骤 2 执行模式枚举值 BACKGROUND/FOREGROUND 改为「后台静默执行/前台流式执行」；步骤 4 去除 BACKGROUND/FOREGROUND 模式名与 SSE 技术细节，改为「后台模式下异步逐次执行所有评估项，执行完成后汇总结果；前台模式下实时推送执行日志，包含模型调用的思考过程和推理内容」。②浏览器工具执行原理——移除类名 BrowserToolInvoker/BrowserToolCallbackImpl/ToolHostBridge/browser_tool_executor.js，改为功能流程：服务端发起调用 → 委托前端获取执行上下文并等待执行结果 → 在浏览器环境中调用对应工具函数 → 执行结果回调至服务端，完成本次调用。\n\n测试总结：纯文档修改，不涉及代码逻辑，无测试适用。测试通过（跳过 0 项）",
+    "errors": []
   }
 ]
