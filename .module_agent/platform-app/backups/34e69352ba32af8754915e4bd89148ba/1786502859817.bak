@@ -25,12 +25,6 @@ public class SessionMemoryDocument {
     /** 聚合结束消息序号（含） */
     private Integer aggregationEndSeq;
 
-    /** 聚合起始时间（毫秒时间戳） */
-    private Long aggregationStartTime;
-
-    /** 聚合结束时间（毫秒时间戳） */
-    private Long aggregationEndTime;
-
     /** 聚合摘要文本 */
     private String aggregationText;
 

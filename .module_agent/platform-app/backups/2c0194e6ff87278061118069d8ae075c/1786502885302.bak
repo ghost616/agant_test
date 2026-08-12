@@ -49,8 +49,6 @@ public class SessionMemoryESClient {
                             .properties("sessionId", p -> p.keyword(k -> k))
                             .properties("aggregationStartSeq", p -> p.integer(i -> i))
                             .properties("aggregationEndSeq", p -> p.integer(i -> i))
-                            .properties("aggregationStartTime", p -> p.long_(l -> l))
-                            .properties("aggregationEndTime", p -> p.long_(l -> l))
                             .properties("aggregationText", p -> p.text(t -> t
                                     .analyzer("ik_max_word")
                                     .searchAnalyzer("ik_smart")))

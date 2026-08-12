@@ -387,3 +387,4 @@
 - SessionMemoryService 新增 triggerSessionMemory(Long sessionId)：校验会话存在（SESSION_NOT_FOUND）、智能体存在（AGENT_NOT_FOUND）、memoryEnabled=true（AGENT_MEMORY_NOT_ENABLED），通过 CompletableFuture.runAsync 异步执行 processSessionWithRetry
 - SessionController 注入 SessionMemoryService，新增 GET /api/sessions/{id}/memory/trigger 端点返回「记忆摘要生成已触发」
 - SessionMemoryServiceTest 新增 4 个 triggerSessionMemory 测试用例；SessionControllerTest 新增 mock 与 2 个 trigger 端点测试用例
+[2026-08-12T02:49:50.280Z] [session: ses_00c2225dfffe2gdkbhbuNubjL4] 会话记忆 ES 文档新增聚合起止时间字段：SessionMemoryDocument 新增 aggregationStartTime/aggregationEndTime（Long 毫秒时间戳）；SessionMemoryService 的 GroupSummary record 新增 startTime/endTime，buildMemoryDocuments 从每组首/尾消息 createTime 转 epoch millis 填充文档新字段（新增 toEpochMillis 辅助方法）；SessionMemoryESClient.createIndex mapping 新增两个 long 类型字段；同步更新 SessionMemoryDocumentTest/SessionMemoryServiceTest/SessionMemoryESClientTest 断言（mapping 字段数 5→7、文档时间字段断言）

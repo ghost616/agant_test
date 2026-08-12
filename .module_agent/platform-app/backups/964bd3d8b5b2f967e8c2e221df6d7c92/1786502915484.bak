@@ -28,9 +28,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -106,13 +103,7 @@ class SessionMemoryServiceTest {
         m.setContent(content);
         m.setSequenceNum(seq);
         m.setRollback(rollback);
-        m.setCreateTime(LocalDateTime.of(2026, 1, 1, 0, 0).plusSeconds(seq));
         return m;
-    }
-
-    private long epochMillis(int seq) {
-        return LocalDateTime.of(2026, 1, 1, 0, 0).plusSeconds(seq)
-                .atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
     }
 
     private void stubInvokers() {
@@ -170,8 +161,6 @@ class SessionMemoryServiceTest {
         assertEquals("100", doc.getSessionId());
         assertEquals(2, doc.getAggregationStartSeq());
         assertEquals(3, doc.getAggregationEndSeq());
-        assertEquals(epochMillis(2), doc.getAggregationStartTime());
-        assertEquals(epochMillis(3), doc.getAggregationEndTime());
         assertEquals("用户完成了数据库配置，结论为使用连接池。", doc.getAggregationText());
         assertEquals(2, doc.getVector().size());
         verify(llmInvoker, times(2)).invoke(any(ChatRequest.class));
@@ -260,11 +249,7 @@ class SessionMemoryServiceTest {
         List<SessionMemoryDocument> docs = docCaptor.getValue();
         assertEquals(2, docs.size());
         assertEquals("【user】: q1\n【assistant】: a1", docs.get(0).getAggregationText());
-        assertEquals(epochMillis(2), docs.get(0).getAggregationStartTime());
-        assertEquals(epochMillis(3), docs.get(0).getAggregationEndTime());
         assertEquals("【user】: q2\n【assistant】: a2", docs.get(1).getAggregationText());
-        assertEquals(epochMillis(4), docs.get(1).getAggregationStartTime());
-        assertEquals(epochMillis(5), docs.get(1).getAggregationEndTime());
         verify(llmInvoker, times(1)).invoke(any(ChatRequest.class));
     }
 
@@ -301,8 +286,6 @@ class SessionMemoryServiceTest {
         SessionMemoryDocument doc = docs.get(0);
         assertEquals(2, doc.getAggregationStartSeq());
         assertEquals(5, doc.getAggregationEndSeq());
-        assertEquals(epochMillis(2), doc.getAggregationStartTime());
-        assertEquals(epochMillis(5), doc.getAggregationEndTime());
         assertEquals("汇总：围绕数据库索引与查询性能展开了深入讨论。", doc.getAggregationText());
         verify(llmInvoker, times(2)).invoke(any(ChatRequest.class));
     }
@@ -340,13 +323,9 @@ class SessionMemoryServiceTest {
         assertEquals(2, docs.size());
         assertEquals(2, docs.get(0).getAggregationStartSeq());
         assertEquals(3, docs.get(0).getAggregationEndSeq());
-        assertEquals(epochMillis(2), docs.get(0).getAggregationStartTime());
-        assertEquals(epochMillis(3), docs.get(0).getAggregationEndTime());
         assertEquals("汇总1：团建安排已确认。", docs.get(0).getAggregationText());
         assertEquals(4, docs.get(1).getAggregationStartSeq());
         assertEquals(5, docs.get(1).getAggregationEndSeq());
-        assertEquals(epochMillis(4), docs.get(1).getAggregationStartTime());
-        assertEquals(epochMillis(5), docs.get(1).getAggregationEndTime());
         assertEquals("汇总2：项目上线时间确定为周五。", docs.get(1).getAggregationText());
         verify(llmInvoker, times(3)).invoke(any(ChatRequest.class));
     }
@@ -459,8 +438,6 @@ class SessionMemoryServiceTest {
         assertEquals(1, docs.size());
         assertEquals(2, docs.get(0).getAggregationStartSeq());
         assertEquals(5, docs.get(0).getAggregationEndSeq());
-        assertEquals(epochMillis(2), docs.get(0).getAggregationStartTime());
-        assertEquals(epochMillis(5), docs.get(0).getAggregationEndTime());
         assertEquals("汇总：两组均为数据库优化话题。", docs.get(0).getAggregationText());
         verify(llmInvoker, times(2)).invoke(any(ChatRequest.class));
     }
@@ -495,11 +472,7 @@ class SessionMemoryServiceTest {
         List<SessionMemoryDocument> docs = docCaptor.getValue();
         assertEquals(2, docs.size());
         assertEquals("【user】: q1\n【assistant】: a1", docs.get(0).getAggregationText());
-        assertEquals(epochMillis(2), docs.get(0).getAggregationStartTime());
-        assertEquals(epochMillis(3), docs.get(0).getAggregationEndTime());
         assertEquals("【user】: q2\n【assistant】: a2", docs.get(1).getAggregationText());
-        assertEquals(epochMillis(4), docs.get(1).getAggregationStartTime());
-        assertEquals(epochMillis(5), docs.get(1).getAggregationEndTime());
         verify(llmInvoker, times(1)).invoke(any(ChatRequest.class));
     }
 
@@ -539,53 +512,14 @@ class SessionMemoryServiceTest {
         assertEquals(3, docs.size());
         assertEquals(2, docs.get(0).getAggregationStartSeq());
         assertEquals(3, docs.get(0).getAggregationEndSeq());
-        assertEquals(epochMillis(2), docs.get(0).getAggregationStartTime());
-        assertEquals(epochMillis(3), docs.get(0).getAggregationEndTime());
         assertEquals("汇总A1", docs.get(0).getAggregationText());
         assertEquals(4, docs.get(1).getAggregationStartSeq());
         assertEquals(5, docs.get(1).getAggregationEndSeq());
-        assertEquals(epochMillis(4), docs.get(1).getAggregationStartTime());
-        assertEquals(epochMillis(5), docs.get(1).getAggregationEndTime());
         assertEquals("汇总B", docs.get(1).getAggregationText());
         assertEquals(6, docs.get(2).getAggregationStartSeq());
         assertEquals(7, docs.get(2).getAggregationEndSeq());
-        assertEquals(epochMillis(6), docs.get(2).getAggregationStartTime());
-        assertEquals(epochMillis(7), docs.get(2).getAggregationEndTime());
         assertEquals("汇总A2", docs.get(2).getAggregationText());
         verify(llmInvoker, times(4)).invoke(any(ChatRequest.class));
-    }
-
-    @Test
-    @DisplayName("createTime 为 null 时 startTime/endTime 为 null，不抛异常")
-    void aggregate_nullCreateTime_nullTimes() {
-        AgentConfig agent = memoryAgent(5L);
-        when(agentConfigMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(List.of(agent));
-        Session s = session(100L, 5L, 1);
-        when(sessionMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(List.of(s));
-        when(agentConfigMapper.selectBatchIds(any())).thenReturn(List.of(agent));
-
-        when(messageMapper.countUserMessages(100L)).thenReturn(3L);
-        when(messageMapper.findNthUserSequenceNum(100L, 1)).thenReturn(4);
-        List<Message> newMessages = new ArrayList<>(List.of(
-                message(2L, 100L, "user", "q1", 2, false),
-                message(3L, 100L, "assistant", "a1", 3, false)));
-        newMessages.forEach(m -> m.setCreateTime(null));
-        when(messageMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(newMessages);
-
-        stubInvokers();
-        when(llmInvoker.invoke(any(ChatRequest.class)))
-                .thenReturn(ChatResponse.builder().content("1. 技术").build())
-                .thenReturn(ChatResponse.builder().content("摘要").build());
-
-        service.aggregateSessionMemories();
-
-        @SuppressWarnings("unchecked")
-        ArgumentCaptor<List<SessionMemoryDocument>> docCaptor = ArgumentCaptor.forClass(List.class);
-        verify(sessionMemoryESClient).batchSave(docCaptor.capture());
-        List<SessionMemoryDocument> docs = docCaptor.getValue();
-        assertEquals(1, docs.size());
-        assertNull(docs.get(0).getAggregationStartTime());
-        assertNull(docs.get(0).getAggregationEndTime());
     }
 
     @Test

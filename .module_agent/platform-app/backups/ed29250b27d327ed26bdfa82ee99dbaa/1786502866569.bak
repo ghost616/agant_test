@@ -26,8 +26,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -270,10 +268,7 @@ public class SessionMemoryService {
                 continue;
             }
             groupSummaries.add(new GroupSummary(group.get(0).getSequenceNum(),
-                    group.get(group.size() - 1).getSequenceNum(),
-                    toEpochMillis(group.get(0).getCreateTime()),
-                    toEpochMillis(group.get(group.size() - 1).getCreateTime()),
-                    content));
+                    group.get(group.size() - 1).getSequenceNum(), content));
         }
         if (groupSummaries.isEmpty()) {
             return List.of();
@@ -299,8 +294,6 @@ public class SessionMemoryService {
                     .sessionId(IdConverter.toString(sessionId))
                     .aggregationStartSeq(topicGroup.get(0).startSeq())
                     .aggregationEndSeq(topicGroup.get(topicGroup.size() - 1).endSeq())
-                    .aggregationStartTime(topicGroup.get(0).startTime())
-                    .aggregationEndTime(topicGroup.get(topicGroup.size() - 1).endTime())
                     .aggregationText(summary)
                     .vector(vector)
                     .build());
@@ -308,7 +301,7 @@ public class SessionMemoryService {
         return documents;
     }
 
-    private record GroupSummary(int startSeq, int endSeq, Long startTime, Long endTime, String summary) {}
+    private record GroupSummary(int startSeq, int endSeq, String summary) {}
 
     private List<List<Message>> groupByUser(List<Message> messages) {
         List<List<Message>> groups = new ArrayList<>();
@@ -333,13 +326,6 @@ public class SessionMemoryService {
             content.append("【").append(role).append("】: ").append(text).append("\n");
         }
         return content.toString().trim();
-    }
-
-    private Long toEpochMillis(LocalDateTime time) {
-        if (time == null) {
-            return null;
-        }
-        return time.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
     }
 
     private List<String> classifyTopics(ModelInvoker invoker, List<GroupSummary> groupSummaries) {

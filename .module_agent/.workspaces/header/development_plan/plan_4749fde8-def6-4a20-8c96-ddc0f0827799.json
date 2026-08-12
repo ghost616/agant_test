@@ -1,0 +1,14 @@
+{
+  "plan_id": "plan_4749fde8-def6-4a20-8c96-ddc0f0827799",
+  "module_name": "platform-app",
+  "development_plan": "在会话记忆聚合 ES 文档中新增消息起始时间和结束时间字段（毫秒时间戳 Long 类型）：\n1. SessionMemoryDocument.java：新增 aggregationStartTime（Long）和 aggregationEndTime（Long）两个字段\n2. SessionMemoryService.java：GroupSummary record 增加 startTime/endTime 字段，在 buildMemoryDocuments 中从每组首/尾消息的 createTime 获取 LocalDateTime 后转为 epoch millis 毫秒时间戳赋值；构建 SessionMemoryDocument 时填充新字段\n3. SessionMemoryESClient.java：createIndex 的 mapping 新增两个 long 类型字段（aggregationStartTime、aggregationEndTime）\n4. 更新相关测试文件（SessionMemoryDocumentTest、SessionMemoryServiceTest、SessionMemoryESClientTest）中的断言",
+  "session_id": "ses_00c2225dfffe2gdkbhbuNubjL4",
+  "modified_files": [
+    "platform-app/src/main/java/com/ghost616/platform/model/SessionMemoryDocument.java",
+    "platform-app/src/main/java/com/ghost616/platform/service/memory/SessionMemoryService.java",
+    "platform-app/src/main/java/com/ghost616/platform/service/search/SessionMemoryESClient.java",
+    "platform-app/src/test/java/com/ghost616/platform/model/SessionMemoryDocumentTest.java",
+    "platform-app/src/test/java/com/ghost616/platform/service/memory/SessionMemoryServiceTest.java",
+    "platform-app/src/test/java/com/ghost616/platform/service/search/SessionMemoryESClientTest.java"
+  ]
+}

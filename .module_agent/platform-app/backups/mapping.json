@@ -134,5 +134,9 @@
   "platform-app/src/test/java/com/ghost616/platform/service/memory/SessionMemoryServiceTest.java": "964bd3d8b5b2f967e8c2e221df6d7c92",
   "platform-app/src/main/java/com/ghost616/platform/dto/ApiResponse.java": "62b3d3e6bce43872b8211f3f058aaaa5",
   "platform-data/src/main/java/com/ghost616/platform/enums/ErrorCode.java": "e1e172e1f953384c0ae366f1f6df7ffa",
-  "platform-app/src/test/java/com/ghost616/platform/controller/SessionControllerTest.java": "c4c171192994e930cdab621001e4c124"
+  "platform-app/src/test/java/com/ghost616/platform/controller/SessionControllerTest.java": "c4c171192994e930cdab621001e4c124",
+  "platform-app/src/main/java/com/ghost616/platform/model/SessionMemoryDocument.java": "34e69352ba32af8754915e4bd89148ba",
+  "platform-app/src/main/java/com/ghost616/platform/service/search/SessionMemoryESClient.java": "2c0194e6ff87278061118069d8ae075c",
+  "platform-app/src/test/java/com/ghost616/platform/model/SessionMemoryDocumentTest.java": "00db66853f8b07f90514f45a23858789",
+  "platform-app/src/test/java/com/ghost616/platform/service/search/SessionMemoryESClientTest.java": "bbc0d59a160857f6551f0aa8b8bdd2b6"
 }

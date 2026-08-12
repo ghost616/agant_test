@@ -166,5 +166,21 @@
     "code_reviewed": false,
     "plan_completed": true,
     "test_passed": true
+  },
+  {
+    "plan_id": "plan_4749fde8-def6-4a20-8c96-ddc0f0827799",
+    "plan_summary": "记忆聚合ES文档添加消息起止时间戳字段",
+    "starter_session_id": "ses_00c9a6a87ffetUtC5ZjBU5QoRN",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_141aba42-10ff-43cd-a20b-a2a62254f1c9",
+    "plan_summary": "记忆ES文档时间戳字段",
+    "starter_session_id": "ses_00c9a6a87ffetUtC5ZjBU5QoRN",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": false
   }
 ]
