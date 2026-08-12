@@ -136,27 +136,83 @@
     "test_passed": true
   },
   {
-    "plan_id": "plan_3e85d7e7-e58c-4b99-90f7-1c40254d1c48",
-    "plan_summary": "EvaluationExecutionController 重构 API：cache/status 与 stream 端点改造，新增 DELETE cache 端点，删除旧端点，同步更新测试",
-    "starter_session_id": "ses_0114cbcb1ffe7vIecu1yT6bjNd",
+    "plan_id": "plan_f76d1593-ba45-481b-944a-e22789f43a8f",
+    "plan_summary": "cache/status 加 maxChunkIndex 检查",
+    "starter_session_id": "ses_0168b7778ffeZm7AZsEiDToWIV",
+    "code_reviewed": false,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_982709dc-9b4d-45fa-a607-63f9a1d54dc2",
+    "plan_summary": "cache/status 轮询等待 maxChunkIndex>0",
+    "starter_session_id": "ses_0168b7778ffeZm7AZsEiDToWIV",
+    "code_reviewed": false,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_50374b0c-7987-4301-b594-559d8b7edd34",
+    "plan_summary": "AgentLogList 会话名空时显示 sessionId",
+    "starter_session_id": "ses_0168b7778ffeZm7AZsEiDToWIV",
+    "code_reviewed": false,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_b55393ff-8f85-4b3c-a141-88012a4a2d32",
+    "plan_summary": "移除 extractGroupContent 长度限制",
+    "starter_session_id": "ses_011001adcffeJfuvbAJO6kbdvF",
+    "code_reviewed": false,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_dd53f971-c15b-45b6-a379-ed2a701889e3",
+    "plan_summary": "platform-data: 新建 ErrorCode 枚举 + 移入 BaseException/BusinessException",
+    "starter_session_id": "ses_00c71e105ffeukYHiBKMO6GNO6",
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
   },
   {
-    "plan_id": "plan_3948bd17-2d57-466c-9d99-4117e27ab927",
-    "plan_summary": "evaluation.ts 与 useEvaluationExecute.ts 更新 API 调用并新增 removeEvaluationCache，同步更新测试",
-    "starter_session_id": "ses_0114cbcb1ffe7vIecu1yT6bjNd",
+    "plan_id": "plan_7ef4eb6b-daea-4e83-b87d-dd4b118926f6",
+    "plan_summary": "agent-base: ErrorCode 重构为 AgentErrorCode + 新建 AgentException，删除 BaseException/BusinessException",
+    "starter_session_id": "ses_00c71e105ffeukYHiBKMO6GNO6",
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
   },
   {
-    "plan_id": "plan_0f005743-d0c9-4a30-85d7-1ea19927b628",
-    "plan_summary": "修复前端 evaluation.ts 缓存接口路径缺少 /evaluations 前缀导致的 404",
-    "starter_session_id": "ses_0114cbcb1ffe7vIecu1yT6bjNd",
+    "plan_id": "plan_d553dfb0-080a-4521-a3ec-224c6c779904",
+    "plan_summary": "agent-integration: 6 个 ModelInvoker 导入适配 AgentErrorCode/AgentException",
+    "starter_session_id": "ses_00c71e105ffeukYHiBKMO6GNO6",
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
+  },
+  {
+    "plan_id": "plan_2d6e066b-afd9-43c9-9859-da6535289beb",
+    "plan_summary": "platform-app: ErrorCode import 迁移到 platform-data + 记忆摘要触发接口",
+    "starter_session_id": "ses_00c71e105ffeukYHiBKMO6GNO6",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_09f9230a-2da1-407a-a99b-cbc19e0279c8",
+    "plan_summary": "精简 ErrorCode 枚举至 platform-app/platform-data 实际使用的 31 个码",
+    "starter_session_id": "ses_00c9a6a87ffetUtC5ZjBU5QoRN",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_451c9aff-9a93-4558-9f37-e4ad31c17fbb",
+    "plan_summary": "ErrorCode 枚举精简",
+    "starter_session_id": "ses_00c9a6a87ffetUtC5ZjBU5QoRN",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": false
   }
 ]

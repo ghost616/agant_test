@@ -21,7 +21,7 @@ import com.ghost616.platform.repository.SessionVariableMapper;
 import com.ghost616.platform.repository.SkillConfigMapper;
 import com.ghost616.platform.repository.SkillToolMapper;
 import com.ghost616.platform.repository.ToolConfigMapper;
-import com.ghost616.agentbase.exception.BusinessException;
+import com.ghost616.platform.exception.BusinessException;
 import com.ghost616.agentbase.service.agent.MessageDataProvider;
 import com.ghost616.platform.service.tool.ToolConfigService;
 import org.junit.jupiter.api.BeforeEach;

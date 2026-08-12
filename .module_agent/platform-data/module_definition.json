@@ -67,7 +67,7 @@
     },
     {
       "path": "platform-data/src/main/java/com/ghost616/platform/repository/MessageMapper.java",
-      "description": "MyBatis-Plus 消息数据访问层，继承 BaseMapper<Message>，提供按 sessionId 和 sequenceNum 批量设置 rollback=1 的自定义方法，以及按 conversationId 查询未回滚消息（rollback=0，按 create_time 升序）的 selectByConversationId 方法"
+      "description": "MyBatis-Plus 消息数据访问层，继承 BaseMapper<Message>，提供按 sessionId 和 sequenceNum 批量设置 rollback=1 的自定义方法，按 conversationId 查询未回滚消息（rollback=0，按 create_time 升序）的 selectByConversationId 方法，countUserMessages 统计会话下 user 角色未回滚消息总数，findNthUserSequenceNum 查找会话内第 n 个 user 未回滚消息的 sequenceNum（按 sequence_num 升序，LIMIT 1 OFFSET n）"
     },
     {
       "path": "platform-data/src/main/java/com/ghost616/platform/repository/AgentConfigMapper.java",
@@ -188,6 +188,34 @@
     {
       "path": "platform-data/src/main/java/com/ghost616/platform/repository/AgentLogMapper.java",
       "description": "AgentLogEntity 的 MyBatis-Plus Mapper 接口，继承 BaseMapper"
+    },
+    {
+      "path": "platform-data/src/test/java/com/ghost616/platform/entity/SessionEntityTest.java",
+      "description": "Session 实体字段测试，验证 memoryPointSequenceNum 字段的 @TableField 映射（memory_point_sequence_num）及类型/设值"
+    },
+    {
+      "path": "platform-data/src/main/java/com/ghost616/platform/enums/ErrorCode.java",
+      "description": "统一业务错误码枚举，定义各业务域（MODEL/TOOL/AGENT/SKILL/SESSION/EVAL/AGENT-EVAL/KNOWLEDGE-BASE/KNOWLEDGE-FILE）的错误码与消息，含 SYS-001 系统错误/SYS-002 参数校验失败/SYS-004 未授权、MODEL-CONFIG-001 模型不存在、SESSION-001 会话不存在、AGENT-CONFIG-005 记忆未开启等共 33 个错误码，提供 getCode/getMessage"
+    },
+    {
+      "path": "platform-data/src/main/java/com/ghost616/platform/exception/BaseException.java",
+      "description": "平台统一基础异常，继承 RuntimeException，携带 ErrorCode 枚举与 detail 详情，提供 getErrorCode/getDetail，供各业务域异常继承"
+    },
+    {
+      "path": "platform-data/src/main/java/com/ghost616/platform/exception/BusinessException.java",
+      "description": "业务逻辑异常，继承 BaseException，用于业务规则校验失败时抛出，支持 ErrorCode 单参和带 detail 双参构造"
+    },
+    {
+      "path": "platform-data/src/test/java/com/ghost616/platform/enums/ErrorCodeTest.java",
+      "description": "ErrorCode 枚举单元测试，校验枚举数量（29 个）、各错误码值及关键消息"
+    },
+    {
+      "path": "platform-data/src/test/java/com/ghost616/platform/exception/BaseExceptionTest.java",
+      "description": "BaseException 单元测试，校验单参/双参构造器的 errorCode、detail、message 行为及 RuntimeException 继承关系"
+    },
+    {
+      "path": "platform-data/src/test/java/com/ghost616/platform/exception/BusinessExceptionTest.java",
+      "description": "BusinessException 单元测试，校验对 BaseException 的继承及单参/双参构造行为"
     }
   ]
 }

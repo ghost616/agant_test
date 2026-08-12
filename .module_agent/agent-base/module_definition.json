@@ -198,24 +198,12 @@
       "description": "通用启用/禁用状态枚举"
     },
     {
-      "path": "agent-base/src/main/java/com/ghost616/agentbase/enums/ErrorCode.java",
-      "description": "错误码枚举，包含系统、模型、工具、智能体、SKILL、会话、评估等模块统一的错误码定义。已定义的系统错误码：SYSTEM_ERROR/PARAM_INVALID/NOT_FOUND/UNAUTHORIZED/DUPLICATE_KEY；模型错误码：MODEL_INVOKE_ERROR/MODEL_VERIFY_ERROR/MODEL_UNSUPPORTED/MODEL_NOT_FOUND/MODEL_ALREADY_EXISTS；工具错误码：TOOL_NOT_FOUND/TOOL_ALREADY_EXISTS/TOOL_SCHEMA_INVALID/TOOL_INVOKE_ERROR/TOOL_RUNTIME_NOT_FOUND/TOOL_EXECUTE_TIMEOUT/TOOL_EXECUTE_ERROR；智能体错误码：AGENT_NOT_FOUND/AGENT_ALREADY_EXISTS；SKILL 错误码：SKILL_NOT_FOUND/SKILL_ALREADY_EXISTS；会话错误码：SESSION_NOT_FOUND/SESSION_NO_USER_MESSAGE/SUB_SESSION_DATA_NOT_FOUND/CHILD_SESSION_NO_MESSAGES；评估错误码：EVALUATION_NOT_FOUND/EVALUATION_ALREADY_EXISTS"
-    },
-    {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/enums/HookPhase.java",
       "description": "HOOK 阶段枚举"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/enums/ToolType.java",
       "description": "工具类型枚举，包含 JAVA/TYPESCRIPT/PYTHON/MCP_HTTP/CUSTOM 五种类型"
-    },
-    {
-      "path": "agent-base/src/main/java/com/ghost616/agentbase/exception/BaseException.java",
-      "description": "基础异常，extends RuntimeException"
-    },
-    {
-      "path": "agent-base/src/main/java/com/ghost616/agentbase/exception/BusinessException.java",
-      "description": "业务逻辑异常"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/event/ToolChangedEvent.java",
@@ -620,6 +608,18 @@
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/CacheSessionInfo.java",
       "description": "缓存会话信息 record（com.ghost616.agentbase.service.agent），包含 String sessionId 与 String conversationId 两个字段，承载缓存所属的会话与对话 ID。由 ChatDataCacheProvider.getCacheSessionInfo(cacheId) 返回，供 ChatDataCacheManager.addCacheLog 解析日志所需的会话/对话 ID。"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/enums/AgentErrorCode.java",
+      "description": "智能体模块统一错误码枚举，仅包含 agent-base 与 agent-integration 实际使用的 12 个错误码（SYSTEM_ERROR/PARAM_INVALID/NOT_FOUND/DUPLICATE_KEY/MODEL_NOT_FOUND/MODEL_INVOKE_ERROR/MODEL_VERIFY_ERROR/TOOL_INVOKE_ERROR/TOOL_RUNTIME_NOT_FOUND/TOOL_EXECUTE_TIMEOUT/TOOL_EXECUTE_ERROR/SESSION_NOT_FOUND），提供 getCode/getMessage 方法。由原 ErrorCode 枚举重命名并裁剪而来，评估/SKILL/知识库等模块错误码已随 BaseException/BusinessException 迁移至 platform-data。"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/exception/AgentException.java",
+      "description": "智能体统一基础异常，extends RuntimeException。构造函数接收 AgentErrorCode 及可选 detail 参数，super 消息取 detail（非空时）否则取 errorCode.getMessage()，提供 getErrorCode/getDetail 方法。由原 BaseException 模式创建，替代原 BaseException/BusinessException 在 agent-base 内的职责。"
+    },
+    {
+      "path": "agent-base/src/test/java/com/ghost616/agentbase/enums/AgentErrorCodeTest.java",
+      "description": "AgentErrorCode 枚举测试，覆盖 12 个错误码的 code/message 断言、错误码唯一性及 message 非空校验。"
     }
   ]
 }

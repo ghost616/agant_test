@@ -21,8 +21,8 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import com.ghost616.agentbase.service.agent.MessageDataProvider;
-import com.ghost616.agentbase.enums.ErrorCode;
-import com.ghost616.agentbase.exception.BusinessException;
+import com.ghost616.platform.enums.ErrorCode;
+import com.ghost616.platform.exception.BusinessException;
 import com.ghost616.agentbase.core.AgentComponentRegistry;
 import com.ghost616.agentbase.service.agent.AgentContextManager;
 import com.ghost616.agentbase.service.agent.SessionManager;

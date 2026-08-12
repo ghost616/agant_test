@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_00fe40043ffe5658ldRxCO3tuQ",
+  "content": "## 待测试功能说明\n\n本次变更涉及 platform-data 模块：\n\n### 变更内容\nMessageMapper.java 恢复两个方法：\n1. `countUserMessages(Long sessionId)`：SELECT COUNT(*) 统计 session 下 role='user' 且 rollback=0 的消息总数，返回 Long\n2. `findNthUserSequenceNum(Long sessionId, int n)`：SELECT sequence_num 按 sequence_num ASC 排序，查找第 n 个（从 0 计数）user 且 rollback=0 消息的 sequenceNum，LIMIT 1 OFFSET n，返回 Integer（不存在则 null）\n\n### 涉及代码文件\n- platform-data/src/main/java/com/ghost616/platform/repository/MessageMapper.java\n\n### 需要测试的功能\n1. 编译测试：platform-data 模块（及依赖模块）mvn compile 通过\n2. 单元测试：platform-data 模块全部测试通过，特别是 MessageMapperTest 的既有用例不受影响\n3. 如有集成测试覆盖（H2 + MyBatis）可验证：\n   - countUserMessages 正确统计 user 且未回滚消息总数\n   - findNthUserSequenceNum 按 sequence_num 升序返回第 n 个 user 未回滚消息 sequenceNum；已回滚/assistant 消息不参与；越界返回 null\n",
+  "timestamp": "2026-08-11T11:31:19.247Z"
+}

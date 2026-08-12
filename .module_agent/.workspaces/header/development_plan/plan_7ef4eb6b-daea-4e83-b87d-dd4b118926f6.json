@@ -1,0 +1,29 @@
+{
+  "plan_id": "plan_7ef4eb6b-daea-4e83-b87d-dd4b118926f6",
+  "module_name": "agent-base",
+  "development_plan": "ErrorCode 重构与 AgentException 创建：\n1. 重命名 ErrorCode 枚举为 AgentErrorCode，仅保留 12 个 agent-base/agent-integration 实际使用的错误码（SYSTEM_ERROR, PARAM_INVALID, NOT_FOUND, DUPLICATE_KEY, MODEL_NOT_FOUND, MODEL_INVOKE_ERROR, MODEL_VERIFY_ERROR, TOOL_INVOKE_ERROR, TOOL_RUNTIME_NOT_FOUND, TOOL_EXECUTE_TIMEOUT, TOOL_EXECUTE_ERROR, SESSION_NOT_FOUND）\n2. 新建 AgentException 类（参考 BaseException 模式，构造函数接收 AgentErrorCode + 可选 message/detail，继承 RuntimeException）\n3. 删除 BaseException 和 BusinessException 类（迁移到 platform-data）\n4. 更新 agent-base 内部所有文件：将 ErrorCode 引用改为 AgentErrorCode，将 BusinessException 引用改为 AgentException（涉及 ChatService, SessionManager, AgentContextManager, ChatDataCacheManager, TypeScriptToolInvoker, PythonToolInvoker, McpJsonRpcClient, McpHttpToolInvoker, McpAuthConfigParser, ContextSerializer 共 10 个文件）\n5. 更新测试文件中的导入和引用",
+  "session_id": "ses_00c710f34ffeTSbhmONDwevHSO",
+  "modified_files": [
+    "agent-base/src/main/java/com/ghost616/agentbase/enums/AgentErrorCode.java",
+    "agent-base/src/main/java/com/ghost616/agentbase/exception/AgentException.java",
+    "agent-base/src/main/java/com/ghost616/agentbase/enums/ErrorCode.java",
+    "agent-base/src/main/java/com/ghost616/agentbase/exception/BaseException.java",
+    "agent-base/src/main/java/com/ghost616/agentbase/exception/BusinessException.java",
+    "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ChatService.java",
+    "agent-base/src/main/java/com/ghost616/agentbase/service/agent/SessionManager.java",
+    "agent-base/src/main/java/com/ghost616/agentbase/service/agent/AgentContextManager.java",
+    "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ChatDataCacheManager.java",
+    "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/TypeScriptToolInvoker.java",
+    "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/PythonToolInvoker.java",
+    "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/McpJsonRpcClient.java",
+    "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/McpHttpToolInvoker.java",
+    "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/McpAuthConfigParser.java",
+    "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/ContextSerializer.java",
+    "agent-base/src/test/java/com/ghost616/agentbase/service/agent/ChatDataCacheManagerTest.java",
+    "agent-base/src/test/java/com/ghost616/agentbase/service/agent/SessionManagerTest.java",
+    "agent-base/src/test/java/com/ghost616/agentbase/service/agent/AgentContextManagerTest.java",
+    "agent-base/src/test/java/com/ghost616/agentbase/service/agent/AgentContextManagerLogTest.java",
+    "agent-base/src/test/java/com/ghost616/agentbase/enums/ErrorCodeTest.java",
+    "agent-base/src/test/java/com/ghost616/agentbase/enums/AgentErrorCodeTest.java"
+  ]
+}

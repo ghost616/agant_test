@@ -27,15 +27,15 @@
     },
     {
       "path": "src/types/agent.ts",
-      "description": "智能体配置类型定义，含 AgentConfig/AgentFormData（tools/skills 替换 toolIds/skillIds，每项含 sessionAuth 字段）/SessionAuthType（ALL/PARENT/CHILD）/AgentListParams"
+      "description": "智能体配置类型定义，含 AgentConfig/AgentFormData（tools/skills 替换 toolIds/skillIds，每项含 sessionAuth 字段）/SessionAuthType（ALL/PARENT/CHILD）/KnowledgeBaseItem/AgentListParams；AgentConfig/AgentFormData 含 recentMessageCount/memoryEnabled/memoryGroupCount/knowledgeBaseIds 等可选字段"
     },
     {
       "path": "src/services/agent.ts",
-      "description": "智能体管理 API 服务封装，含列表/CRUD/状态更新接口"
+      "description": "智能体管理 API 服务封装，含列表/CRUD/状态更新接口（createAgent/updateAgent 请求体透传 AgentFormData 全部字段含 memoryEnabled/memoryGroupCount）"
     },
     {
       "path": "src/pages/agents/AgentList.tsx",
-      "description": "智能体管理列表页面，含筛选搜索、表格展示（新增 tools/skills 列，Tag 颜色区分 sessionAuth）、新增/编辑（name/description/systemPrompt/modelId/tools/skills/recentMessageCount 含 SessionAuthSelect 组件支持每项 sessionAuth 配置）/删除 Popconfirm/启用禁用 Switch；关联模型/工具/技能选择（Promise.all 并行加载）；Table pagination={false} 全量展示"
+      "description": "智能体管理列表页面，含筛选搜索、表格展示（新增 tools/skills 列，Tag 颜色区分 sessionAuth）、新增/编辑（name/description/systemPrompt/modelId/tools/skills/recentMessageCount/memoryEnabled/memoryGroupCount 含 SessionAuthSelect 组件支持每项 sessionAuth 配置，memoryEnabled Switch + memoryGroupCount InputNumber，关闭记忆功能时分组数量禁用）/删除 Popconfirm/启用禁用 Switch；关联模型/工具/技能/知识库选择（Promise.all 并行加载）；Table pagination={false} 全量展示"
     },
     {
       "path": "src/types/session.ts",
@@ -200,6 +200,10 @@
     {
       "path": "e2e/AgentLogList.spec.ts",
       "description": "运行日志页面的 Playwright 端到端测试：覆盖 /logs 路由访问、表格渲染、日志类型中文 Tag 与日志等级彩色字体 span、日志详情 Modal 展开/关闭/重开、翻页请求、日志类型筛选请求。同步维护日志等级渲染断言以匹配 AgentLogList 组件实现。"
+    },
+    {
+      "path": "e2e/AgentListVectorModel.spec.ts",
+      "description": "智能体列表页向量模型功能 E2E 回归用例：验证 EMBEDDINGS 模型下拉加载、memoryEnabled=false 时表单项隐藏、编辑回填 vectorModelId、提交 payload 中 vectorModelId 归一化"
     }
   ]
 }

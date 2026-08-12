@@ -1,11 +1,11 @@
 package com.ghost616.agentbase.service.agent;
 
 import com.ghost616.agentbase.dto.model.ChatChunk;
-import com.ghost616.agentbase.enums.ErrorCode;
+import com.ghost616.agentbase.enums.AgentErrorCode;
 import com.ghost616.agentbase.enums.FinishReason;
 import com.ghost616.agentbase.enums.LogLevel;
 import com.ghost616.agentbase.enums.LogType;
-import com.ghost616.agentbase.exception.BusinessException;
+import com.ghost616.agentbase.exception.AgentException;
 import com.ghost616.agentbase.service.agent.log.AgentLog;
 import com.ghost616.agentbase.service.agent.log.ChatCacheLogData;
 import org.junit.jupiter.api.BeforeEach;
@@ -86,10 +86,10 @@ class ChatDataCacheManagerTest {
     void startCache_whenCacheAlreadyExists_shouldThrowDuplicateKey() {
         when(provider.cacheExists(sessionId, conversationId)).thenReturn(true);
 
-        BusinessException ex = assertThrows(BusinessException.class,
+        AgentException ex = assertThrows(AgentException.class,
                 () -> manager.startCache(sessionId, conversationId));
 
-        assertEquals(ErrorCode.DUPLICATE_KEY, ex.getErrorCode());
+        assertEquals(AgentErrorCode.DUPLICATE_KEY, ex.getErrorCode());
         verify(provider).cacheExists(sessionId, conversationId);
         verify(provider, never()).createCache(any(), any());
     }
@@ -109,10 +109,10 @@ class ChatDataCacheManagerTest {
     void appendChunk_whenCacheNotExists_shouldThrowNotFound() {
         when(provider.cacheExists(cacheId)).thenReturn(false);
 
-        BusinessException ex = assertThrows(BusinessException.class,
+        AgentException ex = assertThrows(AgentException.class,
                 () -> manager.appendChunk(cacheId, chunk(0)));
 
-        assertEquals(ErrorCode.NOT_FOUND, ex.getErrorCode());
+        assertEquals(AgentErrorCode.NOT_FOUND, ex.getErrorCode());
         verify(provider, never()).appendChunk(any(), any());
     }
 
@@ -121,10 +121,10 @@ class ChatDataCacheManagerTest {
         when(provider.cacheExists(cacheId)).thenReturn(true);
         when(provider.isCacheDone(cacheId)).thenReturn(true);
 
-        BusinessException ex = assertThrows(BusinessException.class,
+        AgentException ex = assertThrows(AgentException.class,
                 () -> manager.appendChunk(cacheId, chunk(0)));
 
-        assertEquals(ErrorCode.PARAM_INVALID, ex.getErrorCode());
+        assertEquals(AgentErrorCode.PARAM_INVALID, ex.getErrorCode());
         verify(provider, never()).appendChunk(any(), any());
     }
 
@@ -239,10 +239,10 @@ class ChatDataCacheManagerTest {
     void getStream_whenCacheNotExists_shouldThrowNotFound() {
         when(provider.cacheExists(cacheId)).thenReturn(false);
 
-        BusinessException ex = assertThrows(BusinessException.class,
+        AgentException ex = assertThrows(AgentException.class,
                 () -> manager.getStream(cacheId, 0));
 
-        assertEquals(ErrorCode.NOT_FOUND, ex.getErrorCode());
+        assertEquals(AgentErrorCode.NOT_FOUND, ex.getErrorCode());
         verify(provider, never()).getMaxChunkIndex(any());
         verify(provider, never()).getChunks(any(), anyInt(), anyInt());
     }
@@ -252,10 +252,10 @@ class ChatDataCacheManagerTest {
         when(provider.cacheExists(cacheId)).thenReturn(true);
         when(provider.getMaxChunkIndex(cacheId)).thenReturn(-1);
 
-        BusinessException ex = assertThrows(BusinessException.class,
+        AgentException ex = assertThrows(AgentException.class,
                 () -> manager.getStream(cacheId, 0));
 
-        assertEquals(ErrorCode.NOT_FOUND, ex.getErrorCode());
+        assertEquals(AgentErrorCode.NOT_FOUND, ex.getErrorCode());
         verify(provider, never()).getChunks(any(), anyInt(), anyInt());
     }
 
@@ -264,10 +264,10 @@ class ChatDataCacheManagerTest {
         when(provider.cacheExists(cacheId)).thenReturn(true);
         when(provider.getMaxChunkIndex(cacheId)).thenReturn(3);
 
-        BusinessException ex = assertThrows(BusinessException.class,
+        AgentException ex = assertThrows(AgentException.class,
                 () -> manager.getStream(cacheId, 4));
 
-        assertEquals(ErrorCode.PARAM_INVALID, ex.getErrorCode());
+        assertEquals(AgentErrorCode.PARAM_INVALID, ex.getErrorCode());
         verify(provider, never()).getChunks(any(), anyInt(), anyInt());
     }
 
@@ -296,10 +296,10 @@ class ChatDataCacheManagerTest {
         manager.setAgentLog(agentLog);
         when(provider.cacheExists(sessionId, conversationId)).thenReturn(true);
 
-        BusinessException ex = assertThrows(BusinessException.class,
+        AgentException ex = assertThrows(AgentException.class,
                 () -> manager.startCache(sessionId, conversationId));
 
-        assertEquals(ErrorCode.DUPLICATE_KEY, ex.getErrorCode());
+        assertEquals(AgentErrorCode.DUPLICATE_KEY, ex.getErrorCode());
         ArgumentCaptor<ChatCacheLogData> captor = ArgumentCaptor.forClass(ChatCacheLogData.class);
         verify(agentLog).addLog(captor.capture());
         ChatCacheLogData logData = captor.getValue();
@@ -338,10 +338,10 @@ class ChatDataCacheManagerTest {
         when(provider.cacheExists(cacheId)).thenReturn(false);
         when(provider.getCacheSessionInfo(cacheId)).thenReturn(new CacheSessionInfo(sessionId, conversationId));
 
-        BusinessException ex = assertThrows(BusinessException.class,
+        AgentException ex = assertThrows(AgentException.class,
                 () -> manager.appendChunk(cacheId, chunk(0)));
 
-        assertEquals(ErrorCode.NOT_FOUND, ex.getErrorCode());
+        assertEquals(AgentErrorCode.NOT_FOUND, ex.getErrorCode());
         verify(provider, never()).appendChunk(any(), any());
         ArgumentCaptor<ChatCacheLogData> captor = ArgumentCaptor.forClass(ChatCacheLogData.class);
         verify(agentLog).addLog(captor.capture());
@@ -359,10 +359,10 @@ class ChatDataCacheManagerTest {
         when(provider.cacheExists(cacheId)).thenReturn(true);
         when(provider.isCacheDone(cacheId)).thenReturn(true);
 
-        BusinessException ex = assertThrows(BusinessException.class,
+        AgentException ex = assertThrows(AgentException.class,
                 () -> manager.appendChunk(cacheId, chunk(0)));
 
-        assertEquals(ErrorCode.PARAM_INVALID, ex.getErrorCode());
+        assertEquals(AgentErrorCode.PARAM_INVALID, ex.getErrorCode());
         verify(provider, never()).appendChunk(any(), any());
         ArgumentCaptor<ChatCacheLogData> captor = ArgumentCaptor.forClass(ChatCacheLogData.class);
         verify(agentLog).addLog(captor.capture());

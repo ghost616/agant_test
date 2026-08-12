@@ -26,9 +26,9 @@ import com.ghost616.agentbase.dto.model.ToolDefinition;
 import com.ghost616.agentbase.dto.model.UsageInfo;
 import com.ghost616.agentbase.dto.model.WebSearchCall;
 import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
-import com.ghost616.agentbase.enums.ErrorCode;
+import com.ghost616.agentbase.enums.AgentErrorCode;
 import com.ghost616.agentbase.enums.FinishReason;
-import com.ghost616.agentbase.exception.BusinessException;
+import com.ghost616.agentbase.exception.AgentException;
 import com.ghost616.agentbase.service.model.invoker.ModelInvoker;
 
 
@@ -76,13 +76,13 @@ public class OpenAIResponsesInvoker implements ModelInvoker {
             return parseResponse(responseBody);
         } catch (HttpClientErrorException | HttpServerErrorException e) {
             log.error("OpenAI Responses invoke HTTP error: status={}", e.getStatusCode().value());
-            throw new BusinessException(ErrorCode.MODEL_INVOKE_ERROR,
+            throw new AgentException(AgentErrorCode.MODEL_INVOKE_ERROR,
                     "HTTP " + e.getStatusCode().value() + ": " + e.getResponseBodyAsString());
-        } catch (BusinessException e) {
+        } catch (AgentException e) {
             throw e;
         } catch (Exception e) {
             log.error("OpenAI Responses invoke error", e);
-            throw new BusinessException(ErrorCode.MODEL_INVOKE_ERROR, e.getMessage());
+            throw new AgentException(AgentErrorCode.MODEL_INVOKE_ERROR, e.getMessage());
         }
     }
 
@@ -105,11 +105,11 @@ public class OpenAIResponsesInvoker implements ModelInvoker {
                         .concatMap(this::parseStreamEvent)
                         .onErrorResume(this::handleStreamError);
             });
-        } catch (BusinessException e) {
+        } catch (AgentException e) {
             return Flux.error(e);
         } catch (Exception e) {
             log.error("OpenAI Responses invokeStream error", e);
-            return Flux.error(new BusinessException(ErrorCode.MODEL_INVOKE_ERROR, e.getMessage()));
+            return Flux.error(new AgentException(AgentErrorCode.MODEL_INVOKE_ERROR, e.getMessage()));
         }
     }
 
@@ -125,11 +125,11 @@ public class OpenAIResponsesInvoker implements ModelInvoker {
             return true;
         } catch (HttpClientErrorException | HttpServerErrorException e) {
             log.error("OpenAI Responses verify HTTP error: status={}", e.getStatusCode().value());
-            throw new BusinessException(ErrorCode.MODEL_VERIFY_ERROR,
+            throw new AgentException(AgentErrorCode.MODEL_VERIFY_ERROR,
                     "HTTP " + e.getStatusCode().value() + ": " + e.getResponseBodyAsString());
         } catch (Exception e) {
             log.error("OpenAI Responses verify error", e);
-            throw new BusinessException(ErrorCode.MODEL_VERIFY_ERROR, e.getMessage());
+            throw new AgentException(AgentErrorCode.MODEL_VERIFY_ERROR, e.getMessage());
         }
     }
 
@@ -332,7 +332,7 @@ public class OpenAIResponsesInvoker implements ModelInvoker {
             return builder.build();
         } catch (Exception e) {
             log.error("Failed to parse OpenAI Responses response", e);
-            throw new BusinessException(ErrorCode.MODEL_INVOKE_ERROR, "Failed to parse response: " + e.getMessage());
+            throw new AgentException(AgentErrorCode.MODEL_INVOKE_ERROR, "Failed to parse response: " + e.getMessage());
         }
     }
 

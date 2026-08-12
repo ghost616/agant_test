@@ -5,9 +5,9 @@ import java.util.List;
 import com.ghost616.agentbase.core.AgentComponentRegistry;
 import com.ghost616.agentbase.dto.model.ToolInfo;
 import com.ghost616.agentbase.dto.model.UsageInfo;
-import com.ghost616.agentbase.enums.ErrorCode;
+import com.ghost616.agentbase.enums.AgentErrorCode;
 import com.ghost616.agentbase.enums.LogLevel;
-import com.ghost616.agentbase.exception.BusinessException;
+import com.ghost616.agentbase.exception.AgentException;
 import com.ghost616.agentbase.service.agent.log.AgentLog;
 import com.ghost616.agentbase.service.agent.log.LogData;
 import com.ghost616.agentbase.service.agent.log.MessageQueryLogData;
@@ -130,30 +130,30 @@ public class SessionManager {
                 addLog(SessionErrorLogData.builder()
                         .logLevel(LogLevel.ERROR)
                         .conversationId(conversationId)
-                        .errorCode(ErrorCode.PARAM_INVALID.getCode())
+                        .errorCode(AgentErrorCode.PARAM_INVALID.getCode())
                         .message("sessionId 不能为空")
                         .build());
-                throw new BusinessException(ErrorCode.PARAM_INVALID, "sessionId 不能为空");
+                throw new AgentException(AgentErrorCode.PARAM_INVALID, "sessionId 不能为空");
             }
             if (role == null) {
                 addLog(SessionErrorLogData.builder()
                         .logLevel(LogLevel.ERROR)
                         .sessionId(sessionId)
                         .conversationId(conversationId)
-                        .errorCode(ErrorCode.PARAM_INVALID.getCode())
+                        .errorCode(AgentErrorCode.PARAM_INVALID.getCode())
                         .message("role 不能为空")
                         .build());
-                throw new BusinessException(ErrorCode.PARAM_INVALID, "role 不能为空");
+                throw new AgentException(AgentErrorCode.PARAM_INVALID, "role 不能为空");
             }
             if (content == null) {
                 addLog(SessionErrorLogData.builder()
                         .logLevel(LogLevel.ERROR)
                         .sessionId(sessionId)
                         .conversationId(conversationId)
-                        .errorCode(ErrorCode.PARAM_INVALID.getCode())
+                        .errorCode(AgentErrorCode.PARAM_INVALID.getCode())
                         .message("content 不能为空")
                         .build());
-                throw new BusinessException(ErrorCode.PARAM_INVALID, "content 不能为空");
+                throw new AgentException(AgentErrorCode.PARAM_INVALID, "content 不能为空");
             }
             String messageId = dataProvider.saveMessage(sessionId, role, content, reasoning,
                     toolInfo, toolResult, toolCalls, usage, webSearchCall, customToolCall, conversationId);

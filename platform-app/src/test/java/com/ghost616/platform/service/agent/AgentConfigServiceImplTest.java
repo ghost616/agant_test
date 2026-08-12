@@ -2,9 +2,9 @@ package com.ghost616.platform.service.agent;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.ghost616.agentbase.enums.CommonStatus;
-import com.ghost616.agentbase.enums.ErrorCode;
+import com.ghost616.platform.enums.ErrorCode;
 import com.ghost616.agentbase.enums.SessionAuthType;
-import com.ghost616.agentbase.exception.BusinessException;
+import com.ghost616.platform.exception.BusinessException;
 import com.ghost616.platform.dto.agent.AgentConfigDTO;
 import com.ghost616.platform.dto.agent.AgentCreateRequest;
 import com.ghost616.platform.dto.agent.AgentSkillItem;

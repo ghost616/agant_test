@@ -1,7 +1,7 @@
 package com.ghost616.platform.dto;
 
 
-import com.ghost616.agentbase.enums.ErrorCode;
+import com.ghost616.platform.enums.ErrorCode;
 
 
 /**

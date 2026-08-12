@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_010cce1c3ffeKwnWW0LQZDhMkX",
+  "content": "# 待测试功能说明\n\n本次变更：智能体编辑表单记忆分组数量字段调整\n\n## 涉及的代码文件\n- src/pages/agents/AgentList.tsx：memoryGroupCount Form.Item initialValue 从 10 改为 30；InputNumber 移除 max={100} 上限（保留 min={1}）\n- src/pages/agents/__tests__/AgentList.test.tsx：同步更新断言（默认值 30、移除 max={100}）\n- e2e/AgentList.spec.ts：同步更新断言（POST payload 默认 memoryGroupCount=30；移除原 max=100 限制测试改为验证无上限）\n\n## 需测试的功能点\n1. 表单默认值：新增弹窗 memoryGroupCount 默认值为 30\n2. 无上限：memoryGroupCount 输入可超过 100（如 150 不被回退）\n3. min 下限：仍保留 min={1}\n4. 联动不变：memoryEnabled 关闭时 memoryGroupCount disabled\n5. POST/PUT payload 透传正确\n6. TypeScript 编译：变更文件 tsc 无类型错误",
+  "timestamp": "2026-08-11T05:45:32.062Z"
+}

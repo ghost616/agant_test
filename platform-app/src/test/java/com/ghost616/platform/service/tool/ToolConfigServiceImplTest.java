@@ -2,9 +2,9 @@ package com.ghost616.platform.service.tool;
 
 import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
 import com.ghost616.agentbase.enums.CommonStatus;
-import com.ghost616.agentbase.enums.ErrorCode;
+import com.ghost616.platform.enums.ErrorCode;
 import com.ghost616.agentbase.enums.ToolType;
-import com.ghost616.agentbase.exception.BusinessException;
+import com.ghost616.platform.exception.BusinessException;
 import com.ghost616.agentbase.service.agent.invoker.ToolManager;
 import com.ghost616.agentinteg.tool.KnowledgeBaseInfoTool;
 import com.ghost616.agentinteg.tool.KnowledgeFileChunkTool;

@@ -1,8 +1,8 @@
 package com.ghost616.platform.controller;
 
 import com.ghost616.agentbase.enums.CommonStatus;
-import com.ghost616.agentbase.enums.ErrorCode;
-import com.ghost616.agentbase.exception.BusinessException;
+import com.ghost616.platform.enums.ErrorCode;
+import com.ghost616.platform.exception.BusinessException;
 import com.ghost616.platform.dto.ApiResponse;
 import com.ghost616.platform.dto.knowledge.KnowledgeFileCreateRequest;
 import com.ghost616.platform.dto.knowledge.KnowledgeFileDTO;

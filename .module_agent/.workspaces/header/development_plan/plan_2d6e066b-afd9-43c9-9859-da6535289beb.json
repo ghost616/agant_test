@@ -1,0 +1,32 @@
+{
+  "plan_id": "plan_2d6e066b-afd9-43c9-9859-da6535289beb",
+  "module_name": "platform-app",
+  "development_plan": "ErrorCode 迁移适配 + 记忆摘要触发接口：\n1. 更新 ApiResponse.fail(ErrorCode) 的 import 从 agent-base.enums.ErrorCode 改为 platform-data.enums.ErrorCode\n2. 更新 GlobalExceptionHandler 中 ErrorCode import（agent-base.enums.ErrorCode → platform-data.enums.ErrorCode，BaseException import 改为 platform-data.exception.BaseException）\n3. 更新所有 platform-app Controller/Service 文件中的 ErrorCode import（约 20+ 个 main 文件）：AgentConfigServiceImpl, ModelConfigServiceImpl, ToolConfigServiceImpl, SkillConfigServiceImpl, SessionServiceImpl, DefaultMessageDataProvider, DefaultContextDataProvider, AgentEvaluationServiceImpl, EvaluationServiceImpl, EvaluationExecutionService, EvaluationResultGenerateService, KnowledgeBaseServiceImpl, KnowledgeFileServiceImpl, KnowledgePublishService, KnowledgeBaseQueryProviderImpl, SessionController, ModelConfigController, KnowledgeFileController, EvaluationSessionController，同时将 BusinessException import 从 agent-base 改为 platform-data\n4. 同样更新所有对应的测试文件 import\n5. 在 SessionMemoryService 中新增 triggerSessionMemory(Long sessionId) 方法：根据 sessionId 查询 Session 不存在则抛 SESSION_NOT_FOUND，查询 AgentConfig 不存在则抛 AGENT_NOT_FOUND，校验 memoryEnabled=true 否则抛 AGENT_MEMORY_NOT_ENABLED，使用 @Async 异步调用 processSession，需注入 ApplicationContext 或使用 CompletableFuture.runAsync 实现异步\n6. 在 SessionController 中注入 SessionMemoryService，新增 GET /api/sessions/{sessionId}/memory/trigger 端点，调用 triggerSessionMemory，返回 ApiResponse.success('记忆摘要生成已触发')",
+  "session_id": "ses_00c69e10effeoPnYfW5RrucAsv",
+  "modified_files": [
+    "platform-app/src/main/java/com/ghost616/platform/dto/ApiResponse.java",
+    "platform-app/src/main/java/com/ghost616/platform/config/GlobalExceptionHandler.java",
+    "platform-app/src/main/java/com/ghost616/platform/controller/SessionController.java",
+    "platform-app/src/main/java/com/ghost616/platform/controller/ModelConfigController.java",
+    "platform-app/src/main/java/com/ghost616/platform/controller/KnowledgeFileController.java",
+    "platform-app/src/main/java/com/ghost616/platform/controller/EvaluationSessionController.java",
+    "platform-app/src/main/java/com/ghost616/platform/service/agent/AgentConfigServiceImpl.java",
+    "platform-app/src/main/java/com/ghost616/platform/service/model/ModelConfigServiceImpl.java",
+    "platform-app/src/main/java/com/ghost616/platform/service/tool/ToolConfigServiceImpl.java",
+    "platform-app/src/main/java/com/ghost616/platform/service/skill/SkillConfigServiceImpl.java",
+    "platform-app/src/main/java/com/ghost616/platform/service/session/SessionServiceImpl.java",
+    "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultMessageDataProvider.java",
+    "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultContextDataProvider.java",
+    "platform-app/src/main/java/com/ghost616/platform/service/agent_evaluation/AgentEvaluationServiceImpl.java",
+    "platform-app/src/main/java/com/ghost616/platform/service/evaluation/EvaluationServiceImpl.java",
+    "platform-app/src/main/java/com/ghost616/platform/service/evaluation/EvaluationExecutionService.java",
+    "platform-app/src/main/java/com/ghost616/platform/service/evaluation/EvaluationResultGenerateService.java",
+    "platform-app/src/main/java/com/ghost616/platform/service/knowledge/KnowledgeBaseServiceImpl.java",
+    "platform-app/src/main/java/com/ghost616/platform/service/knowledge/KnowledgeFileServiceImpl.java",
+    "platform-app/src/main/java/com/ghost616/platform/service/knowledge/KnowledgePublishService.java",
+    "platform-app/src/main/java/com/ghost616/platform/service/knowledge/KnowledgeBaseQueryProviderImpl.java",
+    "platform-app/src/main/java/com/ghost616/platform/service/memory/SessionMemoryService.java",
+    "platform-app/src/test/java/com/ghost616/platform/controller/SessionControllerTest.java",
+    "platform-app/src/test/java/com/ghost616/platform/service/memory/SessionMemoryServiceTest.java"
+  ]
+}

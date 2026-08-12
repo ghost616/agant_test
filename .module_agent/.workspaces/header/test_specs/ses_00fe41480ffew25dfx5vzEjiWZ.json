@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_00fe41480ffew25dfx5vzEjiWZ",
+  "content": "## 待测试功能\n\n变更文件：\n- src/pages/agents/AgentList.tsx\n- src/pages/agents/__tests__/AgentList.test.tsx\n- e2e/AgentList.spec.ts\n\n功能说明：\nAgentList.tsx 记忆功能关闭时隐藏 memoryGroupCount 输入框（原为 disabled）：\n- \"保留记忆数量\"（memoryGroupCount）Form.Item 添加 hidden={!memoryEnabled}，memoryEnabled=false 时该表单项不显示，memoryEnabled=true 时显示\n- 移除 InputNumber 的 disabled={!memoryEnabled} 属性\n- 与\"向量模型\"（vectorModelId）的 hidden 行为保持一致\n\n需要验证：\n- 编译/类型检查：变更文件 tsc 零错误（项目既有全量 tsc 错误如 @types/node 缺失、EvaluationResultList.tsx:260、ToolList.tsx:211 与本次变更无关）\n- 单元测试：src/pages/agents/__tests__/AgentList.test.tsx 静态验证用例全部通过（含更新后的 hidden 断言）\n- E2E 测试：e2e/AgentList.spec.ts 记忆功能用例（改为验证隐藏/显示行为）与 e2e/AgentListVectorModel.spec.ts 全部通过",
+  "timestamp": "2026-08-11T12:43:50.250Z"
+}

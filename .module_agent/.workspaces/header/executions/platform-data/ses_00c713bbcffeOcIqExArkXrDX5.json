@@ -1,0 +1,16 @@
+[
+  {
+    "plan_id": "plan_dd53f971-c15b-45b6-a379-ed2a701889e3",
+    "plan": "ErrorCode 枚举与异常类迁移",
+    "modified_files": [
+      "platform-data/src/main/java/com/ghost616/platform/enums/ErrorCode.java",
+      "platform-data/src/main/java/com/ghost616/platform/exception/BaseException.java",
+      "platform-data/src/main/java/com/ghost616/platform/exception/BusinessException.java",
+      "platform-data/src/test/java/com/ghost616/platform/enums/ErrorCodeTest.java",
+      "platform-data/src/test/java/com/ghost616/platform/exception/BaseExceptionTest.java",
+      "platform-data/src/test/java/com/ghost616/platform/exception/BusinessExceptionTest.java"
+    ],
+    "summary": "【执行总结】完成 ErrorCode 枚举与异常类迁移：1) 新建 ErrorCode 枚举（com.ghost616.platform.enums.ErrorCode），包含从 agent-base 移出的 29 个业务错误码（UNAUTHORIZED/MODEL/TOOL/AGENT/SKILL/SESSION/EVAL/AGENT-EVAL/KNOWLEDGE 各域），并新增 AGENT_MEMORY_NOT_ENABLED('AGENT-CONFIG-005','智能体未开启记忆功能')；2) 移入 BaseException（复制自 agent-base，ErrorCode 类型改为 platform-data 的 ErrorCode）；3) 移入 BusinessException（extends 新 BaseException）；4) 更新测试文件导入：现有 platform-data 测试无 agentbase ErrorCode 引用，新增 ErrorCodeTest/BaseExceptionTest/BusinessExceptionTest 三个测试正确导入新包。离朱测试全部通过（新增 9 用例 + 模块完整编译测试 48/48，BUILD SUCCESS），无失败用例。元数据已更新：module_definition 新增 6 文件、current_spec 新增\"统一错误码与异常\"章节、change_history 已记录。代码审查（皋陶）由风后发起。",
+    "errors": []
+  }
+]

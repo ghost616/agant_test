@@ -60,5 +60,6 @@
   "src/index.css": "b3c787053edaeedadf1a2430f41506f2",
   "src/pages/logs/AgentLogList.tsx": "fc8c96a933ea0c64c9c6c6e59f14862d",
   "src/types/log.ts": "e775a7a3f5d8f21002bc1a5c90399c8e",
-  "src/pages/logs/__tests__/AgentLogList.test.tsx": "1fc8fbddcdf8d00ac3b3c547642ce24c"
+  "src/pages/logs/__tests__/AgentLogList.test.tsx": "1fc8fbddcdf8d00ac3b3c547642ce24c",
+  "e2e/AgentList.spec.ts": "40acfdc3b030e534664f87ecd796d47c"
 }

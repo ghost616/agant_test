@@ -6,7 +6,7 @@ import com.ghost616.agentbase.dto.tool.McpExpandedToolDTO;
 import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
 import com.ghost616.agentbase.enums.SessionAuthType;
 import com.ghost616.agentbase.enums.ToolType;
-import com.ghost616.agentbase.exception.BusinessException;
+import com.ghost616.agentbase.exception.AgentException;
 import com.ghost616.agentbase.sendmessage.ConversationIdMessage;
 import com.ghost616.agentbase.sendmessage.MessageSender;
 import com.ghost616.agentbase.service.agent.invoker.ToolManager;
@@ -271,10 +271,10 @@ class AgentContextManagerTest {
     }
 
     @Test
-    void 反向_ctxData为null时抛出BusinessException() {
+    void 反向_ctxData为null时抛出AgentException() {
         when(dataProvider.loadAgentContext(sessionId)).thenReturn(null);
 
-        assertThrows(BusinessException.class, () -> agentContextManager.build(sessionId).build());
+        assertThrows(AgentException.class, () -> agentContextManager.build(sessionId).build());
     }
 
     @Test
@@ -623,7 +623,7 @@ class AgentContextManagerTest {
             String orphanSessionId = "3";
             stubChildSession(orphanSessionId, nonExistentParent);
 
-            assertThrows(BusinessException.class,
+            assertThrows(AgentException.class,
                     () -> agentContextManager.build(orphanSessionId).build());
         }
 

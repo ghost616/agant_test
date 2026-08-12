@@ -3,7 +3,7 @@
   "files": [
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultMessageDataProvider.java",
-      "description": "默认消息数据提供者实现，负责消息的持久化存储、查询和软回滚，实现 agent-base 的 MessageDataProvider 接口。saveMessage 第 5 参为 ToolInfo toolInfo（toolCallId/toolName），将其持久化为 type=tool_result 的 MessageToolCall 行，并在 message 表 tool_call_id 列记录 toolCallId；同时将三种类型的工具调用统一构建进一个 List<MessageToolCall>：function 工具调用行（读 toolCallId/toolCallName/toolCallArguments/type）、webSearchCall 行（type=web_search_call，web_search_call 列存单条 WebSearchCallData 的 JSON）、customToolCall 行（type=custom_tool_call，custom_tool_call 列存单条 CustomToolCallData 的 JSON），合并后通过注入的 MessageToolCallService.saveBatch 一次批量插入；getMessages 从 MessageToolCall 表读取各行，按 type 分类反序列化：web_search_call 行聚合为 List<WebSearchCallData>、custom_tool_call 行聚合为 List<CustomToolCallData>，tool_result 行不进入 toolCalls 列表，并通过匹配 message.tool_call_id 与 MessageToolCall 行构造 ToolInfo 填充 MessageDTO.toolInfo，其余行按普通工具调用处理（读 type 构建 ToolCallData）；提供 rollbackToLastUserMessage 软回滚能力"
+      "description": "默认消息数据提供者实现，负责消息的持久化存储、查询、软回滚和记忆点过滤，实现 agent-base 的 MessageDataProvider 接口。saveMessage 第 5 参为 ToolInfo toolInfo（toolCallId/toolName），将其持久化为 type=tool_result 的 MessageToolCall 行，并在 message 表 tool_call_id 列记录 toolCallId；同时将三种类型的工具调用统一构建进一个 List<MessageToolCall>：function 工具调用行（读 toolCallId/toolCallName/toolCallArguments/type）、webSearchCall 行（type=web_search_call，web_search_call 列存单条 WebSearchCallData 的 JSON）、customToolCall 行（type=custom_tool_call，custom_tool_call 列存单条 CustomToolCallData 的 JSON），合并后通过注入的 MessageToolCallService.saveBatch 一次批量插入；getMessages 从 MessageToolCall 表读取各行，按 type 分类反序列化：web_search_call 行聚合为 List<WebSearchCallData>、custom_tool_call 行聚合为 List<CustomToolCallData>，tool_result 行不进入 toolCalls 列表，并通过匹配 message.tool_call_id 与 MessageToolCall 行构造 ToolInfo 填充 MessageDTO.toolInfo，其余行按普通工具调用处理（读 type 构建 ToolCallData）；getMessages 记忆点过滤：通过 memoryPointCache（ConcurrentHashMap，TTL 60 秒，最大 2000 条时先清理过期条目，sessionId→MemoryPointCacheEntry（含 memoryPointSequenceNum 与 expireAt））缓存会话记忆点，命中未过期缓存直接返回；session.memoryPointSequenceNum 非 null 时在查询追加 sequence_num >= memoryPoint 的 ge 过滤条件，其余消息全量查询返回，不再做消息组截断（已移除 resolveMemoryTruncationBounds 方法与 TruncationBounds record，及 AgentConfig/AgentConfigMapper 依赖）；提供 rollbackToLastUserMessage 软回滚能力"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultContextDataProvider.java",
@@ -11,7 +11,7 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/controller/SessionController.java",
-      "description": "会话管理 REST 控制器，提供会话的 CRUD、消息查询、回滚、子会话列表查询、子会话数据获取（映射 thinking 字段）、子会话完成等 HTTP API 端点"
+      "description": "会话管理 REST 控制器，提供会话的 CRUD、消息查询、回滚、子会话列表查询、子会话数据获取（映射 thinking 字段）、子会话完成等 HTTP API 端点；注入 SessionMemoryService 提供 GET /api/sessions/{id}/memory/trigger 端点（调用 triggerSessionMemory 手动触发记忆摘要生成）"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/session/SessionService.java",
@@ -51,7 +51,7 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/dto/ApiResponse.java",
-      "description": "统一 API 响应体 {code,success,message,data}，含 success/fail 静态工厂方法"
+      "description": "统一 API 响应体 {code,success,message,data}，含 success/fail 静态工厂方法；ErrorCode 引用 platform-data 模块的 com.ghost616.platform.enums.ErrorCode"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/dto/PageResult.java",
@@ -59,7 +59,7 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/config/GlobalExceptionHandler.java",
-      "description": "全局异常处理器 @RestControllerAdvice，处理 BaseException/Validation/兜底异常"
+      "description": "全局异常处理器 @RestControllerAdvice，处理 BaseException/Validation/兜底异常；ErrorCode/BaseException 引用 platform-data 模块（com.ghost616.platform.enums.ErrorCode / com.ghost616.platform.exception.BaseException）"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/config/WebConfig.java",
@@ -400,6 +400,46 @@
     {
       "path": "platform-app/src/test/java/com/ghost616/platform/service/agent/DefaultChatDataCacheProviderTest.java",
       "description": "DefaultChatDataCacheProvider 单元测试：覆盖 createCache/cacheExists/isCacheDone/getCacheId/getCacheIdsBySessionId/getCacheSessionInfo/getMaxChunkIndex/appendChunk/removeCache/getChunks 全部公共方法（含缓存不存在、边界、越界截断、已结束不再追加等场景），并新增并发测试用例（ExecutorService + CountDownLatch 多写多读验证线程安全与 done 状态可见性）"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/dto/agent/AgentConfigDTO.java",
+      "description": "智能体配置数据传输对象（DTO），含 id/name/description/systemPrompt/modelId/status/recentMessageCount/memoryEnabled/memoryGroupCount/vectorModelId/tools/skills/knowledgeBases/createTime/updateTime 字段，id/modelId/vectorModelId 使用 ToStringSerializer 序列化为字符串"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/dto/agent/AgentCreateRequest.java",
+      "description": "智能体创建请求 DTO，含 name/description/systemPrompt/modelId/recentMessageCount/memoryEnabled/memoryGroupCount/vectorModelId/tools/skills/knowledgeBaseIds 字段"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/dto/agent/AgentUpdateRequest.java",
+      "description": "智能体更新请求 DTO，含 name/description/systemPrompt/modelId/recentMessageCount/memoryEnabled/memoryGroupCount/vectorModelId/tools/skills/knowledgeBaseIds 字段"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/AgentConfigServiceImpl.java",
+      "description": "智能体配置服务实现，提供 list/getById/create/update/delete/toggleStatus 能力；create/update 时校验 name 唯一性、skills 存在性及记忆功能参数（memoryEnabled=true 时要求 vectorModelId 必填否则抛 AGENT-CONFIG-004，且 memoryGroupCount ≥ recentMessageCount×3 否则抛 AGENT-CONFIG-003）；维护 tools/skills/knowledgeBaseIds 关联关系（含 sessionAuth 默认 ALL），toDTO 映射 memoryEnabled/memoryGroupCount/vectorModelId 及知识库名称"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/model/SessionMemoryDocument.java",
+      "description": "会话记忆 ES 文档模型，对应 Elasticsearch 索引 session_memory 的文档结构，字段 sessionId(String)/aggregationStartSeq(Integer)/aggregationEndSeq(Integer)/aggregationText(String)/vector(List<Float>)"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/service/search/SessionMemoryESClient.java",
+      "description": "会话记忆 ES 客户端（@Service），封装索引 session_memory 的创建与批量写入：createIndex 建索引（sessionId/keyword、aggregationStartSeq/integer、aggregationEndSeq/integer、aggregationText/text(ik)、vector/dense_vector(cosine)，索引已存在跳过）、batchSave 通过 bulk 批量写入（doc id=sessionId_startSeq_endSeq，索引不存在自动创建），IOException 包装为 IllegalStateException"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/service/memory/SessionMemoryService.java",
+      "description": "会话记忆聚合服务（@Service + @Scheduled cron=0 0 1 * * ?）：每天凌晨 1 点聚合所有 memoryEnabled=true 智能体会话的新增消息——计算新记忆点 sequenceNum，取新旧记忆点间消息；buildMemoryDocuments 流程：消息按 user 分组后每组直接用 extractGroupContent 提取原始内容（拼接每条消息「【role】: content」后直接 trim 返回，不做截断，不调用 LLM）→ 调用 LLM 对所有组内容做主题归类（classifyTopics，SYSTEM_TOPIC_CLASSIFY_PROMPT 含约束「仅相邻片段可归为同一主题，不相邻的相同主题片段也必须使用不同标签以保持连续」；输出「序号. 主题」行格式，parseTopics 用静态常量 TOPIC_LINE_PATTERN 正则解析，按 LinkedHashMap<序号,主题> 收集并按序号 1..N 映射（LLM 乱序输出时也能正确对应），过滤空白主题标签，序号不完整或数量不匹配时回退每组单独成组）→ 按主题将同类组合并为大组（mergeByTopic 连续合并：遍历 groupSummaries 时 currTopic 变化即切分新组，不依赖 LinkedHashMap 全局合并，不相邻的同主题片段不再合并）→ 每个大组调用 LLM 做汇总摘要（summarizeTopicGroup；归类失败降级时跳过该汇总调用，直接使用原组原始内容作为文档文本）→ 每类生成一个 SessionMemoryDocument，aggregationStartSeq/aggregationEndSeq 为大组内第一组 startSeq 到最后一组 endSeq（该类覆盖的完整消息区间）；汇总摘要经向量模型向量化，经 SessionMemoryESClient.batchSave 写入 ES，成功后更新 session.memoryPointSequenceNum；记忆点不变跳过；单个会话失败重试 5 次后 SLF4J 写日志。新增 triggerSessionMemory(Long sessionId) 手动触发方法：校验会话/智能体存在且 memoryEnabled=true（否则分别抛 SESSION_NOT_FOUND/AGENT_NOT_FOUND/AGENT_MEMORY_NOT_ENABLED），校验通过后通过 CompletableFuture.runAsync 异步执行 processSessionWithRetry"
+    },
+    {
+      "path": "platform-app/src/test/java/com/ghost616/platform/model/SessionMemoryDocumentTest.java",
+      "description": "SessionMemoryDocument 单元测试：覆盖 builder/noArgs/allArgs 三种构造方式对各字段的设置与取值"
+    },
+    {
+      "path": "platform-app/src/test/java/com/ghost616/platform/service/search/SessionMemoryESClientTest.java",
+      "description": "SessionMemoryESClient 单元测试：覆盖 indexExists、createIndex（索引不存在创建/mapping 5 字段校验、索引已存在跳过）、batchSave（索引自动创建并 bulk 写入、doc id 校验、空列表不写入、IOException 包装）"
+    },
+    {
+      "path": "platform-app/src/test/java/com/ghost616/platform/service/memory/SessionMemoryServiceTest.java",
+      "description": "SessionMemoryService 单元测试：覆盖无记忆智能体直接返回、新消息聚合写入 ES 并更新记忆点、记忆点不变跳过、未配置向量模型跳过、会话处理失败重试 5 次、摘要失败该组跳过"
     }
   ]
 }

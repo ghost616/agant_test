@@ -5,7 +5,10 @@ import com.ghost616.agentbase.dto.model.ToolInfo;
 import com.ghost616.agentbase.service.agent.MessageDataProvider;
 import com.ghost616.platform.dto.ApiResponse;
 import com.ghost616.platform.dto.session.SubSessionDataDTO;
+import com.ghost616.platform.enums.ErrorCode;
+import com.ghost616.platform.exception.BusinessException;
 import com.ghost616.platform.service.agent.DefaultSubSessionCallback;
+import com.ghost616.platform.service.memory.SessionMemoryService;
 import com.ghost616.platform.service.session.SessionService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,6 +31,9 @@ class SessionControllerTest {
 
     @Mock
     private DefaultSubSessionCallback subSessionCallback;
+
+    @Mock
+    private SessionMemoryService sessionMemoryService;
 
     @InjectMocks
     private SessionController controller;
@@ -88,6 +94,26 @@ class SessionControllerTest {
 
         assertTrue(response.isSuccess());
         assertNull(response.getData());
+    }
+
+    @Test
+    void triggerSessionMemory_shouldTriggerAndReturnSuccess() {
+        ApiResponse<Void> response = controller.triggerSessionMemory(1L);
+
+        assertTrue(response.isSuccess());
+        assertEquals("记忆摘要生成已触发", response.getMessage());
+        verify(sessionMemoryService).triggerSessionMemory(1L);
+    }
+
+    @Test
+    void triggerSessionMemory_shouldPropagateSessionNotFound() {
+        doThrow(new BusinessException(ErrorCode.SESSION_NOT_FOUND))
+                .when(sessionMemoryService).triggerSessionMemory(999L);
+
+        BusinessException ex = assertThrows(BusinessException.class, () -> controller.triggerSessionMemory(999L));
+
+        assertEquals(ErrorCode.SESSION_NOT_FOUND, ex.getErrorCode());
+        verify(sessionMemoryService).triggerSessionMemory(999L);
     }
 
     @Test

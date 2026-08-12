@@ -28,9 +28,9 @@ import com.ghost616.agentbase.dto.model.ToolCallDelta;
 import com.ghost616.agentbase.dto.model.ToolDefinition;
 import com.ghost616.agentbase.dto.model.UsageInfo;
 import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
-import com.ghost616.agentbase.enums.ErrorCode;
+import com.ghost616.agentbase.enums.AgentErrorCode;
 import com.ghost616.agentbase.enums.FinishReason;
-import com.ghost616.agentbase.exception.BusinessException;
+import com.ghost616.agentbase.exception.AgentException;
 import com.ghost616.agentbase.service.model.invoker.ModelInvoker;
 
 
@@ -78,13 +78,13 @@ public class OpenAIInvoker implements ModelInvoker {
             return parseResponse(responseBody);
         } catch (HttpClientErrorException | HttpServerErrorException e) {
             log.error("OpenAI invoke HTTP error: status={}", e.getStatusCode().value());
-            throw new BusinessException(ErrorCode.MODEL_INVOKE_ERROR,
+            throw new AgentException(AgentErrorCode.MODEL_INVOKE_ERROR,
                     "HTTP " + e.getStatusCode().value() + ": " + e.getResponseBodyAsString());
-        } catch (BusinessException e) {
+        } catch (AgentException e) {
             throw e;
         } catch (Exception e) {
             log.error("OpenAI invoke error", e);
-            throw new BusinessException(ErrorCode.MODEL_INVOKE_ERROR, e.getMessage());
+            throw new AgentException(AgentErrorCode.MODEL_INVOKE_ERROR, e.getMessage());
         }
     }
 
@@ -118,11 +118,11 @@ public class OpenAIInvoker implements ModelInvoker {
                         })
                         .onErrorResume(this::handleStreamError);
             });
-        } catch (BusinessException e) {
+        } catch (AgentException e) {
             return Flux.error(e);
         } catch (Exception e) {
             log.error("OpenAI invokeStream error", e);
-            return Flux.error(new BusinessException(ErrorCode.MODEL_INVOKE_ERROR, e.getMessage()));
+            return Flux.error(new AgentException(AgentErrorCode.MODEL_INVOKE_ERROR, e.getMessage()));
         }
     }
 
@@ -142,13 +142,13 @@ public class OpenAIInvoker implements ModelInvoker {
             return parseEmbeddingResponse(responseBody);
         } catch (HttpClientErrorException | HttpServerErrorException e) {
             log.error("OpenAI embed HTTP error: status={}", e.getStatusCode().value());
-            throw new BusinessException(ErrorCode.MODEL_INVOKE_ERROR,
+            throw new AgentException(AgentErrorCode.MODEL_INVOKE_ERROR,
                     "HTTP " + e.getStatusCode().value() + ": " + e.getResponseBodyAsString());
-        } catch (BusinessException e) {
+        } catch (AgentException e) {
             throw e;
         } catch (Exception e) {
             log.error("OpenAI embed error", e);
-            throw new BusinessException(ErrorCode.MODEL_INVOKE_ERROR, e.getMessage());
+            throw new AgentException(AgentErrorCode.MODEL_INVOKE_ERROR, e.getMessage());
         }
     }
 
@@ -164,11 +164,11 @@ public class OpenAIInvoker implements ModelInvoker {
             return true;
         } catch (HttpClientErrorException | HttpServerErrorException e) {
             log.error("OpenAI verify HTTP error: status={}", e.getStatusCode().value());
-            throw new BusinessException(ErrorCode.MODEL_VERIFY_ERROR,
+            throw new AgentException(AgentErrorCode.MODEL_VERIFY_ERROR,
                     "HTTP " + e.getStatusCode().value() + ": " + e.getResponseBodyAsString());
         } catch (Exception e) {
             log.error("OpenAI verify error", e);
-            throw new BusinessException(ErrorCode.MODEL_VERIFY_ERROR, e.getMessage());
+            throw new AgentException(AgentErrorCode.MODEL_VERIFY_ERROR, e.getMessage());
         }
     }
 
@@ -258,7 +258,7 @@ public class OpenAIInvoker implements ModelInvoker {
             return builder.build();
         } catch (Exception e) {
             log.error("Failed to parse OpenAI embedding response", e);
-            throw new BusinessException(ErrorCode.MODEL_INVOKE_ERROR,
+            throw new AgentException(AgentErrorCode.MODEL_INVOKE_ERROR,
                     "Failed to parse embedding response: " + e.getMessage());
         }
     }
@@ -386,7 +386,7 @@ public class OpenAIInvoker implements ModelInvoker {
             return builder.build();
         } catch (Exception e) {
             log.error("Failed to parse OpenAI response", e);
-            throw new BusinessException(ErrorCode.MODEL_INVOKE_ERROR, "Failed to parse response: " + e.getMessage());
+            throw new AgentException(AgentErrorCode.MODEL_INVOKE_ERROR, "Failed to parse response: " + e.getMessage());
         }
     }
 

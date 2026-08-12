@@ -38,8 +38,8 @@ import com.ghost616.agentbase.dto.model.ChatResponse;
 import com.ghost616.agentbase.dto.model.EmbeddingRequest;
 import com.ghost616.agentbase.dto.model.EmbeddingResponse;
 import com.ghost616.agentbase.enums.CommonStatus;
-import com.ghost616.agentbase.enums.ErrorCode;
-import com.ghost616.agentbase.exception.BusinessException;
+import com.ghost616.platform.enums.ErrorCode;
+import com.ghost616.platform.exception.BusinessException;
 import com.ghost616.agentbase.service.model.invoker.ModelInvoker;
 import com.ghost616.platform.util.IdConverter;
 

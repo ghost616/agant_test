@@ -13,9 +13,9 @@ import reactor.core.publisher.Mono;
 import com.ghost616.agentbase.dto.model.ChatChunk;
 import com.ghost616.agentbase.dto.model.ChatRequest;
 import com.ghost616.agentbase.dto.model.ChatResponse;
-import com.ghost616.agentbase.enums.ErrorCode;
+import com.ghost616.agentbase.enums.AgentErrorCode;
 import com.ghost616.agentbase.enums.FinishReason;
-import com.ghost616.agentbase.exception.BusinessException;
+import com.ghost616.agentbase.exception.AgentException;
 
 
 /**
@@ -55,13 +55,13 @@ public class AzureInvoker extends OpenAIInvoker {
             return parseResponse(responseBody);
         } catch (HttpClientErrorException | HttpServerErrorException e) {
             log.error("Azure invoke HTTP error: status={}", e.getStatusCode().value());
-            throw new BusinessException(ErrorCode.MODEL_INVOKE_ERROR,
+            throw new AgentException(AgentErrorCode.MODEL_INVOKE_ERROR,
                     "HTTP " + e.getStatusCode().value() + ": " + e.getResponseBodyAsString());
-        } catch (BusinessException e) {
+        } catch (AgentException e) {
             throw e;
         } catch (Exception e) {
             log.error("Azure invoke error", e);
-            throw new BusinessException(ErrorCode.MODEL_INVOKE_ERROR, e.getMessage());
+            throw new AgentException(AgentErrorCode.MODEL_INVOKE_ERROR, e.getMessage());
         }
     }
 
@@ -94,12 +94,12 @@ public class AzureInvoker extends OpenAIInvoker {
                         })
                         .onErrorResume(this::handleStreamError);
             });
-        } catch (BusinessException e) {
+        } catch (AgentException e) {
             return Flux.error(e);
         } catch (Exception e) {
             log.error("Azure invokeStream error", e);
             return Flux.error(
-                    new BusinessException(ErrorCode.MODEL_INVOKE_ERROR, e.getMessage()));
+                    new AgentException(AgentErrorCode.MODEL_INVOKE_ERROR, e.getMessage()));
         }
     }
 
@@ -115,11 +115,11 @@ public class AzureInvoker extends OpenAIInvoker {
             return true;
         } catch (HttpClientErrorException | HttpServerErrorException e) {
             log.error("Azure verify HTTP error: status={}", e.getStatusCode().value());
-            throw new BusinessException(ErrorCode.MODEL_VERIFY_ERROR,
+            throw new AgentException(AgentErrorCode.MODEL_VERIFY_ERROR,
                     "HTTP " + e.getStatusCode().value() + ": " + e.getResponseBodyAsString());
         } catch (Exception e) {
             log.error("Azure verify error", e);
-            throw new BusinessException(ErrorCode.MODEL_VERIFY_ERROR, e.getMessage());
+            throw new AgentException(AgentErrorCode.MODEL_VERIFY_ERROR, e.getMessage());
         }
     }
 }

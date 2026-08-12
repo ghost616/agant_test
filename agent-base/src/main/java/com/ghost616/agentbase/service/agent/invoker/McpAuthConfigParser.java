@@ -1,8 +1,8 @@
 package com.ghost616.agentbase.service.agent.invoker;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ghost616.agentbase.enums.ErrorCode;
-import com.ghost616.agentbase.exception.BusinessException;
+import com.ghost616.agentbase.enums.AgentErrorCode;
+import com.ghost616.agentbase.exception.AgentException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -34,13 +34,13 @@ public final class McpAuthConfigParser {
                     result.put(header, value);
                 }
             } else {
-                throw new BusinessException(ErrorCode.TOOL_INVOKE_ERROR,
+                throw new AgentException(AgentErrorCode.TOOL_INVOKE_ERROR,
                         "不支持的 MCP 认证类型: " + type);
             }
-        } catch (BusinessException e) {
+        } catch (AgentException e) {
             throw e;
         } catch (Exception e) {
-            throw new BusinessException(ErrorCode.TOOL_INVOKE_ERROR,
+            throw new AgentException(AgentErrorCode.TOOL_INVOKE_ERROR,
                     "解析 MCP 认证配置失败: " + e.getMessage());
         }
         return result;

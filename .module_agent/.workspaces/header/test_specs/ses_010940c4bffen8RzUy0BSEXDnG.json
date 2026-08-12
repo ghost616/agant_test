@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_010940c4bffen8RzUy0BSEXDnG",
+  "content": "## E2E 测试：AgentList 记忆功能\n\n### 变更内容\n- e2e/AgentList.spec.ts 中三处\"记忆分组数量\"文案改为\"保留记忆数量\"：\n  1. 第216行 `.filter({ hasText: '保留记忆数量' })`（memoryGroupCountInput helper）\n  2. 第228行测试用例名称\"新增弹窗存在记忆功能 Switch 与保留记忆数量 InputNumber\"\n  3. 第236行测试用例名称\"记忆功能关闭时保留记忆数量输入框 disabled，开启时可编辑\"\n\n### 验证方式\n运行 `npx playwright test e2e/AgentList.spec.ts --grep \"记忆\"`，确认所有记忆相关用例通过。\n\n### 前置依赖\n- 页面源码 src/pages/agents/AgentList.tsx 中对应 label 已同步改为\"保留记忆数量\"。",
+  "timestamp": "2026-08-11T06:06:32.777Z"
+}

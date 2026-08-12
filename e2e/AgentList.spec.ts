@@ -225,22 +225,24 @@ test.describe('智能体管理页 - 记忆功能', () => {
     await page.waitForSelector('.ant-table', { timeout: 60000 });
   });
 
-  test('新增弹窗存在记忆功能 Switch 与保留记忆数量 InputNumber', async ({ page }) => {
+  test('新增弹窗存在记忆功能 Switch，开启记忆后显示保留记忆数量 InputNumber', async ({ page }) => {
     await page.getByRole('button', { name: '新增智能体' }).click();
     await page.locator('.ant-modal').waitFor();
 
     await expect(memorySwitch(page)).toBeVisible();
+    await expect(memoryGroupCountInput(page)).not.toBeVisible();
+    await memorySwitch(page).click();
     await expect(memoryGroupCountInput(page)).toBeVisible();
   });
 
-  test('记忆功能关闭时保留记忆数量输入框 disabled，开启时可编辑', async ({ page }) => {
+  test('记忆功能关闭时保留记忆数量输入框隐藏，开启时显示', async ({ page }) => {
     await page.getByRole('button', { name: '新增智能体' }).click();
     await page.locator('.ant-modal').waitFor();
 
-    await expect(memoryGroupCountInput(page)).toHaveClass(/ant-input-number-disabled/);
+    await expect(memoryGroupCountInput(page)).not.toBeVisible();
 
     await memorySwitch(page).click();
-    await expect(memoryGroupCountInput(page)).not.toHaveClass(/ant-input-number-disabled/);
+    await expect(memoryGroupCountInput(page)).toBeVisible();
   });
 
   test('记忆功能开启后输入大于 100 的值不被限制（无 max 上限）', async ({ page }) => {

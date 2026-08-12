@@ -1,48 +1,24 @@
 {
   "corrections": [
     {
-      "content": "PublishStatus 枚举应放在 platform-data 模块，而非 agent-base",
-      "timestamp": "2026-08-06T05:32:08.185Z"
+      "content": "工具类 ObjectMapper 替换为 JsonMapper",
+      "timestamp": "2026-08-11T04:17:53.530Z"
+    },
+    {
+      "content": "所有 TOOL_NAME 引用都要用各工具类自身的常量",
+      "timestamp": "2026-08-11T04:17:54.013Z"
+    },
+    {
+      "content": "修改 AgentExecutionContext 后都需要同步修改 browser_tool_executor.js；所有数据库添加字段的操作都需要修改 SchemaMigration",
+      "timestamp": "2026-08-11T04:17:54.649Z"
     },
     {
       "content": "platform-app 相关的错误码（包括知识库发布类新错误码）应放在 platform-data 模块，而非 agent-base 或 platform-app",
-      "timestamp": "2026-08-06T05:35:05.662Z"
-    },
-    {
-      "content": "知识库的 ES Index 字段不能在前台修改只能展示，编辑弹窗中改为 disabled 只读状态，提交时不发送 esIndex",
-      "timestamp": "2026-08-06T08:28:12.928Z"
-    },
-    {
-      "content": "ES Index 只在知识库列表页表格中展示，编辑弹窗中不应出现 ES Index 字段",
-      "timestamp": "2026-08-06T08:55:10.361Z"
+      "timestamp": "2026-08-11T04:19:20.164Z"
     },
     {
       "content": "文件发布时文本块向量化需要批量处理，每 5000 字符一批，而不是逐行单独调用 embedding API",
-      "timestamp": "2026-08-06T09:24:02.271Z"
-    },
-    {
-      "content": "1. searchType 需构建枚举 SearchType(VECTOR/FULLTEXT/HYBRID)；2. 工具类 ObjectMapper 替换为 JsonMapper；3. KnowledgeSearchTool 未按 contextLines 获取额外块，返回应为文件信息列表(kbId+fileId+chunks)；4. TextChunkWithFile 缺 knowledgeBaseId；5. KnowledgeFileInfoTool 加 fileId 查询参数；6. KnowledgeFileChunkTool 返回单个 TextChunkWithFile；7. KnowledgeBaseInfoTool 无参数，sessionId 从 AgentExecutionContext 获取",
-      "timestamp": "2026-08-07T02:48:17.700Z"
-    },
-    {
-      "content": "KnowledgeSearchTool.buildResult 逻辑应改为：收集所有上下文本块→按(kbId,fileId)分组→去重→合并相邻块",
-      "timestamp": "2026-08-07T03:44:08.217Z"
-    },
-    {
-      "content": "DefaultToolDataProvider 的 KNOWLEDGE_TOOL_NAMES 应使用各知识库工具类自身的 TOOL_NAME 常量（如 KnowledgeBaseInfoTool.TOOL_NAME），而非硬编码字符串；getKnowledgeToolConfig 应调用各工具的 createToolConfig() 方法（设置 id 为工具名），而非创建最小化 ToolConfigDTO",
-      "timestamp": "2026-08-07T07:37:45.491Z"
-    },
-    {
-      "content": "AgentContextMutator不需要getConversationId方法，只需setConversationId()。对话ID每次用户发消息时由前端调用接口生成新的。browser_tool_executor.js也有AgentExecutionContext需要同步修改。SchemaMigration需要添加conversation_id字段迁移。",
-      "timestamp": "2026-08-08T01:59:58.668Z"
-    },
-    {
-      "content": "browser_tool_executor.js也有AgentExecutionContext需要同步修改。SchemaMigration需要添加conversation_id字段迁移。MessageSavePostHook需要从context获取conversationId传入messageSave。ToolExecutionService保存tool消息时也需要传入conversationId。",
-      "timestamp": "2026-08-08T02:02:30.796Z"
-    },
-    {
-      "content": "1. AgentAssembler不需要自己持有AgentLog字段，注册时直接设置到registry；2. LogName枚举改为日志类型枚举",
-      "timestamp": "2026-08-09T02:33:28.502Z"
+      "timestamp": "2026-08-11T04:19:20.801Z"
     }
   ]
 }

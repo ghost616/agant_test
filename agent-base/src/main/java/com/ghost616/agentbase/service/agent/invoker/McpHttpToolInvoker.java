@@ -1,8 +1,8 @@
 package com.ghost616.agentbase.service.agent.invoker;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ghost616.agentbase.enums.ErrorCode;
-import com.ghost616.agentbase.exception.BusinessException;
+import com.ghost616.agentbase.enums.AgentErrorCode;
+import com.ghost616.agentbase.exception.AgentException;
 import com.ghost616.agentbase.service.agent.AgentExecutionContext;
 import lombok.extern.slf4j.Slf4j;
 
@@ -47,11 +47,11 @@ public class McpHttpToolInvoker implements ToolInvoker {
                 }
             }
             return sb.toString();
-        } catch (BusinessException e) {
+        } catch (AgentException e) {
             throw e;
         } catch (Exception e) {
             log.error("MCP HTTP 工具执行异常: url={}, tool={}", mcpServerUrl, toolName, e);
-            throw new BusinessException(ErrorCode.TOOL_EXECUTE_ERROR,
+            throw new AgentException(AgentErrorCode.TOOL_EXECUTE_ERROR,
                     "MCP HTTP 工具执行异常: " + e.getMessage());
         }
     }
@@ -66,7 +66,7 @@ public class McpHttpToolInvoker implements ToolInvoker {
             Map<String, Object> result = mapper.readValue(arguments, Map.class);
             return result == null ? Map.of() : result;
         } catch (Exception e) {
-            throw new BusinessException(ErrorCode.TOOL_INVOKE_ERROR,
+            throw new AgentException(AgentErrorCode.TOOL_INVOKE_ERROR,
                     "MCP 工具参数解析失败: " + e.getMessage());
         }
     }

@@ -1,0 +1,12 @@
+[
+  {
+    "plan_id": "plan_09f9230a-2da1-407a-a99b-cbc19e0279c8",
+    "plan": "精简 platform-data 的 ErrorCode 枚举，移除未使用的 UNAUTHORIZED、DUPLICATE_KEY、NOT_FOUND、EVALUATION_SESSION_NOT_CREATED 四个错误码，同步更新测试文件引用",
+    "modified_files": [
+      "platform-data/src/main/java/com/ghost616/platform/enums/ErrorCode.java",
+      "platform-data/src/test/java/com/ghost616/platform/enums/ErrorCodeTest.java"
+    ],
+    "summary": "已从 ErrorCode.java 移除 UNAUTHORIZED、EVALUATION_SESSION_NOT_CREATED（DUPLICATE_KEY、NOT_FOUND 本就不存在于 platform-data 的 ErrorCode，属于 agent-base 的 AgentErrorCode）；ErrorCodeTest 计数 33→31，移除对应断言。枚举总数现为 31。",
+    "errors": []
+  }
+]

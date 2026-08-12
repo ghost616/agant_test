@@ -5,6 +5,7 @@ import com.ghost616.platform.dto.session.CreateSessionRequest;
 import com.ghost616.platform.dto.session.SessionDTO;
 import com.ghost616.platform.dto.session.SubSessionDataDTO;
 import com.ghost616.platform.service.session.SessionService;
+import com.ghost616.platform.service.memory.SessionMemoryService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -21,7 +22,7 @@ import java.util.List;
 
 import com.ghost616.agentbase.dto.model.Message;
 import com.ghost616.agentbase.dto.model.ToolCall;
-import com.ghost616.agentbase.enums.ErrorCode;
+import com.ghost616.platform.enums.ErrorCode;
 import com.ghost616.agentbase.service.agent.MessageDataProvider;
 import com.ghost616.platform.service.agent.DefaultSubSessionCallback;
 
@@ -35,6 +36,7 @@ public class SessionController {
 
     private final SessionService sessionService;
     private final DefaultSubSessionCallback subSessionCallback;
+    private final SessionMemoryService sessionMemoryService;
 
     @GetMapping
     public ApiResponse<List<SessionDTO>> listSessions(@RequestParam(required = false) Long agentId) {
@@ -77,6 +79,12 @@ public class SessionController {
     public ApiResponse<List<SessionDTO>> listChildSessions(@PathVariable Long id) {
         List<SessionDTO> result = sessionService.listChildSessions(id);
         return ApiResponse.success(result);
+    }
+
+    @GetMapping("/{id}/memory/trigger")
+    public ApiResponse<Void> triggerSessionMemory(@PathVariable Long id) {
+        sessionMemoryService.triggerSessionMemory(id);
+        return ApiResponse.success("记忆摘要生成已触发", null);
     }
 
     @GetMapping("/{id}/sub-session-data")

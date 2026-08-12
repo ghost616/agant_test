@@ -3,10 +3,10 @@ package com.ghost616.agentbase.service.agent;
 import com.ghost616.agentbase.core.AgentComponentRegistry;
 import com.ghost616.agentbase.dto.model.ToolInfo;
 import com.ghost616.agentbase.dto.model.UsageInfo;
-import com.ghost616.agentbase.enums.ErrorCode;
+import com.ghost616.agentbase.enums.AgentErrorCode;
 import com.ghost616.agentbase.enums.LogLevel;
 import com.ghost616.agentbase.enums.LogType;
-import com.ghost616.agentbase.exception.BusinessException;
+import com.ghost616.agentbase.exception.AgentException;
 import com.ghost616.agentbase.service.agent.log.AgentLog;
 import com.ghost616.agentbase.service.agent.log.LogData;
 import com.ghost616.agentbase.service.agent.log.MessageQueryLogData;
@@ -46,32 +46,32 @@ class SessionManagerTest {
     }
 
     @Test
-    void save_sessionId为null时抛出BusinessException() {
+    void save_sessionId为null时抛出AgentException() {
         SessionManager.MessageSaveBuilder builder = sessionManager.messageSave()
                 .role("user")
                 .content("hello");
-        BusinessException ex = assertThrows(BusinessException.class, builder::save);
-        assertEquals(ErrorCode.PARAM_INVALID, ex.getErrorCode());
+        AgentException ex = assertThrows(AgentException.class, builder::save);
+        assertEquals(AgentErrorCode.PARAM_INVALID, ex.getErrorCode());
         assertTrue(ex.getMessage().contains("sessionId 不能为空"));
     }
 
     @Test
-    void save_role为null时抛出BusinessException() {
+    void save_role为null时抛出AgentException() {
         SessionManager.MessageSaveBuilder builder = sessionManager.messageSave()
                 .sessionId("1")
                 .content("hello");
-        BusinessException ex = assertThrows(BusinessException.class, builder::save);
-        assertEquals(ErrorCode.PARAM_INVALID, ex.getErrorCode());
+        AgentException ex = assertThrows(AgentException.class, builder::save);
+        assertEquals(AgentErrorCode.PARAM_INVALID, ex.getErrorCode());
         assertTrue(ex.getMessage().contains("role 不能为空"));
     }
 
     @Test
-    void save_content为null时抛出BusinessException() {
+    void save_content为null时抛出AgentException() {
         SessionManager.MessageSaveBuilder builder = sessionManager.messageSave()
                 .sessionId("1")
                 .role("user");
-        BusinessException ex = assertThrows(BusinessException.class, builder::save);
-        assertEquals(ErrorCode.PARAM_INVALID, ex.getErrorCode());
+        AgentException ex = assertThrows(AgentException.class, builder::save);
+        assertEquals(AgentErrorCode.PARAM_INVALID, ex.getErrorCode());
         assertTrue(ex.getMessage().contains("content 不能为空"));
     }
 
@@ -181,7 +181,7 @@ class SessionManagerTest {
     void save校验失败时应记录ERROR日志() {
         SessionManager.MessageSaveBuilder builder = sessionManager.messageSave()
                 .role("user").content("hello");
-        assertThrows(BusinessException.class, builder::save);
+        assertThrows(AgentException.class, builder::save);
 
         ArgumentCaptor<LogData> captor = ArgumentCaptor.forClass(LogData.class);
         verify(agentLog).addLog(captor.capture());
@@ -191,7 +191,7 @@ class SessionManagerTest {
         assertEquals(LogLevel.ERROR, errorLog.getLogLevel());
         assertNull(errorLog.getSessionId());
         assertNull(errorLog.getConversationId());
-        assertEquals(ErrorCode.PARAM_INVALID.getCode(), errorLog.getErrorCode());
+        assertEquals(AgentErrorCode.PARAM_INVALID.getCode(), errorLog.getErrorCode());
         assertTrue(errorLog.getMessage().contains("sessionId 不能为空"));
     }
 

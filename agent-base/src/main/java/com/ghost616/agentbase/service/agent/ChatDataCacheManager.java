@@ -1,10 +1,10 @@
 package com.ghost616.agentbase.service.agent;
 
 import com.ghost616.agentbase.dto.model.ChatChunk;
-import com.ghost616.agentbase.enums.ErrorCode;
+import com.ghost616.agentbase.enums.AgentErrorCode;
 import com.ghost616.agentbase.enums.FinishReason;
 import com.ghost616.agentbase.enums.LogLevel;
-import com.ghost616.agentbase.exception.BusinessException;
+import com.ghost616.agentbase.exception.AgentException;
 import com.ghost616.agentbase.service.agent.log.AgentLog;
 import com.ghost616.agentbase.service.agent.log.ChatCacheLogData;
 import com.ghost616.agentbase.service.agent.log.LogData;
@@ -73,24 +73,24 @@ public class ChatDataCacheManager {
 
     /**
      * 为指定会话与对话创建缓存并返回缓存 ID。
-     * 当缓存已存在时抛出 {@link BusinessException}。
+     * 当缓存已存在时抛出 {@link AgentException}。
      *
      * @param sessionId      会话 ID
      * @param conversationId 对话 ID
      * @return 缓存 ID
-     * @throws BusinessException 缓存已存在
+     * @throws AgentException 缓存已存在
      */
     public String startCache(String sessionId, String conversationId) {
         if (provider.cacheExists(sessionId, conversationId)) {
             log.warn("缓存已存在, sessionId={}, conversationId={}", sessionId, conversationId);
             addCacheLog(LogLevel.ERROR, OPERATION_CACHE_START, null, sessionId, conversationId);
-            throw new BusinessException(ErrorCode.DUPLICATE_KEY, "缓存已存在");
+            throw new AgentException(AgentErrorCode.DUPLICATE_KEY, "缓存已存在");
         }
         String cacheId = provider.createCache(sessionId, conversationId);
         if (cacheId == null) {
             log.warn("创建缓存失败, sessionId={}, conversationId={}", sessionId, conversationId);
             addCacheLog(LogLevel.ERROR, OPERATION_CACHE_START, null, sessionId, conversationId);
-            throw new BusinessException(ErrorCode.DUPLICATE_KEY, "缓存已存在");
+            throw new AgentException(AgentErrorCode.DUPLICATE_KEY, "缓存已存在");
         }
         addCacheLog(LogLevel.INFO, OPERATION_CACHE_START, cacheId, sessionId, conversationId);
         return cacheId;
@@ -98,20 +98,20 @@ public class ChatDataCacheManager {
 
     /**
      * 将聊天块追加到缓存。
-     * 缓存不存在或缓存已结束时抛出 {@link BusinessException}。
+     * 缓存不存在或缓存已结束时抛出 {@link AgentException}。
      *
      * @param cacheId 缓存 ID
      * @param chunk   聊天块
-     * @throws BusinessException 缓存不存在或缓存已结束
+     * @throws AgentException 缓存不存在或缓存已结束
      */
     public void appendChunk(String cacheId, ChatChunk chunk) {
         if (!provider.cacheExists(cacheId)) {
             addCacheLog(LogLevel.ERROR, OPERATION_CACHE_APPEND, cacheId, null, null);
-            throw new BusinessException(ErrorCode.NOT_FOUND, "缓存不存在");
+            throw new AgentException(AgentErrorCode.NOT_FOUND, "缓存不存在");
         }
         if (provider.isCacheDone(cacheId)) {
             addCacheLog(LogLevel.ERROR, OPERATION_CACHE_APPEND, cacheId, null, null);
-            throw new BusinessException(ErrorCode.PARAM_INVALID, "缓存已结束");
+            throw new AgentException(AgentErrorCode.PARAM_INVALID, "缓存已结束");
         }
         provider.appendChunk(cacheId, chunk);
         if (agentLog != null) {
@@ -136,7 +136,7 @@ public class ChatDataCacheManager {
 
     /**
      * 从缓存读取从 startIndex 开始的聊天块并转为 SSE 流返回。
-     * 缓存不存在、缓存无数据（maxIndex < 0）或 startIndex 大于最大序号时抛出 {@link BusinessException}。
+     * 缓存不存在、缓存无数据（maxIndex < 0）或 startIndex 大于最大序号时抛出 {@link AgentException}。
      * 通过自定义 {@link Iterator} 同步轮询驱动：初始数据与新增块均按 lastIndex+1 起拉取并检查 finishReason，
      * 无新数据时 sleep 一个轮询间隔并输出空数据块保持流活跃，
      * 直至遇到 finishReason 非 null 的块或超时（生成 finishReason=ERROR 结束块）。
@@ -144,18 +144,18 @@ public class ChatDataCacheManager {
      * @param cacheId    缓存 ID
      * @param startIndex 起始序号
      * @return SSE 聊天块流
-     * @throws BusinessException 缓存不存在、缓存无数据或起始序号越界
+     * @throws AgentException 缓存不存在、缓存无数据或起始序号越界
      */
     public Flux<ServerSentEvent<ChatChunk>> getStream(String cacheId, int startIndex) {
         if (!provider.cacheExists(cacheId)) {
-            throw new BusinessException(ErrorCode.NOT_FOUND, "缓存不存在");
+            throw new AgentException(AgentErrorCode.NOT_FOUND, "缓存不存在");
         }
         int maxIndex = provider.getMaxChunkIndex(cacheId);
         if (maxIndex < 0) {
-            throw new BusinessException(ErrorCode.NOT_FOUND, "缓存无数据");
+            throw new AgentException(AgentErrorCode.NOT_FOUND, "缓存无数据");
         }
         if (startIndex > maxIndex) {
-            throw new BusinessException(ErrorCode.PARAM_INVALID, "起始序号超过最大序号");
+            throw new AgentException(AgentErrorCode.PARAM_INVALID, "起始序号超过最大序号");
         }
 
         addCacheLog(LogLevel.INFO, OPERATION_CACHE_STREAM, cacheId, null, null);

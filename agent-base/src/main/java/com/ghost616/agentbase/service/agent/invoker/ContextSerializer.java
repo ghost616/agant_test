@@ -6,8 +6,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.ghost616.agentbase.dto.model.ToolCall;
 import com.ghost616.agentbase.dto.skill.SkillConfigDTO;
 import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
-import com.ghost616.agentbase.enums.ErrorCode;
-import com.ghost616.agentbase.exception.BusinessException;
+import com.ghost616.agentbase.enums.AgentErrorCode;
+import com.ghost616.agentbase.exception.AgentException;
 import com.ghost616.agentbase.service.agent.AgentExecutionContext;
 
 public final class ContextSerializer {
@@ -109,7 +109,7 @@ public final class ContextSerializer {
 
             return MAPPER.writeValueAsString(root);
         } catch (Exception e) {
-            throw new BusinessException(ErrorCode.TOOL_INVOKE_ERROR,
+            throw new AgentException(AgentErrorCode.TOOL_INVOKE_ERROR,
                     "序列化上下文失败: " + e.getMessage());
         }
     }

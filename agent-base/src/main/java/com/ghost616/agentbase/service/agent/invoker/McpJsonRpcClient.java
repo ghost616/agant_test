@@ -2,8 +2,8 @@ package com.ghost616.agentbase.service.agent.invoker;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ghost616.agentbase.enums.ErrorCode;
-import com.ghost616.agentbase.exception.BusinessException;
+import com.ghost616.agentbase.enums.AgentErrorCode;
+import com.ghost616.agentbase.exception.AgentException;
 import lombok.extern.slf4j.Slf4j;
 
 import java.net.URI;
@@ -93,7 +93,7 @@ public class McpJsonRpcClient {
                     HttpResponse.BodyHandlers.ofString());
 
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
-                throw new BusinessException(ErrorCode.TOOL_EXECUTE_ERROR,
+                throw new AgentException(AgentErrorCode.TOOL_EXECUTE_ERROR,
                         "MCP HTTP 请求失败: HTTP " + response.statusCode() + " - " + response.body());
             }
 
@@ -109,16 +109,16 @@ public class McpJsonRpcClient {
 
             if (responseMap.containsKey("error")) {
                 Map<String, Object> error = (Map<String, Object>) responseMap.get("error");
-                throw new BusinessException(ErrorCode.TOOL_EXECUTE_ERROR,
+                throw new AgentException(AgentErrorCode.TOOL_EXECUTE_ERROR,
                         "MCP JSON-RPC 错误: " + error.get("message"));
             }
 
             return (Map<String, Object>) responseMap.get("result");
-        } catch (BusinessException e) {
+        } catch (AgentException e) {
             throw e;
         } catch (Exception e) {
             log.error("MCP JSON-RPC 通信异常: url={}", serverUrl, e);
-            throw new BusinessException(ErrorCode.TOOL_EXECUTE_ERROR,
+            throw new AgentException(AgentErrorCode.TOOL_EXECUTE_ERROR,
                     "MCP JSON-RPC 通信异常: " + e.getMessage());
         }
     }

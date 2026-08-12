@@ -9,11 +9,11 @@ import com.ghost616.agentbase.dto.model.WebSearchCall;
 import com.ghost616.agentbase.dto.skill.SkillConfigDTO;
 import com.ghost616.agentbase.dto.tool.McpExpandedToolDTO;
 import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
-import com.ghost616.agentbase.enums.ErrorCode;
+import com.ghost616.agentbase.enums.AgentErrorCode;
 import com.ghost616.agentbase.enums.LogLevel;
 import com.ghost616.agentbase.enums.SessionAuthType;
 import com.ghost616.agentbase.enums.ToolType;
-import com.ghost616.agentbase.exception.BusinessException;
+import com.ghost616.agentbase.exception.AgentException;
 import com.ghost616.agentbase.sendmessage.ChildCreateSession;
 import com.ghost616.agentbase.sendmessage.ConversationIdMessage;
 import com.ghost616.agentbase.sendmessage.HistoryMessage;
@@ -117,10 +117,10 @@ public class AgentContextManager {
                 addLog(SessionErrorLogData.builder()
                         .logLevel(LogLevel.ERROR)
                         .sessionId(sessionId)
-                        .errorCode(ErrorCode.SESSION_NOT_FOUND.getCode())
+                        .errorCode(AgentErrorCode.SESSION_NOT_FOUND.getCode())
                         .message("会话上下文构建失败: 会话未找到: " + sessionId)
                         .build());
-                throw new BusinessException(ErrorCode.SESSION_NOT_FOUND);
+                throw new AgentException(AgentErrorCode.SESSION_NOT_FOUND);
             }
 
             String agentId = ctxData.agentId();

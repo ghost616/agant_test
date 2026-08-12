@@ -12,6 +12,8 @@ import com.ghost616.platform.entity.AgentConfig;
 import com.ghost616.platform.entity.Message;
 import com.ghost616.platform.entity.ModelConfig;
 import com.ghost616.platform.entity.Session;
+import com.ghost616.platform.enums.ErrorCode;
+import com.ghost616.platform.exception.BusinessException;
 import com.ghost616.platform.model.SessionMemoryDocument;
 import com.ghost616.platform.repository.AgentConfigMapper;
 import com.ghost616.platform.repository.MessageMapper;
@@ -28,6 +30,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -85,6 +88,26 @@ public class SessionMemoryService {
         for (Session session : sessions) {
             processSessionWithRetry(session, agentMap.get(session.getAgentId()));
         }
+    }
+
+    /**
+     * 手动触发单个会话的记忆摘要聚合：校验会话与智能体存在且智能体已开启记忆功能后，异步执行聚合。
+     *
+     * @param sessionId 会话 ID
+     */
+    public void triggerSessionMemory(Long sessionId) {
+        Session session = sessionMapper.selectById(sessionId);
+        if (session == null) {
+            throw new BusinessException(ErrorCode.SESSION_NOT_FOUND);
+        }
+        AgentConfig agentConfig = agentConfigMapper.selectById(session.getAgentId());
+        if (agentConfig == null) {
+            throw new BusinessException(ErrorCode.AGENT_NOT_FOUND);
+        }
+        if (!Boolean.TRUE.equals(agentConfig.getMemoryEnabled())) {
+            throw new BusinessException(ErrorCode.AGENT_MEMORY_NOT_ENABLED);
+        }
+        CompletableFuture.runAsync(() -> processSessionWithRetry(session, agentConfig));
     }
 
     private void processSessionWithRetry(Session session, AgentConfig agentConfig) {

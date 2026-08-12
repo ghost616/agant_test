@@ -12,8 +12,8 @@ import reactor.core.publisher.Flux;
 import com.ghost616.agentbase.dto.model.ChatChunk;
 import com.ghost616.agentbase.dto.model.ChatRequest;
 import com.ghost616.agentbase.dto.model.ChatResponse;
-import com.ghost616.agentbase.enums.ErrorCode;
-import com.ghost616.agentbase.exception.BusinessException;
+import com.ghost616.agentbase.enums.AgentErrorCode;
+import com.ghost616.agentbase.exception.AgentException;
 
 /**
  * Azure OpenAI 平台 Responses API 模型调用器。
@@ -55,13 +55,13 @@ public class AzureResponsesInvoker extends OpenAIResponsesInvoker {
             return parseResponse(responseBody);
         } catch (HttpClientErrorException | HttpServerErrorException e) {
             log.error("Azure Responses invoke HTTP error: status={}", e.getStatusCode().value());
-            throw new BusinessException(ErrorCode.MODEL_INVOKE_ERROR,
+            throw new AgentException(AgentErrorCode.MODEL_INVOKE_ERROR,
                     "HTTP " + e.getStatusCode().value() + ": " + e.getResponseBodyAsString());
-        } catch (BusinessException e) {
+        } catch (AgentException e) {
             throw e;
         } catch (Exception e) {
             log.error("Azure Responses invoke error", e);
-            throw new BusinessException(ErrorCode.MODEL_INVOKE_ERROR, e.getMessage());
+            throw new AgentException(AgentErrorCode.MODEL_INVOKE_ERROR, e.getMessage());
         }
     }
 
@@ -83,11 +83,11 @@ public class AzureResponsesInvoker extends OpenAIResponsesInvoker {
                         .concatMap(this::parseStreamEvent)
                         .onErrorResume(this::handleStreamError);
             });
-        } catch (BusinessException e) {
+        } catch (AgentException e) {
             return Flux.error(e);
         } catch (Exception e) {
             log.error("Azure Responses invokeStream error", e);
-            return Flux.error(new BusinessException(ErrorCode.MODEL_INVOKE_ERROR, e.getMessage()));
+            return Flux.error(new AgentException(AgentErrorCode.MODEL_INVOKE_ERROR, e.getMessage()));
         }
     }
 
@@ -103,11 +103,11 @@ public class AzureResponsesInvoker extends OpenAIResponsesInvoker {
             return true;
         } catch (HttpClientErrorException | HttpServerErrorException e) {
             log.error("Azure Responses verify HTTP error: status={}", e.getStatusCode().value());
-            throw new BusinessException(ErrorCode.MODEL_VERIFY_ERROR,
+            throw new AgentException(AgentErrorCode.MODEL_VERIFY_ERROR,
                     "HTTP " + e.getStatusCode().value() + ": " + e.getResponseBodyAsString());
         } catch (Exception e) {
             log.error("Azure Responses verify error", e);
-            throw new BusinessException(ErrorCode.MODEL_VERIFY_ERROR, e.getMessage());
+            throw new AgentException(AgentErrorCode.MODEL_VERIFY_ERROR, e.getMessage());
         }
     }
 }

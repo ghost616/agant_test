@@ -128,5 +128,11 @@
   "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultChatDataCacheProvider.java": "5d25f47603a49eb4e3fd0209560acbb1",
   "platform-app/src/test/java/com/ghost616/platform/service/agent/DefaultChatDataCacheProviderTest.java": "1ab189105f286c5a08dbc187076d91c0",
   "platform-app/src/main/java/com/ghost616/platform/controller/EvaluationExecutionController.java": "7a3b05efe1f52cd599b93bf011d28bfd",
-  "platform-app/src/test/java/com/ghost616/platform/controller/EvaluationExecutionControllerTest.java": "b23785367df92754eb0992619f2c5388"
+  "platform-app/src/test/java/com/ghost616/platform/controller/EvaluationExecutionControllerTest.java": "b23785367df92754eb0992619f2c5388",
+  "agent-base/src/test/java/com/ghost616/agentbase/enums/ErrorCodeTest.java": "e8972da1bb672007ebbd2d018c268736",
+  "platform-app/src/main/java/com/ghost616/platform/service/memory/SessionMemoryService.java": "ed29250b27d327ed26bdfa82ee99dbaa",
+  "platform-app/src/test/java/com/ghost616/platform/service/memory/SessionMemoryServiceTest.java": "964bd3d8b5b2f967e8c2e221df6d7c92",
+  "platform-app/src/main/java/com/ghost616/platform/dto/ApiResponse.java": "62b3d3e6bce43872b8211f3f058aaaa5",
+  "platform-data/src/main/java/com/ghost616/platform/enums/ErrorCode.java": "e1e172e1f953384c0ae366f1f6df7ffa",
+  "platform-app/src/test/java/com/ghost616/platform/controller/SessionControllerTest.java": "c4c171192994e930cdab621001e4c124"
 }

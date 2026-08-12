@@ -32,4 +32,16 @@ class AgentConfigEntityTest {
         AgentConfig config = new AgentConfig();
         assertEquals(30, config.getMemoryGroupCount(), "memoryGroupCount default value should be 30");
     }
+
+    @Test
+    void vectorModelIdField() throws Exception {
+        Field field = AgentConfig.class.getDeclaredField("vectorModelId");
+        assertNotNull(field);
+        assertEquals(Long.class, field.getType());
+        assertEquals("vector_model_id", field.getAnnotation(TableField.class).value());
+
+        AgentConfig config = new AgentConfig();
+        config.setVectorModelId(100L);
+        assertEquals(100L, config.getVectorModelId());
+    }
 }

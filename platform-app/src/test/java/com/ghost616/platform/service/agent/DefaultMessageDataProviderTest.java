@@ -5,7 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import com.ghost616.agentbase.dto.model.ToolInfo;
 import com.ghost616.agentbase.dto.model.UsageInfo;
-import com.ghost616.agentbase.exception.BusinessException;
+import com.ghost616.platform.exception.BusinessException;
 import com.ghost616.agentbase.service.agent.MessageDataProvider.MessageDTO;
 import com.ghost616.agentbase.service.agent.MessageDataProvider.ToolCallData;
 import com.ghost616.agentbase.service.agent.MessageDataProvider.CustomToolCallData;

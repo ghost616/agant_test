@@ -38,12 +38,12 @@ import com.ghost616.agentbase.dto.model.ToolCall;
 import com.ghost616.agentbase.dto.model.ToolDefinition;
 import com.ghost616.agentbase.dto.skill.SkillConfigDTO;
 import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
-import com.ghost616.agentbase.enums.ErrorCode;
+import com.ghost616.agentbase.enums.AgentErrorCode;
 import com.ghost616.agentbase.enums.HookPhase;
 import com.ghost616.agentbase.enums.LogLevel;
 import com.ghost616.agentbase.enums.RequestType;
 import com.ghost616.agentbase.enums.SessionAuthType;
-import com.ghost616.agentbase.exception.BusinessException;
+import com.ghost616.agentbase.exception.AgentException;
 import com.ghost616.agentbase.service.agent.invoker.HistoryQuerySystemTool;
 import com.ghost616.agentbase.service.agent.invoker.LoadSkillsSystemTool;
 import com.ghost616.agentbase.service.agent.invoker.SystemToolManager;
@@ -124,10 +124,10 @@ public class ChatService {
                 addLog(ErrorLogData.builder()
                         .logLevel(LogLevel.ERROR)
                         .context(context)
-                        .errorCode(ErrorCode.PARAM_INVALID.getCode())
+                        .errorCode(AgentErrorCode.PARAM_INVALID.getCode())
                         .message("conversationId 不能为空")
                         .build());
-                throw new BusinessException(ErrorCode.PARAM_INVALID, "conversationId 不能为空");
+                throw new AgentException(AgentErrorCode.PARAM_INVALID, "conversationId 不能为空");
             }
             contextMutator.setConversationId(conversationId);
             sessionManager.messageSave().sessionId(sessionId).role("user").content(content)
@@ -161,10 +161,10 @@ public class ChatService {
             addLog(ErrorLogData.builder()
                     .logLevel(LogLevel.ERROR)
                     .context(context)
-                    .errorCode(ErrorCode.MODEL_NOT_FOUND.getCode())
+                    .errorCode(AgentErrorCode.MODEL_NOT_FOUND.getCode())
                     .message("模型配置不存在: " + finalModelId)
                     .build());
-            throw new BusinessException(ErrorCode.MODEL_NOT_FOUND);
+            throw new AgentException(AgentErrorCode.MODEL_NOT_FOUND);
         }
 
         hookManager.triggerSessionHooks(sessionId, HookPhase.SESSION_START, context, new HookData((ChatChunk) null));
@@ -684,7 +684,7 @@ public class ChatService {
             addLog(ErrorLogData.builder()
                     .logLevel(LogLevel.ERROR)
                     .context(context)
-                    .errorCode(ErrorCode.SYSTEM_ERROR.getCode())
+                    .errorCode(AgentErrorCode.SYSTEM_ERROR.getCode())
                     .message("解析已加载技能列表失败")
                     .exception(e)
                     .build());
@@ -793,7 +793,7 @@ public class ChatService {
                 addLog(ErrorLogData.builder()
                         .logLevel(LogLevel.WARN)
                         .context(context)
-                        .errorCode(ErrorCode.SYSTEM_ERROR.getCode())
+                        .errorCode(AgentErrorCode.SYSTEM_ERROR.getCode())
                         .message("序列化历史组消息失败")
                         .exception(e)
                         .build());
@@ -854,7 +854,7 @@ public class ChatService {
             addLog(ErrorLogData.builder()
                     .logLevel(LogLevel.ERROR)
                     .context(context)
-                    .errorCode(ErrorCode.SYSTEM_ERROR.getCode())
+                    .errorCode(AgentErrorCode.SYSTEM_ERROR.getCode())
                     .message("解析历史消息展开索引失败")
                     .exception(e)
                     .build());

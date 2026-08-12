@@ -41,5 +41,6 @@
   "agent-integration/src/test/java/com/ghost616/agentinteg/tool/KnowledgeFileInfoToolTest.java": "000356e1f6188ab5a3da1eed008b6682",
   "agent-integration/src/main/java/com/ghost616/agentinteg/model/invoker/AzureInvoker.java": "d6902f40da538338d23a7be1e5084943",
   "agent-integration/src/test/java/com/ghost616/agentinteg/model/invoker/OpenAIInvokerTest.java": "de7862abcfce43dd97de7a5eea791ab8",
-  "agent-integration/src/test/java/com/ghost616/agentinteg/model/invoker/OllamaInvokerTest.java": "6d0e7f4ea72a0afda795c5a8fd58ddf2"
+  "agent-integration/src/test/java/com/ghost616/agentinteg/model/invoker/OllamaInvokerTest.java": "6d0e7f4ea72a0afda795c5a8fd58ddf2",
+  "agent-integration/src/main/java/com/ghost616/agentinteg/model/invoker/AzureResponsesInvoker.java": "36402f56be439b485589a96203b32377"
 }

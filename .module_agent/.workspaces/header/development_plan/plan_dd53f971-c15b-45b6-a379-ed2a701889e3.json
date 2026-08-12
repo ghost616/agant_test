@@ -1,0 +1,14 @@
+{
+  "plan_id": "plan_dd53f971-c15b-45b6-a379-ed2a701889e3",
+  "module_name": "platform-data",
+  "development_plan": "ErrorCode 枚举与异常类迁移：\n1. 新建 ErrorCode 枚举（com.ghost616.platform.enums.ErrorCode），包含从 agent-base 移出的全部业务错误码：UNAUTHORIZED, MODEL_ALREADY_EXISTS, MODEL_UNSUPPORTED, TOOL_NOT_FOUND, TOOL_ALREADY_EXISTS, TOOL_SCHEMA_INVALID, AGENT_NOT_FOUND, AGENT_ALREADY_EXISTS, AGENT_MEMORY_GROUP_INVALID, AGENT_MEMORY_VECTOR_MODEL_REQUIRED, SKILL_NOT_FOUND, SKILL_ALREADY_EXISTS, SESSION_NO_USER_MESSAGE, SUB_SESSION_DATA_NOT_FOUND, CHILD_SESSION_NO_MESSAGES, EVALUATION_NOT_FOUND, EVALUATION_ALREADY_EXISTS, EVALUATION_BENCHMARK_NO_USER_MESSAGE, EVALUATION_EXECUTION_STATUS_NOT_FOUND, EVALUATION_SESSION_NOT_CREATED, EVALUATION_RESULT_GENERATE_ERROR, EVALUATION_RESULT_NOT_FOUND, AGENT_EVALUATION_NOT_FOUND, AGENT_EVALUATION_ALREADY_EXISTS, KNOWLEDGE_BASE_NOT_FOUND, KNOWLEDGE_BASE_ALREADY_EXISTS, KNOWLEDGE_FILE_NOT_FOUND, KNOWLEDGE_FILE_PUBLISHING，加新增 AGENT_MEMORY_NOT_ENABLED('AGENT-CONFIG-005', '智能体未开启记忆功能')\n2. 移入 BaseException 类（复制自 agent-base，将 ErrorCode 类型改为 platform-data 的 ErrorCode）\n3. 移入 BusinessException 类（复制自 agent-base，extends 新的 BaseException）\n4. 更新 platform-data 测试文件中的导入",
+  "session_id": "ses_00c713bbcffeOcIqExArkXrDX5",
+  "modified_files": [
+    "platform-data/src/main/java/com/ghost616/platform/enums/ErrorCode.java",
+    "platform-data/src/main/java/com/ghost616/platform/exception/BaseException.java",
+    "platform-data/src/main/java/com/ghost616/platform/exception/BusinessException.java",
+    "platform-data/src/test/java/com/ghost616/platform/enums/ErrorCodeTest.java",
+    "platform-data/src/test/java/com/ghost616/platform/exception/BaseExceptionTest.java",
+    "platform-data/src/test/java/com/ghost616/platform/exception/BusinessExceptionTest.java"
+  ]
+}

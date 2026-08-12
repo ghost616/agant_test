@@ -12,6 +12,8 @@ import com.ghost616.platform.entity.AgentConfig;
 import com.ghost616.platform.entity.Message;
 import com.ghost616.platform.entity.ModelConfig;
 import com.ghost616.platform.entity.Session;
+import com.ghost616.platform.enums.ErrorCode;
+import com.ghost616.platform.exception.BusinessException;
 import com.ghost616.platform.model.SessionMemoryDocument;
 import com.ghost616.platform.repository.AgentConfigMapper;
 import com.ghost616.platform.repository.MessageMapper;
@@ -518,5 +520,68 @@ class SessionMemoryServiceTest {
         assertEquals(7, docs.get(2).getAggregationEndSeq());
         assertEquals("汇总A2", docs.get(2).getAggregationText());
         verify(llmInvoker, times(4)).invoke(any(ChatRequest.class));
+    }
+
+    @Test
+    @DisplayName("手动触发：会话不存在抛 SESSION_NOT_FOUND")
+    void trigger_sessionNotFound_throws() {
+        when(sessionMapper.selectById(999L)).thenReturn(null);
+
+        BusinessException ex = assertThrows(BusinessException.class, () -> service.triggerSessionMemory(999L));
+        assertEquals(ErrorCode.SESSION_NOT_FOUND, ex.getErrorCode());
+        verify(sessionMemoryESClient, never()).batchSave(any());
+    }
+
+    @Test
+    @DisplayName("手动触发：智能体不存在抛 AGENT_NOT_FOUND")
+    void trigger_agentNotFound_throws() {
+        Session s = session(100L, 999L, 1);
+        when(sessionMapper.selectById(100L)).thenReturn(s);
+        when(agentConfigMapper.selectById(999L)).thenReturn(null);
+
+        BusinessException ex = assertThrows(BusinessException.class, () -> service.triggerSessionMemory(100L));
+        assertEquals(ErrorCode.AGENT_NOT_FOUND, ex.getErrorCode());
+        verify(sessionMemoryESClient, never()).batchSave(any());
+    }
+
+    @Test
+    @DisplayName("手动触发：智能体未开启记忆功能抛 AGENT_MEMORY_NOT_ENABLED")
+    void trigger_memoryDisabled_throws() {
+        Session s = session(100L, 5L, 1);
+        when(sessionMapper.selectById(100L)).thenReturn(s);
+        AgentConfig agent = memoryAgent(5L);
+        agent.setMemoryEnabled(false);
+        when(agentConfigMapper.selectById(5L)).thenReturn(agent);
+
+        BusinessException ex = assertThrows(BusinessException.class, () -> service.triggerSessionMemory(100L));
+        assertEquals(ErrorCode.AGENT_MEMORY_NOT_ENABLED, ex.getErrorCode());
+        verify(sessionMemoryESClient, never()).batchSave(any());
+    }
+
+    @Test
+    @DisplayName("手动触发：校验通过后异步聚合生成记忆文档")
+    void trigger_success_generatesDocuments() throws Exception {
+        Session s = session(100L, 5L, null);
+        when(sessionMapper.selectById(100L)).thenReturn(s);
+        when(agentConfigMapper.selectById(5L)).thenReturn(memoryAgent(5L));
+
+        when(messageMapper.countUserMessages(100L)).thenReturn(3L);
+        when(messageMapper.findNthUserSequenceNum(100L, 1)).thenReturn(4);
+        List<Message> newMessages = List.of(
+                message(1L, 100L, "user", "q1", 1, false),
+                message(2L, 100L, "assistant", "a1", 2, false));
+        when(messageMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(newMessages);
+
+        stubInvokers();
+        when(llmInvoker.invoke(any(ChatRequest.class)))
+                .thenReturn(ChatResponse.builder().content("1. 技术").build())
+                .thenReturn(ChatResponse.builder().content("汇总").build());
+
+        service.triggerSessionMemory(100L);
+
+        verify(sessionMapper).selectById(100L);
+        verify(agentConfigMapper).selectById(5L);
+        verify(sessionMemoryESClient, timeout(5000)).batchSave(any());
+        verify(sessionMapper, timeout(5000)).updateById(s);
     }
 }

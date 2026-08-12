@@ -53,6 +53,8 @@
 - 表单工具/技能选择使用 SessionAuthSelect 组件：多选 + 每项可配置 sessionAuth 下拉（默认 ALL）
 - 表格列中 tools/skills 显示为 Tag 标签，颜色区分 sessionAuth 类型（blue/green/orange）
 - 智能体绑定知识库：AgentConfig/AgentFormData 新增 knowledgeBaseIds?: string[] 字段，新增 KnowledgeBaseItem 类型（{ knowledgeBaseId: string; name: string }）；fetchRefData 并行加载知识库列表（listKnowledgeBases({})）构建 knowledgeBaseList 与 knowledgeBaseMap；表单新增"绑定知识库"多选 Select（mode=multiple，从知识库列表获取）；表格新增"绑定知识库"列（knowledgeBaseMap 映射 ID→名称渲染 Tag 列表，空显示 '-'）；createAgent/updateAgent 复用透传 knowledgeBaseIds
+- 智能体向量模型：AgentConfig 与 AgentFormData 新增 vectorModelId?: string 字段；AgentList fetchRefData 并行加载 listModels({modelType:'EMBEDDINGS'}) 构建 vectorModelList，编辑回填 vectorModelId，表单新增"向量模型"下拉（仅 memoryEnabled=true 时显示，hidden={!memoryEnabled}），提交时 memoryEnabled 为 false 则 vectorModelId 置 undefined
+- 记忆功能表单联动：memoryEnabled=false 时"保留记忆数量"（memoryGroupCount）与"向量模型"（vectorModelId）表单项均隐藏（hidden={!memoryEnabled}），memoryEnabled=true 时显示；提交时 memoryEnabled 为 false 则 vectorModelId 置 undefined
 ## 会话管理界面
 
 - Web 搜索结果显示：ChatChunk 新增 webSearchCall 字段（WebSearchCall[] 数组，每项 { itemId, outputIndex, results: [{ title, url, snippet }] }）和 customToolCall 字段，StreamCallbacks 新增 onWebSearchCall 回调（(calls: WebSearchCall[]) => void），processSSEStream 解析 chunk.webSearchCall 数组并回调

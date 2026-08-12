@@ -1,0 +1,63 @@
+package com.ghost616.platform.enums;
+
+/**
+ * 统一业务错误码枚举。
+ */
+public enum ErrorCode {
+
+    SYSTEM_ERROR("SYS-001", "系统内部错误"),
+    PARAM_INVALID("SYS-002", "参数校验失败"),
+
+    MODEL_NOT_FOUND("MODEL-CONFIG-001", "模型配置不存在"),
+    MODEL_UNSUPPORTED("MODEL-UNSUPPORTED-001", "不支持的平台类型"),
+    MODEL_ALREADY_EXISTS("MODEL-CONFIG-002", "模型名称已存在"),
+
+    TOOL_NOT_FOUND("TOOL-CONFIG-001", "工具配置不存在"),
+    TOOL_ALREADY_EXISTS("TOOL-CONFIG-002", "工具名称已存在"),
+    TOOL_SCHEMA_INVALID("TOOL-CONFIG-003", "工具参数 Schema 不合法"),
+
+    AGENT_NOT_FOUND("AGENT-CONFIG-001", "智能体配置不存在"),
+    AGENT_ALREADY_EXISTS("AGENT-CONFIG-002", "智能体名称已存在"),
+    AGENT_MEMORY_GROUP_INVALID("AGENT-CONFIG-003", "记忆节点组序号必须大于等于最近消息数量的3倍"),
+    AGENT_MEMORY_VECTOR_MODEL_REQUIRED("AGENT-CONFIG-004", "启用记忆功能时必须配置向量模型"),
+    AGENT_MEMORY_NOT_ENABLED("AGENT-CONFIG-005", "智能体未开启记忆功能"),
+
+    SKILL_NOT_FOUND("SKILL-CONFIG-001", "SKILL 配置不存在"),
+    SKILL_ALREADY_EXISTS("SKILL-CONFIG-002", "SKILL 名称已存在"),
+
+    SESSION_NOT_FOUND("SESSION-001", "会话不存在"),
+    SESSION_NO_USER_MESSAGE("SESSION-003", "会话中无用户消息"),
+    SUB_SESSION_DATA_NOT_FOUND("SESSION-004", "子会话数据不存在"),
+    CHILD_SESSION_NO_MESSAGES("SESSION-005", "子会话无消息"),
+
+    EVALUATION_NOT_FOUND("EVAL-001", "评估配置不存在"),
+    EVALUATION_ALREADY_EXISTS("EVAL-002", "评估名称已存在"),
+    EVALUATION_BENCHMARK_NO_USER_MESSAGE("EVAL-BENCH-001", "基准会话无用户消息"),
+    EVALUATION_EXECUTION_STATUS_NOT_FOUND("EVAL-EXEC-001", "执行状态未找到"),
+    EVALUATION_RESULT_GENERATE_ERROR("EVAL-EXEC-003", "评估结果生成失败"),
+    EVALUATION_RESULT_NOT_FOUND("EVAL-RES-001", "评估结果不存在"),
+
+    AGENT_EVALUATION_NOT_FOUND("AGENT-EVAL-001", "智能体评估不存在"),
+    AGENT_EVALUATION_ALREADY_EXISTS("AGENT-EVAL-002", "智能体评估名称已存在"),
+
+    KNOWLEDGE_BASE_NOT_FOUND("KNOWLEDGE-BASE-001", "知识库不存在"),
+    KNOWLEDGE_BASE_ALREADY_EXISTS("KNOWLEDGE-BASE-002", "知识库名称已存在"),
+    KNOWLEDGE_FILE_NOT_FOUND("KNOWLEDGE-FILE-001", "知识文件不存在"),
+    KNOWLEDGE_FILE_PUBLISHING("KNOWLEDGE-FILE-002", "知识文件正在发布中");
+
+    private final String code;
+    private final String message;
+
+    ErrorCode(String code, String message) {
+        this.code = code;
+        this.message = message;
+    }
+
+    public String getCode() {
+        return code;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+}

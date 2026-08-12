@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_01111d389ffeAL51rbXBzr9o52",
+  "content": "## 待测试功能说明\n\n### 变更内容\n1. src/pages/logs/AgentLogList.tsx 会话名列（第131行）：render 由 `(value?: string) => value || '-'` 改为 `(value?: string, record?: AgentLog) => value || record?.sessionId || '-'`。当会话名 sessionName 为空时展示会话 ID sessionId，两者均为空时展示 '-'。\n   - 注：此前一次提交用 `record: AgentLog`（必选）违反 TS1016（必选参数不能跟在可选参数后），本次已修复为 `record?` + 可选链访问。\n2. src/pages/logs/__tests__/AgentLogList.test.tsx 新增两条用例：\n   - 会话名为空时展示会话 ID（第一列表格单元格包含 '100'，且不出现 '会话A'）\n   - 会话名与会话 ID 均为空时展示占位符 '-'（第一列表格单元格包含 '-'）\n\n### 验证要求\n- 单元测试：`npx vitest run src/pages/logs/__tests__/AgentLogList.test.tsx` 全部通过\n- 编译测试：对 src/pages/logs/AgentLogList.tsx 做 tsc 检查，确认 TS1016 错误已消失（可执行 `npx tsc --noEmit` 并确认无 AgentLogList.tsx 相关新错误，忽略项目既有基线错误）\n\n### 涉及的代码文件\n- src/pages/logs/AgentLogList.tsx\n- src/pages/logs/__tests__/AgentLogList.test.tsx\n- src/types/log.ts（AgentLog 含 sessionId?: string 字段，无需修改）",
+  "timestamp": "2026-08-11T03:48:56.220Z"
+}

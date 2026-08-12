@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_00c52a8d8ffeMB495tVqjDwDqD",
+  "content": "## 待测试功能\n\n精简 platform-data 模块的 ErrorCode 枚举，移除未使用的错误码，并同步更新测试文件。\n\n### 涉及文件\n- platform-data/src/main/java/com/ghost616/platform/enums/ErrorCode.java：枚举值从 33 个精简为 31 个，移除 UNAUTHORIZED（SYS-004）和 EVALUATION_SESSION_NOT_CREATED（EVAL-EXEC-002）\n- platform-data/src/test/java/com/ghost616/platform/enums/ErrorCodeTest.java：断言从 33 改为 31，移除已删除枚举的断言\n\n### 测试功能点\n1. 编译测试：platform-data 模块 Maven 编译通过\n2. 单元测试：\n   - ErrorCodeTest.enumCountAndCodes：枚举数量为 31，各枚举 name 对应的 code 值正确，无残留已删除枚举\n   - ErrorCodeTest.messages：AGENT_NOT_FOUND、AGENT_MEMORY_NOT_ENABLED 的 message 正确\n   - BaseExceptionTest、BusinessExceptionTest 仍通过（引用的错误码均为保留项）",
+  "timestamp": "2026-08-12T01:55:11.794Z"
+}

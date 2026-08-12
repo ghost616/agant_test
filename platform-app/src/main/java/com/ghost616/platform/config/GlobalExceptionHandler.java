@@ -10,8 +10,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import com.ghost616.agentbase.enums.ErrorCode;
-import com.ghost616.agentbase.exception.BaseException;
+import com.ghost616.platform.enums.ErrorCode;
+import com.ghost616.platform.exception.BaseException;
 
 
 /**

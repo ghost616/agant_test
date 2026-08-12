@@ -231,9 +231,10 @@ describe('AgentList 记忆功能 (静态验证)', () => {
     expect(source).toContain("const memoryEnabled = Form.useWatch('memoryEnabled', form)");
   });
 
-  it('memoryEnabled 关闭时 memoryGroupCount 输入框 disabled', () => {
+  it('memoryEnabled 关闭时 memoryGroupCount 表单项隐藏（hidden={!memoryEnabled}）', () => {
     const source = readFileSync(resolve(__dirname, '../AgentList.tsx'), 'utf-8');
-    expect(source).toContain('disabled={!memoryEnabled}');
+    expect(source).toContain('hidden={!memoryEnabled}');
+    expect(source).not.toContain('disabled={!memoryEnabled}');
   });
 
   it('编辑时回填 memoryEnabled/memoryGroupCount', () => {

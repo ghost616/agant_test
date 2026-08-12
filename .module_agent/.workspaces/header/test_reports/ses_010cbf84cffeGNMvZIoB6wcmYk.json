@@ -1,0 +1,5 @@
+{
+  "lizhu_session_id": "ses_010cbf84cffeGNMvZIoB6wcmYk",
+  "content": "# 测试报告：AgentList 记忆功能文案调整 E2E\n\n## 变更内容确认\n\n`e2e/AgentList.spec.ts` 三处\"记忆分组数量\"文案已改为\"保留记忆数量\"：\n1. 第 216 行 `.filter({ hasText: '保留记忆数量' })`（memoryGroupCountInput helper）✓\n2. 第 228 行测试用例名称\"新增弹窗存在记忆功能 Switch 与保留记忆数量 InputNumber\" ✓\n3. 第 236 行测试用例名称\"记忆功能关闭时保留记忆数量输入框 disabled，开启时可编辑\" ✓\n\n前置依赖已满足：页面源码 `src/pages/agents/AgentList.tsx:530` 的 label 已同步改为\"保留记忆数量\"。\n\n## 测试执行\n\n验证命令：`npx playwright test e2e/AgentList.spec.ts --grep \"记忆\"`\n\n结果：**6 passed (1.2m)**\n\n| # | 用例 | 结果 |\n|---|------|------|\n| 1 | 新增弹窗存在记忆功能 Switch 与保留记忆数量 InputNumber | ✓ |\n| 2 | 记忆功能关闭时保留记忆数量输入框 disabled，开启时可编辑 | ✓ |\n| 3 | 记忆功能开启后输入大于 100 的值不被限制（无 max 上限） | ✓ |\n| 4 | 新增提交时 POST payload 携带 memoryEnabled 与 memoryGroupCount | ✓ |\n| 5 | 编辑弹窗回填 memoryEnabled/memoryGroupCount 值 | ✓ |\n| 6 | 编辑提交时 PUT payload 携带 memoryEnabled 与 memoryGroupCount | ✓ |\n\n## 说明\n\n- helper 定位依据文案\"保留记忆数量\"正确匹配到对应 Form.Item，说明源码 label 与 E2E 定位器一致。\n- 文案调整不影响既有功能断言（disabled 联动、无上限、payload 透传、编辑回填均保持通过）。\n\n## 结论\n\n文案变更验证通过，无回归。\n",
+  "timestamp": "2026-08-11T06:08:05.576Z"
+}

@@ -1,0 +1,406 @@
+package com.ghost616.platform.service.memory;
+
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.ghost616.agentbase.dto.model.ChatRequest;
+import com.ghost616.agentbase.dto.model.ChatResponse;
+import com.ghost616.agentbase.dto.model.EmbeddingRequest;
+import com.ghost616.agentbase.dto.model.EmbeddingResponse;
+import com.ghost616.agentbase.dto.model.ModelConfigData;
+import com.ghost616.agentbase.service.model.invoker.ModelInvoker;
+import com.ghost616.agentbase.service.model.invoker.ModelInvokerManager;
+import com.ghost616.platform.entity.AgentConfig;
+import com.ghost616.platform.entity.Message;
+import com.ghost616.platform.entity.ModelConfig;
+import com.ghost616.platform.entity.Session;
+import com.ghost616.platform.model.SessionMemoryDocument;
+import com.ghost616.platform.repository.AgentConfigMapper;
+import com.ghost616.platform.repository.MessageMapper;
+import com.ghost616.platform.repository.ModelConfigMapper;
+import com.ghost616.platform.repository.SessionMapper;
+import com.ghost616.platform.service.search.SessionMemoryESClient;
+import com.ghost616.platform.util.IdConverter;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+/**
+ * 会话记忆聚合服务：定时将启用记忆功能的智能体会话的新增消息按用户轮次摘要并向量化写入 ES 索引 session_memory。
+ */
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class SessionMemoryService {
+
+    /** 单个会话失败重试次数 */
+    private static final int MAX_RETRY = 5;
+
+    /** LLM 主题归类系统提示词 */
+    private static final String SYSTEM_TOPIC_CLASSIFY_PROMPT =
+            "你是对话主题归类助手。下面列出了若干对话片段，请为每个片段按行指定一个简短的主题标签。"
+                    + "仅相邻片段可归为同一主题，不相邻的相同主题片段也必须使用不同标签以保持连续。"
+                    + "输出格式为每行一个片段：\"序号. 主题\"，序号必须与输入顺序一致，主题控制在 4 字以内。";
+
+    /** LLM 大组汇总系统提示词 */
+    private static final String SYSTEM_GROUP_SUMMARY_PROMPT =
+            "你是对话摘要助手。下面是同一主题下的若干对话片段概要，请将其汇总为一段连贯的中文摘要，"
+                    + "保留关键事实、用户意图与结论，不超过 300 字。";
+
+    /** 主题归类行格式：序号. 主题（序号 + 点/顿号 + 主题） */
+    private static final Pattern TOPIC_LINE_PATTERN = Pattern.compile("^(\\d+)[.、．]\\s*(.*)$");
+
+    private final AgentConfigMapper agentConfigMapper;
+    private final SessionMapper sessionMapper;
+    private final MessageMapper messageMapper;
+    private final ModelConfigMapper modelConfigMapper;
+    private final ModelInvokerManager modelInvokerManager;
+    private final SessionMemoryESClient sessionMemoryESClient;
+
+    /**
+     * 每天凌晨 1 点执行：聚合所有 memoryEnabled=true 的智能体会话的新增消息为记忆文档。
+     */
+    @Scheduled(cron = "0 0 1 * * ?")
+    public void aggregateSessionMemories() {
+        List<Long> agentIds = queryMemoryEnabledAgentIds();
+        if (agentIds.isEmpty()) {
+            return;
+        }
+        LambdaQueryWrapper<Session> sessionWrapper = new LambdaQueryWrapper<>();
+        sessionWrapper.in(Session::getAgentId, agentIds)
+                .and(w -> w.isNull(Session::getIsEvaluation).or().ne(Session::getIsEvaluation, true));
+        List<Session> sessions = sessionMapper.selectList(sessionWrapper);
+        if (sessions.isEmpty()) {
+            return;
+        }
+        Map<Long, AgentConfig> agentMap = loadAgentMap(agentIds);
+        for (Session session : sessions) {
+            processSessionWithRetry(session, agentMap.get(session.getAgentId()));
+        }
+    }
+
+    private void processSessionWithRetry(Session session, AgentConfig agentConfig) {
+        Exception lastError = null;
+        for (int attempt = 1; attempt <= MAX_RETRY; attempt++) {
+            try {
+                processSession(session, agentConfig);
+                return;
+            } catch (Exception e) {
+                lastError = e;
+                if (attempt < MAX_RETRY) {
+                    log.warn("会话记忆聚合失败，准备第{}次重试, sessionId={}", attempt + 1, session.getId(), e);
+                }
+            }
+        }
+        log.error("会话记忆聚合失败，重试{}次后放弃, sessionId={}", MAX_RETRY, session.getId(), lastError);
+    }
+
+    private void processSession(Session session, AgentConfig agentConfig) {
+        if (agentConfig == null) {
+            log.warn("会话记忆聚合跳过：智能体不存在, sessionId={}, agentId={}", session.getId(), session.getAgentId());
+            return;
+        }
+        if (!Boolean.TRUE.equals(agentConfig.getMemoryEnabled())) {
+            return;
+        }
+        if (agentConfig.getVectorModelId() == null) {
+            log.warn("会话记忆聚合跳过：未配置向量模型, sessionId={}", session.getId());
+            return;
+        }
+
+        Integer oldPoint = session.getMemoryPointSequenceNum();
+        Integer newPoint = resolveNewMemoryPoint(session.getId(), agentConfig);
+        if (newPoint == null) {
+            return;
+        }
+        if (oldPoint != null && newPoint <= oldPoint) {
+            return;
+        }
+
+        List<Message> newMessages = queryMessagesBetween(session.getId(), oldPoint, newPoint);
+        if (newMessages.isEmpty()) {
+            return;
+        }
+
+        ModelInvoker llmInvoker = resolveLlmInvoker(session, agentConfig);
+        if (llmInvoker == null) {
+            log.warn("会话记忆聚合跳过：会话 LLM 模型不可用, sessionId={}", session.getId());
+            return;
+        }
+        ModelInvoker embedInvoker = resolveEmbedInvoker(agentConfig);
+        if (embedInvoker == null) {
+            log.warn("会话记忆聚合跳过：向量模型不可用, sessionId={}", session.getId());
+            return;
+        }
+
+        List<SessionMemoryDocument> documents = buildMemoryDocuments(
+                session.getId(), newMessages, llmInvoker, embedInvoker, agentConfig);
+        if (documents.isEmpty()) {
+            return;
+        }
+
+        sessionMemoryESClient.batchSave(documents);
+
+        session.setMemoryPointSequenceNum(newPoint);
+        sessionMapper.updateById(session);
+        Integer archivedEndSeq = documents.get(documents.size() - 1).getAggregationEndSeq();
+        log.info("会话记忆聚合完成, sessionId={}, startSeq={}, endSeq={}, memoryPoint={}, memoryCount={}",
+                session.getId(), oldPoint == null ? 1 : oldPoint + 1, archivedEndSeq, newPoint, documents.size());
+    }
+
+    private List<Long> queryMemoryEnabledAgentIds() {
+        LambdaQueryWrapper<AgentConfig> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(AgentConfig::getMemoryEnabled, true);
+        return agentConfigMapper.selectList(wrapper).stream()
+                .map(AgentConfig::getId)
+                .toList();
+    }
+
+    private Map<Long, AgentConfig> loadAgentMap(List<Long> agentIds) {
+        List<AgentConfig> agents = agentConfigMapper.selectBatchIds(agentIds);
+        return agents.stream()
+                .collect(Collectors.toMap(AgentConfig::getId, Function.identity(), (a, b) -> a));
+    }
+
+    private Integer resolveNewMemoryPoint(Long sessionId, AgentConfig agentConfig) {
+        if (agentConfig.getMemoryGroupCount() == null || agentConfig.getMemoryGroupCount() <= 0) {
+            return null;
+        }
+        Long totalGroups = messageMapper.countUserMessages(sessionId);
+        if (totalGroups == null) {
+            return null;
+        }
+        int skipGroups = totalGroups.intValue() - agentConfig.getMemoryGroupCount();
+        if (skipGroups <= 0) {
+            return null;
+        }
+        return messageMapper.findNthUserSequenceNum(sessionId, skipGroups);
+    }
+
+    private List<Message> queryMessagesBetween(Long sessionId, Integer oldPoint, Integer newPoint) {
+        LambdaQueryWrapper<Message> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Message::getSessionId, sessionId)
+                .eq(Message::getRollback, false)
+                .lt(Message::getSequenceNum, newPoint);
+        if (oldPoint != null) {
+            wrapper.gt(Message::getSequenceNum, oldPoint);
+        }
+        wrapper.orderByAsc(Message::getSequenceNum);
+        return messageMapper.selectList(wrapper);
+    }
+
+    private ModelInvoker resolveLlmInvoker(Session session, AgentConfig agentConfig) {
+        Long modelId = session.getModelId() != null ? session.getModelId() : agentConfig.getModelId();
+        if (modelId == null) {
+            return null;
+        }
+        ModelConfig config = modelConfigMapper.selectById(modelId);
+        if (config == null) {
+            return null;
+        }
+        return modelInvokerManager.getInvoker(buildModelConfigData(config));
+    }
+
+    private ModelInvoker resolveEmbedInvoker(AgentConfig agentConfig) {
+        ModelConfig config = modelConfigMapper.selectById(agentConfig.getVectorModelId());
+        if (config == null) {
+            return null;
+        }
+        return modelInvokerManager.getInvoker(buildModelConfigData(config));
+    }
+
+    private ModelConfigData buildModelConfigData(ModelConfig config) {
+        return new ModelConfigData(
+                IdConverter.toString(config.getId()),
+                config.getApiKey(),
+                config.getBaseUrl(),
+                config.getModelName(),
+                config.getTemperature(),
+                config.getMaxTokens(),
+                config.getPlatformType() != null ? config.getPlatformType().name() : null,
+                config.getRequestType()
+        );
+    }
+
+    private List<SessionMemoryDocument> buildMemoryDocuments(Long sessionId, List<Message> messages,
+                                                             ModelInvoker llmInvoker, ModelInvoker embedInvoker,
+                                                             AgentConfig agentConfig) {
+        List<List<Message>> groups = groupByUser(messages);
+        if (groups.isEmpty()) {
+            return List.of();
+        }
+
+        List<GroupSummary> groupSummaries = new ArrayList<>();
+        for (List<Message> group : groups) {
+            String content = extractGroupContent(group);
+            if (content == null || content.isBlank()) {
+                continue;
+            }
+            groupSummaries.add(new GroupSummary(group.get(0).getSequenceNum(),
+                    group.get(group.size() - 1).getSequenceNum(), content));
+        }
+        if (groupSummaries.isEmpty()) {
+            return List.of();
+        }
+
+        List<String> topics = classifyTopics(llmInvoker, groupSummaries);
+        List<List<GroupSummary>> topicGroups = mergeByTopic(groupSummaries, topics);
+        boolean classificationFailed = topics == null || topics.size() != groupSummaries.size();
+
+        List<SessionMemoryDocument> documents = new ArrayList<>();
+        for (List<GroupSummary> topicGroup : topicGroups) {
+            String summary = topicGroup.size() == 1 && classificationFailed
+                    ? topicGroup.get(0).summary()
+                    : summarizeTopicGroup(llmInvoker, topicGroup);
+            if (summary == null || summary.isBlank()) {
+                continue;
+            }
+            List<Float> vector = embedText(embedInvoker, agentConfig, summary);
+            if (vector == null || vector.isEmpty()) {
+                continue;
+            }
+            documents.add(SessionMemoryDocument.builder()
+                    .sessionId(IdConverter.toString(sessionId))
+                    .aggregationStartSeq(topicGroup.get(0).startSeq())
+                    .aggregationEndSeq(topicGroup.get(topicGroup.size() - 1).endSeq())
+                    .aggregationText(summary)
+                    .vector(vector)
+                    .build());
+        }
+        return documents;
+    }
+
+    private record GroupSummary(int startSeq, int endSeq, String summary) {}
+
+    private List<List<Message>> groupByUser(List<Message> messages) {
+        List<List<Message>> groups = new ArrayList<>();
+        List<Message> current = null;
+        for (Message m : messages) {
+            if ("user".equals(m.getRole())) {
+                current = new ArrayList<>();
+                groups.add(current);
+            }
+            if (current != null) {
+                current.add(m);
+            }
+        }
+        return groups;
+    }
+
+    private String extractGroupContent(List<Message> group) {
+        StringBuilder content = new StringBuilder();
+        for (Message m : group) {
+            String role = m.getRole() != null ? m.getRole() : "unknown";
+            String text = m.getContent() != null ? m.getContent() : "";
+            content.append("【").append(role).append("】: ").append(text).append("\n");
+        }
+        return content.toString().trim();
+    }
+
+    private List<String> classifyTopics(ModelInvoker invoker, List<GroupSummary> groupSummaries) {
+        StringBuilder content = new StringBuilder();
+        for (int i = 0; i < groupSummaries.size(); i++) {
+            GroupSummary gs = groupSummaries.get(i);
+            content.append(i + 1).append(". ").append(gs.summary()).append("\n");
+        }
+        String response = invokeLlm(invoker, SYSTEM_TOPIC_CLASSIFY_PROMPT, content.toString());
+        if (response == null || response.isBlank()) {
+            return List.of();
+        }
+        return parseTopics(response, groupSummaries.size());
+    }
+
+    private List<String> parseTopics(String response, int expectedCount) {
+        Map<Integer, String> topicByIndex = new LinkedHashMap<>();
+        String[] lines = response.split("\n");
+        for (String line : lines) {
+            String trimmed = line.trim();
+            if (trimmed.isEmpty()) {
+                continue;
+            }
+            Matcher matcher = TOPIC_LINE_PATTERN.matcher(trimmed);
+            if (!matcher.matches()) {
+                continue;
+            }
+            String topic = matcher.group(2).trim();
+            if (topic.isEmpty()) {
+                continue;
+            }
+            int index = Integer.parseInt(matcher.group(1));
+            topicByIndex.put(index, topic);
+        }
+        if (topicByIndex.size() != expectedCount) {
+            return List.of();
+        }
+        List<String> topics = new ArrayList<>(expectedCount);
+        for (int i = 1; i <= expectedCount; i++) {
+            String topic = topicByIndex.get(i);
+            if (topic == null) {
+                return List.of();
+            }
+            topics.add(topic);
+        }
+        return topics;
+    }
+
+    private List<List<GroupSummary>> mergeByTopic(List<GroupSummary> groupSummaries, List<String> topics) {
+        if (topics == null || topics.size() != groupSummaries.size()) {
+            return groupSummaries.stream().map(List::of).toList();
+        }
+        List<List<GroupSummary>> topicGroups = new ArrayList<>();
+        List<GroupSummary> current = null;
+        String currentTopic = null;
+        for (int i = 0; i < groupSummaries.size(); i++) {
+            String topic = topics.get(i);
+            if (current == null || !topic.equals(currentTopic)) {
+                current = new ArrayList<>();
+                topicGroups.add(current);
+                currentTopic = topic;
+            }
+            current.add(groupSummaries.get(i));
+        }
+        return topicGroups;
+    }
+
+    private String summarizeTopicGroup(ModelInvoker invoker, List<GroupSummary> topicGroup) {
+        StringBuilder content = new StringBuilder();
+        for (GroupSummary gs : topicGroup) {
+            content.append("【概要】: ").append(gs.summary()).append("\n");
+        }
+        return invokeLlm(invoker, SYSTEM_GROUP_SUMMARY_PROMPT, content.toString());
+    }
+
+    private String invokeLlm(ModelInvoker invoker, String systemPrompt, String userContent) {
+        ChatRequest request = ChatRequest.builder()
+                .messages(List.of(
+                        com.ghost616.agentbase.dto.model.Message.builder().role("system").content(systemPrompt).build(),
+                        com.ghost616.agentbase.dto.model.Message.builder().role("user").content(userContent).build()))
+                .build();
+        ChatResponse response = invoker.invoke(request);
+        return response != null ? response.getContent() : null;
+    }
+
+    private List<Float> embedText(ModelInvoker invoker, AgentConfig agentConfig, String text) {
+        ModelConfig vectorModel = modelConfigMapper.selectById(agentConfig.getVectorModelId());
+        if (vectorModel == null) {
+            return null;
+        }
+        EmbeddingRequest request = EmbeddingRequest.builder()
+                .model(vectorModel.getModelName())
+                .input(text)
+                .build();
+        EmbeddingResponse response = invoker.embed(request);
+        if (response == null || response.getEmbeddings() == null || response.getEmbeddings().isEmpty()) {
+            return null;
+        }
+        return response.getEmbeddings().get(0).getEmbedding();
+    }
+}

@@ -1,0 +1,96 @@
+package com.ghost616.platform.service.search;
+
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch._types.mapping.DenseVectorSimilarity;
+import co.elastic.clients.elasticsearch.core.BulkRequest;
+import com.ghost616.platform.model.SessionMemoryDocument;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
+import java.io.IOException;
+import java.util.List;
+
+/**
+ * 会话记忆客户端，封装 Elasticsearch 索引 session_memory 的创建与会话记忆文档批量写入。
+ */
+@Service
+@RequiredArgsConstructor
+public class SessionMemoryESClient {
+
+    /** 会话记忆索引名 */
+    public static final String INDEX_NAME = "session_memory";
+
+    private final ElasticsearchClient elasticsearchClient;
+
+    /**
+     * 检查索引是否存在。
+     *
+     * @return 索引存在返回 true
+     */
+    public boolean indexExists() {
+        try {
+            return elasticsearchClient.indices().exists(e -> e.index(INDEX_NAME)).value();
+        } catch (IOException e) {
+            throw new IllegalStateException("检查索引是否存在失败: " + INDEX_NAME, e);
+        }
+    }
+
+    /**
+     * 创建索引 session_memory，mapping 包含 sessionId/keyword、聚合序号/integer、聚合文本/text(ik)、向量/dense_vector(cosine)。
+     */
+    public void createIndex() {
+        try {
+            if (indexExists()) {
+                return;
+            }
+            elasticsearchClient.indices().create(c -> c
+                    .index(INDEX_NAME)
+                    .mappings(m -> m
+                            .properties("sessionId", p -> p.keyword(k -> k))
+                            .properties("aggregationStartSeq", p -> p.integer(i -> i))
+                            .properties("aggregationEndSeq", p -> p.integer(i -> i))
+                            .properties("aggregationText", p -> p.text(t -> t
+                                    .analyzer("ik_max_word")
+                                    .searchAnalyzer("ik_smart")))
+                            .properties("vector", p -> p.denseVector(d -> d
+                                    .similarity(DenseVectorSimilarity.Cosine)))));
+        } catch (IOException e) {
+            throw new IllegalStateException("创建索引失败: " + INDEX_NAME, e);
+        }
+    }
+
+    /**
+     * 批量保存会话记忆文档到索引，索引不存在时自动创建。
+     *
+     * @param documents 会话记忆文档列表
+     */
+    public void batchSave(List<SessionMemoryDocument> documents) {
+        ensureIndex();
+        if (documents == null || documents.isEmpty()) {
+            return;
+        }
+        try {
+            BulkRequest.Builder bulkBuilder = new BulkRequest.Builder();
+            for (SessionMemoryDocument document : documents) {
+                bulkBuilder.operations(op -> op
+                        .index(idx -> idx
+                                .index(INDEX_NAME)
+                                .id(buildDocId(document))
+                                .document(document)));
+            }
+            elasticsearchClient.bulk(bulkBuilder.build());
+        } catch (IOException e) {
+            throw new IllegalStateException("批量保存会话记忆文档失败: " + INDEX_NAME, e);
+        }
+    }
+
+    private void ensureIndex() {
+        if (!indexExists()) {
+            createIndex();
+        }
+    }
+
+    private String buildDocId(SessionMemoryDocument document) {
+        return document.getSessionId() + "_" + document.getAggregationStartSeq() + "_" + document.getAggregationEndSeq();
+    }
+}

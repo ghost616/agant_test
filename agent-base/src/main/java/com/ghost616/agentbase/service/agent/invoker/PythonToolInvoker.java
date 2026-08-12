@@ -2,8 +2,8 @@ package com.ghost616.agentbase.service.agent.invoker;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ghost616.agentbase.enums.ErrorCode;
-import com.ghost616.agentbase.exception.BusinessException;
+import com.ghost616.agentbase.enums.AgentErrorCode;
+import com.ghost616.agentbase.exception.AgentException;
 import com.ghost616.agentbase.service.agent.AgentExecutionContext;
 import lombok.extern.slf4j.Slf4j;
 
@@ -33,7 +33,7 @@ public class PythonToolInvoker implements ToolInvoker {
         this.python3Available = isCommandAvailable("python3");
         this.pythonAvailable = isCommandAvailable("python");
         if (!python3Available && !pythonAvailable) {
-            throw new BusinessException(ErrorCode.TOOL_RUNTIME_NOT_FOUND,
+            throw new AgentException(AgentErrorCode.TOOL_RUNTIME_NOT_FOUND,
                     "python 和 python3 运行时均不可用，请安装 Python 3.10+");
         }
         log.debug("Python运行时检测: python3={}, python={}, implPath={}",
@@ -103,7 +103,7 @@ public class PythonToolInvoker implements ToolInvoker {
             if (!finished) {
                 process.destroyForcibly();
                 log.error("工具执行超时 ({}秒): {}", TIMEOUT_SECONDS, scriptDir);
-                throw new BusinessException(ErrorCode.TOOL_EXECUTE_TIMEOUT,
+                throw new AgentException(AgentErrorCode.TOOL_EXECUTE_TIMEOUT,
                         "工具执行超时（" + TIMEOUT_SECONDS + "秒）: " + scriptDir);
             }
 
@@ -111,16 +111,16 @@ public class PythonToolInvoker implements ToolInvoker {
             String result = output.toString().trim();
             if (exitCode != 0) {
                 log.error("工具执行失败, exitCode={}, dir={}, output={}", exitCode, scriptDir, result);
-                throw new BusinessException(ErrorCode.TOOL_EXECUTE_ERROR,
+                throw new AgentException(AgentErrorCode.TOOL_EXECUTE_ERROR,
                         "工具执行失败, exitCode=" + exitCode + ": " + result);
             }
 
             return parseResult(ctx, result);
-        } catch (BusinessException e) {
+        } catch (AgentException e) {
             throw e;
         } catch (Exception e) {
             log.error("执行工具异常: {}", scriptDir, e);
-            throw new BusinessException(ErrorCode.TOOL_EXECUTE_ERROR,
+            throw new AgentException(AgentErrorCode.TOOL_EXECUTE_ERROR,
                     "执行工具异常: " + scriptDir + " - " + e.getMessage());
         } finally {
             try {
@@ -179,7 +179,7 @@ public class PythonToolInvoker implements ToolInvoker {
             }
             return List.of("python");
         }
-        throw new BusinessException(ErrorCode.TOOL_RUNTIME_NOT_FOUND,
+        throw new AgentException(AgentErrorCode.TOOL_RUNTIME_NOT_FOUND,
                 "python 和 python3 运行时均不可用");
     }
 
@@ -188,13 +188,13 @@ public class PythonToolInvoker implements ToolInvoker {
         if (!path.isAbsolute()) {
             String projectDir = ctx.getProjectDir();
             if (projectDir == null || projectDir.isBlank()) {
-                throw new BusinessException(ErrorCode.TOOL_INVOKE_ERROR,
+                throw new AgentException(AgentErrorCode.TOOL_INVOKE_ERROR,
                         "未设置工程目录，无法解析相对路径: " + implPath);
             }
             path = Path.of(projectDir, implPath).normalize();
         }
         if (!Files.isDirectory(path)) {
-            throw new BusinessException(ErrorCode.TOOL_INVOKE_ERROR,
+            throw new AgentException(AgentErrorCode.TOOL_INVOKE_ERROR,
                     "脚本路径不是目录: " + implPath + " (resolved: " + path + ")");
         }
         return path;
@@ -205,7 +205,7 @@ public class PythonToolInvoker implements ToolInvoker {
             Files.writeString(runnerPath, RunnerTemplate.INSTANCE, StandardCharsets.UTF_8);
             log.debug("已生成桥接文件: {}", runnerPath);
         } catch (Exception e) {
-            throw new BusinessException(ErrorCode.TOOL_INVOKE_ERROR,
+            throw new AgentException(AgentErrorCode.TOOL_INVOKE_ERROR,
                     "生成桥接文件失败: " + runnerPath + " - " + e.getMessage());
         }
     }
@@ -217,14 +217,14 @@ public class PythonToolInvoker implements ToolInvoker {
     private static String loadRunnerTemplate() {
         try (InputStream in = PythonToolInvoker.class.getResourceAsStream("/agent/_runner.py")) {
             if (in == null) {
-                throw new BusinessException(ErrorCode.TOOL_INVOKE_ERROR,
+                throw new AgentException(AgentErrorCode.TOOL_INVOKE_ERROR,
                         "未找到桥接文件模板: /agent/_runner.py");
             }
             return new String(in.readAllBytes(), StandardCharsets.UTF_8);
-        } catch (BusinessException e) {
+        } catch (AgentException e) {
             throw e;
         } catch (Exception e) {
-            throw new BusinessException(ErrorCode.TOOL_INVOKE_ERROR,
+            throw new AgentException(AgentErrorCode.TOOL_INVOKE_ERROR,
                     "加载桥接文件模板失败: " + e.getMessage());
         }
     }

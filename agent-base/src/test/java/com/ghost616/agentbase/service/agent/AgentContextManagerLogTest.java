@@ -196,7 +196,7 @@ class AgentContextManagerLogTest {
     void 会话未找到时应记录ERROR日志() {
         when(dataProvider.loadAgentContext(sessionId)).thenReturn(null);
 
-        assertThrows(com.ghost616.agentbase.exception.BusinessException.class,
+        assertThrows(com.ghost616.agentbase.exception.AgentException.class,
                 () -> agentContextManager.build(sessionId).build());
 
         ArgumentCaptor<LogData> captor = ArgumentCaptor.forClass(LogData.class);
