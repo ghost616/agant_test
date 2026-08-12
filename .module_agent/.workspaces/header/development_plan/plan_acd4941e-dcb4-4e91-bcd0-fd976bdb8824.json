@@ -1,0 +1,9 @@
+{
+  "plan_id": "plan_acd4941e-dcb4-4e91-bcd0-fd976bdb8824",
+  "module_name": "framework",
+  "development_plan": "README.md 功能模块列表：1) 删除\"组件注册表\"条目；2) 在\"知识库管理\"条目下新增一行：智能体通过内置工具搜索知识库内容",
+  "session_id": "ses_00bc0a481ffe068e2oY1in15mi",
+  "modified_files": [
+    "README.md"
+  ]
+}

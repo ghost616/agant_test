@@ -16,5 +16,23 @@
     ],
     "summary": "执行总结：已精简 README.md 功能模块列表 9 个条目为功能层面描述。移除内容：LLM 模型管理「模型调用器」、工具管理 Bearer Token/API Key 认证方式与 BROWSER 子工具类型、HOOK 管理 HookInvoker/SystemHook/MessageSavePostHook 类名及六个生命周期枚举值、执行引擎 sendmessage 框架名与 5 种消息类型、子会话 callback_sub_session 工具名、三域授权 ALL/PARENT/CHILD 枚举值、组件注册表 AgentComponentRegistry 及 Provider/Manager/Invoker 接口名。保留功能：各模块的增删改查、关联配置、执行能力、作用域、通信能力、自动加载机制、查询展示等。其余条目（SKILL、智能体配置、智能体评估、知识库、对话ID、会话历史、智能体日志、运行日志）原已为功能层描述或本次已同步简化。\n\n测试总结：纯文档修改，不涉及代码逻辑，无单元/接口/编译/E2E 测试适用。测试通过（跳过 0 项）",
     "errors": []
+  },
+  {
+    "plan_id": "plan_28198656-cc2e-45ae-90f7-7cc3091134ec",
+    "plan": "修改 README.md 会话作用域描述为更易理解的功能表述",
+    "modified_files": [
+      "README.md"
+    ],
+    "summary": "执行总结：已修改 README.md 第 22 行「三域会话授权」条目，描述由「三级会话作用域配置（当前会话/父会话/子会话），控制跨会话可见性与可用性」改为更易理解的功能表述「工具和技能支持三种会话作用域：所有会话可用、只能父会话使用、只能子会话使用」。\n\n测试总结：纯文档修改，不涉及代码逻辑，无测试适用。测试通过（跳过 0 项）",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_acd4941e-dcb4-4e91-bcd0-fd976bdb8824",
+    "plan": "删除组件注册表条目，知识库管理下新增搜索知识库内容条目",
+    "modified_files": [
+      "README.md"
+    ],
+    "summary": "执行总结：①已删除「组件注册表」条目；②在「知识库管理」条目下新增「知识库搜索」条目，内容为「智能体通过内置工具搜索知识库内容」。\n\n测试总结：纯文档修改，不涉及代码逻辑，无测试适用。测试通过（跳过 0 项）",
+    "errors": []
   }
 ]

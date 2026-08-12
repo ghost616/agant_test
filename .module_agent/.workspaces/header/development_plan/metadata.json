@@ -246,5 +246,21 @@
     "code_reviewed": false,
     "plan_completed": true,
     "test_passed": true
+  },
+  {
+    "plan_id": "plan_28198656-cc2e-45ae-90f7-7cc3091134ec",
+    "plan_summary": "README会话作用域描述更清晰",
+    "starter_session_id": "ses_00c9a6a87ffetUtC5ZjBU5QoRN",
+    "code_reviewed": false,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_acd4941e-dcb4-4e91-bcd0-fd976bdb8824",
+    "plan_summary": "README删组件注册表+新增知识搜索条目",
+    "starter_session_id": "ses_00c9a6a87ffetUtC5ZjBU5QoRN",
+    "code_reviewed": false,
+    "plan_completed": true,
+    "test_passed": true
   }
 ]

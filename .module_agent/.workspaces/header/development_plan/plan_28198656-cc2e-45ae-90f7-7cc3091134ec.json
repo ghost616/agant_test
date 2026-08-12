@@ -1,0 +1,9 @@
+{
+  "plan_id": "plan_28198656-cc2e-45ae-90f7-7cc3091134ec",
+  "module_name": "framework",
+  "development_plan": "README.md 会话作用域描述改为更易理解的功能表述：工具和技能支持三种会话作用域——所有会话可用、只能父会话使用、只能子会话使用",
+  "session_id": "ses_00bc0a481ffe068e2oY1in15mi",
+  "modified_files": [
+    "README.md"
+  ]
+}
