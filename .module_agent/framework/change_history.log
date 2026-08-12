@@ -69,3 +69,5 @@
 [2026-08-12T05:46:11.447Z] [session: ses_00bc0a481ffe068e2oY1in15mi] [2026-08-12] README.md 第 3 行平台简介替换为定位描述：可视化的 AI 智能体构建与管理平台，通过配置即可完成智能体创建、工具挂载、知识库检索与自动评估，无需编码
 [2026-08-12T07:11:59.457Z] [session: ses_00b2ff46dffez8FivOaB2SZOMy] README.md 新增"工程配置"章节：以表格简要介绍 application.yml 核心配置（服务端口 8080、SQLite 数据库路径 data/agent_platform.db、Elasticsearch 连接 localhost:9200、日志级别 INFO），配置路径为 platform-app/src/main/resources/application.yml
 [2026-08-12T07:20:09.569Z] [session: ses_00b2ff46dffez8FivOaB2SZOMy] README.md 工程配置章节将 SQLite 数据库行改为可配置的关系型数据库描述：默认内置 SQLite（data/agent_platform.db），可修改 spring.datasource 连接 URL 与驱动替换为 MySQL/PostgreSQL 等其他关系型数据库
+[2026-08-12T09:59:05.600Z] [session: ses_00b2ff46dffez8FivOaB2SZOMy] README.md 将"项目结构"章节从工程配置之后移动至文档末尾（知识库工具之后），调整文档章节顺序
+[2026-08-12T10:02:46.628Z] [session: ses_00b2ff46dffez8FivOaB2SZOMy] README.md：1) "四种工具实现方式"标题改为"五种工具实现方式"；2) Responses API 章节精简，删除概念对比（Chat Completions 对比、有状态/无状态概念）与使用方式（RequestType 枚举、有状态多轮续接机制）子章节，仅保留一句话说明平台支持 Responses API 接口及 6 个平台调用器表格

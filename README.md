@@ -74,6 +74,104 @@ build.bat
 | Elasticsearch | `localhost:9200` | `elasticsearch.host/port`，知识库检索服务连接地址 |
 | 日志级别 | `INFO` | `logging.level.root` 与 `com.ghost616.platform`，全局及平台包日志级别 |
 
+## 智能体执行流程
+
+1. **上下文加载** — 根据会话 ID 加载智能体配置（系统提示词、默认模型、已挂载的工具列表），同时从数据库恢复历史消息记录与**会话变量**，加载关联的**技能列表**，构建执行上下文并缓存
+
+2. **消息组装** — 将用户消息保存入库，按**消息分组**机制拼装消息列表：以用户消息为分界点进行分组，若消息组总数超出历史消息数量限制则折叠早期消息组（仅保留用户消息并插入一条占位回复消息）；用户可通过内置系统工具设置对话变量标记展开索引，展开的历史消息组下轮折叠时跳过。最终拼装为：系统提示词 + 历史消息 + 工具调用记录 + 推理内容
+
+3. **技能注入** — 系统提示词后追加当前会话已加载的可用技能列表说明，将每个已加载技能的提示词注入消息上下文，关联工具按名称去重合并到工具定义列表中；通过内置系统工具可在对话中动态加载/卸载技能
+
+4. **HOOK 触发** — 在会话启动时、每条消息发送前、消息接收完成后，自动扫描并执行已注册的 HOOK 处理器，系统级 HOOK 在每个阶段后额外按优先级执行
+
+5. **模型调用** — 根据智能体配置的平台类型自动匹配对应的模型调用实现（OpenAI/Ollama/Anthropic/Azure/DeepSeek/Custom），以流式方式请求 LLM，实时解析流式回复（含 **reasoning 推理内容**）
+
+6. **工具调度** — 若模型回复中包含工具调用指令（可能在推理/思考过程中决定调用工具），后端先将工具调用数据缓存至队列，前端再逐条拉取异步提交执行任务，后端从会话工具列表中查找对应工具实例，按工具类型调用对应执行器执行，执行完成后将结果写回消息历史和上下文，继续下一轮模型调用
+
+7. **变量管理** — **会话变量**跨轮持久化存储，**对话变量**单轮有效、自动清除；工具执行期间通过统一的变量读写接口访问变量。变量变更实时推送至前端（新增/更新/移除语义）
+
+8. **流式推送** — 整个对话过程通过 SSE 将增量内容、推理过程、工具调用指令、变量变更、完成状态实时推送到前端
+
+## Responses API
+
+平台已支持 Responses API（`/v1/responses`）接口，并已实现 6 个平台的模型调用器，均位于 agent-integration 模块 `model/invoker` 包下：
+
+| 平台 | 调用器 | 说明 |
+|------|--------|------|
+| OpenAI | OpenAIResponsesInvoker | 基础实现，`/v1/responses` 端点，Bearer 认证 |
+| DeepSeek | DeepSeekResponsesInvoker | 复用 OpenAI Responses 兼容实现 |
+| Kimi（月之暗面） | KimiResponsesInvoker | OpenAI 兼容实现，按模型微调 reasoning 参数 |
+| 火山引擎 | VolcEngineResponsesInvoker | 复用 OpenAI Responses 兼容实现 |
+| Azure | AzureResponsesInvoker | `/openai/deployments/{model}/responses?api-version=...` 端点，api-key 认证 |
+| 自定义 | CustomResponsesInvoker | 通用 OpenAI Responses 兼容端点 |
+
+## 智能体评估流程
+
+1. **评估模板创建** — 选择被评估的智能体，配置评估模板的名称与描述，完成模板基本信息定义
+
+2. **评估项配置** — 关联已创建的评估模板，选择评估用的模型、设置单轮执行次数、选择执行模式（后台静默执行 / 前台流式执行），可配置多个评估项
+
+3. **基准会话设定** — 创建评估项时自动生成基准会话，复制被评估智能体的系统提示词、工具和技能配置到该会话；用户在基准会话中输入一条或多条标准用户消息作为评估输入，评估项将基于这些消息对模型进行评测
+
+4. **执行机制** — 每次执行时复制基准会话创建独立执行会话，继承基准会话的全部配置和用户消息，按序发送所有用户消息。后台模式下异步逐次执行所有评估项，执行完成后汇总结果；前台模式下实时推送执行日志，包含模型调用的思考过程和推理内容
+
+5. **结果查看** — 评估详情页展示每轮对话的完整消息对比（请求/响应），以及基于评估标准生成的 Markdown 格式评估结论，支持逐项排查执行质量
+
+## 五种工具实现方式
+
+| 类型 | 实现方式 | 第三方开发指南 |
+|------|----------|----------------|
+| Java | 实现 ToolInvoker 接口，全限定类名注册，反射加载委托执行 | 项目中实现接口 → 编译放入 classpath → 注册填入类名 |
+| TypeScript | index.ts 导出 execute(ctx, args) 函数；_runner.ts 桥接文件可手动放入或首次执行时自动生成；bun 优先，node+tsx fallback | 环境依赖 bun 或 node+tsx 任一可用 → 创建目录 → 编写 index.ts，函数签名为 execute(ctx: AgentExecutionContext, args: string): string，从 ./_runner 导入类型，args 为 JSON 字符串格式的工具参数，返回执行结果字符串 → 注册填入目录路径 |
+| Python | index.py 定义 execute(context, arguments) 函数；_runner.py 桥接文件可手动放入或首次执行时自动生成；python3 优先，python fallback | 环境依赖 Python 3.10+ → 创建目录 → 编写 index.py，函数签名为 execute(context, arguments)，从 _runner 模块导入类型，arguments 为字典格式的工具参数，返回执行结果字符串 → 注册填入目录路径 |
+| MCP HTTP | 注册服务 URL，运行时通过 JSON-RPC 协议发现远程工具并自动展开；支持 Bearer Token 认证 | 部署 MCP 协议服务 → 注册填入 URL 和 Token |
+| CUSTOM | 扩展工具类型，支持通过子工具类型（当前支持 BROWSER）实现特殊工具能力 | 实现子工具类型对应的调用器并注册 → 注册工具时选择 CUSTOM 类型并指定子工具类型 |
+
+## 浏览器工具
+
+BROWSER 浏览器工具通过客户端执行机制，在用户浏览器环境中执行工具操作。
+
+**执行原理：**
+
+服务端发起调用 → 委托前端获取执行上下文并等待执行结果 → 在浏览器环境中调用对应工具函数 → 执行结果回调至服务端，完成本次调用。
+
+## 知识库配置
+
+### 配置流程
+
+1. **创建知识库** — 在知识库管理页面创建知识库，填写名称与描述，完成基本信息定义
+2. **ES 索引自动生成** — 创建知识库时自动生成 ES 索引名称，前端仅列表页展示，编辑弹窗不可修改，用于后续文件内容的向量化存储与检索
+3. **上传 / 编辑文件** — 向知识库上传 Markdown 格式文件，或在页面内直接编辑文件内容
+4. **发布到 ES** — 文件发布时文本按 **5000 字符**分批向量化写入 ES Index，完成内容检索的就绪
+5. **绑定智能体** — 将知识库绑定到目标智能体，绑定后该智能体的会话自动获得知识库检索能力
+
+### 发布状态
+
+知识库文件发布状态通过枚举管理，共五种状态：
+
+- **UNPUBLISHED** — 未发布
+- **PUBLISHING** — 发布中
+- **PUBLISHED** — 已发布
+- **PENDING_PUBLISH** — 待发布
+- **PUBLISH_ERROR** — 发布失败
+
+### 发布机制
+
+文件发布时，服务端将文件文本内容按 5000 字符分批切分，逐批向量化后写入 ES Index；任一状态流转（发布中、成功、失败）均会实时更新到文件记录，供前端展示与后续重试。
+
+## 知识库工具
+
+智能体绑定知识库后，以下 4 个内置工具（`default_tool_rag_*` 前缀）自动注入会话工具列表，会话内直接可用。
+
+| 工具名称 | 用途描述 | 关键参数 |
+|----------|----------|----------|
+| default_tool_rag_info | 获取当前会话关联的知识库信息 | 无参数 |
+| default_tool_rag_file_info | 搜索知识库中的文件 | knowledgeBaseId、fileName、searchLimit |
+| default_tool_rag_search | 搜索知识库文本块 | knowledgeBaseId、fileId、searchType、query、searchLimit、contextLines |
+| default_tool_rag_file_chunk | 获取指定文件的文本块 | knowledgeBaseId、fileId、startLine、endLine |
+
+**自动绑定说明**：智能体绑定知识库后，4 个工具自动注入会话工具列表，无需手动配置即可在会话中调用。
+
 ## 项目结构
 
 ```
@@ -143,118 +241,3 @@ build.bat
     ├── types/                           # TypeScript 类型定义
     └── utils/                           # 工具函数
 ```
-
-## 智能体执行流程
-
-1. **上下文加载** — 根据会话 ID 加载智能体配置（系统提示词、默认模型、已挂载的工具列表），同时从数据库恢复历史消息记录与**会话变量**，加载关联的**技能列表**，构建执行上下文并缓存
-
-2. **消息组装** — 将用户消息保存入库，按**消息分组**机制拼装消息列表：以用户消息为分界点进行分组，若消息组总数超出历史消息数量限制则折叠早期消息组（仅保留用户消息并插入一条占位回复消息）；用户可通过内置系统工具设置对话变量标记展开索引，展开的历史消息组下轮折叠时跳过。最终拼装为：系统提示词 + 历史消息 + 工具调用记录 + 推理内容
-
-3. **技能注入** — 系统提示词后追加当前会话已加载的可用技能列表说明，将每个已加载技能的提示词注入消息上下文，关联工具按名称去重合并到工具定义列表中；通过内置系统工具可在对话中动态加载/卸载技能
-
-4. **HOOK 触发** — 在会话启动时、每条消息发送前、消息接收完成后，自动扫描并执行已注册的 HOOK 处理器，系统级 HOOK 在每个阶段后额外按优先级执行
-
-5. **模型调用** — 根据智能体配置的平台类型自动匹配对应的模型调用实现（OpenAI/Ollama/Anthropic/Azure/DeepSeek/Custom），以流式方式请求 LLM，实时解析流式回复（含 **reasoning 推理内容**）
-
-6. **工具调度** — 若模型回复中包含工具调用指令（可能在推理/思考过程中决定调用工具），后端先将工具调用数据缓存至队列，前端再逐条拉取异步提交执行任务，后端从会话工具列表中查找对应工具实例，按工具类型调用对应执行器执行，执行完成后将结果写回消息历史和上下文，继续下一轮模型调用
-
-7. **变量管理** — **会话变量**跨轮持久化存储，**对话变量**单轮有效、自动清除；工具执行期间通过统一的变量读写接口访问变量。变量变更实时推送至前端（新增/更新/移除语义）
-
-8. **流式推送** — 整个对话过程通过 SSE 将增量内容、推理过程、工具调用指令、变量变更、完成状态实时推送到前端
-
-## Responses API
-
-### 概念说明
-
-Responses API 是新一代模型请求接口（`/v1/responses` 端点），请求结构从 Chat Completions 的 messages 列表调整为 `instructions` + `input`：系统提示词与技能说明作为 `instructions` 独立传递，对话消息放入 `input`，且服务端可维护会话状态，响应携带 `responseId` 供多轮续接。
-
-与 Chat Completions（`/v1/chat/completions`，每次请求需携带完整 messages 历史）相比，Responses API 支持两种模式：
-
-- **有状态（responses）** — 服务端保存对话状态，多轮对话通过 `previousResponseId` 引用上一轮响应，无需重复发送历史消息，`input` 仅需从最后一条 user 消息开始，可显著减少请求体体积与 token 消耗
-- **无状态（responses_stateless）** — 不依赖服务端会话状态，每次请求发送完整消息历史（`input` 为全量消息），模型独立处理每轮请求，适合无需跨轮续接的场景
-
-### 使用方式
-
-在模型配置中选择请求类型（RequestType 枚举：`RESPONSES` 有状态 / `RESPONSES_STATELESS` 无状态 / `COMPLETIONS` 传统 Chat Completions），智能体执行引擎依据该配置自动匹配对应的请求路径与模型调用器。
-
-有状态模式的多轮续接机制：引擎将会话最近一次模型响应携带的 `responseId` 记录为会话 `lastResponseId`，下一轮请求自动透传为 `previousResponseId`（会话级 `lastResponseId` 优先于 API 请求传入值）；流式过程中从 `response.completed` 事件捕获 `responseId` 写回会话上下文，从而实现无需重发历史的多轮续接。无状态模式不传 `previousResponseId`，每轮携带全量历史消息。
-
-### 支持平台
-
-已实现 6 个平台的 Responses API 模型调用器，均位于 agent-integration 模块 `model/invoker` 包下：
-
-| 平台 | 调用器 | 说明 |
-|------|--------|------|
-| OpenAI | OpenAIResponsesInvoker | 基础实现，`/v1/responses` 端点，Bearer 认证 |
-| DeepSeek | DeepSeekResponsesInvoker | 复用 OpenAI Responses 兼容实现 |
-| Kimi（月之暗面） | KimiResponsesInvoker | OpenAI 兼容实现，按模型微调 reasoning 参数 |
-| 火山引擎 | VolcEngineResponsesInvoker | 复用 OpenAI Responses 兼容实现 |
-| Azure | AzureResponsesInvoker | `/openai/deployments/{model}/responses?api-version=...` 端点，api-key 认证 |
-| 自定义 | CustomResponsesInvoker | 通用 OpenAI Responses 兼容端点 |
-
-## 智能体评估流程
-
-1. **评估模板创建** — 选择被评估的智能体，配置评估模板的名称与描述，完成模板基本信息定义
-
-2. **评估项配置** — 关联已创建的评估模板，选择评估用的模型、设置单轮执行次数、选择执行模式（后台静默执行 / 前台流式执行），可配置多个评估项
-
-3. **基准会话设定** — 创建评估项时自动生成基准会话，复制被评估智能体的系统提示词、工具和技能配置到该会话；用户在基准会话中输入一条或多条标准用户消息作为评估输入，评估项将基于这些消息对模型进行评测
-
-4. **执行机制** — 每次执行时复制基准会话创建独立执行会话，继承基准会话的全部配置和用户消息，按序发送所有用户消息。后台模式下异步逐次执行所有评估项，执行完成后汇总结果；前台模式下实时推送执行日志，包含模型调用的思考过程和推理内容
-
-5. **结果查看** — 评估详情页展示每轮对话的完整消息对比（请求/响应），以及基于评估标准生成的 Markdown 格式评估结论，支持逐项排查执行质量
-
-## 四种工具实现方式
-
-| 类型 | 实现方式 | 第三方开发指南 |
-|------|----------|----------------|
-| Java | 实现 ToolInvoker 接口，全限定类名注册，反射加载委托执行 | 项目中实现接口 → 编译放入 classpath → 注册填入类名 |
-| TypeScript | index.ts 导出 execute(ctx, args) 函数；_runner.ts 桥接文件可手动放入或首次执行时自动生成；bun 优先，node+tsx fallback | 环境依赖 bun 或 node+tsx 任一可用 → 创建目录 → 编写 index.ts，函数签名为 execute(ctx: AgentExecutionContext, args: string): string，从 ./_runner 导入类型，args 为 JSON 字符串格式的工具参数，返回执行结果字符串 → 注册填入目录路径 |
-| Python | index.py 定义 execute(context, arguments) 函数；_runner.py 桥接文件可手动放入或首次执行时自动生成；python3 优先，python fallback | 环境依赖 Python 3.10+ → 创建目录 → 编写 index.py，函数签名为 execute(context, arguments)，从 _runner 模块导入类型，arguments 为字典格式的工具参数，返回执行结果字符串 → 注册填入目录路径 |
-| MCP HTTP | 注册服务 URL，运行时通过 JSON-RPC 协议发现远程工具并自动展开；支持 Bearer Token 认证 | 部署 MCP 协议服务 → 注册填入 URL 和 Token |
-| CUSTOM | 扩展工具类型，支持通过子工具类型（当前支持 BROWSER）实现特殊工具能力 | 实现子工具类型对应的调用器并注册 → 注册工具时选择 CUSTOM 类型并指定子工具类型 |
-
-## 浏览器工具
-
-BROWSER 浏览器工具通过客户端执行机制，在用户浏览器环境中执行工具操作。
-
-**执行原理：**
-
-服务端发起调用 → 委托前端获取执行上下文并等待执行结果 → 在浏览器环境中调用对应工具函数 → 执行结果回调至服务端，完成本次调用。
-
-## 知识库配置
-
-### 配置流程
-
-1. **创建知识库** — 在知识库管理页面创建知识库，填写名称与描述，完成基本信息定义
-2. **ES 索引自动生成** — 创建知识库时自动生成 ES 索引名称，前端仅列表页展示，编辑弹窗不可修改，用于后续文件内容的向量化存储与检索
-3. **上传 / 编辑文件** — 向知识库上传 Markdown 格式文件，或在页面内直接编辑文件内容
-4. **发布到 ES** — 文件发布时文本按 **5000 字符**分批向量化写入 ES Index，完成内容检索的就绪
-5. **绑定智能体** — 将知识库绑定到目标智能体，绑定后该智能体的会话自动获得知识库检索能力
-
-### 发布状态
-
-知识库文件发布状态通过枚举管理，共五种状态：
-
-- **UNPUBLISHED** — 未发布
-- **PUBLISHING** — 发布中
-- **PUBLISHED** — 已发布
-- **PENDING_PUBLISH** — 待发布
-- **PUBLISH_ERROR** — 发布失败
-
-### 发布机制
-
-文件发布时，服务端将文件文本内容按 5000 字符分批切分，逐批向量化后写入 ES Index；任一状态流转（发布中、成功、失败）均会实时更新到文件记录，供前端展示与后续重试。
-
-## 知识库工具
-
-智能体绑定知识库后，以下 4 个内置工具（`default_tool_rag_*` 前缀）自动注入会话工具列表，会话内直接可用。
-
-| 工具名称 | 用途描述 | 关键参数 |
-|----------|----------|----------|
-| default_tool_rag_info | 获取当前会话关联的知识库信息 | 无参数 |
-| default_tool_rag_file_info | 搜索知识库中的文件 | knowledgeBaseId、fileName、searchLimit |
-| default_tool_rag_search | 搜索知识库文本块 | knowledgeBaseId、fileId、searchType、query、searchLimit、contextLines |
-| default_tool_rag_file_chunk | 获取指定文件的文本块 | knowledgeBaseId、fileId、startLine、endLine |
-
-**自动绑定说明**：智能体绑定知识库后，4 个工具自动注入会话工具列表，无需手动配置即可在会话中调用。

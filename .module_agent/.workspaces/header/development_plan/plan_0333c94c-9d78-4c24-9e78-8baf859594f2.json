@@ -1,0 +1,9 @@
+{
+  "plan_id": "plan_0333c94c-9d78-4c24-9e78-8baf859594f2",
+  "module_name": "framework",
+  "development_plan": "README.md 将\"项目结构\"章节从当前位置（工程配置之后）移动到文档末尾（知识库工具之后）",
+  "session_id": "ses_00b2ff46dffez8FivOaB2SZOMy",
+  "modified_files": [
+    "README.md"
+  ]
+}

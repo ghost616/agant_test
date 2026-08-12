@@ -1,5 +1,5 @@
 {
   "session_id": "ses_00ac34e59ffeWMwRWhCyqKhr5L",
-  "content": "## 待测试功能说明\n\n本次变更涉及 `src/pages/memory/MemoryList.tsx` 及其测试文件 `src/pages/memory/__tests__/MemoryList.test.tsx`。\n\n功能：记忆回看会话列表页 `/memory` 原先仅展示开启了记忆功能（memoryEnabled=true）智能体的会话，本次去掉了 memoryEnabled 过滤条件，改为展示全部会话。\n\n变更内容：\n- MemoryList.tsx：移除 `sessions.filter(session => agentMap[session.agentId]?.memoryEnabled === true)` 过滤逻辑，直接对全部 sessions 渲染；同步更新组件 JSDoc 描述。\n- MemoryList.test.tsx：更新原有「过滤 memoryEnabled=false 会话」「缺省 memoryEnabled 时会话被过滤」两个断言，改为验证所有会话（含 memoryEnabled=false 或缺省）均被展示，且每个会话都调用 getSessionMessages。\n\n需要测试验证：\n1. MemoryList 组件单元测试通过（Vitest）\n2. TypeScript 编译/类型检查通过（tsc）\n3. 组件渲染行为：所有会话均展示，不再受智能体 memoryEnabled 影响",
-  "timestamp": "2026-08-12T09:11:14.364Z"
+  "content": "## 待测试功能说明\n\n本次变更涉及 `src/pages/memory/MemoryDetail.tsx`、`src/pages/memory/__tests__/MemoryDetail.test.tsx`、`e2e/Memory.spec.ts`。\n\n功能：记忆聚合列表页 `/memory/:sessionId/:type`，按分类聚合（GROUP）类型的列标题由「起始行-结束行」改为「起始-结束」。\n\n变更内容：\n- MemoryDetail.tsx：GROUP 分支列 title 由 '起始行-结束行' 改为 '起始-结束'（数据渲染逻辑不变，仍为 aggregationStartSeq - aggregationEndSeq）。\n- MemoryDetail.test.tsx：两个相关断言文本同步更新（DAILY 不显示「起始-结束」、GROUP 显示「起始-结束」）。\n- e2e/Memory.spec.ts：按分类聚合 e2e 用例断言改为检查「起始-结束」。\n\n需要测试验证：\n1. MemoryDetail 组件单元测试通过（Vitest，断言列标题为「起始-结束」）\n2. TypeScript 编译/类型检查通过（tsc）\n3. e2e 用例文本更新后无引用遗漏",
+  "timestamp": "2026-08-12T09:41:27.996Z"
 }

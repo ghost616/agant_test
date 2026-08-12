@@ -294,5 +294,29 @@
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": false
+  },
+  {
+    "plan_id": "plan_3a46f028-350f-4d06-b37d-850a3c6caadb",
+    "plan_summary": "按分类聚合记忆列标题简化",
+    "starter_session_id": "ses_00c9a6a87ffetUtC5ZjBU5QoRN",
+    "code_reviewed": false,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_0333c94c-9d78-4c24-9e78-8baf859594f2",
+    "plan_summary": "README项目结构移到最后",
+    "starter_session_id": "ses_00c9a6a87ffetUtC5ZjBU5QoRN",
+    "code_reviewed": false,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_e0c25764-4d0b-42c9-b887-983020765623",
+    "plan_summary": "README工具标题修正+Responses精简",
+    "starter_session_id": "ses_00c9a6a87ffetUtC5ZjBU5QoRN",
+    "code_reviewed": false,
+    "plan_completed": true,
+    "test_passed": true
   }
 ]

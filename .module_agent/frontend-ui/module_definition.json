@@ -219,7 +219,7 @@
     },
     {
       "path": "src/pages/memory/MemoryDetail.tsx",
-      "description": "记忆聚合列表页 /memory/:sessionId/:type：根据 type 参数调用 getSessionMemory（GET /api/sessions/{id}/memory），DAILY 显示聚合日期列（aggregationStartTime 格式化）、GROUP 显示起始行-结束行列（aggregationStartSeq-aggregationEndSeq），聚合文本列 ellipsis 超长省略，支持分页（pageSizeOptions 10/20/50/showTotal）；返回按钮跳转 /memory"
+      "description": "记忆聚合列表页 /memory/:sessionId/:type：根据 type 参数调用 getSessionMemory（GET /api/sessions/{id}/memory），DAILY 显示聚合日期列（aggregationStartTime 格式化）、GROUP 显示起始-结束列（aggregationStartSeq-aggregationEndSeq），聚合文本列 ellipsis 超长省略，支持分页（pageSizeOptions 10/20/50/showTotal）；返回按钮跳转 /memory"
     }
   ]
 }

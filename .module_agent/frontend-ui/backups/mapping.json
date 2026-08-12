@@ -63,5 +63,8 @@
   "src/pages/logs/__tests__/AgentLogList.test.tsx": "1fc8fbddcdf8d00ac3b3c547642ce24c",
   "e2e/AgentList.spec.ts": "40acfdc3b030e534664f87ecd796d47c",
   "src/pages/memory/MemoryList.tsx": "1228e28517824e5f87d8b2d22a9f4c4d",
-  "src/pages/memory/__tests__/MemoryList.test.tsx": "bd77930f2f9a1961d5d5ffa4498fcdf3"
+  "src/pages/memory/__tests__/MemoryList.test.tsx": "bd77930f2f9a1961d5d5ffa4498fcdf3",
+  "src/pages/memory/MemoryDetail.tsx": "8f1eee1624c683975e4683ecd2fb84bc",
+  "src/pages/memory/__tests__/MemoryDetail.test.tsx": "e33c1064a5066e01618cfef2efa1a525",
+  "e2e/Memory.spec.ts": "75865c7ae59306f9d498e8357f75b054"
 }

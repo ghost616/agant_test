@@ -8,5 +8,16 @@
     ],
     "summary": "已更新 MemoryList.test.tsx：删除过滤断言，改为验证所有会话均展示、缺省 memoryEnabled 时仍展示并加载消息",
     "errors": []
+  },
+  {
+    "plan_id": "plan_3a46f028-350f-4d06-b37d-850a3c6caadb",
+    "plan": "MemoryDetail.tsx 按分类聚合记忆页面，列标题从\"起始行-结束行\"改为\"起始-结束\"",
+    "modified_files": [
+      "src/pages/memory/MemoryDetail.tsx",
+      "src/pages/memory/__tests__/MemoryDetail.test.tsx",
+      "e2e/Memory.spec.ts"
+    ],
+    "summary": "已改 MemoryDetail.tsx GROUP 列标题为「起始-结束」，并同步更新 MemoryDetail.test.tsx 与 e2e/Memory.spec.ts 断言",
+    "errors": []
   }
 ]

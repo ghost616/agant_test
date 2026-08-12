@@ -76,7 +76,7 @@ function MemoryDetail(): JSX.Element {
         ]
       : [
           {
-            title: '起始-结束',
+            title: '起始行-结束行',
             key: 'seqRange',
             width: 160,
             render: (_: unknown, record: SessionMemoryDocument) => {

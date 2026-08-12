@@ -1,0 +1,11 @@
+{
+  "plan_id": "plan_3a46f028-350f-4d06-b37d-850a3c6caadb",
+  "module_name": "frontend-ui",
+  "development_plan": "MemoryDetail.tsx 按分类聚合记忆页面，列标题从\"起始行-结束行\"改为\"起始-结束\"",
+  "session_id": "ses_00ac34e59ffeWMwRWhCyqKhr5L",
+  "modified_files": [
+    "src/pages/memory/MemoryDetail.tsx",
+    "src/pages/memory/__tests__/MemoryDetail.test.tsx",
+    "e2e/Memory.spec.ts"
+  ]
+}

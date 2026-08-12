@@ -16,5 +16,23 @@
     ],
     "summary": "README.md 工程配置章节的 SQLite 数据库行已改为可配置的关系型数据库描述：默认值标注为 SQLite（data/agent_platform.db），说明修改 spring.datasource 连接 URL 与驱动即可替换为 MySQL/PostgreSQL 等其他关系型数据库",
     "errors": []
+  },
+  {
+    "plan_id": "plan_0333c94c-9d78-4c24-9e78-8baf859594f2",
+    "plan": "README.md 将\"项目结构\"章节从当前位置（工程配置之后）移动到文档末尾（知识库工具之后）",
+    "modified_files": [
+      "README.md"
+    ],
+    "summary": "README.md \"项目结构\"章节已从工程配置之后移动到文档末尾（知识库工具之后），章节内容保持原样",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_e0c25764-4d0b-42c9-b887-983020765623",
+    "plan": "README.md：1) 标题\"四种工具实现方式\"改为\"五种工具实现方式\"；2) Responses API 章节精简，去掉概念对比（Chat Completions对比说明、有状态/无状态概念）和使用方式（RequestType枚举选择、有状态多轮续接机制细节），只保留一句话说明平台支持 Responses API 接口和已实现的6个平台表格",
+    "modified_files": [
+      "README.md"
+    ],
+    "summary": "README.md 完成两处修改：1) \"四种工具实现方式\"标题改为\"五种工具实现方式\"；2) Responses API 章节精简为一段导语（平台支持 /v1/responses 接口，已实现 6 个平台调用器）加 6 平台表格，删除概念对比与使用方式子章节",
+    "errors": []
   }
 ]
