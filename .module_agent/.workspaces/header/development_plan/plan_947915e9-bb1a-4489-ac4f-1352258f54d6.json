@@ -1,7 +1,0 @@
-{
-  "plan_id": "plan_947915e9-bb1a-4489-ac4f-1352258f54d6",
-  "module_name": "agent-base",
-  "development_plan": "ChatDataCacheManager.pollNewChunks 方法中移除 provider.isCacheDone(cacheId) 判断：1. 第145行初始判断移除 isCacheDone，仅保留 finished.get()；2. 第168行 per-tick 判断移除 isCacheDone 分支。轮询仅通过检测块中 finishReason 判定结束。同时更新 ChatDataCacheManagerTest 中相关测试用例。",
-  "session_id": "ses_0155eceffffeYzR4LDvdhubczl",
-  "modified_files": []
-}

@@ -1,5 +1,0 @@
-{
-  "session_id": "ses_01a94de80ffeFwAY9n4DE6fHej",
-  "content": "## 待测试功能说明\n\n本次变更新增智能体日志相关数据层代码：\n\n1. **AgentLogEntity 实体类**（platform-data/src/main/java/com/ghost616/platform/entity/AgentLogEntity.java）\n   - 继承 BaseEntity，@TableName(\"agent_log\")\n   - 字段：sessionId(Long)→session_id、conversationId(String)→conversation_id、logType(String)→log_type、logLevel(String)→log_level、logData(String)→log_data\n   - 使用 Lombok @Data、@EqualsAndHashCode(callSuper = true)\n\n2. **AgentLogMapper 接口**（platform-data/src/main/java/com/ghost616/platform/repository/AgentLogMapper.java）\n   - @Mapper，继承 BaseMapper<AgentLogEntity>\n\n3. **schema.sql**（platform-data/src/main/resources/schema.sql）\n   - 新增 agent_log 表建表 DDL（id/session_id/conversation_id/log_type/log_level/log_data/create_time/update_time/deleted）及 session_id、conversation_id 索引\n\n### 涉及代码文件\n- platform-data/src/main/java/com/ghost616/platform/entity/AgentLogEntity.java\n- platform-data/src/main/java/com/ghost616/platform/repository/AgentLogMapper.java\n- platform-data/src/main/resources/schema.sql\n\n### 测试要求\n- 编译测试：确保 platform-data 模块编译通过，agent_log DDL 语法合法可执行",
-  "timestamp": "2026-08-09T07:28:14.240Z"
-}

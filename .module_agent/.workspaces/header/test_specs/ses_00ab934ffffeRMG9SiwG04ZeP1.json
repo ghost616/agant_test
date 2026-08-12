@@ -1,5 +1,0 @@
-{
-  "session_id": "ses_00ab934ffffeRMG9SiwG04ZeP1",
-  "content": "## 待测试功能说明\n\n### 功能一：MessageService 消息查询服务\n- 文件：platform-app/src/main/java/com/ghost616/platform/service/message/MessageService.java\n- 文件：platform-app/src/main/java/com/ghost616/platform/service/message/MessageServiceImpl.java\n- 功能：getAllMessages(Long sessionId) 通过 MessageMapper 查询指定会话消息，查询条件为 sessionId 相等 + rollback=false，按 sequenceNum 升序排序，不做 memoryPoint 记忆点过滤\n\n### 功能二：SessionServiceImpl.getMessages() 改造\n- 文件：platform-app/src/main/java/com/ghost616/platform/service/session/SessionServiceImpl.java\n- 功能：getMessages(Long sessionId) 改为注入并调用 MessageService.getAllMessages(sessionId) 获取消息实体列表，再通过 DefaultMessageDataProvider.toMessageDTOs 转换为 MessageDTO 返回；会话不存在时抛 SESSION_NOT_FOUND；不再调用 sessionManager.getMessages()\n\n### 测试要求\n- 编译检查：全量编译应通过（新增 service/message 包）\n- 单元测试：MessageServiceImplTest（4 用例）、SessionServiceImplTest（新增 getMessages 2 用例）\n",
-  "timestamp": "2026-08-12T09:23:55.817Z"
-}

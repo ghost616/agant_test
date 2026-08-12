@@ -1,5 +1,0 @@
-{
-  "session_id": "ses_00f908b9dffehBgXDxWSdDqGEC",
-  "content": "## 待测试功能说明\n\n### 变更概述\nSessionMemoryService.extractGroupContent 移除 MAX_GROUP_CONTENT_CHARS=500 字符截断限制：拼完消息内容后直接 trim 返回，不做截断。删除 MAX_GROUP_CONTENT_CHARS 常量。\n\n### 涉及文件\n- platform-app/src/main/java/com/ghost616/platform/service/memory/SessionMemoryService.java\n\n### 需要测试的功能\n1. SessionMemoryService 编译通过（MAX_GROUP_CONTENT_CHARS 常量已删除，无遗留引用）\n2. SessionMemoryServiceTest 全部用例通过（13/13）：extractGroupContent 不再截断不影响既有行为（消息内容均短于 500 字符，trim 后结果与之前一致），各场景（单组、同主题合并、不同主题、A→B→A 连续切分、归类失败降级、乱序映射、空白主题、无记忆智能体、记忆点不变、无向量模型、重试 5 次）无回归\n3. 相关模块（SessionMemoryDocumentTest、SessionMemoryESClientTest、AgentContextConfigurationTest）无回归",
-  "timestamp": "2026-08-11T12:26:29.621Z"
-}

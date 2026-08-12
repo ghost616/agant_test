@@ -1,5 +1,0 @@
-{
-  "session_id": "ses_013b78e49ffeUSUIPhXhykKajr",
-  "content": "# 待测试功能说明：ChatDataCacheManager.getStream 重构为 Flux.fromIterable + 自定义 Iterator\n\n## 涉及文件\n- agent-base/src/main/java/com/ghost616/agentbase/service/agent/ChatDataCacheManager.java\n- agent-base/src/test/java/com/ghost616/agentbase/service/agent/ChatDataCacheManagerTest.java\n\n## 可测试功能\n1. getStream 重构：由 Flux.interval + takeUntil + concatMap 改为 Flux.fromIterable(() -> new StreamIterator(cacheId, startIndex)).map(chunk -> SSE).doFinally(log)。\n2. StreamIterator 行为：hasNext() = !pending.isEmpty() || (!finished && !timedOut)；next() 从 lastIndex+1 起，若 currentMax >= from 则取块推进 lastIndex 并逐个返回（含 finishReason 则 finished=true）；无新数据未超时 sleep(1ms) 返回空 ChatChunk；超时返回 finishReason=ERROR 结束块并 finished=true/timedOut=true。\n3. 结束语义：以 finishReason 结束的流在结束块后不再发射额外空块（finished 后 hasNext 直接 false）。\n4. 轮询语义：无新数据期间每 tick 发射空 ChatChunk 心跳，超时后发射 ERROR 块。\n5. 日志行为不变：getStream 起止/新数据到达（INFO 带 from/currentMax）/超时（WARN）addCacheLog 均正常。\n6. 编译验证：agent-base 模块 test-compile 通过（Java 17）。\n7. 回归：ChatDataCacheManagerTest 全量用例（含委托/异常/日志用例）无回归。",
-  "timestamp": "2026-08-11T02:25:45.041Z"
-}

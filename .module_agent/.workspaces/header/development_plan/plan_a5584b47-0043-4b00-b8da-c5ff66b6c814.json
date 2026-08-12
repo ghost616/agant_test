@@ -1,9 +1,0 @@
-{
-  "plan_id": "plan_a5584b47-0043-4b00-b8da-c5ff66b6c814",
-  "module_name": "framework",
-  "development_plan": "README.md：1) 智能体评估流程去掉 BACKGROUND/FOREGROUND 枚举值、SSE 等技术细节，保留功能流程描述；2) 浏览器工具执行原理去掉类名（BrowserToolInvoker/BrowserToolCallbackImpl/ToolHostBridge/browser_tool_executor.js），保留功能流程",
-  "session_id": "ses_00bc0a481ffe068e2oY1in15mi",
-  "modified_files": [
-    "README.md"
-  ]
-}

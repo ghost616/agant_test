@@ -1,9 +1,0 @@
-{
-  "plan_id": "plan_b55393ff-8f85-4b3c-a141-88012a4a2d32",
-  "module_name": "platform-app",
-  "development_plan": "SessionMemoryService.extractGroupContent 移除 MAX_GROUP_CONTENT_CHARS=500 字符截断限制，拼完消息内容后直接 trim 返回，不做截断",
-  "session_id": "ses_00f908b9dffehBgXDxWSdDqGEC",
-  "modified_files": [
-    "platform-app/src/main/java/com/ghost616/platform/service/memory/SessionMemoryService.java"
-  ]
-}

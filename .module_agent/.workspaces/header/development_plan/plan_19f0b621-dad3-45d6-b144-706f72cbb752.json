@@ -1,9 +1,0 @@
-{
-  "plan_id": "plan_19f0b621-dad3-45d6-b144-706f72cbb752",
-  "module_name": "framework",
-  "development_plan": "README.md 功能模块列表所有条目精简技术细节，只保留功能层面描述：去掉类名（AgentComponentRegistry、HookInvoker、SystemHook、MessageSavePostHook 等）、具体工具名（callback_sub_session）、接口名（Provider/Manager/Invoker）、认证方式细节（Bearer Token、API Key）、子工具类型细节、消息类型枚举等实现细节，每条精简为功能概述",
-  "session_id": "ses_00bc0a481ffe068e2oY1in15mi",
-  "modified_files": [
-    "README.md"
-  ]
-}

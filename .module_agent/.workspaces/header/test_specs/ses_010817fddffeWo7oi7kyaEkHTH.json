@@ -1,5 +1,0 @@
-{
-  "session_id": "ses_010817fddffeWo7oi7kyaEkHTH",
-  "content": "# findNthUserSequenceNum 审查修复测试说明\n\n## 变更文件\n- platform-data/src/main/java/com/ghost616/platform/repository/MessageMapper.java\n\n## 变更内容\nfindNthUserSequenceNum 方法 SQL 修改：\n1. 补充 `AND rollback = 0` 过滤条件，与 countUserMessages 过滤基准一致\n2. `ORDER BY create_time` 改为 `ORDER BY sequence_num`，与调用方 getMessages 的 wrapper 排序基准统一\n\n修改后 SQL：`SELECT sequence_num FROM message WHERE session_id = #{sessionId} AND role = 'user' AND rollback = 0 ORDER BY sequence_num ASC LIMIT 1 OFFSET #{n}`\n\n## 待测试功能\n1. **findNthUserSequenceNum(Long sessionId, int n)**：按 sequence_num 升序查找会话内第 n 个（从 0 计数）user 且未回滚（rollback=0）消息的 sequenceNum，返回 Integer（不存在则返回 null）。\n\n## 测试要求\n- 编译检查：platform-data 模块 Maven 编译通过\n- 集成测试（H2 + MyBatis，复用既有 MessageMapperTest 框架）验证：\n  - 按 sequence_num 升序返回第 n 个 user 消息 sequenceNum（乱序插入验证）\n  - 已回滚（rollback=1）的 user 消息不参与定位\n  - assistant 消息不参与定位\n  - 只定位指定会话\n  - 越界/无匹配返回 null",
-  "timestamp": "2026-08-11T07:00:55.071Z"
-}

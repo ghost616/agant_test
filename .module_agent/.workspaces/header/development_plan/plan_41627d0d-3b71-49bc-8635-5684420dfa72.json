@@ -1,9 +1,0 @@
-{
-  "plan_id": "plan_41627d0d-3b71-49bc-8635-5684420dfa72",
-  "module_name": "framework",
-  "development_plan": "README.md 智能体日志和运行日志两行隐藏技术细节，只保留功能说明：去掉 AgentLog/LogData 类名、19个子类、Builder模式、AgentComponentRegistry、DatabaseAgentLog、MyBatis-Plus、agent_log 表名及字段名、45处日志点、定时任务cron等实现细节，精简为功能层描述",
-  "session_id": "ses_00bc0a481ffe068e2oY1in15mi",
-  "modified_files": [
-    "README.md"
-  ]
-}

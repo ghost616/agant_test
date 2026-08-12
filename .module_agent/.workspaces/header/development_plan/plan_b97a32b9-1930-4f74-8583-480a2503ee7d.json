@@ -1,9 +1,0 @@
-{
-  "plan_id": "plan_b97a32b9-1930-4f74-8583-480a2503ee7d",
-  "module_name": "framework",
-  "development_plan": "README.md：1) 知识库管理条目补充发布流程描述：创建知识库 → 上传或编辑文件 → 发布到 ES；2) 知识库搜索条目补充搜索流程描述：智能体绑定知识库后自动注入搜索工具 → 支持向量/全文/混合三种检索方式 → 返回搜索结果",
-  "session_id": "ses_00bc0a481ffe068e2oY1in15mi",
-  "modified_files": [
-    "README.md"
-  ]
-}

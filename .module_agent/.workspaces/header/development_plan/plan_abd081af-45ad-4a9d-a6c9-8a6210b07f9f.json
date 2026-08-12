@@ -1,9 +1,0 @@
-{
-  "plan_id": "plan_abd081af-45ad-4a9d-a6c9-8a6210b07f9f",
-  "module_name": "framework",
-  "development_plan": "README.md 新增\"工程配置\"章节，简要介绍 application.yml：服务端口（8080）、SQLite 数据库路径（data/agent_platform.db）、Elasticsearch 连接（localhost:9200）、日志级别",
-  "session_id": "ses_00b2ff46dffez8FivOaB2SZOMy",
-  "modified_files": [
-    "README.md"
-  ]
-}

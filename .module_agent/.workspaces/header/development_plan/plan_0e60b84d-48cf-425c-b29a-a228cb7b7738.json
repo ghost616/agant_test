@@ -1,9 +1,0 @@
-{
-  "plan_id": "plan_0e60b84d-48cf-425c-b29a-a228cb7b7738",
-  "module_name": "framework",
-  "development_plan": "README.md 智能体执行流程 8 个步骤精简技术细节，只保留功能流程描述。移除：模块名（agent-integration/agent-base）、类名（ModelInvoker/JavaToolInvoker/TypeScriptToolInvoker/PythonToolInvoker/McpHttpToolInvoker/LoadSkillsSystemTool/UnloadSkillsSystemTool/VariableProxy）、系统工具名（_sys_history_query/_sys_load_skills/_sys_unload_skills）、变量名（_sys_his_msgs_index）、表名（session_variable）、字段名（recentMessageCount）、技术框架名（sendmessage）、协议细节（PUT/REMOVE语义），每条保留功能层面的流程概述",
-  "session_id": "ses_00bc0a481ffe068e2oY1in15mi",
-  "modified_files": [
-    "README.md"
-  ]
-}

@@ -1,5 +1,0 @@
-{
-  "session_id": "ses_010ccf0d2ffeQEeoSERyiiZ024",
-  "content": "## 待测试功能（回归复测）\n\n上一轮离朱测试发现由本次变更引入的回归：`platform-app/src/test/java/com/ghost616/platform/migration/SchemaMigrationTest.java` 中 9 处 `times(82)` 迁移数断言未随 SchemaMigration 新增 2 条迁移项（agent_config.memory_enabled、agent_config.memory_group_count）而同步更新，迁移项总数由 82 变为 84。\n\n已修复：9 处 `times(82)` 已全部更新为 `times(84)`。\n\n## 复测要求\n- 使用 `mvn -pl platform-app -am test` 全量重建执行 platform-app 模块测试，确认 SchemaMigrationTest 的 9 个用例全部通过\n- 确认无新增回归（ToolDetailDTO / ToolConfigServiceImpl 两个既有失败用例与本次变更无关，可忽略）\n- platform-data、agent-base、agent-integration 模块测试不受影响",
-  "timestamp": "2026-08-11T05:13:18.667Z"
-}
