@@ -4,11 +4,15 @@ import com.ghost616.agentbase.dto.model.Message;
 import com.ghost616.agentbase.dto.model.ToolInfo;
 import com.ghost616.agentbase.service.agent.MessageDataProvider;
 import com.ghost616.platform.dto.ApiResponse;
+import com.ghost616.platform.dto.PageResult;
 import com.ghost616.platform.dto.session.SubSessionDataDTO;
+import com.ghost616.platform.enums.AggregationType;
 import com.ghost616.platform.enums.ErrorCode;
 import com.ghost616.platform.exception.BusinessException;
+import com.ghost616.platform.model.SessionMemoryDocument;
 import com.ghost616.platform.service.agent.DefaultSubSessionCallback;
 import com.ghost616.platform.service.memory.SessionMemoryService;
+import com.ghost616.platform.service.search.SessionMemoryESClient;
 import com.ghost616.platform.service.session.SessionService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,6 +38,9 @@ class SessionControllerTest {
 
     @Mock
     private SessionMemoryService sessionMemoryService;
+
+    @Mock
+    private SessionMemoryESClient sessionMemoryESClient;
 
     @InjectMocks
     private SessionController controller;
@@ -204,6 +211,69 @@ class SessionControllerTest {
 
         assertFalse(response.isSuccess());
         assertEquals("SESSION-005", response.getCode());
+    }
+
+    @Test
+    void queryMemory_shouldDelegateToESClientAndReturnData() {
+        SessionMemoryDocument doc = SessionMemoryDocument.builder()
+                .sessionId("100")
+                .aggregationType(AggregationType.GROUP)
+                .aggregationStartSeq(1)
+                .aggregationEndSeq(3)
+                .aggregationText("摘要")
+                .build();
+        PageResult<SessionMemoryDocument> pageResult =
+                new PageResult<>(List.of(doc), 5L, 1, 20);
+        when(sessionMemoryESClient.queryBySessionId("100", AggregationType.GROUP, 1, 20))
+                .thenReturn(pageResult);
+
+        ApiResponse<PageResult<SessionMemoryDocument>> response =
+                controller.queryMemory(100L, AggregationType.GROUP, 1, 20);
+
+        assertTrue(response.isSuccess());
+        assertSame(pageResult, response.getData());
+        verify(sessionMemoryESClient).queryBySessionId("100", AggregationType.GROUP, 1, 20);
+    }
+
+    @Test
+    void queryMemory_shouldForwardNonDefaultPageAndSize() {
+        SessionMemoryDocument doc = SessionMemoryDocument.builder().sessionId("7").build();
+        PageResult<SessionMemoryDocument> pageResult =
+                new PageResult<>(List.of(doc), 2L, 3, 50);
+        when(sessionMemoryESClient.queryBySessionId("7", AggregationType.DAILY, 3, 50))
+                .thenReturn(pageResult);
+
+        ApiResponse<PageResult<SessionMemoryDocument>> response =
+                controller.queryMemory(7L, AggregationType.DAILY, 3, 50);
+
+        assertTrue(response.isSuccess());
+        assertEquals(3, response.getData().getPage());
+        assertEquals(50, response.getData().getSize());
+        verify(sessionMemoryESClient).queryBySessionId("7", AggregationType.DAILY, 3, 50);
+    }
+
+    @Test
+    void queryMemory_shouldReturnEmptyResultWhenNoDocuments() {
+        PageResult<SessionMemoryDocument> pageResult = new PageResult<>(List.of(), 0L, 1, 20);
+        when(sessionMemoryESClient.queryBySessionId("999", AggregationType.GROUP, 1, 20))
+                .thenReturn(pageResult);
+
+        ApiResponse<PageResult<SessionMemoryDocument>> response =
+                controller.queryMemory(999L, AggregationType.GROUP, 1, 20);
+
+        assertTrue(response.isSuccess());
+        assertNotNull(response.getData());
+        assertTrue(response.getData().getList().isEmpty());
+        assertEquals(0L, response.getData().getTotal());
+    }
+
+    @Test
+    void queryMemory_shouldPropagateClientException() {
+        when(sessionMemoryESClient.queryBySessionId(anyString(), any(), anyInt(), anyInt()))
+                .thenThrow(new IllegalStateException("按会话查询记忆文档失败: session_memory"));
+
+        assertThrows(IllegalStateException.class,
+                () -> controller.queryMemory(1L, AggregationType.GROUP, 1, 20));
     }
 
     private MessageDataProvider.MessageDTO buildMessageDTO(String role, String content, String reasoning,

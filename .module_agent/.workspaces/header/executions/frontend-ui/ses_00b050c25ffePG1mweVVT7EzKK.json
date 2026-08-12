@@ -1,0 +1,15 @@
+[
+  {
+    "plan_id": "plan_40054f57-6ee2-4797-a7f9-1b8687e9cc36",
+    "plan": "记忆回看菜单与页面",
+    "modified_files": [
+      "src/App.tsx",
+      "src/types/memory.ts",
+      "src/services/memory.ts",
+      "src/pages/memory/MemoryList.tsx",
+      "src/pages/memory/MemoryDetail.tsx"
+    ],
+    "summary": "记忆回看功能执行完成。新增 src/types/memory.ts（MemoryAggregationType/SessionMemoryDocument/MemoryQueryParams，对齐后端 SessionMemoryDocument）、src/services/memory.ts（getSessionMemory 调用 GET /sessions/{id}/memory，params type/page/size，返回 PageResult）；新建 src/pages/memory/MemoryList.tsx 会话列表页（/memory：并行 listSessions+listAgents，过滤 memoryEnabled=true 智能体会话，表格显示会话名称/智能体名/最近消息时间（getSessionMessages 取末条消息 createTime），每条提供「按日聚合」跳转 /memory/:sessionId/DAILY 与「按分类聚合」跳转 /memory/:sessionId/GROUP，pagination=false）；新建 src/pages/memory/MemoryDetail.tsx 聚合列表页（/memory/:sessionId/:type：按 type 调用 getSessionMemory，DAILY 显示聚合日期列（aggregationStartTime 格式化）、GROUP 显示起始行-结束行列（aggregationStartSeq-aggregationEndSeq），聚合文本列 ellipsis 超长省略，支持分页 pageSizeOptions 10/20/50+showTotal，返回按钮跳转 /memory）；App.tsx 新增「记忆回看」菜单项（EyeOutlined，key /memory）与 /memory、/memory/:sessionId/:type 路由。已同步更新 current_spec.md（新增「记忆回看界面」section）、module_definition.json（新增 4 个文件）与 change_history.log。离朱测试通过：变更文件 tsc 0 错误；新增 39 用例（服务层 memory 5 + MemoryList 9 + MemoryDetail 15 + App 4 + E2E 6）全部通过，无回归。",
+    "errors": []
+  }
+]

@@ -1,12 +1,10 @@
 package com.ghost616.platform.service.search;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
-import co.elastic.clients.elasticsearch._types.SortOrder;
 import co.elastic.clients.elasticsearch._types.mapping.DenseVectorSimilarity;
 import co.elastic.clients.elasticsearch.core.BulkRequest;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
-import com.ghost616.platform.dto.PageResult;
 import com.ghost616.platform.enums.AggregationType;
 import com.ghost616.platform.model.SessionMemoryDocument;
 import lombok.RequiredArgsConstructor;
@@ -14,7 +12,6 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * 会话记忆客户端，封装 Elasticsearch 索引 session_memory 的创建与会话记忆文档批量写入。
@@ -125,42 +122,6 @@ public class SessionMemoryESClient {
             return hits != null && !hits.isEmpty();
         } catch (IOException e) {
             throw new IllegalStateException("检查按日记忆文档是否存在失败: " + INDEX_NAME, e);
-        }
-    }
-
-    /**
-     * 按会话 ID 与聚合类型查询会话记忆文档，按聚合开始时间降序排列并分页返回。
-     *
-     * @param sessionId 会话 ID（字符串形式）
-     * @param type      聚合类型（GROUP/DAILY）
-     * @param page      页码（从 1 开始）
-     * @param size      每页条数
-     * @return 分页结果，包含文档列表与总数
-     */
-    public PageResult<SessionMemoryDocument> queryBySessionId(String sessionId, AggregationType type, int page, int size) {
-        ensureIndex();
-        int safePage = Math.max(1, page);
-        int safeSize = Math.max(1, size);
-        try {
-            SearchResponse<SessionMemoryDocument> response = elasticsearchClient.search(s -> s
-                            .index(INDEX_NAME)
-                            .query(q -> q.bool(b -> b
-                                    .must(m -> m.term(t -> t.field("sessionId").value(sessionId)))
-                                    .must(m -> m.term(t -> t.field("aggregationType").value(type.getCode())))))
-                            .sort(srt -> srt.field(f -> f.field("aggregationStartTime").order(SortOrder.Desc)))
-                            .from((safePage - 1) * safeSize)
-                            .size(safeSize),
-                    SessionMemoryDocument.class);
-            List<Hit<SessionMemoryDocument>> hits = response.hits().hits();
-            List<SessionMemoryDocument> documents = hits == null ? List.of()
-                    : hits.stream()
-                            .map(Hit::source)
-                            .filter(Objects::nonNull)
-                            .toList();
-            long total = response.hits().total() != null ? response.hits().total().value() : 0L;
-            return new PageResult<>(documents, total, safePage, safeSize);
-        } catch (IOException e) {
-            throw new IllegalStateException("按会话查询记忆文档失败: " + INDEX_NAME, e);
         }
     }
 

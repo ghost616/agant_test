@@ -1,6 +1,9 @@
 package com.ghost616.platform.service.search;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch._types.FieldSort;
+import co.elastic.clients.elasticsearch._types.SortOptions;
+import co.elastic.clients.elasticsearch._types.SortOrder;
 import co.elastic.clients.elasticsearch._types.mapping.DenseVectorProperty;
 import co.elastic.clients.elasticsearch._types.mapping.DenseVectorSimilarity;
 import co.elastic.clients.elasticsearch._types.mapping.Property;
@@ -13,11 +16,14 @@ import co.elastic.clients.elasticsearch.core.bulk.BulkOperation;
 import co.elastic.clients.elasticsearch.core.bulk.IndexOperation;
 import co.elastic.clients.elasticsearch.core.search.Hit;
 import co.elastic.clients.elasticsearch.core.search.HitsMetadata;
+import co.elastic.clients.elasticsearch.core.search.TotalHits;
+import co.elastic.clients.elasticsearch.core.search.TotalHitsRelation;
 import co.elastic.clients.elasticsearch.indices.CreateIndexRequest;
 import co.elastic.clients.elasticsearch.indices.ElasticsearchIndicesClient;
 import co.elastic.clients.elasticsearch.indices.ExistsRequest;
 import co.elastic.clients.transport.endpoints.BooleanResponse;
 import co.elastic.clients.util.ObjectBuilder;
+import com.ghost616.platform.dto.PageResult;
 import com.ghost616.platform.enums.AggregationType;
 import com.ghost616.platform.model.SessionMemoryDocument;
 import org.junit.jupiter.api.BeforeEach;
@@ -278,6 +284,212 @@ class SessionMemoryESClientTest {
 
         IllegalStateException ex = assertThrows(IllegalStateException.class,
                 () -> client.checkDailyExists("100", 1000L, 2000L));
+        assertTrue(ex.getMessage().contains(SessionMemoryESClient.INDEX_NAME));
+    }
+
+    @Test
+    @DisplayName("queryBySessionId：bool 查询含 term(sessionId)+term(aggregationType)，sort 降序，分页 from/size 正确，返回文档与总数")
+    void queryBySessionId_returnsDocuments() throws Exception {
+        stubExists(true);
+        @SuppressWarnings("unchecked")
+        SearchResponse<SessionMemoryDocument> searchResponse = mock(SearchResponse.class);
+        @SuppressWarnings("unchecked")
+        HitsMetadata<SessionMemoryDocument> hitsMeta = mock(HitsMetadata.class);
+        @SuppressWarnings("unchecked")
+        Hit<SessionMemoryDocument> hit = mock(Hit.class);
+        SessionMemoryDocument doc = SessionMemoryDocument.builder()
+                .sessionId("100")
+                .aggregationType(AggregationType.GROUP)
+                .aggregationStartSeq(1)
+                .aggregationEndSeq(3)
+                .aggregationText("摘要")
+                .build();
+        when(hit.source()).thenReturn(doc);
+        when(hitsMeta.hits()).thenReturn(List.of(hit));
+        TotalHits totalHits = TotalHits.of(t -> t.value(5L).relation(TotalHitsRelation.Eq));
+        when(hitsMeta.total()).thenReturn(totalHits);
+        when(searchResponse.hits()).thenReturn(hitsMeta);
+        when(elasticsearchClient.search(any(Function.class), eq(SessionMemoryDocument.class)))
+                .thenReturn(searchResponse);
+
+        PageResult<SessionMemoryDocument> result = client.queryBySessionId("100", AggregationType.GROUP, 2, 10);
+
+        assertNotNull(result);
+        assertEquals(1, result.getList().size());
+        assertSame(doc, result.getList().get(0));
+        assertEquals(5L, result.getTotal());
+        assertEquals(2, result.getPage());
+        assertEquals(10, result.getSize());
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Function<SearchRequest.Builder, ObjectBuilder<SearchRequest>>> captor =
+                ArgumentCaptor.forClass(Function.class);
+        verify(elasticsearchClient).search(captor.capture(), eq(SessionMemoryDocument.class));
+        SearchRequest request = apply(captor.getValue(), new SearchRequest.Builder());
+        assertEquals(List.of(SessionMemoryESClient.INDEX_NAME), request.index());
+
+        Query query = request.query();
+        assertTrue(query.isBool(), "应为 bool 查询");
+        assertNotNull(query.bool().must());
+        assertEquals(2, query.bool().must().size(), "bool 查询应包含 2 个 must 条件");
+
+        Query termSession = query.bool().must().get(0);
+        assertTrue(termSession.isTerm(), "第1个条件应为 term 查询");
+        assertEquals("sessionId", termSession.term().field());
+        assertEquals("100", termSession.term().value().stringValue());
+
+        Query termType = query.bool().must().get(1);
+        assertTrue(termType.isTerm(), "第2个条件应为 term 查询");
+        assertEquals("aggregationType", termType.term().field());
+        assertEquals("GROUP", termType.term().value().stringValue());
+
+        assertNotNull(request.sort());
+        assertEquals(1, request.sort().size(), "应只包含 1 个排序字段");
+        SortOptions sort = request.sort().get(0);
+        assertTrue(sort.isField(), "应为 field 排序");
+        FieldSort fieldSort = sort.field();
+        assertEquals("aggregationStartTime", fieldSort.field());
+        assertEquals(SortOrder.Desc, fieldSort.order());
+
+        assertEquals(10, request.from(), "from=(page-1)*size=(2-1)*10=10");
+        assertEquals(10, request.size());
+    }
+
+    @Test
+    @DisplayName("queryBySessionId：source() 为 null 的命中被过滤，只返回有效文档")
+    void queryBySessionId_filtersNullSource() throws Exception {
+        stubExists(true);
+        @SuppressWarnings("unchecked")
+        SearchResponse<SessionMemoryDocument> searchResponse = mock(SearchResponse.class);
+        @SuppressWarnings("unchecked")
+        HitsMetadata<SessionMemoryDocument> hitsMeta = mock(HitsMetadata.class);
+        @SuppressWarnings("unchecked")
+        Hit<SessionMemoryDocument> validHit = mock(Hit.class);
+        @SuppressWarnings("unchecked")
+        Hit<SessionMemoryDocument> nullHit = mock(Hit.class);
+        SessionMemoryDocument doc = SessionMemoryDocument.builder().sessionId("100").build();
+        when(validHit.source()).thenReturn(doc);
+        when(nullHit.source()).thenReturn(null);
+        when(hitsMeta.hits()).thenReturn(List.of(validHit, nullHit));
+        when(hitsMeta.total()).thenReturn(TotalHits.of(t -> t.value(2L).relation(TotalHitsRelation.Eq)));
+        when(searchResponse.hits()).thenReturn(hitsMeta);
+        when(elasticsearchClient.search(any(Function.class), eq(SessionMemoryDocument.class)))
+                .thenReturn(searchResponse);
+
+        PageResult<SessionMemoryDocument> result = client.queryBySessionId("100", AggregationType.DAILY, 1, 20);
+
+        assertEquals(1, result.getList().size(), "source()==null 的命中应被过滤");
+        assertSame(doc, result.getList().get(0));
+        assertEquals(2L, result.getTotal());
+    }
+
+    @Test
+    @DisplayName("queryBySessionId：total 为 null 时返回 0")
+    void queryBySessionId_nullTotal_returnsZero() throws Exception {
+        stubExists(true);
+        @SuppressWarnings("unchecked")
+        SearchResponse<SessionMemoryDocument> searchResponse = mock(SearchResponse.class);
+        @SuppressWarnings("unchecked")
+        HitsMetadata<SessionMemoryDocument> hitsMeta = mock(HitsMetadata.class);
+        when(hitsMeta.hits()).thenReturn(List.of());
+        when(hitsMeta.total()).thenReturn(null);
+        when(searchResponse.hits()).thenReturn(hitsMeta);
+        when(elasticsearchClient.search(any(Function.class), eq(SessionMemoryDocument.class)))
+                .thenReturn(searchResponse);
+
+        PageResult<SessionMemoryDocument> result = client.queryBySessionId("100", AggregationType.GROUP, 1, 20);
+
+        assertNotNull(result.getList());
+        assertTrue(result.getList().isEmpty());
+        assertEquals(0L, result.getTotal(), "total 为 null 时应返回 0");
+    }
+
+    @Test
+    @DisplayName("queryBySessionId：page/size 为 0 或负数时使用 Math.max 兜底（page>=1、size>=1）")
+    void queryBySessionId_safePageAndSize() throws Exception {
+        stubExists(true);
+        @SuppressWarnings("unchecked")
+        SearchResponse<SessionMemoryDocument> searchResponse = mock(SearchResponse.class);
+        @SuppressWarnings("unchecked")
+        HitsMetadata<SessionMemoryDocument> hitsMeta = mock(HitsMetadata.class);
+        when(hitsMeta.hits()).thenReturn(List.of());
+        when(hitsMeta.total()).thenReturn(TotalHits.of(t -> t.value(0L).relation(TotalHitsRelation.Eq)));
+        when(searchResponse.hits()).thenReturn(hitsMeta);
+        when(elasticsearchClient.search(any(Function.class), eq(SessionMemoryDocument.class)))
+                .thenReturn(searchResponse);
+
+        PageResult<SessionMemoryDocument> result = client.queryBySessionId("100", AggregationType.DAILY, 0, 0);
+
+        assertEquals(1, result.getPage(), "page 至少为 1");
+        assertEquals(1, result.getSize(), "size 至少为 1");
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Function<SearchRequest.Builder, ObjectBuilder<SearchRequest>>> captor =
+                ArgumentCaptor.forClass(Function.class);
+        verify(elasticsearchClient).search(captor.capture(), eq(SessionMemoryDocument.class));
+        SearchRequest request = apply(captor.getValue(), new SearchRequest.Builder());
+        assertEquals(0, request.from(), "from=(max(1,0)-1)*max(1,0)=0");
+        assertEquals(1, request.size());
+    }
+
+    @Test
+    @DisplayName("queryBySessionId：负数 page/size 同样兜底为 1")
+    void queryBySessionId_negativePageSize() throws Exception {
+        stubExists(true);
+        @SuppressWarnings("unchecked")
+        SearchResponse<SessionMemoryDocument> searchResponse = mock(SearchResponse.class);
+        @SuppressWarnings("unchecked")
+        HitsMetadata<SessionMemoryDocument> hitsMeta = mock(HitsMetadata.class);
+        when(hitsMeta.hits()).thenReturn(List.of());
+        when(hitsMeta.total()).thenReturn(TotalHits.of(t -> t.value(0L).relation(TotalHitsRelation.Eq)));
+        when(searchResponse.hits()).thenReturn(hitsMeta);
+        when(elasticsearchClient.search(any(Function.class), eq(SessionMemoryDocument.class)))
+                .thenReturn(searchResponse);
+
+        PageResult<SessionMemoryDocument> result = client.queryBySessionId("100", AggregationType.GROUP, -5, -2);
+
+        assertEquals(1, result.getPage());
+        assertEquals(1, result.getSize());
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Function<SearchRequest.Builder, ObjectBuilder<SearchRequest>>> captor =
+                ArgumentCaptor.forClass(Function.class);
+        verify(elasticsearchClient).search(captor.capture(), eq(SessionMemoryDocument.class));
+        SearchRequest request = apply(captor.getValue(), new SearchRequest.Builder());
+        assertEquals(0, request.from());
+        assertEquals(1, request.size());
+    }
+
+    @Test
+    @DisplayName("queryBySessionId：索引不存在时先自动创建再查询")
+    void queryBySessionId_autoCreateIndex() throws Exception {
+        stubExists(false);
+        when(indicesClient.create(any(Function.class))).thenReturn(null);
+        @SuppressWarnings("unchecked")
+        SearchResponse<SessionMemoryDocument> searchResponse = mock(SearchResponse.class);
+        @SuppressWarnings("unchecked")
+        HitsMetadata<SessionMemoryDocument> hitsMeta = mock(HitsMetadata.class);
+        when(hitsMeta.hits()).thenReturn(List.of());
+        when(hitsMeta.total()).thenReturn(TotalHits.of(t -> t.value(0L).relation(TotalHitsRelation.Eq)));
+        when(searchResponse.hits()).thenReturn(hitsMeta);
+        when(elasticsearchClient.search(any(Function.class), eq(SessionMemoryDocument.class)))
+                .thenReturn(searchResponse);
+
+        client.queryBySessionId("100", AggregationType.GROUP, 1, 20);
+
+        verify(indicesClient).create(any(Function.class));
+        verify(elasticsearchClient).search(any(Function.class), eq(SessionMemoryDocument.class));
+    }
+
+    @Test
+    @DisplayName("queryBySessionId：IOException 包装为 IllegalStateException 且消息含索引名")
+    void queryBySessionId_ioException() throws Exception {
+        stubExists(true);
+        when(elasticsearchClient.search(any(Function.class), eq(SessionMemoryDocument.class)))
+                .thenThrow(new IOException("boom"));
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class,
+                () -> client.queryBySessionId("100", AggregationType.GROUP, 1, 20));
         assertTrue(ex.getMessage().contains(SessionMemoryESClient.INDEX_NAME));
     }
 }

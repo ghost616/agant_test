@@ -1,7 +1,6 @@
 package com.ghost616.platform.controller;
 
 import com.ghost616.platform.dto.ApiResponse;
-import com.ghost616.platform.dto.PageResult;
 import com.ghost616.platform.dto.session.CreateSessionRequest;
 import com.ghost616.platform.dto.session.SessionDTO;
 import com.ghost616.platform.dto.session.SubSessionDataDTO;
@@ -23,13 +22,9 @@ import java.util.List;
 
 import com.ghost616.agentbase.dto.model.Message;
 import com.ghost616.agentbase.dto.model.ToolCall;
-import com.ghost616.platform.enums.AggregationType;
 import com.ghost616.platform.enums.ErrorCode;
 import com.ghost616.agentbase.service.agent.MessageDataProvider;
-import com.ghost616.platform.model.SessionMemoryDocument;
 import com.ghost616.platform.service.agent.DefaultSubSessionCallback;
-import com.ghost616.platform.service.search.SessionMemoryESClient;
-import com.ghost616.platform.util.IdConverter;
 
 import java.util.Map;
 
@@ -42,7 +37,6 @@ public class SessionController {
     private final SessionService sessionService;
     private final DefaultSubSessionCallback subSessionCallback;
     private final SessionMemoryService sessionMemoryService;
-    private final SessionMemoryESClient sessionMemoryESClient;
 
     @GetMapping
     public ApiResponse<List<SessionDTO>> listSessions(@RequestParam(required = false) Long agentId) {
@@ -91,16 +85,6 @@ public class SessionController {
     public ApiResponse<Void> triggerSessionMemory(@PathVariable Long id) {
         sessionMemoryService.triggerSessionMemory(id);
         return ApiResponse.success("记忆摘要生成已触发", null);
-    }
-
-    @GetMapping("/{id}/memory")
-    public ApiResponse<PageResult<SessionMemoryDocument>> queryMemory(@PathVariable Long id,
-                                                                      @RequestParam AggregationType type,
-                                                                      @RequestParam(defaultValue = "1") int page,
-                                                                      @RequestParam(defaultValue = "20") int size) {
-        PageResult<SessionMemoryDocument> result = sessionMemoryESClient.queryBySessionId(
-                IdConverter.toString(id), type, page, size);
-        return ApiResponse.success(result);
     }
 
     @GetMapping("/{id}/sub-session-data")

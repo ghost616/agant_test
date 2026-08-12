@@ -11,7 +11,7 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/controller/SessionController.java",
-      "description": "会话管理 REST 控制器，提供会话的 CRUD、消息查询、回滚、子会话列表查询、子会话数据获取（映射 thinking 字段）、子会话完成等 HTTP API 端点；注入 SessionMemoryService 提供 GET /api/sessions/{id}/memory/trigger 端点（调用 triggerSessionMemory 手动触发记忆摘要生成）"
+      "description": "会话管理 REST 控制器，提供会话的 CRUD、消息查询、回滚、子会话列表查询、子会话数据获取（映射 thinking 字段）、子会话完成等 HTTP API 端点；注入 SessionMemoryService 提供 GET /api/sessions/{id}/memory/trigger 端点（调用 triggerSessionMemory 手动触发记忆摘要生成）；注入 SessionMemoryESClient 提供 GET /api/sessions/{id}/memory 端点（接收 type(DAILY|GROUP)/page(默认1)/size(默认20) 参数，调用 queryBySessionId 查询 ES 返回分页结果）"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/session/SessionService.java",
@@ -19,7 +19,7 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/session/SessionServiceImpl.java",
-      "description": "会话管理服务实现，包含会话创建（含工具绑定）、查询、删除、回滚、子会话列表查询等业务逻辑"
+      "description": "会话管理服务实现，包含会话创建（含工具绑定）、查询、删除、回滚、子会话列表查询等业务逻辑；getMessages 注入并调用 MessageService.getAllMessages 查询消息（sessionId + rollback=false，按 sequenceNum 升序，不过滤 memoryPoint）后通过 DefaultMessageDataProvider.toMessageDTOs 转换为 MessageDTO 返回"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/config/AgentContextConfiguration.java",
@@ -423,7 +423,7 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/search/SessionMemoryESClient.java",
-      "description": "会话记忆 ES 客户端（@Service），封装索引 session_memory 的创建与批量写入：createIndex 建索引（sessionId/keyword、aggregationType/keyword、aggregationStartSeq/integer、aggregationEndSeq/integer、aggregationStartTime/long、aggregationEndTime/long、aggregationText/text(ik)、vector/dense_vector(cosine)，索引已存在跳过）、batchSave 通过 bulk 批量写入（doc id=sessionId_aggregationType_startSeq_endSeq，索引不存在自动创建）、checkDailyExists(String sessionId, long startTime, long endTime) 用 term sessionId + term aggregationType=DAILY + range aggregationStartTime lte endTime + range aggregationEndTime gte startTime 重叠判断该时间段是否已有 DAILY 文档，IOException 包装为 IllegalStateException"
+      "description": "会话记忆 ES 客户端（@Service），封装索引 session_memory 的创建、批量写入与查询：createIndex 建索引（sessionId/keyword、aggregationType/keyword、aggregationStartSeq/integer、aggregationEndSeq/integer、aggregationStartTime/long、aggregationEndTime/long、aggregationText/text(ik)、vector/dense_vector(cosine)，索引已存在跳过）、batchSave 通过 bulk 批量写入（doc id=sessionId_aggregationType_startSeq_endSeq，索引不存在自动创建）、checkDailyExists(String sessionId, long startTime, long endTime) 用 term sessionId + term aggregationType=DAILY + range aggregationStartTime lte endTime + range aggregationEndTime gte startTime 重叠判断该时间段是否已有 DAILY 文档、queryBySessionId(String sessionId, AggregationType type, int page, int size) 用 term sessionId + term aggregationType 查询并按 aggregationStartTime 降序排列分页返回 PageResult<SessionMemoryDocument>（含文档列表与总数），IOException 包装为 IllegalStateException"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/memory/SessionMemoryService.java",
@@ -440,6 +440,18 @@
     {
       "path": "platform-app/src/test/java/com/ghost616/platform/service/memory/SessionMemoryServiceTest.java",
       "description": "SessionMemoryService 单元测试：覆盖无记忆智能体直接返回、新消息聚合写入 ES 并更新记忆点、记忆点不变跳过、未配置向量模型跳过、会话处理失败重试 5 次、摘要失败该组跳过"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/service/message/MessageService.java",
+      "description": "消息查询服务接口，定义 getAllMessages(Long sessionId) 方法，提供消息持久化数据的查询能力"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/service/message/MessageServiceImpl.java",
+      "description": "消息查询服务实现，注入 MessageMapper，通过 LambdaQueryWrapper 查询会话消息（sessionId + rollback=false，按 sequenceNum 升序，不做 memoryPoint 记忆点过滤）"
+    },
+    {
+      "path": "platform-app/src/test/java/com/ghost616/platform/service/message/MessageServiceImplTest.java",
+      "description": "消息查询服务单元测试，覆盖 getAllMessages 的消息查询、空结果、查询条件构造与不做 memoryPoint 过滤场景"
     }
   ]
 }

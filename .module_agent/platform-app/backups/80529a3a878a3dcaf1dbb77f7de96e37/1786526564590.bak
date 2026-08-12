@@ -24,7 +24,6 @@ import com.ghost616.agentbase.service.agent.AgentContextManager;
 import com.ghost616.agentbase.service.agent.MessageDataProvider;
 import com.ghost616.agentbase.service.agent.SessionManager;
 import com.ghost616.agentbase.service.agent.invoker.ToolManager;
-import com.ghost616.platform.exception.BusinessException;
 
 
 @ExtendWith(MockitoExtension.class)
@@ -46,8 +45,6 @@ class SessionServiceImplTest {
     private com.ghost616.platform.repository.MessageMapper messageMapper;
     @Mock
     private com.ghost616.platform.service.agent.DefaultMessageDataProvider defaultMessageDataProvider;
-    @Mock
-    private com.ghost616.platform.service.message.MessageService messageService;
 
     @InjectMocks
     private SessionServiceImpl sessionService;
@@ -338,46 +335,6 @@ class SessionServiceImplTest {
         assertEquals(2, result.size());
         assertEquals("newer", result.get(0).getTitle());
         assertEquals("older", result.get(1).getTitle());
-    }
-
-    // ========== getMessages ==========
-
-    @Test
-    void getMessages_会话存在_调用MessageService并转换为DTO() {
-        Session entity = new Session();
-        entity.setId(100L);
-        entity.setIsChild(false);
-        entity.setTitle("test");
-        when(sessionMapper.selectById(100L)).thenReturn(entity);
-
-        com.ghost616.platform.entity.Message msg = new com.ghost616.platform.entity.Message();
-        msg.setId(1L);
-        msg.setSessionId(100L);
-        msg.setRole("user");
-        msg.setContent("hello");
-        msg.setSequenceNum(1);
-        when(messageService.getAllMessages(100L)).thenReturn(List.of(msg));
-
-        MessageDataProvider.MessageDTO dto = new MessageDataProvider.MessageDTO(
-                "1", "100", "user", "hello", null, null, 1, null, null,
-                List.of(), null, false, null, null, null);
-        when(defaultMessageDataProvider.toMessageDTOs(List.of(msg))).thenReturn(List.of(dto));
-
-        List<MessageDataProvider.MessageDTO> result = sessionService.getMessages(100L);
-
-        assertEquals(1, result.size());
-        assertEquals("hello", result.get(0).content());
-        verify(messageService).getAllMessages(100L);
-        verify(defaultMessageDataProvider).toMessageDTOs(List.of(msg));
-        verify(sessionManager, never()).getMessages(any());
-    }
-
-    @Test
-    void getMessages_会话不存在_抛SESSION_NOT_FOUND() {
-        when(sessionMapper.selectById(999L)).thenReturn(null);
-
-        assertThrows(BusinessException.class, () -> sessionService.getMessages(999L));
-        verify(messageService, never()).getAllMessages(any());
     }
 
     // ========== getMessagesByConversationId ==========

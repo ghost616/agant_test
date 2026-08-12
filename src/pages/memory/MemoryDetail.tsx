@@ -1,0 +1,139 @@
+import { useCallback, useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { Button, message, Space, Table, Typography } from 'antd';
+import { ArrowLeftOutlined } from '@ant-design/icons';
+import type { ColumnsType } from 'antd/es/table';
+import type {
+  MemoryAggregationType,
+  SessionMemoryDocument,
+} from '../../types/memory';
+import { getSessionMemory } from '../../services/memory';
+
+const PAGE_SIZE_OPTIONS = [10, 20, 50];
+const DATE_FORMAT_OPTIONS: Intl.DateTimeFormatOptions = {
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+};
+
+/**
+ * 格式化毫秒时间戳为日期字符串。
+ * @param timestamp 毫秒时间戳
+ * @returns yyyy/MM/dd 格式日期
+ */
+function formatDate(timestamp?: number): string {
+  if (timestamp == null) {
+    return '-';
+  }
+  return new Date(timestamp).toLocaleDateString('zh-CN', DATE_FORMAT_OPTIONS);
+}
+
+/**
+ * 记忆聚合列表页：按 type（DAILY/GROUP）展示会话的记忆聚合文档，支持分页。
+ */
+function MemoryDetail(): JSX.Element {
+  const { sessionId = '', type = 'DAILY' } = useParams<{
+    sessionId?: string;
+    type?: string;
+  }>();
+  const navigate = useNavigate();
+
+  const aggType: MemoryAggregationType = type === 'GROUP' ? 'GROUP' : 'DAILY';
+
+  const [dataSource, setDataSource] = useState<SessionMemoryDocument[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [total, setTotal] = useState(0);
+
+  const fetchList = useCallback(async (): Promise<void> => {
+    setLoading(true);
+    try {
+      const result = await getSessionMemory(sessionId, aggType, page, pageSize);
+      setDataSource(result.list);
+      setTotal(result.total);
+    } catch {
+      message.error('获取记忆聚合列表失败');
+    } finally {
+      setLoading(false);
+    }
+  }, [sessionId, aggType, page, pageSize]);
+
+  useEffect(() => {
+    fetchList();
+  }, [fetchList]);
+
+  const columns: ColumnsType<SessionMemoryDocument> = [
+    ...(aggType === 'DAILY'
+      ? [
+          {
+            title: '聚合日期',
+            key: 'date',
+            width: 140,
+            render: (_: unknown, record: SessionMemoryDocument) =>
+              formatDate(record.aggregationStartTime),
+          } as ColumnsType<SessionMemoryDocument>[number],
+        ]
+      : [
+          {
+            title: '起始行-结束行',
+            key: 'seqRange',
+            width: 160,
+            render: (_: unknown, record: SessionMemoryDocument) => {
+              const start = record.aggregationStartSeq ?? '-';
+              const end = record.aggregationEndSeq ?? '-';
+              return `${start} - ${end}`;
+            },
+          } as ColumnsType<SessionMemoryDocument>[number],
+        ]),
+    {
+      title: '聚合文本',
+      dataIndex: 'aggregationText',
+      width: 520,
+      ellipsis: true,
+      render: (value?: string) => value || '-',
+    },
+  ];
+
+  const handlePageChange = (nextPage: number, nextPageSize: number): void => {
+    setPage(nextPageSize !== pageSize ? 1 : nextPage);
+    setPageSize(nextPageSize);
+  };
+
+  return (
+    <div>
+      <Space style={{ marginBottom: 16 }}>
+        <Button
+          icon={<ArrowLeftOutlined />}
+          onClick={() => navigate('/memory')}
+        >
+          返回
+        </Button>
+        <Typography.Title level={5} style={{ margin: 0 }}>
+          {aggType === 'DAILY' ? '按日聚合记忆' : '按分类聚合记忆'}
+        </Typography.Title>
+      </Space>
+
+      <Table<SessionMemoryDocument>
+        rowKey={(record) =>
+          `${record.sessionId}_${record.aggregationType}_${record.aggregationStartSeq}_${record.aggregationEndSeq}`
+        }
+        columns={columns}
+        dataSource={dataSource}
+        loading={loading}
+        scroll={{ x: 820 }}
+        pagination={{
+          current: page,
+          pageSize,
+          total,
+          showSizeChanger: true,
+          pageSizeOptions: PAGE_SIZE_OPTIONS,
+          showTotal: (t) => `共 ${t} 条`,
+          onChange: handlePageChange,
+        }}
+      />
+    </div>
+  );
+}
+
+export default MemoryDetail;

@@ -5,5 +5,13 @@
   ],
   "framework": [
     "ses_00b2ff46dffez8FivOaB2SZOMy"
+  ],
+  "platform-app": [
+    "ses_00b0ac8f1ffetCH6dyjJEp29VK",
+    "ses_00ab934ffffeRMG9SiwG04ZeP1"
+  ],
+  "frontend-ui": [
+    "ses_00b050c25ffePG1mweVVT7EzKK",
+    "ses_00ac34e59ffeWMwRWhCyqKhr5L"
   ]
 }

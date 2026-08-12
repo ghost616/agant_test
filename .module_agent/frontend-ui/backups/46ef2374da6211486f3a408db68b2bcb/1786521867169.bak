@@ -6,7 +6,6 @@ import {
   ApiOutlined,
   BookOutlined,
   CheckCircleOutlined,
-  EyeOutlined,
   FileTextOutlined,
   HistoryOutlined,
   MessageOutlined,
@@ -31,8 +30,6 @@ import EvaluationList from './pages/evaluations/EvaluationList';
 import EvaluationResultList from './pages/evaluations/EvaluationResultList';
 import EvaluationResultDetail from './pages/evaluations/EvaluationResultDetail';
 import AgentLogList from './pages/logs/AgentLogList';
-import MemoryList from './pages/memory/MemoryList';
-import MemoryDetail from './pages/memory/MemoryDetail';
 
 const { Header, Sider, Content } = Layout;
 
@@ -76,11 +73,6 @@ const MENU_ITEMS: MenuProps['items'] = [
     key: '/conversations',
     icon: <HistoryOutlined />,
     label: '会话历史',
-  },
-  {
-    key: '/memory',
-    icon: <EyeOutlined />,
-    label: '记忆回看',
   },
   {
     key: '/logs',
@@ -157,8 +149,6 @@ function App() {
             <Route path="/evaluations/items/:evaluationId/results" element={<EvaluationResultList />} />
             <Route path="/evaluations/results/:resultId" element={<EvaluationResultDetail />} />
             <Route path="/logs" element={<AgentLogList />} />
-            <Route path="/memory" element={<MemoryList />} />
-            <Route path="/memory/:sessionId/:type" element={<MemoryDetail />} />
           </Routes>
         </Content>
       </Layout>

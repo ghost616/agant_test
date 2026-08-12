@@ -1,0 +1,207 @@
+import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import type { Session } from '../../../types/session';
+import type { AgentConfig } from '../../../types/agent';
+
+const mocks = vi.hoisted(() => ({
+  listSessions: vi.fn(),
+  getSessionMessages: vi.fn(),
+  listAgents: vi.fn(),
+}));
+const mockNavigate = vi.hoisted(() => vi.fn());
+
+vi.mock('../../../services/session', () => ({
+  listSessions: (...args: unknown[]) => mocks.listSessions(...args),
+  getSessionMessages: (...args: unknown[]) => mocks.getSessionMessages(...args),
+}));
+
+vi.mock('../../../services/agent', () => ({
+  listAgents: (...args: unknown[]) => mocks.listAgents(...args),
+}));
+
+vi.mock('react-router-dom', () => ({
+  useNavigate: () => mockNavigate,
+}));
+
+import MemoryList from '../MemoryList';
+
+beforeAll(() => {
+  window.matchMedia =
+    window.matchMedia ||
+    ((query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    }));
+});
+
+function makeSession(overrides: Partial<Session> = {}): Session {
+  return {
+    id: '1',
+    agentId: 'a1',
+    modelId: 'm1',
+    title: '会话A',
+    createTime: '2026-08-01T00:00:00',
+    updateTime: '2026-08-01T00:00:00',
+    ...overrides,
+  };
+}
+
+function makeAgent(overrides: Partial<AgentConfig> = {}): AgentConfig {
+  return {
+    id: 'a1',
+    name: '智能体A',
+    status: 'ENABLED',
+    tools: [],
+    skills: [],
+    createTime: '2026-08-01T00:00:00',
+    updateTime: '2026-08-01T00:00:00',
+    ...overrides,
+  };
+}
+
+function defaultMocks() {
+  mocks.listSessions.mockReset();
+  mocks.getSessionMessages.mockReset();
+  mocks.listAgents.mockReset();
+  mockNavigate.mockReset();
+  mocks.listSessions.mockResolvedValue([makeSession()]);
+  mocks.listAgents.mockResolvedValue([makeAgent({ memoryEnabled: true })]);
+  mocks.getSessionMessages.mockResolvedValue([
+    {
+      id: 'm1',
+      sessionId: '1',
+      role: 'user',
+      content: 'hi',
+      sequenceNum: 1,
+      createTime: '2026-08-10 09:00:00',
+    },
+    {
+      id: 'm2',
+      sessionId: '1',
+      role: 'assistant',
+      content: 'hello',
+      sequenceNum: 2,
+      createTime: '2026-08-10 10:00:00',
+    },
+  ]);
+}
+
+function renderComponent() {
+  return render(<MemoryList />);
+}
+
+describe('MemoryList 并行加载与展示', () => {
+  beforeEach(() => {
+    defaultMocks();
+  });
+
+  it('应并行调用 listSessions 与 listAgents，并为每个会话调用 getSessionMessages', async () => {
+    renderComponent();
+    await waitFor(() => {
+      expect(mocks.listSessions).toHaveBeenCalledTimes(1);
+    });
+    expect(mocks.listAgents).toHaveBeenCalledTimes(1);
+    expect(mocks.getSessionMessages).toHaveBeenCalledWith('1');
+  });
+
+  it('展示所有会话，不受 memoryEnabled 过滤影响（memoryEnabled=false 也展示）', async () => {
+    mocks.listSessions.mockResolvedValue([
+      makeSession({ id: '1', agentId: 'a1', title: '记忆会话' }),
+      makeSession({ id: '2', agentId: 'a2', title: '普通会话' }),
+    ]);
+    mocks.listAgents.mockResolvedValue([
+      makeAgent({ id: 'a1', name: '记忆智能体', memoryEnabled: true }),
+      makeAgent({ id: 'a2', name: '普通智能体', memoryEnabled: false }),
+    ]);
+
+    renderComponent();
+    await waitFor(() => {
+      expect(screen.getByText('记忆会话')).toBeTruthy();
+    });
+    expect(screen.getByText('普通会话')).toBeTruthy();
+  });
+
+  it('智能体未开启 memoryEnabled（缺省 false）时会话仍被展示并加载消息', async () => {
+    mocks.listAgents.mockResolvedValue([makeAgent({ id: 'a1', name: '智能体A' })]);
+
+    renderComponent();
+    await waitFor(() => {
+      expect(screen.getByText('会话A')).toBeTruthy();
+    });
+    expect(mocks.getSessionMessages).toHaveBeenCalledWith('1');
+  });
+});
+
+describe('MemoryList 表格渲染', () => {
+  beforeEach(() => {
+    defaultMocks();
+  });
+
+  it('渲染列：会话名称/智能体名/最近消息时间/操作，agentName 取智能体名', async () => {
+    renderComponent();
+    await screen.findByText('会话A');
+
+    const headerTexts = Array.from(
+      document.querySelectorAll('.ant-table-thead th'),
+    ).map((el) => el?.textContent ?? '');
+    for (const title of ['会话名称', '智能体名', '最近消息时间', '操作']) {
+      expect(headerTexts).toContain(title);
+    }
+    expect(screen.getAllByText('智能体A').length).toBeGreaterThan(0);
+  });
+
+  it('最近消息时间取 getSessionMessages 末条消息的 createTime', async () => {
+    renderComponent();
+    await screen.findByText('会话A');
+
+    expect(screen.getAllByText('2026-08-10 10:00:00').length).toBeGreaterThan(0);
+    expect(screen.queryByText('2026-08-10 09:00:00')).toBeNull();
+  });
+
+  it('无消息时最近消息时间显示占位符 -', async () => {
+    mocks.getSessionMessages.mockResolvedValue([]);
+
+    renderComponent();
+    await screen.findByText('会话A');
+
+    const dashCells = Array.from(document.querySelectorAll('.ant-table-tbody td')).filter(
+      (el) => el?.textContent?.trim() === '-',
+    );
+    expect(dashCells.length).toBeGreaterThan(0);
+  });
+
+  it('Table pagination=false（无分页器渲染）', async () => {
+    renderComponent();
+    await screen.findByText('会话A');
+
+    expect(document.querySelector('.ant-pagination')).toBeNull();
+  });
+});
+
+describe('MemoryList 操作按钮', () => {
+  beforeEach(() => {
+    defaultMocks();
+  });
+
+  it('按日聚合按钮跳转 /memory/{id}/DAILY', async () => {
+    renderComponent();
+    await screen.findByText('会话A');
+
+    fireEvent.click(screen.getByText('按日聚合'));
+    expect(mockNavigate).toHaveBeenCalledWith('/memory/1/DAILY');
+  });
+
+  it('按分类聚合按钮跳转 /memory/{id}/GROUP', async () => {
+    renderComponent();
+    await screen.findByText('会话A');
+
+    fireEvent.click(screen.getByText('按分类聚合'));
+    expect(mockNavigate).toHaveBeenCalledWith('/memory/1/GROUP');
+  });
+});

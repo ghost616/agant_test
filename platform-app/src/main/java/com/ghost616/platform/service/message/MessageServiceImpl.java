@@ -1,0 +1,28 @@
+package com.ghost616.platform.service.message;
+
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.ghost616.platform.entity.Message;
+import com.ghost616.platform.repository.MessageMapper;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+/**
+ * 消息查询服务实现，通过 MessageMapper 查询消息持久化数据。
+ */
+@Service
+@RequiredArgsConstructor
+public class MessageServiceImpl implements MessageService {
+
+    private final MessageMapper messageMapper;
+
+    @Override
+    public List<Message> getAllMessages(Long sessionId) {
+        LambdaQueryWrapper<Message> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Message::getSessionId, sessionId)
+                .eq(Message::getRollback, false)
+                .orderByAsc(Message::getSequenceNum);
+        return messageMapper.selectList(wrapper);
+    }
+}

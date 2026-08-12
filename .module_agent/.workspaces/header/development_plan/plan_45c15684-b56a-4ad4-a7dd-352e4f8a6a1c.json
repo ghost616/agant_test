@@ -1,0 +1,13 @@
+{
+  "plan_id": "plan_45c15684-b56a-4ad4-a7dd-352e4f8a6a1c",
+  "module_name": "platform-app",
+  "development_plan": "1) 新建 MessageService 接口与 MessageServiceImpl 实现类（注入 MessageMapper，提供 getAllMessages(Long sessionId) 方法，查询 sessionId + rollback=false，按 sequenceNum 升序，不过滤 memoryPoint）2) SessionServiceImpl.getMessages() 改为注入并调用 MessageService.getAllMessages() 替代原有的 sessionManager.getMessages() 调用，保留 sessionManager.getMessages() 在 AgentContextManager 中的原有用途不变",
+  "session_id": "ses_00ab934ffffeRMG9SiwG04ZeP1",
+  "modified_files": [
+    "platform-app/src/main/java/com/ghost616/platform/service/message/MessageService.java",
+    "platform-app/src/main/java/com/ghost616/platform/service/message/MessageServiceImpl.java",
+    "platform-app/src/main/java/com/ghost616/platform/service/session/SessionServiceImpl.java",
+    "platform-app/src/test/java/com/ghost616/platform/session/SessionServiceImplTest.java",
+    "platform-app/src/test/java/com/ghost616/platform/service/message/MessageServiceImplTest.java"
+  ]
+}

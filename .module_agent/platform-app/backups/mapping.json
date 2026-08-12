@@ -138,5 +138,6 @@
   "platform-app/src/main/java/com/ghost616/platform/model/SessionMemoryDocument.java": "34e69352ba32af8754915e4bd89148ba",
   "platform-app/src/main/java/com/ghost616/platform/service/search/SessionMemoryESClient.java": "2c0194e6ff87278061118069d8ae075c",
   "platform-app/src/test/java/com/ghost616/platform/model/SessionMemoryDocumentTest.java": "00db66853f8b07f90514f45a23858789",
-  "platform-app/src/test/java/com/ghost616/platform/service/search/SessionMemoryESClientTest.java": "bbc0d59a160857f6551f0aa8b8bdd2b6"
+  "platform-app/src/test/java/com/ghost616/platform/service/search/SessionMemoryESClientTest.java": "bbc0d59a160857f6551f0aa8b8bdd2b6",
+  "platform-app/src/test/java/com/ghost616/platform/session/SessionServiceImplTest.java": "80529a3a878a3dcaf1dbb77f7de96e37"
 }

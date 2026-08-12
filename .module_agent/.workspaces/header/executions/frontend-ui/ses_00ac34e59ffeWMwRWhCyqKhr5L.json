@@ -1,0 +1,12 @@
+[
+  {
+    "plan_id": "plan_52ec506e-955c-4fd9-9678-c6d611d8c4a8",
+    "plan": "MemoryList.tsx 去掉 memoryEnabled 过滤条件，显示所有会话",
+    "modified_files": [
+      "src/pages/memory/MemoryList.tsx",
+      "src/pages/memory/__tests__/MemoryList.test.tsx"
+    ],
+    "summary": "已更新 MemoryList.test.tsx：删除过滤断言，改为验证所有会话均展示、缺省 memoryEnabled 时仍展示并加载消息",
+    "errors": []
+  }
+]

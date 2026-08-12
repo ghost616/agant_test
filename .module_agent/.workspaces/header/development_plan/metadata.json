@@ -171,7 +171,7 @@
     "plan_id": "plan_41627d0d-3b71-49bc-8635-5684420dfa72",
     "plan_summary": "README日志行隐藏技术细节突出功能",
     "starter_session_id": "ses_00c9a6a87ffetUtC5ZjBU5QoRN",
-    "code_reviewed": false,
+    "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
   },
@@ -179,7 +179,7 @@
     "plan_id": "plan_19f0b621-dad3-45d6-b144-706f72cbb752",
     "plan_summary": "README功能模块全部精简技术细节",
     "starter_session_id": "ses_00c9a6a87ffetUtC5ZjBU5QoRN",
-    "code_reviewed": false,
+    "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
   },
@@ -187,7 +187,7 @@
     "plan_id": "plan_28198656-cc2e-45ae-90f7-7cc3091134ec",
     "plan_summary": "README会话作用域描述更清晰",
     "starter_session_id": "ses_00c9a6a87ffetUtC5ZjBU5QoRN",
-    "code_reviewed": false,
+    "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
   },
@@ -195,7 +195,7 @@
     "plan_id": "plan_acd4941e-dcb4-4e91-bcd0-fd976bdb8824",
     "plan_summary": "README删组件注册表+新增知识搜索条目",
     "starter_session_id": "ses_00c9a6a87ffetUtC5ZjBU5QoRN",
-    "code_reviewed": false,
+    "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
   },
@@ -203,7 +203,7 @@
     "plan_id": "plan_b97a32b9-1930-4f74-8583-480a2503ee7d",
     "plan_summary": "README知识库发布和搜索流程",
     "starter_session_id": "ses_00c9a6a87ffetUtC5ZjBU5QoRN",
-    "code_reviewed": false,
+    "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
   },
@@ -211,7 +211,7 @@
     "plan_id": "plan_5536b63b-5f9c-46a7-a496-e7c9768ae87c",
     "plan_summary": "README去掉DeepSeek仅限描述",
     "starter_session_id": "ses_00c9a6a87ffetUtC5ZjBU5QoRN",
-    "code_reviewed": false,
+    "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
   },
@@ -219,7 +219,7 @@
     "plan_id": "plan_0e60b84d-48cf-425c-b29a-a228cb7b7738",
     "plan_summary": "README执行流程精简技术细节",
     "starter_session_id": "ses_00c9a6a87ffetUtC5ZjBU5QoRN",
-    "code_reviewed": false,
+    "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
   },
@@ -227,7 +227,7 @@
     "plan_id": "plan_a5584b47-0043-4b00-b8da-c5ff66b6c814",
     "plan_summary": "README评估流程和浏览器工具精简",
     "starter_session_id": "ses_00c9a6a87ffetUtC5ZjBU5QoRN",
-    "code_reviewed": false,
+    "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
   },
@@ -235,7 +235,7 @@
     "plan_id": "plan_1b015488-a28f-4ef7-940a-cc4983c56e0e",
     "plan_summary": "README简介改为平台定位描述",
     "starter_session_id": "ses_00c9a6a87ffetUtC5ZjBU5QoRN",
-    "code_reviewed": false,
+    "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
   },
@@ -243,7 +243,7 @@
     "plan_id": "plan_abd081af-45ad-4a9d-a6c9-8a6210b07f9f",
     "plan_summary": "README新增application配置说明",
     "starter_session_id": "ses_00c9a6a87ffetUtC5ZjBU5QoRN",
-    "code_reviewed": false,
+    "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
   },
@@ -251,8 +251,48 @@
     "plan_id": "plan_c840c62d-b0b9-4457-a3b2-63bf2dd158dc",
     "plan_summary": "README数据库配置去掉SQLite硬绑定",
     "starter_session_id": "ses_00c9a6a87ffetUtC5ZjBU5QoRN",
-    "code_reviewed": false,
+    "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
+  },
+  {
+    "plan_id": "plan_eb25b3dc-7bac-490c-a2ae-159e51481bc0",
+    "plan_summary": "会话记忆ES查询接口",
+    "starter_session_id": "ses_00b0b3af4ffeenU6jZgfizU6I8",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_40054f57-6ee2-4797-a7f9-1b8687e9cc36",
+    "plan_summary": "记忆回看菜单与页面",
+    "starter_session_id": "ses_00b0b3af4ffeenU6jZgfizU6I8",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_52ec506e-955c-4fd9-9678-c6d611d8c4a8",
+    "plan_summary": "MemoryList去掉memoryEnabled过滤",
+    "starter_session_id": "ses_00c9a6a87ffetUtC5ZjBU5QoRN",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_45c15684-b56a-4ad4-a7dd-352e4f8a6a1c",
+    "plan_summary": "新建MessageService去掉memoryPoint过滤",
+    "starter_session_id": "ses_00c9a6a87ffetUtC5ZjBU5QoRN",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_44741c90-c3df-4a38-9474-4fc8263cd7be",
+    "plan_summary": "新建MessageService去掉memoryPoint过滤",
+    "starter_session_id": "ses_00c9a6a87ffetUtC5ZjBU5QoRN",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": false
   }
 ]

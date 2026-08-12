@@ -11,7 +11,6 @@ import com.ghost616.platform.repository.MessageMapper;
 import com.ghost616.platform.repository.SessionMapper;
 import com.ghost616.platform.repository.SessionToolMapper;
 import com.ghost616.platform.service.agent.DefaultMessageDataProvider;
-import com.ghost616.platform.service.message.MessageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,7 +38,6 @@ public class SessionServiceImpl implements SessionService {
     private final ToolManager toolManager;
     private final MessageMapper messageMapper;
     private final DefaultMessageDataProvider defaultMessageDataProvider;
-    private final MessageService messageService;
 
     @Override
     public List<SessionDTO> listSessions(Long agentId) {
@@ -126,7 +124,7 @@ public class SessionServiceImpl implements SessionService {
         if (entity == null) {
             throw new BusinessException(ErrorCode.SESSION_NOT_FOUND);
         }
-        return defaultMessageDataProvider.toMessageDTOs(messageService.getAllMessages(sessionId));
+        return sessionManager.getMessages(IdConverter.toString(sessionId));
     }
 
     @Override

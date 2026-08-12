@@ -204,6 +204,22 @@
     {
       "path": "e2e/AgentListVectorModel.spec.ts",
       "description": "智能体列表页向量模型功能 E2E 回归用例：验证 EMBEDDINGS 模型下拉加载、memoryEnabled=false 时表单项隐藏、编辑回填 vectorModelId、提交 payload 中 vectorModelId 归一化"
+    },
+    {
+      "path": "src/types/memory.ts",
+      "description": "记忆聚合相关 TypeScript 类型定义：MemoryAggregationType（GROUP/DAILY，code 对应后端 AggregationType 枚举）、SessionMemoryDocument（与后端 SessionMemoryDocument 对齐，含 sessionId/aggregationType/aggregationStartSeq/aggregationEndSeq/aggregationStartTime/aggregationEndTime/aggregationText/vector）、MemoryQueryParams 查询参数"
+    },
+    {
+      "path": "src/services/memory.ts",
+      "description": "记忆聚合 API 封装：getSessionMemory(sessionId, type, page, size) 调用 GET /api/sessions/{id}/memory（params type/page/size）返回 PageResult<SessionMemoryDocument>"
+    },
+    {
+      "path": "src/pages/memory/MemoryList.tsx",
+      "description": "记忆回看会话列表页 /memory：并行调用 listSessions 与 listAgents，展示全部会话（不按 memoryEnabled 过滤，任何会话均可回看），表格显示会话名称/智能体名/最近消息时间（getSessionMessages 取末条消息 createTime），每条操作提供「按日聚合」（跳转 /memory/:sessionId/DAILY）与「按分类聚合」（跳转 /memory/:sessionId/GROUP）按钮，Table pagination=false"
+    },
+    {
+      "path": "src/pages/memory/MemoryDetail.tsx",
+      "description": "记忆聚合列表页 /memory/:sessionId/:type：根据 type 参数调用 getSessionMemory（GET /api/sessions/{id}/memory），DAILY 显示聚合日期列（aggregationStartTime 格式化）、GROUP 显示起始行-结束行列（aggregationStartSeq-aggregationEndSeq），聚合文本列 ellipsis 超长省略，支持分页（pageSizeOptions 10/20/50/showTotal）；返回按钮跳转 /memory"
     }
   ]
 }
