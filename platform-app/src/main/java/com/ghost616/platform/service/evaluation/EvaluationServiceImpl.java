@@ -181,7 +181,6 @@ public class EvaluationServiceImpl implements EvaluationService {
     }
 
     @Override
-    @Transactional
     public void delete(Long id) {
         Evaluation entity = evaluationMapper.selectById(id);
         if (entity == null) {
@@ -283,7 +282,6 @@ public class EvaluationServiceImpl implements EvaluationService {
     }
 
     @Override
-    @Transactional
     public void batchDeleteResults(List<Long> resultIds) {
         if (resultIds == null || resultIds.isEmpty()) {
             return;
@@ -294,7 +292,6 @@ public class EvaluationServiceImpl implements EvaluationService {
     }
 
     @Override
-    @Transactional
     public void clearResults(Long evaluationId) {
         LambdaQueryWrapper<EvaluationResult> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(EvaluationResult::getEvaluationId, evaluationId);

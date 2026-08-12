@@ -1,6 +1,6 @@
 package com.ghost616.platform;
 
-import com.ghost616.platform.config.SchemaMigration;
+import com.ghost616.platform.config.MessageSchemaMigration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -62,8 +62,8 @@ class AgentLogMigrationTest {
 
     @Test
     void schemaMigrationSourceContainsAgentLogMigrations() throws IOException {
-        Path path = Paths.get("src/main/java/com/ghost616/platform/config/SchemaMigration.java");
-        assertTrue(Files.exists(path), "SchemaMigration source file should exist");
+        Path path = Paths.get("src/main/java/com/ghost616/platform/config/MessageSchemaMigration.java");
+        assertTrue(Files.exists(path), "MessageSchemaMigration source file should exist");
         String content = Files.readString(path, StandardCharsets.UTF_8);
 
         assertTrue(content.contains("new Migration(\"agent_log\", \"session_variables\", \"TEXT\", null)"),
@@ -76,7 +76,7 @@ class AgentLogMigrationTest {
     void oldAgentLogTableGetsNewColumnsAfterMigration() {
         createOldAgentLogTable();
 
-        new SchemaMigration(jdbc).run(null);
+        new MessageSchemaMigration(jdbc).run(null);
 
         List<String> columns = agentLogColumns();
         assertTrue(columns.contains("session_variables"),
@@ -93,7 +93,7 @@ class AgentLogMigrationTest {
                 "session_variables TEXT, conversation_variables TEXT, " +
                 "create_time TIMESTAMP, update_time TIMESTAMP, deleted INTEGER DEFAULT 0)");
 
-        assertDoesNotThrow(() -> new SchemaMigration(jdbc).run(null));
+        assertDoesNotThrow(() -> new MessageSchemaMigration(jdbc).run(null));
 
         List<String> columns = agentLogColumns();
         assertTrue(columns.contains("session_variables"));
@@ -104,7 +104,7 @@ class AgentLogMigrationTest {
     void migratedOldTableCanStoreNewColumns() {
         createOldAgentLogTable();
 
-        new SchemaMigration(jdbc).run(null);
+        new MessageSchemaMigration(jdbc).run(null);
 
         jdbc.update("INSERT INTO agent_log (id, session_id, log_type, session_variables, conversation_variables) " +
                 "VALUES (1, 100, 'TEST', ?, ?)", "{\"k\":\"v\"}", "{\"a\":1}");

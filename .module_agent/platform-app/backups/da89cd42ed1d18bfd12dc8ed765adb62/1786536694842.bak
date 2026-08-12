@@ -109,6 +109,7 @@ public class SessionServiceImpl implements SessionService {
     }
 
     @Override
+    @Transactional
     public int rollback(Long sessionId) {
         Session entity = sessionMapper.selectById(sessionId);
         if (entity == null) {

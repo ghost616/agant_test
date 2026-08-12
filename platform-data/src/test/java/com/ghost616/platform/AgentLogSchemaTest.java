@@ -28,14 +28,14 @@ class AgentLogSchemaTest {
 
     @Test
     void schemaSqlAgentLogHasSessionVariablesColumn() throws IOException {
-        String sql = readResource("schema.sql");
+        String sql = readResource("schema-message.sql");
         assertTrue(sql.contains("session_variables      TEXT"),
                 "agent_log should contain session_variables TEXT column");
     }
 
     @Test
     void schemaSqlAgentLogHasConversationVariablesColumn() throws IOException {
-        String sql = readResource("schema.sql");
+        String sql = readResource("schema-message.sql");
         assertTrue(sql.contains("conversation_variables TEXT"),
                 "agent_log should contain conversation_variables TEXT column");
     }
@@ -52,7 +52,7 @@ class AgentLogSchemaTest {
 
     @Test
     void agentLogTableContainsNewColumns() throws Exception {
-        String sql = readResource("schema.sql");
+        String sql = readResource("schema-message.sql");
         try (Connection conn = DriverManager.getConnection(JDBC_URL, "sa", "")) {
             try (Statement st = conn.createStatement()) {
                 st.execute(sql);
@@ -81,7 +81,7 @@ class AgentLogSchemaTest {
 
     @Test
     void agentLogRoundTripInsertSelectNewColumns() throws Exception {
-        String sql = readResource("schema.sql");
+        String sql = readResource("schema-message.sql");
         try (Connection conn = DriverManager.getConnection(JDBC_URL, "sa", "")) {
             try (Statement st = conn.createStatement()) {
                 st.execute(sql);

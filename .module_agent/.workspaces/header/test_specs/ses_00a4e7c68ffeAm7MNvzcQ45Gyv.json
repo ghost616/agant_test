@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_00a4e7c68ffeAm7MNvzcQ45Gyv",
+  "content": "复测：MessageToolCallSchemaTest 新增 1 个用例 messageMigrationShouldFailFastWhenSchemaScriptFails —— mock JdbcTemplate.getDataSource() 返回 null，断言 MessageSchemaMigration.run() 抛出 IllegalStateException 且消息含 schema-message.sql。请运行 platform-data 模块 MessageToolCallSchemaTest 及相关受影响测试验证。",
+  "timestamp": "2026-08-12T12:03:55.902Z"
+}

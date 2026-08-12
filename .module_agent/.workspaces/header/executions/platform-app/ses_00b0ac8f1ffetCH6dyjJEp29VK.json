@@ -8,5 +8,32 @@
     ],
     "summary": "已完成 SessionMemoryESClient.queryBySessionId 方法与 SessionController.queryMemory 端点代码修改",
     "errors": []
+  },
+  {
+    "plan_id": "plan_fd8887c4-90cf-4b47-bfd2-be1bd7e75d40",
+    "plan": "多数据源与 SchemaMigration 拆分：application.yml 双数据源、schema.sql/schema-message.sql 拆分、Primary/Message SchemaMigration、MybatisPlusConfig 适配",
+    "modified_files": [
+      "platform-app/src/main/resources/application.yml",
+      "platform-data/src/main/resources/schema.sql",
+      "platform-data/src/main/resources/schema-message.sql",
+      "platform-data/src/main/java/com/ghost616/platform/config/SchemaMigration.java",
+      "platform-data/src/main/java/com/ghost616/platform/config/AbstractSchemaMigration.java",
+      "platform-data/src/main/java/com/ghost616/platform/config/PrimarySchemaMigration.java",
+      "platform-data/src/main/java/com/ghost616/platform/config/MessageSchemaMigration.java",
+      "platform-app/src/main/java/com/ghost616/platform/config/MybatisPlusConfig.java"
+    ],
+    "summary": "已完成多数据源与 SchemaMigration 拆分代码变更：application.yml 配置 spring.datasource.dynamic 双数据源（primary 默认 + message 副数据源）；schema.sql 移除 message/agent_log 建表语句；新建 schema-message.sql 仅含 message/agent_log；SchemaMigration 拆为 AbstractSchemaMigration（公共基类）+ PrimarySchemaMigration（主数据源 80 条 ALTER + 回填）+ MessageSchemaMigration（ScriptUtils 执行 schema-message.sql 建表 + 6 条 ALTER）；MybatisPlusConfig 新增 primaryJdbcTemplate/messageJdbcTemplate Bean 适配多数据源",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_734e6ce1-9799-4af9-b553-fac027304ce2",
+    "plan": "修复 @Transactional 事务内调用 @DS(\"message\") mapper 导致的跨库运行时错误",
+    "modified_files": [
+      "platform-app/src/main/java/com/ghost616/platform/service/session/SessionServiceImpl.java",
+      "platform-app/src/main/java/com/ghost616/platform/service/evaluation/EvaluationServiceImpl.java",
+      "platform-app/src/main/java/com/ghost616/platform/service/agent_evaluation/AgentEvaluationServiceImpl.java"
+    ],
+    "summary": "已完成跨库事务修复：SessionServiceImpl.rollback()、EvaluationServiceImpl.delete()/batchDeleteResults()/clearResults()、AgentEvaluationServiceImpl.delete() 移除 @Transactional（拆分事务），避免主库事务内 @DS(message) 路由失效导致的 no such table。已更新模块定义与变更历史",
+    "errors": []
   }
 ]

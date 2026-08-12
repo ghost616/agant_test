@@ -1,0 +1,32 @@
+[
+  {
+    "plan_id": "plan_28ff17e2-687e-4ca4-9573-1575cc603674",
+    "plan": "platform-data/pom.xml 新增 dynamic-datasource-spring-boot-starter 依赖；MessageMapper 和 AgentLogMapper 接口添加 @DS(\"message\") 注解",
+    "modified_files": [
+      "platform-data/pom.xml",
+      "platform-data/src/main/java/com/ghost616/platform/repository/MessageMapper.java",
+      "platform-data/src/main/java/com/ghost616/platform/repository/AgentLogMapper.java"
+    ],
+    "summary": "离朱复测通过：依赖解析与全量编译 BUILD SUCCESS，两个 Mapper 的 @DS(\"message\") 注解编译正确且运行时 value 已验证。计划完成。",
+    "errors": [
+      "module_agent_backup 工具多次调用均返回 JSON 解析错误，无法完成文件备份，已记录"
+    ]
+  },
+  {
+    "plan_id": "plan_21f65446-9845-4ad6-8a72-ec1e938809ce",
+    "plan": "修复 message_tool_call 跨库一致性问题：schema.sql 移除建表、schema-message.sql 添加建表、MessageToolCallMapper 加 @DS、MessageSchemaMigration 同步包含、建表失败 fail-fast",
+    "modified_files": [
+      "platform-data/src/main/resources/schema.sql",
+      "platform-data/src/main/resources/schema-message.sql",
+      "platform-data/src/main/java/com/ghost616/platform/repository/MessageToolCallMapper.java",
+      "platform-data/src/main/java/com/ghost616/platform/config/MessageSchemaMigration.java",
+      "platform-data/src/main/java/com/ghost616/platform/config/PrimarySchemaMigration.java",
+      "platform-app/src/test/java/com/ghost616/platform/migration/SchemaMigrationTest.java",
+      "platform-data/src/test/java/com/ghost616/platform/MessageToolCallSchemaTest.java"
+    ],
+    "summary": "已完成 5 项代码修改：1) schema.sql 移除 message_tool_call 建表及索引；2) schema-message.sql 新增 message_tool_call 建表及索引；3) MessageToolCallMapper 添加 @DS(\"message\")；4) MessageSchemaMigration 建表脚本（schema-message.sql）包含 message_tool_call，并新增 3 条 message_tool_call 增量迁移，同时从 PrimarySchemaMigration 移除对应 3 条迁移；5) MessageSchemaMigration 建表失败改为抛 IllegalStateException fail-fast。同步更新 platform-app SchemaMigrationTest 计数（80→77、6→9）及 message 测试改用真实 H2；新增 MessageToolCallSchemaTest 验证三表齐全与 @DS 注解。",
+    "errors": [
+      "module_agent_backup 工具多次调用均返回 JSON 解析错误，无法完成文件备份，已记录"
+    ]
+  }
+]

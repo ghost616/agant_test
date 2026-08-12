@@ -3,7 +3,7 @@
   "files": [
     {
       "path": "platform-data/pom.xml",
-      "description": "platform-data 模块 Maven 构建文件，声明 spring-boot-starter-data-jpa、mybatis-plus-spring-boot3-starter、h2、lombok、jackson-databind 依赖，以及 agent-base 和 agent-integration 模块依赖"
+      "description": "platform-data 模块 Maven 构建文件，声明 spring-boot-starter、mybatis-plus-spring-boot3-starter、dynamic-datasource-spring-boot3-starter（多数据源动态路由）、h2、lombok、jackson-databind 依赖，以及 agent-base 和 agent-integration 模块依赖"
     },
     {
       "path": "platform-data/src/main/java/com/ghost616/platform/entity/BaseEntity.java",
@@ -67,7 +67,7 @@
     },
     {
       "path": "platform-data/src/main/java/com/ghost616/platform/repository/MessageMapper.java",
-      "description": "MyBatis-Plus 消息数据访问层，继承 BaseMapper<Message>，提供按 sessionId 和 sequenceNum 批量设置 rollback=1 的自定义方法，按 conversationId 查询未回滚消息（rollback=0，按 create_time 升序）的 selectByConversationId 方法，countUserMessages 统计会话下 user 角色未回滚消息总数，findNthUserSequenceNum 查找会话内第 n 个 user 未回滚消息的 sequenceNum（按 sequence_num 升序，LIMIT 1 OFFSET n）"
+      "description": "MyBatis-Plus 消息数据访问层，继承 BaseMapper<Message>，提供按 sessionId 和 sequenceNum 批量设置 rollback=1 的自定义方法，按 conversationId 查询未回滚消息（rollback=0，按 create_time 升序）的 selectByConversationId 方法，countUserMessages 统计会话下 user 角色未回滚消息总数，findNthUserSequenceNum 查找会话内第 n 个 user 未回滚消息的 sequenceNum（按 sequence_num 升序，LIMIT 1 OFFSET n）；标注 @DS(\"message\") 注解路由至副数据源"
     },
     {
       "path": "platform-data/src/main/java/com/ghost616/platform/repository/AgentConfigMapper.java",
@@ -103,7 +103,7 @@
     },
     {
       "path": "platform-data/src/main/java/com/ghost616/platform/repository/MessageToolCallMapper.java",
-      "description": "MessageToolCall 实体的 MyBatis-Plus Mapper 接口"
+      "description": "MessageToolCall 实体的 MyBatis-Plus Mapper 接口，继承 BaseMapper，提供 deleteByMessageIds 批量删除；标注 @DS(\"message\") 注解路由至副数据源，与 message/agent_log 同库"
     },
     {
       "path": "platform-data/src/main/java/com/ghost616/platform/repository/SessionToolMapper.java",
@@ -119,11 +119,7 @@
     },
     {
       "path": "platform-data/src/main/resources/schema.sql",
-      "description": "DDL 初始化脚本，定义所有业务表（model_config、tool_config、session、message、message_tool_call、session_tool、agent_config、agent_tool、agent_skill、skill_config、skill_tool、session_variable、session_skill、agent_evaluation、evaluation、evaluation_result、knowledge_base、knowledge_file、agent_knowledge_base）的建表语句和索引；knowledge_base 含 vector_model_id/es_index/rebuilding 列，knowledge_file 含 publish_status 列"
-    },
-    {
-      "path": "platform-data/src/main/java/com/ghost616/platform/config/SchemaMigration.java",
-      "description": "数据库 Schema 迁移组件，通过 ALTER TABLE 实现列增量迁移和 NULL 回填，确保新增列的兼容性；覆盖 agent_evaluation 表全字段、evaluation 表 agent_eval_id/agent_id/execution_type、model_config.request_type 及 knowledge_base.vector_model_id/es_index/rebuilding、knowledge_file.publish_status 列迁移"
+      "description": "主数据源 DDL 初始化脚本，定义除 message、agent_log、message_tool_call 外的所有业务表（model_config、tool_config、session、session_tool、agent_config、agent_tool、agent_skill、skill_config、skill_tool、session_variable、session_skill、agent_evaluation、evaluation、evaluation_result、knowledge_base、knowledge_file、agent_knowledge_base）的建表语句和索引；knowledge_base 含 vector_model_id/es_index/rebuilding 列，knowledge_file 含 publish_status 列；message、agent_log、message_tool_call 表已移至 schema-message.sql"
     },
     {
       "path": "platform-data/src/main/java/com/ghost616/platform/entity/Evaluation.java",
@@ -187,7 +183,7 @@
     },
     {
       "path": "platform-data/src/main/java/com/ghost616/platform/repository/AgentLogMapper.java",
-      "description": "AgentLogEntity 的 MyBatis-Plus Mapper 接口，继承 BaseMapper"
+      "description": "AgentLogEntity 的 MyBatis-Plus Mapper 接口，继承 BaseMapper；标注 @DS(\"message\") 注解路由至副数据源"
     },
     {
       "path": "platform-data/src/test/java/com/ghost616/platform/entity/SessionEntityTest.java",
@@ -220,6 +216,26 @@
     {
       "path": "platform-data/src/main/java/com/ghost616/platform/enums/AggregationType.java",
       "description": "聚合类型枚举（com.ghost616.platform.enums.AggregationType），包含 GROUP（分组聚合）、DAILY（按日聚合）两个值，@EnumValue 标记 code 字段，提供 getCode/getDescription"
+    },
+    {
+      "path": "platform-data/src/main/java/com/ghost616/platform/config/AbstractSchemaMigration.java",
+      "description": "数据库 Schema 迁移基类（abstract），封装 ALTER TABLE 增量列迁移（Migration record + isDuplicateColumn + runAlterMigrations）与 session_auth 空值回填（runNullBackfill）的公共逻辑，供 PrimarySchemaMigration 与 MessageSchemaMigration 复用"
+    },
+    {
+      "path": "platform-data/src/main/java/com/ghost616/platform/config/PrimarySchemaMigration.java",
+      "description": "主数据源 Schema 迁移组件（@Component @Order(1)），注入 @Qualifier(\"primaryJdbcTemplate\") 的 JdbcTemplate，执行主数据源各表（tool_config/session_variable/agent_config/session/session_tool/agent_tool/agent_skill/session_skill/evaluation/evaluation_result/agent_evaluation/model_config/knowledge_base/knowledge_file/agent_knowledge_base）的 77 条 ALTER TABLE 增量列迁移（message_tool_call 迁移已移至 MessageSchemaMigration），并回填 session_auth NULL 值"
+    },
+    {
+      "path": "platform-data/src/main/java/com/ghost616/platform/config/MessageSchemaMigration.java",
+      "description": "消息数据源 Schema 迁移组件（@Component @Order(1)），注入 @Qualifier(\"messageJdbcTemplate\") 的 JdbcTemplate，通过 ScriptUtils 执行 classpath 下 schema-message.sql 建 message/agent_log/message_tool_call 三表；建表失败时抛 IllegalStateException fail-fast 终止启动；再执行 message/agent_log/message_tool_call 三表 9 条 ALTER TABLE 增量列迁移（tool_result/token_usage/conversation_id/rollback/session_variables/conversation_variables/type/web_search_call/custom_tool_call）"
+    },
+    {
+      "path": "platform-data/src/main/resources/schema-message.sql",
+      "description": "消息数据源 DDL 初始化脚本，含 message、agent_log、message_tool_call 三张表的建表语句和索引（message_tool_call 含 message_id/tool_call_id 索引），由 MessageSchemaMigration 在消息数据源上执行，确保三表齐全"
+    },
+    {
+      "path": "platform-data/src/test/java/com/ghost616/platform/MessageToolCallSchemaTest.java",
+      "description": "message_tool_call 跨库一致性验证测试：断言 schema.sql 不含 message_tool_call 建表/索引、schema-message.sql 含其建表与 message_id/tool_call_id 索引、H2 执行后 message/agent_log/message_tool_call 三表齐全、MessageToolCallMapper 带 @DS(\"message\")、MessageSchemaMigration 含 message_tool_call 三条迁移而 PrimarySchemaMigration 不含、MessageSchemaMigration 建表失败 fail-fast 抛 IllegalStateException"
     }
   ]
 }

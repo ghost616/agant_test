@@ -1,5 +1,6 @@
 package com.ghost616.platform.repository;
 
+import com.baomidou.dynamic.datasource.annotation.DS;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -12,6 +13,7 @@ import java.util.List;
 
 
 @Mapper
+@DS("message")
 public interface MessageMapper extends BaseMapper<Message> {
 
     @Update("UPDATE message SET rollback=1 WHERE session_id = #{sessionId} AND sequence_num >= #{sequenceNum}")

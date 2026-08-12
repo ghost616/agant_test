@@ -115,6 +115,7 @@ public class AgentEvaluationServiceImpl implements AgentEvaluationService {
     }
 
     @Override
+    @Transactional
     public void delete(Long id) {
         AgentEvaluation entity = agentEvaluationMapper.selectById(id);
         if (entity == null) {

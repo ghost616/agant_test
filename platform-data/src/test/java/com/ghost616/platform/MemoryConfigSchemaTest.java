@@ -41,8 +41,8 @@ class MemoryConfigSchemaTest {
 
     @Test
     void schemaMigrationContainsMemoryEntries() throws IOException {
-        Path source = Paths.get("src/main/java/com/ghost616/platform/config/SchemaMigration.java");
-        assertTrue(Files.exists(source), "SchemaMigration source file should exist");
+        Path source = Paths.get("src/main/java/com/ghost616/platform/config/PrimarySchemaMigration.java");
+        assertTrue(Files.exists(source), "PrimarySchemaMigration source file should exist");
         String content = Files.readString(source, StandardCharsets.UTF_8);
 
         assertTrue(content.contains("new Migration(\"agent_config\", \"memory_enabled\", \"TINYINT(1)\", \"0\")"),

@@ -1,0 +1,11 @@
+{
+  "plan_id": "plan_734e6ce1-9799-4af9-b553-fac027304ce2",
+  "module_name": "platform-app",
+  "development_plan": "修复 @Transactional 事务内调用 @DS(\"message\") mapper 导致的跨库运行时错误：1) SessionServiceImpl.rollback() @Transactional 方法内经 sessionManager.rollbackToLastUserMessage → DefaultMessageDataProvider 调用 messageMapper（@DS message）和 agentLogMapper（@DS message），@DS 在 Spring 本地事务内不生效，SQL 落到主库而 message/agent_log 表已迁移，运行时抛 no such table。需调整事务边界：将消息/日志跨库操作移出事务范围（如改为 REQUIRES_NEW、或拆分事务、或在事务提交后执行）；2) EvaluationServiceImpl.delete()/batchDeleteResults()/clearResults() 等 @Transactional 方法在事务内调用 messageMapper.selectList/delete，同样处理；3) AgentEvaluationServiceImpl.delete() @Transactional 方法内调用 messageMapper，同样处理。核心目标：任何 @DS(\"message\") 的 Mapper 调用都不能发生在绑定主库连接的 @Transactional 事务内，确保消息/日志相关操作在正确数据源执行。修复后运行相关测试验证。",
+  "session_id": "ses_00b0ac8f1ffetCH6dyjJEp29VK",
+  "modified_files": [
+    "platform-app/src/main/java/com/ghost616/platform/service/session/SessionServiceImpl.java",
+    "platform-app/src/main/java/com/ghost616/platform/service/evaluation/EvaluationServiceImpl.java",
+    "platform-app/src/main/java/com/ghost616/platform/service/agent_evaluation/AgentEvaluationServiceImpl.java"
+  ]
+}

@@ -8,8 +8,16 @@ spring:
     init:
       mode: always
   datasource:
-    url: jdbc:sqlite:data/agent_platform.db
-    driver-class-name: org.sqlite.JDBC
+    dynamic:
+      primary: primary
+      strict: false
+      datasource:
+        primary:
+          url: jdbc:sqlite:data/agent_platform.db
+          driver-class-name: org.sqlite.JDBC
+        message:
+          url: jdbc:sqlite:data/agent_platform.db
+          driver-class-name: org.sqlite.JDBC
 
 mybatis-plus:
   mapper-locations: classpath*:mapper/**/*.xml

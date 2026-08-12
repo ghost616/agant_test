@@ -318,5 +318,37 @@
     "code_reviewed": false,
     "plan_completed": true,
     "test_passed": true
+  },
+  {
+    "plan_id": "plan_28ff17e2-687e-4ca4-9573-1575cc603674",
+    "plan_summary": "dynamic-datasource 依赖与 @DS 注解",
+    "starter_session_id": "ses_00b0b3af4ffeenU6jZgfizU6I8",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_fd8887c4-90cf-4b47-bfd2-be1bd7e75d40",
+    "plan_summary": "多数据源与 SchemaMigration 拆分",
+    "starter_session_id": "ses_00b0b3af4ffeenU6jZgfizU6I8",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_21f65446-9845-4ad6-8a72-ec1e938809ce",
+    "plan_summary": "message_tool_call 迁移至 message 库修复",
+    "starter_session_id": "ses_00b0b3af4ffeenU6jZgfizU6I8",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_734e6ce1-9799-4af9-b553-fac027304ce2",
+    "plan_summary": "修复事务内跨数据源调用问题",
+    "starter_session_id": "ses_00b0b3af4ffeenU6jZgfizU6I8",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
   }
 ]

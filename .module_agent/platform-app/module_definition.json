@@ -19,7 +19,7 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/session/SessionServiceImpl.java",
-      "description": "会话管理服务实现，包含会话创建（含工具绑定）、查询、删除、回滚、子会话列表查询等业务逻辑；getMessages 注入并调用 MessageService.getAllMessages 查询消息（sessionId + rollback=false，按 sequenceNum 升序，不过滤 memoryPoint）后通过 DefaultMessageDataProvider.toMessageDTOs 转换为 MessageDTO 返回"
+      "description": "会话管理服务实现，包含会话创建（含工具绑定）、查询、删除、回滚、子会话列表查询等业务逻辑；rollback 不再声明 @Transactional（跨库：sessionManager.rollbackToLastUserMessage 内部调用 @DS(message) 的 messageMapper，在主库事务内 @DS 路由失效），改为拆分事务让 message 操作在 message 数据源上自动提交执行；getMessages 注入并调用 MessageService.getAllMessages 查询消息（sessionId + rollback=false，按 sequenceNum 升序，不过滤 memoryPoint）后通过 DefaultMessageDataProvider.toMessageDTOs 转换为 MessageDTO 返回"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/config/AgentContextConfiguration.java",
@@ -47,7 +47,7 @@
     },
     {
       "path": "platform-app/src/main/resources/application.yml",
-      "description": "应用配置，端口 8080，SQLite 数据库 data/agent_platform.db，MyBatis-Plus 配置"
+      "description": "应用配置，端口 8080，通过 spring.datasource.dynamic 配置双数据源（primary 主数据源 SQLite data/agent_platform.db、message 副数据源 SQLite data/message.db），MyBatis-Plus 配置"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/dto/ApiResponse.java",
@@ -67,7 +67,7 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/config/MybatisPlusConfig.java",
-      "description": "MyBatis-Plus 配置类，MapperScan + SQLite 分页拦截器"
+      "description": "MyBatis-Plus 与多数据源适配配置类：MapperScan + SQLite 分页拦截器；定义 primaryJdbcTemplate（绑定 primary 数据源）与 messageJdbcTemplate（绑定 message 数据源）两个 JdbcTemplate Bean，供 SchemaMigration 组件按数据源注入"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/config/MyMetaObjectHandler.java",
@@ -171,7 +171,7 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/evaluation/EvaluationServiceImpl.java",
-      "description": "EvaluationService 实现类，提供评估 CRUD 操作 + EvaluationResult 查询/删除；create 时 executionType 默认 BACKGROUND，update 条件更新，toDTO 映射 executionType；deleteResult 级联清理执行会话相关数据，batchDeleteResults 批量级联删除结果（@Transactional），clearResults 按 evaluationId 查询全部 resultId 后批量删除"
+      "description": "EvaluationService 实现类，提供评估 CRUD 操作 + EvaluationResult 查询/删除；create 时 executionType 默认 BACKGROUND，update 条件更新，toDTO 映射 executionType；deleteResult 级联清理执行会话相关数据（含 @DS(message) 的 messageMapper 查询/删除），delete/batchDeleteResults/clearResults 均不再声明 @Transactional（拆分事务：级联删除涉及主库 session/session_variable/session_tool/session_skill 与 message 库 message/message_tool_call，主库事务内 @DS 路由失效会导致 message 落到主库报 no such table），使跨库 mapper 在各自数据源上自动提交执行"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/controller/EvaluationController.java",
@@ -199,7 +199,7 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/agent_evaluation/AgentEvaluationServiceImpl.java",
-      "description": "智能体评估业务服务实现类，包含 name 唯一性校验、级联删除（关联 Evaluation → EvaluationResult → benchmarkSession/executionSession → SessionVariable/SessionTool/SessionSkill/Message → MessageToolCall）、AgentConfigMapper 查询 agentName 等完整业务逻辑"
+      "description": "智能体评估业务服务实现类，包含 name 唯一性校验、级联删除（关联 Evaluation → EvaluationResult → benchmarkSession/executionSession → SessionVariable/SessionTool/SessionSkill/Message → MessageToolCall）、AgentConfigMapper 查询 agentName 等完整业务逻辑；delete 不再声明 @Transactional（级联删除含 @DS(message) 的 messageMapper，主库事务内 @DS 路由失效，拆分事务使 message 操作在 message 数据源上执行）"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/controller/AgentEvaluationController.java",

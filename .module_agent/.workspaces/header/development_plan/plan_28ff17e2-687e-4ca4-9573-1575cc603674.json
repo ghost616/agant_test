@@ -1,0 +1,11 @@
+{
+  "plan_id": "plan_28ff17e2-687e-4ca4-9573-1575cc603674",
+  "module_name": "platform-data",
+  "development_plan": "1) platform-data/pom.xml 新增 dynamic-datasource-spring-boot-starter 依赖；2) MessageMapper 和 AgentLogMapper 接口添加 @DS(\"message\") 注解，指定使用副数据源",
+  "session_id": "ses_00a4e7c68ffeAm7MNvzcQ45Gyv",
+  "modified_files": [
+    "platform-data/pom.xml",
+    "platform-data/src/main/java/com/ghost616/platform/repository/MessageMapper.java",
+    "platform-data/src/main/java/com/ghost616/platform/repository/AgentLogMapper.java"
+  ]
+}
