@@ -1,0 +1,11 @@
+{
+  "plan_id": "plan_c163133e-1699-4710-b2ce-a02b3201af09",
+  "module_name": "frontend-ui",
+  "development_plan": "AgentList.tsx 智能体表单两个字段标签与辅助说明：recentMessageCount 标签改为\"保留对话轮数\"，增加辅助说明\"保留最近 N 轮对话对 AI 可见，更早对话折叠\"；memoryGroupCount 标签改为\"保留消息组数量\"，增加辅助说明\"保留最近 N 个消息组对 AI 可见，更早的消息组归档为记忆\"。同步更新测试文件断言。",
+  "session_id": "ses_0062486a3ffeBs05tqY30QdSrj",
+  "modified_files": [
+    "src/pages/agents/AgentList.tsx",
+    "src/pages/agents/__tests__/AgentList.test.tsx",
+    "e2e/AgentList.spec.ts"
+  ]
+}

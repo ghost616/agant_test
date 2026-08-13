@@ -44,7 +44,7 @@
 - 路由 /agents 注册，侧边栏"智能体管理"菜单项（RobotOutlined 图标）
 - 智能体列表表格添加 pagination={false}，移除分页器，全量展示
 - AgentConfig 与 AgentFormData 类型新增 recentMessageCount?: number 字段（最近消息数量）
-- 新增/编辑 Modal 新增 Form.Item name="recentMessageCount" label="最近消息数量"：InputNumber，initialValue=10、min=1、max=100、宽度 100%
+- 新增/编辑 Modal 新增 Form.Item name="recentMessageCount" label="保留对话轮数"（extra 辅助说明"保留最近 N 轮对话对 AI 可见，更早对话折叠"）：InputNumber，initialValue=10、min=1、max=100、宽度 100%
 - 编辑回填时同步设置 recentMessageCount 字段
 - Table columns 新增"最近消息"列（dataIndex=recentMessageCount，width 100），值为空时显示 '-'
 - 新增/编辑 Modal 新增 skills 多选：通过 Promise.all 并行加载模型/工具/技能列表，新增 skillList state 存储技能数据，fetchModelsAndTools 改名为 fetchRefData 同步加载三种引用数据，表单中添加 skillIds (Select multiple) 字段实现技能多选，编辑回填时同步设置 skillIds
@@ -54,7 +54,7 @@
 - 表格列中 tools/skills 显示为 Tag 标签，颜色区分 sessionAuth 类型（blue/green/orange）
 - 智能体绑定知识库：AgentConfig/AgentFormData 新增 knowledgeBaseIds?: string[] 字段，新增 KnowledgeBaseItem 类型（{ knowledgeBaseId: string; name: string }）；fetchRefData 并行加载知识库列表（listKnowledgeBases({})）构建 knowledgeBaseList 与 knowledgeBaseMap；表单新增"绑定知识库"多选 Select（mode=multiple，从知识库列表获取）；表格新增"绑定知识库"列（knowledgeBaseMap 映射 ID→名称渲染 Tag 列表，空显示 '-'）；createAgent/updateAgent 复用透传 knowledgeBaseIds
 - 智能体向量模型：AgentConfig 与 AgentFormData 新增 vectorModelId?: string 字段；AgentList fetchRefData 并行加载 listModels({modelType:'EMBEDDINGS'}) 构建 vectorModelList，编辑回填 vectorModelId，表单新增"向量模型"下拉（仅 memoryEnabled=true 时显示，hidden={!memoryEnabled}），提交时 memoryEnabled 为 false 则 vectorModelId 置 undefined
-- 记忆功能表单联动：memoryEnabled=false 时"保留记忆数量"（memoryGroupCount）与"向量模型"（vectorModelId）表单项均隐藏（hidden={!memoryEnabled}），memoryEnabled=true 时显示；提交时 memoryEnabled 为 false 则 vectorModelId 置 undefined
+- 记忆功能表单联动：memoryEnabled=false 时"保留消息组数量"（memoryGroupCount，label="保留消息组数量"，extra 辅助说明"保留最近 N 个消息组对 AI 可见，更早的消息组归档为记忆"）与"向量模型"（vectorModelId）表单项均隐藏（hidden={!memoryEnabled}），memoryEnabled=true 时显示；提交时 memoryEnabled 为 false 则 vectorModelId 置 undefined
 ## 会话管理界面
 
 - Web 搜索结果显示：ChatChunk 新增 webSearchCall 字段（WebSearchCall[] 数组，每项 { itemId, outputIndex, results: [{ title, url, snippet }] }）和 customToolCall 字段，StreamCallbacks 新增 onWebSearchCall 回调（(calls: WebSearchCall[]) => void），processSSEStream 解析 chunk.webSearchCall 数组并回调

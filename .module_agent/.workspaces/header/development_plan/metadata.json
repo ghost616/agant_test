@@ -1,1 +1,10 @@
-[]
+[
+  {
+    "plan_id": "plan_c163133e-1699-4710-b2ce-a02b3201af09",
+    "plan_summary": "智能体表单字段标签语义化",
+    "starter_session_id": "ses_00c9a6a87ffetUtC5ZjBU5QoRN",
+    "code_reviewed": false,
+    "plan_completed": true,
+    "test_passed": true
+  }
+]

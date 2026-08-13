@@ -213,7 +213,7 @@ function memorySwitch(page: Page) {
 function memoryGroupCountInput(page: Page) {
   return page
     .locator('.ant-modal .ant-form-item')
-    .filter({ hasText: '保留消息组数量' })
+    .filter({ hasText: '保留记忆数量' })
     .locator('.ant-input-number');
 }
 
@@ -225,7 +225,7 @@ test.describe('智能体管理页 - 记忆功能', () => {
     await page.waitForSelector('.ant-table', { timeout: 60000 });
   });
 
-  test('新增弹窗存在记忆功能 Switch，开启记忆后显示保留消息组数量 InputNumber', async ({ page }) => {
+  test('新增弹窗存在记忆功能 Switch，开启记忆后显示保留记忆数量 InputNumber', async ({ page }) => {
     await page.getByRole('button', { name: '新增智能体' }).click();
     await page.locator('.ant-modal').waitFor();
 
@@ -235,7 +235,7 @@ test.describe('智能体管理页 - 记忆功能', () => {
     await expect(memoryGroupCountInput(page)).toBeVisible();
   });
 
-  test('记忆功能关闭时保留消息组数量输入框隐藏，开启时显示', async ({ page }) => {
+  test('记忆功能关闭时保留记忆数量输入框隐藏，开启时显示', async ({ page }) => {
     await page.getByRole('button', { name: '新增智能体' }).click();
     await page.locator('.ant-modal').waitFor();
 

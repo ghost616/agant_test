@@ -1,7 +1,11 @@
 {
   "gaotao": {},
-  "limu": {},
+  "limu": {
+    "ses_0062486a3ffeBs05tqY30QdSrj": "ses_00c9a6a87ffetUtC5ZjBU5QoRN"
+  },
   "lizhu": {},
-  "lizhu_fengzhou": {},
+  "lizhu_fengzhou": {
+    "ses_006232ce6ffexWOoauIXWnTAfY": "ses_00c9a6a87ffetUtC5ZjBU5QoRN"
+  },
   "kui": {}
 }

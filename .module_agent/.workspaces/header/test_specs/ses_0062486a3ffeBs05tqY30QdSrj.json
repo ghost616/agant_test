@@ -1,0 +1,5 @@
+{
+  "session_id": "ses_0062486a3ffeBs05tqY30QdSrj",
+  "content": "## 待测试功能\n\n本次变更涉及智能体表单两个字段的标签与辅助说明调整，涉及文件：\n\n1. `src/pages/agents/AgentList.tsx`\n   - recentMessageCount 表单项：label 由\"最近消息数量\"改为\"保留对话轮数\"，新增 extra 辅助说明\"保留最近 N 轮对话对 AI 可见，更早对话折叠\"，placeholder 同步为\"请输入保留对话轮数\"\n   - memoryGroupCount 表单项：label 由\"保留记忆数量\"改为\"保留消息组数量\"，新增 extra 辅助说明\"保留最近 N 个消息组对 AI 可见，更早的消息组归档为记忆\"，placeholder 同步为\"请输入保留消息组数量\"\n   - 其余逻辑（initialValue、min/max、hidden 联动、编辑回填）不变\n\n2. `src/pages/agents/__tests__/AgentList.test.tsx`\n   - 新增 recentMessageCount 标签/辅助说明静态断言\n   - memoryGroupCount 测试新增 label\"保留消息组数量\"/extra 辅助说明断言\n\n3. `e2e/AgentList.spec.ts`\n   - memoryGroupCountInput 定位器 hasText 由\"保留记忆数量\"改为\"保留消息组数量\"\n   - 相关用例标题由\"保留记忆数量\"改为\"保留消息组数量\"\n\n## 测试类型\n\n- 单元测试：AgentList.test.tsx 静态断言\n- 编译测试：TypeScript 变更文件 tsc 检查\n- E2E 测试：e2e/AgentList.spec.ts 记忆功能用例（表单 label/辅助说明展示相关）",
+  "timestamp": "2026-08-13T06:43:45.141Z"
+}

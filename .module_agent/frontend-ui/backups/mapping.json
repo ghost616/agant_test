@@ -66,5 +66,6 @@
   "src/pages/memory/__tests__/MemoryList.test.tsx": "bd77930f2f9a1961d5d5ffa4498fcdf3",
   "src/pages/memory/MemoryDetail.tsx": "8f1eee1624c683975e4683ecd2fb84bc",
   "src/pages/memory/__tests__/MemoryDetail.test.tsx": "e33c1064a5066e01618cfef2efa1a525",
-  "e2e/Memory.spec.ts": "75865c7ae59306f9d498e8357f75b054"
+  "e2e/Memory.spec.ts": "75865c7ae59306f9d498e8357f75b054",
+  "src/pages/agents/__tests__/AgentList.test.tsx": "69ac1e1a8f080a9b4ce2a5ebcb4f62ce"
 }

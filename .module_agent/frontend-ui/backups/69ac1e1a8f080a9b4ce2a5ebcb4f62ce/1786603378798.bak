@@ -209,24 +209,12 @@ describe('AgentList 记忆功能 (静态验证)', () => {
     expect(source).toContain('<Switch />');
   });
 
-  it('recentMessageCount 标签为"保留对话轮数"并带辅助说明', () => {
-    const source = readFileSync(resolve(__dirname, '../AgentList.tsx'), 'utf-8');
-    const block = source.match(/name="recentMessageCount"[\s\S]*?<\/Form.Item>/);
-    expect(block).not.toBeNull();
-    if (block) {
-      expect(block[0]).toContain('label="保留对话轮数"');
-      expect(block[0]).toContain('extra="保留最近 N 轮对话对 AI 可见，更早对话折叠"');
-    }
-  });
-
   it('表单应包含记忆分组数量 InputNumber（memoryGroupCount，min=1，无 max 上限，宽度 100%）', () => {
     const source = readFileSync(resolve(__dirname, '../AgentList.tsx'), 'utf-8');
     expect(source).toContain('name="memoryGroupCount"');
     const block = source.match(/name="memoryGroupCount"[\s\S]*?<\/Form.Item>/);
     expect(block).not.toBeNull();
     if (block) {
-      expect(block[0]).toContain('label="保留消息组数量"');
-      expect(block[0]).toContain('extra="保留最近 N 个消息组对 AI 可见，更早的消息组归档为记忆"');
       expect(block[0]).toContain('min={1}');
       expect(block[0]).not.toContain('max={100}');
       expect(block[0]).toContain("style={{ width: '100%' }}");
