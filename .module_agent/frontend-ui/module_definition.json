@@ -231,7 +231,7 @@
     },
     {
       "path": "src/pages/memory/MemoryDocumentDetail.tsx",
-      "description": "记忆聚合文档详情页 /memory/:sessionId/:type/:seqRange：左侧只读文本框（Input.TextArea readOnly）展示聚合文本（路由 state.aggregationText），右侧调用 getSessionMessagesRange 按序列号区间获取消息并以对话气泡样式展示（与 AgentChat 一致的 ROLE_CONFIG/BUBBLE_STYLES：角色标签+图标+气泡背景色，ReactMarkdown 渲染，按 sequenceNum 升序排列）；左右两栏等高容器布局（alignItems stretch + 固定高度），各自内容区独立滚动（左 TextArea flex 填充内滚、右消息区 overflowY auto）；返回按钮跳转 /memory/:sessionId/:type"
+      "description": "记忆聚合文档详情页 /memory/:sessionId/:type/:seqRange：左侧只读文本框（Input.TextArea readOnly）展示聚合文本（路由 state.aggregationText），右侧调用 getSessionMessagesRange 按序列号区间获取消息并以对话气泡样式展示（与 AgentChat 一致的 ROLE_CONFIG/BUBBLE_STYLES：角色标签+图标+气泡背景色，ReactMarkdown 渲染，按 sequenceNum 升序排列）；消息渲染与 AgentChat 对齐：reasoning 非空显示\"思考过程\"块（#ffd700 黄色左边框）、content 为空不渲染气泡（仅保留角色头部）；工具消息渲染与 AgentChat loadHistory 对齐：role=tool 且 toolResult 非空时 buildToolContent 解析 toolResult JSON 将 content 格式化为\"**工具: toolName**\\n\\n**参数:**\\n```json\\narguments\\n```\\n\\n**执行结果:**\\nresult\"（toolName 取 toolInfo.toolName 或 JSON 内 toolName 兜底，解析失败保持原始内容），工具消息不显示 toolInfo 头部（toolName+toolCallId 已移除，工具名仅以内容\"**工具: toolName**\"格式展示）；左右两栏等高容器布局（alignItems stretch + 固定高度），各自内容区独立滚动（左 TextArea flex 填充内滚、右消息区 overflowY auto）；返回按钮跳转 /memory/:sessionId/:type"
     }
   ]
 }

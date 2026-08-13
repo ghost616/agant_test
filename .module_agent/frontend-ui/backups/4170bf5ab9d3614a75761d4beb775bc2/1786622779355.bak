@@ -81,19 +81,17 @@ const MESSAGE_AREA_STYLE: CSSProperties = {
 
 /**
  * 与 AgentChat loadHistory 对齐：tool 消息且 toolResult 非空时解析 JSON，
- * 格式化为"**工具: toolName**\n\n**参数:**\n```json\narguments\n```\n\n**执行结果:**\nresult"，
- * toolName 取 toolInfo.toolName 或 JSON 内 toolName 兜底；解析失败保持原始内容。
+ * 格式化为"**参数:**\n```json\narguments\n```\n\n**执行结果:**\nresult"，
+ * 去掉"**工具: toolName**"行避免与 toolInfo 头部（toolName+toolCallId）重复显示；解析失败保持原始内容。
  */
 function buildToolContent(msg: SessionMessage): string {
   if (msg.role === 'tool' && msg.toolResult) {
     try {
       const tr = JSON.parse(msg.toolResult) as {
-        toolName?: string;
         arguments?: string;
         result?: string;
       };
-      const toolName = msg.toolInfo?.toolName || tr.toolName;
-      return `**工具: ${toolName}**\n\n**参数:**\n\`\`\`json\n${tr.arguments}\n\`\`\`\n\n**执行结果:**\n${tr.result}`;
+      return `**参数:**\n\`\`\`json\n${tr.arguments}\n\`\`\`\n\n**执行结果:**\n${tr.result}`;
     } catch {
       // keep original content
     }
@@ -204,6 +202,18 @@ function MemoryDocumentDetail(): JSX.Element {
         <div style={{ maxWidth: '80%' }}>
           {renderRoleHeader(role)}
           {msg.reasoning && renderReasoning(msg.reasoning)}
+          {msg.toolInfo && msg.role === 'tool' && (
+            <div style={{ marginBottom: 4 }}>
+              <Typography.Text style={{ color: '#d7ba7d', fontSize: 12 }}>
+                {msg.toolInfo.toolName}
+              </Typography.Text>
+              {msg.toolInfo.toolCallId && (
+                <Typography.Text style={{ color: '#888', fontSize: 11, marginLeft: 8 }}>
+                  {msg.toolInfo.toolCallId}
+                </Typography.Text>
+              )}
+            </div>
+          )}
           {content && (
             <div style={BUBBLE_STYLES[role]} className="agent-chat-markdown">
               <div style={{ color: '#d4d4d4', fontSize: 14, lineHeight: 1.8 }}>

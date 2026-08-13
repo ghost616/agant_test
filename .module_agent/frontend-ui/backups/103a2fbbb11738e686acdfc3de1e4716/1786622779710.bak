@@ -186,7 +186,7 @@ describe('MemoryDocumentDetail 渲染', () => {
     expect(reasoningBlock!.textContent).toContain('思考中...');
   });
 
-  it('工具消息不再显示 toolInfo 头部（toolName+toolCallId），仅渲染内容', async () => {
+  it('工具消息显示 toolInfo.toolName 与 toolCallId 头部信息', async () => {
     mocks.getSessionMessagesRange.mockResolvedValue([
       makeMessage({
         id: 'm1',
@@ -199,13 +199,13 @@ describe('MemoryDocumentDetail 渲染', () => {
     renderComponent();
 
     await waitFor(() => {
-      expect(screen.getByText('工具执行结果')).toBeTruthy();
+      expect(screen.getByText('search')).toBeTruthy();
     });
-    expect(screen.queryByText('search')).toBeNull();
-    expect(screen.queryByText('call-001')).toBeNull();
+    expect(screen.getByText('call-001')).toBeTruthy();
+    expect(screen.getByText('工具执行结果')).toBeTruthy();
   });
 
-  it('tool 消息带 toolResult 时按 AgentChat loadHistory 一致的 Markdown 结构渲染', async () => {
+  it('tool 消息带 toolResult 时格式化内容仅含"参数"与"执行结果"（无工具名行）', async () => {
     mocks.getSessionMessagesRange.mockResolvedValue([
       makeMessage({
         id: 'm1',
@@ -223,34 +223,13 @@ describe('MemoryDocumentDetail 渲染', () => {
     renderComponent();
 
     await waitFor(() => {
-      expect(screen.getByText('工具: search')).toBeTruthy();
+      expect(screen.getByText('search')).toBeTruthy();
     });
+    expect(screen.queryByText('工具: search')).toBeNull();
     expect(screen.getByText('参数:')).toBeTruthy();
     expect(screen.getByText('执行结果:')).toBeTruthy();
     expect(screen.getByText('{"keyword":"test"}')).toBeTruthy();
     expect(screen.getByText('找到 3 条结果')).toBeTruthy();
-  });
-
-  it('tool 消息无 toolInfo 时 toolName 从 toolResult JSON 内兜底', async () => {
-    mocks.getSessionMessagesRange.mockResolvedValue([
-      makeMessage({
-        id: 'm1',
-        role: 'tool',
-        content: '原始内容',
-        sequenceNum: 1,
-        toolResult: JSON.stringify({
-          toolName: 'search',
-          arguments: '{}',
-          result: '完成',
-        }),
-      }),
-    ]);
-    renderComponent();
-
-    await waitFor(() => {
-      expect(screen.getByText('工具: search')).toBeTruthy();
-    });
-    expect(screen.getByText('完成')).toBeTruthy();
   });
 
   it('tool 消息 toolResult 解析失败时保留原始 content', async () => {
@@ -346,21 +325,21 @@ describe('MemoryDocumentDetail 源码配置', () => {
     expect(source).toContain('msg.reasoning && renderReasoning(msg.reasoning)');
   });
 
-  it('工具消息不再渲染 toolInfo 头部（toolName+toolCallId）', () => {
+  it('工具消息显示 toolInfo.toolName 与 toolCallId 头部信息', () => {
     const source = readFileSync(resolve(__dirname, '../MemoryDocumentDetail.tsx'), 'utf-8');
-    expect(source).not.toContain("msg.toolInfo && msg.role === 'tool'");
-    expect(source).not.toContain('msg.toolInfo.toolCallId');
-    expect(source).toContain('msg.toolInfo?.toolName');
+    expect(source).toContain("msg.toolInfo && msg.role === 'tool'");
+    expect(source).toContain('msg.toolInfo.toolName');
+    expect(source).toContain('msg.toolInfo.toolCallId');
   });
 
-  it('tool 消息带 toolResult 时格式化为 AgentChat loadHistory 一致结构（buildToolContent）', () => {
+  it('tool 消息带 toolResult 时格式化为"参数+执行结果"结构（buildToolContent，无工具名行）', () => {
     const source = readFileSync(resolve(__dirname, '../MemoryDocumentDetail.tsx'), 'utf-8');
     expect(source).toContain('buildToolContent(msg)');
     expect(source).toContain("msg.role === 'tool' && msg.toolResult");
-    expect(source).toContain('msg.toolInfo?.toolName || tr.toolName');
-    expect(source).toContain('**工具: ${toolName}**');
     expect(source).toContain('**参数:**');
     expect(source).toContain('**执行结果:**');
+    expect(source).not.toContain('**工具:');
+    expect(source).not.toContain('msg.toolInfo?.toolName || tr.toolName');
   });
 
   it('内容为空的助手消息不渲染气泡（移除"（空消息）"占位）', () => {

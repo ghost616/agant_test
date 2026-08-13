@@ -3,7 +3,7 @@
     "plan_id": "plan_c163133e-1699-4710-b2ce-a02b3201af09",
     "plan_summary": "智能体表单字段标签语义化",
     "starter_session_id": "ses_00c9a6a87ffetUtC5ZjBU5QoRN",
-    "code_reviewed": false,
+    "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
   },
@@ -11,7 +11,7 @@
     "plan_id": "plan_3e4e7e54-b315-4d38-969f-9b69a6488ed9",
     "plan_summary": "菜单记忆回看改名记忆修改",
     "starter_session_id": "ses_00c9a6a87ffetUtC5ZjBU5QoRN",
-    "code_reviewed": false,
+    "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
   },
@@ -19,7 +19,7 @@
     "plan_id": "plan_2bf21a34-2272-4ab6-9f77-673f24340e8c",
     "plan_summary": "表格动态高度固定表头",
     "starter_session_id": "ses_00c9a6a87ffetUtC5ZjBU5QoRN",
-    "code_reviewed": false,
+    "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
   },
@@ -42,6 +42,62 @@
   {
     "plan_id": "plan_991947b4-0aa4-4f8f-b283-c9e680160220",
     "plan_summary": "记忆详情页对话气泡样式+双栏对齐",
+    "starter_session_id": "ses_00c9a6a87ffetUtC5ZjBU5QoRN",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_19571461-f8f1-4dba-ac06-8aec2c1d7780",
+    "plan_summary": "messages/range返回对齐MessageDTO",
+    "starter_session_id": "ses_00c9a6a87ffetUtC5ZjBU5QoRN",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_4f55ca48-1846-4072-bede-4c8c57f3ac1c",
+    "plan_summary": "messages/range返回对齐MessageDTO",
+    "starter_session_id": "ses_00c9a6a87ffetUtC5ZjBU5QoRN",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": false
+  },
+  {
+    "plan_id": "plan_4dc08e4e-f28a-4d22-acd9-81febee1f27f",
+    "plan_summary": "记忆详情消息渲染对齐AgentChat",
+    "starter_session_id": "ses_00c9a6a87ffetUtC5ZjBU5QoRN",
+    "code_reviewed": false,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_a4251030-7781-4157-9dc1-e2bd46513a4e",
+    "plan_summary": "记忆详情工具消息格式对齐",
+    "starter_session_id": "ses_00c9a6a87ffetUtC5ZjBU5QoRN",
+    "code_reviewed": false,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_f8184b53-3f24-43fa-a21b-a878d68a0f2a",
+    "plan_summary": "记忆详情工具名去重",
+    "starter_session_id": "ses_00c9a6a87ffetUtC5ZjBU5QoRN",
+    "code_reviewed": false,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_7c5ee242-5032-4a67-b9bc-dfc1d10ad1c9",
+    "plan_summary": "恢复记忆详情工具名行",
+    "starter_session_id": "ses_00c9a6a87ffetUtC5ZjBU5QoRN",
+    "code_reviewed": false,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_7be252f5-9de6-4e6b-8da0-b3a6b1068ce9",
+    "plan_summary": "去掉工具消息toolInfo头部",
     "starter_session_id": "ses_00c9a6a87ffetUtC5ZjBU5QoRN",
     "code_reviewed": false,
     "plan_completed": true,

@@ -1,0 +1,10 @@
+{
+  "plan_id": "plan_a4251030-7781-4157-9dc1-e2bd46513a4e",
+  "module_name": "frontend-ui",
+  "development_plan": "MemoryDocumentDetail.tsx 工具消息渲染与 AgentChat loadHistory 对齐：当 role=tool 且有 toolResult 时解析 JSON，将 content 格式化为\"**工具: toolName**\\n\\n**参数:**\\n```json\\narguments\\n```\\n\\n**执行结果:**\\nresult\"的 Markdown 结构，toolName 取 toolInfo.toolName 或 JSON 内 toolName 兜底；保留 toolInfo 头部显示。同步更新测试断言。",
+  "session_id": "ses_0062486a3ffeBs05tqY30QdSrj",
+  "modified_files": [
+    "src/pages/memory/MemoryDocumentDetail.tsx",
+    "src/pages/memory/__tests__/MemoryDocumentDetail.test.tsx"
+  ]
+}

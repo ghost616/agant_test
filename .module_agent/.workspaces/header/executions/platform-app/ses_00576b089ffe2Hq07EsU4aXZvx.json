@@ -1,0 +1,12 @@
+[
+  {
+    "plan_id": "plan_19571461-f8f1-4dba-ac06-8aec2c1d7780",
+    "plan": "SessionController /messages/range 端点返回类型从 List<Message> 改为 List<MessageDataProvider.MessageDTO>，注入 DefaultMessageDataProvider，通过 toMessageDTOs 转换，与 /messages 接口返回结构对齐。同步更新测试断言。",
+    "modified_files": [
+      "platform-app/src/main/java/com/ghost616/platform/controller/SessionController.java",
+      "platform-app/src/test/java/com/ghost616/platform/controller/SessionControllerTest.java"
+    ],
+    "summary": "已修改 SessionController.java 与 SessionControllerTest.java",
+    "errors": []
+  }
+]

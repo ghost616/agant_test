@@ -10,7 +10,6 @@ import com.ghost616.platform.enums.AggregationType;
 import com.ghost616.platform.enums.ErrorCode;
 import com.ghost616.platform.exception.BusinessException;
 import com.ghost616.platform.model.SessionMemoryDocument;
-import com.ghost616.platform.service.agent.DefaultMessageDataProvider;
 import com.ghost616.platform.service.agent.DefaultSubSessionCallback;
 import com.ghost616.platform.service.memory.SessionMemoryService;
 import com.ghost616.platform.service.message.MessageService;
@@ -46,9 +45,6 @@ class SessionControllerTest {
 
     @Mock
     private MessageService messageService;
-
-    @Mock
-    private DefaultMessageDataProvider defaultMessageDataProvider;
 
     @InjectMocks
     private SessionController controller;
@@ -285,43 +281,35 @@ class SessionControllerTest {
     }
 
     @Test
-    void getMessagesBySeqRange_shouldConvertToDTOAndReturnMessages() {
+    void getMessagesBySeqRange_shouldDelegateToMessageServiceAndReturnMessages() {
         com.ghost616.platform.entity.Message msg = new com.ghost616.platform.entity.Message();
         msg.setId(1L);
         msg.setSessionId(100L);
         msg.setSequenceNum(2);
-        MessageDataProvider.MessageDTO dto =
-                buildMessageDTO("user", "hello", null, null, null, null, null);
         when(messageService.getMessagesBySeqRange(100L, 1, 5))
                 .thenReturn(List.of(msg));
-        when(defaultMessageDataProvider.toMessageDTOs(List.of(msg)))
-                .thenReturn(List.of(dto));
 
-        ApiResponse<List<MessageDataProvider.MessageDTO>> response =
+        ApiResponse<List<com.ghost616.platform.entity.Message>> response =
                 controller.getMessagesBySeqRange(100L, 1, 5);
 
         assertTrue(response.isSuccess());
         assertEquals(1, response.getData().size());
-        assertEquals("hello", response.getData().get(0).content());
+        assertEquals(2, response.getData().get(0).getSequenceNum());
         verify(messageService).getMessagesBySeqRange(100L, 1, 5);
-        verify(defaultMessageDataProvider).toMessageDTOs(List.of(msg));
     }
 
     @Test
     void getMessagesBySeqRange_shouldReturnEmptyListWhenNoMessages() {
         when(messageService.getMessagesBySeqRange(999L, 10, 20))
                 .thenReturn(List.of());
-        when(defaultMessageDataProvider.toMessageDTOs(List.of()))
-                .thenReturn(List.of());
 
-        ApiResponse<List<MessageDataProvider.MessageDTO>> response =
+        ApiResponse<List<com.ghost616.platform.entity.Message>> response =
                 controller.getMessagesBySeqRange(999L, 10, 20);
 
         assertTrue(response.isSuccess());
         assertNotNull(response.getData());
         assertTrue(response.getData().isEmpty());
         verify(messageService).getMessagesBySeqRange(999L, 10, 20);
-        verify(defaultMessageDataProvider).toMessageDTOs(List.of());
     }
 
     private MessageDataProvider.MessageDTO buildMessageDTO(String role, String content, String reasoning,

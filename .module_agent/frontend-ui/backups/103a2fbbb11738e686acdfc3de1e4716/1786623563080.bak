@@ -186,7 +186,7 @@ describe('MemoryDocumentDetail 渲染', () => {
     expect(reasoningBlock!.textContent).toContain('思考中...');
   });
 
-  it('工具消息不再显示 toolInfo 头部（toolName+toolCallId），仅渲染内容', async () => {
+  it('工具消息显示 toolInfo.toolName 与 toolCallId 头部信息', async () => {
     mocks.getSessionMessagesRange.mockResolvedValue([
       makeMessage({
         id: 'm1',
@@ -199,10 +199,10 @@ describe('MemoryDocumentDetail 渲染', () => {
     renderComponent();
 
     await waitFor(() => {
-      expect(screen.getByText('工具执行结果')).toBeTruthy();
+      expect(screen.getByText('search')).toBeTruthy();
     });
-    expect(screen.queryByText('search')).toBeNull();
-    expect(screen.queryByText('call-001')).toBeNull();
+    expect(screen.getByText('call-001')).toBeTruthy();
+    expect(screen.getByText('工具执行结果')).toBeTruthy();
   });
 
   it('tool 消息带 toolResult 时按 AgentChat loadHistory 一致的 Markdown 结构渲染', async () => {
@@ -346,11 +346,11 @@ describe('MemoryDocumentDetail 源码配置', () => {
     expect(source).toContain('msg.reasoning && renderReasoning(msg.reasoning)');
   });
 
-  it('工具消息不再渲染 toolInfo 头部（toolName+toolCallId）', () => {
+  it('工具消息显示 toolInfo.toolName 与 toolCallId 头部信息', () => {
     const source = readFileSync(resolve(__dirname, '../MemoryDocumentDetail.tsx'), 'utf-8');
-    expect(source).not.toContain("msg.toolInfo && msg.role === 'tool'");
-    expect(source).not.toContain('msg.toolInfo.toolCallId');
-    expect(source).toContain('msg.toolInfo?.toolName');
+    expect(source).toContain("msg.toolInfo && msg.role === 'tool'");
+    expect(source).toContain('msg.toolInfo.toolName');
+    expect(source).toContain('msg.toolInfo.toolCallId');
   });
 
   it('tool 消息带 toolResult 时格式化为 AgentChat loadHistory 一致结构（buildToolContent）', () => {

@@ -28,7 +28,6 @@ import com.ghost616.platform.enums.AggregationType;
 import com.ghost616.platform.enums.ErrorCode;
 import com.ghost616.agentbase.service.agent.MessageDataProvider;
 import com.ghost616.platform.model.SessionMemoryDocument;
-import com.ghost616.platform.service.agent.DefaultMessageDataProvider;
 import com.ghost616.platform.service.agent.DefaultSubSessionCallback;
 import com.ghost616.platform.service.search.SessionMemoryESClient;
 import com.ghost616.platform.util.IdConverter;
@@ -46,7 +45,6 @@ public class SessionController {
     private final SessionMemoryService sessionMemoryService;
     private final SessionMemoryESClient sessionMemoryESClient;
     private final MessageService messageService;
-    private final DefaultMessageDataProvider defaultMessageDataProvider;
 
     @GetMapping
     public ApiResponse<List<SessionDTO>> listSessions(@RequestParam(required = false) Long agentId) {
@@ -74,12 +72,12 @@ public class SessionController {
     }
 
     @GetMapping("/{id}/messages/range")
-    public ApiResponse<List<MessageDataProvider.MessageDTO>> getMessagesBySeqRange(
+    public ApiResponse<List<com.ghost616.platform.entity.Message>> getMessagesBySeqRange(
             @PathVariable Long id,
             @RequestParam Integer startSeq,
             @RequestParam Integer endSeq) {
-        List<MessageDataProvider.MessageDTO> result =
-                defaultMessageDataProvider.toMessageDTOs(messageService.getMessagesBySeqRange(id, startSeq, endSeq));
+        List<com.ghost616.platform.entity.Message> result =
+                messageService.getMessagesBySeqRange(id, startSeq, endSeq);
         return ApiResponse.success(result);
     }
 

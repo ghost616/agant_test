@@ -1,0 +1,12 @@
+{
+  "plan_id": "plan_7be252f5-9de6-4e6b-8da0-b3a6b1068ce9",
+  "module_name": "frontend-ui",
+  "development_plan": "1) MemoryDocumentDetail.tsx 去掉工具消息的 toolInfo 头部显示（toolName+toolCallId），保留内容中\"**工具: toolName**\"格式；2) AgentChat.tsx 去掉工具消息的 toolInfo 头部显示（msg.toolInfo.toolName 与 toolCallId 块）；3) 同步更新两个页面的测试断言。",
+  "session_id": "ses_0062486a3ffeBs05tqY30QdSrj",
+  "modified_files": [
+    "src/pages/memory/MemoryDocumentDetail.tsx",
+    "src/pages/sessions/AgentChat.tsx",
+    "src/pages/memory/__tests__/MemoryDocumentDetail.test.tsx",
+    "src/pages/sessions/__tests__/AgentChat.test.tsx"
+  ]
+}

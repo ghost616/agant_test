@@ -889,18 +889,6 @@ function AgentChat(): JSX.Element {
           {renderRoleHeader(msg.role)}
           {msg.reasoning && renderReasoning(msg.reasoning)}
           {msg.webSearchCall && msg.webSearchCall.length > 0 && renderWebSearchCall(msg.webSearchCall)}
-          {msg.toolInfo && msg.role === 'tool' && (
-            <div style={{ marginBottom: 4 }}>
-              <Typography.Text style={{ color: '#d7ba7d', fontSize: 12 }}>
-                {msg.toolInfo.toolName}
-              </Typography.Text>
-              {msg.toolInfo.toolCallId && (
-                <Typography.Text style={{ color: '#888', fontSize: 11, marginLeft: 8 }}>
-                  {msg.toolInfo.toolCallId}
-                </Typography.Text>
-              )}
-            </div>
-          )}
           {msg.content.trim() && (
             <div style={BUBBLE_STYLES[msg.role]} className="agent-chat-markdown">
               <div style={{ color: '#d4d4d4', fontSize: 14, lineHeight: 1.8 }}>

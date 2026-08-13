@@ -66,5 +66,57 @@
     ],
     "summary": "已完成：1) 右侧消息从 Table 改为对话气泡样式（与 AgentChat 一致的 ROLE_CONFIG/BUBBLE_STYLES：角色标签+图标+气泡背景色，ReactMarkdown+remarkGfm 渲染，按 sequenceNum 升序排列）；2) 左右两栏等高容器布局（alignItems stretch + 固定高度 520，左 TextArea flex 填充内部滚动、右消息区 overflowY auto 独立滚动，loading/空态处理）；3) 同步更新 MemoryDocumentDetail.test.tsx（角色断言 用户→你、新增升序行为测试与气泡/等高布局源码断言）与 e2e/Memory.spec.ts（断言改为 .agent-chat-markdown）。离朱测试全部通过：单测 13/13、变更源码 tsc 零错误、E2E 10/10 无回归。",
     "errors": []
+  },
+  {
+    "plan_id": "plan_4dc08e4e-f28a-4d22-acd9-81febee1f27f",
+    "plan": "MemoryDocumentDetail.tsx 消息渲染与 AgentChat 对齐：reasoning 思考过程块 + 工具消息 toolInfo 头部 + 空内容不渲染气泡 + 同步测试",
+    "modified_files": [
+      "src/pages/memory/MemoryDocumentDetail.tsx",
+      "src/pages/memory/__tests__/MemoryDocumentDetail.test.tsx"
+    ],
+    "summary": "已完成：1) 新增 renderReasoning，助手消息 reasoning 非空时显示\"思考过程\"块（#ffd700 黄色左边框，ReactMarkdown 渲染）；2) tool 消息 toolInfo 存在时显示 toolName + toolCallId 头部信息；3) 空内容消息不渲染气泡（移除\"（空消息）\"占位，仅保留角色头部）；4) 同步更新 MemoryDocumentDetail.test.tsx（新增 3 个行为测试 + 3 个源码断言）。离朱测试全部通过：单测 19/19、变更源码 tsc 零错误、E2E 10/10 无回归。",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_a4251030-7781-4157-9dc1-e2bd46513a4e",
+    "plan": "MemoryDocumentDetail.tsx 工具消息渲染与 AgentChat loadHistory 对齐（toolResult JSON 格式化 + toolInfo 头部保留 + 同步测试）",
+    "modified_files": [
+      "src/pages/memory/MemoryDocumentDetail.tsx",
+      "src/pages/memory/__tests__/MemoryDocumentDetail.test.tsx"
+    ],
+    "summary": "已完成：1) 新增模块级 buildToolContent(msg)：role=tool 且 toolResult 非空时解析 JSON，toolName 取 toolInfo.toolName 或 JSON 内 toolName 兜底，content 格式化为\"**工具: toolName**\\n\\n**参数:**\\n```json\\narguments\\n```\\n\\n**执行结果:**\\nresult\"，解析失败保持原始内容；2) renderMessage 使用 buildToolContent(msg).trim() 计算 content，toolInfo 头部（toolName+toolCallId）保留；3) 同步更新 MemoryDocumentDetail.test.tsx（新增 Markdown 结构渲染/toolName JSON 兜底/解析失败保留原样 3 个行为测试及源码断言）。离朱测试全部通过：单测 23/23、变更源码 tsc 零错误、E2E MemoryDocumentDetail 2/2 无回归。",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_f8184b53-3f24-43fa-a21b-a878d68a0f2a",
+    "plan": "MemoryDocumentDetail.tsx buildToolContent 去掉\"**工具: toolName**\"行，格式化内容仅保留\"参数\"与\"执行结果\"，同步更新测试",
+    "modified_files": [
+      "src/pages/memory/MemoryDocumentDetail.tsx",
+      "src/pages/memory/__tests__/MemoryDocumentDetail.test.tsx"
+    ],
+    "summary": "已完成：1) buildToolContent 去掉\"**工具: toolName**\"行（避免与 toolInfo 头部重复显示），content 仅保留\"**参数:**\"与\"**执行结果:**\"两部分，移除 toolName 兜底逻辑；2) 同步更新 MemoryDocumentDetail.test.tsx（行为测试断言无\"工具: search\"行、删除 toolName JSON 兜底测试、源码断言 not 包含\"**工具:\"等）；3) 修正 JSDoc 注释措辞避免与断言冲突。离朱测试全部通过：单测 22/22、变更源码 tsc 零错误、E2E MemoryDocumentDetail 2/2 无回归。",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_7c5ee242-5032-4a67-b9bc-dfc1d10ad1c9",
+    "plan": "MemoryDocumentDetail.tsx 恢复 buildToolContent 中\"**工具: toolName**\"行及 toolName 兜底逻辑，同步更新测试",
+    "modified_files": [
+      "src/pages/memory/MemoryDocumentDetail.tsx",
+      "src/pages/memory/__tests__/MemoryDocumentDetail.test.tsx"
+    ],
+    "summary": "已完成：1) buildToolContent 恢复\"**工具: toolName**\"行及 toolName 兜底逻辑（toolInfo.toolName 或 JSON 内 toolName），格式化为\"**工具: toolName**\\n\\n**参数:**\\n```json\\narguments\\n```\\n\\n**执行结果:**\\nresult\"；2) 同步更新 MemoryDocumentDetail.test.tsx（恢复\"工具: search\"断言、toolName JSON 兜底测试及源码断言）。离朱测试全部通过：单测 23/23、变更源码 tsc 零错误、E2E MemoryDocumentDetail 2/2 无回归。",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_7be252f5-9de6-4e6b-8da0-b3a6b1068ce9",
+    "plan": "MemoryDocumentDetail.tsx 与 AgentChat.tsx 去掉工具消息 toolInfo 头部显示（toolName+toolCallId），保留内容\"**工具: toolName**\"格式，同步更新测试",
+    "modified_files": [
+      "src/pages/memory/MemoryDocumentDetail.tsx",
+      "src/pages/sessions/AgentChat.tsx",
+      "src/pages/memory/__tests__/MemoryDocumentDetail.test.tsx",
+      "src/pages/sessions/__tests__/AgentChat.test.tsx"
+    ],
+    "summary": "已完成：1) MemoryDocumentDetail.tsx 去掉工具消息 toolInfo 头部块（toolName+toolCallId 不再显示），工具名仅以内容\"**工具: toolName**\"格式展示（toolName 兜底逻辑保留）；2) AgentChat.tsx 去掉 renderMessage 中 toolInfo 头部块（loadHistory 兜底保留）；3) 同步更新测试：MemoryDocumentDetail.test.tsx 行为/源码断言改为头部移除；AgentChat.test.tsx 新增头部移除源码断言。离朱测试：单测 48/48（MemoryDocumentDetail 23 + AgentChat 25）、变更源码 tsc 零错误全部通过；E2E 因当前环境 vite dev server 故障（非代码）无法可靠执行，上轮同用例通过无回归迹象。",
+    "errors": []
   }
 ]
