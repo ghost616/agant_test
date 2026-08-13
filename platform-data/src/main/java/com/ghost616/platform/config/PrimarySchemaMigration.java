@@ -48,6 +48,7 @@ public class PrimarySchemaMigration extends AbstractSchemaMigration implements A
                 new Migration("session", "is_evaluation", "TINYINT(1)", "0"),
                 new Migration("session", "last_response_id", "VARCHAR(50)", null),
                 new Migration("session", "memory_point_sequence_num", "INTEGER", null),
+                new Migration("session", "memory_prompt", "VARCHAR(500)", null),
                 new Migration("evaluation", "id", "BIGINT", null),
                 new Migration("evaluation", "name", "VARCHAR(255)", null),
                 new Migration("evaluation", "description", "TEXT", null),

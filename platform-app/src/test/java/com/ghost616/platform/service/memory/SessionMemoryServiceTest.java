@@ -10,6 +10,7 @@ import com.ghost616.agentbase.dto.model.EmbeddingResponse;
 import com.ghost616.agentbase.dto.model.ModelConfigData;
 import com.ghost616.agentbase.service.model.invoker.ModelInvoker;
 import com.ghost616.agentbase.service.model.invoker.ModelInvokerManager;
+import com.ghost616.platform.dto.memory.MemoryRegenerateStatusDTO;
 import com.ghost616.platform.entity.AgentConfig;
 import com.ghost616.platform.entity.Message;
 import com.ghost616.platform.entity.ModelConfig;
@@ -897,5 +898,194 @@ class SessionMemoryServiceTest {
         verify(agentConfigMapper).selectById(5L);
         verify(sessionMemoryESClient, timeout(5000)).batchSave(any());
         verify(sessionMapper, timeout(5000)).updateById(s);
+    }
+
+    @Test
+    @DisplayName("getMemoryPrompt：会话存在时返回 memory_prompt")
+    void getMemoryPrompt_sessionExists_returnsPrompt() {
+        Session s = session(100L, 5L, 1);
+        s.setMemoryPrompt("自定义提示语");
+        when(sessionMapper.selectById(100L)).thenReturn(s);
+
+        String prompt = service.getMemoryPrompt(100L);
+
+        assertEquals("自定义提示语", prompt);
+    }
+
+    @Test
+    @DisplayName("getMemoryPrompt：会话不存在抛 SESSION_NOT_FOUND")
+    void getMemoryPrompt_sessionNotFound_throws() {
+        when(sessionMapper.selectById(999L)).thenReturn(null);
+
+        BusinessException ex = assertThrows(BusinessException.class, () -> service.getMemoryPrompt(999L));
+        assertEquals(ErrorCode.SESSION_NOT_FOUND, ex.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("saveMemoryPrompt：保存 memory_prompt 并更新会话")
+    void saveMemoryPrompt_updatesSession() {
+        Session s = session(100L, 5L, 1);
+        when(sessionMapper.selectById(100L)).thenReturn(s);
+
+        service.saveMemoryPrompt(100L, "新提示语");
+
+        ArgumentCaptor<Session> captor = ArgumentCaptor.forClass(Session.class);
+        verify(sessionMapper).updateById(captor.capture());
+        assertEquals("新提示语", captor.getValue().getMemoryPrompt());
+    }
+
+    @Test
+    @DisplayName("saveMemoryPrompt：会话不存在抛 SESSION_NOT_FOUND")
+    void saveMemoryPrompt_sessionNotFound_throws() {
+        when(sessionMapper.selectById(999L)).thenReturn(null);
+
+        BusinessException ex = assertThrows(BusinessException.class, () -> service.saveMemoryPrompt(999L, "p"));
+        assertEquals(ErrorCode.SESSION_NOT_FOUND, ex.getErrorCode());
+        verify(sessionMapper, never()).updateById(any(Session.class));
+    }
+
+    @Test
+    @DisplayName("regenerateSummary：返回 RUNNING 状态并异步生成聚合文本")
+    void regenerateSummary_returnsRunningAndCompletes() throws Exception {
+        Session s = session(100L, 5L, null);
+        s.setModelId(10L);
+        when(sessionMapper.selectById(100L)).thenReturn(s);
+
+        List<Message> messages = List.of(
+                message(2L, 100L, "user", "q1", 2, false),
+                message(3L, 100L, "assistant", "a1", 3, false));
+        when(messageMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(messages);
+        when(modelConfigMapper.selectById(10L)).thenReturn(llmModel(10L));
+        when(modelInvokerManager.getInvoker(any(ModelConfigData.class))).thenReturn(llmInvoker);
+        when(llmInvoker.invoke(any(ChatRequest.class)))
+                .thenReturn(ChatResponse.builder().content("重生成的摘要").build());
+
+        MemoryRegenerateStatusDTO initial = service.regenerateSummary(100L, "100_GROUP_2_3", 2, 3, null);
+
+        assertEquals("RUNNING", initial.getStatus());
+        assertEquals("100_GROUP_2_3", initial.getDocId());
+
+        verify(llmInvoker, timeout(5000)).invoke(any(ChatRequest.class));
+
+        MemoryRegenerateStatusDTO status = service.getRegenerateStatus(100L);
+        assertNotNull(status);
+        assertEquals("COMPLETED", status.getStatus());
+        assertEquals("重生成的摘要", status.getAggregationText());
+    }
+
+    @Test
+    @DisplayName("regenerateSummary：自定义 prompt 非空时透传给 LLM")
+    void regenerateSummary_customPrompt_passedToLlm() throws Exception {
+        Session s = session(100L, 5L, null);
+        s.setModelId(10L);
+        when(sessionMapper.selectById(100L)).thenReturn(s);
+
+        when(messageMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(List.of(
+                message(2L, 100L, "user", "q1", 2, false)));
+        when(modelConfigMapper.selectById(10L)).thenReturn(llmModel(10L));
+        when(modelInvokerManager.getInvoker(any(ModelConfigData.class))).thenReturn(llmInvoker);
+        when(llmInvoker.invoke(any(ChatRequest.class)))
+                .thenReturn(ChatResponse.builder().content("按提示语生成的摘要").build());
+
+        service.regenerateSummary(100L, "100_GROUP_2_2", 2, 2, "请用英文总结");
+
+        ArgumentCaptor<ChatRequest> reqCaptor = ArgumentCaptor.forClass(ChatRequest.class);
+        verify(llmInvoker, timeout(5000)).invoke(reqCaptor.capture());
+        List<com.ghost616.agentbase.dto.model.Message> msgs = reqCaptor.getValue().getMessages();
+        assertEquals("请用英文总结", msgs.get(0).getContent());
+        assertEquals("q1", msgs.get(msgs.size() - 1).getContent());
+    }
+
+    @Test
+    @DisplayName("regenerateSummary：序号区间内无消息时状态 FAILED")
+    void regenerateSummary_noMessages_failed() throws Exception {
+        Session s = session(100L, 5L, null);
+        s.setModelId(10L);
+        when(sessionMapper.selectById(100L)).thenReturn(s);
+        when(messageMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(List.of());
+
+        service.regenerateSummary(100L, "100_GROUP_2_3", 2, 3, null);
+
+        verify(messageMapper, timeout(5000)).selectList(any(LambdaQueryWrapper.class));
+
+        MemoryRegenerateStatusDTO status = service.getRegenerateStatus(100L);
+        assertEquals("FAILED", status.getStatus());
+        assertNotNull(status.getError());
+        verify(llmInvoker, never()).invoke(any(ChatRequest.class));
+    }
+
+    @Test
+    @DisplayName("regenerateSummary：会话不存在抛 SESSION_NOT_FOUND")
+    void regenerateSummary_sessionNotFound_throws() {
+        when(sessionMapper.selectById(999L)).thenReturn(null);
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> service.regenerateSummary(999L, "doc", 1, 2, null));
+        assertEquals(ErrorCode.SESSION_NOT_FOUND, ex.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("saveAggregationText：重新向量化并调用 ES updateDocument")
+    void saveAggregationText_revectorizesAndUpdates() {
+        Session s = session(100L, 5L, null);
+        when(sessionMapper.selectById(100L)).thenReturn(s);
+        when(agentConfigMapper.selectById(5L)).thenReturn(memoryAgent(5L));
+        when(modelConfigMapper.selectById(20L)).thenReturn(vectorModel(20L));
+        when(modelInvokerManager.getInvoker(any(ModelConfigData.class))).thenReturn(embedInvoker);
+        when(embedInvoker.embed(any(EmbeddingRequest.class))).thenReturn(
+                EmbeddingResponse.builder().embeddings(List.of(
+                        EmbeddingResponse.EmbeddingItem.builder().index(0).embedding(List.of(0.9f, 0.8f)).build()))
+                        .build());
+
+        service.saveAggregationText(100L, "100_GROUP_2_3", "更新后的摘要");
+
+        ArgumentCaptor<EmbeddingRequest> embedCaptor = ArgumentCaptor.forClass(EmbeddingRequest.class);
+        verify(embedInvoker).embed(embedCaptor.capture());
+        assertEquals("embed-model", embedCaptor.getValue().getModel());
+        assertEquals("更新后的摘要", embedCaptor.getValue().getInput());
+        verify(sessionMemoryESClient).updateDocument(eq("100_GROUP_2_3"), eq("更新后的摘要"), eq(List.of(0.9f, 0.8f)));
+    }
+
+    @Test
+    @DisplayName("saveAggregationText：智能体不存在抛 AGENT_NOT_FOUND")
+    void saveAggregationText_agentNotFound_throws() {
+        Session s = session(100L, 999L, null);
+        when(sessionMapper.selectById(100L)).thenReturn(s);
+        when(agentConfigMapper.selectById(999L)).thenReturn(null);
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> service.saveAggregationText(100L, "doc", "text"));
+        assertEquals(ErrorCode.AGENT_NOT_FOUND, ex.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("saveAggregationText：未配置向量模型抛 AGENT_MEMORY_VECTOR_MODEL_REQUIRED")
+    void saveAggregationText_noVectorModel_throws() {
+        Session s = session(100L, 5L, null);
+        when(sessionMapper.selectById(100L)).thenReturn(s);
+        AgentConfig agent = memoryAgent(5L);
+        agent.setVectorModelId(null);
+        when(agentConfigMapper.selectById(5L)).thenReturn(agent);
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> service.saveAggregationText(100L, "doc", "text"));
+        assertEquals(ErrorCode.AGENT_MEMORY_VECTOR_MODEL_REQUIRED, ex.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("saveAggregationText：向量化结果为空抛 AGENT_MEMORY_VECTOR_MODEL_REQUIRED")
+    void saveAggregationText_emptyVector_throws() {
+        Session s = session(100L, 5L, null);
+        when(sessionMapper.selectById(100L)).thenReturn(s);
+        when(agentConfigMapper.selectById(5L)).thenReturn(memoryAgent(5L));
+        when(modelConfigMapper.selectById(20L)).thenReturn(vectorModel(20L));
+        when(modelInvokerManager.getInvoker(any(ModelConfigData.class))).thenReturn(embedInvoker);
+        when(embedInvoker.embed(any(EmbeddingRequest.class)))
+                .thenReturn(EmbeddingResponse.builder().embeddings(List.of()).build());
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> service.saveAggregationText(100L, "doc", "text"));
+        assertEquals(ErrorCode.AGENT_MEMORY_VECTOR_MODEL_REQUIRED, ex.getErrorCode());
+        verify(sessionMemoryESClient, never()).updateDocument(anyString(), anyString(), any());
     }
 }

@@ -40,6 +40,13 @@ class MemoryConfigSchemaTest {
     }
 
     @Test
+    void schemaSqlSessionHasMemoryPromptColumn() throws IOException {
+        String sql = readResource("schema.sql");
+        assertTrue(sql.contains("memory_prompt     VARCHAR(500)"),
+                "session should contain memory_prompt column");
+    }
+
+    @Test
     void schemaMigrationContainsMemoryEntries() throws IOException {
         Path source = Paths.get("src/main/java/com/ghost616/platform/config/PrimarySchemaMigration.java");
         assertTrue(Files.exists(source), "PrimarySchemaMigration source file should exist");
@@ -53,5 +60,7 @@ class MemoryConfigSchemaTest {
                 "missing migration: agent_config.vector_model_id");
         assertTrue(content.contains("new Migration(\"session\", \"memory_point_sequence_num\", \"INTEGER\", null)"),
                 "missing migration: session.memory_point_sequence_num");
+        assertTrue(content.contains("new Migration(\"session\", \"memory_prompt\", \"VARCHAR(500)\", null)"),
+                "missing migration: session.memory_prompt");
     }
 }

@@ -11,7 +11,7 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/controller/SessionController.java",
-      "description": "会话管理 REST 控制器，提供会话的 CRUD、消息查询、回滚、子会话列表查询、子会话数据获取（映射 thinking 字段）、子会话完成等 HTTP API 端点；注入 SessionMemoryService 提供 GET /api/sessions/{id}/memory/trigger 端点（调用 triggerSessionMemory 手动触发记忆摘要生成）；注入 SessionMemoryESClient 提供 GET /api/sessions/{id}/memory 端点（接收 type(DAILY|GROUP)/page(默认1)/size(默认20) 参数，调用 queryBySessionId 查询 ES 返回分页结果）；注入 MessageService 与 DefaultMessageDataProvider 提供 GET /api/sessions/{id}/messages/range 端点（startSeq/endSeq 必填参数，调用 getMessagesBySeqRange 获取实体列表后经 defaultMessageDataProvider.toMessageDTOs 转换为 MessageDataProvider.MessageDTO 列表返回，与 /messages 端点返回结构一致）"
+      "description": "会话管理 REST 控制器，提供会话的 CRUD、消息查询、消息序号范围查询（转换为 MessageDTO）、回滚、子会话列表查询、子会话数据获取（映射 thinking 字段）、子会话完成等 HTTP API 端点；注入 SessionMemoryService 提供 GET /api/sessions/{id}/memory/trigger、GET/PUT /api/sessions/{id}/memory-prompt、POST /api/sessions/{id}/memory/regenerate、GET /api/sessions/{id}/memory/regenerate/status、POST /api/sessions/{id}/memory/update 端点；注入 SessionMemoryESClient 提供 GET /api/sessions/{id}/memory 端点（type/page/size 参数，分页返回记忆文档）"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/session/SessionService.java",
@@ -107,7 +107,7 @@
     },
     {
       "path": "platform-app/src/test/java/com/ghost616/platform/controller/SessionControllerTest.java",
-      "description": "会话控制器单元测试，覆盖 getSubSessionData 端点 thinking 字段映射（true/null/false/未找到）、triggerSessionMemory 触发与异常传播、completeSubSession 工具信息映射与失败分支、queryMemory 记忆查询委派与分页参数，以及 getMessagesBySeqRange 端点委派与 MessageDTO 转换（mock defaultMessageDataProvider.toMessageDTOs）及空结果场景"
+      "description": "会话控制器单元测试，覆盖 getSubSessionData/triggerSessionMemory/completeSubSession/queryMemory/getMessagesBySeqRange 及新增 memory-prompt 读写、memory/regenerate 触发与状态查询、memory/update 端点委派场景"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultToolExecutionProvider.java",
@@ -423,11 +423,11 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/search/SessionMemoryESClient.java",
-      "description": "会话记忆 ES 客户端（@Service），封装索引 session_memory 的创建、批量写入与查询：createIndex 建索引（sessionId/keyword、aggregationType/keyword、aggregationStartSeq/integer、aggregationEndSeq/integer、aggregationStartTime/long、aggregationEndTime/long、aggregationText/text(ik)、vector/dense_vector(cosine)，索引已存在跳过）、batchSave 通过 bulk 批量写入（doc id=sessionId_aggregationType_startSeq_endSeq，索引不存在自动创建）、checkDailyExists(String sessionId, long startTime, long endTime) 用 term sessionId + term aggregationType=DAILY + range aggregationStartTime lte endTime + range aggregationEndTime gte startTime 重叠判断该时间段是否已有 DAILY 文档、queryBySessionId(String sessionId, AggregationType type, int page, int size) 用 term sessionId + term aggregationType 查询并按 aggregationStartTime 降序排列分页返回 PageResult<SessionMemoryDocument>（含文档列表与总数），IOException 包装为 IllegalStateException"
+      "description": "会话记忆客户端，封装 Elasticsearch 索引 session_memory 的创建与会话记忆文档批量写入；提供 checkDailyExists 按日记忆去重、queryBySessionId 分页查询、updateDocument 按 docId 部分更新（仅 aggregationText 与 vector）能力"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/memory/SessionMemoryService.java",
-      "description": "会话记忆聚合服务（@Service + @Scheduled cron=0 0 1 * * ?）：每天凌晨 1 点聚合所有 memoryEnabled=true 智能体会话的新增消息。processSession 拆分为分组聚合与按日聚合双通道：(1) processGroupAggregation——计算新记忆点 sequenceNum，取新旧记忆点间消息；buildMemoryDocuments 流程：消息按 user 分组后每组直接用 extractGroupContent 提取原始内容（拼接每条消息「【role】: content」后直接 trim 返回，不做截断，不调用 LLM）→ 调用 LLM 对所有组内容做主题归类（classifyTopics，SYSTEM_TOPIC_CLASSIFY_PROMPT 含约束「仅相邻片段可归为同一主题，不相邻的相同主题片段也必须使用不同标签以保持连续」；输出「序号. 主题」行格式，parseTopics 用静态常量 TOPIC_LINE_PATTERN 正则解析，按 LinkedHashMap<序号,主题> 收集并按序号 1..N 映射（LLM 乱序输出时也能正确对应），过滤空白主题标签，序号不完整或数量不匹配时回退每组单独成组）→ 按主题将同类组合并为大组（mergeByTopic 连续合并：遍历 groupSummaries 时 currTopic 变化即切分新组，不相邻的同主题片段不再合并）→ 每个大组调用 LLM 做汇总摘要（summarizeTopicGroup；归类失败降级时跳过该汇总调用，直接使用原组原始内容作为文档文本）→ 每类生成一个 SessionMemoryDocument（aggregationType=GROUP），aggregationStartSeq/aggregationEndSeq 为大组内第一组 startSeq 到最后一组 endSeq，GroupSummary record 含 startTime/endTime（每组首/尾消息 createTime 转 epoch millis，文档 aggregationStartTime/aggregationEndTime 取大组首组 startTime 与末组 endTime）；汇总摘要经向量模型向量化，经 SessionMemoryESClient.batchSave 写入 ES，成功后更新 session.memoryPointSequenceNum；记忆点不变跳过；单会话失败重试 5 次后 SLF4J 写日志。(2) processDailyAggregation——以当前时间截断秒为基准 endTime、往前推 24h 得 startTime，先 checkDailyExists 防重（已存在跳过），再 queryMessagesByTimeRange 查询该时间段消息，走相同 buildMemoryDocuments 流程（aggregationType=DAILY，聚合文档 aggregationStartTime/aggregationEndTime 直接填充为窗口时间戳范围），batchSave 写入。triggerSessionMemory(Long sessionId) 手动触发方法：校验会话/智能体存在且 memoryEnabled=true（否则抛 SESSION_NOT_FOUND/AGENT_NOT_FOUND/AGENT_MEMORY_NOT_ENABLED），校验通过后 CompletableFuture.runAsync 异步执行 processSessionWithRetry（同时触发分组与按日聚合）"
+      "description": "会话记忆聚合服务：定时聚合启用记忆功能智能体的会话新增消息生成记忆文档并向量化写入 ES；提供手动触发 triggerSessionMemory；提供记忆提示语读写 getMemoryPrompt/saveMemoryPrompt（session.memory_prompt）；提供聚合文本重生成 regenerateSummary（异步、状态可查询）+ getRegenerateStatus + saveAggregationText（重新向量化并更新 ES）"
     },
     {
       "path": "platform-app/src/test/java/com/ghost616/platform/model/SessionMemoryDocumentTest.java",
@@ -435,11 +435,11 @@
     },
     {
       "path": "platform-app/src/test/java/com/ghost616/platform/service/search/SessionMemoryESClientTest.java",
-      "description": "SessionMemoryESClient 单元测试：覆盖 indexExists、createIndex（索引不存在创建/mapping 5 字段校验、索引已存在跳过）、batchSave（索引自动创建并 bulk 写入、doc id 校验、空列表不写入、IOException 包装）"
+      "description": "会话记忆 ES 客户端单元测试，覆盖 indexExists/createIndex/batchSave/checkDailyExists/queryBySessionId 及 updateDocument（部分更新请求构造、索引已存在不重复创建、IOException 包装）场景"
     },
     {
       "path": "platform-app/src/test/java/com/ghost616/platform/service/memory/SessionMemoryServiceTest.java",
-      "description": "SessionMemoryService 单元测试：覆盖无记忆智能体直接返回、新消息聚合写入 ES 并更新记忆点、记忆点不变跳过、未配置向量模型跳过、会话处理失败重试 5 次、摘要失败该组跳过"
+      "description": "会话记忆聚合服务单元测试，覆盖定时聚合（分组/按日/重试/主题归类各分支）、手动触发、记忆提示语读写、聚合文本重生成（异步状态、自定义 prompt、空消息 FAILED、会话不存在）、saveAggregationText（重新向量化+ES 更新、异常分支）场景"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/message/MessageService.java",
@@ -452,6 +452,22 @@
     {
       "path": "platform-app/src/test/java/com/ghost616/platform/service/message/MessageServiceImplTest.java",
       "description": "消息查询服务单元测试，覆盖 getAllMessages 的消息查询、空结果、查询条件构造与不做 memoryPoint 过滤场景，以及 getMessagesBySeqRange 的区间消息查询、空结果与查询条件构造场景"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/dto/memory/MemoryRegenerateStatusDTO.java",
+      "description": "聚合文本重生成状态 DTO，包含 sessionId/docId/status/aggregationText/error 字段，记录异步重生成聚合摘要文本的执行状态与结果"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/dto/memory/MemoryPromptSaveRequest.java",
+      "description": "记忆提示语保存请求 DTO，包含 prompt 字段"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/dto/memory/MemoryRegenerateRequest.java",
+      "description": "聚合文本重生成请求 DTO，包含 docId/startSeq/endSeq/prompt 字段"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/dto/memory/MemoryUpdateRequest.java",
+      "description": "聚合文本保存（重新向量化+更新ES）请求 DTO，包含 docId/text 字段"
     }
   ]
 }

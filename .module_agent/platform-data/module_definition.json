@@ -43,7 +43,7 @@
     },
     {
       "path": "platform-data/src/main/java/com/ghost616/platform/entity/Session.java",
-      "description": "会话实体，继承BaseEntity，@TableName(\"session\")，含thinking字段"
+      "description": "会话实体，继承BaseEntity，@TableName(\"session\")，含thinking字段及 memoryPointSequenceNum/memoryPrompt（记忆提示语，仅通过独立接口读写、不加入 SessionDTO）字段"
     },
     {
       "path": "platform-data/src/main/java/com/ghost616/platform/entity/MessageToolCall.java",
@@ -187,7 +187,7 @@
     },
     {
       "path": "platform-data/src/test/java/com/ghost616/platform/entity/SessionEntityTest.java",
-      "description": "Session 实体字段测试，验证 memoryPointSequenceNum 字段的 @TableField 映射（memory_point_sequence_num）及类型/设值"
+      "description": "Session 实体字段测试，验证 memoryPointSequenceNum 字段的 @TableField 映射（memory_point_sequence_num）及类型/设值，并验证 memoryPrompt 字段的 @TableField 映射（memory_prompt）及类型/设值"
     },
     {
       "path": "platform-data/src/main/java/com/ghost616/platform/enums/ErrorCode.java",
@@ -223,7 +223,7 @@
     },
     {
       "path": "platform-data/src/main/java/com/ghost616/platform/config/PrimarySchemaMigration.java",
-      "description": "主数据源 Schema 迁移组件（@Component @Order(1)），注入 @Qualifier(\"primaryJdbcTemplate\") 的 JdbcTemplate，执行主数据源各表（tool_config/session_variable/agent_config/session/session_tool/agent_tool/agent_skill/session_skill/evaluation/evaluation_result/agent_evaluation/model_config/knowledge_base/knowledge_file/agent_knowledge_base）的 77 条 ALTER TABLE 增量列迁移（message_tool_call 迁移已移至 MessageSchemaMigration），并回填 session_auth NULL 值"
+      "description": "主数据源 Schema 迁移组件（@Component @Order(1)），注入 @Qualifier(\"primaryJdbcTemplate\") 的 JdbcTemplate，执行主数据源各表（tool_config/session_variable/agent_config/session/session_tool/agent_tool/agent_skill/session_skill/evaluation/evaluation_result/agent_evaluation/model_config/knowledge_base/knowledge_file/agent_knowledge_base）的 78 条 ALTER TABLE 增量列迁移（含 session.memory_prompt，message_tool_call 迁移已移至 MessageSchemaMigration），并回填 session_auth NULL 值"
     },
     {
       "path": "platform-data/src/main/java/com/ghost616/platform/config/MessageSchemaMigration.java",

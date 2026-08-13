@@ -102,5 +102,69 @@
     "code_reviewed": false,
     "plan_completed": true,
     "test_passed": true
+  },
+  {
+    "plan_id": "plan_df64b0b3-c4e7-4a62-9d9b-577622d0be41",
+    "plan_summary": "Session 实体新增 memory_prompt 字段及迁移",
+    "starter_session_id": "ses_005cf34a8ffeQh91FOcWodATxH",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_7ed54a0c-0be5-46a6-9c13-316ce2636e2e",
+    "plan_summary": "记忆提示语与聚合文本编辑接口",
+    "starter_session_id": "ses_005cf34a8ffeQh91FOcWodATxH",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_6e93c557-b0b5-4418-a2d7-174b9a81b906",
+    "plan_summary": "聚合文档详情页功能按钮与弹窗",
+    "starter_session_id": "ses_005cf34a8ffeQh91FOcWodATxH",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_3f2099a1-5492-40d7-9b11-f7d743a8b5a2",
+    "plan_summary": "修复 e2e Playwright 路由遮蔽",
+    "starter_session_id": "ses_005cf34a8ffeQh91FOcWodATxH",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_eb4fb588-fd0f-40db-9a12-bd8701805cb4",
+    "plan_summary": "模型下拉迁移到编辑弹窗",
+    "starter_session_id": "ses_00c9a6a87ffetUtC5ZjBU5QoRN",
+    "code_reviewed": false,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_c44078ab-f854-4d41-9922-5149fe5d9aab",
+    "plan_summary": "编辑弹窗模型预选会话模型",
+    "starter_session_id": "ses_00c9a6a87ffetUtC5ZjBU5QoRN",
+    "code_reviewed": false,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_d1e3c807-8c0d-4fac-b454-3ca4cf935fd1",
+    "plan_summary": "详情页聚合文本Markdown化+保存后刷新",
+    "starter_session_id": "ses_00c9a6a87ffetUtC5ZjBU5QoRN",
+    "code_reviewed": false,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_3f854b04-cdcd-4d1b-9aa3-961da74079e8",
+    "plan_summary": "仅保存后替换详情页聚合文本",
+    "starter_session_id": "ses_00c9a6a87ffetUtC5ZjBU5QoRN",
+    "code_reviewed": false,
+    "plan_completed": true,
+    "test_passed": true
   }
 ]

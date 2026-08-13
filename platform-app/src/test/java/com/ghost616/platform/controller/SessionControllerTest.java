@@ -5,6 +5,10 @@ import com.ghost616.agentbase.dto.model.ToolInfo;
 import com.ghost616.agentbase.service.agent.MessageDataProvider;
 import com.ghost616.platform.dto.ApiResponse;
 import com.ghost616.platform.dto.PageResult;
+import com.ghost616.platform.dto.memory.MemoryPromptSaveRequest;
+import com.ghost616.platform.dto.memory.MemoryRegenerateRequest;
+import com.ghost616.platform.dto.memory.MemoryRegenerateStatusDTO;
+import com.ghost616.platform.dto.memory.MemoryUpdateRequest;
 import com.ghost616.platform.dto.session.SubSessionDataDTO;
 import com.ghost616.platform.enums.AggregationType;
 import com.ghost616.platform.enums.ErrorCode;
@@ -322,6 +326,80 @@ class SessionControllerTest {
         assertTrue(response.getData().isEmpty());
         verify(messageService).getMessagesBySeqRange(999L, 10, 20);
         verify(defaultMessageDataProvider).toMessageDTOs(List.of());
+    }
+
+    @Test
+    void getMemoryPrompt_shouldDelegateAndReturnPrompt() {
+        when(sessionMemoryService.getMemoryPrompt(100L)).thenReturn("自定义提示语");
+
+        ApiResponse<String> response = controller.getMemoryPrompt(100L);
+
+        assertTrue(response.isSuccess());
+        assertEquals("自定义提示语", response.getData());
+        verify(sessionMemoryService).getMemoryPrompt(100L);
+    }
+
+    @Test
+    void saveMemoryPrompt_shouldDelegateAndReturnSuccess() {
+        MemoryPromptSaveRequest request = new MemoryPromptSaveRequest("新提示语");
+
+        ApiResponse<Void> response = controller.saveMemoryPrompt(100L, request);
+
+        assertTrue(response.isSuccess());
+        verify(sessionMemoryService).saveMemoryPrompt(100L, "新提示语");
+    }
+
+    @Test
+    void regenerateSummary_shouldDelegateAndReturnStatus() {
+        MemoryRegenerateStatusDTO status = MemoryRegenerateStatusDTO.builder()
+                .sessionId(100L)
+                .docId("100_GROUP_2_3")
+                .status("RUNNING")
+                .build();
+        when(sessionMemoryService.regenerateSummary(100L, "100_GROUP_2_3", 2, 3, "请总结"))
+                .thenReturn(status);
+        MemoryRegenerateRequest request = MemoryRegenerateRequest.builder()
+                .docId("100_GROUP_2_3")
+                .startSeq(2)
+                .endSeq(3)
+                .prompt("请总结")
+                .build();
+
+        ApiResponse<MemoryRegenerateStatusDTO> response = controller.regenerateSummary(100L, request);
+
+        assertTrue(response.isSuccess());
+        assertSame(status, response.getData());
+        verify(sessionMemoryService).regenerateSummary(100L, "100_GROUP_2_3", 2, 3, "请总结");
+    }
+
+    @Test
+    void getRegenerateStatus_shouldDelegateAndReturnStatus() {
+        MemoryRegenerateStatusDTO status = MemoryRegenerateStatusDTO.builder()
+                .sessionId(100L)
+                .docId("100_GROUP_2_3")
+                .status("COMPLETED")
+                .aggregationText("摘要")
+                .build();
+        when(sessionMemoryService.getRegenerateStatus(100L)).thenReturn(status);
+
+        ApiResponse<MemoryRegenerateStatusDTO> response = controller.getRegenerateStatus(100L);
+
+        assertTrue(response.isSuccess());
+        assertSame(status, response.getData());
+        verify(sessionMemoryService).getRegenerateStatus(100L);
+    }
+
+    @Test
+    void saveAggregationText_shouldDelegateAndReturnSuccess() {
+        MemoryUpdateRequest request = MemoryUpdateRequest.builder()
+                .docId("100_GROUP_2_3")
+                .text("更新后的摘要")
+                .build();
+
+        ApiResponse<Void> response = controller.saveAggregationText(100L, request);
+
+        assertTrue(response.isSuccess());
+        verify(sessionMemoryService).saveAggregationText(100L, "100_GROUP_2_3", "更新后的摘要");
     }
 
     private MessageDataProvider.MessageDTO buildMessageDTO(String role, String content, String reasoning,

@@ -8,6 +8,10 @@ import com.ghost616.platform.dto.session.SubSessionDataDTO;
 import com.ghost616.platform.service.session.SessionService;
 import com.ghost616.platform.service.message.MessageService;
 import com.ghost616.platform.service.memory.SessionMemoryService;
+import com.ghost616.platform.dto.memory.MemoryPromptSaveRequest;
+import com.ghost616.platform.dto.memory.MemoryRegenerateRequest;
+import com.ghost616.platform.dto.memory.MemoryRegenerateStatusDTO;
+import com.ghost616.platform.dto.memory.MemoryUpdateRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -105,6 +109,41 @@ public class SessionController {
     public ApiResponse<Void> triggerSessionMemory(@PathVariable Long id) {
         sessionMemoryService.triggerSessionMemory(id);
         return ApiResponse.success("记忆摘要生成已触发", null);
+    }
+
+    @GetMapping("/{id}/memory-prompt")
+    public ApiResponse<String> getMemoryPrompt(@PathVariable Long id) {
+        String prompt = sessionMemoryService.getMemoryPrompt(id);
+        return ApiResponse.success(prompt);
+    }
+
+    @PutMapping("/{id}/memory-prompt")
+    public ApiResponse<Void> saveMemoryPrompt(@PathVariable Long id,
+                                              @RequestBody MemoryPromptSaveRequest request) {
+        sessionMemoryService.saveMemoryPrompt(id, request.getPrompt());
+        return ApiResponse.success(null);
+    }
+
+    @PostMapping("/{id}/memory/regenerate")
+    public ApiResponse<MemoryRegenerateStatusDTO> regenerateSummary(
+            @PathVariable Long id,
+            @RequestBody MemoryRegenerateRequest request) {
+        MemoryRegenerateStatusDTO status = sessionMemoryService.regenerateSummary(
+                id, request.getDocId(), request.getStartSeq(), request.getEndSeq(), request.getPrompt());
+        return ApiResponse.success("聚合文本重生成已触发", status);
+    }
+
+    @GetMapping("/{id}/memory/regenerate/status")
+    public ApiResponse<MemoryRegenerateStatusDTO> getRegenerateStatus(@PathVariable Long id) {
+        MemoryRegenerateStatusDTO status = sessionMemoryService.getRegenerateStatus(id);
+        return ApiResponse.success(status);
+    }
+
+    @PostMapping("/{id}/memory/update")
+    public ApiResponse<Void> saveAggregationText(@PathVariable Long id,
+                                                 @RequestBody MemoryUpdateRequest request) {
+        sessionMemoryService.saveAggregationText(id, request.getDocId(), request.getText());
+        return ApiResponse.success(null);
     }
 
     @GetMapping("/{id}/memory")

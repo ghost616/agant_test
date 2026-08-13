@@ -71,5 +71,8 @@
   "src/__tests__/App.test.tsx": "80c7c7265b06ab434b8d6040477c4c4a",
   "src/pages/skills/SkillList.tsx": "e90e982f374ecf9555dd76d4ea76a96e",
   "src/pages/memory/__tests__/MemoryDocumentDetail.test.tsx": "103a2fbbb11738e686acdfc3de1e4716",
-  "src/pages/memory/MemoryDocumentDetail.tsx": "4170bf5ab9d3614a75761d4beb775bc2"
+  "src/pages/memory/MemoryDocumentDetail.tsx": "4170bf5ab9d3614a75761d4beb775bc2",
+  "src/types/memory.ts": "b73d1b276409bd019d77ece1b5b7edea",
+  "src/services/memory.ts": "0d1c479915537d08c52f1dfffb8777e0",
+  "src/services/__tests__/memory.test.ts": "c0ad5f07adf182a7f4927f6b0dfe191e"
 }

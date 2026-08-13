@@ -43,4 +43,7 @@ public class Session extends BaseEntity {
 
     @TableField("memory_point_sequence_num")
     private Integer memoryPointSequenceNum;
+
+    @TableField("memory_prompt")
+    private String memoryPrompt;
 }

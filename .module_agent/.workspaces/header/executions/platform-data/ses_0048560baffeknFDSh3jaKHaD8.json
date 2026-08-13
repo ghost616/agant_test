@@ -1,0 +1,18 @@
+[
+  {
+    "plan_id": "plan_df64b0b3-c4e7-4a62-9d9b-577622d0be41",
+    "plan": "Session 实体新增 memory_prompt 字段（记忆提示语，VARCHAR）；schema.sql session 表新增 memory_prompt 列；SchemaMigration 新增对应迁移项；字段仅通过独立接口读写，不加入 SessionDTO",
+    "modified_files": [
+      "platform-data/src/main/java/com/ghost616/platform/entity/Session.java",
+      "platform-data/src/main/resources/schema.sql",
+      "platform-data/src/main/java/com/ghost616/platform/config/PrimarySchemaMigration.java",
+      "platform-data/src/test/java/com/ghost616/platform/entity/SessionEntityTest.java",
+      "platform-data/src/test/java/com/ghost616/platform/MemoryConfigSchemaTest.java",
+      "platform-app/src/test/java/com/ghost616/platform/migration/SchemaMigrationTest.java"
+    ],
+    "summary": "执行总结：Session 实体新增 memoryPrompt 字段（@TableField(\"memory_prompt\")，String，记忆提示语，仅通过独立接口读写、不加入 SessionDTO）；schema.sql session 表新增 memory_prompt VARCHAR(500) 列；PrimarySchemaMigration 新增 session.memory_prompt（VARCHAR(500)）迁移条目，迁移总数 77→78；SessionEntityTest 新增 memoryPromptField 测试、MemoryConfigSchemaTest 新增列与迁移断言、platform-app SchemaMigrationTest PRIMARY_ALTER_COUNT 同步为 78。离朱测试全部通过：platform-data 编译成功，SessionEntityTest+MemoryConfigSchemaTest 6/6，platform-app SchemaMigrationTest 14/14，platform-app 编译无破坏。元数据（current_spec/module_definition/change_history）已同步更新。遗留问题：module_agent_backup 工具服务端 JSON 解析错误，文件修改前备份未成功。",
+    "errors": [
+      "module_agent_backup(action=backup) 连续返回 'Unexpected non-whitespace character after JSON' 服务端错误，全部文件修改前备份未成功"
+    ]
+  }
+]

@@ -7,5 +7,28 @@
     ],
     "summary": "离朱复测 10/10 E2E 通过、72/73 单测通过，仅剩 MemoryDocumentDetail.test.tsx state 缺失用例选择器问题：antd v5 纯 textarea 无 .ant-input-textarea 容器，已改为 textarea.ant-input",
     "errors": []
+  },
+  {
+    "plan_id": "plan_6e93c557-b0b5-4418-a2d7-174b9a81b906",
+    "plan": "聚合文档详情页功能按钮与弹窗：1) 右下角新增配置/编辑按钮（配置弹窗提示语输入+模型下拉只选不存，保存调 PUT /memory-prompt）；编辑弹窗左右输入框（左已保存提示语 GET /memory-prompt，右聚合文本，底部保存/重新生成）；2) 保存调 POST /memory/update 重新向量化更新 ES；3) 重新生成调 POST /memory/regenerate 后轮询 /memory/regenerate/status 完成后回填右侧；4) 同步更新测试",
+    "modified_files": [
+      "src/types/memory.ts",
+      "src/services/memory.ts",
+      "src/pages/memory/MemoryDocumentDetail.tsx",
+      "src/pages/memory/__tests__/MemoryDocumentDetail.test.tsx",
+      "src/services/__tests__/memory.test.ts",
+      "e2e/Memory.spec.ts"
+    ],
+    "summary": "已完成聚合文档详情页功能按钮与弹窗开发。实现内容：1) types/memory.ts 新增 MemoryPromptSaveRequest/MemoryUpdateRequest/MemoryRegenerateRequest/MemoryRegenerateStatusEnum/MemoryRegenerateStatus 类型（与后端 DTO 对齐）；2) services/memory.ts 新增 getMemoryPrompt（GET /sessions/{id}/memory-prompt）、saveMemoryPrompt（PUT /sessions/{id}/memory-prompt body {prompt}）、updateMemoryDocument（POST /sessions/{id}/memory/update body {docId,text}）、regenerateMemory（POST /sessions/{id}/memory/regenerate body {docId,startSeq,endSeq,prompt}）、getRegenerateStatus（GET /sessions/{id}/memory/regenerate/status）5 个接口；3) MemoryDocumentDetail.tsx 右下角新增「配置」「编辑」按钮：配置弹窗（提示语 TextArea + 模型 Select 只选不存，打开时加载 getMemoryPrompt 与 listModels({modelType:'LLM'})，保存调 saveMemoryPrompt）；编辑弹窗（左提示语 getMemoryPrompt + 右聚合文本 editText=state.aggregationText，底部取消/保存/重新生成）；保存调 updateMemoryDocument（docId=`${sessionId}_${aggType}_${startSeq}_${endSeq}`）将右侧聚合文本重新向量化更新 ES；重新生成调 regenerateMemory 后每 2000ms 轮询 getRegenerateStatus（最多 30 次）COMPLETED 时 setEditText 回填新聚合文本、FAILED 显示 error；4) 同步更新测试：MemoryDocumentDetail.test.tsx（配置/编辑弹窗 7 用例 + 源码断言，修正 antd 双中文空格断言）、memory.test.ts（5 组新接口用例）、e2e/Memory.spec.ts（3 个新 e2e 用例与 memory-prompt/regenerate/status/update/models 接口 mock）。离朱测试：单元测试 53/53（MemoryDocumentDetail 34/34 + memory.test 19/19）、编译零错误全部通过；E2E 13 用例与 mock 已就绪，但因当前环境 vite dev server JS 模块 transform 持续卡死无法执行（环境故障非代码问题）。元数据已更新（spec/definition/history）。",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_3f2099a1-5492-40d7-9b11-f7d743a8b5a2",
+    "plan": "修复 e2e/Memory.spec.ts Playwright 路由遮蔽（皋陶审查 warning）",
+    "modified_files": [
+      "e2e/Memory.spec.ts"
+    ],
+    "summary": "已完成 e2e/Memory.spec.ts Playwright 路由遮蔽修复并验证。修复内容：setupMocks 中泛化路由 `**/api/sessions/*/memory*` 原注册在具体路由之后（约195行），因 Playwright 按注册逆序匹配导致其先于 memory-prompt 等具体路由命中，配置弹窗 GET/PUT /memory-prompt 会错误拿到 memory 列表对象。已将泛化路由移到所有具体路由（memory-prompt/regenerate/regenerate-status/update）之前注册（现 146 行），并删除原注册在具体路由之后的重复泛化路由。离朱源码核对确认修复正确（路由注册顺序表验证通过），预期 4 个验证点（配置保存/编辑保存/重新生成/回归 10 用例）用例与 mock 均已就绪；E2E 13 用例仍因环境 vite dev server JS 模块 transform 持续卡死无法执行（环境故障非代码问题，与既往多轮一致）。元数据已更新（history）。",
+    "errors": []
   }
 ]

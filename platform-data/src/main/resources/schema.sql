@@ -47,6 +47,7 @@ CREATE TABLE IF NOT EXISTS session (
     last_response_id VARCHAR(50),
     is_evaluation    TINYINT(1) DEFAULT 0,
     memory_point_sequence_num INTEGER,
+    memory_prompt     VARCHAR(500),
     create_time      TIMESTAMP,
     update_time      TIMESTAMP,
     deleted          INTEGER DEFAULT 0

@@ -129,16 +129,6 @@ async function setupMocks(page: Page) {
     });
   });
 
-  await page.route('**/api/sessions/*/memory*', async (route) => {
-    const url = new URL(route.request().url());
-    const type = url.searchParams.get('type');
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: okJson(type === 'GROUP' ? MOCK_GROUP : MOCK_DAILY),
-    });
-  });
-
   await page.route('**/api/sessions/*/messages/range*', async (route) => {
     const url = new URL(route.request().url());
     const startSeq = url.searchParams.get('startSeq');
@@ -150,6 +140,79 @@ async function setupMocks(page: Page) {
       status: 200,
       contentType: 'application/json',
       body: okJson(ranged),
+    });
+  });
+
+  await page.route('**/api/sessions/*/memory*', async (route) => {
+    const url = new URL(route.request().url());
+    const type = url.searchParams.get('type');
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: okJson(type === 'GROUP' ? MOCK_GROUP : MOCK_DAILY),
+    });
+  });
+
+  await page.route('**/api/sessions/*/memory-prompt', async (route) => {
+    if (route.request().method() === 'PUT') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: okJson(null),
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: okJson('记忆聚合提示语'),
+    });
+  });
+
+  await page.route('**/api/sessions/*/memory/regenerate/status*', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: okJson({
+        sessionId: '1',
+        docId: '1_DAILY_1_5',
+        status: 'COMPLETED',
+        aggregationText: '重生成后的每日摘要',
+      }),
+    });
+  });
+
+  await page.route('**/api/sessions/*/memory/regenerate', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: okJson({
+        sessionId: '1',
+        docId: '1_DAILY_1_5',
+        status: 'RUNNING',
+      }),
+    });
+  });
+
+  await page.route('**/api/sessions/*/memory/update', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: okJson(null),
+    });
+  });
+
+  await page.route('**/api/models*', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: okJson([
+        {
+          id: 'm1',
+          name: 'LLM模型',
+          modelType: 'LLM',
+        },
+      ]),
     });
   });
 }
@@ -323,5 +386,93 @@ test.describe('记忆修改 MemoryDocumentDetail 页面', () => {
 
     await page.getByRole('button', { name: '返回' }).click();
     await page.waitForURL('**/memory/1/DAILY');
+  });
+
+  test('配置按钮打开弹窗仅展示已保存提示语（无模型下拉），保存调用 PUT memory-prompt', async ({ page }) => {
+    await page.goto('/memory/1/DAILY');
+    await page.waitForSelector('.ant-table');
+    await page
+      .locator('.ant-table-tbody')
+      .getByRole('button', { name: '详情' })
+      .click();
+    await page.waitForURL('**/memory/1/DAILY/1-5');
+
+    await page.getByRole('button', { name: /配\s*置/ }).click();
+    await expect(page.getByText('提示语配置')).toBeVisible();
+    await expect(page.locator('.ant-modal textarea').first()).toHaveValue('记忆聚合提示语');
+    await expect(page.locator('.ant-modal .ant-select-selector')).toHaveCount(0);
+
+    const [request] = await Promise.all([
+      page.waitForRequest(
+        (req) =>
+          req.url().includes('/api/sessions/1/memory-prompt') &&
+          req.method() === 'PUT',
+      ),
+      page.locator('.ant-modal').getByRole('button', { name: /保\s*存/ }).click(),
+    ]);
+    expect(request.postDataJSON()).toEqual({ prompt: '记忆聚合提示语' });
+  });
+
+  test('编辑按钮打开弹窗，展示模型下拉，保存调用 POST memory/update', async ({ page }) => {
+    await page.goto('/memory/1/DAILY');
+    await page.waitForSelector('.ant-table');
+    await page
+      .locator('.ant-table-tbody')
+      .getByRole('button', { name: '详情' })
+      .click();
+    await page.waitForURL('**/memory/1/DAILY/1-5');
+
+    await page.getByRole('button', { name: /编\s*辑/ }).click();
+    await expect(page.getByText('编辑聚合文档')).toBeVisible();
+    await expect(page.locator('.ant-modal textarea').nth(1)).toHaveValue('每日摘要');
+
+    await page.locator('.ant-modal .ant-select-selector').click();
+    await expect(page.locator('.ant-select-dropdown:visible').getByText('LLM模型')).toBeVisible();
+    await page.keyboard.press('Escape');
+
+    const [request] = await Promise.all([
+      page.waitForRequest(
+        (req) =>
+          req.url().includes('/api/sessions/1/memory/update') &&
+          req.method() === 'POST',
+      ),
+      page.locator('.ant-modal').getByRole('button', { name: /保\s*存/ }).click(),
+    ]);
+    expect(request.postDataJSON()).toEqual({
+      docId: '1_DAILY_1_5',
+      text: '每日摘要',
+    });
+  });
+
+  test('重新生成按钮调用 regenerate 并轮询 status，完成后回填右侧输入框', async ({ page }) => {
+    await page.goto('/memory/1/DAILY');
+    await page.waitForSelector('.ant-table');
+    await page
+      .locator('.ant-table-tbody')
+      .getByRole('button', { name: '详情' })
+      .click();
+    await page.waitForURL('**/memory/1/DAILY/1-5');
+
+    await page.getByRole('button', { name: /编\s*辑/ }).click();
+    await expect(page.getByText('编辑聚合文档')).toBeVisible();
+
+    const [request] = await Promise.all([
+      page.waitForRequest(
+        (req) =>
+          req.url().includes('/api/sessions/1/memory/regenerate') &&
+          req.method() === 'POST',
+      ),
+      page.getByRole('button', { name: '重新生成' }).click(),
+    ]);
+    expect(request.postDataJSON()).toEqual({
+      docId: '1_DAILY_1_5',
+      startSeq: 1,
+      endSeq: 5,
+      prompt: '记忆聚合提示语',
+    });
+
+    await expect(page.locator('.ant-modal textarea').nth(1)).toHaveValue(
+      '重生成后的每日摘要',
+    );
   });
 });

@@ -5,3 +5,4 @@ target
 .maven
 *.log
 .lizhu_env
+test-results

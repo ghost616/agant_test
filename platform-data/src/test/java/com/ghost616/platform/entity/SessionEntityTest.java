@@ -21,4 +21,16 @@ class SessionEntityTest {
         session.setMemoryPointSequenceNum(5);
         assertEquals(5, session.getMemoryPointSequenceNum());
     }
+
+    @Test
+    void memoryPromptField() throws Exception {
+        Field field = Session.class.getDeclaredField("memoryPrompt");
+        assertNotNull(field);
+        assertEquals(String.class, field.getType());
+        assertEquals("memory_prompt", field.getAnnotation(TableField.class).value());
+
+        Session session = new Session();
+        session.setMemoryPrompt("请记住用户的偏好");
+        assertEquals("请记住用户的偏好", session.getMemoryPrompt());
+    }
 }

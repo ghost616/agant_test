@@ -12,6 +12,8 @@ import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.elasticsearch.core.BulkRequest;
 import co.elastic.clients.elasticsearch.core.SearchRequest;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
+import co.elastic.clients.elasticsearch.core.UpdateRequest;
+import co.elastic.clients.elasticsearch.core.UpdateResponse;
 import co.elastic.clients.elasticsearch.core.bulk.BulkOperation;
 import co.elastic.clients.elasticsearch.core.bulk.IndexOperation;
 import co.elastic.clients.elasticsearch.core.search.Hit;
@@ -21,6 +23,9 @@ import co.elastic.clients.elasticsearch.core.search.TotalHitsRelation;
 import co.elastic.clients.elasticsearch.indices.CreateIndexRequest;
 import co.elastic.clients.elasticsearch.indices.ElasticsearchIndicesClient;
 import co.elastic.clients.elasticsearch.indices.ExistsRequest;
+import co.elastic.clients.json.JsonData;
+import co.elastic.clients.json.JsonpMapper;
+import co.elastic.clients.json.jackson.JacksonJsonpMapper;
 import co.elastic.clients.transport.endpoints.BooleanResponse;
 import co.elastic.clients.util.ObjectBuilder;
 import com.ghost616.platform.dto.PageResult;
@@ -482,14 +487,90 @@ class SessionMemoryESClientTest {
     }
 
     @Test
-    @DisplayName("queryBySessionId：IOException 包装为 IllegalStateException 且消息含索引名")
-    void queryBySessionId_ioException() throws Exception {
+    @DisplayName("updateDocument：索引不存在时先自动创建，按 docId 更新 aggregationText 与 vector")
+    void updateDocument_buildsUpdateRequest() throws Exception {
+        stubExists(false);
+        when(indicesClient.create(any(Function.class))).thenReturn(null);
+        @SuppressWarnings("unchecked")
+        UpdateResponse<SessionMemoryDocument> updateResponse = mock(UpdateResponse.class);
+        when(elasticsearchClient.<SessionMemoryDocument, JsonData>update(any(Function.class),
+                eq(SessionMemoryDocument.class))).thenReturn(updateResponse);
+
+        client.updateDocument("100_GROUP_1_3", "新摘要", List.of(0.3f, 0.4f));
+
+        verify(indicesClient).create(any(Function.class));
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Function<UpdateRequest.Builder<SessionMemoryDocument, JsonData>,
+                ObjectBuilder<UpdateRequest<SessionMemoryDocument, JsonData>>>> captor =
+                ArgumentCaptor.forClass(Function.class);
+        verify(elasticsearchClient).<SessionMemoryDocument, JsonData>update(captor.capture(),
+                eq(SessionMemoryDocument.class));
+        UpdateRequest<SessionMemoryDocument, JsonData> request =
+                apply(captor.getValue(), new UpdateRequest.Builder<SessionMemoryDocument, JsonData>());
+        assertEquals(SessionMemoryESClient.INDEX_NAME, request.index());
+        assertEquals("100_GROUP_1_3", request.id());
+        assertNotNull(request.doc(), "update 应包含部分文档");
+    }
+
+    @Test
+    @DisplayName("updateDocument：部分文档仅包含 aggregationText 与 vector 字段")
+    void updateDocument_docContainsOnlyTextAndVector() throws Exception {
         stubExists(true);
-        when(elasticsearchClient.search(any(Function.class), eq(SessionMemoryDocument.class)))
-                .thenThrow(new IOException("boom"));
+        @SuppressWarnings("unchecked")
+        UpdateResponse<SessionMemoryDocument> updateResponse = mock(UpdateResponse.class);
+        when(elasticsearchClient.<SessionMemoryDocument, JsonData>update(any(Function.class),
+                eq(SessionMemoryDocument.class))).thenReturn(updateResponse);
+
+        client.updateDocument("100_GROUP_1_3", "新摘要", List.of(0.3f, 0.4f));
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Function<UpdateRequest.Builder<SessionMemoryDocument, JsonData>,
+                ObjectBuilder<UpdateRequest<SessionMemoryDocument, JsonData>>>> captor =
+                ArgumentCaptor.forClass(Function.class);
+        verify(elasticsearchClient).<SessionMemoryDocument, JsonData>update(captor.capture(),
+                eq(SessionMemoryDocument.class));
+        UpdateRequest<SessionMemoryDocument, JsonData> request =
+                apply(captor.getValue(), new UpdateRequest.Builder<SessionMemoryDocument, JsonData>());
+        JsonData doc = request.doc();
+        assertNotNull(doc);
+        JsonpMapper mapper = new JacksonJsonpMapper();
+        @SuppressWarnings("unchecked")
+        Map<String, Object> partial = doc.to(Map.class, mapper);
+        assertEquals("新摘要", partial.get("aggregationText"));
+        @SuppressWarnings("unchecked")
+        List<Number> vector = (List<Number>) partial.get("vector");
+        assertNotNull(vector);
+        assertEquals(2, vector.size());
+        assertEquals(0.3, vector.get(0).doubleValue(), 1e-6);
+        assertEquals(0.4, vector.get(1).doubleValue(), 1e-6);
+    }
+
+    @Test
+    @DisplayName("updateDocument：索引已存在时不重复创建")
+    void updateDocument_indexExists_skipCreate() throws Exception {
+        stubExists(true);
+        @SuppressWarnings("unchecked")
+        UpdateResponse<SessionMemoryDocument> updateResponse = mock(UpdateResponse.class);
+        when(elasticsearchClient.<SessionMemoryDocument, JsonData>update(any(Function.class),
+                eq(SessionMemoryDocument.class))).thenReturn(updateResponse);
+
+        client.updateDocument("100_GROUP_1_3", "新摘要", List.of(0.3f, 0.4f));
+
+        verify(indicesClient, never()).create(any(Function.class));
+        verify(elasticsearchClient).<SessionMemoryDocument, JsonData>update(any(Function.class),
+                eq(SessionMemoryDocument.class));
+    }
+
+    @Test
+    @DisplayName("updateDocument：IOException 包装为 IllegalStateException 且消息含索引名")
+    void updateDocument_ioException() throws Exception {
+        stubExists(true);
+        when(elasticsearchClient.<SessionMemoryDocument, JsonData>update(any(Function.class),
+                eq(SessionMemoryDocument.class))).thenThrow(new IOException("boom"));
 
         IllegalStateException ex = assertThrows(IllegalStateException.class,
-                () -> client.queryBySessionId("100", AggregationType.GROUP, 1, 20));
+                () -> client.updateDocument("100_GROUP_1_3", "新摘要", List.of(0.3f, 0.4f)));
         assertTrue(ex.getMessage().contains(SessionMemoryESClient.INDEX_NAME));
     }
 }

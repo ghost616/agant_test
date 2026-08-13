@@ -1,0 +1,11 @@
+{
+  "plan_id": "plan_eb4fb588-fd0f-40db-9a12-bd8701805cb4",
+  "module_name": "frontend-ui",
+  "development_plan": "MemoryDocumentDetail.tsx：将模型选择下拉从配置弹窗迁移到编辑弹窗（编辑聚合文档弹窗中），配置弹窗仅保留提示语输入框+关闭/保存按钮。同步更新测试断言。",
+  "session_id": "ses_0062486a3ffeBs05tqY30QdSrj",
+  "modified_files": [
+    "src/pages/memory/MemoryDocumentDetail.tsx",
+    "src/pages/memory/__tests__/MemoryDocumentDetail.test.tsx",
+    "e2e/Memory.spec.ts"
+  ]
+}

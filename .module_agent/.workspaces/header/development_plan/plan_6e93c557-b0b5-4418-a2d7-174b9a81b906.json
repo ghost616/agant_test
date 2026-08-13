@@ -1,0 +1,14 @@
+{
+  "plan_id": "plan_6e93c557-b0b5-4418-a2d7-174b9a81b906",
+  "module_name": "frontend-ui",
+  "development_plan": "聚合文档详情页功能按钮与弹窗：1) 详情页右下角新增两个功能按钮：配置按钮（弹出提示语配置弹窗：上方提示语输入框、下方模型选择下拉，只选不存；关闭/保存按钮，保存调用 PUT /memory-prompt 接口）；编辑按钮（弹出编辑弹窗：左右两个输入框，左显示已保存提示语 GET /memory-prompt，右显示聚合文本；底部保存/重新生成按钮）；2) 保存按钮：调用 POST /memory/update 接口把右边聚合文本重新向量化并更新 ES；3) 重新生成按钮：调用 POST /memory/regenerate 异步接口后前台轮询 /memory/regenerate/status，完成后将生成的新聚合文本填入右边输入框；4) 同步更新测试。",
+  "session_id": "ses_005cab1ddffeeVpM4P17JhFa4o",
+  "modified_files": [
+    "src/types/memory.ts",
+    "src/services/memory.ts",
+    "src/pages/memory/MemoryDocumentDetail.tsx",
+    "src/pages/memory/__tests__/MemoryDocumentDetail.test.tsx",
+    "src/services/__tests__/memory.test.ts",
+    "e2e/Memory.spec.ts"
+  ]
+}

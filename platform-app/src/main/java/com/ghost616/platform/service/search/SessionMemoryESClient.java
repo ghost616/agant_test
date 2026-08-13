@@ -6,6 +6,7 @@ import co.elastic.clients.elasticsearch._types.mapping.DenseVectorSimilarity;
 import co.elastic.clients.elasticsearch.core.BulkRequest;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
+import co.elastic.clients.json.JsonData;
 import com.ghost616.platform.dto.PageResult;
 import com.ghost616.platform.enums.AggregationType;
 import com.ghost616.platform.model.SessionMemoryDocument;
@@ -13,7 +14,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -161,6 +164,29 @@ public class SessionMemoryESClient {
             return new PageResult<>(documents, total, safePage, safeSize);
         } catch (IOException e) {
             throw new IllegalStateException("按会话查询记忆文档失败: " + INDEX_NAME, e);
+        }
+    }
+
+    /**
+     * 按文档 ID 更新现有会话记忆文档，仅更新 aggregationText 与 vector 字段，不新增文档。
+     *
+     * @param docId  文档 ID（sessionId_aggregationType_startSeq_endSeq）
+     * @param text   新的聚合摘要文本
+     * @param vector 新的摘要向量
+     */
+    public void updateDocument(String docId, String text, List<Float> vector) {
+        ensureIndex();
+        Map<String, Object> partial = new HashMap<>();
+        partial.put("aggregationText", text);
+        partial.put("vector", vector);
+        try {
+            elasticsearchClient.update(u -> u
+                            .index(INDEX_NAME)
+                            .id(docId)
+                            .doc(JsonData.of(partial)),
+                    SessionMemoryDocument.class);
+        } catch (IOException e) {
+            throw new IllegalStateException("更新会话记忆文档失败: " + INDEX_NAME, e);
         }
     }
 

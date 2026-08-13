@@ -12,6 +12,7 @@ import com.ghost616.platform.entity.AgentConfig;
 import com.ghost616.platform.entity.Message;
 import com.ghost616.platform.entity.ModelConfig;
 import com.ghost616.platform.entity.Session;
+import com.ghost616.platform.dto.memory.MemoryRegenerateStatusDTO;
 import com.ghost616.platform.enums.AggregationType;
 import com.ghost616.platform.enums.ErrorCode;
 import com.ghost616.platform.exception.BusinessException;
@@ -36,6 +37,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -77,6 +79,137 @@ public class SessionMemoryService {
     private final ModelConfigMapper modelConfigMapper;
     private final ModelInvokerManager modelInvokerManager;
     private final SessionMemoryESClient sessionMemoryESClient;
+
+    /** 聚合文本重生成状态缓存（key=sessionId） */
+    private final Map<Long, MemoryRegenerateStatusDTO> regenerateStatusMap = new ConcurrentHashMap<>();
+
+    /**
+     * 读取会话的记忆提示语（session.memory_prompt）。
+     *
+     * @param sessionId 会话 ID
+     * @return 记忆提示语，未设置时返回 null
+     */
+    public String getMemoryPrompt(Long sessionId) {
+        Session session = requireSession(sessionId);
+        return session.getMemoryPrompt();
+    }
+
+    /**
+     * 保存会话的记忆提示语（session.memory_prompt）。
+     *
+     * @param sessionId 会话 ID
+     * @param prompt    记忆提示语
+     */
+    public void saveMemoryPrompt(Long sessionId, String prompt) {
+        Session session = requireSession(sessionId);
+        session.setMemoryPrompt(prompt);
+        sessionMapper.updateById(session);
+    }
+
+    /**
+     * 异步重生成指定文档的聚合摘要文本：获取 [startSeq, endSeq] 区间消息，用会话 modelId 对应 LLM 生成新聚合文本，
+     * 完成后可通过 {@link #getRegenerateStatus(Long)} 查询结果。prompt 为空时使用现有聚合提示语 SYSTEM_GROUP_SUMMARY_PROMPT 兜底。
+     *
+     * @param sessionId 会话 ID
+     * @param docId     目标 ES 文档 ID
+     * @param startSeq  起始消息序号（含）
+     * @param endSeq    结束消息序号（含）
+     * @param prompt    自定义提示语，可为 null
+     * @return 初始重生成状态（RUNNING）
+     */
+    public MemoryRegenerateStatusDTO regenerateSummary(Long sessionId, String docId,
+                                                       Integer startSeq, Integer endSeq, String prompt) {
+        Session session = requireSession(sessionId);
+        MemoryRegenerateStatusDTO status = MemoryRegenerateStatusDTO.builder()
+                .sessionId(sessionId)
+                .docId(docId)
+                .status("RUNNING")
+                .build();
+        regenerateStatusMap.put(sessionId, status);
+        CompletableFuture.runAsync(() -> doRegenerateSummary(session, status, startSeq, endSeq, prompt));
+        return status;
+    }
+
+    /**
+     * 查询聚合文本重生成状态。
+     *
+     * @param sessionId 会话 ID
+     * @return 重生成状态，不存在时返回 null
+     */
+    public MemoryRegenerateStatusDTO getRegenerateStatus(Long sessionId) {
+        return regenerateStatusMap.get(sessionId);
+    }
+
+    /**
+     * 保存聚合文本：用智能体 vectorModelId 对应向量模型重新向量化新聚合文本后，调用 ES 更新指定文档。
+     *
+     * @param sessionId 会话 ID
+     * @param docId     目标 ES 文档 ID
+     * @param text      新的聚合摘要文本
+     */
+    public void saveAggregationText(Long sessionId, String docId, String text) {
+        Session session = requireSession(sessionId);
+        AgentConfig agentConfig = agentConfigMapper.selectById(session.getAgentId());
+        if (agentConfig == null) {
+            throw new BusinessException(ErrorCode.AGENT_NOT_FOUND);
+        }
+        ModelInvoker embedInvoker = resolveEmbedInvoker(agentConfig);
+        if (embedInvoker == null) {
+            throw new BusinessException(ErrorCode.AGENT_MEMORY_VECTOR_MODEL_REQUIRED);
+        }
+        List<Float> vector = embedText(embedInvoker, agentConfig, text);
+        if (vector == null || vector.isEmpty()) {
+            throw new BusinessException(ErrorCode.AGENT_MEMORY_VECTOR_MODEL_REQUIRED);
+        }
+        sessionMemoryESClient.updateDocument(docId, text, vector);
+    }
+
+    private Session requireSession(Long sessionId) {
+        Session session = sessionMapper.selectById(sessionId);
+        if (session == null) {
+            throw new BusinessException(ErrorCode.SESSION_NOT_FOUND);
+        }
+        return session;
+    }
+
+    private void doRegenerateSummary(Session session, MemoryRegenerateStatusDTO status,
+                                     Integer startSeq, Integer endSeq, String prompt) {
+        try {
+            List<Message> messages = queryMessagesBySeqRange(session.getId(), startSeq, endSeq);
+            if (messages.isEmpty()) {
+                status.setStatus("FAILED");
+                status.setError("序号区间内无消息");
+                return;
+            }
+            ModelInvoker llmInvoker = resolveSessionLlmInvoker(session);
+            if (llmInvoker == null) {
+                status.setStatus("FAILED");
+                status.setError("会话 LLM 模型不可用");
+                return;
+            }
+            String content = extractAllContent(messages);
+            if (content == null || content.isBlank()) {
+                status.setStatus("FAILED");
+                status.setError("序号区间内消息内容为空");
+                return;
+            }
+            String systemPrompt = (prompt == null || prompt.isBlank())
+                    ? SYSTEM_GROUP_SUMMARY_PROMPT
+                    : prompt;
+            String summary = invokeLlm(llmInvoker, systemPrompt, content);
+            if (summary == null || summary.isBlank()) {
+                status.setStatus("FAILED");
+                status.setError("LLM 生成的聚合文本为空");
+                return;
+            }
+            status.setAggregationText(summary);
+            status.setStatus("COMPLETED");
+        } catch (Exception e) {
+            status.setStatus("FAILED");
+            status.setError(e.getMessage());
+            log.warn("聚合文本重生成失败, sessionId={}", session.getId(), e);
+        }
+    }
 
     /**
      * 每天凌晨 1 点执行：聚合所有 memoryEnabled=true 的智能体会话的新增消息为记忆文档。
@@ -260,6 +393,16 @@ public class SessionMemoryService {
         return messageMapper.findNthUserSequenceNum(sessionId, skipGroups);
     }
 
+    private List<Message> queryMessagesBySeqRange(Long sessionId, Integer startSeq, Integer endSeq) {
+        LambdaQueryWrapper<Message> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Message::getSessionId, sessionId)
+                .eq(Message::getRollback, false)
+                .ge(Message::getSequenceNum, startSeq)
+                .le(Message::getSequenceNum, endSeq)
+                .orderByAsc(Message::getSequenceNum);
+        return messageMapper.selectList(wrapper);
+    }
+
     private List<Message> queryMessagesBetween(Long sessionId, Integer oldPoint, Integer newPoint) {
         LambdaQueryWrapper<Message> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Message::getSessionId, sessionId)
@@ -288,6 +431,18 @@ public class SessionMemoryService {
 
     private ModelInvoker resolveLlmInvoker(Session session, AgentConfig agentConfig) {
         Long modelId = session.getModelId() != null ? session.getModelId() : agentConfig.getModelId();
+        if (modelId == null) {
+            return null;
+        }
+        ModelConfig config = modelConfigMapper.selectById(modelId);
+        if (config == null) {
+            return null;
+        }
+        return modelInvokerManager.getInvoker(buildModelConfigData(config));
+    }
+
+    private ModelInvoker resolveSessionLlmInvoker(Session session) {
+        Long modelId = session.getModelId();
         if (modelId == null) {
             return null;
         }

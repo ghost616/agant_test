@@ -118,5 +118,46 @@
     ],
     "summary": "已完成：1) MemoryDocumentDetail.tsx 去掉工具消息 toolInfo 头部块（toolName+toolCallId 不再显示），工具名仅以内容\"**工具: toolName**\"格式展示（toolName 兜底逻辑保留）；2) AgentChat.tsx 去掉 renderMessage 中 toolInfo 头部块（loadHistory 兜底保留）；3) 同步更新测试：MemoryDocumentDetail.test.tsx 行为/源码断言改为头部移除；AgentChat.test.tsx 新增头部移除源码断言。离朱测试：单测 48/48（MemoryDocumentDetail 23 + AgentChat 25）、变更源码 tsc 零错误全部通过；E2E 因当前环境 vite dev server 故障（非代码）无法可靠执行，上轮同用例通过无回归迹象。",
     "errors": []
+  },
+  {
+    "plan_id": "plan_eb4fb588-fd0f-40db-9a12-bd8701805cb4",
+    "plan": "MemoryDocumentDetail.tsx 将模型选择下拉从配置弹窗迁移到编辑弹窗，配置弹窗仅保留提示语+关闭/保存，同步更新测试",
+    "modified_files": [
+      "src/pages/memory/MemoryDocumentDetail.tsx",
+      "src/pages/memory/__tests__/MemoryDocumentDetail.test.tsx",
+      "e2e/Memory.spec.ts"
+    ],
+    "summary": "已完成：1) 移除 configModelId、新增 editModelId；openConfigModal 不再加载模型列表，openEditModal 加载 listModels({modelType:'LLM'})；2) 配置弹窗移除模型下拉，仅保留提示语输入框+保存/关闭按钮；3) 编辑弹窗左右 TextArea 下方新增模型下拉 Select（仅选择不保存）；4) 同步更新 MemoryDocumentDetail.test.tsx（配置弹窗无模型下拉、编辑弹窗含模型下拉断言）与 e2e/Memory.spec.ts（配置/编辑弹窗用例调整）。离朱测试：单测 53/53、变更源码 tsc 零错误通过；E2E 因环境 vite 故障无法执行（用例与 mock 已就绪）。",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_c44078ab-f854-4d41-9922-5149fe5d9aab",
+    "plan": "MemoryDocumentDetail.tsx 编辑弹窗打开时调用 getSession 获取会话 modelId，模型下拉预选该模型，同步更新测试",
+    "modified_files": [
+      "src/pages/memory/MemoryDocumentDetail.tsx",
+      "src/pages/memory/__tests__/MemoryDocumentDetail.test.tsx"
+    ],
+    "summary": "已完成：1) openEditModal 调用 getSession(sessionId) 获取会话 modelId（sessionModelId = session?.modelId）；2) 模型列表加载完成后若会话 modelId 存在于列表则 setEditModelId 预选，否则保持未选中；3) 同步更新 MemoryDocumentDetail.test.tsx（mocks 新增 getSession、新增\"预选会话 modelId\"与\"不在列表时不预选\"行为测试及源码断言）。离朱测试：单测 91/91（含 session/memory 回归）、变更源码 tsc 零错误通过；E2E 因环境 vite 故障无法执行（用例与 mock 已就绪）。",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_d1e3c807-8c0d-4fac-b454-3ca4cf935fd1",
+    "plan": "MemoryDocumentDetail.tsx 聚合文本改为 useState 管理 + 左侧改为 Markdown 渲染显示，编辑保存/重新生成后回调更新，同步测试",
+    "modified_files": [
+      "src/pages/memory/MemoryDocumentDetail.tsx",
+      "src/pages/memory/__tests__/MemoryDocumentDetail.test.tsx"
+    ],
+    "summary": "已完成：1) 聚合文本由 location.state 改为 useState 管理，编辑保存（setAggregationText(editText)）或重新生成成功（setAggregationText(status.aggregationText)）后回调更新详情页；2) 左侧聚合文本由只读 TextArea 改为 Markdown 渲染显示框（ReactMarkdown+remarkGfm，agent-chat-markdown 样式，容器内滚动，空时\"暂无聚合文本\"）；3) 同步更新测试断言并修复 2 处 ReactMarkdown 嵌套多匹配断言（selector: 'p'）。离朱测试：单测 39/39 全部通过、变更源码 tsc 零错误；E2E 因环境 vite 故障未执行。",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_3f854b04-cdcd-4d1b-9aa3-961da74079e8",
+    "plan": "MemoryDocumentDetail.tsx 重新生成成功仅更新编辑弹窗右侧文本框，不再更新详情页聚合文本；仅保存成功回调 setAggregationText，同步更新测试",
+    "modified_files": [
+      "src/pages/memory/MemoryDocumentDetail.tsx",
+      "src/pages/memory/__tests__/MemoryDocumentDetail.test.tsx"
+    ],
+    "summary": "已完成：1) handleRegenerate COMPLETED 分支移除 setAggregationText(status.aggregationText)，仅 setEditText 回填编辑弹窗右侧输入框；2) handleEditSave 成功后仍 setAggregationText(editText) 替换详情页聚合文本显示；3) 同步更新测试断言（重新生成不更新详情页、源码断言 not 包含 setAggregationText(status.aggregationText)）。离朱测试：单测 39/39 全部通过、变更源码 tsc 零错误；E2E 因环境 vite 故障未执行。",
+    "errors": []
   }
 ]

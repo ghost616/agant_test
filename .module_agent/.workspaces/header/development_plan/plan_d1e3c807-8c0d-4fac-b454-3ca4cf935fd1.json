@@ -1,0 +1,10 @@
+{
+  "plan_id": "plan_d1e3c807-8c0d-4fac-b454-3ca4cf935fd1",
+  "module_name": "frontend-ui",
+  "development_plan": "MemoryDocumentDetail.tsx：1) 聚合文本从 location.state 静态值改为 useState 管理，编辑弹窗保存（POST /memory/update）或重新生成成功后回调更新详情页聚合文本；2) 左侧聚合文本展示从 Input.TextArea 只读输入框改为 Markdown 渲染显示框（ReactMarkdown+remarkGfm，与右侧消息气泡一致的 agent-chat-markdown 样式，容器内滚动）。同步更新测试断言。",
+  "session_id": "ses_0062486a3ffeBs05tqY30QdSrj",
+  "modified_files": [
+    "src/pages/memory/MemoryDocumentDetail.tsx",
+    "src/pages/memory/__tests__/MemoryDocumentDetail.test.tsx"
+  ]
+}
