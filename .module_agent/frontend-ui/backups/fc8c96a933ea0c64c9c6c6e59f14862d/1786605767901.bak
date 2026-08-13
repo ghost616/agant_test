@@ -4,7 +4,6 @@ import type { ColumnsType } from 'antd/es/table';
 import type { AgentLog } from '../../types/log';
 import { LogLevel, LogType } from '../../types/log';
 import { listAgentLogs } from '../../services/log';
-import useTableScrollY from '../../hooks/useTableScrollY';
 
 const PAGE_SIZE_OPTIONS = [20, 50, 100];
 
@@ -211,7 +210,7 @@ function AgentLogList(): JSX.Element {
         columns={columns}
         dataSource={dataSource}
         loading={loading}
-        scroll={{ x: 1630, y: useTableScrollY(272) }}
+        scroll={{ x: 1630 }}
         pagination={{
           current: page,
           pageSize,

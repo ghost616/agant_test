@@ -1,4 +1,6 @@
 import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest';
+import { readFileSync } from 'fs';
+import { resolve } from 'path';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import type { PlatformConfig } from '../../../types/model';
@@ -139,5 +141,13 @@ describe('ModelList 提交时 CUSTOM 保留 modelType', () => {
     });
     const calledData = mockCreateModel.mock.calls[0][0] as { modelType: string };
     expect(calledData.modelType).toBe('EMBEDDINGS');
+  });
+});
+
+describe('ModelList 表格滚动 (useTableScrollY)', () => {
+  it('表格 scroll 使用 useTableScrollY 实现固定表头动态高度', () => {
+    const source = readFileSync(resolve(__dirname, '../ModelList.tsx'), 'utf-8');
+    expect(source).toContain("import useTableScrollY from '../../hooks/useTableScrollY'");
+    expect(source).toContain('scroll={{ x: 1360, y: useTableScrollY(216) }}');
   });
 });

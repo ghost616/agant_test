@@ -21,7 +21,6 @@ import {
   deleteAgentEvaluation,
 } from '../../services/agentEvaluation';
 import { listAgents } from '../../services/agent';
-import useTableScrollY from '../../hooks/useTableScrollY';
 
 function AgentEvaluationList(): JSX.Element {
   const navigate = useNavigate();
@@ -193,7 +192,7 @@ function AgentEvaluationList(): JSX.Element {
         dataSource={dataSource}
         loading={loading}
         pagination={false}
-        scroll={{ x: 1200, y: useTableScrollY(216) }}
+        scroll={{ x: 1200 }}
       />
 
       <Modal

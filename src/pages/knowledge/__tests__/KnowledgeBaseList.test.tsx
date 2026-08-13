@@ -1,4 +1,6 @@
 import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest';
+import { readFileSync } from 'fs';
+import { resolve } from 'path';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import type { KnowledgeBase } from '../../../types/knowledge';
@@ -363,5 +365,13 @@ describe('KnowledgeBaseList 编辑弹窗 (功能点7)', () => {
       expect(document.querySelector('.ant-select-selection-item')?.textContent).toContain('向量模型A');
     });
     expect(screen.queryByLabelText('ES 索引')).toBeNull();
+  });
+});
+
+describe('KnowledgeBaseList 表格滚动 (useTableScrollY)', () => {
+  it('表格 scroll 使用 useTableScrollY 实现固定表头动态高度', () => {
+    const source = readFileSync(resolve(__dirname, '../KnowledgeBaseList.tsx'), 'utf-8');
+    expect(source).toContain("import useTableScrollY from '../../hooks/useTableScrollY'");
+    expect(source).toContain('scroll={{ x: 1300, y: useTableScrollY(216) }}');
   });
 });

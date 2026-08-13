@@ -6,7 +6,6 @@ import type { AgentConfig } from '../../types/agent';
 import type { Session } from '../../types/session';
 import { getSessionMessages, listSessions } from '../../services/session';
 import { listAgents } from '../../services/agent';
-import useTableScrollY from '../../hooks/useTableScrollY';
 
 interface MemorySession extends Session {
   agentName?: string;
@@ -14,7 +13,7 @@ interface MemorySession extends Session {
 }
 
 /**
- * 记忆修改会话列表页：展示已开启记忆功能的智能体会话，
+ * 记忆回看会话列表页：展示已开启记忆功能的智能体会话，
  * 每条提供「按日聚合」与「按分类聚合」入口。
  */
 function MemoryList(): JSX.Element {
@@ -113,7 +112,7 @@ function MemoryList(): JSX.Element {
   return (
     <div>
       <Typography.Title level={5} style={{ marginBottom: 16 }}>
-        记忆修改
+        记忆回看
       </Typography.Title>
       <Table<MemorySession>
         rowKey="id"
@@ -121,7 +120,7 @@ function MemoryList(): JSX.Element {
         dataSource={dataSource}
         loading={loading}
         pagination={false}
-        scroll={{ x: 800, y: useTableScrollY(216) }}
+        scroll={{ x: 800 }}
       />
     </div>
   );

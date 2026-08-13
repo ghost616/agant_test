@@ -9,5 +9,51 @@
     ],
     "summary": "已完成：1) AgentList.tsx recentMessageCount label 改为\"保留对话轮数\"并新增 extra 辅助说明\"保留最近 N 轮对话对 AI 可见，更早对话折叠\"（placeholder 同步）；memoryGroupCount label 改为\"保留消息组数量\"并新增 extra 辅助说明\"保留最近 N 个消息组对 AI 可见，更早的消息组归档为记忆\"（placeholder 同步）；2) 更新 AgentList.test.tsx 静态断言（新增 recentMessageCount 标签/辅助说明断言，memoryGroupCount 断言新增 label/extra 校验）；3) 更新 e2e/AgentList.spec.ts 定位器 hasText 为\"保留消息组数量\"及相关用例标题。离朱测试全部通过：单元 44/44、变更文件 tsc 零错误、E2E 记忆功能 6/6 + 绑定知识库 4/4。",
     "errors": []
+  },
+  {
+    "plan_id": "plan_3e4e7e54-b315-4d38-969f-9b69a6488ed9",
+    "plan": "App.tsx 菜单\"记忆回看\"改为\"记忆修改\"，MemoryList.tsx 页面标题同步修改，更新相关测试断言",
+    "modified_files": [
+      "src/App.tsx",
+      "src/pages/memory/MemoryList.tsx",
+      "src/__tests__/App.test.tsx",
+      "e2e/Memory.spec.ts"
+    ],
+    "summary": "已完成：1) src/App.tsx 侧边栏菜单 label 由\"记忆回看\"改为\"记忆修改\"（key /memory、EyeOutlined 不变）；2) src/pages/memory/MemoryList.tsx 页面标题与 JSDoc 同步改为\"记忆修改\"；3) src/__tests__/App.test.tsx describe/用例标题与 label: '记忆修改' 断言更新；4) e2e/Memory.spec.ts describe/用例标题与侧边栏菜单 getByText('记忆修改') 断言更新。离朱测试全部通过：单元 33/33、变更文件 tsc 零错误、E2E 6/6 无回归。",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_2bf21a34-2272-4ab6-9f77-673f24340e8c",
+    "plan": "新增 useTableScrollY Hook 并应用到 13 个带 scroll.x 的表格，实现固定表头+底部可见横向滚动条，同步更新测试",
+    "modified_files": [
+      "src/hooks/useTableScrollY.ts",
+      "src/pages/agents/AgentList.tsx",
+      "src/pages/models/ModelList.tsx",
+      "src/pages/skills/SkillList.tsx",
+      "src/pages/sessions/SessionList.tsx",
+      "src/pages/tools/ToolList.tsx",
+      "src/pages/evaluations/EvaluationList.tsx",
+      "src/pages/evaluations/AgentEvaluationList.tsx",
+      "src/pages/evaluations/EvaluationResultList.tsx",
+      "src/pages/logs/AgentLogList.tsx",
+      "src/pages/memory/MemoryList.tsx",
+      "src/pages/memory/MemoryDetail.tsx",
+      "src/pages/knowledge/KnowledgeBaseList.tsx",
+      "src/pages/knowledge/KnowledgeFileList.tsx",
+      "src/hooks/__tests__/useTableScrollY.test.tsx",
+      "src/pages/agents/__tests__/AgentList.test.tsx",
+      "src/pages/models/__tests__/ModelList.test.tsx",
+      "src/pages/sessions/__tests__/SessionList.test.tsx",
+      "src/pages/tools/__tests__/ToolList.test.tsx",
+      "src/pages/evaluations/__tests__/EvaluationList.test.tsx",
+      "src/pages/evaluations/__tests__/EvaluationResultList.test.tsx",
+      "src/pages/logs/__tests__/AgentLogList.test.tsx",
+      "src/pages/memory/__tests__/MemoryList.test.tsx",
+      "src/pages/memory/__tests__/MemoryDetail.test.tsx",
+      "src/pages/knowledge/__tests__/KnowledgeBaseList.test.tsx",
+      "src/pages/knowledge/__tests__/KnowledgeFileList.test.tsx"
+    ],
+    "summary": "已完成：1) 新建 src/hooks/useTableScrollY.ts（innerHeight - offset 动态计算表格高度，Math.max 防负，监听 resize 实时更新，卸载移除监听，offset 变化重算）；2) 13 个带 scroll.x 表格统一改为 scroll={{ x: 原宽度, y: useTableScrollY(偏移量) }}（无分页 11 个页面偏移量 216，含分页 AgentLogList/MemoryDetail 偏移量 272），实现固定表头+底部可见横向滚动条；3) 新建 src/hooks/__tests__/useTableScrollY.test.tsx（6 用例），为 11 个页面测试补充 scroll 静态断言，并顺带修复 SessionList.test.tsx 两处既有过时断言。离朱测试全部通过：hook 单测 6/6、页面单测 200/200（含修复后 SessionList 6/6）、变更文件 tsc 零错误、E2E 回归 12/12。",
+    "errors": []
   }
 ]

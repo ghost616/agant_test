@@ -67,5 +67,7 @@
   "src/pages/memory/MemoryDetail.tsx": "8f1eee1624c683975e4683ecd2fb84bc",
   "src/pages/memory/__tests__/MemoryDetail.test.tsx": "e33c1064a5066e01618cfef2efa1a525",
   "e2e/Memory.spec.ts": "75865c7ae59306f9d498e8357f75b054",
-  "src/pages/agents/__tests__/AgentList.test.tsx": "69ac1e1a8f080a9b4ce2a5ebcb4f62ce"
+  "src/pages/agents/__tests__/AgentList.test.tsx": "69ac1e1a8f080a9b4ce2a5ebcb4f62ce",
+  "src/__tests__/App.test.tsx": "80c7c7265b06ab434b8d6040477c4c4a",
+  "src/pages/skills/SkillList.tsx": "e90e982f374ecf9555dd76d4ea76a96e"
 }

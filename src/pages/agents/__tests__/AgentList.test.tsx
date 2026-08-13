@@ -255,3 +255,11 @@ describe('AgentList 记忆功能 (静态验证)', () => {
     expect(source).toContain('memoryGroupCount: editingAgent.memoryGroupCount');
   });
 });
+
+describe('AgentList 表格滚动 (useTableScrollY)', () => {
+  it('表格 scroll 使用 useTableScrollY 实现固定表头动态高度', () => {
+    const source = readFileSync(resolve(__dirname, '../AgentList.tsx'), 'utf-8');
+    expect(source).toContain("import useTableScrollY from '../../hooks/useTableScrollY'");
+    expect(source).toContain('scroll={{ x: 1600, y: useTableScrollY(216) }}');
+  });
+});

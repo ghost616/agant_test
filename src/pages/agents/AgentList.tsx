@@ -36,6 +36,7 @@ import { listSkills } from '../../services/skill';
 import { listKnowledgeBases } from '../../services/knowledge';
 import type { SkillConfig } from '../../types/skill';
 import type { KnowledgeBase } from '../../types/knowledge';
+import useTableScrollY from '../../hooks/useTableScrollY';
 
 const STATUS_LABELS: Record<CommonStatus, string> = {
   ENABLED: '启用',
@@ -442,7 +443,7 @@ function AgentList(): JSX.Element {
         dataSource={dataSource}
         loading={loading}
         pagination={false}
-        scroll={{ x: 1600 }}
+        scroll={{ x: 1600, y: useTableScrollY(216) }}
       />
 
       <Modal

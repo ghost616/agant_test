@@ -146,3 +146,11 @@ describe('EvaluationList 清空结果功能', () => {
     }
   });
 });
+
+describe('EvaluationList 表格滚动 (useTableScrollY)', () => {
+  it('表格 scroll 使用 useTableScrollY 实现固定表头动态高度', () => {
+    const source = readFileSync(resolve(__dirname, '../EvaluationList.tsx'), 'utf-8');
+    expect(source).toContain("import useTableScrollY from '../../hooks/useTableScrollY'");
+    expect(source).toContain('scroll={{ x: 1400, y: useTableScrollY(216) }}');
+  });
+});

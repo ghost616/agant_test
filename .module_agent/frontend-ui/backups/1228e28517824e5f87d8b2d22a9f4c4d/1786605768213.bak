@@ -6,7 +6,6 @@ import type { AgentConfig } from '../../types/agent';
 import type { Session } from '../../types/session';
 import { getSessionMessages, listSessions } from '../../services/session';
 import { listAgents } from '../../services/agent';
-import useTableScrollY from '../../hooks/useTableScrollY';
 
 interface MemorySession extends Session {
   agentName?: string;
@@ -121,7 +120,7 @@ function MemoryList(): JSX.Element {
         dataSource={dataSource}
         loading={loading}
         pagination={false}
-        scroll={{ x: 800, y: useTableScrollY(216) }}
+        scroll={{ x: 800 }}
       />
     </div>
   );

@@ -14,7 +14,6 @@ import {
 } from '../../services/evaluation';
 import { listModels } from '../../services/model';
 import { useEvaluationExecute } from './hooks/useEvaluationExecute';
-import useTableScrollY from '../../hooks/useTableScrollY';
 
 function EvaluationResultList(): JSX.Element {
   const navigate = useNavigate();
@@ -238,7 +237,7 @@ function EvaluationResultList(): JSX.Element {
         dataSource={dataSource}
         loading={loading}
         pagination={false}
-        scroll={{ x: 1200, y: useTableScrollY(216) }}
+        scroll={{ x: 1200 }}
         rowSelection={{
           selectedRowKeys,
           onChange: (keys) => setSelectedRowKeys(keys),

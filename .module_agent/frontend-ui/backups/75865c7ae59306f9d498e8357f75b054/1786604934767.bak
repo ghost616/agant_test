@@ -140,17 +140,17 @@ async function setupMocks(page: Page) {
   });
 }
 
-test.describe('记忆修改 MemoryList 页面', () => {
+test.describe('记忆回看 MemoryList 页面', () => {
   test.describe.configure({ timeout: 120000 });
   test.beforeEach(async ({ page }) => {
     await setupMocks(page);
   });
 
-  test('/memory 路由可访问，侧边栏存在记忆修改菜单，仅展示 memoryEnabled 智能体会话', async ({ page }) => {
+  test('/memory 路由可访问，侧边栏存在记忆回看菜单，仅展示 memoryEnabled 智能体会话', async ({ page }) => {
     await page.goto('/memory');
     await page.waitForSelector('.ant-table');
 
-    await expect(page.locator('.ant-menu').getByText('记忆修改')).toBeVisible();
+    await expect(page.locator('.ant-menu').getByText('记忆回看')).toBeVisible();
 
     await expect(page.locator('.ant-table-tbody').getByText('记忆会话')).toBeVisible();
     await expect(page.locator('.ant-table-tbody').getByText('普通会话')).toHaveCount(0);
@@ -208,7 +208,7 @@ test.describe('记忆修改 MemoryList 页面', () => {
   });
 });
 
-test.describe('记忆修改 MemoryDetail 页面', () => {
+test.describe('记忆回看 MemoryDetail 页面', () => {
   test.describe.configure({ timeout: 120000 });
   test.beforeEach(async ({ page }) => {
     await setupMocks(page);

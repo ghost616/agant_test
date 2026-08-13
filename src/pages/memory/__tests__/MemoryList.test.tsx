@@ -1,4 +1,6 @@
 import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest';
+import { readFileSync } from 'fs';
+import { resolve } from 'path';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import type { Session } from '../../../types/session';
 import type { AgentConfig } from '../../../types/agent';
@@ -203,5 +205,13 @@ describe('MemoryList 操作按钮', () => {
 
     fireEvent.click(screen.getByText('按分类聚合'));
     expect(mockNavigate).toHaveBeenCalledWith('/memory/1/GROUP');
+  });
+});
+
+describe('MemoryList 表格滚动 (useTableScrollY)', () => {
+  it('表格 scroll 使用 useTableScrollY 实现固定表头动态高度', () => {
+    const source = readFileSync(resolve(__dirname, '../MemoryList.tsx'), 'utf-8');
+    expect(source).toContain("import useTableScrollY from '../../hooks/useTableScrollY'");
+    expect(source).toContain('scroll={{ x: 800, y: useTableScrollY(216) }}');
   });
 });

@@ -331,3 +331,11 @@ describe('MemoryDetail 返回按钮与源码配置', () => {
     expect(source).toContain('PAGE_SIZE_OPTIONS = [10, 20, 50]');
   });
 });
+
+describe('MemoryDetail 表格滚动 (useTableScrollY)', () => {
+  it('表格 scroll 使用 useTableScrollY 实现固定表头动态高度', () => {
+    const source = readFileSync(resolve(__dirname, '../MemoryDetail.tsx'), 'utf-8');
+    expect(source).toContain("import useTableScrollY from '../../hooks/useTableScrollY'");
+    expect(source).toContain('scroll={{ x: 820, y: useTableScrollY(272) }}');
+  });
+});

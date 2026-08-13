@@ -23,7 +23,6 @@ import {
   clearEvaluationResults,
 } from '../../services/evaluation';
 import { listModels } from '../../services/model';
-import useTableScrollY from '../../hooks/useTableScrollY';
 
 function EvaluationList(): JSX.Element {
   const navigate = useNavigate();
@@ -260,7 +259,7 @@ function EvaluationList(): JSX.Element {
         dataSource={dataSource}
         loading={loading}
         pagination={false}
-        scroll={{ x: 1400, y: useTableScrollY(216) }}
+        scroll={{ x: 1400 }}
       />
 
       <Modal

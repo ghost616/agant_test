@@ -8,7 +8,6 @@ import type {
   SessionMemoryDocument,
 } from '../../types/memory';
 import { getSessionMemory } from '../../services/memory';
-import useTableScrollY from '../../hooks/useTableScrollY';
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50];
 const DATE_FORMAT_OPTIONS: Intl.DateTimeFormatOptions = {
@@ -122,7 +121,7 @@ function MemoryDetail(): JSX.Element {
         columns={columns}
         dataSource={dataSource}
         loading={loading}
-        scroll={{ x: 820, y: useTableScrollY(272) }}
+        scroll={{ x: 820 }}
         pagination={{
           current: page,
           pageSize,

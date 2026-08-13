@@ -1,4 +1,6 @@
 import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest';
+import { readFileSync } from 'fs';
+import { resolve } from 'path';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import type { AgentLog } from '../../../types/log';
 
@@ -458,5 +460,13 @@ describe('AgentLogList 筛选与分页', () => {
     };
     expect(lastCall.page).toBe(1);
     expect(lastCall.size).toBe(100);
+  });
+});
+
+describe('AgentLogList 表格滚动 (useTableScrollY)', () => {
+  it('表格 scroll 使用 useTableScrollY 实现固定表头动态高度', () => {
+    const source = readFileSync(resolve(__dirname, '../AgentLogList.tsx'), 'utf-8');
+    expect(source).toContain("import useTableScrollY from '../../hooks/useTableScrollY'");
+    expect(source).toContain('scroll={{ x: 1630, y: useTableScrollY(272) }}');
   });
 });

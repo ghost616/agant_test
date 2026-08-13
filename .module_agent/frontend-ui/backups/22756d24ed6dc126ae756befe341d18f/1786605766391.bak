@@ -18,7 +18,6 @@ import type { ModelConfig } from '../../types/model';
 import { createSession, deleteSession, listSessions } from '../../services/session';
 import { listAgents } from '../../services/agent';
 import { listModels } from '../../services/model';
-import useTableScrollY from '../../hooks/useTableScrollY';
 
 function SessionList(): JSX.Element {
   const navigate = useNavigate();
@@ -178,7 +177,7 @@ function SessionList(): JSX.Element {
         dataSource={dataSource}
         loading={loading}
         pagination={false}
-        scroll={{ x: 960, y: useTableScrollY(216) }}
+        scroll={{ x: 960 }}
       />
 
       <Modal

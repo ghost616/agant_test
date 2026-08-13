@@ -214,3 +214,11 @@ describe('EvaluationResultList 清空功能', () => {
     expect(source).toContain("message.error('清空失败')");
   });
 });
+
+describe('EvaluationResultList 表格滚动 (useTableScrollY)', () => {
+  it('表格 scroll 使用 useTableScrollY 实现固定表头动态高度', () => {
+    const source = readFileSync(resolve(__dirname, '../EvaluationResultList.tsx'), 'utf-8');
+    expect(source).toContain("import useTableScrollY from '../../hooks/useTableScrollY'");
+    expect(source).toContain('scroll={{ x: 1200, y: useTableScrollY(216) }}');
+  });
+});

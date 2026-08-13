@@ -130,8 +130,12 @@
 - src/types/__tests__/log.test.ts 提供 LogType/LogLevel 枚举结构静态测试（不含 CALL_SOURCE/WARN、仅 INFO/ERROR、code/label 非空）
 ## 记忆回看界面
 
-- 记忆回看会话列表页面 `/memory`：调用 listSessions 与 listAgents 并行加载，过滤 memoryEnabled=true 智能体会话（agentMap[session.agentId]?.memoryEnabled === true），表格列：会话名称（title，ellipsis）、智能体名（agentMap 映射）、最近消息时间（getSessionMessages 取末条消息 createTime，为空显示 '-'）；每条操作提供「按日聚合」「按分类聚合」两个按钮，分别跳转 `/memory/:sessionId/DAILY` 与 `/memory/:sessionId/GROUP`；Table pagination={false}
+- 记忆修改会话列表页面 `/memory`（页面标题"记忆修改"）：调用 listSessions 与 listAgents 并行加载，过滤 memoryEnabled=true 智能体会话（agentMap[session.agentId]?.memoryEnabled === true），表格列：会话名称（title，ellipsis）、智能体名（agentMap 映射）、最近消息时间（getSessionMessages 取末条消息 createTime，为空显示 '-'）；每条操作提供「按日聚合」「按分类聚合」两个按钮，分别跳转 `/memory/:sessionId/DAILY` 与 `/memory/:sessionId/GROUP`；Table pagination={false}
 - 记忆聚合列表页面 `/memory/:sessionId/:type`：根据 type 参数调用 getSessionMemory（GET /api/sessions/{id}/memory，params type/page/size），返回 PageResult<SessionMemoryDocument>；DAILY 类型显示「聚合日期」列（aggregationStartTime 毫秒时间戳格式化为日期），GROUP 类型显示「起始-结束」列（aggregationStartSeq - aggregationEndSeq）；「聚合文本」列 ellipsis 超长省略；支持分页（pageSizeOptions 10/20/50，showTotal，页码变化重置逻辑）；页面标题按 type 显示「按日聚合记忆」/「按分类聚合记忆」；返回按钮跳转 /memory
 - types/memory.ts 提供 MemoryAggregationType（GROUP/DAILY）、SessionMemoryDocument（sessionId/aggregationType/aggregationStartSeq/aggregationEndSeq/aggregationStartTime/aggregationEndTime/aggregationText/vector，与后端 SessionMemoryDocument 对齐）、MemoryQueryParams 类型
 - services/memory.ts 提供 getSessionMemory(sessionId, type, page, size) 调用 GET /api/sessions/{id}/memory 返回分页结果
-- App.tsx 新增「记忆回看」菜单项（EyeOutlined）与 /memory、/memory/:sessionId/:type 路由
+- App.tsx 新增「记忆修改」菜单项（EyeOutlined）与 /memory、/memory/:sessionId/:type 路由
+## 通用表格滚动
+
+- 通用表格滚动 Hook：src/hooks/useTableScrollY.ts 根据 window.innerHeight 减去固定偏移量动态计算表格可滚动高度（Math.max(innerHeight - offset, 0)），监听 window resize 实时更新，卸载时移除监听，返回 scrollY 供 Table scroll={{ x, y }} 使用
+- 应用范围：13 个带 scroll.x 的表格统一改为 scroll={{ x: 原宽度, y: useTableScrollY(偏移量) }}，实现固定表头 + 底部可见横向滚动条；无分页页面偏移量 216（AgentList/ModelList/SkillList/SessionList/ToolList/EvaluationList/AgentEvaluationList/EvaluationResultList/MemoryList/KnowledgeBaseList/KnowledgeFileList），含分页页面偏移量 272（AgentLogList/MemoryDetail）

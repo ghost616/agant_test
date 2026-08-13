@@ -6,5 +6,21 @@
     "code_reviewed": false,
     "plan_completed": true,
     "test_passed": true
+  },
+  {
+    "plan_id": "plan_3e4e7e54-b315-4d38-969f-9b69a6488ed9",
+    "plan_summary": "菜单记忆回看改名记忆修改",
+    "starter_session_id": "ses_00c9a6a87ffetUtC5ZjBU5QoRN",
+    "code_reviewed": false,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_2bf21a34-2272-4ab6-9f77-673f24340e8c",
+    "plan_summary": "表格动态高度固定表头",
+    "starter_session_id": "ses_00c9a6a87ffetUtC5ZjBU5QoRN",
+    "code_reviewed": false,
+    "plan_completed": true,
+    "test_passed": true
   }
 ]

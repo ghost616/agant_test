@@ -26,7 +26,6 @@ import {
   updateModel,
   updateModelStatus,
 } from '../../services/model';
-import useTableScrollY from '../../hooks/useTableScrollY';
 
 const PLATFORM_TYPE_LABELS: Record<PlatformType, string> = {
   OPENAI: 'OpenAI',
@@ -373,7 +372,7 @@ function ModelList(): JSX.Element {
         dataSource={dataSource}
         loading={loading}
         pagination={false}
-        scroll={{ x: 1360, y: useTableScrollY(216) }}
+        scroll={{ x: 1360 }}
       />
 
       <Modal

@@ -145,3 +145,11 @@ describe('ToolList JsonEditor 懒加载', () => {
     expect(lazyIndex).toBeGreaterThan(importTypeIndex);
   });
 });
+
+describe('ToolList 表格滚动 (useTableScrollY)', () => {
+  it('表格 scroll 使用 useTableScrollY 实现固定表头动态高度', () => {
+    const source = readFileSync(resolve(__dirname, '../ToolList.tsx'), 'utf-8');
+    expect(source).toContain("import useTableScrollY from '../../hooks/useTableScrollY'");
+    expect(source).toContain('scroll={{ x: 980, y: useTableScrollY(216) }}');
+  });
+});

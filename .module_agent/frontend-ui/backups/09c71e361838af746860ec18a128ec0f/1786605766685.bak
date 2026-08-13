@@ -22,7 +22,6 @@ import {
   updateTool,
   updateToolStatus,
 } from '../../services/tool';
-import useTableScrollY from '../../hooks/useTableScrollY';
 
 const JsonEditor = React.lazy(() => import('../../components/JsonEditor'));
 
@@ -341,7 +340,7 @@ function ToolList(): JSX.Element {
         dataSource={dataSource}
         loading={loading}
         pagination={false}
-        scroll={{ x: 980, y: useTableScrollY(216) }}
+        scroll={{ x: 980 }}
       />
 
       <Modal

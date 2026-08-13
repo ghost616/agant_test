@@ -80,7 +80,7 @@ const MENU_ITEMS: MenuProps['items'] = [
   {
     key: '/memory',
     icon: <EyeOutlined />,
-    label: '记忆修改',
+    label: '记忆回看',
   },
   {
     key: '/logs',

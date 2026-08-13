@@ -26,6 +26,7 @@ import {
   updateKnowledgeBase,
   updateKnowledgeBaseStatus,
 } from '../../services/knowledge';
+import useTableScrollY from '../../hooks/useTableScrollY';
 
 const STATUS_LABELS: Record<CommonStatus, string> = {
   ENABLED: '启用',
@@ -296,7 +297,7 @@ function KnowledgeBaseList(): JSX.Element {
         dataSource={dataSource}
         loading={loading}
         pagination={false}
-        scroll={{ x: 1300 }}
+        scroll={{ x: 1300, y: useTableScrollY(216) }}
       />
 
       <Modal

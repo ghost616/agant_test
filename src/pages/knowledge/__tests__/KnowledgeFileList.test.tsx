@@ -149,3 +149,11 @@ describe('KnowledgeFileList 编辑内容按钮导航 (功能点2)', () => {
     expect(mockNavigate).toHaveBeenCalledWith('/knowledge/kb-1/files/file-1/edit');
   });
 });
+
+describe('KnowledgeFileList 表格滚动 (useTableScrollY)', () => {
+  it('表格 scroll 使用 useTableScrollY 实现固定表头动态高度', () => {
+    const source = readFileSync(resolve(__dirname, '../KnowledgeFileList.tsx'), 'utf-8');
+    expect(source).toContain("import useTableScrollY from '../../hooks/useTableScrollY'");
+    expect(source).toContain('scroll={{ x: 1300, y: useTableScrollY(216) }}');
+  });
+});
