@@ -1,5 +1,0 @@
-{
-  "session_id": "ses_0062486a3ffeBs05tqY30QdSrj",
-  "content": "## 待测试功能\n\nMemoryDocumentDetail.tsx 重新生成成功仅更新编辑弹窗右侧文本框，不再更新详情页聚合文本，涉及文件：\n\n1. `src/pages/memory/MemoryDocumentDetail.tsx`：\n   - handleRegenerate COMPLETED 分支移除 setAggregationText(status.aggregationText)，仅保留 setEditText(status.aggregationText)（回填编辑弹窗右侧输入框）\n   - handleEditSave 成功后仍 setAggregationText(editText) 替换详情页聚合文本显示\n2. `src/pages/memory/__tests__/MemoryDocumentDetail.test.tsx`：\n   - \"重新生成调用 regenerateMemory...\"测试：移除\"详情页 Markdown 更新为新生成的聚合文本\"断言，改为断言 queryByText('新生成的聚合文本', { selector: 'p' }) 为 null（详情页不更新）；保留 getByDisplayValue 回填断言\n   - 源码断言\"编辑保存或重新生成成功后回调更新聚合文本状态\"改为\"仅在保存成功时回调更新详情页聚合文本（重新生成不更新详情页）\"：toContain setAggregationText(editText)、not.toContain setAggregationText(status.aggregationText)\n   - 保存测试（详情页更新为新聚合文本）不变\n   - 既有用例回归\n\n## 测试类型\n\n- 单元测试：src/pages/memory/__tests__/MemoryDocumentDetail.test.tsx 全部用例\n- 编译测试：变更文件 tsc 检查\n- E2E 测试：e2e/Memory.spec.ts 记忆修改 MemoryDocumentDetail 用例（vite 环境正常时执行）",
-  "timestamp": "2026-08-13T16:40:10.522Z"
-}

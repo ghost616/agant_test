@@ -1,5 +1,0 @@
-{
-  "session_id": "ses_00576b089ffe2Hq07EsU4aXZvx",
-  "content": "# SessionController /messages/range 端点返回类型对齐改造 - 待测试功能说明\n\n## 功能一：SessionController.getMessagesBySeqRange 返回类型变更\n- 文件：platform-app/src/main/java/com/ghost616/platform/controller/SessionController.java\n- 功能：GET /api/sessions/{id}/messages/range 端点返回类型从 ApiResponse<List<Message>> 改为 ApiResponse<List<MessageDataProvider.MessageDTO>>；注入 DefaultMessageDataProvider，通过 defaultMessageDataProvider.toMessageDTOs(messageService.getMessagesBySeqRange(id, startSeq, endSeq)) 转换后返回，与 GET /api/sessions/{id}/messages 端点返回结构对齐\n\n## 功能二：SessionControllerTest 断言同步\n- 文件：platform-app/src/test/java/com/ghost616/platform/controller/SessionControllerTest.java\n- 功能：新增 @Mock DefaultMessageDataProvider；两个 getMessagesBySeqRange 用例改为断言 MessageDTO 返回（buildMessageDTO 构造），并 verify defaultMessageDataProvider.toMessageDTOs 调用\n\n## 测试要求\n- 编译测试：确认 platform-app 模块可编译通过，无 import/签名错误\n- 单元测试：运行 SessionControllerTest 确认新增/更新的用例通过，且无回归\n",
-  "timestamp": "2026-08-13T09:53:10.003Z"
-}

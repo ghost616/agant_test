@@ -1,5 +1,0 @@
-{
-  "session_id": "ses_005cab1ddffeeVpM4P17JhFa4o",
-  "content": "# e2e/Memory.spec.ts Playwright 路由遮蔽修复验证\n\n## 修复内容\nsetupMocks 中泛化路由 `**/api/sessions/*/memory*` 原注册在具体路由之后（约195行），Playwright 按注册逆序匹配导致其先于 memory-prompt 等具体路由匹配，配置弹窗 GET/PUT /memory-prompt 会错误拿到 memory 列表对象。\n\n修复：将泛化路由 `**/api/sessions/*/memory*` 移到所有具体路由（memory-prompt/regenerate/regenerate-status/update）之前注册（现 146 行），并删除原注册在具体路由之后（205-213行）的重复泛化路由。\n\n## 期望验证点\n1. 配置弹窗保存用例：GET /memory-prompt 返回提示语字符串（'记忆聚合提示语'），PUT /memory-prompt body {prompt} 正确拦截\n2. 编辑保存用例：POST /memory/update body {docId:'1_DAILY_1_5', text:'每日摘要'} 正确拦截\n3. 重新生成用例：POST /memory/regenerate body {docId,startSeq:1,endSeq:5,prompt} 正确拦截，status 轮询返回 COMPLETED 后回填\n4. 回归：MemoryList/MemoryDetail 既有 10 用例不受影响（memory 列表接口仍由泛化路由兜底）\n\n## 测试要求\n运行 `npx playwright test e2e/Memory.spec.ts` 全部 13 个用例。\n若环境 vite dev server 仍故障无法执行，如实报告环境状态并确认用例/mock 已正确就绪（重点核对路由注册顺序源码）。",
-  "timestamp": "2026-08-13T15:49:26.334Z"
-}

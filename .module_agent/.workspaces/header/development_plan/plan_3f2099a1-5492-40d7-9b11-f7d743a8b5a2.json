@@ -1,9 +1,0 @@
-{
-  "plan_id": "plan_3f2099a1-5492-40d7-9b11-f7d743a8b5a2",
-  "module_name": "frontend-ui",
-  "development_plan": "修复 e2e/Memory.spec.ts 中 Playwright 路由遮蔽问题（皋陶审查 warning）：setupMocks 中最后注册的泛化路由 '**/api/sessions/*/memory*'（约195行）会先于更具体的 '**/api/sessions/*/memory-prompt'（146行）等具体路由匹配（Playwright 按注册逆序匹配），导致配置弹窗 GET/PUT /memory-prompt 拿到 memory 列表对象而非提示语字符串。修复方案：将泛化路由 '**/api/sessions/*/memory*' 移到所有具体路由（memory-prompt/regenerate/status/update）之前注册，确保具体路由后注册优先匹配；或保持具体路由后注册。修复后运行相关测试确认无回归。",
-  "session_id": "ses_005cab1ddffeeVpM4P17JhFa4o",
-  "modified_files": [
-    "e2e/Memory.spec.ts"
-  ]
-}
