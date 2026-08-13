@@ -4,7 +4,11 @@ import { Layout, Menu } from 'antd';
 import type { MenuProps } from 'antd';
 import {
   ApiOutlined,
+  BookOutlined,
   CheckCircleOutlined,
+  EyeOutlined,
+  FileTextOutlined,
+  HistoryOutlined,
   MessageOutlined,
   RobotOutlined,
   ThunderboltOutlined,
@@ -16,9 +20,19 @@ import ToolList from './pages/tools/ToolList';
 import AgentList from './pages/agents/AgentList';
 import SessionList from './pages/sessions/SessionList';
 import AgentChat from './pages/sessions/AgentChat';
+import ConversationHistory from './pages/sessions/ConversationHistory';
+import ConversationDetail from './pages/sessions/ConversationDetail';
 import SkillList from './pages/skills/SkillList';
+import KnowledgeBaseList from './pages/knowledge/KnowledgeBaseList';
+import KnowledgeFileList from './pages/knowledge/KnowledgeFileList';
+import KnowledgeFileEdit from './pages/knowledge/KnowledgeFileEdit';
+import AgentEvaluationList from './pages/evaluations/AgentEvaluationList';
 import EvaluationList from './pages/evaluations/EvaluationList';
 import EvaluationResultList from './pages/evaluations/EvaluationResultList';
+import EvaluationResultDetail from './pages/evaluations/EvaluationResultDetail';
+import AgentLogList from './pages/logs/AgentLogList';
+import MemoryList from './pages/memory/MemoryList';
+import MemoryDetail from './pages/memory/MemoryDetail';
 
 const { Header, Sider, Content } = Layout;
 
@@ -39,6 +53,11 @@ const MENU_ITEMS: MenuProps['items'] = [
     label: '技能管理',
   },
   {
+    key: '/knowledge',
+    icon: <BookOutlined />,
+    label: '知识库管理',
+  },
+  {
     key: '/agents',
     icon: <RobotOutlined />,
     label: '智能体管理',
@@ -52,6 +71,21 @@ const MENU_ITEMS: MenuProps['items'] = [
     key: '/evaluations',
     icon: <CheckCircleOutlined />,
     label: '评估管理',
+  },
+  {
+    key: '/conversations',
+    icon: <HistoryOutlined />,
+    label: '会话历史',
+  },
+  {
+    key: '/memory',
+    icon: <EyeOutlined />,
+    label: '记忆修改',
+  },
+  {
+    key: '/logs',
+    icon: <FileTextOutlined />,
+    label: '运行日志',
   },
 ];
 
@@ -82,7 +116,7 @@ function App() {
             fontWeight: 'bold',
           }}
         >
-          Agent 调试平台
+          Agent 低代码平台
         </div>
         <Menu
           theme="dark"
@@ -100,7 +134,7 @@ function App() {
             borderBottom: '1px solid #f0f0f0',
           }}
         >
-          <h2 style={{ margin: 0 }}>智能化 Agent 调试平台</h2>
+          <h2 style={{ margin: 0 }}>智能化 Agent 低代码平台</h2>
         </Header>
         <Content style={{ margin: 24 }}>
           <Routes>
@@ -110,10 +144,21 @@ function App() {
             <Route path="/tools" element={<ToolList />} />
             <Route path="/agents" element={<AgentList />} />
             <Route path="/skills" element={<SkillList />} />
+            <Route path="/knowledge" element={<KnowledgeBaseList />} />
+            <Route path="/knowledge/:kbId/files" element={<KnowledgeFileList />} />
+            <Route path="/knowledge/:kbId/files/:fileId/edit" element={<KnowledgeFileEdit />} />
             <Route path="/sessions" element={<SessionList />} />
             <Route path="/sessions/:id/chat" element={<AgentChat />} />
-            <Route path="/evaluations" element={<EvaluationList />} />
-            <Route path="/evaluations/:id/results" element={<EvaluationResultList />} />
+            <Route path="/conversations" element={<ConversationHistory />} />
+            <Route path="/conversations/:sessionId" element={<ConversationHistory />} />
+            <Route path="/conversations/:conversationId/detail" element={<ConversationDetail />} />
+            <Route path="/evaluations" element={<AgentEvaluationList />} />
+            <Route path="/evaluations/:agentEvalId/items" element={<EvaluationList />} />
+            <Route path="/evaluations/items/:evaluationId/results" element={<EvaluationResultList />} />
+            <Route path="/evaluations/results/:resultId" element={<EvaluationResultDetail />} />
+            <Route path="/logs" element={<AgentLogList />} />
+            <Route path="/memory" element={<MemoryList />} />
+            <Route path="/memory/:sessionId/:type" element={<MemoryDetail />} />
           </Routes>
         </Content>
       </Layout>

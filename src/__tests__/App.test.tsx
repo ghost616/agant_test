@@ -54,6 +54,16 @@ describe('App 路由注册 (记忆修改)', () => {
     expect(source).toContain('path="/memory/:sessionId/:type" element={<MemoryDetail />}');
   });
 
+  it('应导入 MemoryDocumentDetail 组件并注册详情路由', () => {
+    const source = readFileSync(appPath, 'utf-8');
+    expect(source).toContain(
+      "import MemoryDocumentDetail from './pages/memory/MemoryDocumentDetail'",
+    );
+    expect(source).toContain(
+      'path="/memory/:sessionId/:type/:seqRange" element={<MemoryDocumentDetail />}',
+    );
+  });
+
   it('侧边栏应包含记忆修改菜单项（EyeOutlined，key: /memory，label: 记忆修改）', () => {
     const source = readFileSync(appPath, 'utf-8');
     expect(source).toContain('EyeOutlined');

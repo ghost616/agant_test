@@ -43,7 +43,7 @@
     },
     {
       "path": "src/services/session.ts",
-      "description": "会话相关 API 封装，包括列表/创建/获取/删除会话、获取子会话列表（listChildSessions）、获取历史消息（getSessionMessages）、按 conversationId 获取对话消息（getConversationMessages，GET /api/conversations/{conversationId}/messages）、SSE 流式聊天（agentChatStream/continueChatStream）、工具执行（executeTools/getToolStatus）、工具执行状态轮询（pollToolStatus）、回滚会话（rollbackSession）、停止 AI 回复（stopChat）、子会话回调工具（getSubSessionData/completeSubSession）以及 SubSessionData 类型定义；fetchConversationId（GET /conversation-id 获取新 conversationId）；ChatRequest 类型来源于 types/session.ts；ExecuteToolsResult 和 ToolStatusResult 接口新增 needsSubSessionFlow 可选字段；ChatChunk 接口新增 responseId/webSearchCall/customToolCall 字段（webSearchCall 为 WebSearchCall[] 数组）、StreamCallbacks 新增 onResponseId/onWebSearchCall 回调（processSSEStream 解析 chunk.responseId 与 chunk.webSearchCall 数组并回调）、agentChatStream 新增 previousResponseId 参数且参数类型改为 ChatRequest（Responses 有状态模式多轮续接透传，conversationId 用户发送前获取传入）；新增 SessionContextBasic 类型与 getSessionContextBasic API（GET /api/context/{sessionId}/basic 获取会话上下文基础信息含 lastResponseId）；导出 ChatChunk/StreamCallbacks/processSSEStream 供评估流式接口等复用"
+      "description": "会话相关 API 封装，包括列表/创建/获取/删除会话、获取子会话列表（listChildSessions）、获取历史消息（getSessionMessages）、按序列号区间查询会话消息（getSessionMessagesRange，GET /api/sessions/{id}/messages/range，params startSeq/endSeq 返回 SessionMessage[]，对应后端 SessionController messages/range 端点）、按 conversationId 获取对话消息（getConversationMessages，GET /api/conversations/{conversationId}/messages）、SSE 流式聊天（agentChatStream/continueChatStream）、工具执行（executeTools/getToolStatus）、工具执行状态轮询（pollToolStatus）、回滚会话（rollbackSession）、停止 AI 回复（stopChat）、子会话回调工具（getSubSessionData/completeSubSession）以及 SubSessionData 类型定义；fetchConversationId（GET /conversation-id 获取新 conversationId）；ChatRequest 类型来源于 types/session.ts；ExecuteToolsResult 和 ToolStatusResult 接口新增 needsSubSessionFlow 可选字段；ChatChunk 接口新增 responseId/webSearchCall/customToolCall 字段（webSearchCall 为 WebSearchCall[] 数组）、StreamCallbacks 新增 onResponseId/onWebSearchCall 回调（processSSEStream 解析 chunk.responseId 与 chunk.webSearchCall 数组并回调）、agentChatStream 新增 previousResponseId 参数且参数类型改为 ChatRequest（Responses 有状态模式多轮续接透传，conversationId 用户发送前获取传入）；新增 SessionContextBasic 类型与 getSessionContextBasic API（GET /api/context/{sessionId}/basic 获取会话上下文基础信息含 lastResponseId）；导出 ChatChunk/StreamCallbacks/processSSEStream 供评估流式接口等复用"
     },
     {
       "path": "src/pages/sessions/SessionList.tsx",
@@ -219,7 +219,7 @@
     },
     {
       "path": "src/pages/memory/MemoryDetail.tsx",
-      "description": "记忆聚合列表页 /memory/:sessionId/:type：根据 type 参数调用 getSessionMemory（GET /api/sessions/{id}/memory），DAILY 显示聚合日期列（aggregationStartTime 格式化）、GROUP 显示起始-结束列（aggregationStartSeq-aggregationEndSeq），聚合文本列 ellipsis 超长省略，支持分页（pageSizeOptions 10/20/50/showTotal）；返回按钮跳转 /memory"
+      "description": "记忆聚合列表页 /memory/:sessionId/:type：根据 type 参数调用 getSessionMemory（GET /api/sessions/{id}/memory），DAILY 显示聚合日期列（aggregationStartTime 格式化）、GROUP 显示起始-结束列（aggregationStartSeq-aggregationEndSeq），聚合文本列 ellipsis 超长省略，支持分页（pageSizeOptions 10/20/50/showTotal）；操作列提供「详情」按钮跳转 /memory/:sessionId/:type/:seqRange（seqRange 格式 startSeq-endSeq，序号缺省 0-0），经 navigate state 携带 startSeq/endSeq/aggregationText；表格 scroll.x=910；返回按钮跳转 /memory"
     },
     {
       "path": "src/hooks/useTableScrollY.ts",
@@ -228,6 +228,10 @@
     {
       "path": "src/hooks/__tests__/useTableScrollY.test.tsx",
       "description": "useTableScrollY Hook 单元测试：验证初始值 = innerHeight - offset、resize 实时更新、offset 变化重新计算、卸载移除监听、innerHeight 小于 offset 返回 0"
+    },
+    {
+      "path": "src/pages/memory/MemoryDocumentDetail.tsx",
+      "description": "记忆聚合文档详情页 /memory/:sessionId/:type/:seqRange：左侧只读文本框（Input.TextArea readOnly）展示聚合文本（路由 state.aggregationText），右侧调用 getSessionMessagesRange 按序列号区间获取消息并以对话气泡样式展示（与 AgentChat 一致的 ROLE_CONFIG/BUBBLE_STYLES：角色标签+图标+气泡背景色，ReactMarkdown 渲染，按 sequenceNum 升序排列）；左右两栏等高容器布局（alignItems stretch + 固定高度），各自内容区独立滚动（左 TextArea flex 填充内滚、右消息区 overflowY auto）；返回按钮跳转 /memory/:sessionId/:type"
     }
   ]
 }

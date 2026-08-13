@@ -138,20 +138,6 @@ async function setupMocks(page: Page) {
       body: okJson(type === 'GROUP' ? MOCK_GROUP : MOCK_DAILY),
     });
   });
-
-  await page.route('**/api/sessions/*/messages/range*', async (route) => {
-    const url = new URL(route.request().url());
-    const startSeq = url.searchParams.get('startSeq');
-    const endSeq = url.searchParams.get('endSeq');
-    const ranged = MOCK_MESSAGES.filter(
-      (m) => m.sequenceNum >= Number(startSeq) && m.sequenceNum <= Number(endSeq),
-    );
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: okJson(ranged),
-    });
-  });
 }
 
 test.describe('记忆修改 MemoryList 页面', () => {
@@ -250,78 +236,5 @@ test.describe('记忆修改 MemoryDetail 页面', () => {
 
     await page.getByRole('button', { name: '返回' }).click();
     await page.waitForURL('**/memory');
-  });
-
-  test('聚合列表详情按钮跳转详情页并携带 startSeq/endSeq 参数', async ({ page }) => {
-    await page.goto('/memory/1/DAILY');
-    await page.waitForSelector('.ant-table');
-
-    const [request] = await Promise.all([
-      page.waitForRequest(
-        (req) =>
-          req.url().includes('/api/sessions/1/messages/range') &&
-          req.url().includes('startSeq=1') &&
-          req.url().includes('endSeq=5'),
-      ),
-      page.locator('.ant-table-tbody').getByRole('button', { name: '详情' }).click(),
-    ]);
-
-    await page.waitForURL('**/memory/1/DAILY/1-5');
-    expect(request.url()).toContain('/api/sessions/1/messages/range');
-  });
-
-  test('GROUP 详情按钮跳转 /memory/1/GROUP/1-3', async ({ page }) => {
-    await page.goto('/memory/1/GROUP');
-    await page.waitForSelector('.ant-table');
-
-    await page
-      .locator('.ant-table-tbody')
-      .getByRole('button', { name: '详情' })
-      .click();
-
-    await page.waitForURL('**/memory/1/GROUP/1-3');
-    await expect(page.getByText('聚合文档详情')).toBeVisible();
-  });
-});
-
-test.describe('记忆修改 MemoryDocumentDetail 页面', () => {
-  test.describe.configure({ timeout: 120000 });
-  test.beforeEach(async ({ page }) => {
-    await setupMocks(page);
-  });
-
-  test('左侧只读展示聚合文本，右侧以对话气泡展示生成消息与角色标签', async ({ page }) => {
-    await page.goto('/memory/1/DAILY');
-    await page.waitForSelector('.ant-table');
-
-    await page
-      .locator('.ant-table-tbody')
-      .getByRole('button', { name: '详情' })
-      .click();
-    await page.waitForURL('**/memory/1/DAILY/1-5');
-
-    const textarea = page.locator('textarea').first();
-    await expect(textarea).toBeVisible();
-    await expect(textarea).toHaveValue('每日摘要');
-    await expect(textarea).toHaveAttribute('readonly', '');
-
-    await expect(page.locator('.agent-chat-markdown').getByText('hi')).toBeVisible();
-    await expect(page.locator('.agent-chat-markdown').getByText('hello')).toBeVisible();
-    await expect(page.getByText('你')).toBeVisible();
-    await expect(page.getByText('助手')).toBeVisible();
-  });
-
-  test('返回按钮跳转 /memory/:sessionId/:type', async ({ page }) => {
-    await page.goto('/memory/1/DAILY');
-    await page.waitForSelector('.ant-table');
-
-    await page
-      .locator('.ant-table-tbody')
-      .getByRole('button', { name: '详情' })
-      .click();
-    await page.waitForURL('**/memory/1/DAILY/1-5');
-
-    await page.getByRole('button', { name: '返回' }).click();
-    await page.waitForURL('**/memory/1/DAILY');
   });
 });

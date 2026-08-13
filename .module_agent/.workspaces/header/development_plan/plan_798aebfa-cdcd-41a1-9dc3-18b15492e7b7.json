@@ -1,0 +1,17 @@
+{
+  "plan_id": "plan_798aebfa-cdcd-41a1-9dc3-18b15492e7b7",
+  "module_name": "frontend-ui",
+  "development_plan": "记忆聚合详情页：1) MemoryDetail.tsx 聚合列表新增\"详情\"操作按钮，跳转 /memory/:sessionId/:type/:seqRange 详情路由（携带 startSeq/endSeq/aggregationText 等参数）；2) App.tsx 新增详情页路由；3) 新建 MemoryDocumentDetail.tsx 详情页：左侧展示聚合文本（文本框只读），右侧展示生成该聚合文本的所有消息列表（调用 messages/range 接口），支持消息角色标签；4) 同步更新测试",
+  "session_id": "ses_005cab1ddffeeVpM4P17JhFa4o",
+  "modified_files": [
+    "src/services/session.ts",
+    "src/pages/memory/MemoryDetail.tsx",
+    "src/App.tsx",
+    "src/pages/memory/MemoryDocumentDetail.tsx",
+    "src/pages/memory/__tests__/MemoryDetail.test.tsx",
+    "src/pages/memory/__tests__/MemoryDocumentDetail.test.tsx",
+    "src/services/__tests__/session.test.ts",
+    "src/__tests__/App.test.tsx",
+    "e2e/Memory.spec.ts"
+  ]
+}

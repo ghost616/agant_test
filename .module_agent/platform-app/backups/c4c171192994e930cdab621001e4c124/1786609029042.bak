@@ -12,7 +12,6 @@ import com.ghost616.platform.exception.BusinessException;
 import com.ghost616.platform.model.SessionMemoryDocument;
 import com.ghost616.platform.service.agent.DefaultSubSessionCallback;
 import com.ghost616.platform.service.memory.SessionMemoryService;
-import com.ghost616.platform.service.message.MessageService;
 import com.ghost616.platform.service.search.SessionMemoryESClient;
 import com.ghost616.platform.service.session.SessionService;
 import org.junit.jupiter.api.Test;
@@ -42,9 +41,6 @@ class SessionControllerTest {
 
     @Mock
     private SessionMemoryESClient sessionMemoryESClient;
-
-    @Mock
-    private MessageService messageService;
 
     @InjectMocks
     private SessionController controller;
@@ -278,38 +274,6 @@ class SessionControllerTest {
 
         assertThrows(IllegalStateException.class,
                 () -> controller.queryMemory(1L, AggregationType.GROUP, 1, 20));
-    }
-
-    @Test
-    void getMessagesBySeqRange_shouldDelegateToMessageServiceAndReturnMessages() {
-        com.ghost616.platform.entity.Message msg = new com.ghost616.platform.entity.Message();
-        msg.setId(1L);
-        msg.setSessionId(100L);
-        msg.setSequenceNum(2);
-        when(messageService.getMessagesBySeqRange(100L, 1, 5))
-                .thenReturn(List.of(msg));
-
-        ApiResponse<List<com.ghost616.platform.entity.Message>> response =
-                controller.getMessagesBySeqRange(100L, 1, 5);
-
-        assertTrue(response.isSuccess());
-        assertEquals(1, response.getData().size());
-        assertEquals(2, response.getData().get(0).getSequenceNum());
-        verify(messageService).getMessagesBySeqRange(100L, 1, 5);
-    }
-
-    @Test
-    void getMessagesBySeqRange_shouldReturnEmptyListWhenNoMessages() {
-        when(messageService.getMessagesBySeqRange(999L, 10, 20))
-                .thenReturn(List.of());
-
-        ApiResponse<List<com.ghost616.platform.entity.Message>> response =
-                controller.getMessagesBySeqRange(999L, 10, 20);
-
-        assertTrue(response.isSuccess());
-        assertNotNull(response.getData());
-        assertTrue(response.getData().isEmpty());
-        verify(messageService).getMessagesBySeqRange(999L, 10, 20);
     }
 
     private MessageDataProvider.MessageDTO buildMessageDTO(String role, String content, String reasoning,

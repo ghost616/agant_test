@@ -136,6 +136,8 @@ platform-app 模块包含以下功能：
 - 新增 GET /api/context/{sessionId}/basic 轻量接口，返回 AgentContextBasicDTO（sessionId/agentId/modelId/lastResponseId/parentSessionId）
 - 新增 MessageService 消息查询服务接口与 MessageServiceImpl 实现：注入 MessageMapper，getAllMessages(Long sessionId) 查询 sessionId + rollback=false 的消息，按 sequenceNum 升序，不做 memoryPoint 记忆点过滤
 - SessionServiceImpl.getMessages() 改为注入并调用 MessageService.getAllMessages() 获取消息实体列表，再通过 DefaultMessageDataProvider.toMessageDTOs 转换为 MessageDTO 返回；sessionManager.getMessages() 在 AgentContextManager 中的原有用途保持不变
+- 新增 MessageService.getMessagesBySeqRange(Long sessionId, Integer startSeq, Integer endSeq) 方法：查询 sessionId + rollback=false + sequenceNum 在 [startSeq, endSeq] 区间的消息，按 sequenceNum 升序，MessageServiceImpl 注入 MessageMapper 通过 LambdaQueryWrapper（ge/le）实现
+- SessionController 新增 GET /api/sessions/{id}/messages/range 端点：接收 startSeq/endSeq 查询参数，调用 MessageService.getMessagesBySeqRange 返回消息实体列表（ApiResponse<List<Message>>），注入 MessageService 依赖
 ## 知识库管理
 
 - 知识库(KnowledgeBase) CRUD 接口：DTO（KnowledgeBaseDTO/KnowledgeBaseCreateRequest/KnowledgeBaseUpdateRequest）、Service（KnowledgeBaseService 接口与 KnowledgeBaseServiceImpl 实现）、Controller（KnowledgeBaseController，路径 /api/knowledge-bases）

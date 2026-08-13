@@ -290,7 +290,7 @@ test.describe('记忆修改 MemoryDocumentDetail 页面', () => {
     await setupMocks(page);
   });
 
-  test('左侧只读展示聚合文本，右侧以对话气泡展示生成消息与角色标签', async ({ page }) => {
+  test('左侧只读展示聚合文本，右侧展示生成消息列表与角色标签', async ({ page }) => {
     await page.goto('/memory/1/DAILY');
     await page.waitForSelector('.ant-table');
 
@@ -305,10 +305,10 @@ test.describe('记忆修改 MemoryDocumentDetail 页面', () => {
     await expect(textarea).toHaveValue('每日摘要');
     await expect(textarea).toHaveAttribute('readonly', '');
 
-    await expect(page.locator('.agent-chat-markdown').getByText('hi')).toBeVisible();
-    await expect(page.locator('.agent-chat-markdown').getByText('hello')).toBeVisible();
-    await expect(page.getByText('你')).toBeVisible();
-    await expect(page.getByText('助手')).toBeVisible();
+    await expect(page.locator('.ant-table-tbody').getByText('hi')).toBeVisible();
+    await expect(page.locator('.ant-table-tbody').getByText('hello')).toBeVisible();
+    await expect(page.locator('.ant-table-tbody').getByText('用户')).toBeVisible();
+    await expect(page.locator('.ant-table-tbody').getByText('助手')).toBeVisible();
   });
 
   test('返回按钮跳转 /memory/:sessionId/:type', async ({ page }) => {

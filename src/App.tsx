@@ -33,6 +33,7 @@ import EvaluationResultDetail from './pages/evaluations/EvaluationResultDetail';
 import AgentLogList from './pages/logs/AgentLogList';
 import MemoryList from './pages/memory/MemoryList';
 import MemoryDetail from './pages/memory/MemoryDetail';
+import MemoryDocumentDetail from './pages/memory/MemoryDocumentDetail';
 
 const { Header, Sider, Content } = Layout;
 
@@ -159,6 +160,7 @@ function App() {
             <Route path="/logs" element={<AgentLogList />} />
             <Route path="/memory" element={<MemoryList />} />
             <Route path="/memory/:sessionId/:type" element={<MemoryDetail />} />
+            <Route path="/memory/:sessionId/:type/:seqRange" element={<MemoryDocumentDetail />} />
           </Routes>
         </Content>
       </Layout>

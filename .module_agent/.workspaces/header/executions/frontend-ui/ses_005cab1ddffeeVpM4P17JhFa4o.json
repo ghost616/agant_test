@@ -1,0 +1,11 @@
+[
+  {
+    "plan_id": "plan_798aebfa-cdcd-41a1-9dc3-18b15492e7b7",
+    "plan": "记忆聚合详情页开发（测试修复二轮）",
+    "modified_files": [
+      "src/pages/memory/__tests__/MemoryDocumentDetail.test.tsx"
+    ],
+    "summary": "离朱复测 10/10 E2E 通过、72/73 单测通过，仅剩 MemoryDocumentDetail.test.tsx state 缺失用例选择器问题：antd v5 纯 textarea 无 .ant-input-textarea 容器，已改为 textarea.ant-input",
+    "errors": []
+  }
+]

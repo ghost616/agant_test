@@ -1,0 +1,271 @@
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { CSSProperties } from 'react';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { Button, Input, message, Space, Spin, Typography } from 'antd';
+import {
+  ArrowLeftOutlined,
+  InfoCircleOutlined,
+  RobotOutlined,
+  ToolOutlined,
+  UserOutlined,
+} from '@ant-design/icons';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import type { SessionMessage } from '../../types/session';
+import { getSessionMessagesRange } from '../../services/session';
+
+type MessageRole = 'user' | 'assistant' | 'tool' | 'system';
+
+const ROLES: MessageRole[] = ['user', 'assistant', 'tool', 'system'];
+
+const ROLE_CONFIG: Record<MessageRole, { label: string; icon: JSX.Element; color: string }> = {
+  user: { label: '你', icon: <UserOutlined />, color: '#569cd6' },
+  assistant: { label: '助手', icon: <RobotOutlined />, color: '#4ec9b0' },
+  tool: { label: '工具', icon: <ToolOutlined />, color: '#d7ba7d' },
+  system: { label: '系统', icon: <InfoCircleOutlined />, color: '#9cdcfe' },
+};
+
+const BUBBLE_STYLES: Record<MessageRole, CSSProperties> = {
+  user: {
+    background: '#1a3a5c',
+    borderRadius: 12,
+    padding: '10px 14px',
+  },
+  assistant: {
+    background: '#2a2a2a',
+    borderRadius: 12,
+    padding: '10px 14px',
+  },
+  tool: {
+    background: '#3a3a3a',
+    borderRadius: 12,
+    padding: '10px 14px',
+  },
+  system: {
+    background: '#2d3748',
+    borderRadius: 12,
+    padding: '10px 14px',
+  },
+};
+
+const DETAIL_LAYOUT_STYLE: CSSProperties = {
+  display: 'flex',
+  gap: 16,
+  alignItems: 'stretch',
+  height: 520,
+};
+
+const TEXT_PANE_STYLE: CSSProperties = {
+  width: 380,
+  flexShrink: 0,
+  display: 'flex',
+  flexDirection: 'column',
+};
+
+const LIST_PANE_STYLE: CSSProperties = {
+  flex: 1,
+  minWidth: 0,
+  display: 'flex',
+  flexDirection: 'column',
+};
+
+const MESSAGE_AREA_STYLE: CSSProperties = {
+  flex: 1,
+  minHeight: 0,
+  marginTop: 8,
+  overflowY: 'auto',
+  background: '#1a1a1a',
+  borderRadius: 8,
+  padding: 16,
+};
+
+/**
+ * 记忆聚合文档详情页：左侧只读展示聚合文本，
+ * 右侧按序列号区间展示生成该聚合文本的全部消息（对话气泡样式，Markdown 渲染）。
+ */
+function MemoryDocumentDetail(): JSX.Element {
+  const { sessionId = '', type = 'DAILY', seqRange = '' } = useParams<{
+    sessionId?: string;
+    type?: string;
+    seqRange?: string;
+  }>();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const state = (location.state ?? {}) as {
+    startSeq?: number;
+    endSeq?: number;
+    aggregationText?: string;
+  };
+
+  const parsed = seqRange.split('-');
+  const startSeq: number = state.startSeq ?? Number(parsed[0]);
+  const endSeq: number = state.endSeq ?? Number(parsed[1]);
+
+  const [messages, setMessages] = useState<SessionMessage[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const fetchMessages = useCallback(async (): Promise<void> => {
+    if (!Number.isInteger(startSeq) || !Number.isInteger(endSeq)) {
+      return;
+    }
+    setLoading(true);
+    try {
+      const result = await getSessionMessagesRange(sessionId, startSeq, endSeq);
+      setMessages(result);
+    } catch {
+      message.error('获取消息列表失败');
+      setMessages([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [sessionId, startSeq, endSeq]);
+
+  useEffect(() => {
+    fetchMessages();
+  }, [fetchMessages]);
+
+  const sortedMessages = useMemo(
+    () => [...messages].sort((a, b) => a.sequenceNum - b.sequenceNum),
+    [messages],
+  );
+
+  const renderRoleHeader = (role: MessageRole): JSX.Element => {
+    const config = ROLE_CONFIG[role];
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
+        <span style={{ color: config.color, fontSize: 14 }}>{config.icon}</span>
+        <Typography.Text strong style={{ color: config.color, fontSize: 12 }}>
+          {config.label}
+        </Typography.Text>
+      </div>
+    );
+  };
+
+  const renderMessage = (msg: SessionMessage, idx: number): JSX.Element => {
+    const role: MessageRole = ROLES.includes(msg.role as MessageRole)
+      ? (msg.role as MessageRole)
+      : 'system';
+    const isUser = msg.role === 'user';
+    const content = msg.content?.trim() || '';
+    return (
+      <div
+        key={idx}
+        style={{
+          display: 'flex',
+          justifyContent: isUser ? 'flex-end' : 'flex-start',
+          marginBottom: 16,
+        }}
+      >
+        <div style={{ maxWidth: '80%' }}>
+          {renderRoleHeader(role)}
+          {content ? (
+            <div style={BUBBLE_STYLES[role]} className="agent-chat-markdown">
+              <div style={{ color: '#d4d4d4', fontSize: 14, lineHeight: 1.8 }}>
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+              </div>
+            </div>
+          ) : (
+            <div style={BUBBLE_STYLES[role]}>
+              <Typography.Text style={{ color: '#888', fontSize: 13 }}>
+                （空消息）
+              </Typography.Text>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const backType: string = type === 'GROUP' ? 'GROUP' : 'DAILY';
+
+  return (
+    <div>
+      <style>{`
+        .agent-chat-markdown pre {
+          background: #2d2d2d;
+          border-radius: 6px;
+          padding: 12px 16px;
+          overflow-x: auto;
+        }
+        .agent-chat-markdown code {
+          font-family: 'Consolas', 'Courier New', monospace;
+          font-size: 13px;
+        }
+        .agent-chat-markdown :not(pre) > code {
+          background: #2d2d2d;
+          padding: 2px 6px;
+          border-radius: 4px;
+        }
+        .agent-chat-markdown table {
+          border-collapse: collapse;
+          width: 100%;
+          margin: 12px 0;
+        }
+        .agent-chat-markdown th,
+        .agent-chat-markdown td {
+          border: 1px solid #444;
+          padding: 8px 12px;
+          text-align: left;
+        }
+        .agent-chat-markdown th {
+          background: #2d2d2d;
+          font-weight: 600;
+        }
+        .agent-chat-markdown blockquote {
+          border-left: 3px solid #555;
+          padding-left: 12px;
+          margin: 12px 0;
+          color: #aaa;
+        }
+        .agent-chat-markdown a {
+          color: #569cd6;
+        }
+        .agent-chat-markdown ul,
+        .agent-chat-markdown ol {
+          padding-left: 24px;
+        }
+        .agent-chat-markdown p {
+          margin: 8px 0;
+        }
+      `}</style>
+      <Space style={{ marginBottom: 16 }}>
+        <Button
+          icon={<ArrowLeftOutlined />}
+          onClick={() => navigate(`/memory/${sessionId}/${backType}`)}
+        >
+          返回
+        </Button>
+        <Typography.Title level={5} style={{ margin: 0 }}>
+          聚合文档详情
+        </Typography.Title>
+      </Space>
+      <div style={DETAIL_LAYOUT_STYLE}>
+        <div style={TEXT_PANE_STYLE}>
+          <Typography.Text strong>聚合文本</Typography.Text>
+          <Input.TextArea
+            value={state.aggregationText ?? ''}
+            readOnly
+            style={{ flex: 1, minHeight: 0, marginTop: 8, resize: 'none' }}
+          />
+        </div>
+        <div style={LIST_PANE_STYLE}>
+          <Typography.Text strong>生成该聚合文本的消息</Typography.Text>
+          <div style={MESSAGE_AREA_STYLE}>
+            {loading ? (
+              <div style={{ textAlign: 'center', padding: 40 }}>
+                <Spin />
+              </div>
+            ) : sortedMessages.length === 0 ? (
+              <Typography.Text style={{ color: '#666' }}>暂无消息</Typography.Text>
+            ) : (
+              sortedMessages.map(renderMessage)
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default MemoryDocumentDetail;

@@ -90,32 +90,9 @@ function MemoryDetail(): JSX.Element {
     {
       title: '聚合文本',
       dataIndex: 'aggregationText',
-      width: 420,
+      width: 520,
       ellipsis: true,
       render: (value?: string) => value || '-',
-    },
-    {
-      title: '操作',
-      key: 'actions',
-      width: 90,
-      render: (_: unknown, record: SessionMemoryDocument) => {
-        const start = record.aggregationStartSeq ?? 0;
-        const end = record.aggregationEndSeq ?? 0;
-        const handleDetail = (): void => {
-          navigate(`/memory/${record.sessionId}/${aggType}/${start}-${end}`, {
-            state: {
-              startSeq: record.aggregationStartSeq,
-              endSeq: record.aggregationEndSeq,
-              aggregationText: record.aggregationText,
-            },
-          });
-        };
-        return (
-          <Button type="link" size="small" onClick={handleDetail}>
-            详情
-          </Button>
-        );
-      },
     },
   ];
 
@@ -145,7 +122,7 @@ function MemoryDetail(): JSX.Element {
         columns={columns}
         dataSource={dataSource}
         loading={loading}
-        scroll={{ x: 910, y: useTableScrollY(272) }}
+        scroll={{ x: 820, y: useTableScrollY(272) }}
         pagination={{
           current: page,
           pageSize,

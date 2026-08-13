@@ -25,15 +25,4 @@ public class MessageServiceImpl implements MessageService {
                 .orderByAsc(Message::getSequenceNum);
         return messageMapper.selectList(wrapper);
     }
-
-    @Override
-    public List<Message> getMessagesBySeqRange(Long sessionId, Integer startSeq, Integer endSeq) {
-        LambdaQueryWrapper<Message> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(Message::getSessionId, sessionId)
-                .eq(Message::getRollback, false)
-                .ge(Message::getSequenceNum, startSeq)
-                .le(Message::getSequenceNum, endSeq)
-                .orderByAsc(Message::getSequenceNum);
-        return messageMapper.selectList(wrapper);
-    }
 }

@@ -6,7 +6,6 @@ import com.ghost616.platform.dto.session.CreateSessionRequest;
 import com.ghost616.platform.dto.session.SessionDTO;
 import com.ghost616.platform.dto.session.SubSessionDataDTO;
 import com.ghost616.platform.service.session.SessionService;
-import com.ghost616.platform.service.message.MessageService;
 import com.ghost616.platform.service.memory.SessionMemoryService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -44,7 +43,6 @@ public class SessionController {
     private final DefaultSubSessionCallback subSessionCallback;
     private final SessionMemoryService sessionMemoryService;
     private final SessionMemoryESClient sessionMemoryESClient;
-    private final MessageService messageService;
 
     @GetMapping
     public ApiResponse<List<SessionDTO>> listSessions(@RequestParam(required = false) Long agentId) {
@@ -68,16 +66,6 @@ public class SessionController {
     @GetMapping("/{id}/messages")
     public ApiResponse<List<MessageDataProvider.MessageDTO>> getMessages(@PathVariable Long id) {
         List<MessageDataProvider.MessageDTO> result = sessionService.getMessages(id);
-        return ApiResponse.success(result);
-    }
-
-    @GetMapping("/{id}/messages/range")
-    public ApiResponse<List<com.ghost616.platform.entity.Message>> getMessagesBySeqRange(
-            @PathVariable Long id,
-            @RequestParam Integer startSeq,
-            @RequestParam Integer endSeq) {
-        List<com.ghost616.platform.entity.Message> result =
-                messageService.getMessagesBySeqRange(id, startSeq, endSeq);
         return ApiResponse.success(result);
     }
 

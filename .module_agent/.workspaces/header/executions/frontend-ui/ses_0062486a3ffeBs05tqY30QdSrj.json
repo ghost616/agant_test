@@ -55,5 +55,16 @@
     ],
     "summary": "已完成：1) 新建 src/hooks/useTableScrollY.ts（innerHeight - offset 动态计算表格高度，Math.max 防负，监听 resize 实时更新，卸载移除监听，offset 变化重算）；2) 13 个带 scroll.x 表格统一改为 scroll={{ x: 原宽度, y: useTableScrollY(偏移量) }}（无分页 11 个页面偏移量 216，含分页 AgentLogList/MemoryDetail 偏移量 272），实现固定表头+底部可见横向滚动条；3) 新建 src/hooks/__tests__/useTableScrollY.test.tsx（6 用例），为 11 个页面测试补充 scroll 静态断言，并顺带修复 SessionList.test.tsx 两处既有过时断言。离朱测试全部通过：hook 单测 6/6、页面单测 200/200（含修复后 SessionList 6/6）、变更文件 tsc 零错误、E2E 回归 12/12。",
     "errors": []
+  },
+  {
+    "plan_id": "plan_991947b4-0aa4-4f8f-b283-c9e680160220",
+    "plan": "MemoryDocumentDetail.tsx 详情页布局优化：气泡消息展示 + 等高独立滚动 + 同步测试",
+    "modified_files": [
+      "src/pages/memory/MemoryDocumentDetail.tsx",
+      "src/pages/memory/__tests__/MemoryDocumentDetail.test.tsx",
+      "e2e/Memory.spec.ts"
+    ],
+    "summary": "已完成：1) 右侧消息从 Table 改为对话气泡样式（与 AgentChat 一致的 ROLE_CONFIG/BUBBLE_STYLES：角色标签+图标+气泡背景色，ReactMarkdown+remarkGfm 渲染，按 sequenceNum 升序排列）；2) 左右两栏等高容器布局（alignItems stretch + 固定高度 520，左 TextArea flex 填充内部滚动、右消息区 overflowY auto 独立滚动，loading/空态处理）；3) 同步更新 MemoryDocumentDetail.test.tsx（角色断言 用户→你、新增升序行为测试与气泡/等高布局源码断言）与 e2e/Memory.spec.ts（断言改为 .agent-chat-markdown）。离朱测试全部通过：单测 13/13、变更源码 tsc 零错误、E2E 10/10 无回归。",
+    "errors": []
   }
 ]

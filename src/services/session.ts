@@ -45,6 +45,25 @@ export async function getSessionMessages(sessionId: string): Promise<SessionMess
   return res.data.data;
 }
 
+/**
+ * 按序列号区间查询会话消息。
+ * @param sessionId 会话 ID
+ * @param startSeq 起始序列号
+ * @param endSeq 结束序列号
+ * @returns 区间内的消息列表
+ */
+export async function getSessionMessagesRange(
+  sessionId: string,
+  startSeq: number,
+  endSeq: number,
+): Promise<SessionMessage[]> {
+  const res = await api.get<ApiResponse<SessionMessage[]>>(
+    `/sessions/${sessionId}/messages/range`,
+    { params: { startSeq, endSeq } },
+  );
+  return res.data.data;
+}
+
 export async function getConversationMessages(conversationId: string): Promise<SessionMessage[]> {
   const res = await api.get<ApiResponse<SessionMessage[]>>(`/conversations/${conversationId}/messages`);
   return res.data.data;

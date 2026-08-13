@@ -1,0 +1,15 @@
+[
+  {
+    "plan_id": "plan_1a676e4f-9f5b-4867-b472-e133a7a898bb",
+    "plan": "消息序号范围查询接口：MessageService 新增 getMessagesBySeqRange，SessionController 新增 GET /api/sessions/{id}/messages/range 端点",
+    "modified_files": [
+      "platform-app/src/main/java/com/ghost616/platform/service/message/MessageService.java",
+      "platform-app/src/main/java/com/ghost616/platform/service/message/MessageServiceImpl.java",
+      "platform-app/src/main/java/com/ghost616/platform/controller/SessionController.java",
+      "platform-app/src/test/java/com/ghost616/platform/service/message/MessageServiceImplTest.java",
+      "platform-app/src/test/java/com/ghost616/platform/controller/SessionControllerTest.java"
+    ],
+    "summary": "已完成消息序号范围查询接口：MessageService 接口新增 getMessagesBySeqRange(Long sessionId, Integer startSeq, Integer endSeq)，MessageServiceImpl 通过 LambdaQueryWrapper 查询 sessionId + rollback=false + sequenceNum 区间（ge/le）按升序返回；SessionController 注入 MessageService 并新增 GET /api/sessions/{id}/messages/range 端点（startSeq/endSeq 必填查询参数）。同步更新 MessageServiceImplTest（3 新用例）与 SessionControllerTest（新增 mock + 2 新用例）。离朱测试通过：编译成功，MessageServiceImplTest 7/7、SessionControllerTest 17/17 全部通过，无回归。元数据已更新（spec/definition/history）。",
+    "errors": []
+  }
+]

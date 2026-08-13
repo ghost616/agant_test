@@ -91,38 +91,4 @@ class MessageServiceImplTest {
         verify(messageMapper).selectList(any());
         verifyNoMoreInteractions(messageMapper);
     }
-
-    @Test
-    void getMessagesBySeqRange_有消息_返回区间内消息列表() {
-        when(messageMapper.selectList(any())).thenReturn(List.of(message1, message2));
-
-        List<Message> result = messageService.getMessagesBySeqRange(100L, 1, 5);
-
-        assertEquals(2, result.size());
-        assertEquals("hello", result.get(0).getContent());
-        assertEquals("hi", result.get(1).getContent());
-        verify(messageMapper).selectList(any());
-    }
-
-    @Test
-    void getMessagesBySeqRange_无消息_返回空列表() {
-        when(messageMapper.selectList(any())).thenReturn(List.of());
-
-        List<Message> result = messageService.getMessagesBySeqRange(100L, 10, 20);
-
-        assertNotNull(result);
-        assertTrue(result.isEmpty());
-    }
-
-    @Test
-    void getMessagesBySeqRange_查询条件包含sessionId_rollback和sequenceNum区间() {
-        when(messageMapper.selectList(any())).thenReturn(List.of());
-
-        messageService.getMessagesBySeqRange(100L, 3, 8);
-
-        ArgumentCaptor<LambdaQueryWrapper<Message>> captor = ArgumentCaptor.forClass(LambdaQueryWrapper.class);
-        verify(messageMapper).selectList(captor.capture());
-        LambdaQueryWrapper<Message> wrapper = captor.getValue();
-        assertNotNull(wrapper);
-    }
 }

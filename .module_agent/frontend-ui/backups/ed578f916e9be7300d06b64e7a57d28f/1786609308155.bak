@@ -11,7 +11,7 @@ vi.mock('../api', () => ({
   },
 }));
 
-import { stopChat, listChildSessions, getSubSessionData, completeSubSession, getBrowserExtension, getToolScript, fetchConversationId, getConversationMessages, getSessionMessagesRange } from '../session';
+import { stopChat, listChildSessions, getSubSessionData, completeSubSession, getBrowserExtension, getToolScript, fetchConversationId, getConversationMessages } from '../session';
 
 describe('fetchConversationId', () => {
   beforeEach(() => {
@@ -80,50 +80,6 @@ describe('getConversationMessages', () => {
     const testError = new Error('Network Error');
     mockGet.mockRejectedValueOnce(testError);
     await expect(getConversationMessages('conv-1')).rejects.toThrow('Network Error');
-  });
-});
-
-describe('getSessionMessagesRange', () => {
-  beforeEach(() => {
-    mockGet.mockReset();
-  });
-
-  it('应调用 GET /sessions/{sessionId}/messages/range 并携带 startSeq/endSeq', async () => {
-    mockGet.mockResolvedValueOnce({ data: { data: [] } });
-    await getSessionMessagesRange('session-123', 1, 3);
-    expect(mockGet).toHaveBeenCalledWith('/sessions/session-123/messages/range', {
-      params: { startSeq: 1, endSeq: 3 },
-    });
-  });
-
-  it('应在不同 sessionId 与序列号下正确拼接参数', async () => {
-    mockGet.mockResolvedValueOnce({ data: { data: [] } });
-    await getSessionMessagesRange('session-a', 5, 10);
-    expect(mockGet).toHaveBeenCalledWith('/sessions/session-a/messages/range', {
-      params: { startSeq: 5, endSeq: 10 },
-    });
-  });
-
-  it('应返回 SessionMessage 数组', async () => {
-    const fakeMessages = [
-      {
-        id: 'm1',
-        sessionId: 's1',
-        role: 'user',
-        content: 'hello',
-        sequenceNum: 1,
-        createTime: '2026-01-01T00:00:00',
-      },
-    ];
-    mockGet.mockResolvedValueOnce({ data: { data: fakeMessages } });
-    const result = await getSessionMessagesRange('s1', 1, 2);
-    expect(result).toEqual(fakeMessages);
-  });
-
-  it('应在 API 失败时抛出错误', async () => {
-    const testError = new Error('Network Error');
-    mockGet.mockRejectedValueOnce(testError);
-    await expect(getSessionMessagesRange('s1', 1, 2)).rejects.toThrow('Network Error');
   });
 });
 

@@ -135,6 +135,9 @@
 - types/memory.ts 提供 MemoryAggregationType（GROUP/DAILY）、SessionMemoryDocument（sessionId/aggregationType/aggregationStartSeq/aggregationEndSeq/aggregationStartTime/aggregationEndTime/aggregationText/vector，与后端 SessionMemoryDocument 对齐）、MemoryQueryParams 类型
 - services/memory.ts 提供 getSessionMemory(sessionId, type, page, size) 调用 GET /api/sessions/{id}/memory 返回分页结果
 - App.tsx 新增「记忆修改」菜单项（EyeOutlined）与 /memory、/memory/:sessionId/:type 路由
+- 记忆聚合文档详情页 /memory/:sessionId/:type/:seqRange（MemoryDocumentDetail.tsx）：左侧只读文本框（Input.TextArea readOnly，flex 填充等高容器内滚）展示聚合文本（经路由 state.aggregationText 传入，state 缺失时显示空），右侧按序列号区间调用 getSessionMessagesRange 获取消息并以对话气泡样式展示——与 AgentChat 一致的 ROLE_CONFIG/BUBBLE_STYLES（角色标签+图标+气泡背景色：user=你 #569cd6/#1a3a5c、assistant=助手 #4ec9b0/#2a2a2a、tool=工具 #d7ba7d/#3a3a3a、system=系统 #9cdcfe/#2d3748），ReactMarkdown+remarkGfm 渲染（内联 .agent-chat-markdown 样式），按 sequenceNum 升序排列；左右两栏等高容器布局（alignItems: stretch + 固定高度 520），各自内容区独立滚动（左 TextArea resize:none 内滚、右消息区 overflowY:auto）；返回按钮跳转 /memory/:sessionId/:type
+- MemoryDetail.tsx 聚合列表新增「详情」操作按钮：跳转 /memory/:sessionId/:type/:seqRange（seqRange 格式 startSeq-endSeq，序号缺省时为 0-0），通过 navigate state 携带 startSeq/endSeq/aggregationText 参数；表格 scroll.x 调整为 910
+- services/session.ts 新增 getSessionMessagesRange(sessionId, startSeq, endSeq) 调用 GET /api/sessions/{id}/messages/range（params startSeq/endSeq）返回 SessionMessage[]，对应后端 SessionController messages/range 端点
 ## 通用表格滚动
 
 - 通用表格滚动 Hook：src/hooks/useTableScrollY.ts 根据 window.innerHeight 减去固定偏移量动态计算表格可滚动高度（Math.max(innerHeight - offset, 0)），监听 window resize 实时更新，卸载时移除监听，返回 scrollY 供 Table scroll={{ x, y }} 使用

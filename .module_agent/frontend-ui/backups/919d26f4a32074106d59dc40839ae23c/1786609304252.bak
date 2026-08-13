@@ -1,5 +1,5 @@
 import type { ApiResponse } from '../types/common';
-import type { Session, CreateSessionParams, SessionMessage } from '../types/session';
+import type { Session, CreateSessionParams, SessionMessage, WebSearchCall, ChatRequest } from '../types/session';
 import api from './api';
 
 export async function listSessions(agentId?: string): Promise<Session[]> {
@@ -18,6 +18,19 @@ export async function getSession(id: string): Promise<Session> {
   return res.data.data;
 }
 
+export interface SessionContextBasic {
+  sessionId: string;
+  agentId: string;
+  modelId: string;
+  lastResponseId?: string;
+  parentSessionId?: string;
+}
+
+export async function getSessionContextBasic(sessionId: string): Promise<SessionContextBasic> {
+  const res = await api.get<ApiResponse<SessionContextBasic>>(`/context/${sessionId}/basic`);
+  return res.data.data;
+}
+
 export async function deleteSession(id: string): Promise<void> {
   await api.delete(`/sessions/${id}`);
 }
@@ -32,21 +45,31 @@ export async function getSessionMessages(sessionId: string): Promise<SessionMess
   return res.data.data;
 }
 
-interface ChatChunk {
-  delta?: string;
-  reasoning?: string;
-  finishReason?: string;
-  hasToolCalls?: boolean;
+export async function getConversationMessages(conversationId: string): Promise<SessionMessage[]> {
+  const res = await api.get<ApiResponse<SessionMessage[]>>(`/conversations/${conversationId}/messages`);
+  return res.data.data;
 }
 
-interface StreamCallbacks {
+export interface ChatChunk {
+  delta?: string;
+  reasoning?: string;
+  responseId?: string;
+  finishReason?: string;
+  hasToolCalls?: boolean;
+  webSearchCall?: WebSearchCall[];
+  customToolCall?: Record<string, unknown>;
+}
+
+export interface StreamCallbacks {
   onDelta: (text: string) => void;
   onReasoning: (text: string) => void;
+  onResponseId?: (id: string) => void;
+  onWebSearchCall?: (calls: WebSearchCall[]) => void;
   onDone: (hasToolCalls: boolean) => void;
   onError: (err: Error) => void;
 }
 
-async function processSSEStream(
+export async function processSSEStream(
   response: Response,
   callbacks: StreamCallbacks,
 ): Promise<void> {
@@ -97,6 +120,12 @@ async function processSSEStream(
         if (chunk.reasoning) {
           callbacks.onReasoning(chunk.reasoning);
         }
+        if (chunk.responseId) {
+          callbacks.onResponseId?.(chunk.responseId);
+        }
+        if (chunk.webSearchCall) {
+          callbacks.onWebSearchCall?.(chunk.webSearchCall);
+        }
         if (chunk.delta) {
           callbacks.onDelta(chunk.delta);
         }
@@ -106,9 +135,13 @@ async function processSSEStream(
     }
   }
 }
+export async function fetchConversationId(): Promise<string> {
+  const res = await api.get<ApiResponse<{ conversationId: string }>>('/conversation-id');
+  return res.data.data.conversationId;
+}
 
 export function agentChatStream(
-  params: { sessionId: string; content: string; modelId?: string; thinking?: boolean },
+  params: ChatRequest,
   callbacks: StreamCallbacks,
 ): AbortController {
   const controller = new AbortController();
@@ -152,6 +185,7 @@ export interface ToolStatusResult {
   result?: string;
   hasMore?: boolean;
   needsSubSessionFlow?: boolean;
+  toolConfig?: { id: string; subToolType: string; toolName: string };
 }
 
 export interface SubSessionData {
@@ -219,3 +253,21 @@ export function continueChatStream(
   run();
   return controller;
 }
+
+export async function updateSessionThinking(sessionId: string, thinking: boolean): Promise<void> {
+  await api.put(`/sessions/${sessionId}/thinking`, { thinking });
+}
+
+export async function getBrowserExtension(): Promise<string> {
+  const response = await fetch('/api/browser-tool/extension');
+  return response.text();
+}
+
+export async function getToolScript(toolConfigId: string): Promise<string> {
+  const res = await api.get<ApiResponse<string>>(
+    `/browser-tool/tool-script/${encodeURIComponent(toolConfigId)}`,
+  );
+  return res.data.data;
+}
+
+
