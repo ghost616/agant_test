@@ -10,6 +10,7 @@ import com.ghost616.agentbase.service.agent.ToolDataProvider.SessionToolInfo;
 import com.ghost616.agentbase.service.agent.ToolDataProvider.SkillToolInfo;
 import com.ghost616.agentbase.service.agent.invoker.CustomToolInvoker;
 import com.ghost616.agentinteg.knowledge.KnowledgeBaseQueryProvider;
+import com.ghost616.agentinteg.memory.MemoryQueryProvider;
 import com.ghost616.agentinteg.model.PlatformType;
 import com.ghost616.agentinteg.tool.BrowserToolInvoker;
 import com.ghost616.agentinteg.tool.BrowserToolProvider;
@@ -17,7 +18,9 @@ import com.ghost616.agentinteg.tool.KnowledgeBaseInfoTool;
 import com.ghost616.agentinteg.tool.KnowledgeFileChunkTool;
 import com.ghost616.agentinteg.tool.KnowledgeFileInfoTool;
 import com.ghost616.agentinteg.tool.KnowledgeSearchTool;
+import com.ghost616.agentinteg.tool.MemoryQueryTool;
 import com.ghost616.platform.dto.tool.ToolDetailDTO;
+import com.ghost616.platform.entity.AgentConfig;
 import com.ghost616.platform.entity.AgentKnowledgeBase;
 import com.ghost616.platform.entity.AgentSkill;
 import com.ghost616.platform.entity.ModelConfig;
@@ -26,6 +29,7 @@ import com.ghost616.platform.entity.SessionSkill;
 import com.ghost616.platform.entity.SessionTool;
 import com.ghost616.platform.entity.SkillTool;
 import com.ghost616.platform.enums.SubToolType;
+import com.ghost616.platform.repository.AgentConfigMapper;
 import com.ghost616.platform.repository.AgentKnowledgeBaseMapper;
 import com.ghost616.platform.repository.AgentSkillMapper;
 import com.ghost616.platform.repository.ModelConfigMapper;
@@ -57,6 +61,8 @@ public class DefaultToolDataProvider implements ToolDataProvider {
             KnowledgeSearchTool.TOOL_NAME,
             KnowledgeFileChunkTool.TOOL_NAME);
 
+    private static final String MEMORY_TOOL_NAME = MemoryQueryTool.TOOL_NAME;
+
     private final SessionToolMapper sessionToolMapper;
     private final SessionMapper sessionMapper;
     private final AgentSkillMapper agentSkillMapper;
@@ -67,6 +73,8 @@ public class DefaultToolDataProvider implements ToolDataProvider {
     private final ModelConfigMapper modelConfigMapper;
     private final ObjectProvider<KnowledgeBaseQueryProvider> knowledgeBaseQueryProvider;
     private final AgentKnowledgeBaseMapper agentKnowledgeBaseMapper;
+    private final AgentConfigMapper agentConfigMapper;
+    private final ObjectProvider<MemoryQueryProvider> memoryQueryProvider;
 
     @Override
     public List<SessionToolInfo> getSessionToolIds(String sessionId) {
@@ -92,6 +100,10 @@ public class DefaultToolDataProvider implements ToolDataProvider {
                         result.add(new SessionToolInfo(toolName, SessionAuthType.ALL));
                     }
                 }
+                AgentConfig agentConfig = agentConfigMapper.selectById(session.getAgentId());
+                if (agentConfig != null && Boolean.TRUE.equals(agentConfig.getMemoryEnabled())) {
+                    result.add(new SessionToolInfo(MEMORY_TOOL_NAME, SessionAuthType.ALL));
+                }
             }
         }
         return result;
@@ -102,6 +114,9 @@ public class DefaultToolDataProvider implements ToolDataProvider {
         if (KNOWLEDGE_TOOL_NAMES.contains(toolId)) {
             return getKnowledgeToolConfig(toolId);
         }
+        if (MEMORY_TOOL_NAME.equals(toolId)) {
+            return getMemoryToolConfig(toolId);
+        }
         Long tid = IdConverter.parse(toolId);
         return toolConfigService.getById(tid);
     }
@@ -111,6 +126,9 @@ public class DefaultToolDataProvider implements ToolDataProvider {
         if (KNOWLEDGE_TOOL_NAMES.contains(toolConfig.getId())) {
             return createKnowledgeTool(toolConfig);
         }
+        if (MEMORY_TOOL_NAME.equals(toolConfig.getId())) {
+            return createMemoryTool(toolConfig);
+        }
         ToolDetailDTO detail = toolConfigService.getById(IdConverter.parse(toolConfig.getId()));
         if (toolConfig.getToolType() == ToolType.CUSTOM && detail.getSubToolType() == SubToolType.BROWSER) {
             return new BrowserToolInvoker(toolConfig, browserToolCallback);
@@ -119,6 +137,17 @@ public class DefaultToolDataProvider implements ToolDataProvider {
             return createKnowledgeTool(toolConfig);
         }
         throw new UnsupportedOperationException("Custom tool invoker not supported");
+    }
+
+    private ToolConfigDTO getMemoryToolConfig(String toolName) {
+        ToolConfigDTO config = MemoryQueryTool.createToolConfig();
+        config.setId(toolName);
+        return config;
+    }
+
+    private CustomToolInvoker createMemoryTool(ToolConfigDTO toolConfig) {
+        MemoryQueryProvider provider = memoryQueryProvider.getObject();
+        return new MemoryQueryTool(toolConfig, provider);
     }
 
     private ToolConfigDTO getKnowledgeToolConfig(String toolName) {

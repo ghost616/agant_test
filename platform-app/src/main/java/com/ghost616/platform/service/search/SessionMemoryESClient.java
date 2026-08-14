@@ -3,6 +3,7 @@ package com.ghost616.platform.service.search;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.SortOrder;
 import co.elastic.clients.elasticsearch._types.mapping.DenseVectorSimilarity;
+import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery;
 import co.elastic.clients.elasticsearch.core.BulkRequest;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
@@ -14,7 +15,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -28,6 +31,8 @@ public class SessionMemoryESClient {
 
     /** 会话记忆索引名 */
     public static final String INDEX_NAME = "session_memory";
+
+    private static final int DEFAULT_NUM_CANDIDATES = 100;
 
     private final ElasticsearchClient elasticsearchClient;
 
@@ -165,6 +170,128 @@ public class SessionMemoryESClient {
         } catch (IOException e) {
             throw new IllegalStateException("按会话查询记忆文档失败: " + INDEX_NAME, e);
         }
+    }
+
+    /**
+     * 向量检索会话记忆，按相似度分数降序返回 topK 条记忆文档。
+     * 过滤条件：sessionId（必填）、aggregationType（可空，为空表示所有聚合类型）、aggregationStartTime/aggregationEndTime 范围（可空）。
+     *
+     * @param sessionId       会话 ID
+     * @param aggregationType 聚合类型（GROUP/DAILY，可空）
+     * @param startTime       起始时间（毫秒时间戳，可空）
+     * @param endTime         结束时间（毫秒时间戳，可空）
+     * @param vector          查询向量
+     * @param topK            返回条数
+     * @return 命中的记忆文档列表
+     */
+    public List<SessionMemoryDocument> vectorSearch(String sessionId, String aggregationType, Long startTime,
+                                                    Long endTime, List<Float> vector, int topK) {
+        ensureIndex();
+        try {
+            SearchResponse<SessionMemoryDocument> response = elasticsearchClient.search(s -> s
+                            .index(INDEX_NAME)
+                            .knn(k -> k
+                                    .field("vector")
+                                    .queryVector(vector)
+                                    .k(topK)
+                                    .numCandidates(Math.max(topK * 10, DEFAULT_NUM_CANDIDATES))
+                                    .filter(f -> f.bool(b -> addScopeFilters(b, sessionId, aggregationType, startTime, endTime)))),
+                    SessionMemoryDocument.class);
+            return toDocuments(response);
+        } catch (IOException e) {
+            throw new IllegalStateException("向量检索失败: " + INDEX_NAME, e);
+        }
+    }
+
+    /**
+     * 全文检索会话记忆（BM25），按相关度分数降序返回 topK 条记忆文档。
+     * 过滤条件：sessionId（必填）、aggregationType（可空）、aggregationStartTime/aggregationEndTime 范围（可空）。
+     *
+     * @param sessionId       会话 ID
+     * @param aggregationType 聚合类型（GROUP/DAILY，可空）
+     * @param startTime       起始时间（毫秒时间戳，可空）
+     * @param endTime         结束时间（毫秒时间戳，可空）
+     * @param query           查询文本
+     * @param topK            返回条数
+     * @return 命中的记忆文档列表
+     */
+    public List<SessionMemoryDocument> fullTextSearch(String sessionId, String aggregationType, Long startTime,
+                                                      Long endTime, String query, int topK) {
+        ensureIndex();
+        try {
+            SearchResponse<SessionMemoryDocument> response = elasticsearchClient.search(s -> s
+                            .index(INDEX_NAME)
+                            .query(q -> q.bool(b -> {
+                                addScopeFilters(b, sessionId, aggregationType, startTime, endTime);
+                                b.must(m -> m.match(mt -> mt.field("aggregationText").query(query)));
+                                return b;
+                            }))
+                            .size(topK),
+                    SessionMemoryDocument.class);
+            return toDocuments(response);
+        } catch (IOException e) {
+            throw new IllegalStateException("全文检索失败: " + INDEX_NAME, e);
+        }
+    }
+
+    /**
+     * 混合检索会话记忆：合并向量检索与全文检索结果并按文档 ID 去重。
+     * 过滤条件：sessionId（必填）、aggregationType（可空）、aggregationStartTime/aggregationEndTime 范围（可空）。
+     *
+     * @param sessionId       会话 ID
+     * @param aggregationType 聚合类型（GROUP/DAILY，可空）
+     * @param startTime       起始时间（毫秒时间戳，可空）
+     * @param endTime         结束时间（毫秒时间戳，可空）
+     * @param vector          查询向量
+     * @param query           查询文本
+     * @param topK            返回条数
+     * @return 合并去重后的记忆文档列表
+     */
+    public List<SessionMemoryDocument> hybridSearch(String sessionId, String aggregationType, Long startTime,
+                                                    Long endTime, List<Float> vector, String query, int topK) {
+        ensureIndex();
+        Map<String, SessionMemoryDocument> dedup = new LinkedHashMap<>();
+        for (SessionMemoryDocument doc : vectorSearch(sessionId, aggregationType, startTime, endTime, vector, topK)) {
+            dedup.putIfAbsent(docKey(doc), doc);
+        }
+        for (SessionMemoryDocument doc : fullTextSearch(sessionId, aggregationType, startTime, endTime, query, topK)) {
+            dedup.putIfAbsent(docKey(doc), doc);
+        }
+        return new ArrayList<>(dedup.values());
+    }
+
+    /**
+     * 向 bool 查询添加会话记忆检索的过滤条件：sessionId（必填）、aggregationType（可空）、时间范围（可空）。
+     */
+    private BoolQuery.Builder addScopeFilters(BoolQuery.Builder b, String sessionId, String aggregationType,
+                                              Long startTime, Long endTime) {
+        b.filter(f -> f.term(t -> t.field("sessionId").value(sessionId)));
+        if (aggregationType != null && !aggregationType.isBlank()) {
+            b.filter(f -> f.term(t -> t.field("aggregationType").value(aggregationType)));
+        }
+        if (startTime != null) {
+            b.filter(f -> f.range(r -> r.number(n -> n.field("aggregationStartTime").gte((double) startTime))));
+        }
+        if (endTime != null) {
+            b.filter(f -> f.range(r -> r.number(n -> n.field("aggregationEndTime").lte((double) endTime))));
+        }
+        return b;
+    }
+
+    private String docKey(SessionMemoryDocument document) {
+        return document.getSessionId() + "_" + document.getAggregationType() + "_"
+                + document.getAggregationStartSeq() + "_" + document.getAggregationEndSeq();
+    }
+
+    private List<SessionMemoryDocument> toDocuments(SearchResponse<SessionMemoryDocument> response) {
+        List<Hit<SessionMemoryDocument>> hits = response.hits().hits();
+        List<SessionMemoryDocument> documents = new ArrayList<>(hits.size());
+        for (Hit<SessionMemoryDocument> hit : hits) {
+            if (hit.source() != null) {
+                documents.add(hit.source());
+            }
+        }
+        return documents;
     }
 
     /**

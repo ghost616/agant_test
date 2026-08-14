@@ -10,18 +10,22 @@ import com.ghost616.agentinteg.knowledge.KnowledgeBaseQueryProvider;
 import com.ghost616.agentinteg.knowledge.SearchType;
 import com.ghost616.agentinteg.knowledge.TextChunkWithFile;
 import com.ghost616.agentinteg.model.PlatformType;
+import com.ghost616.agentinteg.memory.MemoryQueryProvider;
 import com.ghost616.agentinteg.tool.BrowserToolInvoker;
 import com.ghost616.agentinteg.tool.BrowserToolProvider;
 import com.ghost616.agentinteg.tool.KnowledgeBaseInfoTool;
 import com.ghost616.agentinteg.tool.KnowledgeFileChunkTool;
 import com.ghost616.agentinteg.tool.KnowledgeFileInfoTool;
 import com.ghost616.agentinteg.tool.KnowledgeSearchTool;
+import com.ghost616.agentinteg.tool.MemoryQueryTool;
 import com.ghost616.platform.dto.tool.ToolDetailDTO;
+import com.ghost616.platform.entity.AgentConfig;
 import com.ghost616.platform.entity.AgentKnowledgeBase;
 import com.ghost616.platform.entity.ModelConfig;
 import com.ghost616.platform.entity.Session;
 import com.ghost616.platform.entity.SessionTool;
 import com.ghost616.platform.enums.SubToolType;
+import com.ghost616.platform.repository.AgentConfigMapper;
 import com.ghost616.platform.repository.AgentKnowledgeBaseMapper;
 import com.ghost616.platform.repository.AgentSkillMapper;
 import com.ghost616.platform.repository.ModelConfigMapper;
@@ -60,6 +64,9 @@ class DefaultToolDataProviderTest {
     @Mock private KnowledgeBaseQueryProvider knowledgeBaseQueryProvider;
     @Mock private ObjectProvider<KnowledgeBaseQueryProvider> knowledgeBaseQueryProviderProvider;
     @Mock private AgentKnowledgeBaseMapper agentKnowledgeBaseMapper;
+    @Mock private AgentConfigMapper agentConfigMapper;
+    @Mock private MemoryQueryProvider memoryQueryProvider;
+    @Mock private ObjectProvider<MemoryQueryProvider> memoryQueryProviderProvider;
 
     private DefaultToolDataProvider provider;
 
@@ -68,7 +75,7 @@ class DefaultToolDataProviderTest {
         provider = new DefaultToolDataProvider(sessionToolMapper, sessionMapper,
                 agentSkillMapper, skillToolMapper, sessionSkillMapper, toolConfigService,
                 browserToolCallback, modelConfigMapper, knowledgeBaseQueryProviderProvider,
-                agentKnowledgeBaseMapper);
+                agentKnowledgeBaseMapper, agentConfigMapper, memoryQueryProviderProvider);
     }
 
     private SessionTool createSessionTool(Long toolId, SessionAuthType auth) {
@@ -95,6 +102,12 @@ class DefaultToolDataProviderTest {
         AgentKnowledgeBase b = new AgentKnowledgeBase();
         b.setAgentId(agentId);
         return b;
+    }
+
+    private AgentConfig createAgentConfig(Boolean memoryEnabled) {
+        AgentConfig c = new AgentConfig();
+        c.setMemoryEnabled(memoryEnabled);
+        return c;
     }
 
     @Nested
@@ -169,6 +182,50 @@ class DefaultToolDataProviderTest {
 
             assertTrue(result.isEmpty());
         }
+
+        @Test
+        @DisplayName("session 对应 agent 的 memoryEnabled=true 时注入 default_tool_memory_search 工具")
+        void sessionWithMemoryEnabled_shouldIncludeMemorySearchTool() {
+            when(sessionToolMapper.selectList(any())).thenReturn(List.of());
+            when(sessionMapper.selectById(1L)).thenReturn(createSession(10L));
+            when(agentKnowledgeBaseMapper.selectList(any())).thenReturn(List.of());
+            when(agentConfigMapper.selectById(10L)).thenReturn(createAgentConfig(true));
+
+            List<SessionToolInfo> result = provider.getSessionToolIds("1");
+
+            assertEquals(1, result.size());
+            assertEquals(MemoryQueryTool.TOOL_NAME, result.get(0).toolId());
+            assertEquals(SessionAuthType.ALL, result.get(0).sessionAuth());
+        }
+
+        @Test
+        @DisplayName("session 对应 agent 的 memoryEnabled=false 时不注入记忆搜索工具")
+        void sessionWithMemoryDisabled_shouldNotIncludeMemorySearchTool() {
+            when(sessionToolMapper.selectList(any())).thenReturn(List.of());
+            when(sessionMapper.selectById(1L)).thenReturn(createSession(10L));
+            when(agentKnowledgeBaseMapper.selectList(any())).thenReturn(List.of());
+            when(agentConfigMapper.selectById(10L)).thenReturn(createAgentConfig(false));
+
+            List<SessionToolInfo> result = provider.getSessionToolIds("1");
+
+            assertTrue(result.isEmpty());
+        }
+
+        @Test
+        @DisplayName("session 有知识库绑定且 memoryEnabled=true 时同时注入知识库工具与记忆搜索工具")
+        void sessionWithKnowledgeAndMemory_shouldIncludeBothToolKinds() {
+            when(sessionToolMapper.selectList(any())).thenReturn(List.of());
+            when(sessionMapper.selectById(1L)).thenReturn(createSession(10L));
+            when(agentKnowledgeBaseMapper.selectList(any()))
+                    .thenReturn(List.of(createBinding(10L)));
+            when(agentConfigMapper.selectById(10L)).thenReturn(createAgentConfig(true));
+
+            List<SessionToolInfo> result = provider.getSessionToolIds("1");
+
+            assertEquals(5, result.size());
+            assertTrue(result.stream().anyMatch(i -> MemoryQueryTool.TOOL_NAME.equals(i.toolId())));
+            assertTrue(result.stream().allMatch(i -> SessionAuthType.ALL == i.sessionAuth()));
+        }
     }
 
     @Nested
@@ -184,6 +241,22 @@ class DefaultToolDataProviderTest {
             assertNotNull(result);
             assertEquals(toolName, result.getId());
             assertEquals(KnowledgeSearchTool.TOOL_NAME, result.getName());
+            assertEquals(ToolType.CUSTOM, result.getToolType());
+            assertNotNull(result.getDescription());
+            assertFalse(result.getDescription().isBlank());
+            assertNotNull(result.getParameterSchema());
+            assertFalse(result.getParameterSchema().isBlank());
+            verify(toolConfigService, never()).getById(anyLong());
+        }
+
+        @Test
+        @DisplayName("传入记忆搜索工具名返回 MemoryQueryTool 工具配置（id=工具名，toolType=CUSTOM）")
+        void memoryToolName_shouldReturnMemoryToolConfig() {
+            ToolConfigDTO result = provider.getToolById(MemoryQueryTool.TOOL_NAME);
+
+            assertNotNull(result);
+            assertEquals(MemoryQueryTool.TOOL_NAME, result.getId());
+            assertEquals(MemoryQueryTool.TOOL_NAME, result.getName());
             assertEquals(ToolType.CUSTOM, result.getToolType());
             assertNotNull(result.getDescription());
             assertFalse(result.getDescription().isBlank());
@@ -357,6 +430,22 @@ class DefaultToolDataProviderTest {
             CustomToolInvoker result = provider.getCustomInvoker(config);
 
             assertInstanceOf(KnowledgeBaseInfoTool.class, result);
+            verify(toolConfigService, never()).getById(anyLong());
+        }
+
+        @Test
+        @DisplayName("记忆搜索工具配置返回 MemoryQueryTool 实例")
+        void memoryTool_shouldReturnMemoryQueryTool() {
+            ToolConfigDTO config = ToolConfigDTO.builder()
+                    .id(MemoryQueryTool.TOOL_NAME)
+                    .name(MemoryQueryTool.TOOL_NAME)
+                    .toolType(ToolType.CUSTOM)
+                    .build();
+            when(memoryQueryProviderProvider.getObject()).thenReturn(memoryQueryProvider);
+
+            CustomToolInvoker result = provider.getCustomInvoker(config);
+
+            assertInstanceOf(MemoryQueryTool.class, result);
             verify(toolConfigService, never()).getById(anyLong());
         }
 

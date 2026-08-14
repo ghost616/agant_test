@@ -164,6 +164,30 @@
     {
       "path": "agent-integration/src/main/java/com/ghost616/agentinteg/tool/BrowserToolProvider.java",
       "description": "浏览器工具回调函数式接口（由 BrowserToolCallback 重命名而来），定义 execute(sessionId, toolConfigId, toolName, toolParams) 方法返回 String，供 BrowserToolInvoker 在执行时回调宿主环境"
+    },
+    {
+      "path": "agent-integration/src/main/java/com/ghost616/agentinteg/memory/MemoryQueryProvider.java",
+      "description": "AI 记忆查询 Provider 接口，由外部模块提供记忆的查询能力。定义两个方法：getMemories(sessionId, searchType, memoryType, startTime, endTime, query) 返回 List<MemoryResult> 记忆结果列表；getMessageSeqsByRole(sessionId, List<SeqRange> ranges) 按序号区间列表批量查询，返回合并去重后的 MessageSeqByRole 消息序号分类结果（原签名 (String, int, int) 改为批量 List<SeqRange>，消除 N+1 查询）。"
+    },
+    {
+      "path": "agent-integration/src/main/java/com/ghost616/agentinteg/memory/MemoryResult.java",
+      "description": "AI 记忆查询结果数据类，record 封装 content/startSeq/endSeq/memoryType 四个字段。"
+    },
+    {
+      "path": "agent-integration/src/main/java/com/ghost616/agentinteg/memory/MessageSeqByRole.java",
+      "description": "消息序号按角色分类的结果数据类，record 封装 userSeqList/toolSeqList/assistantSeqList 三个序号列表。"
+    },
+    {
+      "path": "agent-integration/src/main/java/com/ghost616/agentinteg/tool/MemoryQueryTool.java",
+      "description": "AI 记忆查询工具（工具名 default_tool_memory_search），继承 CustomToolInvoker（非 SystemTool），无 @Component 注解。静态 createToolConfig() 返回 ToolConfigDTO（id=null, toolType=CUSTOM, name=default_tool_memory_search，描述与参数 schema：query 必填、searchType 必填 enum VECTOR/FULLTEXT/HYBRID、memoryType 可选 GROUP/DAILY、startTime 与 endTime 可选毫秒时间戳）。构造函数传入 ToolConfigDTO 与 MemoryQueryProvider。execute 通过 ctx.getSessionId() 获取会话 ID，调用 provider.getMemories 获取记忆结果，buildOutput 收集所有结果序号区间构造 List<SeqRange> 后在循环外仅一次调用 provider.getMessageSeqsByRole(sessionId, ranges)，再合并去重得到 userSeqList/toolSeqList/assistantSeqList，返回包含 results、userSeqList、toolSeqList、assistantSeqList 的 JSON，使用 JsonMapper。参数缺失/无效时返回 status=error JSON，无匹配结果返回空列表（非错误）。"
+    },
+    {
+      "path": "agent-integration/src/test/java/com/ghost616/agentinteg/tool/MemoryQueryToolTest.java",
+      "description": "MemoryQueryTool 单元测试，覆盖 createToolConfig（CUSTOM 类型、工具名、参数 schema 含 enum 与必填项）、execute 正常路径（参数解析、批量 provider 调用、序号汇总）、批量返回序号合并去重、未传可选参数透传 null、无匹配结果返回空列表、getMessageSeqsByRole 返回 null 跳过、缺少/无效 query、searchType、memoryType、startTime、endTime 的错误场景、无法获取会话 ID、provider 异常场景。"
+    },
+    {
+      "path": "agent-integration/src/main/java/com/ghost616/agentinteg/memory/SeqRange.java",
+      "description": "消息序号区间数据类，record 封装 startSeq/endSeq 两个字段，用于批量消息序号查询。"
     }
   ]
 }

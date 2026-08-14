@@ -487,6 +487,216 @@ class SessionMemoryESClientTest {
     }
 
     @Test
+    @DisplayName("vectorSearch：knn 查询使用 vector 字段、queryVector、k=topK、numCandidates=max(topK*10,100)，filter 含 sessionId/aggregationType/时间范围")
+    void vectorSearch_buildsKnnRequest() throws Exception {
+        stubExists(true);
+        @SuppressWarnings("unchecked")
+        SearchResponse<SessionMemoryDocument> searchResponse = mock(SearchResponse.class);
+        @SuppressWarnings("unchecked")
+        HitsMetadata<SessionMemoryDocument> hitsMeta = mock(HitsMetadata.class);
+        @SuppressWarnings("unchecked")
+        Hit<SessionMemoryDocument> hit = mock(Hit.class);
+        SessionMemoryDocument doc = SessionMemoryDocument.builder().sessionId("100").aggregationText("摘要").build();
+        when(hit.source()).thenReturn(doc);
+        when(hitsMeta.hits()).thenReturn(List.of(hit));
+        when(searchResponse.hits()).thenReturn(hitsMeta);
+        when(elasticsearchClient.search(any(Function.class), eq(SessionMemoryDocument.class)))
+                .thenReturn(searchResponse);
+
+        List<SessionMemoryDocument> result = client.vectorSearch("100", "GROUP", 1000L, 2000L,
+                List.of(0.1f, 0.2f), 5);
+
+        assertEquals(1, result.size());
+        assertSame(doc, result.get(0));
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Function<SearchRequest.Builder, ObjectBuilder<SearchRequest>>> captor =
+                ArgumentCaptor.forClass(Function.class);
+        verify(elasticsearchClient).search(captor.capture(), eq(SessionMemoryDocument.class));
+        SearchRequest request = apply(captor.getValue(), new SearchRequest.Builder());
+        assertEquals(List.of(SessionMemoryESClient.INDEX_NAME), request.index());
+        assertNotNull(request.knn());
+        assertEquals(1, request.knn().size());
+        assertEquals("vector", request.knn().get(0).field());
+        assertEquals(List.of(0.1f, 0.2f), request.knn().get(0).queryVector());
+        assertEquals(5, request.knn().get(0).k());
+        assertEquals(100, request.knn().get(0).numCandidates(), "numCandidates 应为 max(5*10,100)=100");
+
+        Query filter = request.knn().get(0).filter().get(0);
+        assertTrue(filter.isBool(), "knn filter 应为 bool 查询");
+        assertNotNull(filter.bool().filter());
+        assertEquals(4, filter.bool().filter().size(), "filter 应含 sessionId/aggregationType/startTime/endTime");
+    }
+
+    @Test
+    @DisplayName("vectorSearch：numCandidates 随 topK 放大（topK*10 超过默认 100）")
+    void vectorSearch_numCandidatesScalesWithTopK() throws Exception {
+        stubExists(true);
+        @SuppressWarnings("unchecked")
+        SearchResponse<SessionMemoryDocument> searchResponse = mock(SearchResponse.class);
+        @SuppressWarnings("unchecked")
+        HitsMetadata<SessionMemoryDocument> hitsMeta = mock(HitsMetadata.class);
+        when(hitsMeta.hits()).thenReturn(List.of());
+        when(searchResponse.hits()).thenReturn(hitsMeta);
+        when(elasticsearchClient.search(any(Function.class), eq(SessionMemoryDocument.class)))
+                .thenReturn(searchResponse);
+
+        client.vectorSearch("100", null, null, null, List.of(0.1f), 20);
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Function<SearchRequest.Builder, ObjectBuilder<SearchRequest>>> captor =
+                ArgumentCaptor.forClass(Function.class);
+        verify(elasticsearchClient).search(captor.capture(), eq(SessionMemoryDocument.class));
+        SearchRequest request = apply(captor.getValue(), new SearchRequest.Builder());
+        assertEquals(200, request.knn().get(0).numCandidates(), "topK=20 时 numCandidates=max(200,100)=200");
+
+        Query filter = request.knn().get(0).filter().get(0);
+        assertTrue(filter.isBool());
+        assertEquals(1, filter.bool().filter().size(), "aggregationType/时间均未传时 filter 仅含 sessionId");
+    }
+
+    @Test
+    @DisplayName("vectorSearch：IOException 包装为 IllegalStateException")
+    void vectorSearch_ioException() throws Exception {
+        stubExists(true);
+        when(elasticsearchClient.search(any(Function.class), eq(SessionMemoryDocument.class)))
+                .thenThrow(new IOException("boom"));
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class,
+                () -> client.vectorSearch("100", null, null, null, List.of(0.1f), 5));
+        assertTrue(ex.getMessage().contains(SessionMemoryESClient.INDEX_NAME));
+    }
+
+    @Test
+    @DisplayName("fullTextSearch：bool 查询 filter 含 sessionId/aggregationType/时间范围，must 含 match(aggregationText)")
+    void fullTextSearch_buildsBoolRequest() throws Exception {
+        stubExists(true);
+        @SuppressWarnings("unchecked")
+        SearchResponse<SessionMemoryDocument> searchResponse = mock(SearchResponse.class);
+        @SuppressWarnings("unchecked")
+        HitsMetadata<SessionMemoryDocument> hitsMeta = mock(HitsMetadata.class);
+        @SuppressWarnings("unchecked")
+        Hit<SessionMemoryDocument> hit = mock(Hit.class);
+        SessionMemoryDocument doc = SessionMemoryDocument.builder().sessionId("100").aggregationText("摘要").build();
+        when(hit.source()).thenReturn(doc);
+        when(hitsMeta.hits()).thenReturn(List.of(hit));
+        when(searchResponse.hits()).thenReturn(hitsMeta);
+        when(elasticsearchClient.search(any(Function.class), eq(SessionMemoryDocument.class)))
+                .thenReturn(searchResponse);
+
+        List<SessionMemoryDocument> result = client.fullTextSearch("100", "DAILY", 1000L, 2000L, "关键字", 10);
+
+        assertEquals(1, result.size());
+        assertSame(doc, result.get(0));
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Function<SearchRequest.Builder, ObjectBuilder<SearchRequest>>> captor =
+                ArgumentCaptor.forClass(Function.class);
+        verify(elasticsearchClient).search(captor.capture(), eq(SessionMemoryDocument.class));
+        SearchRequest request = apply(captor.getValue(), new SearchRequest.Builder());
+        assertEquals(List.of(SessionMemoryESClient.INDEX_NAME), request.index());
+        assertEquals(10, request.size());
+
+        Query query = request.query();
+        assertTrue(query.isBool(), "应为 bool 查询");
+        assertNotNull(query.bool().filter());
+        assertEquals(4, query.bool().filter().size(), "filter 应含 sessionId/aggregationType/startTime/endTime");
+        assertNotNull(query.bool().must());
+        assertEquals(1, query.bool().must().size());
+        Query match = query.bool().must().get(0);
+        assertTrue(match.isMatch(), "must 应为 match 查询");
+        assertEquals("aggregationText", match.match().field());
+        assertEquals("关键字", match.match().query().stringValue());
+    }
+
+    @Test
+    @DisplayName("fullTextSearch：无过滤条件时 filter 仅含 sessionId")
+    void fullTextSearch_minimalFilter() throws Exception {
+        stubExists(true);
+        @SuppressWarnings("unchecked")
+        SearchResponse<SessionMemoryDocument> searchResponse = mock(SearchResponse.class);
+        @SuppressWarnings("unchecked")
+        HitsMetadata<SessionMemoryDocument> hitsMeta = mock(HitsMetadata.class);
+        when(hitsMeta.hits()).thenReturn(List.of());
+        when(searchResponse.hits()).thenReturn(hitsMeta);
+        when(elasticsearchClient.search(any(Function.class), eq(SessionMemoryDocument.class)))
+                .thenReturn(searchResponse);
+
+        client.fullTextSearch("100", null, null, null, "q", 5);
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Function<SearchRequest.Builder, ObjectBuilder<SearchRequest>>> captor =
+                ArgumentCaptor.forClass(Function.class);
+        verify(elasticsearchClient).search(captor.capture(), eq(SessionMemoryDocument.class));
+        SearchRequest request = apply(captor.getValue(), new SearchRequest.Builder());
+        Query query = request.query();
+        assertEquals(1, query.bool().filter().size());
+    }
+
+    @Test
+    @DisplayName("fullTextSearch：IOException 包装为 IllegalStateException")
+    void fullTextSearch_ioException() throws Exception {
+        stubExists(true);
+        when(elasticsearchClient.search(any(Function.class), eq(SessionMemoryDocument.class)))
+                .thenThrow(new IOException("boom"));
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class,
+                () -> client.fullTextSearch("100", null, null, null, "q", 5));
+        assertTrue(ex.getMessage().contains(SessionMemoryESClient.INDEX_NAME));
+    }
+
+    @Test
+    @DisplayName("hybridSearch：合并向量与全文结果，按文档 ID 去重")
+    void hybridSearch_mergesAndDedups() throws Exception {
+        stubExists(true);
+        SessionMemoryDocument docA = SessionMemoryDocument.builder()
+                .sessionId("100").aggregationType(AggregationType.GROUP)
+                .aggregationStartSeq(1).aggregationEndSeq(3).aggregationText("A").build();
+        SessionMemoryDocument docB = SessionMemoryDocument.builder()
+                .sessionId("100").aggregationType(AggregationType.DAILY)
+                .aggregationStartSeq(5).aggregationEndSeq(6).aggregationText("B").build();
+
+        @SuppressWarnings("unchecked")
+        SearchResponse<SessionMemoryDocument> vectorResp = mock(SearchResponse.class);
+        @SuppressWarnings("unchecked")
+        HitsMetadata<SessionMemoryDocument> vectorHits = mock(HitsMetadata.class);
+        @SuppressWarnings("unchecked")
+        Hit<SessionMemoryDocument> vectorHitA = mock(Hit.class);
+        @SuppressWarnings("unchecked")
+        Hit<SessionMemoryDocument> vectorHitB = mock(Hit.class);
+        when(vectorHitA.source()).thenReturn(docA);
+        when(vectorHitB.source()).thenReturn(docB);
+        when(vectorHits.hits()).thenReturn(List.of(vectorHitA, vectorHitB));
+        when(vectorResp.hits()).thenReturn(vectorHits);
+
+        @SuppressWarnings("unchecked")
+        SearchResponse<SessionMemoryDocument> fullResp = mock(SearchResponse.class);
+        @SuppressWarnings("unchecked")
+        HitsMetadata<SessionMemoryDocument> fullHits = mock(HitsMetadata.class);
+        @SuppressWarnings("unchecked")
+        Hit<SessionMemoryDocument> fullHitA = mock(Hit.class);
+        @SuppressWarnings("unchecked")
+        Hit<SessionMemoryDocument> fullHitC = mock(Hit.class);
+        SessionMemoryDocument docC = SessionMemoryDocument.builder()
+                .sessionId("100").aggregationType(AggregationType.GROUP)
+                .aggregationStartSeq(8).aggregationEndSeq(9).aggregationText("C").build();
+        when(fullHitA.source()).thenReturn(docA);
+        when(fullHitC.source()).thenReturn(docC);
+        when(fullHits.hits()).thenReturn(List.of(fullHitA, fullHitC));
+        when(fullResp.hits()).thenReturn(fullHits);
+
+        when(elasticsearchClient.search(any(Function.class), eq(SessionMemoryDocument.class)))
+                .thenReturn(vectorResp, fullResp);
+
+        List<SessionMemoryDocument> result = client.hybridSearch("100", null, null, null,
+                List.of(0.1f), "q", 5);
+
+        // 向量返回 A、B，全文返回 A、C，去重后为 A、B、C
+        assertEquals(3, result.size());
+        verify(elasticsearchClient, times(2)).search(any(Function.class), eq(SessionMemoryDocument.class));
+    }
+
+    @Test
     @DisplayName("updateDocument：索引不存在时先自动创建，按 docId 更新 aggregationText 与 vector")
     void updateDocument_buildsUpdateRequest() throws Exception {
         stubExists(false);

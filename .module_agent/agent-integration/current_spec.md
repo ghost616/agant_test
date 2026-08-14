@@ -59,6 +59,12 @@
 - **AzureResponsesInvoker**：Azure OpenAI 平台 Responses API 调用器，继承 OpenAIResponsesInvoker；覆写 buildResponsesUrl=mountResponsesResourceUrl 使用 Azure 部署资源路径 + api-version，invoke/invokeStream/verify 使用 api-key header 认证
 - **CustomResponsesInvoker**：自定义平台 Responses API 调用器，继承 OpenAIResponsesInvoker，无额外覆写
 - **OpenAIResponsesInvoker.parseStreamEvent 新增事件**：response.reasoning_text.delta 解析 delta 写入 ChatChunk.reasoning；response.custom_tool_call.in_progress/done 解析 item_id/output_index/input 构建 ChatChunk.CustomToolCall 写入 customToolCall
+
+- **MemoryQueryProvider**：AI 记忆查询 Provider 接口，由外部模块提供实现。定义两个方法：getMemories(sessionId, searchType, memoryType, startTime, endTime, query) 按搜索类型与过滤条件查询记忆返回 List<MemoryResult>；getMessageSeqsByRole(sessionId, List<SeqRange> ranges) 按序号区间列表批量查询消息序号并按角色分类返回 MessageSeqByRole（合并去重后的 user/tool/assistant 序号列表，原单区间签名已改为批量 List<SeqRange>，消除 N+1 查询）。
+- **MemoryResult**：AI 记忆查询结果数据类，record 封装 content/startSeq/endSeq/memoryType。
+- **MessageSeqByRole**：消息序号按角色分类的结果数据类，record 封装 userSeqList/toolSeqList/assistantSeqList 三个序号列表。
+- **SeqRange**：消息序号区间数据类，record 封装 startSeq/endSeq，用于批量消息序号查询。
+- **MemoryQueryTool**（default_tool_memory_search）：继承 CustomToolInvoker（非 SystemTool），无 @Component 注解，构造函数传参（ToolConfigDTO + MemoryQueryProvider），提供静态 createToolConfig() 返回 ToolConfigDTO（id=null, toolType=CUSTOM）。参数 query(必填)/searchType(必填 enum VECTOR/FULLTEXT/HYBRID)/memoryType(可选 GROUP=分类 DAILY=按天)/startTime、endTime(可选毫秒时间戳)。execute 通过 ctx.getSessionId() 获取会话 ID，调用 provider.getMemories 获取记忆结果，buildOutput 收集所有结果序号区间构造 List<SeqRange> 后在循环外仅一次调用 provider.getMessageSeqsByRole(sessionId, ranges) 批量查询，再合并去重得到 user/tool/assistant 序号列表，返回 {results:[{content,startSeq,endSeq,memoryType}], userSeqList, toolSeqList, assistantSeqList} JSON。参数缺失/无效返回 {"status":"error","errMsg":...}，无匹配结果返回空列表（非错误）。错误 JSON 序列化使用 JsonMapper。
 ## 工厂与组装
 
 - **DefaultModelInvokerFactory**：根据平台类型（OPENAI/ANTHROPIC/AZURE/OLLAMA/KIMI/VOLCENGINE/DEEPSEEK/CUSTOM/SILICONFLOW）创建对应 Invoker；createChatCompletionsInvoker 新增 SILICONFLOW case 分支创建 SiliconFlowInvoker；supportsResponses 中不包含 SILICONFLOW（SILICONFLOW 仅支持 chat-completions，不支持 Responses API，与前端 RESPONSES_SUPPORTED 保持一致）
