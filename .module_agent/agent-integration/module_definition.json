@@ -188,6 +188,22 @@
     {
       "path": "agent-integration/src/main/java/com/ghost616/agentinteg/memory/SeqRange.java",
       "description": "消息序号区间数据类，record 封装 startSeq/endSeq 两个字段，用于批量消息序号查询。"
+    },
+    {
+      "path": "agent-integration/src/main/java/com/ghost616/agentinteg/history/HistoryMessageQueryProvider.java",
+      "description": "历史消息查询 Provider 接口，由外部模块提供历史消息的查询能力。定义方法 getMessagesBySeqs(sessionId, seqs, includeReasoning)：按消息序号列表查询会话历史消息，includeReasoning 控制是否返回推理内容，返回 List<HistoryMessageItem>。"
+    },
+    {
+      "path": "agent-integration/src/main/java/com/ghost616/agentinteg/history/HistoryMessageItem.java",
+      "description": "历史消息项数据类，record 封装 role/content/reasoning/toolCalls(工具调用列表)/toolResult(工具结果)，嵌套 HistoryToolCallItem(toolCallId/toolCallName/toolCallArguments) 与 HistoryToolResultItem(toolCallId/toolCallName，结果内容即消息 content)。"
+    },
+    {
+      "path": "agent-integration/src/main/java/com/ghost616/agentinteg/tool/HistoryQueryTool.java",
+      "description": "历史消息查询工具（工具名 default_tool_history_query），继承 CustomToolInvoker（非 SystemTool），无 @Component 注解。静态 createToolConfig() 返回 ToolConfigDTO（id=null, toolType=CUSTOM, name=default_tool_history_query，描述与参数 schema：seqs 必填 integer 数组、includeReasoning 可选 boolean 默认 false）。构造函数传入 ToolConfigDTO 与 HistoryMessageQueryProvider。execute 通过 ctx.getSessionId() 获取会话 ID，解析 seqs 与 includeReasoning，调用 provider.getMessagesBySeqs 获取历史消息，返回 {\"messages\":[{role,content,reasoning,toolCalls,toolResult}]} JSON，使用 JsonMapper。seqs 缺失/空/含非整数时返回 status=error JSON，无匹配消息返回空列表（非错误）。"
+    },
+    {
+      "path": "agent-integration/src/test/java/com/ghost616/agentinteg/tool/HistoryQueryToolTest.java",
+      "description": "HistoryQueryTool 单元测试，覆盖 createToolConfig（CUSTOM 类型、工具名、参数 schema）、execute 正常路径（seqs/includeReasoning 透传、reasoning 按需返回、toolCalls/toolResult 序列化）、includeReasoning 默认 false 不返回 reasoning、无匹配消息返回空列表、provider 返回 null 返回空列表、缺少/空/含非整数 seqs 的错误场景、无法获取会话 ID、provider 异常场景。"
     }
   ]
 }

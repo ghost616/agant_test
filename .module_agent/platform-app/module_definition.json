@@ -79,7 +79,7 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultToolDataProvider.java",
-      "description": "默认工具数据提供者实现，实现 ToolDataProvider 接口，负责工具和技能工具查询（getSessionToolIds/getToolById/getSkillToolIds）：getSessionToolIds 在 session 对应 agent memoryEnabled=true 时注入 default_tool_memory_search 工具（SessionAuthType.ALL）；getToolById/getCustomInvoker 支持记忆搜索工具（返回 MemoryQueryTool.createToolConfig 与 MemoryQueryTool 实例）及知识库工具；自定义工具调用器分发（getCustomInvoker，CUSTOM+BROWSER 返回 BrowserToolInvoker）；内置工具查询（getBuiltinTools：根据模型配置的 platformType/requestType 判断是否返回 web_search）"
+      "description": "默认工具数据提供者实现，实现 ToolDataProvider 接口，负责工具和技能工具查询（getSessionToolIds/getToolById/getSkillToolIds）：getSessionToolIds 在 session 对应 agent memoryEnabled=true 时注入 default_tool_memory_search 与 default_tool_history_query 工具（SessionAuthType.ALL）；getToolById/getCustomInvoker 支持记忆搜索工具（MemoryQueryTool）与历史查询工具（HistoryQueryTool）及知识库工具；自定义工具调用器分发（getCustomInvoker，CUSTOM+BROWSER 返回 BrowserToolInvoker）；内置工具查询（getBuiltinTools：根据模型配置的 platformType/requestType 判断是否返回 web_search）"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/systemtest/SystemTestSubSessionTool.java",
@@ -476,6 +476,10 @@
     {
       "path": "platform-app/src/test/java/com/ghost616/platform/service/memory/MemoryQueryProviderImplTest.java",
       "description": "MemoryQueryProviderImpl 单元测试，覆盖 getMemories（参数校验、VECTOR/FULLTEXT/HYBRID 搜索分派、向量化链路逐级缺失返回空向量回退、null 序号映射为 0、空结果返回空列表）与 getMessageSeqsByRole（批量区间一次 SQL 查询、按 role 分类并去重、跳过 sequenceNum 为 null 的消息、空结果返回空三列表）"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/service/history/HistoryMessageQueryProviderImpl.java",
+      "description": "历史消息查询 Provider 实现（实现 agent-integration 的 HistoryMessageQueryProvider 接口，@Component）：getMessagesBySeqs 用 MessageMapper 按 sessionId 且 sequenceNum in seqs 查询有效消息（过滤 rollback、按 sequenceNum 升序），用 MessageToolCallMapper 按 messageId 查询工具调用记录组装——assistant 消息的工具调用（type=function 的 toolCallId/toolCallName/toolCallArguments）、tool 消息的工具结果（toolCallId/toolCallName，content 为消息内容）；includeReasoning=false 时不返回 reasoning"
     }
   ]
 }

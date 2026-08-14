@@ -10,10 +10,12 @@ import com.ghost616.agentbase.service.agent.ToolDataProvider.SessionToolInfo;
 import com.ghost616.agentbase.service.agent.ToolDataProvider.SkillToolInfo;
 import com.ghost616.agentbase.service.agent.invoker.CustomToolInvoker;
 import com.ghost616.agentinteg.knowledge.KnowledgeBaseQueryProvider;
+import com.ghost616.agentinteg.history.HistoryMessageQueryProvider;
 import com.ghost616.agentinteg.memory.MemoryQueryProvider;
 import com.ghost616.agentinteg.model.PlatformType;
 import com.ghost616.agentinteg.tool.BrowserToolInvoker;
 import com.ghost616.agentinteg.tool.BrowserToolProvider;
+import com.ghost616.agentinteg.tool.HistoryQueryTool;
 import com.ghost616.agentinteg.tool.KnowledgeBaseInfoTool;
 import com.ghost616.agentinteg.tool.KnowledgeFileChunkTool;
 import com.ghost616.agentinteg.tool.KnowledgeFileInfoTool;
@@ -63,6 +65,8 @@ public class DefaultToolDataProvider implements ToolDataProvider {
 
     private static final String MEMORY_TOOL_NAME = MemoryQueryTool.TOOL_NAME;
 
+    private static final String HISTORY_TOOL_NAME = HistoryQueryTool.TOOL_NAME;
+
     private final SessionToolMapper sessionToolMapper;
     private final SessionMapper sessionMapper;
     private final AgentSkillMapper agentSkillMapper;
@@ -75,6 +79,7 @@ public class DefaultToolDataProvider implements ToolDataProvider {
     private final AgentKnowledgeBaseMapper agentKnowledgeBaseMapper;
     private final AgentConfigMapper agentConfigMapper;
     private final ObjectProvider<MemoryQueryProvider> memoryQueryProvider;
+    private final ObjectProvider<HistoryMessageQueryProvider> historyMessageQueryProvider;
 
     @Override
     public List<SessionToolInfo> getSessionToolIds(String sessionId) {
@@ -103,6 +108,7 @@ public class DefaultToolDataProvider implements ToolDataProvider {
                 AgentConfig agentConfig = agentConfigMapper.selectById(session.getAgentId());
                 if (agentConfig != null && Boolean.TRUE.equals(agentConfig.getMemoryEnabled())) {
                     result.add(new SessionToolInfo(MEMORY_TOOL_NAME, SessionAuthType.ALL));
+                    result.add(new SessionToolInfo(HISTORY_TOOL_NAME, SessionAuthType.ALL));
                 }
             }
         }
@@ -117,6 +123,9 @@ public class DefaultToolDataProvider implements ToolDataProvider {
         if (MEMORY_TOOL_NAME.equals(toolId)) {
             return getMemoryToolConfig(toolId);
         }
+        if (HISTORY_TOOL_NAME.equals(toolId)) {
+            return getHistoryToolConfig(toolId);
+        }
         Long tid = IdConverter.parse(toolId);
         return toolConfigService.getById(tid);
     }
@@ -128,6 +137,9 @@ public class DefaultToolDataProvider implements ToolDataProvider {
         }
         if (MEMORY_TOOL_NAME.equals(toolConfig.getId())) {
             return createMemoryTool(toolConfig);
+        }
+        if (HISTORY_TOOL_NAME.equals(toolConfig.getId())) {
+            return createHistoryTool(toolConfig);
         }
         ToolDetailDTO detail = toolConfigService.getById(IdConverter.parse(toolConfig.getId()));
         if (toolConfig.getToolType() == ToolType.CUSTOM && detail.getSubToolType() == SubToolType.BROWSER) {
@@ -148,6 +160,17 @@ public class DefaultToolDataProvider implements ToolDataProvider {
     private CustomToolInvoker createMemoryTool(ToolConfigDTO toolConfig) {
         MemoryQueryProvider provider = memoryQueryProvider.getObject();
         return new MemoryQueryTool(toolConfig, provider);
+    }
+
+    private ToolConfigDTO getHistoryToolConfig(String toolName) {
+        ToolConfigDTO config = HistoryQueryTool.createToolConfig();
+        config.setId(toolName);
+        return config;
+    }
+
+    private CustomToolInvoker createHistoryTool(ToolConfigDTO toolConfig) {
+        HistoryMessageQueryProvider provider = historyMessageQueryProvider.getObject();
+        return new HistoryQueryTool(toolConfig, provider);
     }
 
     private ToolConfigDTO getKnowledgeToolConfig(String toolName) {

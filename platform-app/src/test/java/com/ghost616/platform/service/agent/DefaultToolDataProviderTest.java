@@ -6,6 +6,7 @@ import com.ghost616.agentbase.enums.SessionAuthType;
 import com.ghost616.agentbase.enums.ToolType;
 import com.ghost616.agentbase.service.agent.invoker.CustomToolInvoker;
 import com.ghost616.agentbase.service.agent.ToolDataProvider.SessionToolInfo;
+import com.ghost616.agentinteg.history.HistoryMessageQueryProvider;
 import com.ghost616.agentinteg.knowledge.KnowledgeBaseQueryProvider;
 import com.ghost616.agentinteg.knowledge.SearchType;
 import com.ghost616.agentinteg.knowledge.TextChunkWithFile;
@@ -13,6 +14,7 @@ import com.ghost616.agentinteg.model.PlatformType;
 import com.ghost616.agentinteg.memory.MemoryQueryProvider;
 import com.ghost616.agentinteg.tool.BrowserToolInvoker;
 import com.ghost616.agentinteg.tool.BrowserToolProvider;
+import com.ghost616.agentinteg.tool.HistoryQueryTool;
 import com.ghost616.agentinteg.tool.KnowledgeBaseInfoTool;
 import com.ghost616.agentinteg.tool.KnowledgeFileChunkTool;
 import com.ghost616.agentinteg.tool.KnowledgeFileInfoTool;
@@ -67,6 +69,8 @@ class DefaultToolDataProviderTest {
     @Mock private AgentConfigMapper agentConfigMapper;
     @Mock private MemoryQueryProvider memoryQueryProvider;
     @Mock private ObjectProvider<MemoryQueryProvider> memoryQueryProviderProvider;
+    @Mock private HistoryMessageQueryProvider historyMessageQueryProvider;
+    @Mock private ObjectProvider<HistoryMessageQueryProvider> historyMessageQueryProviderProvider;
 
     private DefaultToolDataProvider provider;
 
@@ -75,7 +79,8 @@ class DefaultToolDataProviderTest {
         provider = new DefaultToolDataProvider(sessionToolMapper, sessionMapper,
                 agentSkillMapper, skillToolMapper, sessionSkillMapper, toolConfigService,
                 browserToolCallback, modelConfigMapper, knowledgeBaseQueryProviderProvider,
-                agentKnowledgeBaseMapper, agentConfigMapper, memoryQueryProviderProvider);
+                agentKnowledgeBaseMapper, agentConfigMapper, memoryQueryProviderProvider,
+                historyMessageQueryProviderProvider);
     }
 
     private SessionTool createSessionTool(Long toolId, SessionAuthType auth) {
@@ -184,7 +189,7 @@ class DefaultToolDataProviderTest {
         }
 
         @Test
-        @DisplayName("session 对应 agent 的 memoryEnabled=true 时注入 default_tool_memory_search 工具")
+        @DisplayName("session 对应 agent 的 memoryEnabled=true 时注入 default_tool_memory_search 与 default_tool_history_query 工具")
         void sessionWithMemoryEnabled_shouldIncludeMemorySearchTool() {
             when(sessionToolMapper.selectList(any())).thenReturn(List.of());
             when(sessionMapper.selectById(1L)).thenReturn(createSession(10L));
@@ -193,13 +198,14 @@ class DefaultToolDataProviderTest {
 
             List<SessionToolInfo> result = provider.getSessionToolIds("1");
 
-            assertEquals(1, result.size());
-            assertEquals(MemoryQueryTool.TOOL_NAME, result.get(0).toolId());
-            assertEquals(SessionAuthType.ALL, result.get(0).sessionAuth());
+            assertEquals(2, result.size());
+            assertTrue(result.stream().anyMatch(i -> MemoryQueryTool.TOOL_NAME.equals(i.toolId())));
+            assertTrue(result.stream().anyMatch(i -> HistoryQueryTool.TOOL_NAME.equals(i.toolId())));
+            assertTrue(result.stream().allMatch(i -> SessionAuthType.ALL == i.sessionAuth()));
         }
 
         @Test
-        @DisplayName("session 对应 agent 的 memoryEnabled=false 时不注入记忆搜索工具")
+        @DisplayName("session 对应 agent 的 memoryEnabled=false 时不注入记忆搜索与历史查询工具")
         void sessionWithMemoryDisabled_shouldNotIncludeMemorySearchTool() {
             when(sessionToolMapper.selectList(any())).thenReturn(List.of());
             when(sessionMapper.selectById(1L)).thenReturn(createSession(10L));
@@ -212,7 +218,7 @@ class DefaultToolDataProviderTest {
         }
 
         @Test
-        @DisplayName("session 有知识库绑定且 memoryEnabled=true 时同时注入知识库工具与记忆搜索工具")
+        @DisplayName("session 有知识库绑定且 memoryEnabled=true 时同时注入知识库工具、记忆搜索与历史查询工具")
         void sessionWithKnowledgeAndMemory_shouldIncludeBothToolKinds() {
             when(sessionToolMapper.selectList(any())).thenReturn(List.of());
             when(sessionMapper.selectById(1L)).thenReturn(createSession(10L));
@@ -222,8 +228,9 @@ class DefaultToolDataProviderTest {
 
             List<SessionToolInfo> result = provider.getSessionToolIds("1");
 
-            assertEquals(5, result.size());
+            assertEquals(6, result.size());
             assertTrue(result.stream().anyMatch(i -> MemoryQueryTool.TOOL_NAME.equals(i.toolId())));
+            assertTrue(result.stream().anyMatch(i -> HistoryQueryTool.TOOL_NAME.equals(i.toolId())));
             assertTrue(result.stream().allMatch(i -> SessionAuthType.ALL == i.sessionAuth()));
         }
     }
@@ -257,6 +264,22 @@ class DefaultToolDataProviderTest {
             assertNotNull(result);
             assertEquals(MemoryQueryTool.TOOL_NAME, result.getId());
             assertEquals(MemoryQueryTool.TOOL_NAME, result.getName());
+            assertEquals(ToolType.CUSTOM, result.getToolType());
+            assertNotNull(result.getDescription());
+            assertFalse(result.getDescription().isBlank());
+            assertNotNull(result.getParameterSchema());
+            assertFalse(result.getParameterSchema().isBlank());
+            verify(toolConfigService, never()).getById(anyLong());
+        }
+
+        @Test
+        @DisplayName("传入历史查询工具名返回 HistoryQueryTool 工具配置（id=工具名，toolType=CUSTOM）")
+        void historyToolName_shouldReturnHistoryToolConfig() {
+            ToolConfigDTO result = provider.getToolById(HistoryQueryTool.TOOL_NAME);
+
+            assertNotNull(result);
+            assertEquals(HistoryQueryTool.TOOL_NAME, result.getId());
+            assertEquals(HistoryQueryTool.TOOL_NAME, result.getName());
             assertEquals(ToolType.CUSTOM, result.getToolType());
             assertNotNull(result.getDescription());
             assertFalse(result.getDescription().isBlank());
@@ -446,6 +469,22 @@ class DefaultToolDataProviderTest {
             CustomToolInvoker result = provider.getCustomInvoker(config);
 
             assertInstanceOf(MemoryQueryTool.class, result);
+            verify(toolConfigService, never()).getById(anyLong());
+        }
+
+        @Test
+        @DisplayName("历史查询工具配置返回 HistoryQueryTool 实例")
+        void historyTool_shouldReturnHistoryQueryTool() {
+            ToolConfigDTO config = ToolConfigDTO.builder()
+                    .id(HistoryQueryTool.TOOL_NAME)
+                    .name(HistoryQueryTool.TOOL_NAME)
+                    .toolType(ToolType.CUSTOM)
+                    .build();
+            when(historyMessageQueryProviderProvider.getObject()).thenReturn(historyMessageQueryProvider);
+
+            CustomToolInvoker result = provider.getCustomInvoker(config);
+
+            assertInstanceOf(HistoryQueryTool.class, result);
             verify(toolConfigService, never()).getById(anyLong());
         }
 
