@@ -20,10 +20,10 @@ public class BrowserToolInvoker extends CustomToolInvoker {
     private static final JsonMapper JSON_MAPPER = JsonMapper.builder().build();
     private static final String DEFAULT_JS_PATH = "browser/browser_tool_executor.js";
 
-    private final BrowserToolCallback callback;
+    private final BrowserToolProvider callback;
     private static String jsContent;
 
-    public BrowserToolInvoker(ToolConfigDTO toolConfig, BrowserToolCallback callback) {
+    public BrowserToolInvoker(ToolConfigDTO toolConfig, BrowserToolProvider callback) {
         super(toolConfig);
         this.callback = callback;
     }

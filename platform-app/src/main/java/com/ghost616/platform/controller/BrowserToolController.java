@@ -5,7 +5,7 @@ import com.ghost616.platform.dto.ApiResponse;
 import com.ghost616.platform.dto.browser.BrowserToolTask;
 import com.ghost616.platform.dto.context.PassResultRequest;
 import com.ghost616.platform.dto.tool.ToolDetailDTO;
-import com.ghost616.platform.service.browser.BrowserToolCallbackImpl;
+import com.ghost616.platform.service.browser.DefaultBrowserToolProvider;
 import com.ghost616.platform.service.tool.ToolConfigService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,7 +29,7 @@ public class BrowserToolController {
     private static volatile String cachedExtensionJs;
 
     private final ToolConfigService toolConfigService;
-    private final BrowserToolCallbackImpl browserToolCallback;
+    private final DefaultBrowserToolProvider browserToolCallback;
 
     @PostMapping("/pass-result")
     public ApiResponse<Void> passResult(@RequestBody PassResultRequest body) {

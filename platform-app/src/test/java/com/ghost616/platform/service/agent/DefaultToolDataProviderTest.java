@@ -10,8 +10,8 @@ import com.ghost616.agentinteg.knowledge.KnowledgeBaseQueryProvider;
 import com.ghost616.agentinteg.knowledge.SearchType;
 import com.ghost616.agentinteg.knowledge.TextChunkWithFile;
 import com.ghost616.agentinteg.model.PlatformType;
-import com.ghost616.agentinteg.tool.BrowserToolCallback;
 import com.ghost616.agentinteg.tool.BrowserToolInvoker;
+import com.ghost616.agentinteg.tool.BrowserToolProvider;
 import com.ghost616.agentinteg.tool.KnowledgeBaseInfoTool;
 import com.ghost616.agentinteg.tool.KnowledgeFileChunkTool;
 import com.ghost616.agentinteg.tool.KnowledgeFileInfoTool;
@@ -55,7 +55,7 @@ class DefaultToolDataProviderTest {
     @Mock private SkillToolMapper skillToolMapper;
     @Mock private SessionSkillMapper sessionSkillMapper;
     @Mock private ToolConfigService toolConfigService;
-    @Mock private BrowserToolCallback browserToolCallback;
+    @Mock private BrowserToolProvider browserToolCallback;
     @Mock private ModelConfigMapper modelConfigMapper;
     @Mock private KnowledgeBaseQueryProvider knowledgeBaseQueryProvider;
     @Mock private ObjectProvider<KnowledgeBaseQueryProvider> knowledgeBaseQueryProviderProvider;

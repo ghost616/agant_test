@@ -143,11 +143,7 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/dto/browser/BrowserToolTask.java",
-      "description": "浏览器工具任务数据类，封装 sessionId/toolId/toolName/toolParams 字符串字段和 CompletableFuture<String> toolResult，用于 BrowserToolCallbackImpl 的任务管理与结果传递"
-    },
-    {
-      "path": "platform-app/src/main/java/com/ghost616/platform/service/browser/BrowserToolCallbackImpl.java",
-      "description": "BrowserToolCallback 接口实现，@Component，使用 ConcurrentHashMap 管理 BrowserToolTask，execute 方法阻塞等待 toolResult.complete() 后返回结果"
+      "description": "浏览器工具任务数据类，封装 sessionId/toolId/toolName/toolParams 字符串字段和 CompletableFuture<String> toolResult，用于 DefaultBrowserToolProvider 的任务管理与结果传递"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/util/IdConverter.java",
@@ -468,6 +464,10 @@
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/dto/memory/MemoryUpdateRequest.java",
       "description": "聚合文本保存（重新向量化+更新ES）请求 DTO，包含 docId/text 字段"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/service/browser/DefaultBrowserToolProvider.java",
+      "description": "DefaultBrowserToolProvider 实现（实现 agent-integration 的 BrowserToolProvider 接口，@Component），使用 ConcurrentHashMap 管理 BrowserToolTask，execute 方法阻塞等待 toolResult.complete() 后返回结果"
     }
   ]
 }

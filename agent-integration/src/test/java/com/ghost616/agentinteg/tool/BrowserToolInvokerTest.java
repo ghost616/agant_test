@@ -16,7 +16,7 @@ import static org.mockito.Mockito.*;
 class BrowserToolInvokerTest {
 
     @Mock
-    private BrowserToolCallback callback;
+    private BrowserToolProvider callback;
 
     @Mock
     private AgentExecutionContext ctx;

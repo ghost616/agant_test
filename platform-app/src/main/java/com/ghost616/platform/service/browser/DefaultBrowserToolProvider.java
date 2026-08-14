@@ -1,6 +1,6 @@
 package com.ghost616.platform.service.browser;
 
-import com.ghost616.agentinteg.tool.BrowserToolCallback;
+import com.ghost616.agentinteg.tool.BrowserToolProvider;
 import com.ghost616.platform.dto.browser.BrowserToolTask;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -13,7 +13,7 @@ import java.util.concurrent.TimeoutException;
 
 @Slf4j
 @Component
-public class BrowserToolCallbackImpl implements BrowserToolCallback {
+public class DefaultBrowserToolProvider implements BrowserToolProvider {
 
     private final ConcurrentHashMap<String, BrowserToolTask> taskMap = new ConcurrentHashMap<>();
 
@@ -35,14 +35,14 @@ public class BrowserToolCallbackImpl implements BrowserToolCallback {
         try {
             return task.getToolResult().get(600, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
-            log.warn("BrowserToolCallback execute interrupted for sessionId={} toolConfigId={}", sessionId, toolConfigId, e);
+            log.warn("DefaultBrowserToolProvider execute interrupted for sessionId={} toolConfigId={}", sessionId, toolConfigId, e);
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
         } catch (ExecutionException e) {
-            log.warn("BrowserToolCallback execute failed for sessionId={} toolConfigId={}", sessionId, toolConfigId, e);
+            log.warn("DefaultBrowserToolProvider execute failed for sessionId={} toolConfigId={}", sessionId, toolConfigId, e);
             throw new RuntimeException(e);
         } catch (TimeoutException e) {
-            log.warn("BrowserToolCallback execute timed out for sessionId={} toolConfigId={}", sessionId, toolConfigId, e);
+            log.warn("DefaultBrowserToolProvider execute timed out for sessionId={} toolConfigId={}", sessionId, toolConfigId, e);
             throw new RuntimeException(e);
         } finally {
             taskMap.remove(key);

@@ -45,8 +45,8 @@
 - **OllamaInvoker.parseStreamChunk**：在 done=true 的最终 chunk 中解析 eval_count/prompt_eval_count，设置到 ChatChunk.usage
 
 ### 浏览器工具（Browser Tool）
-- **BrowserToolCallback**：函数式接口，定义 `execute(String sessionId, String toolId, String toolName, String toolParams)` 方法，用于浏览器工具的回调执行
-- **BrowserToolInvoker**：继承 CustomToolInvoker 的自定义工具调用器。构造函数注入 BrowserToolCallback 回调，execute() 从 AgentExecutionContext 获取 sessionId、从 ToolConfigDTO 获取 toolId/toolName，将参数 JSON 传递给回调执行；提供 loadJsContent() 方法从 classpath 加载 browser_tool_executor.js、getJsContent() 返回缓存的 JS 内容
+- **BrowserToolProvider**：函数式接口（原 BrowserToolCallback，已重命名），定义 `execute(String sessionId, String toolConfigId, String toolName, String toolParams)` 方法，用于浏览器工具的回调执行
+- **BrowserToolInvoker**：继承 CustomToolInvoker 的自定义工具调用器。构造函数注入 BrowserToolProvider 回调，execute() 从 AgentExecutionContext 获取 sessionId、从 ToolConfigDTO 获取 toolId/toolName，将参数 JSON 传递给回调执行；提供 loadJsContent() 方法从 classpath 加载 browser_tool_executor.js、getJsContent() 返回缓存的 JS 内容
 - **browser_tool_executor.js**：JS 工具执行引擎，定义 AgentExecutionContext 对象、ToolFunction 工具函数定义、ToolManager 工具函数管理器（按 toolName 绑定/添加/移除/get）、四个工具执行函数：getAgentExecutionContext 获取上下文、getToolResult 从管理器获取工具执行结果、passToolResult 回传结果给宿主、execute 主执行入口
 
 - **OpenAIResponsesInvoker**：OpenAI Responses API 模型调用器，实现 ModelInvoker 接口，使用 /v1/responses 端点。同步 invoke 使用 instructions+input 请求格式，解析 output 数组提取 message content（output_text）与 function_call 到 ChatResponse（含 responseId 供多轮续接）；流式 invokeStream 解析 SSE 事件：response.output_text.delta→delta、response.function_call_arguments.delta→toolCalls（index+arguments）、response.web_search_call.in_progress/searching/completed→webSearchCall（completed 时从 results 数组解析 title/url/snippet）、response.completed→finishReason+usage；verify() 使用 GET /v1/models；toToolDefinition() 与 OpenAIInvoker 一致。input 消息转换：system 跳过、user/assistant 普通文本、assistant 工具调用转为 content 中的 function_call 部件、tool 角色转为 function_call_output

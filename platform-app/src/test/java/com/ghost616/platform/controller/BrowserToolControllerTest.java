@@ -4,7 +4,7 @@ import com.ghost616.platform.dto.ApiResponse;
 import com.ghost616.platform.dto.browser.BrowserToolTask;
 import com.ghost616.platform.dto.context.PassResultRequest;
 import com.ghost616.platform.dto.tool.ToolDetailDTO;
-import com.ghost616.platform.service.browser.BrowserToolCallbackImpl;
+import com.ghost616.platform.service.browser.DefaultBrowserToolProvider;
 import com.ghost616.platform.service.tool.ToolConfigService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -22,7 +22,7 @@ class BrowserToolControllerTest {
     private ToolConfigService toolConfigService;
 
     @Mock
-    private BrowserToolCallbackImpl browserToolCallback;
+    private DefaultBrowserToolProvider browserToolCallback;
 
     @InjectMocks
     private BrowserToolController controller;

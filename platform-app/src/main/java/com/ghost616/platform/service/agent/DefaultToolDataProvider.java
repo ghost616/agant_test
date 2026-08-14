@@ -11,8 +11,8 @@ import com.ghost616.agentbase.service.agent.ToolDataProvider.SkillToolInfo;
 import com.ghost616.agentbase.service.agent.invoker.CustomToolInvoker;
 import com.ghost616.agentinteg.knowledge.KnowledgeBaseQueryProvider;
 import com.ghost616.agentinteg.model.PlatformType;
-import com.ghost616.agentinteg.tool.BrowserToolCallback;
 import com.ghost616.agentinteg.tool.BrowserToolInvoker;
+import com.ghost616.agentinteg.tool.BrowserToolProvider;
 import com.ghost616.agentinteg.tool.KnowledgeBaseInfoTool;
 import com.ghost616.agentinteg.tool.KnowledgeFileChunkTool;
 import com.ghost616.agentinteg.tool.KnowledgeFileInfoTool;
@@ -63,7 +63,7 @@ public class DefaultToolDataProvider implements ToolDataProvider {
     private final SkillToolMapper skillToolMapper;
     private final SessionSkillMapper sessionSkillMapper;
     private final ToolConfigService toolConfigService;
-    private final BrowserToolCallback browserToolCallback;
+    private final BrowserToolProvider browserToolCallback;
     private final ModelConfigMapper modelConfigMapper;
     private final ObjectProvider<KnowledgeBaseQueryProvider> knowledgeBaseQueryProvider;
     private final AgentKnowledgeBaseMapper agentKnowledgeBaseMapper;
