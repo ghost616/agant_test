@@ -23,11 +23,11 @@
     },
     {
       "path": "src/App.tsx",
-      "description": "路由与 antd Layout 布局（Sider/Header/Content），含模型管理和工具管理菜单及路由，根路由重定向到模型管理"
+      "description": "路由与 antd Layout 布局（Sider/Header/Content），含模型管理、工具管理、用户管理等菜单及路由，根路由重定向到模型管理；/login 路由渲染独立全屏登录页（不套用主界面 Layout），/users 路由渲染用户管理页"
     },
     {
       "path": "src/services/api.ts",
-      "description": "Axios 实例 baseURL=/api，请求/响应拦截器统一错误处理"
+      "description": "Axios 实例 baseURL=/api，请求/响应拦截器统一错误处理；响应拦截器命中业务错误码 USER-NOT-LOGIN 时清理 localStorage 登录用户并跳转 /login（成功与错误响应两分支均处理）"
     },
     {
       "path": "src/types/common.ts",
@@ -64,6 +64,22 @@
     {
       "path": "index.html",
       "description": "前端应用入口 HTML 页面，定义页面标题（Agent 低代码平台）、加载 React 入口脚本 src/main.tsx"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/util/PasswordUtil.java",
+      "description": "密码工具类（final + 私有构造器），提供基于国密 SM3 的密码加密方法 encrypt(明文密码, 用户ID, 创建时间)，加密公式为 SM3( MD5(明文密码+用户ID) + 创建时间毫秒时间戳 )，MD5 使用 JDK MessageDigest、SM3 使用 hutool SmUtil，输出 64 位十六进制摘要；参数为空时抛 IllegalArgumentException，MD5 算法不可用时抛 IllegalStateException"
+    },
+    {
+      "description": "鉴权拦截器（HandlerInterceptor），请求进入控制器前从 Cookie 读取会话 ID（SESSION_ID）调用 UserSessionManager.getSession 查询会话（同步刷新最后访问时间）并写入 UserContext 线程上下文，afterCompletion 清理线程上下文防止会话串号；仅写入上下文不阻断请求，登录与否由 AuthAspect 校验，登录接口在 WebConfig 中放行",
+      "path": "platform-app/src/main/java/com/ghost616/platform/config/AuthInterceptor.java"
+    },
+    {
+      "description": "控制器鉴权切面（@Aspect + @Around 拦截 com.ghost616.platform.controller 包所有方法）：无用户会话抛 BusinessException(USER_NOT_LOGIN 请登录)，用户管理接口 /api/users/** 校验用户类型为管理员否则抛 USER_FORBIDDEN 无权限，登录接口 POST /api/auth/login 与 OPTIONS 预检请求放行",
+      "path": "platform-app/src/main/java/com/ghost616/platform/config/AuthAspect.java"
+    },
+    {
+      "description": "Web MVC 全局配置：CORS 映射（允许跨域、携带凭据）与鉴权拦截器 AuthInterceptor 注册（拦截 /api/**，排除 /api/auth/login 登录接口）",
+      "path": "platform-app/src/main/java/com/ghost616/platform/config/WebConfig.java"
     }
   ]
 }

@@ -13,7 +13,7 @@ class ErrorCodeTest {
     @Test
     void enumCountAndCodes() {
         ErrorCode[] values = ErrorCode.values();
-        assertEquals(31, values.length);
+        assertEquals(37, values.length);
         Map<String, String> expected = new LinkedHashMap<>();
         expected.put("SYSTEM_ERROR", "SYS-001");
         expected.put("PARAM_INVALID", "SYS-002");
@@ -34,6 +34,12 @@ class ErrorCodeTest {
         expected.put("SESSION_NO_USER_MESSAGE", "SESSION-003");
         expected.put("SUB_SESSION_DATA_NOT_FOUND", "SESSION-004");
         expected.put("CHILD_SESSION_NO_MESSAGES", "SESSION-005");
+        expected.put("USER_NOT_LOGIN", "USER-NOT-LOGIN");
+        expected.put("USER_FORBIDDEN", "USER-FORBIDDEN");
+        expected.put("USER_ALREADY_EXISTS", "USER-ALREADY-EXISTS");
+        expected.put("USER_NOT_FOUND", "USER-NOT-FOUND");
+        expected.put("USER_LOGIN_FAILED", "USER-LOGIN-FAILED");
+        expected.put("USER_DISABLED", "USER-DISABLED");
         expected.put("EVALUATION_NOT_FOUND", "EVAL-001");
         expected.put("EVALUATION_ALREADY_EXISTS", "EVAL-002");
         expected.put("EVALUATION_BENCHMARK_NO_USER_MESSAGE", "EVAL-BENCH-001");

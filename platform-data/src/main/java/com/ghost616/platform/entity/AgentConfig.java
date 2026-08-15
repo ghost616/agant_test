@@ -13,6 +13,9 @@ import com.ghost616.agentbase.enums.CommonStatus;
 @TableName("agent_config")
 public class AgentConfig extends BaseEntity {
 
+    @TableField("user_id")
+    private Long userId;
+
     private String name;
 
     private String description;

@@ -10,6 +10,9 @@ import lombok.EqualsAndHashCode;
 @TableName("session")
 public class Session extends BaseEntity {
 
+    @TableField("user_id")
+    private Long userId;
+
     @TableField("agent_id")
     private Long agentId;
 

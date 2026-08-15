@@ -1,5 +1,6 @@
 CREATE TABLE IF NOT EXISTS message (
     id           BIGINT PRIMARY KEY,
+    user_id      BIGINT DEFAULT 1,
     session_id   BIGINT,
     role         VARCHAR(20),
     content      MEDIUMTEXT,
@@ -16,6 +17,7 @@ CREATE INDEX IF NOT EXISTS idx_message_tool_call_id ON message(tool_call_id);
 
 CREATE TABLE IF NOT EXISTS agent_log (
     id              BIGINT PRIMARY KEY,
+    user_id         BIGINT DEFAULT 1,
     session_id      BIGINT,
     conversation_id VARCHAR(50),
     log_type        VARCHAR(64),

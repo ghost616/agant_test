@@ -1,0 +1,57 @@
+{
+  "module_name": "user",
+  "files": [
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/session/UserSession.java",
+      "description": "用户会话对象：包含会话 ID、登录用户信息（User 实体）与最后访问时间（epoch 毫秒，volatile 保证多线程可见），由 UserSessionManager 在访问时刷新用于空闲过期判断。"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/session/UserContext.java",
+      "description": "用户线程上下文：通过 ThreadLocal 保存当前请求线程的用户会话，提供静态 set/get/clear 方法，供鉴权拦截器写入与业务代码读取当前登录用户。"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/session/UserSessionManager.java",
+      "description": "用户会话管理器：基于内存 ConcurrentHashMap 按会话 ID 创建/查询/删除/刷新用户会话，定义会话 Cookie 名称 SESSION_ID 与 2 小时空闲过期时长，@Scheduled 定时（1 分钟）清理空闲超时会话。"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/controller/AuthController.java",
+      "description": "登录认证接口：POST /api/auth/login，校验登录名与密码，成功后通过 UserSessionManager 创建用户会话并写入 HttpOnly 会话 Cookie（SameSite=Lax），返回登录用户信息。"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/controller/UserController.java",
+      "description": "用户管理接口（仅管理员可调用）：GET /api/users 分页列表、POST /api/users 添加用户、PUT /api/users/{id} 修改用户；通过请求 Cookie 解析会话并校验 user_type=2，未登录抛 USER_NOT_LOGIN，非管理员抛 USER_FORBIDDEN。"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/service/user/UserService.java",
+      "description": "用户服务接口：定义普通用户/管理员用户类型常量（USER_TYPE_NORMAL=1、USER_TYPE_ADMIN=2），提供登录校验、分页查询用户、添加用户、修改用户方法。"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/service/user/UserServiceImpl.java",
+      "description": "用户服务实现：登录时按登录名查用户并校验密码（复用 PasswordUtil 加密公式，创建时间为秒级精度以保障跨存储往返一致）与登录开关；分页查询按创建时间倒序；添加用户预生成雪花 ID、校验登录名唯一性与 userType/enabled 取值、按公式加密密码；修改用户支持更新显示名/用户类型/密码/登录开关。"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/dto/user/LoginRequest.java",
+      "description": "登录请求体 DTO：loginName（登录名，必填）与 password（密码，必填），带 jakarta validation 校验注解。"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/dto/user/UserDTO.java",
+      "description": "用户信息响应体 DTO：id（字符串序列化）、loginName、displayName、userType、enabled、createTime、updateTime，不包含密码；提供静态工厂 of(User) 从实体转换。"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/dto/user/UserCreateRequest.java",
+      "description": "添加用户请求体 DTO：loginName 与 password 必填，displayName 可选，userType 默认普通用户，enabled 默认允许登录，带校验注解。"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/dto/user/UserUpdateRequest.java",
+      "description": "修改用户请求体 DTO：displayName、userType、password、enabled 均可选，字段为空表示不修改。"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/config/DefaultAdminInitializer.java",
+      "description": "默认管理员初始化器（ApplicationRunner）：应用启动时若 user 表为空则插入 id=1、login_name=admin、display_name=管理员、user_type=2、enabled=1 的默认管理员，密码为按加密公式加密后的 123456。"
+    },
+    {
+      "path": "src/types/user.ts",
+      "description": "前端用户类型定义：User/LoginRequest/UserCreateRequest/UserUpdateRequest 接口及用户类型常量 USER_TYPE_NORMAL/USER_TYPE_ADMIN。"
+    }
+  ]
+}

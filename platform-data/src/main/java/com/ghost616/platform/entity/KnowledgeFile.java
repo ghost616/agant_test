@@ -15,6 +15,9 @@ import lombok.EqualsAndHashCode;
 @TableName("knowledge_file")
 public class KnowledgeFile extends BaseEntity {
 
+    @TableField("user_id")
+    private Long userId;
+
     @TableField("file_name")
     private String fileName;
 

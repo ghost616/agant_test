@@ -8,6 +8,8 @@
 - **AgentConfig**：智能体配置实体，继承 BaseEntity，映射 agent_config 表，含 name/description/systemPrompt/modelId/status/recentMessageCount/memoryEnabled/memoryGroupCount/vectorModelId（关联 model_config.id）字段
 - **Session**：会话实体，继承 BaseEntity，映射 session 表，含 agentId/modelId/title/systemPrompt/parentSessionId/isChild/description/totalTokenUsed/lastResponseId/isEvaluation/thinking/memoryPointSequenceNum/memoryPrompt（记忆提示语，仅通过独立接口读写、不加入 SessionDTO）字段
 - **AggregationType**：聚合类型枚举（GROUP/DAILY），@EnumValue 标记 code 字段
+- **User**：用户实体，继承 BaseEntity，映射 user 表，含 loginName(登录名)/displayName(显示名)/userType(用户类型 Integer，1=普通用户，2=管理员)/password(密码)/enabled(登录开关 Integer，1=可登录，0=禁止登录，默认 1) 字段
+- 数据归属扩展：model_config、tool_config、session、session_variable、agent_config、skill_config、agent_evaluation、evaluation、evaluation_result、knowledge_base、knowledge_file、message、agent_log 共 13 个实体类新增 userId 字段（Long，@TableField("user_id")），标识记录归属用户
 ## 数据访问层
 
 - **MessageMapper**：继承 BaseMapper\<Message\>，额外提供 rollbackBySessionIdAndGeSequenceNum 批量更新方法、selectByConversationId 按会话查询未回滚消息（按创建时间升序）、countUserMessages 统计会话下 user 角色未回滚消息总数、findNthUserSequenceNum 查找会话内第 n 个 user 未回滚消息的 sequenceNum（按 sequence_num 升序，LIMIT 1 OFFSET n）；添加 @DS("message") 注解路由至副数据源
@@ -26,9 +28,13 @@ PrimarySchemaMigration 新增 knowledge_file.publish_status（VARCHAR(32)，默�
 agent_config 表新增 memory_enabled（TINYINT(1) 默认 0）、memory_group_count（INTEGER 默认 30）列，PrimarySchemaMigration 同步新增对应迁移条目；AgentConfig 实体新增 memoryEnabled/memoryGroupCount 字段
 agent_config 表新增 vector_model_id（BIGINT）列、session 表新增 memory_point_sequence_num（INTEGER）列，PrimarySchemaMigration 同步新增对应迁移条目；AgentConfig 实体新增 vectorModelId 字段，Session 实体新增 memoryPointSequenceNum 字段
 session 表新增 memory_prompt（VARCHAR(500)）列，PrimarySchemaMigration 同步新增对应迁移条目；Session 实体新增 memoryPrompt 字段（记忆提示语，仅通过独立接口读写、不加入 SessionDTO）
+- schema.sql 新增 user 表建表语句（login_name/display_name/user_type/password/enabled 默认 1）；model_config、tool_config、session、session_variable、agent_config、skill_config、agent_evaluation、evaluation、evaluation_result、knowledge_base、knowledge_file 11 张表新增 user_id BIGINT DEFAULT 1 列（user 为 H2 保留字，H2 测试库通过 NON_KEYWORDS=USER 连接参数支持，生产 SQLite 原生支持）
+- schema-message.sql 中 message、agent_log 表新增 user_id BIGINT DEFAULT 1 列
+- PrimarySchemaMigration 新增 11 条 user_id 迁移条目（总数 78→89）；MessageSchemaMigration 新增 message.user_id、agent_log.user_id 两条迁移条目（总数 9→11）；platform-app SchemaMigrationTest 计数常量同步更新（PRIMARY 89、MESSAGE 11）
 ## 统一错误码与异常
 
 - **ErrorCode**：统一业务错误码枚举（com.ghost616.platform.enums.ErrorCode），共 31 个，覆盖 SYS/MODEL/TOOL/AGENT/SKILL/SESSION/EVAL/AGENT-EVAL/KNOWLEDGE 各业务域错误码，提供 getCode/getMessage。含 SYSTEM_ERROR（SYS-001）、PARAM_INVALID（SYS-002）、AGENT_MEMORY_NOT_ENABLED（AGENT-CONFIG-005，智能体未开启记忆功能）等
 - **BaseException**：平台统一基础异常，继承 RuntimeException，携带 ErrorCode 与 detail，提供 getErrorCode/getDetail
 - **BusinessException**：业务逻辑异常，继承 BaseException，用于业务规则校验失败抛出
 - 已移除未使用的 UNAUTHORIZED（SYS-004）、EVALUATION_SESSION_NOT_CREATED（EVAL-EXEC-002），枚举总数由 33 精简为 31；ErrorCodeTest 断言同步更新
+- **ErrorCode 新增 USER 域错误码**：USER_NOT_LOGIN（USER-NOT-LOGIN，请登录）、USER_FORBIDDEN（USER-FORBIDDEN，无权限）、USER_ALREADY_EXISTS（USER-ALREADY-EXISTS，登录名已存在）、USER_NOT_FOUND（USER-NOT-FOUND，用户不存在），枚举总数由 31 增至 35；ErrorCodeTest 断言同步更新

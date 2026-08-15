@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class AgentLogSchemaTest {
 
     private static final String JDBC_URL =
-            "jdbc:h2:mem:agentlog_schema;MODE=MySQL;DB_CLOSE_DELAY=-1";
+            "jdbc:h2:mem:agentlog_schema;MODE=MySQL;NON_KEYWORDS=USER;DB_CLOSE_DELAY=-1";
 
     private String readResource(String name) throws IOException {
         try (InputStream in = AgentLogSchemaTest.class.getClassLoader().getResourceAsStream(name)) {

@@ -19,6 +19,9 @@ public class Message {
     @JsonSerialize(using = ToStringSerializer.class)
     private Long id;
 
+    @TableField("user_id")
+    private Long userId;
+
     @TableField("session_id")
     private Long sessionId;
 

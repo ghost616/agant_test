@@ -43,6 +43,10 @@
     {
       "name": "platform-data",
       "description": "数据库交互模块，包含所有 JPA Entity 和 MyBatis-Plus Mapper，作为独立 Maven 工程供其他模块依赖"
+    },
+    {
+      "name": "user",
+      "description": "用户管理模块，包含用户认证、用户会话、用户管理、权限控制功能"
     }
   ]
 }

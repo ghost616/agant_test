@@ -104,7 +104,18 @@ public class PrimarySchemaMigration extends AbstractSchemaMigration implements A
                 new Migration("knowledge_file", "deleted", "INTEGER", "0"),
                 new Migration("agent_knowledge_base", "id", "BIGINT", null),
                 new Migration("agent_knowledge_base", "agent_id", "BIGINT", null),
-                new Migration("agent_knowledge_base", "knowledge_base_id", "BIGINT", null)
+                new Migration("agent_knowledge_base", "knowledge_base_id", "BIGINT", null),
+                new Migration("model_config", "user_id", "BIGINT", "1"),
+                new Migration("tool_config", "user_id", "BIGINT", "1"),
+                new Migration("session", "user_id", "BIGINT", "1"),
+                new Migration("session_variable", "user_id", "BIGINT", "1"),
+                new Migration("agent_config", "user_id", "BIGINT", "1"),
+                new Migration("skill_config", "user_id", "BIGINT", "1"),
+                new Migration("agent_evaluation", "user_id", "BIGINT", "1"),
+                new Migration("evaluation", "user_id", "BIGINT", "1"),
+                new Migration("evaluation_result", "user_id", "BIGINT", "1"),
+                new Migration("knowledge_base", "user_id", "BIGINT", "1"),
+                new Migration("knowledge_file", "user_id", "BIGINT", "1")
         ));
 
         runNullBackfill(List.of(

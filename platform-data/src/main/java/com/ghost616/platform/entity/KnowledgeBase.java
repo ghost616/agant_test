@@ -14,6 +14,9 @@ import lombok.EqualsAndHashCode;
 @TableName("knowledge_base")
 public class KnowledgeBase extends BaseEntity {
 
+    @TableField("user_id")
+    private Long userId;
+
     @TableField("name")
     private String name;
 

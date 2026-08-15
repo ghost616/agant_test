@@ -31,6 +31,8 @@ schema.sql 新增 agent_skill 中间表（agent_id/skill_id 关联），结构�
 - dev.bat 后端启动改为两步命令：mvn install -pl agent-base -DskipTests -q 安装依赖 + mvn spring-boot:run -f platform-app/pom.xml 启动子模块，避免 -pl 对 spring-boot:run 不生效的问题
 - README.md 平台描述已更新：工具管理新增 MCP HTTP 认证方式说明；HOOK 管理补充 Spring 自动发现加载机制；智能体执行引擎补充 sendmessage 跨会话通信框架；新增三域会话授权与组件注册表描述；变量管理补充 SSE 推送说明。
 - dev.bat 开发模式已改为预编译模式：一次性 `vite build` 编译前端到 dist/，再并行启动 `vite build --watch`（监听源码变更自动增量编译）与 Node 静态服务（serve.js）。serve.js 使用 Node 内置 http 模块静态托管 dist/ 目录（自动识别 MIME 类型、SPA fallback 非文件路径返回 index.html），/api 请求代理到 http://localhost:8080，监听 3000 端口。package.json 新增 dev:build（vite build --watch）与 dev:serve（node serve.js）脚本。
+- PasswordUtil 密码工具类（platform-app util 包）：提供基于国密 SM3 的密码加密方法 encrypt(明文密码, 用户ID, 创建时间)，加密公式为 SM3( MD5(明文密码+用户ID) + 创建时间毫秒时间戳 )，MD5 用 JDK MessageDigest、SM3 用 hutool SmUtil（依赖 cn.hutool:hutool-crypto:5.8.27，根 pom 引入）。
+- 鉴权体系：AuthInterceptor 拦截器（Cookie SESSION_ID → UserSessionManager 查询会话并刷新最后访问时间 → 写入 UserContext 线程上下文，请求结束清理）+ AuthAspect 控制器切面（未登录抛 USER_NOT_LOGIN「请登录」，/api/users/** 非管理员抛 USER_FORBIDDEN「无权限」，登录接口与 OPTIONS 放行），WebConfig 注册拦截器（拦截 /api/** 排除 /api/auth/login）；前端 /login 独立全屏登录页、/users 用户管理页与侧边菜单，api.ts 响应拦截器命中 USER-NOT-LOGIN 自动跳转 /login。依赖 spring-boot-starter-aop（根 pom 引入）。
 ## 文件结构
 
 ```

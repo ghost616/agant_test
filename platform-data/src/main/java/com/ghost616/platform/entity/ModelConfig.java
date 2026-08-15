@@ -14,6 +14,9 @@ import lombok.EqualsAndHashCode;
 @TableName("model_config")
 public class ModelConfig extends BaseEntity {
 
+    @TableField("user_id")
+    private Long userId;
+
     private String name;
 
     private PlatformType platformType;

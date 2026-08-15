@@ -1,5 +1,6 @@
 package com.ghost616.platform.entity;
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -17,6 +18,9 @@ import com.ghost616.agentbase.enums.CommonStatus;
 @EqualsAndHashCode(callSuper = true)
 @TableName("skill_config")
 public class SkillConfig extends BaseEntity {
+
+    @TableField("user_id")
+    private Long userId;
 
     private String name;
 

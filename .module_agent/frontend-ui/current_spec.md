@@ -145,3 +145,14 @@
 
 - 通用表格滚动 Hook：src/hooks/useTableScrollY.ts 根据 window.innerHeight 减去固定偏移量动态计算表格可滚动高度（Math.max(innerHeight - offset, 0)），监听 window resize 实时更新，卸载时移除监听，返回 scrollY 供 Table scroll={{ x, y }} 使用
 - 应用范围：13 个带 scroll.x 的表格统一改为 scroll={{ x: 原宽度, y: useTableScrollY(偏移量) }}，实现固定表头 + 底部可见横向滚动条；无分页页面偏移量 216（AgentList/ModelList/SkillList/SessionList/ToolList/EvaluationList/AgentEvaluationList/EvaluationResultList/MemoryList/KnowledgeBaseList/KnowledgeFileList），含分页页面偏移量 272（AgentLogList/MemoryDetail）
+## 登录与用户管理界面
+
+- 登录页 src/pages/login/Login.tsx：登录名 + 密码表单（Form + Input.Password），调用 login 接口，成功后 message.success 并 navigate('/') 进入主界面，失败展示接口错误信息；独立全屏居中 Card 布局（不依赖主界面 Layout）
+- 用户管理页 src/pages/users/UserList.tsx：仅管理员可见可操作（getCurrentUser()?.userType === USER_TYPE_ADMIN 拦截，非管理员渲染 Result 403「无权限访问」；后端接口同样强制校验）
+  - 分页表格（page/size，pageSizeOptions 10/20/50，showTotal，scroll={{ x: 940, y: useTableScrollY(272) }}）
+  - 列：登录名、显示名（空显示 '-'）、用户类型（Tag：普通用户 default/管理员 gold）、登录状态（Tag：允许登录 green/禁止登录 red）、创建时间、操作（修改/禁止登录|恢复登录 Popconfirm）
+  - 添加用户 Modal：loginName（必填）、displayName、userType（Select 默认普通用户）、password（必填）、enabled（Switch 默认允许）；提交组装 UserCreateRequest
+  - 修改用户 Modal：displayName、userType、password（留空则不修改密码）、enabled（Switch 回填 record.enabled === 1）；提交组装 UserUpdateRequest
+  - 禁止登录 = updateUser(id, { enabled: 0 })，恢复登录 = updateUser(id, { enabled: 1 })
+- src/services/auth.ts：login(data: LoginRequest) 调用 POST /api/auth/login 返回 User 并保存 localStorage（CURRENT_USER_KEY='currentUser'）；getCurrentUser() 读取本地用户（未登录/损坏返回 null）；clearCurrentUser() 清除
+- src/services/user.ts：listUsers({page,size}) 调用 GET /api/users 返回 PageResult<User>；createUser(data) 调用 POST /api/users；updateUser(id, data) 调用 PUT /api/users/{id}；导出 UserListParams 类型

@@ -10,6 +10,9 @@ import lombok.EqualsAndHashCode;
 @TableName("agent_evaluation")
 public class AgentEvaluation extends BaseEntity {
 
+    @TableField("user_id")
+    private Long userId;
+
     @TableField("name")
     private String name;
 

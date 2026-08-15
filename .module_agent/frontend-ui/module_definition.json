@@ -232,6 +232,22 @@
     {
       "path": "src/pages/memory/MemoryDocumentDetail.tsx",
       "description": "记忆聚合文档详情页 /memory/:sessionId/:type/:seqRange：左侧聚合文本以 Markdown 渲染显示（ReactMarkdown+remarkGfm，agent-chat-markdown 样式，容器 overflowY:auto 内滚，空时显示\"暂无聚合文本\"），聚合文本由 useState 管理（初始值 state.aggregationText），仅编辑保存成功时 setAggregationText(editText) 回调更新详情页，重新生成成功不更新详情页（仅 setEditText 回填编辑弹窗右侧输入框）；右侧调用 getSessionMessagesRange 按序列号区间获取消息并以对话气泡样式展示（与 AgentChat 一致的 ROLE_CONFIG/BUBBLE_STYLES，ReactMarkdown 渲染，按 sequenceNum 升序排列，reasoning 思考过程块、空内容不渲染气泡）；工具消息渲染与 AgentChat loadHistory 对齐：role=tool 且 toolResult 非空时 buildToolContent 解析 JSON 格式化为\"**工具: toolName**\\n\\n**参数:**\\n```json\\narguments\\n```\\n\\n**执行结果:**\\nresult\"（toolName 取 toolInfo.toolName 或 JSON 内 toolName 兜底，解析失败保持原始内容），工具消息不显示 toolInfo 头部；左右两栏等高容器布局（alignItems stretch + 固定高度），各自内容区独立滚动；右下角「配置」「编辑」功能按钮：配置弹窗仅提示语 TextArea + 保存/关闭（加载 getMemoryPrompt，保存调 saveMemoryPrompt）；编辑弹窗含左右提示语/聚合文本 TextArea（右为 editText=aggregationText）+ 模型下拉 Select（仅选择不保存，打开时加载 getMemoryPrompt、getSession 获取会话 modelId 与 listModels({modelType:'LLM'})，列表加载后若会话 modelId 在列表则 setEditModelId 预选否则未选中）+ 取消/保存/重新生成（保存调 updateMemoryDocument 成功后 setAggregationText(editText) 更新详情页；重新生成调 regenerateMemory 后 2000ms 轮询 getRegenerateStatus 最多 30 次，COMPLETED 时仅 setEditText 回填右侧输入框不更新详情页）；返回按钮跳转 /memory/:sessionId/:type"
+    },
+    {
+      "path": "src/services/auth.ts",
+      "description": "认证服务封装：login 调用 POST /api/auth/login（返回 User 并写入 localStorage currentUser）；getCurrentUser 读取本地当前登录用户；clearCurrentUser 清除本地登录用户信息"
+    },
+    {
+      "path": "src/services/user.ts",
+      "description": "用户管理 API 封装：listUsers 分页查询用户（GET /api/users）、createUser 添加用户（POST /api/users）、updateUser 修改用户（PUT /api/users/{id}，支持 enabled 0/1 禁止/恢复登录）；导出 UserListParams 分页参数类型"
+    },
+    {
+      "path": "src/pages/login/Login.tsx",
+      "description": "登录页：登录名+密码表单，调用 login 接口成功后跳转主界面（/），失败展示错误信息；独立全屏居中布局，不依赖主界面 Layout"
+    },
+    {
+      "path": "src/pages/users/UserList.tsx",
+      "description": "用户管理页（仅管理员可见可操作，非管理员显示无权限 Result）：分页表格展示用户列表，支持添加/修改用户 Modal 与禁止/恢复登录（Popconfirm 调 updateUser enabled 0/1）；用户类型/登录状态 Tag 展示；分页支持每页条数切换"
     }
   ]
 }

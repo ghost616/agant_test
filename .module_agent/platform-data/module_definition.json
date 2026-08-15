@@ -11,11 +11,11 @@
     },
     {
       "path": "platform-data/src/main/java/com/ghost616/platform/entity/Message.java",
-      "description": "消息实体（message 表），不继承 BaseEntity，含雪花ID、会话ID、角色、内容、推理、序号、工具调用ID、工具结果、创建时间"
+      "description": "消息实体（message 表），不继承 BaseEntity，含雪花ID、会话ID、角色、内容、推理、序号、工具调用ID、工具结果、创建时间、userId（归属用户）"
     },
     {
       "path": "platform-data/src/main/java/com/ghost616/platform/entity/AgentConfig.java",
-      "description": "智能体配置实体类，继承 BaseEntity，映射 agent_config 表"
+      "description": "智能体配置实体类，继承 BaseEntity，映射 agent_config 表，含 userId（归属用户）字段"
     },
     {
       "path": "platform-data/src/main/java/com/ghost616/platform/entity/AgentTool.java",
@@ -27,15 +27,15 @@
     },
     {
       "path": "platform-data/src/main/java/com/ghost616/platform/entity/ModelConfig.java",
-      "description": "模型配置实体（name/platformType/apiKey/baseUrl/modelName/requestType/temperature/maxTokens/status/description），映射 model_config 表"
+      "description": "模型配置实体（name/platformType/apiKey/baseUrl/modelName/requestType/temperature/maxTokens/status/description），映射 model_config 表，含 userId（归属用户）字段"
     },
     {
       "path": "platform-data/src/main/java/com/ghost616/platform/entity/ToolConfig.java",
-      "description": "工具配置实体，含 authConfig 字段"
+      "description": "工具配置实体，含 authConfig 字段，映射 tool_config 表，含 userId（归属用户）字段"
     },
     {
       "path": "platform-data/src/main/java/com/ghost616/platform/entity/SkillConfig.java",
-      "description": "SKILL 配置实体（extends BaseEntity），映射 skill_config 表"
+      "description": "SKILL 配置实体（extends BaseEntity），映射 skill_config 表，含 userId（归属用户）字段"
     },
     {
       "path": "platform-data/src/main/java/com/ghost616/platform/entity/SkillTool.java",
@@ -43,7 +43,7 @@
     },
     {
       "path": "platform-data/src/main/java/com/ghost616/platform/entity/Session.java",
-      "description": "会话实体，继承BaseEntity，@TableName(\"session\")，含thinking字段及 memoryPointSequenceNum/memoryPrompt（记忆提示语，仅通过独立接口读写、不加入 SessionDTO）字段"
+      "description": "会话实体，继承BaseEntity，@TableName(\"session\")，含thinking字段及 memoryPointSequenceNum/memoryPrompt（记忆提示语，仅通过独立接口读写、不加入 SessionDTO）字段，含 userId（归属用户）字段"
     },
     {
       "path": "platform-data/src/main/java/com/ghost616/platform/entity/MessageToolCall.java",
@@ -55,7 +55,7 @@
     },
     {
       "path": "platform-data/src/main/java/com/ghost616/platform/entity/SessionVariable.java",
-      "description": "会话变量实体，@TableName(\"session_variable\")"
+      "description": "会话变量实体，@TableName(\"session_variable\")，含 userId（归属用户）字段"
     },
     {
       "path": "platform-data/src/main/java/com/ghost616/platform/entity/SessionSkill.java",
@@ -119,15 +119,15 @@
     },
     {
       "path": "platform-data/src/main/resources/schema.sql",
-      "description": "主数据源 DDL 初始化脚本，定义除 message、agent_log、message_tool_call 外的所有业务表（model_config、tool_config、session、session_tool、agent_config、agent_tool、agent_skill、skill_config、skill_tool、session_variable、session_skill、agent_evaluation、evaluation、evaluation_result、knowledge_base、knowledge_file、agent_knowledge_base）的建表语句和索引；knowledge_base 含 vector_model_id/es_index/rebuilding 列，knowledge_file 含 publish_status 列；message、agent_log、message_tool_call 表已移至 schema-message.sql"
+      "description": "主数据源 DDL 初始化脚本，定义 user 表及除 message、agent_log、message_tool_call 外的所有业务表（model_config、tool_config、session、session_tool、agent_config、agent_tool、agent_skill、skill_config、skill_tool、session_variable、session_skill、agent_evaluation、evaluation、evaluation_result、knowledge_base、knowledge_file、agent_knowledge_base）的建表语句和索引；user 表含 login_name/display_name/user_type/password/enabled（默认 1）列；model_config/tool_config/session/session_variable/agent_config/skill_config/agent_evaluation/evaluation/evaluation_result/knowledge_base/knowledge_file 11 张表含 user_id BIGINT DEFAULT 1 列；knowledge_base 含 vector_model_id/es_index/rebuilding 列，knowledge_file 含 publish_status 列；message、agent_log、message_tool_call 表已移至 schema-message.sql"
     },
     {
       "path": "platform-data/src/main/java/com/ghost616/platform/entity/Evaluation.java",
-      "description": "评估配置实体，继承 BaseEntity，映射 evaluation 表；字段：name（评估名称）、description（描述）、benchmarkSessionId（基准会话ID）、executionCount（执行次数）、modelId（模型ID）、agentEvalId（关联智能体评估ID）、agentId（关联智能体ID）"
+      "description": "评估配置实体，继承 BaseEntity，映射 evaluation 表；字段：name（评估名称）、description（描述）、benchmarkSessionId（基准会话ID）、executionCount（执行次数）、modelId（模型ID）、agentEvalId（关联智能体评估ID）、agentId（关联智能体ID）、userId（归属用户）"
     },
     {
       "path": "platform-data/src/main/java/com/ghost616/platform/entity/EvaluationResult.java",
-      "description": "评估结果实体，继承 BaseEntity，映射 evaluation_result 表；字段：evaluationId（评估配置ID）、evaluationSessionId（评估执行会话ID）、result（评估结果内容）、executionStatus（执行状态，PENDING/RUNNING/COMPLETED/FAILED，默认 PENDING）、modelId（关联模型ID）、finalScore（最终评分）"
+      "description": "评估结果实体，继承 BaseEntity，映射 evaluation_result 表；字段：evaluationId（评估配置ID）、evaluationSessionId（评估执行会话ID）、result（评估结果内容）、executionStatus（执行状态，PENDING/RUNNING/COMPLETED/FAILED，默认 PENDING）、modelId（关联模型ID）、finalScore（最终评分）、userId（归属用户）"
     },
     {
       "path": "platform-data/src/main/java/com/ghost616/platform/repository/EvaluationMapper.java",
@@ -139,7 +139,7 @@
     },
     {
       "path": "platform-data/src/main/java/com/ghost616/platform/entity/AgentEvaluation.java",
-      "description": "智能体评估实体，继承 BaseEntity，映射 agent_evaluation 表；字段：name（评估名称）、description（描述）、agentId（关联智能体ID）"
+      "description": "智能体评估实体，继承 BaseEntity，映射 agent_evaluation 表；字段：name（评估名称）、description（描述）、agentId（关联智能体ID）、userId（归属用户）"
     },
     {
       "path": "platform-data/src/main/java/com/ghost616/platform/repository/AgentEvaluationMapper.java",
@@ -147,11 +147,11 @@
     },
     {
       "path": "platform-data/src/main/java/com/ghost616/platform/entity/KnowledgeBase.java",
-      "description": "知识库实体类，继承 BaseEntity，映射 knowledge_base 表，含 name/description/status(CommonStatus)/vectorModelId/esIndex/rebuilding(默认 false) 字段"
+      "description": "知识库实体类，继承 BaseEntity，映射 knowledge_base 表，含 name/description/status(CommonStatus)/vectorModelId/esIndex/rebuilding(默认 false)/userId（归属用户） 字段"
     },
     {
       "path": "platform-data/src/main/java/com/ghost616/platform/entity/KnowledgeFile.java",
-      "description": "知识库文件实体类，继承 BaseEntity，映射 knowledge_file 表，含 fileName/fileDescription/knowledgeBaseId/fileSize/lineCount/status(CommonStatus)/publishStatus(PublishStatus)/fileContent(LONGTEXT) 字段"
+      "description": "知识库文件实体类，继承 BaseEntity，映射 knowledge_file 表，含 fileName/fileDescription/knowledgeBaseId/fileSize/lineCount/status(CommonStatus)/publishStatus(PublishStatus)/fileContent(LONGTEXT)/userId（归属用户） 字段"
     },
     {
       "path": "platform-data/src/main/java/com/ghost616/platform/entity/AgentKnowledgeBase.java",
@@ -179,7 +179,7 @@
     },
     {
       "path": "platform-data/src/main/java/com/ghost616/platform/entity/AgentLogEntity.java",
-      "description": "智能体日志实体类，继承 BaseEntity，映射 agent_log 表，含 sessionId(会话ID)/conversationId(对话ID)/logType(日志类型，存储 LogType 枚举 code 值)/logLevel(日志等级，存储 LogLevel 枚举 code 值)/logData(LogData 对象序列化 JSON 文本) 字段"
+      "description": "智能体日志实体类，继承 BaseEntity，映射 agent_log 表，含 sessionId(会话ID)/conversationId(对话ID)/logType(日志类型，存储 LogType 枚举 code 值)/logLevel(日志等级，存储 LogLevel 枚举 code 值)/logData(LogData 对象序列化 JSON 文本)/userId（归属用户） 字段"
     },
     {
       "path": "platform-data/src/main/java/com/ghost616/platform/repository/AgentLogMapper.java",
@@ -191,7 +191,7 @@
     },
     {
       "path": "platform-data/src/main/java/com/ghost616/platform/enums/ErrorCode.java",
-      "description": "统一业务错误码枚举，定义各业务域（MODEL/TOOL/AGENT/SKILL/SESSION/EVAL/AGENT-EVAL/KNOWLEDGE-BASE/KNOWLEDGE-FILE）的错误码与消息，含 SYS-001 系统错误/SYS-002 参数校验失败/SYS-004 未授权、MODEL-CONFIG-001 模型不存在、SESSION-001 会话不存在、AGENT-CONFIG-005 记忆未开启等共 33 个错误码，提供 getCode/getMessage"
+      "description": "统一业务错误码枚举，定义各业务域（MODEL/TOOL/AGENT/SKILL/SESSION/USER/EVAL/AGENT-EVAL/KNOWLEDGE-BASE/KNOWLEDGE-FILE）的错误码与消息，含 SYS-001 系统错误/SYS-002 参数校验失败、MODEL-CONFIG-001 模型不存在、SESSION-001 会话不存在、AGENT-CONFIG-005 记忆未开启、USER-NOT-LOGIN 请登录/USER-FORBIDDEN 无权限/USER-ALREADY-EXISTS 登录名已存在/USER-NOT-FOUND 用户不存在等共 35 个错误码，提供 getCode/getMessage"
     },
     {
       "path": "platform-data/src/main/java/com/ghost616/platform/exception/BaseException.java",
@@ -203,7 +203,7 @@
     },
     {
       "path": "platform-data/src/test/java/com/ghost616/platform/enums/ErrorCodeTest.java",
-      "description": "ErrorCode 枚举单元测试，校验枚举数量（29 个）、各错误码值及关键消息"
+      "description": "ErrorCode 枚举单元测试，校验枚举数量（35 个）、各错误码值及关键消息"
     },
     {
       "path": "platform-data/src/test/java/com/ghost616/platform/exception/BaseExceptionTest.java",
@@ -223,19 +223,27 @@
     },
     {
       "path": "platform-data/src/main/java/com/ghost616/platform/config/PrimarySchemaMigration.java",
-      "description": "主数据源 Schema 迁移组件（@Component @Order(1)），注入 @Qualifier(\"primaryJdbcTemplate\") 的 JdbcTemplate，执行主数据源各表（tool_config/session_variable/agent_config/session/session_tool/agent_tool/agent_skill/session_skill/evaluation/evaluation_result/agent_evaluation/model_config/knowledge_base/knowledge_file/agent_knowledge_base）的 78 条 ALTER TABLE 增量列迁移（含 session.memory_prompt，message_tool_call 迁移已移至 MessageSchemaMigration），并回填 session_auth NULL 值"
+      "description": "主数据源 Schema 迁移组件（@Component @Order(1)），注入 @Qualifier(\"primaryJdbcTemplate\") 的 JdbcTemplate，执行主数据源各表（tool_config/session_variable/agent_config/session/session_tool/agent_tool/agent_skill/session_skill/evaluation/evaluation_result/agent_evaluation/model_config/knowledge_base/knowledge_file/agent_knowledge_base）的 89 条 ALTER TABLE 增量列迁移（含 11 张业务表 user_id BIGINT DEFAULT 1 列与 session.memory_prompt，message_tool_call 迁移已移至 MessageSchemaMigration），并回填 session_auth NULL 值"
     },
     {
       "path": "platform-data/src/main/java/com/ghost616/platform/config/MessageSchemaMigration.java",
-      "description": "消息数据源 Schema 迁移组件（@Component @Order(1)），注入 @Qualifier(\"messageJdbcTemplate\") 的 JdbcTemplate，通过 ScriptUtils 执行 classpath 下 schema-message.sql 建 message/agent_log/message_tool_call 三表；建表失败时抛 IllegalStateException fail-fast 终止启动；再执行 message/agent_log/message_tool_call 三表 9 条 ALTER TABLE 增量列迁移（tool_result/token_usage/conversation_id/rollback/session_variables/conversation_variables/type/web_search_call/custom_tool_call）"
+      "description": "消息数据源 Schema 迁移组件（@Component @Order(1)），注入 @Qualifier(\"messageJdbcTemplate\") 的 JdbcTemplate，通过 ScriptUtils 执行 classpath 下 schema-message.sql 建 message/agent_log/message_tool_call 三表；建表失败时抛 IllegalStateException fail-fast 终止启动；再执行 message/agent_log/message_tool_call 三表 11 条 ALTER TABLE 增量列迁移（tool_result/token_usage/conversation_id/rollback/session_variables/conversation_variables/type/web_search_call/custom_tool_call/message.user_id/agent_log.user_id）"
     },
     {
       "path": "platform-data/src/main/resources/schema-message.sql",
-      "description": "消息数据源 DDL 初始化脚本，含 message、agent_log、message_tool_call 三张表的建表语句和索引（message_tool_call 含 message_id/tool_call_id 索引），由 MessageSchemaMigration 在消息数据源上执行，确保三表齐全"
+      "description": "消息数据源 DDL 初始化脚本，含 message、agent_log、message_tool_call 三张表的建表语句和索引（message_tool_call 含 message_id/tool_call_id 索引）；message 与 agent_log 表含 user_id BIGINT DEFAULT 1 列；由 MessageSchemaMigration 在消息数据源上执行，确保三表齐全"
     },
     {
       "path": "platform-data/src/test/java/com/ghost616/platform/MessageToolCallSchemaTest.java",
       "description": "message_tool_call 跨库一致性验证测试：断言 schema.sql 不含 message_tool_call 建表/索引、schema-message.sql 含其建表与 message_id/tool_call_id 索引、H2 执行后 message/agent_log/message_tool_call 三表齐全、MessageToolCallMapper 带 @DS(\"message\")、MessageSchemaMigration 含 message_tool_call 三条迁移而 PrimarySchemaMigration 不含、MessageSchemaMigration 建表失败 fail-fast 抛 IllegalStateException"
+    },
+    {
+      "path": "platform-data/src/main/java/com/ghost616/platform/entity/User.java",
+      "description": "用户实体，继承 BaseEntity，映射 user 表，含 loginName（登录名）/displayName（显示名）/userType（用户类型 Integer，1=普通用户 2=管理员）/password（密码）/enabled（登录开关 Integer，1=可登录 0=禁止登录，默认 1）字段"
+    },
+    {
+      "path": "platform-data/src/main/java/com/ghost616/platform/repository/UserMapper.java",
+      "description": "User 的 MyBatis-Plus Mapper 接口，继承 BaseMapper<User>"
     }
   ]
 }

@@ -22,8 +22,8 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class SchemaMigrationTest {
 
-    private static final int PRIMARY_ALTER_COUNT = 78;
-    private static final int MESSAGE_ALTER_COUNT = 9;
+    private static final int PRIMARY_ALTER_COUNT = 89;
+    private static final int MESSAGE_ALTER_COUNT = 11;
 
     @Mock
     private JdbcTemplate jdbcTemplate;

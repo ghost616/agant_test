@@ -1,5 +1,18 @@
+CREATE TABLE IF NOT EXISTS user (
+    id          BIGINT PRIMARY KEY,
+    login_name  VARCHAR(255) NOT NULL,
+    display_name VARCHAR(255),
+    user_type   INTEGER,
+    password    VARCHAR(255),
+    enabled     INTEGER DEFAULT 1,
+    create_time TIMESTAMP,
+    update_time TIMESTAMP,
+    deleted     INTEGER DEFAULT 0
+);
+
 CREATE TABLE IF NOT EXISTS model_config (
     id          BIGINT PRIMARY KEY,
+    user_id     BIGINT DEFAULT 1,
     name        VARCHAR(255) NOT NULL,
     platform_type VARCHAR(64),
     api_key     VARCHAR(255),
@@ -18,6 +31,7 @@ CREATE TABLE IF NOT EXISTS model_config (
 
 CREATE TABLE IF NOT EXISTS tool_config (
     id               BIGINT PRIMARY KEY,
+    user_id          BIGINT DEFAULT 1,
     name             VARCHAR(255) NOT NULL,
     tool_type        VARCHAR(32),
     description      TEXT,
@@ -35,6 +49,7 @@ CREATE TABLE IF NOT EXISTS tool_config (
 
 CREATE TABLE IF NOT EXISTS session (
     id               BIGINT PRIMARY KEY,
+    user_id          BIGINT DEFAULT 1,
     agent_id         BIGINT,
     model_id         BIGINT,
     title            VARCHAR(200),
@@ -66,6 +81,7 @@ CREATE INDEX IF NOT EXISTS idx_session_tool_tool_id ON session_tool(tool_id);
 
 CREATE TABLE IF NOT EXISTS agent_config (
     id            BIGINT PRIMARY KEY,
+    user_id       BIGINT DEFAULT 1,
     name          VARCHAR(255) NOT NULL,
     description   TEXT,
     system_prompt TEXT,
@@ -102,6 +118,7 @@ CREATE INDEX IF NOT EXISTS idx_agent_skill_skill_id ON agent_skill(skill_id);
 
 CREATE TABLE IF NOT EXISTS skill_config (
     id          BIGINT PRIMARY KEY,
+    user_id     BIGINT DEFAULT 1,
     name        VARCHAR(255) NOT NULL,
     description TEXT,
     prompt      TEXT,
@@ -121,6 +138,7 @@ CREATE INDEX IF NOT EXISTS idx_skill_tool_tool_id ON skill_tool(tool_id);
 
 CREATE TABLE IF NOT EXISTS session_variable (
     id             BIGINT PRIMARY KEY,
+    user_id        BIGINT DEFAULT 1,
     session_id     BIGINT,
     variable_key   VARCHAR(255),
     variable_value TEXT,
@@ -142,6 +160,7 @@ CREATE INDEX IF NOT EXISTS idx_session_skill_skill_id ON session_skill(skill_id)
 
 CREATE TABLE IF NOT EXISTS agent_evaluation (
     id          BIGINT PRIMARY KEY,
+    user_id     BIGINT DEFAULT 1,
     name        VARCHAR(255) NOT NULL,
     description TEXT,
     agent_id    BIGINT,
@@ -152,6 +171,7 @@ CREATE TABLE IF NOT EXISTS agent_evaluation (
 
 CREATE TABLE IF NOT EXISTS evaluation (
     id                  BIGINT PRIMARY KEY,
+    user_id             BIGINT DEFAULT 1,
     name                VARCHAR(255) NOT NULL,
     description         TEXT,
     benchmark_session_id BIGINT,
@@ -166,6 +186,7 @@ CREATE TABLE IF NOT EXISTS evaluation (
 
 CREATE TABLE IF NOT EXISTS evaluation_result (
     id                    BIGINT PRIMARY KEY,
+    user_id               BIGINT DEFAULT 1,
     evaluation_id         BIGINT,
     evaluation_session_id BIGINT,
     result                TEXT,
@@ -179,6 +200,7 @@ CREATE TABLE IF NOT EXISTS evaluation_result (
 
 CREATE TABLE IF NOT EXISTS knowledge_base (
     id               BIGINT PRIMARY KEY,
+    user_id          BIGINT DEFAULT 1,
     name             VARCHAR(255) NOT NULL,
     description      TEXT,
     status           VARCHAR(32),
@@ -192,6 +214,7 @@ CREATE TABLE IF NOT EXISTS knowledge_base (
 
 CREATE TABLE IF NOT EXISTS knowledge_file (
     id                 BIGINT PRIMARY KEY,
+    user_id            BIGINT DEFAULT 1,
     file_name          VARCHAR(255),
     file_description   TEXT,
     knowledge_base_id  BIGINT,

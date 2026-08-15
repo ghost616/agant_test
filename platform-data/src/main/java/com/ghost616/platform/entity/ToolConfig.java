@@ -15,6 +15,9 @@ import com.ghost616.platform.enums.SubToolType;
 @TableName("tool_config")
 public class ToolConfig extends BaseEntity {
 
+    @TableField("user_id")
+    private Long userId;
+
     private String name;
 
     @TableField("tool_type")

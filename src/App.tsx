@@ -13,6 +13,7 @@ import {
   RobotOutlined,
   ThunderboltOutlined,
   ToolOutlined,
+  UserOutlined,
 } from '@ant-design/icons';
 import ModelList from './pages/models/ModelList';
 import ModelTest from './pages/models/ModelTest';
@@ -34,10 +35,17 @@ import AgentLogList from './pages/logs/AgentLogList';
 import MemoryList from './pages/memory/MemoryList';
 import MemoryDetail from './pages/memory/MemoryDetail';
 import MemoryDocumentDetail from './pages/memory/MemoryDocumentDetail';
+import Login from './pages/login/Login';
+import UserList from './pages/users/UserList';
 
 const { Header, Sider, Content } = Layout;
 
 const MENU_ITEMS: MenuProps['items'] = [
+  {
+    key: '/users',
+    icon: <UserOutlined />,
+    label: '用户管理',
+  },
   {
     key: '/models',
     icon: <ApiOutlined />,
@@ -95,6 +103,11 @@ function App() {
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
 
+  // 登录页为独立全屏页面，不套用主界面 Layout
+  if (location.pathname === '/login') {
+    return <Login />;
+  }
+
   const selectedKeys = [location.pathname === '/' ? '/models' : location.pathname];
 
   return (
@@ -140,6 +153,7 @@ function App() {
         <Content style={{ margin: 24 }}>
           <Routes>
             <Route path="/" element={<ModelList />} />
+            <Route path="/users" element={<UserList />} />
             <Route path="/models" element={<ModelList />} />
             <Route path="/models/:id/test" element={<ModelTest />} />
             <Route path="/tools" element={<ToolList />} />
