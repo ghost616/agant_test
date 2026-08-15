@@ -21,8 +21,7 @@ import com.ghost616.platform.repository.MessageMapper;
 import com.ghost616.platform.repository.ModelConfigMapper;
 import com.ghost616.platform.repository.SessionMapper;
 import com.ghost616.platform.service.search.SessionMemoryESClient;
-import com.ghost616.platform.session.UserContext;
-import com.ghost616.platform.session.UserSession;
+import com.ghost616.platform.session.UserContextUtil;
 import com.ghost616.platform.util.IdConverter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -56,7 +55,7 @@ public class MemoryQueryProviderImpl implements MemoryQueryProvider {
         if (sessionId == null || sessionId.isBlank() || searchType == null) {
             return List.of();
         }
-        Long userId = currentUserId();
+        Long userId = UserContextUtil.currentUserIdOrNull();
         String aggregationType = (memoryType == null || memoryType.isBlank()) ? null : memoryType;
         List<SessionMemoryDocument> documents;
         switch (searchType) {
@@ -89,7 +88,7 @@ public class MemoryQueryProviderImpl implements MemoryQueryProvider {
         if (sid == null || ranges == null || ranges.isEmpty()) {
             return new MessageSeqByRole(List.of(), List.of(), List.of());
         }
-        Long userId = currentUserId();
+        Long userId = UserContextUtil.currentUserIdOrNull();
         LambdaQueryWrapper<Message> wrapper = new LambdaQueryWrapper<Message>()
                 .eq(Message::getSessionId, sid)
                 .eq(Message::getRollback, false);
@@ -168,22 +167,5 @@ public class MemoryQueryProviderImpl implements MemoryQueryProvider {
                 config.getPlatformType() != null ? config.getPlatformType().name() : null,
                 config.getRequestType()
         );
-    }
-
-    /**
-     * 获取当前登录用户 ID。
-     *
-     * <p>从 {@link UserContext} 线程上下文读取用户会话；异步场景（如工具异步执行线程）
-     * 通过线程变量传播保证上下文可取。无用户上下文（如系统级流程）时返回 null，
-     * 此时不追加 userId 过滤，避免中断系统级流程。</p>
-     *
-     * @return 当前登录用户 ID，无用户上下文时返回 null
-     */
-    private Long currentUserId() {
-        UserSession session = UserContext.get();
-        if (session == null || session.getUser() == null) {
-            return null;
-        }
-        return session.getUser().getId();
     }
 }

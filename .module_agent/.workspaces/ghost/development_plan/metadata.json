@@ -8,73 +8,65 @@
     "test_passed": true
   },
   {
-    "plan_id": "plan_ab744052-f35f-4842-baf2-b38861c8b854",
-    "plan_summary": "会话数据用户隔离",
-    "starter_session_id": "4cf3d5ef-d588-45d9-8685-0d455a6be0b6",
+    "plan_id": "plan_a13863e4-5364-45ed-8078-dcb2552db206",
+    "plan_summary": "新增 UserContextUtil 静态工具类，提供 requireUserId/currentUserIdOrNull 统一用户上下文入口",
+    "starter_session_id": "93912fae-4acb-4f52-be83-671bed2f26f1",
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
   },
   {
-    "plan_id": "plan_ad76438c-3e59-40e2-960b-22b2280d5993",
-    "plan_summary": "新增线程变量传播双接口并接入异步执行点",
-    "starter_session_id": "4cf3d5ef-d588-45d9-8685-0d455a6be0b6",
+    "plan_id": "plan_2f9ce822-fa4e-491d-ac91-7d0740c644b8",
+    "plan_summary": "修复 AgentAssembler 的 ThreadVariableHandler 注册顺序及对应测试用例",
+    "starter_session_id": "93912fae-4acb-4f52-be83-671bed2f26f1",
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
   },
   {
-    "plan_id": "plan_4a3dd6d4-2b49-483a-a5e2-442f37595be4",
-    "plan_summary": "模型配置数据用户隔离",
-    "starter_session_id": "4cf3d5ef-d588-45d9-8685-0d455a6be0b6",
+    "plan_id": "plan_d4766315-fe0c-4f2a-b6be-18202b7606ca",
+    "plan_summary": "SessionServiceImpl 与 DefaultContextDataProvider 改用 UserContextUtil 统一入口",
+    "starter_session_id": "93912fae-4acb-4f52-be83-671bed2f26f1",
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
   },
   {
-    "plan_id": "plan_f91d7ab8-75f5-4276-b8f5-21da9cef66d6",
-    "plan_summary": "工具配置数据用户隔离",
-    "starter_session_id": "4cf3d5ef-d588-45d9-8685-0d455a6be0b6",
+    "plan_id": "plan_64a41cec-1d85-4972-875f-6840a0dc6df4",
+    "plan_summary": "ModelConfigServiceImpl 改用 UserContextUtil 统一入口",
+    "starter_session_id": "93912fae-4acb-4f52-be83-671bed2f26f1",
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
   },
   {
-    "plan_id": "plan_a707fa79-a0c8-4b5a-a5ec-6944803b0ecb",
-    "plan_summary": "智能体配置数据用户隔离",
-    "starter_session_id": "4cf3d5ef-d588-45d9-8685-0d455a6be0b6",
+    "plan_id": "plan_0296b6a7-5a70-4ffd-9c7d-336e4dff189e",
+    "plan_summary": "ToolConfigServiceImpl 改用 UserContextUtil 统一入口",
+    "starter_session_id": "93912fae-4acb-4f52-be83-671bed2f26f1",
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
   },
   {
-    "plan_id": "plan_7051ab92-8256-42ab-bde6-524e4a6d92e0",
-    "plan_summary": "技能配置数据用户隔离",
-    "starter_session_id": "4cf3d5ef-d588-45d9-8685-0d455a6be0b6",
+    "plan_id": "plan_27fe9233-6192-4ea9-a5d3-91bae78203e2",
+    "plan_summary": "AgentConfigServiceImpl 改用 UserContextUtil 统一入口",
+    "starter_session_id": "93912fae-4acb-4f52-be83-671bed2f26f1",
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
   },
   {
-    "plan_id": "plan_d2afe1b3-bfd6-457b-b3e0-8e824c1100ad",
-    "plan_summary": "前端登录守卫与菜单权限",
-    "starter_session_id": "4cf3d5ef-d588-45d9-8685-0d455a6be0b6",
+    "plan_id": "plan_be049c57-77dd-4d31-b853-48ad1d01a6bc",
+    "plan_summary": "SkillConfigServiceImpl 改用 UserContextUtil 统一入口",
+    "starter_session_id": "93912fae-4acb-4f52-be83-671bed2f26f1",
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
   },
   {
-    "plan_id": "plan_0c9873b2-ed24-4fa9-be2e-28c9706fa487",
-    "plan_summary": "AgentAssembler 添加线程变量处理接口的注册方法",
-    "starter_session_id": "4cf3d5ef-d588-45d9-8685-0d455a6be0b6",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": true
-  },
-  {
-    "plan_id": "plan_35f668d1-ed93-42d7-84ce-c2f5bb68627b",
-    "plan_summary": "实现线程变量传播并完成业务数据用户隔离",
-    "starter_session_id": "4cf3d5ef-d588-45d9-8685-0d455a6be0b6",
+    "plan_id": "plan_af9b4128-ae4e-4ef0-9696-9f187709f8b6",
+    "plan_summary": "多个 service/controller 改用 UserContextUtil 并修复 ModelConfigServiceImplAuthGuardTest 编译错误",
+    "starter_session_id": "93912fae-4acb-4f52-be83-671bed2f26f1",
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true

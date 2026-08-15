@@ -8,5 +8,6 @@
   "platform-app/src/main/java/com/ghost616/platform/dto/agent/AgentUpdateRequest.java": "bb5368e694d5c3995046001395f06f1a",
   "platform-app/src/main/java/com/ghost616/platform/dto/agent/AgentConfigDTO.java": "83da0a30331dcae67bae1cf8d005a852",
   "platform-app/src/main/java/com/ghost616/platform/service/agent/AgentConfigServiceImpl.java": "8658a6abf3451c470b98ee4e10a8ee7b",
-  "platform-app/src/test/java/com/ghost616/platform/service/agent/AgentConfigServiceImplTest.java": "e40fc3fc9b98bae006e07711b17663a8"
+  "platform-app/src/test/java/com/ghost616/platform/service/agent/AgentConfigServiceImplTest.java": "e40fc3fc9b98bae006e07711b17663a8",
+  "platform-app/src/test/java/com/ghost616/platform/service/agent/AgentConfigUserIsolationTest.java": "da9b72110b274c229b65435ad4aa64b3"
 }

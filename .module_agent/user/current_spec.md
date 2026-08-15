@@ -8,6 +8,7 @@
 - UserSession：用户会话对象，含会话 ID、登录用户信息（User 实体）、最后访问时间（epoch 毫秒，volatile）。
 - UserContext：ThreadLocal 线程上下文，静态 set/get/clear 保存当前请求线程的用户会话，供后续鉴权拦截器写入、业务代码读取。
 - UserSessionManager：内存会话管理器（ConcurrentHashMap），按会话 ID 创建/查询/删除/刷新会话；会话 Cookie 名称 SESSION_ID，空闲 2 小时过期；@Scheduled 每分钟清理过期会话。
+- UserContextUtil：静态工具类，其它模块获取当前登录用户 ID 的统一入口。requireUserId() 会话或用户为空时抛 BusinessException(ErrorCode.USER_NOT_LOGIN)；currentUserIdOrNull() 会话或用户为空时返回 null（不抛异常）。内部通过 UserContext 读取当前线程用户会话。
 ## 登录与认证
 
 - AuthController：POST /api/auth/login（豁免鉴权），校验 LoginRequest（登录名+密码），成功则创建用户会话并写入 HttpOnly 会话 Cookie（SameSite=Lax），返回 UserDTO。

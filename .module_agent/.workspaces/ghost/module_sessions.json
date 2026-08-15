@@ -1,29 +1,26 @@
 {
-  "agent-engine": [
-    "56509b41-4005-4bf2-a608-59e594d1e433"
-  ],
-  "agent-base": [
-    "681e9db0-5748-4464-930c-e79a3aa8ca6f"
-  ],
-  "llm-model": [
-    "33a2cd21-3697-4321-9488-1f779d23bae9"
-  ],
-  "tool-registry": [
-    "6b423c68-7a56-45ab-92c4-e27aeb981a94"
-  ],
-  "agent-config": [
-    "0655c0c3-679e-422c-8333-f2bd4bf9ce7f"
-  ],
-  "skill-manager": [
-    "2e17d0f2-72bb-4f62-9b04-dab116da644a"
-  ],
-  "frontend-ui": [
-    "fe69b361-98d7-4533-913c-3dd975e7104b"
+  "user": [
+    "e9111507-9724-4232-8435-83a34e79600e"
   ],
   "agent-integration": [
-    "a20e3447-d5ea-4398-8fd7-e326f412515b"
+    "4f2e260e-e95d-4e5a-b4bd-fc6f0a76f1a0"
+  ],
+  "agent-engine": [
+    "7864e9d7-6681-4cc9-9615-c472ea3952a1"
+  ],
+  "llm-model": [
+    "d991caff-c32e-4224-92d6-814502e36b8e"
+  ],
+  "tool-registry": [
+    "3d89ed88-471b-412c-8609-1e952e56e6d4"
+  ],
+  "agent-config": [
+    "bd70bd26-4bf3-4562-a0d7-ef62b3820507"
+  ],
+  "skill-manager": [
+    "a80576ec-9ea0-4591-9a31-59f64ff02589"
   ],
   "platform-app": [
-    "2678e7b6-99c1-4f2f-990f-16d075a60a97"
+    "c847c155-6f21-4916-9fa9-318c0d98972d"
   ]
 }

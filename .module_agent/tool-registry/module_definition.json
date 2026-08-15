@@ -23,7 +23,7 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/tool/ToolConfigServiceImpl.java",
-      "description": "工具配置服务实现，含四种类型的 validateImplPath 校验"
+      "description": "工具配置服务实现：提供工具增删改查/状态切换/按名称查实现（getImplByName）等核心业务，含四种工具类型（JAVA/TYPESCRIPT/PYTHON/MCP_HTTP）的 validateImplPath 实现路径校验、normalizeParameterSchema 参数 Schema JSON 校验、BROWSER 子工具的 toolScript JS 语法校验；通过 UserContextUtil.requireUserId() 实现按登录用户隔离（create 填充 user_id、list/getImplByName/checkNameDuplicate 按 userId 过滤，未登录抛 USER_NOT_LOGIN）；getToolConfigBySessionAndName 通过 ToolManager 解析会话工具并回查实体"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/enums/SubToolType.java",

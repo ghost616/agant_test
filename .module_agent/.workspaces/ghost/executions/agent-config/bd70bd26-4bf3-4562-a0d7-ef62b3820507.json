@@ -1,0 +1,12 @@
+[
+  {
+    "plan_id": "plan_27fe9233-6192-4ea9-a5d3-91bae78203e2",
+    "plan": "AgentConfigServiceImpl 改用 UserContextUtil：删除私有 currentUserId() 方法，调用处改用 UserContextUtil.requireUserId()",
+    "modified_files": [
+      "platform-app/src/main/java/com/ghost616/platform/service/agent/AgentConfigServiceImpl.java",
+      "platform-app/src/test/java/com/ghost616/platform/service/agent/AgentConfigUserIsolationTest.java"
+    ],
+    "summary": "执行总结：本轮完成 AgentConfigServiceImpl 用户上下文获取方式重构——删除私有 currentUserId() 方法（原实现从 UserContext 手动读取会话并抛 USER_NOT_LOGIN），3 处调用（list:50、create:77、checkNameDuplicate:282）全部改用 UserContextUtil.requireUserId()，import 由 UserContext/UserSession 替换为 UserContextUtil；同步将 AgentConfigUserIsolationTest 的 Javadoc 引用更新为 UserContextUtil#requireUserId()，并修复该测试类 2 个固有缺陷用例（list_shouldUseUserFromCurrentContext、duplicateCheck_shouldBeScopedPerUser 在检查 getParamNameValuePairs 前补 wrapper.getSqlSegment() 触发 MyBatis-Plus 惰性参数填充）。\n\n测试总结：全部测试通过（11/11，Failures: 0, Errors: 0）。静态检查通过（无 currentUserId() 残留、3 处调用点全部使用 UserContextUtil.requireUserId()、仅导入 UserContextUtil 无未使用 import）；编译检查通过（隔离副本全模块 test-compile BUILD SUCCESS，4 模块，Java 17 target）；回归测试 AgentConfigUserIsolationTest 11/11 通过（NameDuplicatePerUserTest 3/3、ListUserIsolationTest 5/5、CreateUserOwnershipTest 3/3），覆盖 create 填充 userId、list 按 userId 过滤/换用户不混入、checkNameDuplicate 用户维度唯一性、update excludeId、USER_NOT_LOGIN 全部场景；接口测试与 E2E 不适用（纯服务层变更）。行为保持经 11 用例 + 第一轮探针证据双重确认。",
+    "errors": []
+  }
+]

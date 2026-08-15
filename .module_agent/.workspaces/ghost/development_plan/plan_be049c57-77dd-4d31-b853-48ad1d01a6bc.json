@@ -1,0 +1,10 @@
+{
+  "plan_id": "plan_be049c57-77dd-4d31-b853-48ad1d01a6bc",
+  "module_name": "skill-manager",
+  "development_plan": "SkillConfigServiceImpl 改用 UserContextUtil：\n1. 删除私有 currentUserId() 方法，调用处改用 UserContextUtil.requireUserId()（技能配置新增/查询需要登录态）。",
+  "session_id": "a80576ec-9ea0-4591-9a31-59f64ff02589",
+  "modified_files": [
+    "platform-app/src/main/java/com/ghost616/platform/service/skill/SkillConfigServiceImpl.java",
+    "platform-app/src/test/java/com/ghost616/platform/service/skill/SkillConfigServiceImplTest.java"
+  ]
+}

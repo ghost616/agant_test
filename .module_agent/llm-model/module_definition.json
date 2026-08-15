@@ -44,6 +44,10 @@
     {
       "path": "platform-app/src/test/java/com/ghost616/platform/service/model/ModelConfigServiceImplAuthGuardTest.java",
       "description": "模型配置服务未登录保护单元测试：覆盖 UserContext 为空或会话用户为 null 时 create()/list() 抛出 USER_NOT_LOGIN 且不执行数据库操作（数据用户隔离）"
+    },
+    {
+      "path": "platform-app/src/test/java/com/ghost616/platform/service/model/ModelConfigServiceImplUserIsolationTest.java",
+      "description": "ModelConfigServiceImpl 数据用户隔离单元测试：验证登录态下 create() 将当前登录用户 ID 填充到 userId 字段、list() 按当前用户 user_id 过滤查询（配合 UserContextUtil.requireUserId() 使用）"
     }
   ]
 }

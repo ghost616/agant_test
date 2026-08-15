@@ -105,6 +105,9 @@ public class AgentAssembler {
 
     public void setThreadVariableHandler(ThreadVariableHandler threadVariableHandler) {
         this.threadVariableHandler = threadVariableHandler;
+        if (registry != null) {
+            registry.setThreadVariableHandler(threadVariableHandler);
+        }
     }
 
     public Result build() {

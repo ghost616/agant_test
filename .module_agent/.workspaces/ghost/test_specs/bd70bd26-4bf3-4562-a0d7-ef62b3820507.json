@@ -1,0 +1,5 @@
+{
+  "session_id": "bd70bd26-4bf3-4562-a0d7-ef62b3820507",
+  "content": "# 待测试功能说明（第二轮）\n\n## 变更内容\n1. AgentConfigServiceImpl 用户上下文获取方式重构：删除私有 currentUserId() 方法，3 处调用（list()、create()、checkNameDuplicate()）改用 UserContextUtil.requireUserId()，import 替换为 UserContextUtil。\n2. 修复 AgentConfigUserIsolationTest 2 个失败用例（测试代码缺陷）：\n   - list_shouldUseUserFromCurrentContext：断言前补 wrapper.getSqlSegment() 触发 MyBatis-Plus 参数 map 惰性填充\n   - duplicateCheck_shouldBeScopedPerUser：thenAnswer 内检查参数前补 wrapper.getSqlSegment()\n\n涉及文件：\n- platform-app/src/main/java/com/ghost616/platform/service/agent/AgentConfigServiceImpl.java\n- platform-app/src/test/java/com/ghost616/platform/service/agent/AgentConfigUserIsolationTest.java\n\n## 需要验证的功能\n1. 编译检查：Java 17 + Maven 全模块编译通过，无残留 currentUserId() 引用、无未使用 import。\n2. 行为保持：list()/create()/checkNameDuplicate() 登录态下取当前线程用户 ID；未登录/会话用户为 null 抛 ErrorCode.USER_NOT_LOGIN。\n3. 回归测试：AgentConfigUserIsolationTest 全部 11 用例通过（含修复后的 2 个用例）。\n",
+  "timestamp": "2026-08-15T16:39:22.040Z"
+}

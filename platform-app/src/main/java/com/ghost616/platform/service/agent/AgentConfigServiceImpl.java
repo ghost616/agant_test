@@ -22,8 +22,7 @@ import com.ghost616.platform.repository.AgentSkillMapper;
 import com.ghost616.platform.repository.AgentToolMapper;
 import com.ghost616.platform.repository.KnowledgeBaseMapper;
 import com.ghost616.platform.repository.SkillConfigMapper;
-import com.ghost616.platform.session.UserContext;
-import com.ghost616.platform.session.UserSession;
+import com.ghost616.platform.session.UserContextUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -48,7 +47,7 @@ public class AgentConfigServiceImpl implements AgentConfigService {
 
     @Override
     public List<AgentConfigDTO> list(String name, CommonStatus status) {
-        Long userId = currentUserId();
+        Long userId = UserContextUtil.requireUserId();
         LambdaQueryWrapper<AgentConfig> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(AgentConfig::getUserId, userId);
         if (StringUtils.isNotBlank(name)) {
@@ -75,7 +74,7 @@ public class AgentConfigServiceImpl implements AgentConfigService {
     @Override
     @Transactional
     public AgentConfigDTO create(AgentCreateRequest request) {
-        Long userId = currentUserId();
+        Long userId = UserContextUtil.requireUserId();
         checkNameDuplicate(request.getName(), null);
 
         validateMemoryConfig(request.getMemoryEnabled(), request.getMemoryGroupCount(),
@@ -280,7 +279,7 @@ public class AgentConfigServiceImpl implements AgentConfigService {
 
     private void checkNameDuplicate(String name, Long excludeId) {
         LambdaQueryWrapper<AgentConfig> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(AgentConfig::getUserId, currentUserId());
+        wrapper.eq(AgentConfig::getUserId, UserContextUtil.requireUserId());
         wrapper.eq(AgentConfig::getName, name);
         if (excludeId != null) {
             wrapper.ne(AgentConfig::getId, excludeId);
@@ -288,22 +287,6 @@ public class AgentConfigServiceImpl implements AgentConfigService {
         if (agentConfigMapper.selectCount(wrapper) > 0) {
             throw new BusinessException(ErrorCode.AGENT_ALREADY_EXISTS);
         }
-    }
-
-    /**
-     * 获取当前登录用户 ID。
-     *
-     * <p>从 {@link UserContext} 线程上下文读取用户会话；
-     * 未登录时抛出 {@link ErrorCode#USER_NOT_LOGIN}，防止无归属数据写入。</p>
-     *
-     * @return 当前登录用户 ID
-     */
-    private Long currentUserId() {
-        UserSession session = UserContext.get();
-        if (session == null || session.getUser() == null) {
-            throw new BusinessException(ErrorCode.USER_NOT_LOGIN);
-        }
-        return session.getUser().getId();
     }
 
     private AgentConfigDTO toDTO(AgentConfig entity) {

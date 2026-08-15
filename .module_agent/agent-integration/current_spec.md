@@ -19,7 +19,7 @@
 - **AgentAssembler**：新增 setAgentLog(AgentLog) 公开方法，仅当 registry 已存在（build() 之后）时设置到 registry，无自有 AgentLog 暂存字段；build() 不自动注册 agentLog
 - **AgentAssembler**：新增 setChatDataCacheManager(ChatDataCacheManager) 公开方法，参考 setAgentLog 模式，仅当 registry 已存在（build() 之后）时设置到 registry，无自有 ChatDataCacheManager 暂存字段；build() 不自动注册 chatDataCacheManager
 - **AgentAssembler**：新增 private AgentMessageProxy agentMessageProxy 字段保留 build() 创建的引用；setChatDataCacheManager(ChatDataCacheManager) 方法在设置 registry 后，若 agentMessageProxy 非 null 则调用 agentMessageProxy.setChatDataCacheManager(chatDataCacheManager) 透传
-- **AgentAssembler**：新增 setThreadVariableHandler(ThreadVariableHandler) 公开方法与 threadVariableHandler 暂存字段，build() 中通过 registry.setThreadVariableHandler(threadVariableHandler) 将线程变量处理器注册到 AgentComponentRegistry（build 前调用生效，build 后调用仅更新暂存字段、不影响已建 registry）
+- **AgentAssembler**：新增 setThreadVariableHandler(ThreadVariableHandler) 公开方法与 threadVariableHandler 暂存字段，build() 中通过 registry.setThreadVariableHandler(threadVariableHandler) 将线程变量处理器注册到 AgentComponentRegistry；setThreadVariableHandler 在赋值暂存字段后，若 registry 已存在（build() 之后）则立即同步注册到已建 registry（与 setAgentLog/setChatDataCacheManager 注册模式一致），build 前后调用均生效
 ## 模块职责
 提供多平台模型调用器的实现（ModelInvoker）和 Agent 组件的组装能力。
 

@@ -31,8 +31,7 @@ import com.ghost616.platform.repository.SessionMapper;
 import com.ghost616.platform.repository.SessionSkillMapper;
 import com.ghost616.platform.repository.SessionToolMapper;
 import com.ghost616.platform.repository.SessionVariableMapper;
-import com.ghost616.platform.session.UserContext;
-import com.ghost616.platform.session.UserSession;
+import com.ghost616.platform.session.UserContextUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,7 +41,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * 评估业务实现。创建数据时从 {@link UserContext} 获取当前登录用户填充 user_id，
+ * 评估业务实现。创建数据时从 {@link UserContextUtil} 获取当前登录用户填充 user_id，
  * 查询/列表仅返回当前用户数据，单条访问校验数据归属，实现评估数据用户隔离。
  */
 @Service
@@ -65,7 +64,7 @@ public class EvaluationServiceImpl implements EvaluationService {
     @Override
     public List<EvaluationDTO> list(Long agentEvalId) {
         LambdaQueryWrapper<Evaluation> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(Evaluation::getUserId, currentUserId());
+        wrapper.eq(Evaluation::getUserId, UserContextUtil.requireUserId());
         if (agentEvalId != null) {
             wrapper.eq(Evaluation::getAgentEvalId, agentEvalId);
         }
@@ -87,7 +86,7 @@ public class EvaluationServiceImpl implements EvaluationService {
     @Override
     @Transactional
     public EvaluationDTO create(EvaluationCreateRequest request) {
-        Long userId = currentUserId();
+        Long userId = UserContextUtil.requireUserId();
         LambdaQueryWrapper<Evaluation> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Evaluation::getUserId, userId)
                 .eq(Evaluation::getName, request.getName())
@@ -317,7 +316,7 @@ public class EvaluationServiceImpl implements EvaluationService {
         requireOwned(evaluation);
         LambdaQueryWrapper<EvaluationResult> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(EvaluationResult::getEvaluationId, evaluationId)
-                .eq(EvaluationResult::getUserId, currentUserId());
+                .eq(EvaluationResult::getUserId, UserContextUtil.requireUserId());
         List<Long> resultIds = evaluationResultMapper.selectList(wrapper)
                 .stream()
                 .map(EvaluationResult::getId)
@@ -329,7 +328,7 @@ public class EvaluationServiceImpl implements EvaluationService {
     public List<EvaluationResultDTO> listResults(Long evaluationId) {
         LambdaQueryWrapper<EvaluationResult> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(EvaluationResult::getEvaluationId, evaluationId)
-                .eq(EvaluationResult::getUserId, currentUserId());
+                .eq(EvaluationResult::getUserId, UserContextUtil.requireUserId());
         wrapper.orderByDesc(EvaluationResult::getCreateTime);
         List<EvaluationResult> entities = evaluationResultMapper.selectList(wrapper);
 
@@ -386,28 +385,12 @@ public class EvaluationServiceImpl implements EvaluationService {
     }
 
     /**
-     * 获取当前登录用户 ID。
-     *
-     * <p>从 {@link UserContext} 线程上下文读取用户会话；
-     * 未登录时抛出 {@link ErrorCode#USER_NOT_LOGIN}，防止无归属数据写入与越权访问。</p>
-     *
-     * @return 当前登录用户 ID
-     */
-    private Long currentUserId() {
-        UserSession session = UserContext.get();
-        if (session == null || session.getUser() == null) {
-            throw new BusinessException(ErrorCode.USER_NOT_LOGIN);
-        }
-        return session.getUser().getId();
-    }
-
-    /**
      * 校验评估归属当前用户，非本人数据按不存在处理（不泄露数据存在性）。
      *
      * @param entity 评估实体
      */
     private void requireOwned(Evaluation entity) {
-        Long userId = currentUserId();
+        Long userId = UserContextUtil.requireUserId();
         if (entity.getUserId() != null && !entity.getUserId().equals(userId)) {
             throw new BusinessException(ErrorCode.EVALUATION_NOT_FOUND);
         }
@@ -419,7 +402,7 @@ public class EvaluationServiceImpl implements EvaluationService {
      * @param entity 评估结果实体
      */
     private void requireOwnedResult(EvaluationResult entity) {
-        Long userId = currentUserId();
+        Long userId = UserContextUtil.requireUserId();
         if (entity.getUserId() != null && !entity.getUserId().equals(userId)) {
             throw new BusinessException(ErrorCode.EVALUATION_RESULT_NOT_FOUND);
         }

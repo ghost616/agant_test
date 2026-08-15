@@ -44,8 +44,8 @@ import static org.mockito.Mockito.*;
  *   <li>create() 从 {@link UserContext} 获取当前 userId 并填充到 entity.user_id；</li>
  *   <li>list() 仅按当前 userId 过滤，且随线程上下文切换而不混入其他用户过滤值；</li>
  *   <li>checkNameDuplicate() 按用户维度判断名称唯一性（不同用户可同名）；</li>
- *   <li>currentUserId() 在 UserContext 为空或会话用户为 null 时抛出
- *       {@link ErrorCode#USER_NOT_LOGIN}。</li>
+ *   <li>{@link com.ghost616.platform.session.UserContextUtil#requireUserId()} 在
+ *       UserContext 为空或会话用户为 null 时抛出 {@link ErrorCode#USER_NOT_LOGIN}。</li>
  * </ul>
  *
  * <p>与 {@code ModelConfigServiceImplListFilterTest} 一致，通过
@@ -194,6 +194,7 @@ class AgentConfigUserIsolationTest {
 
             verify(agentConfigMapper).selectList(agentConfigWrapperCaptor.capture());
             LambdaQueryWrapper<AgentConfig> wrapper = agentConfigWrapperCaptor.getValue();
+            wrapper.getSqlSegment(); // 触发参数 map 填充（MyBatis-Plus 惰性求值）
             assertTrue(wrapper.getParamNameValuePairs().containsValue(USER_B_ID),
                     "list 应使用当前线程上下文的用户 ID 过滤");
             assertFalse(wrapper.getParamNameValuePairs().containsValue(USER_A_ID),
@@ -252,6 +253,7 @@ class AgentConfigUserIsolationTest {
             // selectCount 按 wrapper 中的 user_id 参数区分：用户 A 已有同名记录，用户 B 无
             when(agentConfigMapper.selectCount(any())).thenAnswer(invocation -> {
                 LambdaQueryWrapper<AgentConfig> wrapper = invocation.getArgument(0);
+                wrapper.getSqlSegment(); // 触发参数 map 填充（MyBatis-Plus 惰性求值）
                 if (wrapper.getParamNameValuePairs().containsValue(USER_A_ID)) {
                     return 1L;
                 }

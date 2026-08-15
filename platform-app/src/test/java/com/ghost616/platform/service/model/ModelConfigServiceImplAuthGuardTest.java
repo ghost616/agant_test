@@ -3,6 +3,7 @@ package com.ghost616.platform.service.model;
 import com.ghost616.agentbase.service.model.invoker.ModelInvokerManager;
 import com.ghost616.agentinteg.model.PlatformType;
 import com.ghost616.platform.dto.model.ModelCreateRequest;
+import com.ghost616.platform.entity.ModelConfig;
 import com.ghost616.platform.enums.ErrorCode;
 import com.ghost616.platform.exception.BusinessException;
 import com.ghost616.platform.repository.ModelConfigMapper;
@@ -64,7 +65,7 @@ class ModelConfigServiceImplAuthGuardTest {
         BusinessException ex = assertThrows(BusinessException.class, () -> service.create(createRequest()));
 
         assertEquals(ErrorCode.USER_NOT_LOGIN, ex.getErrorCode());
-        verify(modelConfigMapper, never()).insert(any());
+        verify(modelConfigMapper, never()).insert(any(ModelConfig.class));
     }
 
     @Test
@@ -86,7 +87,7 @@ class ModelConfigServiceImplAuthGuardTest {
         BusinessException ex = assertThrows(BusinessException.class, () -> service.create(createRequest()));
 
         assertEquals(ErrorCode.USER_NOT_LOGIN, ex.getErrorCode());
-        verify(modelConfigMapper, never()).insert(any());
+        verify(modelConfigMapper, never()).insert(any(ModelConfig.class));
     }
 
     @Test

@@ -145,5 +145,6 @@
   "platform-app/src/main/java/com/ghost616/platform/service/message/MessageServiceImpl.java": "e16f211f61c15ddd4dd2f67b1eb0f5d6",
   "platform-app/src/test/java/com/ghost616/platform/service/message/MessageServiceImplTest.java": "4bd6252a0be6a2cb968333774277d138",
   "platform-app/src/main/java/com/ghost616/platform/service/memory/MemoryQueryProviderImpl.java": "a6eca5f6d2098997ec1e7fea0cd79ca4",
-  "platform-app/src/test/java/com/ghost616/platform/service/memory/MemoryQueryProviderImplTest.java": "38d211c67d1e607c013b5bb4ebef233f"
+  "platform-app/src/test/java/com/ghost616/platform/service/memory/MemoryQueryProviderImplTest.java": "38d211c67d1e607c013b5bb4ebef233f",
+  "platform-app/src/test/java/com/ghost616/platform/service/model/ModelConfigServiceImplAuthGuardTest.java": "bf3c0d77cefa8d5d4ffdefd326feab58"
 }

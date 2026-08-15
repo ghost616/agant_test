@@ -1,0 +1,5 @@
+{
+  "session_id": "a80576ec-9ea0-4591-9a31-59f64ff02589",
+  "content": "## 待测试功能说明\n\n### 变更概述\n重构 `SkillConfigServiceImpl`：删除私有方法 `currentUserId()`，其三处调用点（list 查询过滤、create 填充 userId、checkNameDuplicate 名称去重）改用 `UserContextUtil.requireUserId()`。行为保持不变：未登录时抛出 `USER_NOT_LOGIN` 业务异常；已登录时返回当前用户 ID。\n\n### 涉及文件\n- platform-app/src/main/java/com/ghost616/platform/service/skill/SkillConfigServiceImpl.java（被修改）\n- platform-app/src/main/java/com/ghost616/platform/session/UserContextUtil.java（依赖，未修改）\n- platform-app/src/test/java/com/ghost616/platform/service/skill/SkillConfigServiceImplTest.java（已有测试，未修改）\n\n### 需要测试的功能\n1. **编译检查**：SkillConfigServiceImpl 修改后项目可正常编译（import 无残留、无未使用引用、UserContextUtil 引入正确）。\n2. **list 查询用户隔离**：list 查询构造的查询条件包含当前登录用户 ID（CURRENT_USER_ID=42），测试 `list_shouldReturnDTOs` 应通过。\n3. **create 填充 userId**：create 时 SkillConfig.userId 被填充为当前登录用户 ID，测试 `create_newSkill_shouldReturnDTO` 应通过。\n4. **未登录场景**：UserContext 未设置时调用 list/create 抛出 USER_NOT_LOGIN（与重构前行为一致）。\n5. **既有测试全量回归**：SkillConfigServiceImplTest 中 getById、list、create、toggleStatus 全部通过。",
+  "timestamp": "2026-08-15T15:58:39.180Z"
+}

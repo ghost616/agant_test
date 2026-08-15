@@ -1,0 +1,12 @@
+[
+  {
+    "plan_id": "plan_0296b6a7-5a70-4ffd-9c7d-336e4dff189e",
+    "plan": "ToolConfigServiceImpl 改用 UserContextUtil：删除私有 currentUserId() 方法，调用处改用 UserContextUtil.requireUserId()（工具配置新增/查询需要登录态）",
+    "modified_files": [
+      "platform-app/src/main/java/com/ghost616/platform/service/tool/ToolConfigServiceImpl.java",
+      "platform-app/src/test/java/com/ghost616/platform/service/tool/ToolConfigServiceImplTest.java"
+    ],
+    "summary": "执行总结：ToolConfigServiceImpl 改用 UserContextUtil 任务完成。修改 2 个文件：① ToolConfigServiceImpl.java——删除私有 currentUserId() 方法，list/create/getImplByName/checkNameDuplicate 共 4 处改用 UserContextUtil.requireUserId()（行为等价：均从 UserContext 读取会话、未登录抛 USER_NOT_LOGIN），移除 UserContext/UserSession import 并新增 UserContextUtil import；② ToolConfigServiceImplTest.java——修复 4 个既有断言缺陷（wrapper 参数断言前调用 getSqlSegment() 触发 MyBatis-Plus 参数惰性填充；@BeforeEach 首行 TableInfoHelper.initTableInfo 初始化实体缓存，解决纯 Mockito 单测环境 getSqlSegment() 缺 TableInfo 缓存抛 MybatisPlusException；toDTO 断言 getId() 由 1L 改为字符串 \"1\"，因 ToolDetailDTO.id 为 String）。同步更新 current_spec.md（基础模型层用户隔离描述改为 UserContextUtil.requireUserId()）、module_definition.json（ToolConfigServiceImpl 职责描述补充用户隔离）、change_history.log。\n\n测试总结：全部测试通过，通过 57 项，失败 0 项，跳过 0 项。离朱三轮回归验证：① 编译测试 Maven fresh 编译 142 个源文件 BUILD SUCCESS，无残留对已删除方法/import 的引用；② 单元测试 57/57 全绿（0 失败 0 错误）：ToolConfigServiceImplTest 43/43（CreateTests 15/15 含登录态填充用户 ID、未登录抛 USER_NOT_LOGIN 且不 insert、重名抛 TOOL_ALREADY_EXISTS；ListTests 4/4；GetImplByNameTests 2/2；ToDTOTests 2/2；UpdateTests/ExceptionTests/会话查询 20/20）、ToolConfigServiceImplLazyTest 3/3、UserContextUtilTest 11/11；③ 行为等价性验证：恢复旧 currentUserId() 实现的回退实验中失败用例与新版完全一致，证明新旧实现行为等价；④ 接口/E2E 测试不适用（纯后端 Service 层静态变更）。测试全程在离朱隔离快照中执行（与主工作区文件哈希一致），主工作区未被修改。",
+    "errors": []
+  }
+]

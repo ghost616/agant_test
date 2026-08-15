@@ -1,0 +1,10 @@
+{
+  "plan_id": "plan_27fe9233-6192-4ea9-a5d3-91bae78203e2",
+  "module_name": "agent-config",
+  "development_plan": "AgentConfigServiceImpl 改用 UserContextUtil：\n1. 删除私有 currentUserId() 方法，调用处改用 UserContextUtil.requireUserId()（智能体配置新增/查询需要登录态）。",
+  "session_id": "bd70bd26-4bf3-4562-a0d7-ef62b3820507",
+  "modified_files": [
+    "platform-app/src/main/java/com/ghost616/platform/service/agent/AgentConfigServiceImpl.java",
+    "platform-app/src/test/java/com/ghost616/platform/service/agent/AgentConfigUserIsolationTest.java"
+  ]
+}

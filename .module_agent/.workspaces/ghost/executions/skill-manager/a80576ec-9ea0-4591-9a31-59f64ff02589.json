@@ -1,0 +1,12 @@
+[
+  {
+    "plan_id": "plan_be049c57-77dd-4d31-b853-48ad1d01a6bc",
+    "plan": "SkillConfigServiceImpl 改用 UserContextUtil：删除私有 currentUserId() 方法，调用处改用 UserContextUtil.requireUserId()",
+    "modified_files": [
+      "platform-app/src/main/java/com/ghost616/platform/service/skill/SkillConfigServiceImpl.java",
+      "platform-app/src/test/java/com/ghost616/platform/service/skill/SkillConfigServiceImplTest.java"
+    ],
+    "summary": "执行总结：本次重构 SkillConfigServiceImpl，将获取当前登录用户 ID 的逻辑统一收敛到 UserContextUtil：1) 删除私有 currentUserId() 方法（原内部直接使用 UserContext/UserSession 并抛 USER_NOT_LOGIN）；2) list（按用户过滤）、create（填充 userId）、checkNameDuplicate（名称去重按用户维度）三处调用点改用 UserContextUtil.requireUserId()，行为与原先完全一致（未登录抛 USER_NOT_LOGIN，已登录返回用户 ID）；3) 同步清理 import（移除 UserContext/UserSession，新增 UserContextUtil）。业务逻辑零变化，属纯重构。测试文件 SkillConfigServiceImplTest 由离朱增强：setUp 增加 MyBatis-Plus TableInfoHelper 元数据初始化、list 断言前强制渲染 wrapper、新增 2 个未登录场景测试（list/create 抛 USER_NOT_LOGIN 且不触达 Mapper）。\n\n测试总结：全部测试通过，通过 6 项（编译检查 ✅ + 单元测试 6/6 ✅），失败 0 项，跳过 0 项。接口测试/E2E 不适用（服务层内部重构，无 HTTP/UI 变更）。编译检查：多模块 Maven 全量编译成功（agent-base / agent-integration / platform-data / platform-app），SkillConfigServiceImpl 三处调用点（list:37、create:65、checkNameDuplicate:158）均已正确改用 UserContextUtil.requireUserId()，无 currentUserId() 残留。单元测试 6/6：getById、list_shouldReturnDTOs（查询条件含 CURRENT_USER_ID=42）、create_newSkill_shouldReturnDTO（userId 填充=42）、toggleStatus 及新增 list/create 未登录抛 USER_NOT_LOGIN 测试全部通过。关键发现（非回归）：初次运行 list_shouldReturnDTOs 的 containsValue 断言失败，经源码级验证为 MyBatis-Plus 3.5.7 的 eq() 延迟 lambda 机制导致——仅 SQL 渲染时才写入 paramNameValuePairs，纯 Mockito 环境断言恒失败，与重构无关，非业务回归。环境说明：测试期间并行开发进程执行 mvn clean 清空共享 target 造成假性编译失败，离朱改用 .lizhu_env\\lizhu_skill_refactor_test 隔离副本完成构建验证并在工作区复验一致。",
+    "errors": []
+  }
+]

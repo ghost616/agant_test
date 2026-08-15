@@ -10,8 +10,7 @@ import com.ghost616.agentbase.service.agent.log.LogData;
 import com.ghost616.agentbase.service.agent.log.SessionLogData;
 import com.ghost616.platform.entity.AgentLogEntity;
 import com.ghost616.platform.repository.AgentLogMapper;
-import com.ghost616.platform.session.UserContext;
-import com.ghost616.platform.session.UserSession;
+import com.ghost616.platform.session.UserContextUtil;
 import com.ghost616.platform.util.IdConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,7 +43,7 @@ public class DatabaseAgentLog implements AgentLog {
     @Override
     public void addLog(LogData logData) {
         AgentLogEntity entity = new AgentLogEntity();
-        entity.setUserId(currentUserId());
+        entity.setUserId(UserContextUtil.currentUserIdOrNull());
         if (logData instanceof ContextLogData contextLogData) {
             AgentExecutionContext context = contextLogData.getContext();
             if (context != null) {
@@ -102,22 +101,5 @@ public class DatabaseAgentLog implements AgentLog {
             log.warn("序列化日志数据失败: {}", e.getMessage());
             return null;
         }
-    }
-
-    /**
-     * 获取当前登录用户 ID。
-     *
-     * <p>从 {@link UserContext} 线程上下文读取用户会话；
-     * 异步场景（如工具异步执行线程）通过线程变量传播保证上下文可取。
-     * 无用户上下文（如系统级流程）时返回 null，userId 留空，避免中断系统级流程。</p>
-     *
-     * @return 当前登录用户 ID，无用户上下文时返回 null
-     */
-    private Long currentUserId() {
-        UserSession session = UserContext.get();
-        if (session == null || session.getUser() == null) {
-            return null;
-        }
-        return session.getUser().getId();
     }
 }

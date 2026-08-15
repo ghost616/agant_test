@@ -1,0 +1,12 @@
+[
+  {
+    "plan_id": "plan_2f9ce822-fa4e-491d-ac91-7d0740c644b8",
+    "plan": "修复 AgentAssembler 的 ThreadVariableHandler 注册顺序",
+    "modified_files": [
+      "agent-integration/src/main/java/com/ghost616/agentinteg/AgentAssembler.java",
+      "agent-integration/src/test/java/com/ghost616/agentinteg/AgentAssemblerTest.java"
+    ],
+    "summary": "执行总结：本轮共修改 2 个文件，实现了 AgentAssembler 的 ThreadVariableHandler 注册顺序修复——1）AgentAssembler.java 的 setThreadVariableHandler 方法在赋值暂存字段 this.threadVariableHandler 后新增 if (registry != null) registry.setThreadVariableHandler(threadVariableHandler)，与 setAgentLog/setChatDataCacheManager 注册模式保持一致，build 后调用也会同步更新已建 registry；2）build() 内的 registry.setThreadVariableHandler(threadVariableHandler) 保留不变；3）AgentAssemblerTest.java 第 3 个用例由 setThreadVariableHandler_build后调用_不影响已建registry 更名为 setThreadVariableHandler_build后调用_更新已建registry，断言 assertNull 改为 assertSame。同步更新了模块 spec/definition/history 元数据。\n\n测试总结：全部测试通过。编译检查 mvn -pl agent-integration -am clean test-compile BUILD SUCCESS（43 主源码 + 15 测试源码，javac release 17）；单元测试 AgentAssemblerTest 共 22 用例，通过 22 项，失败 0 项，跳过 0 项（Tests run: 22, Failures: 0, Errors: 0, Skipped: 0）。ThreadVariableHandler 三用例逐条 PASS：build 前调用 build 后注册到 registry（assertSame）✅、未调用时 registry 为 null（assertNull）✅、build 后调用更新已建 registry（assertSame，原 assertNull 已修正）✅。接口测试与 E2E 不适用（纯 Java 后端逻辑变更，无 API/UI 变更）。环境说明：Maven 3.9.16 + JDK 21（target 17），本地 ~/.m2 已缓存依赖无需安装；测试日志留存于 E:\\test_tool\\test-results\\（mvn_clean_test_compile.log、mvn_test_run.log）。",
+    "errors": []
+  }
+]

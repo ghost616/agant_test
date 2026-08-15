@@ -1,0 +1,10 @@
+{
+  "plan_id": "plan_0296b6a7-5a70-4ffd-9c7d-336e4dff189e",
+  "module_name": "tool-registry",
+  "development_plan": "ToolConfigServiceImpl 改用 UserContextUtil：\n1. 删除私有 currentUserId() 方法，调用处改用 UserContextUtil.requireUserId()（工具配置新增/查询需要登录态）。",
+  "session_id": "3d89ed88-471b-412c-8609-1e952e56e6d4",
+  "modified_files": [
+    "platform-app/src/main/java/com/ghost616/platform/service/tool/ToolConfigServiceImpl.java",
+    "platform-app/src/test/java/com/ghost616/platform/service/tool/ToolConfigServiceImplTest.java"
+  ]
+}

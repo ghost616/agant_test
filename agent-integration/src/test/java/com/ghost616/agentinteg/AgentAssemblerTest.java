@@ -260,12 +260,12 @@ class AgentAssemblerTest {
     }
 
     @Test
-    void setThreadVariableHandler_build后调用_不影响已建registry() throws Exception {
+    void setThreadVariableHandler_build后调用_更新已建registry() throws Exception {
         agentAssembler.build();
         ThreadVariableHandler handler = mock(ThreadVariableHandler.class);
         agentAssembler.setThreadVariableHandler(handler);
 
-        assertNull(getRegistry().getThreadVariableHandler());
+        assertSame(handler, getRegistry().getThreadVariableHandler());
     }
 
     private AgentComponentRegistry getRegistry() throws Exception {

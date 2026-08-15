@@ -1,10 +1,15 @@
 package com.ghost616.platform.service.skill;
 
+import com.baomidou.mybatisplus.core.MybatisConfiguration;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import com.ghost616.agentbase.dto.skill.SkillConfigDTO;
 import com.ghost616.agentbase.enums.CommonStatus;
 import com.ghost616.platform.entity.SkillConfig;
 import com.ghost616.platform.entity.SkillTool;
 import com.ghost616.platform.entity.User;
+import com.ghost616.platform.enums.ErrorCode;
+import com.ghost616.platform.exception.BusinessException;
 import com.ghost616.platform.repository.SkillConfigMapper;
 import com.ghost616.platform.repository.SkillToolMapper;
 import com.ghost616.platform.repository.ToolConfigMapper;
@@ -17,6 +22,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.apache.ibatis.builder.MapperBuilderAssistant;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -41,6 +47,10 @@ class SkillConfigServiceImplTest {
 
     @BeforeEach
     void setUp() {
+        // 初始化 MyBatis-Plus 表元数据缓存，使 LambdaQueryWrapper 的 SQL 渲染（列名解析/参数填充）可用
+        TableInfoHelper.initTableInfo(new MapperBuilderAssistant(new MybatisConfiguration(), ""), SkillConfig.class);
+        TableInfoHelper.initTableInfo(new MapperBuilderAssistant(new MybatisConfiguration(), ""), SkillTool.class);
+
         service = new SkillConfigServiceImpl(skillConfigMapper, skillToolMapper, toolConfigMapper);
         User user = new User();
         user.setId(CURRENT_USER_ID);
@@ -95,7 +105,9 @@ class SkillConfigServiceImplTest {
         ArgumentCaptor<com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<SkillConfig>> wrapperCaptor =
                 ArgumentCaptor.forClass(com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper.class);
         verify(skillConfigMapper).selectList(wrapperCaptor.capture());
-        assertTrue(wrapperCaptor.getValue().getParamNameValuePairs().containsValue(CURRENT_USER_ID));
+        LambdaQueryWrapper<SkillConfig> captured = wrapperCaptor.getValue();
+        captured.getExpression().getSqlSegment(); // 渲染 SQL，触发 paramNameValuePairs 填充
+        assertTrue(captured.getParamNameValuePairs().containsValue(CURRENT_USER_ID));
     }
 
     @Test
@@ -136,5 +148,29 @@ class SkillConfigServiceImplTest {
 
         assertNull(dto.getSessionAuth());
         assertEquals(CommonStatus.DISABLED, dto.getStatus());
+    }
+
+    @Test
+    void list_whenNotLoggedIn_shouldThrowUserNotLogin() {
+        UserContext.clear();
+
+        BusinessException ex = assertThrows(BusinessException.class, () -> service.list(null, null));
+
+        assertEquals(ErrorCode.USER_NOT_LOGIN, ex.getErrorCode());
+        verify(skillConfigMapper, never()).selectList(any());
+    }
+
+    @Test
+    void create_whenNotLoggedIn_shouldThrowUserNotLogin() {
+        UserContext.clear();
+        com.ghost616.platform.dto.skill.SkillCreateRequest request =
+                com.ghost616.platform.dto.skill.SkillCreateRequest.builder()
+                        .name("new_skill")
+                        .build();
+
+        BusinessException ex = assertThrows(BusinessException.class, () -> service.create(request));
+
+        assertEquals(ErrorCode.USER_NOT_LOGIN, ex.getErrorCode());
+        verify(skillConfigMapper, never()).insert(any(SkillConfig.class));
     }
 }

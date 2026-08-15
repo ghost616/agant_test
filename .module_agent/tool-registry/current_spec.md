@@ -6,7 +6,7 @@
 - GET /api/tools/{name}/impl：按工具名称查询工具实现信息，返回 ToolConfigDTO。Controller 新增 getImplByName 端点；Service 接口新增 getImplByName(String name) 方法，ServiceImpl 通过 LambdaQueryWrapper 按名称等值查询，不存在时抛出 TOOL_NOT_FOUND 异常。
 - ToolConfigDTO.id 字段添加 @JsonSerialize(using = ToStringSerializer.class) 注解，防止前端 JavaScript 处理雪花 ID 时精度丢失。
 - ToolCreateRequest 与 ToolUpdateRequest 的 name 字段 @Pattern 正则改为 `^(?!_sys_)[a-z0-9_]+$`，在原有"仅允许小写字母、数字、下划线"基础上禁止以 `_sys_` 开头（系统保留前缀），提示信息为"工具名称不允许以 _sys_ 开头"。
-- 工具配置数据用户隔离：ToolConfigServiceImpl 通过 currentUserId()（UserContext 线程上下文，未登录抛 USER_NOT_LOGIN）实现按用户隔离——create() 将当前用户 ID 填充到 user_id 字段；list()/getImplByName()/checkNameDuplicate() 均按当前 userId 过滤，不同用户可创建同名工具，同用户内名称去重
+- 工具配置数据用户隔离：ToolConfigServiceImpl 通过 UserContextUtil.requireUserId()（统一用户上下文工具类，未登录抛 USER_NOT_LOGIN）实现按用户隔离——create() 将当前用户 ID 填充到 user_id 字段；list()/getImplByName()/checkNameDuplicate() 均按当前 userId 过滤，不同用户可创建同名工具，同用户内名称去重
 ## Schema 验证与规范化
 
 - ToolConfigServiceImpl.create() 和 update() 在设置 parameterSchema 前调用 normalizeParameterSchema() 进行 JSON 合法性校验

@@ -52,6 +52,14 @@
     {
       "path": "src/types/user.ts",
       "description": "前端用户类型定义：User/LoginRequest/UserCreateRequest/UserUpdateRequest 接口及用户类型常量 USER_TYPE_NORMAL/USER_TYPE_ADMIN。"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/session/UserContextUtil.java",
+      "description": "用户上下文静态工具类，其它模块获取当前登录用户 ID 的统一入口。requireUserId() 未登录时抛 BusinessException(ErrorCode.USER_NOT_LOGIN)；currentUserIdOrNull() 未登录时返回 null。内部通过 UserContext 读取当前线程用户会话。"
+    },
+    {
+      "description": "UserContextUtil 单元测试（JUnit 5）：覆盖 requireUserId / currentUserIdOrNull 的正向、会话为空、用户为空、用户 id 为 null、线程隔离等场景。",
+      "path": "platform-app/src/test/java/com/ghost616/platform/session/UserContextUtilTest.java"
     }
   ]
 }

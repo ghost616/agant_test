@@ -1,0 +1,12 @@
+[
+  {
+    "plan_id": "plan_a13863e4-5364-45ed-8078-dcb2552db206",
+    "plan": "新增静态工具类 UserContextUtil，作为其它模块获取当前用户 ID 的统一入口",
+    "modified_files": [
+      "platform-app/src/main/java/com/ghost616/platform/session/UserContextUtil.java",
+      "platform-app/src/test/java/com/ghost616/platform/session/UserContextUtilTest.java"
+    ],
+    "summary": "执行总结：新增静态工具类 UserContextUtil（platform-app/src/main/java/com/ghost616/platform/session/UserContextUtil.java），作为其它模块获取当前登录用户 ID 的统一入口。requireUserId()：会话或用户为空时抛 BusinessException(ErrorCode.USER_NOT_LOGIN)，否则返回用户 ID；currentUserIdOrNull()：会话或用户为空时返回 null（不抛异常）。内部通过 UserContext 读取当前线程用户会话，复用私有方法 currentUserOrNull() 避免重复判空。已同步更新模块定义（新增主类与测试文件条目）、current_spec.md「用户会话管理」小节、变更历史。注意：write 工具在当前宿主机全局故障（EISDIR），主文件经 PowerShell 以 UTF-8 无 BOM 写入并 read 校验无误。\n\n测试总结：全部测试通过。单元测试 11/11 通过（Tests run: 11, Failures: 0, Errors: 0, Skipped: 0），覆盖：正向 2 例（会话+用户存在时两方法均返回用户 ID）；会话为空 4 例（requireUserId 抛 BusinessException 且 errorCode==USER_NOT_LOGIN、消息\"请登录\"，含显式 set(null)；currentUserIdOrNull 返回 null）；用户为空 2 例（同上行为）；边界 1 例（用户存在但 id 为 null 时透传返回 null 不抛异常）；线程隔离 2 例（子线程无会话不污染主线程）。编译测试通过：mvn -pl platform-app -am compile BUILD SUCCESS，platform-app 编译 142 个源文件（含新增 UserContextUtil.java），跨模块依赖（platform-data 的 User/ErrorCode/BusinessException）正常。接口/E2E 不适用（纯静态工具类，无 HTTP API、无 UI）。环境问题：预存在的 ModelConfigServiceImplAuthGuardTest.java 第 67/89 行 verify(...).insert(any()) 与 MyBatis-Plus 3.5.7 重载歧义导致无法编译（非本次变更引入），离朱测试时临时移出源码树并原样恢复（SHA-256 一致，无残留改动）；建议后续修复为 insert(any(ModelConfig.class))。新增测试文件 platform-app/src/test/java/com/ghost616/platform/session/UserContextUtilTest.java。",
+    "errors": []
+  }
+]

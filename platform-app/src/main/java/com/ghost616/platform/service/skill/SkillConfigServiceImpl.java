@@ -9,8 +9,7 @@ import com.ghost616.platform.entity.SkillTool;
 import com.ghost616.platform.repository.SkillConfigMapper;
 import com.ghost616.platform.repository.SkillToolMapper;
 import com.ghost616.platform.repository.ToolConfigMapper;
-import com.ghost616.platform.session.UserContext;
-import com.ghost616.platform.session.UserSession;
+import com.ghost616.platform.session.UserContextUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,7 +34,7 @@ public class SkillConfigServiceImpl implements SkillConfigService {
     @Override
     public List<SkillConfigDTO> list(String name, CommonStatus status) {
         LambdaQueryWrapper<SkillConfig> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(SkillConfig::getUserId, currentUserId());
+        wrapper.eq(SkillConfig::getUserId, UserContextUtil.requireUserId());
         if (StringUtils.isNotBlank(name)) {
             wrapper.like(SkillConfig::getName, name);
         }
@@ -63,7 +62,7 @@ public class SkillConfigServiceImpl implements SkillConfigService {
         checkNameDuplicate(request.getName(), null);
 
         SkillConfig entity = SkillConfig.builder()
-                .userId(currentUserId())
+                .userId(UserContextUtil.requireUserId())
                 .name(request.getName())
                 .description(request.getDescription())
                 .prompt(request.getPrompt())
@@ -156,7 +155,7 @@ public class SkillConfigServiceImpl implements SkillConfigService {
 
     private void checkNameDuplicate(String name, Long excludeId) {
         LambdaQueryWrapper<SkillConfig> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(SkillConfig::getUserId, currentUserId());
+        wrapper.eq(SkillConfig::getUserId, UserContextUtil.requireUserId());
         wrapper.eq(SkillConfig::getName, name);
         if (excludeId != null) {
             wrapper.ne(SkillConfig::getId, excludeId);
@@ -164,20 +163,6 @@ public class SkillConfigServiceImpl implements SkillConfigService {
         if (skillConfigMapper.selectCount(wrapper) > 0) {
             throw new BusinessException(ErrorCode.SKILL_ALREADY_EXISTS);
         }
-    }
-
-    /**
-     * 获取当前登录用户 ID。
-     *
-     * @return 当前登录用户 ID
-     * @throws BusinessException 未登录时抛出 USER_NOT_LOGIN
-     */
-    private Long currentUserId() {
-        UserSession session = UserContext.get();
-        if (session == null || session.getUser() == null) {
-            throw new BusinessException(ErrorCode.USER_NOT_LOGIN);
-        }
-        return session.getUser().getId();
     }
 
     private void validateToolIds(List<Long> toolIds) {

@@ -1,0 +1,5 @@
+{
+  "session_id": "e9111507-9724-4232-8435-83a34e79600e",
+  "content": "# 待测试功能说明\n\n## 功能\n新增静态工具类 `UserContextUtil`（platform-app/src/main/java/com/ghost616/platform/session/UserContextUtil.java，归属 user 模块），作为其它模块获取当前登录用户 ID 的统一入口：\n\n1. `requireUserId()`：从 UserContext 获取当前登录用户 ID；会话为空或用户为空时抛出 BusinessException(ErrorCode.USER_NOT_LOGIN)；否则返回用户 ID（Long）。\n2. `currentUserIdOrNull()`：从 UserContext 获取当前登录用户 ID；会话为空或用户为空时返回 null（不抛异常）；否则返回用户 ID（Long）。\n\n## 涉及代码文件\n- platform-app/src/main/java/com/ghost616/platform/session/UserContextUtil.java（新增）\n- 依赖类：platform-app/src/main/java/com/ghost616/platform/session/UserContext.java、UserSession.java（platform-app）、platform-data 模块的 User.java（entity，id 继承自 BaseEntity 为 Long）、ErrorCode.java（enums，含 USER_NOT_LOGIN）、BusinessException.java（exception）\n\n## 建议测试点\n- 会话存在且用户存在时：requireUserId 返回用户 ID；currentUserIdOrNull 返回用户 ID\n- 会话为空时：requireUserId 抛 BusinessException 且 code 为 USER_NOT_LOGIN；currentUserIdOrNull 返回 null\n- 会话存在但用户为空时：requireUserId 抛 BusinessException(USER_NOT_LOGIN)；currentUserIdOrNull 返回 null\n- 编译检查：新增类可正常编译（注意 User 实体位于 platform-data 模块）",
+  "timestamp": "2026-08-15T15:50:48.578Z"
+}

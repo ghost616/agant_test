@@ -2,7 +2,9 @@ package com.ghost616.platform.service.tool;
 
 import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
 import com.ghost616.agentbase.enums.CommonStatus;
+import com.baomidou.mybatisplus.core.MybatisConfiguration;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import com.ghost616.platform.enums.ErrorCode;
 import com.ghost616.agentbase.enums.ToolType;
 import com.ghost616.platform.exception.BusinessException;
@@ -20,6 +22,7 @@ import com.ghost616.platform.enums.SubToolType;
 import com.ghost616.platform.repository.ToolConfigMapper;
 import com.ghost616.platform.session.UserContext;
 import com.ghost616.platform.session.UserSession;
+import org.apache.ibatis.builder.MapperBuilderAssistant;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -56,6 +59,8 @@ class ToolConfigServiceImplTest {
 
     @BeforeEach
     void setUp() {
+        // 初始化 MyBatis-Plus TableInfo 缓存，使 LambdaQueryWrapper.getSqlSegment() 在纯单测环境可解析列名
+        TableInfoHelper.initTableInfo(new MapperBuilderAssistant(new MybatisConfiguration(), ""), ToolConfig.class);
         service = new ToolConfigServiceImpl(toolConfigMapper, eventPublisher, toolManager);
         User user = new User();
         user.setId(CURRENT_USER_ID);
@@ -365,6 +370,8 @@ class ToolConfigServiceImplTest {
             ArgumentCaptor<LambdaQueryWrapper<ToolConfig>> captor =
                     ArgumentCaptor.forClass(LambdaQueryWrapper.class);
             verify(toolConfigMapper).selectList(captor.capture());
+            // MyBatis-Plus 参数惰性填充：调用 getSqlSegment() 渲染 SQL 后才写入参数
+            captor.getValue().getSqlSegment();
             assertTrue(captor.getValue().getParamNameValuePairs().containsValue(CURRENT_USER_ID),
                     "list 应使用当前登录用户 ID 过滤 user_id");
         }
@@ -384,6 +391,8 @@ class ToolConfigServiceImplTest {
             ArgumentCaptor<LambdaQueryWrapper<ToolConfig>> captor =
                     ArgumentCaptor.forClass(LambdaQueryWrapper.class);
             verify(toolConfigMapper).selectList(captor.capture());
+            // MyBatis-Plus 参数惰性填充：调用 getSqlSegment() 渲染 SQL 后才写入参数
+            captor.getValue().getSqlSegment();
             assertTrue(captor.getValue().getParamNameValuePairs().containsValue(200L),
                     "list 应使用当前线程上下文的用户 ID 过滤");
             assertFalse(captor.getValue().getParamNameValuePairs().containsValue(CURRENT_USER_ID),
@@ -424,6 +433,8 @@ class ToolConfigServiceImplTest {
             ArgumentCaptor<LambdaQueryWrapper<ToolConfig>> captor =
                     ArgumentCaptor.forClass(LambdaQueryWrapper.class);
             verify(toolConfigMapper).selectOne(captor.capture());
+            // MyBatis-Plus 参数惰性填充：调用 getSqlSegment() 渲染 SQL 后才写入参数
+            captor.getValue().getSqlSegment();
             assertTrue(captor.getValue().getParamNameValuePairs().containsValue(CURRENT_USER_ID),
                     "getImplByName 应使用当前登录用户 ID 过滤 user_id");
             assertTrue(captor.getValue().getParamNameValuePairs().containsValue("impl_tool"),
@@ -675,7 +686,7 @@ class ToolConfigServiceImplTest {
 
             ToolDetailDTO dto = service.getById(1L);
 
-            assertEquals(1L, dto.getId());
+            assertEquals("1", dto.getId());
             assertEquals("test_tool", dto.getName());
             assertEquals(ToolType.CUSTOM, dto.getToolType());
             assertEquals("desc", dto.getDescription());

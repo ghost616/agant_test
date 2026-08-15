@@ -7,8 +7,7 @@ import com.ghost616.platform.dto.model.ModelUpdateRequest;
 import com.ghost616.platform.entity.ModelConfig;
 import com.ghost616.agentinteg.model.PlatformType;
 import com.ghost616.platform.repository.ModelConfigMapper;
-import com.ghost616.platform.session.UserContext;
-import com.ghost616.platform.session.UserSession;
+import com.ghost616.platform.session.UserContextUtil;
 import com.ghost616.agentbase.service.model.invoker.ModelInvokerManager;
 import lombok.RequiredArgsConstructor;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
@@ -33,7 +32,7 @@ public class ModelConfigServiceImpl implements ModelConfigService {
     @Override
     public List<ModelConfigDTO> list(String name, PlatformType platformType, CommonStatus status, ModelType modelType) {
         LambdaQueryWrapper<ModelConfig> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(ModelConfig::getUserId, currentUserId());
+        wrapper.eq(ModelConfig::getUserId, UserContextUtil.requireUserId());
         if (StringUtils.isNotBlank(name)) {
             wrapper.like(ModelConfig::getName, name);
         }
@@ -68,7 +67,7 @@ public class ModelConfigServiceImpl implements ModelConfigService {
         checkNameDuplicate(request.getName(), null);
 
         ModelConfig entity = new ModelConfig();
-        entity.setUserId(currentUserId());
+        entity.setUserId(UserContextUtil.requireUserId());
         entity.setName(request.getName());
         entity.setPlatformType(request.getPlatformType());
         entity.setApiKey(request.getApiKey());
@@ -156,22 +155,6 @@ public class ModelConfigServiceImpl implements ModelConfigService {
         modelConfigMapper.updateById(entity);
         modelInvokerManager.evict(IdConverter.toString(id));
         return toDTO(entity);
-    }
-
-    /**
-     * 获取当前登录用户 ID。
-     *
-     * <p>从 {@link UserContext} 线程上下文读取用户会话；
-     * 未登录时抛出 {@link ErrorCode#USER_NOT_LOGIN}，防止无归属数据写入。</p>
-     *
-     * @return 当前登录用户 ID
-     */
-    private Long currentUserId() {
-        UserSession session = UserContext.get();
-        if (session == null || session.getUser() == null) {
-            throw new BusinessException(ErrorCode.USER_NOT_LOGIN);
-        }
-        return session.getUser().getId();
     }
 
     private void checkNameDuplicate(String name, Long excludeId) {
