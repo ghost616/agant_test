@@ -1,0 +1,13 @@
+{
+  "plan_id": "plan_4a3dd6d4-2b49-483a-a5e2-442f37595be4",
+  "module_name": "llm-model",
+  "development_plan": "模型配置数据用户隔离：\n1. ModelConfigServiceImpl 新增模型配置时，从当前用户上下文获取 userId 填充到 user_id 字段。\n2. 查询模型配置列表时按当前 userId 过滤（仅返回当前用户的数据）。",
+  "session_id": "33a2cd21-3697-4321-9488-1f779d23bae9",
+  "modified_files": [
+    "platform-app/src/main/java/com/ghost616/platform/service/model/ModelConfigServiceImpl.java",
+    "platform-app/src/test/java/com/ghost616/platform/service/model/ModelConfigServiceImplRequestTypeTest.java",
+    "platform-app/src/test/java/com/ghost616/platform/service/model/ModelConfigServiceImplListFilterTest.java",
+    "platform-app/src/test/java/com/ghost616/platform/service/model/ModelConfigServiceImplModelTypeTest.java",
+    "platform-app/src/test/java/com/ghost616/platform/service/model/ModelConfigServiceImplAuthGuardTest.java"
+  ]
+}

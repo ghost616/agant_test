@@ -1,4 +1,5 @@
 import { test, expect, Page, Route } from '@playwright/test';
+import { seedAdminLogin } from './utils/seedAuth';
 
 const MOCK_SESSION = {
   id: 'session-1',
@@ -44,6 +45,10 @@ async function setupMocks(page: Page, childSessions = MOCK_CHILD_SESSIONS, child
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: [] }) });
   });
 }
+
+test.beforeEach(async ({ page }) => {
+  await seedAdminLogin(page);
+});
 
 test.describe('AgentChat Tab 切换与子会话只读查看', () => {
   test('应展示「主会话」和「子会话列表」两个 Tab', async ({ page }) => {

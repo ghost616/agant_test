@@ -1,6 +1,8 @@
 package com.ghost616.platform.service.evaluation;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.ghost616.agentbase.core.ThreadVariableHandler;
+import com.ghost616.agentbase.core.ThreadVariableWrapper;
 import com.ghost616.platform.enums.ErrorCode;
 import com.ghost616.platform.exception.BusinessException;
 import com.ghost616.agentbase.service.agent.MessageDataProvider;
@@ -40,6 +42,7 @@ public class EvaluationExecutionService {
     private final EvaluationResultGenerateService evaluationResultGenerateService;
     private final AsyncEvaluationExecutor asyncEvaluationExecutor;
     private final DefaultChatDataCacheProvider defaultChatDataCacheProvider;
+    private final ThreadVariableHandler threadVariableHandler;
 
     private final Map<String, EvaluationExecutionStatusDTO> executionStatusMap = new ConcurrentHashMap<>();
     private final Map<String, Long> statusTimestamps = new ConcurrentHashMap<>();
@@ -73,7 +76,9 @@ public class EvaluationExecutionService {
         executionStatusMap.put(statusKey, statusDTO);
         statusTimestamps.put(statusKey, System.currentTimeMillis());
 
-        asyncEvaluationExecutor.executeAsync(evaluationId, executionSession, userMessages, executionStatusMap);
+        ThreadVariableWrapper threadVariableWrapper = threadVariableHandler.wrap();
+        asyncEvaluationExecutor.executeAsync(evaluationId, executionSession, userMessages, executionStatusMap,
+                threadVariableWrapper);
 
         String sessionId = String.valueOf(executionSession.getId());
         String cacheId = null;
@@ -147,7 +152,9 @@ public class EvaluationExecutionService {
         generateStatusMap.put(statusKey, statusDTO);
         generateStatusTimestamps.put(statusKey, System.currentTimeMillis());
 
-        asyncEvaluationExecutor.generateResultAsync(evaluationId, executionSessionId, generateStatusMap);
+        ThreadVariableWrapper threadVariableWrapper = threadVariableHandler.wrap();
+        asyncEvaluationExecutor.generateResultAsync(evaluationId, executionSessionId, generateStatusMap,
+                threadVariableWrapper);
 
         return statusDTO;
     }

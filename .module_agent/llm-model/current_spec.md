@@ -70,3 +70,4 @@ LLM 模型的 CRUD 管理、独立参数配置、连通性验证、统一模型�
 - `ModelConfigService.list()` 方法已去掉分页，签名改为 `List<ModelConfigDTO> list(String name, PlatformType platformType, CommonStatus status)`，直接返回 `List<ModelConfigDTO>`
 - `ModelConfigController.list()` 端点 `GET /api/models` 已去掉 `page`/`size` 参数，返回 `ApiResponse<List<ModelConfigDTO>>`
 ModelConfigServiceImpl 的 update()、toggleStatus()、delete() 方法在数据库操作成功后调用 modelInvokerManager.evict(id) 清除旧的模型调用器缓存，确保下次调用时使用最新配置重新创建 Invoker。
+- **数据用户隔离**：`ModelConfig` 实体含 `userId` 字段（`@TableField("user_id")`）；`ModelConfigServiceImpl` 通过 `currentUserId()`（从 `UserContext` 线程上下文读取，未登录抛 `USER_NOT_LOGIN`）实现数据归属隔离 —— `create()` 将当前登录用户 ID 填充到 userId 字段；`list()` 恒先追加 `user_id = 当前用户` 过滤，再叠加 name/platformType/status/modelType 组合条件（2026-08-15 新增，复用 AgentConfigServiceImpl 模式）

@@ -1,5 +1,6 @@
 package com.ghost616.platform.controller;
 
+import com.ghost616.agentbase.core.ThreadVariableHandler;
 import com.ghost616.agentbase.enums.CommonStatus;
 import com.ghost616.platform.enums.ErrorCode;
 import com.ghost616.platform.exception.BusinessException;
@@ -28,6 +29,9 @@ class KnowledgeFileControllerTest {
 
     @Mock
     private KnowledgePublishService knowledgePublishService;
+
+    @Mock
+    private ThreadVariableHandler threadVariableHandler;
 
     @InjectMocks
     private KnowledgeFileController controller;
@@ -66,7 +70,7 @@ class KnowledgeFileControllerTest {
 
         assertTrue(response.isSuccess());
         assertNull(response.getData());
-        verify(knowledgePublishService).publishFile(1L);
+        verify(knowledgePublishService).publishFile(eq(1L), any());
     }
 
     @Test
@@ -75,7 +79,7 @@ class KnowledgeFileControllerTest {
 
         BusinessException ex = assertThrows(BusinessException.class, () -> controller.publish(100L, 1L));
         assertEquals(ErrorCode.KNOWLEDGE_FILE_PUBLISHING, ex.getErrorCode());
-        verify(knowledgePublishService, never()).publishFile(1L);
+        verify(knowledgePublishService, never()).publishFile(eq(1L), any());
     }
 
     @Test

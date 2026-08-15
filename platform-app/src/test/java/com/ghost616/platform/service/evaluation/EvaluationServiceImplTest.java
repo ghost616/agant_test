@@ -10,6 +10,9 @@ import com.ghost616.platform.dto.evaluation.EvaluationResultDTO;
 import com.ghost616.platform.dto.evaluation.EvaluationUpdateRequest;
 import com.ghost616.platform.entity.*;
 import com.ghost616.platform.repository.*;
+import com.ghost616.platform.session.UserContext;
+import com.ghost616.platform.session.UserSession;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -69,6 +72,7 @@ class EvaluationServiceImplTest {
     private static final Long TOOL_ID_1 = 200L;
     private static final Long TOOL_ID_2 = 201L;
     private static final Long SKILL_ID_1 = 300L;
+    private static final Long CURRENT_USER_ID = 42L;
 
     @BeforeEach
     void setUp() {
@@ -78,6 +82,15 @@ class EvaluationServiceImplTest {
                 sessionToolMapper, sessionSkillMapper, agentEvaluationMapper,
                 agentConfigMapper, agentToolMapper, agentSkillMapper
         );
+        User user = new User();
+        user.setId(CURRENT_USER_ID);
+        UserSession session = new UserSession("session-1", user, System.currentTimeMillis());
+        UserContext.set(session);
+    }
+
+    @AfterEach
+    void tearDown() {
+        UserContext.clear();
     }
 
     private EvaluationCreateRequest createRequest() {
@@ -401,6 +414,10 @@ class EvaluationServiceImplTest {
 
         @Test
         void withResults_shouldDeleteAllResultsWithCascade() {
+            Evaluation evaluation = new Evaluation();
+            evaluation.setId(EVALUATION_ID_LOCAL);
+            evaluation.setUserId(CURRENT_USER_ID);
+            when(evaluationMapper.selectById(EVALUATION_ID_LOCAL)).thenReturn(evaluation);
             when(evaluationResultMapper.selectList(any()))
                     .thenReturn(List.of(result(RESULT_ID_1, SESSION_ID_LOCAL_1), result(RESULT_ID_2, SESSION_ID_LOCAL_2)));
             when(evaluationResultMapper.selectById(RESULT_ID_1)).thenReturn(result(RESULT_ID_1, SESSION_ID_LOCAL_1));
@@ -418,6 +435,10 @@ class EvaluationServiceImplTest {
 
         @Test
         void noResults_shouldDoNothing() {
+            Evaluation evaluation = new Evaluation();
+            evaluation.setId(EVALUATION_ID_LOCAL);
+            evaluation.setUserId(CURRENT_USER_ID);
+            when(evaluationMapper.selectById(EVALUATION_ID_LOCAL)).thenReturn(evaluation);
             when(evaluationResultMapper.selectList(any())).thenReturn(List.of());
 
             service.clearResults(EVALUATION_ID_LOCAL);

@@ -136,7 +136,7 @@ class MemoryQueryProviderImplTest {
     @DisplayName("getMemories: VECTOR 搜索调用 vectorSearch 并透传向量与过滤条件")
     void getMemories_vectorSearch() {
         stubEmbedding();
-        when(sessionMemoryESClient.vectorSearch(eq("100"), eq("GROUP"), eq(1L), eq(2L), eq(List.of(0.1f, 0.2f)), eq(20)))
+        when(sessionMemoryESClient.vectorSearch(eq("100"), isNull(), eq("GROUP"), eq(1L), eq(2L), eq(List.of(0.1f, 0.2f)), eq(20)))
                 .thenReturn(List.of(doc("记忆A", 1, 3, AggregationType.GROUP)));
 
         List<MemoryResult> result = provider.getMemories("100", SearchType.VECTOR, "GROUP", 1L, 2L, "q");
@@ -147,13 +147,13 @@ class MemoryQueryProviderImplTest {
         assertEquals(1, r.startSeq());
         assertEquals(3, r.endSeq());
         assertEquals("GROUP", r.memoryType());
-        verify(sessionMemoryESClient).vectorSearch("100", "GROUP", 1L, 2L, List.of(0.1f, 0.2f), 20);
+        verify(sessionMemoryESClient).vectorSearch("100", null, "GROUP", 1L, 2L, List.of(0.1f, 0.2f), 20);
     }
 
     @Test
     @DisplayName("getMemories: FULLTEXT 搜索调用 fullTextSearch，不触发向量化")
     void getMemories_fullTextSearch() {
-        when(sessionMemoryESClient.fullTextSearch("100", null, null, null, "q", 20))
+        when(sessionMemoryESClient.fullTextSearch("100", null, null, null, null, "q", 20))
                 .thenReturn(List.of(doc("记忆B", 5, 6, AggregationType.DAILY)));
 
         List<MemoryResult> result = provider.getMemories("100", SearchType.FULLTEXT, null, null, null, "q");
@@ -163,7 +163,7 @@ class MemoryQueryProviderImplTest {
         assertEquals(5, result.get(0).startSeq());
         assertEquals(6, result.get(0).endSeq());
         assertEquals("DAILY", result.get(0).memoryType());
-        verify(sessionMemoryESClient).fullTextSearch("100", null, null, null, "q", 20);
+        verify(sessionMemoryESClient).fullTextSearch("100", null, null, null, null, "q", 20);
         verify(modelInvokerManager, never()).getInvoker(any());
     }
 
@@ -171,14 +171,14 @@ class MemoryQueryProviderImplTest {
     @DisplayName("getMemories: HYBRID 搜索调用 hybridSearch，同时携带向量与文本")
     void getMemories_hybridSearch() {
         stubEmbedding();
-        when(sessionMemoryESClient.hybridSearch(eq("100"), isNull(), isNull(), isNull(), anyList(), eq("q"), eq(20)))
+        when(sessionMemoryESClient.hybridSearch(eq("100"), isNull(), isNull(), isNull(), isNull(), anyList(), eq("q"), eq(20)))
                 .thenReturn(List.of(doc("记忆C", 7, 8, AggregationType.GROUP)));
 
         List<MemoryResult> result = provider.getMemories("100", SearchType.HYBRID, null, null, null, "q");
 
         assertEquals(1, result.size());
         assertEquals("记忆C", result.get(0).content());
-        verify(sessionMemoryESClient).hybridSearch("100", null, null, null, List.of(0.1f, 0.2f), "q", 20);
+        verify(sessionMemoryESClient).hybridSearch("100", null, null, null, null, List.of(0.1f, 0.2f), "q", 20);
     }
 
     @Test
@@ -188,7 +188,7 @@ class MemoryQueryProviderImplTest {
                 .sessionId("100")
                 .aggregationText("记忆D")
                 .build();
-        when(sessionMemoryESClient.fullTextSearch("100", null, null, null, "q", 20))
+        when(sessionMemoryESClient.fullTextSearch("100", null, null, null, null, "q", 20))
                 .thenReturn(List.of(doc));
 
         List<MemoryResult> result = provider.getMemories("100", SearchType.FULLTEXT, null, null, null, "q");
@@ -202,7 +202,7 @@ class MemoryQueryProviderImplTest {
     @Test
     @DisplayName("getMemories: 无匹配结果时返回空列表（非错误）")
     void getMemories_noResult() {
-        when(sessionMemoryESClient.fullTextSearch("100", null, null, null, "q", 20))
+        when(sessionMemoryESClient.fullTextSearch("100", null, null, null, null, "q", 20))
                 .thenReturn(List.of());
 
         List<MemoryResult> result = provider.getMemories("100", SearchType.FULLTEXT, null, null, null, "q");
@@ -215,27 +215,27 @@ class MemoryQueryProviderImplTest {
     void getMemories_embedQueryFallbacks() {
         // session 不存在
         when(sessionMapper.selectById(100L)).thenReturn(null);
-        when(sessionMemoryESClient.vectorSearch("100", null, null, null, List.of(), 20))
+        when(sessionMemoryESClient.vectorSearch("100", null, null, null, null, List.of(), 20))
                 .thenReturn(List.of());
         assertTrue(provider.getMemories("100", SearchType.VECTOR, null, null, null, "q").isEmpty());
 
         // session.agentId 为 null
         when(sessionMapper.selectById(100L)).thenReturn(session(null));
-        when(sessionMemoryESClient.vectorSearch("100", null, null, null, List.of(), 20))
+        when(sessionMemoryESClient.vectorSearch("100", null, null, null, null, List.of(), 20))
                 .thenReturn(List.of());
         assertTrue(provider.getMemories("100", SearchType.VECTOR, null, null, null, "q").isEmpty());
 
         // agentConfig 不存在
         when(sessionMapper.selectById(100L)).thenReturn(session(10L));
         when(agentConfigMapper.selectById(10L)).thenReturn(null);
-        when(sessionMemoryESClient.vectorSearch("100", null, null, null, List.of(), 20))
+        when(sessionMemoryESClient.vectorSearch("100", null, null, null, null, List.of(), 20))
                 .thenReturn(List.of());
         assertTrue(provider.getMemories("100", SearchType.VECTOR, null, null, null, "q").isEmpty());
 
         // agentConfig.vectorModelId 为 null
         when(sessionMapper.selectById(100L)).thenReturn(session(10L));
         when(agentConfigMapper.selectById(10L)).thenReturn(agentConfig(null));
-        when(sessionMemoryESClient.vectorSearch("100", null, null, null, List.of(), 20))
+        when(sessionMemoryESClient.vectorSearch("100", null, null, null, null, List.of(), 20))
                 .thenReturn(List.of());
         assertTrue(provider.getMemories("100", SearchType.VECTOR, null, null, null, "q").isEmpty());
 
@@ -243,7 +243,7 @@ class MemoryQueryProviderImplTest {
         when(sessionMapper.selectById(100L)).thenReturn(session(10L));
         when(agentConfigMapper.selectById(10L)).thenReturn(agentConfig(5L));
         when(modelConfigMapper.selectById(5L)).thenReturn(null);
-        when(sessionMemoryESClient.vectorSearch("100", null, null, null, List.of(), 20))
+        when(sessionMemoryESClient.vectorSearch("100", null, null, null, null, List.of(), 20))
                 .thenReturn(List.of());
         assertTrue(provider.getMemories("100", SearchType.VECTOR, null, null, null, "q").isEmpty());
 

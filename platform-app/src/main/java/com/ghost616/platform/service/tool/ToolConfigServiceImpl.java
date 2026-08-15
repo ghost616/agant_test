@@ -9,6 +9,8 @@ import com.ghost616.platform.dto.tool.ToolCreateRequest;
 import com.ghost616.platform.dto.tool.ToolUpdateRequest;
 import com.ghost616.platform.entity.ToolConfig;
 import com.ghost616.platform.repository.ToolConfigMapper;
+import com.ghost616.platform.session.UserContext;
+import com.ghost616.platform.session.UserSession;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -37,7 +39,6 @@ import com.ghost616.agentinteg.tool.KnowledgeBaseInfoTool;
 import com.ghost616.agentinteg.tool.KnowledgeFileChunkTool;
 import com.ghost616.agentinteg.tool.KnowledgeFileInfoTool;
 import com.ghost616.agentinteg.tool.KnowledgeSearchTool;
-import com.ghost616.platform.util.IdConverter;
 import org.springframework.context.annotation.Lazy;
 
 
@@ -61,7 +62,9 @@ public class ToolConfigServiceImpl implements ToolConfigService {
 
     @Override
     public List<ToolDetailDTO> list(String name, ToolType toolType, CommonStatus status) {
+        Long userId = currentUserId();
         LambdaQueryWrapper<ToolConfig> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(ToolConfig::getUserId, userId);
         if (StringUtils.isNotBlank(name)) {
             wrapper.like(ToolConfig::getName, name);
         }
@@ -88,6 +91,7 @@ public class ToolConfigServiceImpl implements ToolConfigService {
 
     @Override
     public ToolDetailDTO create(ToolCreateRequest request) {
+        Long userId = currentUserId();
         checkNameDuplicate(request.getName(), null);
 
         SubToolType subToolType = request.getSubToolType();
@@ -117,6 +121,7 @@ public class ToolConfigServiceImpl implements ToolConfigService {
         entity.setSubToolType(subToolType);
         entity.setToolScript(request.getToolScript());
         entity.setStatus(request.getStatus() != null ? request.getStatus() : CommonStatus.ENABLED);
+        entity.setUserId(userId);
 
         toolConfigMapper.insert(entity);
         return toDTO(entity);
@@ -213,6 +218,7 @@ public class ToolConfigServiceImpl implements ToolConfigService {
     @Override
     public ToolDetailDTO getImplByName(String name) {
         LambdaQueryWrapper<ToolConfig> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(ToolConfig::getUserId, currentUserId());
         wrapper.eq(ToolConfig::getName, name);
         ToolConfig entity = toolConfigMapper.selectOne(wrapper);
         if (entity == null) {
@@ -354,6 +360,7 @@ public class ToolConfigServiceImpl implements ToolConfigService {
 
     private void checkNameDuplicate(String name, Long excludeId) {
         LambdaQueryWrapper<ToolConfig> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(ToolConfig::getUserId, currentUserId());
         wrapper.eq(ToolConfig::getName, name);
         if (excludeId != null) {
             wrapper.ne(ToolConfig::getId, excludeId);
@@ -361,6 +368,22 @@ public class ToolConfigServiceImpl implements ToolConfigService {
         if (toolConfigMapper.selectCount(wrapper) > 0) {
             throw new BusinessException(ErrorCode.TOOL_ALREADY_EXISTS);
         }
+    }
+
+    /**
+     * 获取当前登录用户 ID。
+     *
+     * <p>从 {@link UserContext} 线程上下文读取用户会话；
+     * 未登录时抛出 {@link ErrorCode#USER_NOT_LOGIN}，防止无归属数据写入。</p>
+     *
+     * @return 当前登录用户 ID
+     */
+    private Long currentUserId() {
+        UserSession session = UserContext.get();
+        if (session == null || session.getUser() == null) {
+            throw new BusinessException(ErrorCode.USER_NOT_LOGIN);
+        }
+        return session.getUser().getId();
     }
 
     private ToolDetailDTO toDTO(ToolConfig entity) {

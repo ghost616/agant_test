@@ -2,6 +2,8 @@ package com.ghost616.platform.service.knowledge;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
+import com.ghost616.agentbase.core.ThreadVariableHandler;
+import com.ghost616.agentbase.core.ThreadVariableWrapper;
 import com.ghost616.agentbase.dto.model.EmbeddingRequest;
 import com.ghost616.agentbase.dto.model.EmbeddingResponse;
 import com.ghost616.agentbase.dto.model.ModelConfigData;
@@ -19,6 +21,7 @@ import com.ghost616.platform.repository.KnowledgeBaseMapper;
 import com.ghost616.platform.repository.KnowledgeFileMapper;
 import com.ghost616.platform.repository.ModelConfigMapper;
 import com.ghost616.platform.service.search.KnowledgeSearchClient;
+import com.ghost616.platform.session.UserContext;
 import com.ghost616.platform.util.IdConverter;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -55,15 +58,32 @@ public class KnowledgePublishService {
     private final ModelConfigMapper modelConfigMapper;
     private final ModelInvokerManager modelInvokerManager;
     private final KnowledgeSearchClient knowledgeSearchClient;
+    private final ThreadVariableHandler threadVariableHandler;
 
     /**
      * 异步发布单个知识文件：删除旧文本块后逐行向量化并批量写入索引。
+     * <p>
+     * 任务提交方（如 {@code KnowledgeFileController}、{@link #rebuildKnowledgeBase}）
+     * 通过 {@link ThreadVariableWrapper} 传播当前登录用户，此处先恢复用户上下文，
+     * 执行结束后在 finally 中清理，避免线程复用导致会话串号。
      *
-     * @param fileId 知识文件 ID
+     * @param fileId               知识文件 ID
+     * @param threadVariableWrapper 线程变量包装器（提交线程捕获的用户上下文快照，可为 null）
      * @return 发布任务完成信号
      */
     @Async
-    public CompletableFuture<Void> publishFile(Long fileId) {
+    public CompletableFuture<Void> publishFile(Long fileId, ThreadVariableWrapper threadVariableWrapper) {
+        if (threadVariableWrapper != null) {
+            threadVariableWrapper.apply();
+        }
+        try {
+            return doPublishFile(fileId);
+        } finally {
+            UserContext.clear();
+        }
+    }
+
+    private CompletableFuture<Void> doPublishFile(Long fileId) {
         CompletableFuture<Void> future = new CompletableFuture<>();
         activeTasks.put(fileId, future);
         try {
@@ -142,7 +162,7 @@ public class KnowledgePublishService {
                     PublishStatus.PUBLISHING, PublishStatus.PUBLISHED, PublishStatus.PENDING_PUBLISH);
             List<KnowledgeFile> files = knowledgeFileMapper.selectList(wrapper);
             for (KnowledgeFile file : files) {
-                publishFile(file.getId());
+                publishFile(file.getId(), threadVariableHandler.wrap());
             }
             log.info("rebuildKnowledgeBase 完成, kbId={}, fileCount={}", kbId, files.size());
         } finally {

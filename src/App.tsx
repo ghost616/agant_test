@@ -1,7 +1,10 @@
 import { useState } from 'react';
-import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import { Navigate, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { Layout, Menu } from 'antd';
 import type { MenuProps } from 'antd';
+import { getCurrentUser } from './services/auth';
+import { USER_TYPE_ADMIN } from './types/user';
+import type { User } from './types/user';
 import {
   ApiOutlined,
   BookOutlined,
@@ -40,7 +43,7 @@ import UserList from './pages/users/UserList';
 
 const { Header, Sider, Content } = Layout;
 
-const MENU_ITEMS: MenuProps['items'] = [
+const MENU_ITEMS: NonNullable<MenuProps['items']> = [
   {
     key: '/users',
     icon: <UserOutlined />,
@@ -98,17 +101,46 @@ const MENU_ITEMS: MenuProps['items'] = [
   },
 ];
 
+/**
+ * 根据当前登录用户角色过滤侧边栏菜单：用户管理菜单仅管理员可见，其余菜单所有登录用户可见。
+ * @param user 当前登录用户
+ * @returns 可见的菜单项列表
+ */
+function getVisibleMenuItems(user: User | null): MenuProps['items'] {
+  if (user?.userType === USER_TYPE_ADMIN) {
+    return MENU_ITEMS;
+  }
+  return MENU_ITEMS.filter((item) => item !== null && item.key !== '/users');
+}
+
+/**
+ * 根据用户类型返回登录后落地页路径：管理员 /users，普通用户 /models。
+ * @param user 当前登录用户
+ * @returns 落地页路径
+ */
+function getLandingPath(user: User | null): string {
+  return user?.userType === USER_TYPE_ADMIN ? '/users' : '/models';
+}
+
 function App() {
   const navigate = useNavigate();
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
+  const currentUser = getCurrentUser();
+
+  // 路由守卫：未登录访问任意页面（除 /login）自动跳转登录页
+  if (!currentUser && location.pathname !== '/login') {
+    return <Navigate to="/login" replace />;
+  }
 
   // 登录页为独立全屏页面，不套用主界面 Layout
   if (location.pathname === '/login') {
     return <Login />;
   }
 
-  const selectedKeys = [location.pathname === '/' ? '/models' : location.pathname];
+  const landingPath = getLandingPath(currentUser);
+  const menuItems = getVisibleMenuItems(currentUser);
+  const selectedKeys = [location.pathname === '/' ? landingPath : location.pathname];
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
@@ -136,7 +168,7 @@ function App() {
           theme="dark"
           mode="inline"
           selectedKeys={selectedKeys}
-          items={MENU_ITEMS}
+          items={menuItems}
           onClick={({ key }) => navigate(key)}
         />
       </Sider>
@@ -152,7 +184,7 @@ function App() {
         </Header>
         <Content style={{ margin: 24 }}>
           <Routes>
-            <Route path="/" element={<ModelList />} />
+            <Route path="/" element={<Navigate to={landingPath} replace />} />
             <Route path="/users" element={<UserList />} />
             <Route path="/models" element={<ModelList />} />
             <Route path="/models/:id/test" element={<ModelTest />} />

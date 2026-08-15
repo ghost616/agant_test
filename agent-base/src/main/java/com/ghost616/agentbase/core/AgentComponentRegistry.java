@@ -59,6 +59,9 @@ public class AgentComponentRegistry {
     @Setter
     private ChatDataCacheManager chatDataCacheManager;
 
+    @Setter
+    private ThreadVariableHandler threadVariableHandler;
+
     private <T> T requireInitialized(T value, String name) {
         if (value == null) {
             throw new IllegalStateException("AgentComponentRegistry: " + name + " 尚未初始化");
@@ -140,5 +143,9 @@ public class AgentComponentRegistry {
 
     public ChatDataCacheManager getChatDataCacheManager() {
         return chatDataCacheManager;
+    }
+
+    public ThreadVariableHandler getThreadVariableHandler() {
+        return threadVariableHandler;
     }
 }

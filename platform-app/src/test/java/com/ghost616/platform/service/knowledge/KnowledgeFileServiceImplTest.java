@@ -11,10 +11,14 @@ import com.ghost616.platform.dto.knowledge.KnowledgeFileDTO;
 import com.ghost616.platform.dto.knowledge.KnowledgeFileUpdateRequest;
 import com.ghost616.platform.entity.KnowledgeBase;
 import com.ghost616.platform.entity.KnowledgeFile;
+import com.ghost616.platform.entity.User;
 import com.ghost616.platform.enums.PublishStatus;
 import com.ghost616.platform.repository.KnowledgeBaseMapper;
 import com.ghost616.platform.repository.KnowledgeFileMapper;
+import com.ghost616.platform.session.UserContext;
+import com.ghost616.platform.session.UserSession;
 import org.apache.ibatis.builder.MapperBuilderAssistant;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -33,6 +37,8 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class KnowledgeFileServiceImplTest {
 
+    private static final Long CURRENT_USER_ID = 42L;
+
     @Mock
     private KnowledgeFileMapper knowledgeFileMapper;
     @Mock
@@ -47,6 +53,15 @@ class KnowledgeFileServiceImplTest {
         TableInfoHelper.initTableInfo(new MapperBuilderAssistant(new MybatisConfiguration(), ""), KnowledgeBase.class);
         TableInfoHelper.initTableInfo(new MapperBuilderAssistant(new MybatisConfiguration(), ""), KnowledgeFile.class);
         service = new KnowledgeFileServiceImpl(knowledgeFileMapper, knowledgeBaseMapper, knowledgePublishService);
+        User user = new User();
+        user.setId(CURRENT_USER_ID);
+        UserSession session = new UserSession("session-1", user, System.currentTimeMillis());
+        UserContext.set(session);
+    }
+
+    @AfterEach
+    void tearDown() {
+        UserContext.clear();
     }
 
     private KnowledgeFile fileEntity(Long id, Long kbId, String name) {

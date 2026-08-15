@@ -1,5 +1,0 @@
-{
-  "lizhu_session_id": "ses_04e33302affeTSMEM2TPlpFJQe",
-  "content": "## 离朱测试报告\n\n### 测试概览\n\n| 测试类型 | 通过 | 失败 | 跳过 | 说明 |\n|---------|:---:|:---:|:----:|------|\n| 编译检查 `mvn compile` | 1 | 0 | 0 | 编译成功 |\n| 单元测试 `DefaultMessageDataProviderTest` | 21 | 0 | 0 | 全部通过 |\n| **合计** | **22** | **0** | **0** | |\n\n### 执行详情\n\n- **时间**: 2026-07-30 15:12\n- **测试文件**: `DefaultMessageDataProviderTest.java`（21 个用例）\n- **编译**: 81 个 main 源文件 + 36 个 test 源文件，无编译错误\n- **mock 框架**: Mockito (MockitoExtension)\n- **变更覆盖**:\n  - `saveMessage()` 中 `.eq(Message::getRollback, 0)` 过滤条件 — 已有用例使用 `any(LambdaQueryWrapper.class)` mock，语法正确\n  - `rollbackToLastUserMessage()` 中 `.eq(Message::getRollback, 0)` 过滤条件 — 已有用例使用 `any(LambdaQueryWrapper.class)` mock，语法正确\n  - `EvaluationResultGenerateService.java` 字符串模板修改 — 仅文本变更，无需功能测试\n- **建议**: 未来可增加 ArgumentCaptor 捕获 LambdaQueryWrapper 以验证具体 eq 条件\n",
-  "timestamp": "2026-07-30T07:12:54.667Z"
-}

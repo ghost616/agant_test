@@ -236,7 +236,7 @@ class SessionControllerTest {
                 .build();
         PageResult<SessionMemoryDocument> pageResult =
                 new PageResult<>(List.of(doc), 5L, 1, 20);
-        when(sessionMemoryESClient.queryBySessionId("100", AggregationType.GROUP, 1, 20))
+        when(sessionMemoryESClient.queryBySessionId("100", null, AggregationType.GROUP, 1, 20))
                 .thenReturn(pageResult);
 
         ApiResponse<PageResult<SessionMemoryDocument>> response =
@@ -244,7 +244,7 @@ class SessionControllerTest {
 
         assertTrue(response.isSuccess());
         assertSame(pageResult, response.getData());
-        verify(sessionMemoryESClient).queryBySessionId("100", AggregationType.GROUP, 1, 20);
+        verify(sessionMemoryESClient).queryBySessionId("100", null, AggregationType.GROUP, 1, 20);
     }
 
     @Test
@@ -252,7 +252,7 @@ class SessionControllerTest {
         SessionMemoryDocument doc = SessionMemoryDocument.builder().sessionId("7").build();
         PageResult<SessionMemoryDocument> pageResult =
                 new PageResult<>(List.of(doc), 2L, 3, 50);
-        when(sessionMemoryESClient.queryBySessionId("7", AggregationType.DAILY, 3, 50))
+        when(sessionMemoryESClient.queryBySessionId("7", null, AggregationType.DAILY, 3, 50))
                 .thenReturn(pageResult);
 
         ApiResponse<PageResult<SessionMemoryDocument>> response =
@@ -261,13 +261,13 @@ class SessionControllerTest {
         assertTrue(response.isSuccess());
         assertEquals(3, response.getData().getPage());
         assertEquals(50, response.getData().getSize());
-        verify(sessionMemoryESClient).queryBySessionId("7", AggregationType.DAILY, 3, 50);
+        verify(sessionMemoryESClient).queryBySessionId("7", null, AggregationType.DAILY, 3, 50);
     }
 
     @Test
     void queryMemory_shouldReturnEmptyResultWhenNoDocuments() {
         PageResult<SessionMemoryDocument> pageResult = new PageResult<>(List.of(), 0L, 1, 20);
-        when(sessionMemoryESClient.queryBySessionId("999", AggregationType.GROUP, 1, 20))
+        when(sessionMemoryESClient.queryBySessionId("999", null, AggregationType.GROUP, 1, 20))
                 .thenReturn(pageResult);
 
         ApiResponse<PageResult<SessionMemoryDocument>> response =
@@ -281,7 +281,7 @@ class SessionControllerTest {
 
     @Test
     void queryMemory_shouldPropagateClientException() {
-        when(sessionMemoryESClient.queryBySessionId(anyString(), any(), anyInt(), anyInt()))
+        when(sessionMemoryESClient.queryBySessionId(anyString(), any(), any(), anyInt(), anyInt()))
                 .thenThrow(new IllegalStateException("按会话查询记忆文档失败: session_memory"));
 
         assertThrows(IllegalStateException.class,

@@ -32,3 +32,5 @@
 - **DTO**: AgentConfigDTO、AgentCreateRequest、AgentUpdateRequest 均将原 toolIds/skillIds（Long 列表）改为 tools（List<AgentToolItem>）/ skills（List<AgentSkillItem>），支持携带 sessionAuth 配置
 - **DTO**: 新增 AgentToolItem（toolId + sessionAuth）和 AgentSkillItem（skillId + sessionAuth）record
 - **Service**: create() 和 update() 写入 AgentTool/AgentSkill 时设置 sessionAuth（默认 ALL）；toDTO() 查询关联表时读取 sessionAuth 并映射到 AgentToolItem/AgentSkillItem；validateSkillIds() 适配新的 skills 字段
+
+- **数据用户隔离**: AgentConfig 实体含 userId 字段（映射 user_id 列）；新增 currentUserId() 辅助方法从 UserContext 线程上下文获取当前登录用户 ID（未登录抛 USER_NOT_LOGIN）；create() 创建时填充 userId；list() 按当前 userId 过滤仅返回当前用户数据；checkNameDuplicate() 名称唯一性按用户维度判断

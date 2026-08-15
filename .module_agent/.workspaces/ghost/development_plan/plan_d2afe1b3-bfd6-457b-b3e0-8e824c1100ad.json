@@ -1,0 +1,27 @@
+{
+  "plan_id": "plan_d2afe1b3-bfd6-457b-b3e0-8e824c1100ad",
+  "module_name": "frontend-ui",
+  "development_plan": "前端登录守卫与菜单权限：\n1. 路由守卫：未登录访问任意页面（除 /login）自动跳转登录页；登录页为独立全屏页面。\n2. 登录后落地页：管理员（userType=2）跳转 /users，普通用户跳转 /models。\n3. 侧边栏菜单按角色过滤：用户管理菜单仅管理员可见，其余菜单所有登录用户可见。",
+  "session_id": "fe69b361-98d7-4533-913c-3dd975e7104b",
+  "modified_files": [
+    "src/App.tsx",
+    "src/pages/login/Login.tsx",
+    "src/__tests__/App.test.tsx",
+    "src/__tests__/AppGuard.behavior.test.tsx",
+    "src/pages/login/__tests__/Login.test.tsx",
+    "e2e/utils/seedAuth.ts",
+    "e2e/Login.spec.ts",
+    "e2e/AgentChat.spec.ts",
+    "e2e/EvaluationList.spec.ts",
+    "e2e/EvaluationResultList.spec.ts",
+    "e2e/ModelTest.spec.ts",
+    "e2e/KnowledgeFile.spec.ts",
+    "e2e/KnowledgeBaseList.spec.ts",
+    "e2e/AgentList.spec.ts",
+    "e2e/ConversationHistory.spec.ts",
+    "e2e/ToolList.spec.ts",
+    "e2e/AgentLogList.spec.ts",
+    "e2e/AgentListVectorModel.spec.ts",
+    "e2e/Memory.spec.ts"
+  ]
+}

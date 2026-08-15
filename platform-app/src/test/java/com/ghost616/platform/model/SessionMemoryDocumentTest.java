@@ -52,9 +52,10 @@ class SessionMemoryDocumentTest {
     @Test
     void allArgsConstructor_shouldPopulateFields() {
         SessionMemoryDocument doc = new SessionMemoryDocument(
-                "200", AggregationType.DAILY, 3, 8, 3000L, 8000L, "摘要", List.of(0.5f));
+                "200", 42L, AggregationType.DAILY, 3, 8, 3000L, 8000L, "摘要", List.of(0.5f));
 
         assertEquals("200", doc.getSessionId());
+        assertEquals(42L, doc.getUserId());
         assertEquals(AggregationType.DAILY, doc.getAggregationType());
         assertEquals(3, doc.getAggregationStartSeq());
         assertEquals(8, doc.getAggregationEndSeq());

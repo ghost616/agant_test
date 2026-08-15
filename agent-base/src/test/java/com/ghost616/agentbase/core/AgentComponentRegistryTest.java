@@ -102,4 +102,17 @@ class AgentComponentRegistryTest {
         registry.setChatDataCacheManager(manager);
         assertSame(manager, registry.getChatDataCacheManager());
     }
+
+    @Test
+    void getThreadVariableHandler未设置时应直接返回null() {
+        assertNull(registry.getThreadVariableHandler());
+    }
+
+    @Test
+    void setThreadVariableHandler后getThreadVariableHandler应返回设置实例() {
+        ThreadVariableHandler handler = () -> () -> {
+        };
+        registry.setThreadVariableHandler(handler);
+        assertSame(handler, registry.getThreadVariableHandler());
+    }
 }

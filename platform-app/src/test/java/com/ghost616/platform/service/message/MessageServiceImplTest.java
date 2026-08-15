@@ -2,7 +2,11 @@ package com.ghost616.platform.service.message;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.ghost616.platform.entity.Message;
+import com.ghost616.platform.entity.User;
 import com.ghost616.platform.repository.MessageMapper;
+import com.ghost616.platform.session.UserContext;
+import com.ghost616.platform.session.UserSession;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -20,6 +24,8 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class MessageServiceImplTest {
 
+    private static final Long CURRENT_USER_ID = 42L;
+
     @Mock
     private MessageMapper messageMapper;
 
@@ -31,8 +37,14 @@ class MessageServiceImplTest {
 
     @BeforeEach
     void setUp() {
+        User user = new User();
+        user.setId(CURRENT_USER_ID);
+        UserSession session = new UserSession("session-1", user, System.currentTimeMillis());
+        UserContext.set(session);
+
         message1 = new Message();
         message1.setId(1L);
+        message1.setUserId(CURRENT_USER_ID);
         message1.setSessionId(100L);
         message1.setRole("user");
         message1.setContent("hello");
@@ -41,11 +53,17 @@ class MessageServiceImplTest {
 
         message2 = new Message();
         message2.setId(2L);
+        message2.setUserId(CURRENT_USER_ID);
         message2.setSessionId(100L);
         message2.setRole("assistant");
         message2.setContent("hi");
         message2.setSequenceNum(2);
         message2.setRollback(false);
+    }
+
+    @AfterEach
+    void tearDown() {
+        UserContext.clear();
     }
 
     @Test

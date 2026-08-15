@@ -1,0 +1,12 @@
+[
+  {
+    "plan_id": "plan_f91d7ab8-75f5-4276-b8f5-21da9cef66d6",
+    "plan": "工具配置数据用户隔离：create 填充 user_id、list 按 userId 过滤",
+    "modified_files": [
+      "platform-app/src/main/java/com/ghost616/platform/service/tool/ToolConfigServiceImpl.java",
+      "platform-app/src/test/java/com/ghost616/platform/service/tool/ToolConfigServiceImplTest.java"
+    ],
+    "summary": "执行总结：完成工具配置数据用户隔离改造。修改 2 个文件：1) platform-app/src/main/java/com/ghost616/platform/service/tool/ToolConfigServiceImpl.java——新增 currentUserId()（从 UserContext 线程上下文读取，未登录或用户为空抛 USER_NOT_LOGIN，与 AgentConfig/SkillConfig 既有模式一致）；create() 在方法入口获取 userId 并填充到 entity.setUserId(userId)（user_id 字段）；list() 无条件追加 user_id = 当前用户过滤条件；配套隔离点 getImplByName()/checkNameDuplicate() 同样按当前 userId 过滤（避免多用户同名工具 selectOne 歧义、同用户内重名去重），另清理了重复的 IdConverter import。2) platform-app/src/test/java/com/ghost616/platform/service/tool/ToolConfigServiceImplTest.java——@BeforeEach/@AfterEach 建立并清理登录上下文（用户 100L），新增 8 个用例：create 填充 userId、未登录抛 USER_NOT_LOGIN 且不插入、同用户重名抛 TOOL_ALREADY_EXISTS、list 按当前用户过滤、切换上下文用户（200L）不串数据、list 返回当前用户工具、list 未登录抛错、getImplByName 按用户过滤及未登录抛错；原有用例全部保留。测试文件共 43 个 @Test。\n\n测试总结：因环境原因无法执行，skip_count=2（编译测试、单元测试），passed_count=0，failed_count=0。环境错误详情：本会话沙箱禁止执行 JVM/Maven 进程——mvn.cmd 报 Program 'mvn.cmd' failed to run: Access is denied（exit 1，含 sandbox marker）；java.exe 共 4 个 JDK 路径（前台/后台/Start-Process 三种方式）均报 Access is denied / Win32Exception；委派会话无法升级 sandbox_permissions，批准提示已禁用，故未重试；控制组 cmd/whoami 可执行，确认仅 JVM 被拦截。离朱已完成静态代码走查：规格 4 项功能逐条核对通过（create 填充 userId 且未登录异常先于 insert；list 无条件 user_id 过滤；getImplByName/checkNameDuplicate 按用户隔离；ToolConfig 实体 @TableField(\"user_id\") userId 为本次变更新增；UserContext/UserSession/User.getId 依赖齐全），测试用例与实现一致，测试文件已逐字节同步至 .lizhu_env\\lizhu_user_data_test 测试环境。复核命令（需具备 JVM 执行权限的环境）：在 E:\\test_tool\\.lizhu_env\\lizhu_user_data_test 下执行 mvn -pl platform-app -am test-compile -DskipTests 与 mvn -pl platform-app test -Dtest=ToolConfigServiceImplTest -DfailIfNoTests=false，预期 BUILD SUCCESS、43 用例全部通过。次要观察：本次修复了重复 import IdConverter（原仅 warning 不影响编译）。",
+    "errors": []
+  }
+]

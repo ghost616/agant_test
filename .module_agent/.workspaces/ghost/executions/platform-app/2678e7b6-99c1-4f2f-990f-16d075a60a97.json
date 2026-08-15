@@ -1,0 +1,36 @@
+[
+  {
+    "plan_id": "plan_35f668d1-ed93-42d7-84ce-c2f5bb68627b",
+    "plan": "实现线程变量传播并完成业务数据用户隔离",
+    "modified_files": [
+      "platform-app/src/main/java/com/ghost616/platform/service/memory/SessionMemoryService.java",
+      "platform-app/src/main/java/com/ghost616/platform/service/evaluation/AsyncEvaluationExecutor.java",
+      "platform-app/src/main/java/com/ghost616/platform/service/evaluation/EvaluationExecutionService.java",
+      "platform-app/src/main/java/com/ghost616/platform/service/knowledge/KnowledgePublishService.java",
+      "platform-app/src/main/java/com/ghost616/platform/controller/KnowledgeFileController.java",
+      "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultMessageDataProvider.java",
+      "platform-app/src/main/java/com/ghost616/platform/service/agent/DatabaseAgentLog.java",
+      "platform-app/src/main/java/com/ghost616/platform/service/message/MessageServiceImpl.java",
+      "platform-app/src/main/java/com/ghost616/platform/service/agent_log/AgentLogServiceImpl.java",
+      "platform-app/src/main/java/com/ghost616/platform/service/evaluation/EvaluationServiceImpl.java",
+      "platform-app/src/main/java/com/ghost616/platform/service/evaluation/EvaluationResultGenerateService.java",
+      "platform-app/src/main/java/com/ghost616/platform/service/agent_evaluation/AgentEvaluationServiceImpl.java",
+      "platform-app/src/main/java/com/ghost616/platform/service/knowledge/KnowledgeBaseServiceImpl.java",
+      "platform-app/src/main/java/com/ghost616/platform/service/knowledge/KnowledgeFileServiceImpl.java",
+      "platform-app/src/main/java/com/ghost616/platform/model/SessionMemoryDocument.java",
+      "platform-app/src/main/java/com/ghost616/platform/service/search/SessionMemoryESClient.java",
+      "platform-app/src/main/java/com/ghost616/platform/service/memory/MemoryQueryProviderImpl.java",
+      "platform-app/src/main/java/com/ghost616/platform/controller/SessionController.java",
+      "platform-app/src/test/java/com/ghost616/platform/service/search/SessionMemoryESClientTest.java",
+      "platform-app/src/test/java/com/ghost616/platform/service/message/MessageServiceImplTest.java",
+      "platform-app/src/test/java/com/ghost616/platform/service/agent_log/AgentLogServiceImplTest.java",
+      "platform-app/src/test/java/com/ghost616/platform/service/evaluation/EvaluationServiceImplTest.java",
+      "platform-app/src/test/java/com/ghost616/platform/service/knowledge/KnowledgeBaseServiceImplTest.java",
+      "platform-app/src/test/java/com/ghost616/platform/service/knowledge/KnowledgeFileServiceImplTest.java",
+      "platform-app/src/test/java/com/ghost616/platform/controller/SessionControllerMemoryUserIdSupplementTest.java",
+      "platform-app/src/test/java/com/ghost616/platform/service/search/SessionMemoryESClientUserIdFilterTest.java"
+    ],
+    "summary": "执行总结：本轮完成\"线程变量传播与业务数据用户隔离\"计划的任务3/4/5（任务1/2 已核查确认此前完成）。共修改 18 个主代码文件 + 5 个测试文件（另有 9 个测试文件本会话前已被预适配），主要实现：① 异步执行点上下文传播——SessionMemoryService 两个 CompletableFuture.runAsync 提交点、AsyncEvaluationExecutor 两个 @Async 方法（新增 ThreadVariableWrapper 参数）+ EvaluationExecutionService 提交点、KnowledgePublishService.publishFile（签名改为 Long+ThreadVariableWrapper）+ KnowledgeFileController/rebuildKnowledgeBase 提交点，均 wrap() 捕获 → apply() 恢复 → finally UserContext.clear()；② 写入侧 user_id 填充——DefaultMessageDataProvider.saveMessage（message）、DatabaseAgentLog.addLog（agent_log）、EvaluationServiceImpl.create（evaluation+基准 Session）、EvaluationResultGenerateService.generate（evaluation_result）、AgentEvaluationServiceImpl.create、KnowledgeBaseServiceImpl.create、KnowledgeFileServiceImpl.create（另校验知识库属主）、SessionMemoryService 记忆文档 userId（取会话属主，SessionMemoryDocument 新增 userId 字段 + ES mapping userId keyword）；③ 查询/列表按 userId 过滤——MessageServiceImpl、AgentLogServiceImpl（含 sessionName 搜索限定用户）、Evaluation/AgentEvaluation/KnowledgeBase/KnowledgeFile 四 service（list 过滤 + 单条访问属主校验 + name 唯一性按 user_id 限定）、MemoryQueryProviderImpl（ES userId 过滤 + Message.user_id eq）、SessionMemoryESClient 四搜索方法新增 userId 可空参数、SessionController 记忆分页查询。已更新 current_spec.md（新增\"数据用户隔离与线程变量传播\"section）、module_definition.json（18 个文件描述更新 + 离朱新增 2 个测试文件登记）、change_history.log。\n\n测试总结：全部测试通过。编译测试 BUILD SUCCESS（mvn -pl platform-app -am clean compile，141 个主源文件，release 17）；单元测试规范指定 25 类 411/411 通过，0 失败；接口测试通过（GET /api/sessions/{id}/memory userId 过滤透传、POST /{id}/publish wrapper 传播，含离朱新增 4 个补充用例）；全量回归 988 用例 980 通过，8 个失败全部为既有问题与本变更无关（ToolDetailDTOTest:45 与 ToolConfigServiceImplTest$ToDTOTests:678 的 id 类型 Long vs String 断言，以及 ToolConfig×3/AgentConfig×2/SkillConfig×1 共 6 个 getParamNameValuePairs().containsValue 断言在 MyBatis-Plus 3.5.7 惰性参数机制下恒失败的测试写法缺陷；相关文件修改时间均早于本会话）。环境说明：沙箱禁止外部 mvn/java 及 surefire 分叉管道，离朱使用工作区内 JDK21+Maven+m2repo 以 -DforkCount=0 完成运行；platform-data 6 个 schema 测试在该模式下为 CWD 假象误报，模块目录下 18/18 通过。需风后知悉的既有技术债（未在本计划内处理）：ModelConfigServiceImplAuthGuardTest.java:67/89 的 insert(any()) 歧义导致全量 test-compile 失败（建议改为 any(ModelConfig.class) 或配置 testExcludes）。",
+    "errors": []
+  }
+]

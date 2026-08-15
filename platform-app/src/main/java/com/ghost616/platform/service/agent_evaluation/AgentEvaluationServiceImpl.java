@@ -26,6 +26,8 @@ import com.ghost616.platform.repository.SessionMapper;
 import com.ghost616.platform.repository.SessionSkillMapper;
 import com.ghost616.platform.repository.SessionToolMapper;
 import com.ghost616.platform.repository.SessionVariableMapper;
+import com.ghost616.platform.session.UserContext;
+import com.ghost616.platform.session.UserSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,6 +36,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * 智能体评估业务实现。创建数据时从 {@link UserContext} 获取当前登录用户填充 user_id，
+ * 查询/列表仅返回当前用户数据，单条访问校验数据归属，实现智能体评估数据用户隔离。
+ */
 @Service
 @RequiredArgsConstructor
 public class AgentEvaluationServiceImpl implements AgentEvaluationService {
@@ -52,6 +58,7 @@ public class AgentEvaluationServiceImpl implements AgentEvaluationService {
     @Override
     public List<AgentEvaluationDTO> list() {
         LambdaQueryWrapper<AgentEvaluation> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(AgentEvaluation::getUserId, currentUserId());
         wrapper.orderByDesc(AgentEvaluation::getCreateTime);
         List<AgentEvaluation> entities = agentEvaluationMapper.selectList(wrapper);
         return entities.stream().map(this::toDTO).toList();
@@ -63,19 +70,23 @@ public class AgentEvaluationServiceImpl implements AgentEvaluationService {
         if (entity == null) {
             throw new BusinessException(ErrorCode.AGENT_EVALUATION_NOT_FOUND);
         }
+        requireOwned(entity);
         return toDTO(entity);
     }
 
     @Override
     @Transactional
     public AgentEvaluationDTO create(AgentEvaluationCreateRequest request) {
+        Long userId = currentUserId();
         LambdaQueryWrapper<AgentEvaluation> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(AgentEvaluation::getName, request.getName());
+        wrapper.eq(AgentEvaluation::getUserId, userId)
+                .eq(AgentEvaluation::getName, request.getName());
         if (agentEvaluationMapper.selectCount(wrapper) > 0) {
             throw new BusinessException(ErrorCode.AGENT_EVALUATION_ALREADY_EXISTS);
         }
 
         AgentEvaluation entity = new AgentEvaluation();
+        entity.setUserId(userId);
         entity.setName(request.getName());
         entity.setDescription(request.getDescription());
         entity.setAgentId(request.getAgentId());
@@ -91,11 +102,13 @@ public class AgentEvaluationServiceImpl implements AgentEvaluationService {
         if (entity == null) {
             throw new BusinessException(ErrorCode.AGENT_EVALUATION_NOT_FOUND);
         }
+        requireOwned(entity);
 
         if (request.getName() != null) {
             if (!request.getName().equals(entity.getName())) {
                 LambdaQueryWrapper<AgentEvaluation> wrapper = new LambdaQueryWrapper<>();
-                wrapper.eq(AgentEvaluation::getName, request.getName());
+                wrapper.eq(AgentEvaluation::getUserId, entity.getUserId())
+                        .eq(AgentEvaluation::getName, request.getName());
                 if (agentEvaluationMapper.selectCount(wrapper) > 0) {
                     throw new BusinessException(ErrorCode.AGENT_EVALUATION_ALREADY_EXISTS);
                 }
@@ -120,6 +133,7 @@ public class AgentEvaluationServiceImpl implements AgentEvaluationService {
         if (entity == null) {
             throw new BusinessException(ErrorCode.AGENT_EVALUATION_NOT_FOUND);
         }
+        requireOwned(entity);
 
         LambdaQueryWrapper<Evaluation> evalWrapper = new LambdaQueryWrapper<>();
         evalWrapper.eq(Evaluation::getAgentEvalId, id);
@@ -194,5 +208,33 @@ public class AgentEvaluationServiceImpl implements AgentEvaluationService {
                 .createTime(entity.getCreateTime())
                 .updateTime(entity.getUpdateTime())
                 .build();
+    }
+
+    /**
+     * 获取当前登录用户 ID。
+     *
+     * <p>从 {@link UserContext} 线程上下文读取用户会话；
+     * 未登录时抛出 {@link ErrorCode#USER_NOT_LOGIN}，防止无归属数据写入与越权访问。</p>
+     *
+     * @return 当前登录用户 ID
+     */
+    private Long currentUserId() {
+        UserSession session = UserContext.get();
+        if (session == null || session.getUser() == null) {
+            throw new BusinessException(ErrorCode.USER_NOT_LOGIN);
+        }
+        return session.getUser().getId();
+    }
+
+    /**
+     * 校验智能体评估归属当前用户，非本人数据按不存在处理（不泄露数据存在性）。
+     *
+     * @param entity 智能体评估实体
+     */
+    private void requireOwned(AgentEvaluation entity) {
+        Long userId = currentUserId();
+        if (entity.getUserId() != null && !entity.getUserId().equals(userId)) {
+            throw new BusinessException(ErrorCode.AGENT_EVALUATION_NOT_FOUND);
+        }
     }
 }

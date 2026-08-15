@@ -1,5 +1,0 @@
-{
-  "session_id": "ses_058b16899ffeJc4Qp07oNQb9T3",
-  "content": "## 待测试功能\n1. TypeScript 编译检查：确保 evaluation.ts 中新增的 `executionType?: string` 字段在所有接口（Evaluation / EvaluationCreateRequest / EvaluationUpdateRequest）中类型正确，且 EvaluationList.tsx 中引用这些类型的地方类型匹配。\n2. 涉及文件：\n   - src/types/evaluation.ts\n   - src/pages/evaluations/EvaluationList.tsx\n   - src/services/evaluation.ts（引用了 EvaluationCreateRequest / EvaluationUpdateRequest）",
-  "timestamp": "2026-07-28T06:00:04.424Z"
-}

@@ -1,5 +1,0 @@
-{
-  "session_id": "ses_04e33c745ffe5b39QodCsM3L1t",
-  "content": "## 待测试功能\n\n### 1. 评估提示语评分规则更新\n- 文件：EvaluationResultGenerateService.java\n- 变更：替换了 buildJudgeMessages() 方法中的评分规则文本（新增传参出错扣分说明、完整性扣分细化、时间因素说明）\n- 测试：仅涉及字符串模板修改，无需功能测试\n\n### 2. DefaultMessageDataProvider 回滚修复\n- 文件：DefaultMessageDataProvider.java\n- 变更：\n  - saveMessage() 方法中查询最后一条消息时添加 .eq(Message::getRollback, 0) 过滤条件\n  - rollbackToLastUserMessage() 方法中查找最后一条 user 消息时添加 .eq(Message::getRollback, 0) 过滤条件\n- 本次变更未涉及接口签名变化或新增方法，仅修改内部实现逻辑\n\n### 需要验证的测试\n- 编译检查：mvn compile（验证 Java 语法正确性）\n- 单元测试：DefaultMessageDataProviderTest 中 rollbackToLastUserMessage 和 saveMessage 相关用例需覆盖 rollback=0 过滤逻辑",
-  "timestamp": "2026-07-30T06:53:36.281Z"
-}

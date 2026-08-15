@@ -1,13 +1,14 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Card, Form, Input, message, Typography } from 'antd';
 import { LockOutlined, UserOutlined } from '@ant-design/icons';
+import { USER_TYPE_ADMIN } from '../../types/user';
 import type { LoginRequest } from '../../types/user';
 import { login } from '../../services/auth';
 
 /**
  * 登录页：登录名 + 密码表单，调用登录接口，
- * 成功后后端写入 HttpOnly Cookie 并跳转主界面。
+ * 成功后后端写入 HttpOnly Cookie 并按角色跳转落地页（管理员 /users，普通用户 /models）。
  */
 function Login(): JSX.Element {
   const navigate = useNavigate();
@@ -16,9 +17,9 @@ function Login(): JSX.Element {
   const handleFinish = async (values: LoginRequest): Promise<void> => {
     setSubmitting(true);
     try {
-      await login(values);
+      const user = await login(values);
       message.success('登录成功');
-      navigate('/');
+      navigate(user.userType === USER_TYPE_ADMIN ? '/users' : '/models');
     } catch (error) {
       const msg = error instanceof Error ? error.message : '登录失败';
       message.error(msg);

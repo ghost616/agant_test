@@ -15,6 +15,8 @@ import com.ghost616.platform.entity.Evaluation;
 import com.ghost616.platform.entity.EvaluationResult;
 import com.ghost616.platform.repository.EvaluationMapper;
 import com.ghost616.platform.repository.EvaluationResultMapper;
+import com.ghost616.platform.session.UserContext;
+import com.ghost616.platform.session.UserSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -88,6 +90,7 @@ public class EvaluationResultGenerateService {
         EvaluationResult evaluationResult = new EvaluationResult();
         evaluationResult.setEvaluationId(evaluationId);
         evaluationResult.setEvaluationSessionId(executionSessionId);
+        evaluationResult.setUserId(currentUserId());
         evaluationResult.setResult(resultContent);
         evaluationResult.setExecutionStatus("COMPLETED");
         evaluationResult.setModelId(evaluation.getModelId());
@@ -199,5 +202,21 @@ public class EvaluationResultGenerateService {
         if (msg.toolResult() != null && !msg.toolResult().isEmpty()) {
             sb.append("  [工具结果]: ").append(msg.toolResult()).append("\n");
         }
+    }
+
+    /**
+     * 获取当前登录用户 ID。
+     *
+     * <p>从 {@link UserContext} 线程上下文读取用户会话；异步评估执行等场景通过线程变量传播
+     * 保证上下文可取。无用户上下文（如系统级流程）时返回 null，userId 留空，避免中断流程。</p>
+     *
+     * @return 当前登录用户 ID，无用户上下文时返回 null
+     */
+    private Long currentUserId() {
+        UserSession session = UserContext.get();
+        if (session == null || session.getUser() == null) {
+            return null;
+        }
+        return session.getUser().getId();
     }
 }

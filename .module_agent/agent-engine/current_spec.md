@@ -108,3 +108,6 @@ AgentExecutionContext 新增 self.stopped = data.get("stopped", False) 字段，
 ## 工具测试
 
 新增 session-var-write-py / session-var-read-py / session-var-write-ts / session-var-read-ts 四个 session 变量读写验证工具。
+## 会话用户隔离
+
+会话数据用户隔离：SessionServiceImpl.createSession 从 UserContext 线程上下文获取当前登录用户 ID 填充 Session.userId（未登录抛 USER_NOT_LOGIN）；listSessions 查询按当前 userId 过滤（eq(Session::getUserId, currentUserId())）。DefaultContextDataProvider.saveSessionVariable 新建 SessionVariable 时填充 userId，createChildSession 创建子会话 Session 时填充 userId；其 currentUserId() 无用户上下文时返回 null（容忍系统级异步流程，如评估执行）。异步场景通过线程变量传播保证用户上下文可取：新建 UserContextThreadVariableHandler 实现 agent-base ThreadVariableHandler，由 AgentContextConfiguration 注入 AgentAssembler 注册到 AgentComponentRegistry，ToolExecutionService 异步工具执行（CompletableFuture.supplyAsync）提交前 wrap() 捕获 UserContext、异步线程 apply() 恢复。

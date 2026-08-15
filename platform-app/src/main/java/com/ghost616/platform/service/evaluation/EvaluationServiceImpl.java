@@ -31,6 +31,8 @@ import com.ghost616.platform.repository.SessionMapper;
 import com.ghost616.platform.repository.SessionSkillMapper;
 import com.ghost616.platform.repository.SessionToolMapper;
 import com.ghost616.platform.repository.SessionVariableMapper;
+import com.ghost616.platform.session.UserContext;
+import com.ghost616.platform.session.UserSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,6 +41,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * 评估业务实现。创建数据时从 {@link UserContext} 获取当前登录用户填充 user_id，
+ * 查询/列表仅返回当前用户数据，单条访问校验数据归属，实现评估数据用户隔离。
+ */
 @Service
 @RequiredArgsConstructor
 public class EvaluationServiceImpl implements EvaluationService {
@@ -59,6 +65,7 @@ public class EvaluationServiceImpl implements EvaluationService {
     @Override
     public List<EvaluationDTO> list(Long agentEvalId) {
         LambdaQueryWrapper<Evaluation> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Evaluation::getUserId, currentUserId());
         if (agentEvalId != null) {
             wrapper.eq(Evaluation::getAgentEvalId, agentEvalId);
         }
@@ -73,14 +80,17 @@ public class EvaluationServiceImpl implements EvaluationService {
         if (entity == null) {
             throw new BusinessException(ErrorCode.EVALUATION_NOT_FOUND);
         }
+        requireOwned(entity);
         return toDTO(entity);
     }
 
     @Override
     @Transactional
     public EvaluationDTO create(EvaluationCreateRequest request) {
+        Long userId = currentUserId();
         LambdaQueryWrapper<Evaluation> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(Evaluation::getName, request.getName())
+        wrapper.eq(Evaluation::getUserId, userId)
+                .eq(Evaluation::getName, request.getName())
                 .eq(Evaluation::getAgentEvalId, request.getAgentEvalId());
         if (evaluationMapper.selectCount(wrapper) > 0) {
             throw new BusinessException(ErrorCode.EVALUATION_ALREADY_EXISTS);
@@ -95,6 +105,7 @@ public class EvaluationServiceImpl implements EvaluationService {
         String systemPrompt = agentConfig != null ? agentConfig.getSystemPrompt() : null;
 
         Session baselineSession = new Session();
+        baselineSession.setUserId(userId);
         baselineSession.setTitle(request.getName() + "BenchmarkSession");
         baselineSession.setModelId(request.getModelId());
         baselineSession.setIsEvaluation(true);
@@ -128,6 +139,7 @@ public class EvaluationServiceImpl implements EvaluationService {
         }
 
         Evaluation entity = new Evaluation();
+        entity.setUserId(userId);
         entity.setName(request.getName());
         entity.setDescription(request.getDescription());
         entity.setBenchmarkSessionId(baselineSession.getId());
@@ -150,11 +162,13 @@ public class EvaluationServiceImpl implements EvaluationService {
         if (entity == null) {
             throw new BusinessException(ErrorCode.EVALUATION_NOT_FOUND);
         }
+        requireOwned(entity);
 
         if (request.getName() != null) {
             if (!request.getName().equals(entity.getName())) {
                 LambdaQueryWrapper<Evaluation> wrapper = new LambdaQueryWrapper<>();
-                wrapper.eq(Evaluation::getName, request.getName())
+                wrapper.eq(Evaluation::getUserId, entity.getUserId())
+                        .eq(Evaluation::getName, request.getName())
                         .eq(Evaluation::getAgentEvalId, entity.getAgentEvalId());
                 if (evaluationMapper.selectCount(wrapper) > 0) {
                     throw new BusinessException(ErrorCode.EVALUATION_ALREADY_EXISTS);
@@ -186,6 +200,7 @@ public class EvaluationServiceImpl implements EvaluationService {
         if (entity == null) {
             throw new BusinessException(ErrorCode.EVALUATION_NOT_FOUND);
         }
+        requireOwned(entity);
 
         Long benchmarkSessionId = entity.getBenchmarkSessionId();
 
@@ -248,6 +263,7 @@ public class EvaluationServiceImpl implements EvaluationService {
         if (entity == null) {
             throw new BusinessException(ErrorCode.EVALUATION_RESULT_NOT_FOUND);
         }
+        requireOwnedResult(entity);
         Session session = sessionMapper.selectById(entity.getEvaluationSessionId());
         return toResultDTO(entity, session);
     }
@@ -258,6 +274,7 @@ public class EvaluationServiceImpl implements EvaluationService {
         if (entity == null) {
             throw new BusinessException(ErrorCode.EVALUATION_RESULT_NOT_FOUND);
         }
+        requireOwnedResult(entity);
 
         Long sessionId = entity.getEvaluationSessionId();
 
@@ -293,8 +310,14 @@ public class EvaluationServiceImpl implements EvaluationService {
 
     @Override
     public void clearResults(Long evaluationId) {
+        Evaluation evaluation = evaluationMapper.selectById(evaluationId);
+        if (evaluation == null) {
+            throw new BusinessException(ErrorCode.EVALUATION_NOT_FOUND);
+        }
+        requireOwned(evaluation);
         LambdaQueryWrapper<EvaluationResult> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(EvaluationResult::getEvaluationId, evaluationId);
+        wrapper.eq(EvaluationResult::getEvaluationId, evaluationId)
+                .eq(EvaluationResult::getUserId, currentUserId());
         List<Long> resultIds = evaluationResultMapper.selectList(wrapper)
                 .stream()
                 .map(EvaluationResult::getId)
@@ -305,7 +328,8 @@ public class EvaluationServiceImpl implements EvaluationService {
     @Override
     public List<EvaluationResultDTO> listResults(Long evaluationId) {
         LambdaQueryWrapper<EvaluationResult> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(EvaluationResult::getEvaluationId, evaluationId);
+        wrapper.eq(EvaluationResult::getEvaluationId, evaluationId)
+                .eq(EvaluationResult::getUserId, currentUserId());
         wrapper.orderByDesc(EvaluationResult::getCreateTime);
         List<EvaluationResult> entities = evaluationResultMapper.selectList(wrapper);
 
@@ -359,5 +383,45 @@ public class EvaluationServiceImpl implements EvaluationService {
                 .finalScore(entity.getFinalScore())
                 .createTime(entity.getCreateTime())
                 .build();
+    }
+
+    /**
+     * 获取当前登录用户 ID。
+     *
+     * <p>从 {@link UserContext} 线程上下文读取用户会话；
+     * 未登录时抛出 {@link ErrorCode#USER_NOT_LOGIN}，防止无归属数据写入与越权访问。</p>
+     *
+     * @return 当前登录用户 ID
+     */
+    private Long currentUserId() {
+        UserSession session = UserContext.get();
+        if (session == null || session.getUser() == null) {
+            throw new BusinessException(ErrorCode.USER_NOT_LOGIN);
+        }
+        return session.getUser().getId();
+    }
+
+    /**
+     * 校验评估归属当前用户，非本人数据按不存在处理（不泄露数据存在性）。
+     *
+     * @param entity 评估实体
+     */
+    private void requireOwned(Evaluation entity) {
+        Long userId = currentUserId();
+        if (entity.getUserId() != null && !entity.getUserId().equals(userId)) {
+            throw new BusinessException(ErrorCode.EVALUATION_NOT_FOUND);
+        }
+    }
+
+    /**
+     * 校验评估结果归属当前用户，非本人数据按不存在处理（不泄露数据存在性）。
+     *
+     * @param entity 评估结果实体
+     */
+    private void requireOwnedResult(EvaluationResult entity) {
+        Long userId = currentUserId();
+        if (entity.getUserId() != null && !entity.getUserId().equals(userId)) {
+            throw new BusinessException(ErrorCode.EVALUATION_RESULT_NOT_FOUND);
+        }
     }
 }

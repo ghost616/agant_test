@@ -1,4 +1,5 @@
 import { test, expect, Page } from '@playwright/test';
+import { seedAdminLogin } from './utils/seedAuth';
 
 const KB_ID = 'kb-100';
 
@@ -67,6 +68,10 @@ async function setupMocks(page: Page) {
     });
   });
 }
+
+test.beforeEach(async ({ page }) => {
+  await seedAdminLogin(page);
+});
 
 test.describe('知识库管理页 - ES 索引列与提交排除', () => {
   test.setTimeout(120000);

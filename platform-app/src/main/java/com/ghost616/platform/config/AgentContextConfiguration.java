@@ -24,6 +24,7 @@ import com.ghost616.platform.service.agent.DefaultChatDataCacheProvider;
 import com.ghost616.platform.service.agent.DefaultChatDataProvider;
 import com.ghost616.platform.service.agent.DefaultToolExecutionProvider;
 import com.ghost616.platform.service.agent.DefaultSubSessionCallback;
+import com.ghost616.platform.session.UserContextThreadVariableHandler;
 import com.ghost616.agentinteg.tool.SubSessionCallbackSystemTool;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationContext;
@@ -84,9 +85,12 @@ public class AgentContextConfiguration {
     public AgentAssembler agentAssembler(SystemToolProvider systemToolProvider,
                             ModelInvokerFactory modelInvokerFactory,
                             ChatDataProvider chatDataProvider,
-                            ToolExecutionProvider toolExecutionProvider) {
-        return new AgentAssembler(contextDataProvider, messageDataProvider, toolDataProvider,
+                            ToolExecutionProvider toolExecutionProvider,
+                            UserContextThreadVariableHandler userContextThreadVariableHandler) {
+        AgentAssembler assembler = new AgentAssembler(contextDataProvider, messageDataProvider, toolDataProvider,
                 systemToolProvider, modelInvokerFactory, chatDataProvider, null, toolExecutionProvider);
+        assembler.setThreadVariableHandler(userContextThreadVariableHandler);
+        return assembler;
     }
 
     @Bean

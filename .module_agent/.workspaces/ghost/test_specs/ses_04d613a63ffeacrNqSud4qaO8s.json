@@ -1,5 +1,0 @@
-{
-  "session_id": "ses_04d613a63ffeacrNqSud4qaO8s",
-  "content": "## 待测试功能\n\n### 测试范围\n修改 `EvaluationServiceImpl.java` 中名称唯一性校验规则：\n- `create()` 方法：名称唯一性查询条件从 `eq(Name)` 改为 `eq(Name) + eq(AgentEvalId)`\n- `update()` 方法：名称唯一性查询条件从 `eq(Name)` 改为 `eq(Name) + eq(AgentEvalId)`\n\n### 涉及的代码文件\n- `platform-app/src/main/java/com/ghost616/platform/service/evaluation/EvaluationServiceImpl.java`\n\n### 需验证的测试类型\n1. **单元测试**：验证 `create()` 在不同 `agentEvalId` 下允许同名 Evaluation，在同 `agentEvalId` 下拒绝同名 Evaluation；验证 `update()` 类似行为\n2. **编译测试**：确保代码编译通过\n3. **接口测试**：验证 HTTP API 端点行为正确性",
-  "timestamp": "2026-07-30T10:43:16.343Z"
-}

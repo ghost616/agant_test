@@ -71,3 +71,40 @@ describe('App 路由注册 (记忆修改)', () => {
     expect(source).toContain("label: '记忆修改'");
   });
 });
+
+describe('App 登录守卫与菜单权限', () => {
+  it('应导入 getCurrentUser、USER_TYPE_ADMIN 与 Navigate', () => {
+    const source = readFileSync(appPath, 'utf-8');
+    expect(source).toContain("import { getCurrentUser } from './services/auth'");
+    expect(source).toContain("import { USER_TYPE_ADMIN } from './types/user'");
+    expect(source).toContain('Navigate');
+  });
+
+  it('路由守卫：未登录访问任意页面（除 /login）自动跳转登录页', () => {
+    const source = readFileSync(appPath, 'utf-8');
+    expect(source).toContain(
+      "if (!currentUser && location.pathname !== '/login') {",
+    );
+    expect(source).toContain('return <Navigate to="/login" replace />;');
+  });
+
+  it('根路由 / 应按角色重定向落地页（管理员 /users、普通用户 /models）', () => {
+    const source = readFileSync(appPath, 'utf-8');
+    expect(source).toContain(
+      "return user?.userType === USER_TYPE_ADMIN ? '/users' : '/models';",
+    );
+    expect(source).toContain(
+      '<Route path="/" element={<Navigate to={landingPath} replace />} />',
+    );
+    expect(source).toContain("const landingPath = getLandingPath(currentUser);");
+  });
+
+  it('侧边栏菜单按角色过滤：用户管理菜单仅管理员可见', () => {
+    const source = readFileSync(appPath, 'utf-8');
+    expect(source).toContain(
+      "MENU_ITEMS.filter((item) => item !== null && item.key !== '/users')",
+    );
+    expect(source).toContain('items={menuItems}');
+    expect(source).toContain('const menuItems = getVisibleMenuItems(currentUser);');
+  });
+});

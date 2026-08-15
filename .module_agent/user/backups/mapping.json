@@ -1,0 +1,5 @@
+{
+  "platform-data/src/main/java/com/ghost616/platform/enums/ErrorCode.java": "e1e172e1f953384c0ae366f1f6df7ffa",
+  "platform-data/src/test/java/com/ghost616/platform/enums/ErrorCodeTest.java": "d02f02a0ecab1356349b93847a856793",
+  "platform-app/src/main/java/com/ghost616/platform/controller/AuthController.java": "3ff10ed0b665c8133255874650a2326a"
+}

@@ -20,6 +20,9 @@ public class SessionMemoryDocument {
     /** 会话 ID（字符串形式，与索引 keyword 映射一致） */
     private String sessionId;
 
+    /** 归属用户 ID（记忆文档跟随会话归属，ES 存 keyword） */
+    private Long userId;
+
     /** 聚合类型（GROUP=分组聚合、DAILY=按日聚合，ES 存 keyword） */
     private AggregationType aggregationType;
 

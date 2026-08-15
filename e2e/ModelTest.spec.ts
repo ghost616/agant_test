@@ -1,4 +1,5 @@
 import { test, expect, Page } from '@playwright/test';
+import { seedAdminLogin } from './utils/seedAuth';
 
 const MODEL_ID = 'model-embed-1';
 
@@ -44,6 +45,10 @@ async function setupMocks(page: Page) {
     });
   });
 }
+
+test.beforeEach(async ({ page }) => {
+  await seedAdminLogin(page);
+});
 
 test.describe('ModelTest EMBEDDINGS 界面', () => {
   test.beforeEach(async ({ page }) => {

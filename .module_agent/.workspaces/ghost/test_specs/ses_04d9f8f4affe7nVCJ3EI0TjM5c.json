@@ -1,5 +1,0 @@
-{
-  "session_id": "ses_04d9f8f4affe7nVCJ3EI0TjM5c",
-  "content": "# ToolManager 修改测试说明\n\n## 修改概览\n1. **getSessionTools 移除 CHILD 过滤**：移除了 getSessionTools 中 129-131 行的 `if (!isSubSession(id)) { result.removeIf(...); }` 代码块，使 getSessionTools 返回完整工具列表（含 CHILD 类型）。\n2. **getInvoker 新增主会话 CHILD 过滤**：在 getInvoker 中新增 `.filter(tso -> subSession || tso.toolConfig().getSessionAuth() != SessionAuthType.CHILD)`，确保主会话无法查找到 CHILD 工具的 invoker，而子会话可正常查找。\n\n## 需要测试的功能\n1. getSessionTools 返回列表应包含 CHILD 类型的工具（不再被过滤）\n2. getInvoker 在主会话中查找 CHILD 工具时应返回 null\n3. getInvoker 在子会话中查找 CHILD 工具时应返回 invoker\n4. getInvoker 在主会话中查找非 CHILD 工具时行为不变\n5. getSessionTools 的 expandChildMcp=true 模式行为不变（子会话模式）\n\n## 涉及的文件\n- agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/ToolManager.java\n- agent-base/src/test/java/com/ghost616/agentbase/service/agent/invoker/ToolManagerTest.java",
-  "timestamp": "2026-07-30T09:36:02.069Z"
-}

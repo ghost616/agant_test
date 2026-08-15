@@ -1,4 +1,5 @@
 import { test, expect, Page } from '@playwright/test';
+import { seedAdminLogin } from './utils/seedAuth';
 
 const AGENT_ID = 'agent-100';
 
@@ -131,6 +132,10 @@ async function selectKnowledgeBases(page: Page, names: string[]) {
     await page.locator('.ant-select-dropdown:visible').getByText(name).click();
   }
 }
+
+test.beforeEach(async ({ page }) => {
+  await seedAdminLogin(page);
+});
 
 test.describe('智能体管理页 - 绑定知识库', () => {
   test.setTimeout(120000);

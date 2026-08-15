@@ -1,6 +1,8 @@
 package com.ghost616.agentbase.service.agent;
 
 import com.ghost616.agentbase.core.AgentComponentRegistry;
+import com.ghost616.agentbase.core.ThreadVariableHandler;
+import com.ghost616.agentbase.core.ThreadVariableWrapper;
 import com.ghost616.agentbase.dto.chat.ChatRequest;
 import com.ghost616.agentbase.dto.model.ChatChunk;
 import com.ghost616.agentbase.dto.model.ToolInfo;
@@ -31,6 +33,8 @@ import reactor.core.publisher.Flux;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -349,6 +353,56 @@ class ToolExecutionServiceTest {
         assertEquals("normalTool", result.toolName());
         assertEquals("{\"key\":\"val\"}", result.arguments());
         assertTrue(result.hasMore());
+    }
+
+    @Test
+    void executeTool_注入ThreadVariableHandler时提交前捕获_异步线程内应用() throws Exception {
+        ThreadVariableHandler handler = mock(ThreadVariableHandler.class);
+        CountDownLatch appliedLatch = new CountDownLatch(1);
+        ThreadVariableWrapper wrapper = appliedLatch::countDown;
+        when(handler.wrap()).thenReturn(wrapper);
+        registry.setThreadVariableHandler(handler);
+
+        MessageDataProvider.ToolCallData peekData = new MessageDataProvider.ToolCallData("tid_tv", "tvTool", "{}");
+        when(toolCallQueueManager.peek(sessionId)).thenReturn(peekData);
+        ToolInvoker invoker = mock(ToolInvoker.class);
+        when(toolManager.getInvoker(sessionId, "tvTool")).thenReturn(invoker);
+
+        MessageDataProvider.ToolCallData pollData = new MessageDataProvider.ToolCallData("tid_tv", "tvTool", "{}");
+        when(toolCallQueueManager.poll(sessionId)).thenReturn(pollData);
+        when(toolCallQueueManager.hasPending(sessionId)).thenReturn(false);
+        AgentContextManager.AgentSessionContext sessionCtx = mock(AgentContextManager.AgentSessionContext.class);
+        AgentExecutionContext context = mock(AgentExecutionContext.class);
+        when(sessionCtx.context()).thenReturn(context);
+        when(context.isStopped()).thenReturn(false);
+        when(agentContextManager.get(sessionId)).thenReturn(sessionCtx);
+
+        ToolExecutionService.ToolExecutionResult result = toolExecutionService.executeTool(sessionId);
+
+        verify(handler).wrap();
+        assertTrue(appliedLatch.await(3, TimeUnit.SECONDS), "异步线程应调用 wrapper.apply()");
+        assertEquals("executing", result.status());
+    }
+
+    @Test
+    void executeTool_未注入ThreadVariableHandler时不影响正常执行() {
+        MessageDataProvider.ToolCallData peekData = new MessageDataProvider.ToolCallData("tid_tv2", "tvTool2", "{}");
+        when(toolCallQueueManager.peek(sessionId)).thenReturn(peekData);
+        ToolInvoker invoker = mock(ToolInvoker.class);
+        when(toolManager.getInvoker(sessionId, "tvTool2")).thenReturn(invoker);
+
+        MessageDataProvider.ToolCallData pollData = new MessageDataProvider.ToolCallData("tid_tv2", "tvTool2", "{}");
+        when(toolCallQueueManager.poll(sessionId)).thenReturn(pollData);
+        when(toolCallQueueManager.hasPending(sessionId)).thenReturn(false);
+        AgentContextManager.AgentSessionContext sessionCtx = mock(AgentContextManager.AgentSessionContext.class);
+        AgentExecutionContext context = mock(AgentExecutionContext.class);
+        when(sessionCtx.context()).thenReturn(context);
+        when(context.isStopped()).thenReturn(false);
+        when(agentContextManager.get(sessionId)).thenReturn(sessionCtx);
+
+        ToolExecutionService.ToolExecutionResult result = toolExecutionService.executeTool(sessionId);
+
+        assertEquals("executing", result.status());
     }
 
     // ========== getToolStatus ==========

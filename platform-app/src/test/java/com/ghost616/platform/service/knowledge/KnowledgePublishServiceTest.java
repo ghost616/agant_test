@@ -1,5 +1,6 @@
 package com.ghost616.platform.service.knowledge;
 
+import com.ghost616.agentbase.core.ThreadVariableHandler;
 import com.ghost616.agentbase.dto.model.EmbeddingRequest;
 import com.ghost616.agentbase.dto.model.EmbeddingResponse;
 import com.ghost616.agentbase.dto.model.ModelConfigData;
@@ -50,13 +51,15 @@ class KnowledgePublishServiceTest {
     private ModelInvoker modelInvoker;
     @Mock
     private KnowledgeSearchClient knowledgeSearchClient;
+    @Mock
+    private ThreadVariableHandler threadVariableHandler;
 
     private KnowledgePublishService service;
 
     private KnowledgePublishService newService() {
         service = new KnowledgePublishService(
                 knowledgeFileMapper, knowledgeBaseMapper, modelConfigMapper,
-                modelInvokerManager, knowledgeSearchClient);
+                modelInvokerManager, knowledgeSearchClient, threadVariableHandler);
         return service;
     }
 
@@ -133,7 +136,7 @@ class KnowledgePublishServiceTest {
         stubBatchEmbedding();
         when(knowledgeSearchClient.indexExists("agent_idx")).thenReturn(true);
 
-        service.publishFile(1L);
+        service.publishFile(1L, null);
 
         verify(knowledgeSearchClient).deleteByFile("agent_idx", 1L);
         ArgumentCaptor<EmbeddingRequest> requestCaptor = ArgumentCaptor.forClass(EmbeddingRequest.class);
@@ -166,7 +169,7 @@ class KnowledgePublishServiceTest {
         stubBatchEmbedding();
         when(knowledgeSearchClient.indexExists("agent_idx")).thenReturn(false);
 
-        service.publishFile(1L);
+        service.publishFile(1L, null);
 
         verify(knowledgeSearchClient, never()).deleteByFile("agent_idx", 1L);
         verify(knowledgeSearchClient, never()).createIndex("agent_idx");
@@ -184,7 +187,7 @@ class KnowledgePublishServiceTest {
         when(modelInvoker.embed(any(EmbeddingRequest.class))).thenThrow(new RuntimeException("embed 失败"));
         when(knowledgeSearchClient.indexExists("agent_idx")).thenReturn(true);
 
-        service.publishFile(1L);
+        service.publishFile(1L, null);
 
         assertEquals(PublishStatus.PUBLISH_ERROR, f.getPublishStatus());
         verify(knowledgeSearchClient, times(2)).deleteByFile("agent_idx", 1L);
@@ -196,7 +199,7 @@ class KnowledgePublishServiceTest {
         newService();
         when(knowledgeFileMapper.selectById(1L)).thenReturn(null);
 
-        service.publishFile(1L);
+        service.publishFile(1L, null);
 
         verify(knowledgeFileMapper, never()).updateById(any(KnowledgeFile.class));
         verify(knowledgeBaseMapper, never()).selectById(any());
@@ -209,7 +212,7 @@ class KnowledgePublishServiceTest {
         when(knowledgeFileMapper.selectById(1L)).thenReturn(f);
         when(knowledgeBaseMapper.selectById(100L)).thenReturn(kb(100L, null));
 
-        service.publishFile(1L);
+        service.publishFile(1L, null);
 
         assertEquals(PublishStatus.PUBLISH_ERROR, f.getPublishStatus());
         verify(knowledgeSearchClient, never()).batchSave(anyString(), anyList());
@@ -224,7 +227,7 @@ class KnowledgePublishServiceTest {
         stubPublishDependencies();
         when(knowledgeSearchClient.indexExists("agent_idx")).thenReturn(true);
 
-        service.publishFile(1L);
+        service.publishFile(1L, null);
 
         verify(knowledgeSearchClient).batchSave(eq("agent_idx"), anyList());
         assertEquals(PublishStatus.PUBLISHED, f.getPublishStatus());
@@ -244,7 +247,7 @@ class KnowledgePublishServiceTest {
         stubBatchEmbedding();
         when(knowledgeSearchClient.indexExists("agent_idx")).thenReturn(true);
 
-        service.publishFile(1L);
+        service.publishFile(1L, null);
 
         ArgumentCaptor<EmbeddingRequest> requestCaptor = ArgumentCaptor.forClass(EmbeddingRequest.class);
         verify(modelInvoker, times(2)).embed(requestCaptor.capture());
@@ -274,7 +277,7 @@ class KnowledgePublishServiceTest {
                 embeddingItem(0, 0.1f))));
         when(knowledgeSearchClient.indexExists("agent_idx")).thenReturn(true);
 
-        service.publishFile(1L);
+        service.publishFile(1L, null);
 
         ArgumentCaptor<EmbeddingRequest> requestCaptor = ArgumentCaptor.forClass(EmbeddingRequest.class);
         verify(modelInvoker, times(1)).embed(requestCaptor.capture());
@@ -308,7 +311,7 @@ class KnowledgePublishServiceTest {
 
         Thread t = new Thread(() -> {
             try {
-                service.publishFile(1L).join();
+                service.publishFile(1L, null).join();
             } catch (Exception ignore) {
                 // 测试主线程控制释放，join 异常不影响断言
             }
@@ -334,7 +337,7 @@ class KnowledgePublishServiceTest {
         stubBatchEmbedding();
         when(knowledgeSearchClient.indexExists("agent_idx")).thenReturn(true);
 
-        service.publishFile(1L);
+        service.publishFile(1L, null);
 
         assertFalse(service.isPublishing(1L), "同步执行完成后任务应从 map 清理");
     }

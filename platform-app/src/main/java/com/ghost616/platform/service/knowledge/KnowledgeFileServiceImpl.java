@@ -13,12 +13,18 @@ import com.ghost616.platform.entity.KnowledgeFile;
 import com.ghost616.platform.enums.PublishStatus;
 import com.ghost616.platform.repository.KnowledgeBaseMapper;
 import com.ghost616.platform.repository.KnowledgeFileMapper;
+import com.ghost616.platform.session.UserContext;
+import com.ghost616.platform.session.UserSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
+/**
+ * 知识文件业务实现。创建数据时从 {@link UserContext} 获取当前登录用户填充 user_id，
+ * 查询/列表仅返回当前用户数据，单条访问校验数据归属，实现知识文件数据用户隔离。
+ */
 @Service
 @RequiredArgsConstructor
 public class KnowledgeFileServiceImpl implements KnowledgeFileService {
@@ -30,6 +36,7 @@ public class KnowledgeFileServiceImpl implements KnowledgeFileService {
     @Override
     public List<KnowledgeFileDTO> list(Long knowledgeBaseId, String fileName, CommonStatus status) {
         LambdaQueryWrapper<KnowledgeFile> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(KnowledgeFile::getUserId, currentUserId());
         if (knowledgeBaseId != null) {
             wrapper.eq(KnowledgeFile::getKnowledgeBaseId, knowledgeBaseId);
         }
@@ -51,17 +58,21 @@ public class KnowledgeFileServiceImpl implements KnowledgeFileService {
         if (entity == null) {
             throw new BusinessException(ErrorCode.KNOWLEDGE_FILE_NOT_FOUND);
         }
+        requireOwned(entity);
         return toDTO(entity);
     }
 
     @Override
     public KnowledgeFileDTO create(Long knowledgeBaseId, KnowledgeFileCreateRequest request) {
+        Long userId = currentUserId();
         KnowledgeBase knowledgeBase = knowledgeBaseMapper.selectById(knowledgeBaseId);
         if (knowledgeBase == null) {
             throw new BusinessException(ErrorCode.KNOWLEDGE_BASE_NOT_FOUND);
         }
+        requireOwned(knowledgeBase);
 
         KnowledgeFile entity = new KnowledgeFile();
+        entity.setUserId(userId);
         entity.setFileName(request.getFileName());
         entity.setFileDescription(request.getFileDescription());
         entity.setKnowledgeBaseId(knowledgeBaseId);
@@ -78,6 +89,7 @@ public class KnowledgeFileServiceImpl implements KnowledgeFileService {
         if (entity == null) {
             throw new BusinessException(ErrorCode.KNOWLEDGE_FILE_NOT_FOUND);
         }
+        requireOwned(entity);
         return entity.getFileContent();
     }
 
@@ -87,6 +99,7 @@ public class KnowledgeFileServiceImpl implements KnowledgeFileService {
         if (entity == null) {
             throw new BusinessException(ErrorCode.KNOWLEDGE_FILE_NOT_FOUND);
         }
+        requireOwned(entity);
         if (knowledgePublishService.isPublishing(id)) {
             throw new BusinessException(ErrorCode.KNOWLEDGE_FILE_PUBLISHING);
         }
@@ -105,6 +118,7 @@ public class KnowledgeFileServiceImpl implements KnowledgeFileService {
         if (entity == null) {
             throw new BusinessException(ErrorCode.KNOWLEDGE_FILE_NOT_FOUND);
         }
+        requireOwned(entity);
 
         if (StringUtils.isNotBlank(request.getFileName())) {
             entity.setFileName(request.getFileName());
@@ -126,6 +140,7 @@ public class KnowledgeFileServiceImpl implements KnowledgeFileService {
         if (entity == null) {
             throw new BusinessException(ErrorCode.KNOWLEDGE_FILE_NOT_FOUND);
         }
+        requireOwned(entity);
         knowledgeFileMapper.deleteById(id);
     }
 
@@ -135,6 +150,7 @@ public class KnowledgeFileServiceImpl implements KnowledgeFileService {
         if (entity == null) {
             throw new BusinessException(ErrorCode.KNOWLEDGE_FILE_NOT_FOUND);
         }
+        requireOwned(entity);
         entity.setStatus(status);
         knowledgeFileMapper.updateById(entity);
         return toDTO(entity);
@@ -168,5 +184,45 @@ public class KnowledgeFileServiceImpl implements KnowledgeFileService {
                 .createTime(entity.getCreateTime())
                 .updateTime(entity.getUpdateTime())
                 .build();
+    }
+
+    /**
+     * 获取当前登录用户 ID。
+     *
+     * <p>从 {@link UserContext} 线程上下文读取用户会话；
+     * 未登录时抛出 {@link ErrorCode#USER_NOT_LOGIN}，防止无归属数据写入与越权访问。</p>
+     *
+     * @return 当前登录用户 ID
+     */
+    private Long currentUserId() {
+        UserSession session = UserContext.get();
+        if (session == null || session.getUser() == null) {
+            throw new BusinessException(ErrorCode.USER_NOT_LOGIN);
+        }
+        return session.getUser().getId();
+    }
+
+    /**
+     * 校验知识文件归属当前用户，非本人数据按不存在处理（不泄露数据存在性）。
+     *
+     * @param entity 知识文件实体
+     */
+    private void requireOwned(KnowledgeFile entity) {
+        Long userId = currentUserId();
+        if (entity.getUserId() != null && !entity.getUserId().equals(userId)) {
+            throw new BusinessException(ErrorCode.KNOWLEDGE_FILE_NOT_FOUND);
+        }
+    }
+
+    /**
+     * 校验知识库归属当前用户，非本人数据按不存在处理（不泄露数据存在性）。
+     *
+     * @param entity 知识库实体
+     */
+    private void requireOwned(KnowledgeBase entity) {
+        Long userId = currentUserId();
+        if (entity.getUserId() != null && !entity.getUserId().equals(userId)) {
+            throw new BusinessException(ErrorCode.KNOWLEDGE_BASE_NOT_FOUND);
+        }
     }
 }

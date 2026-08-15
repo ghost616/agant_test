@@ -243,11 +243,35 @@
     },
     {
       "path": "src/pages/login/Login.tsx",
-      "description": "登录页：登录名+密码表单，调用 login 接口成功后跳转主界面（/），失败展示错误信息；独立全屏居中布局，不依赖主界面 Layout"
+      "description": "登录页：登录名+密码表单，调用 login 接口成功后按用户角色跳转落地页（管理员 userType=2 跳 /users、普通用户跳 /models），失败展示错误信息；独立全屏居中 Card 布局，不依赖主界面 Layout"
     },
     {
       "path": "src/pages/users/UserList.tsx",
       "description": "用户管理页（仅管理员可见可操作，非管理员显示无权限 Result）：分页表格展示用户列表，支持添加/修改用户 Modal 与禁止/恢复登录（Popconfirm 调 updateUser enabled 0/1）；用户类型/登录状态 Tag 展示；分页支持每页条数切换"
+    },
+    {
+      "path": "src/App.tsx",
+      "description": "应用入口组件（BrowserRouter 内）：注册全部页面路由与根路径 '/' 按角色重定向落地页；侧边栏菜单（MENU_ITEMS 常量 + getVisibleMenuItems 按角色过滤，用户管理仅管理员可见）；登录守卫（getCurrentUser 为 null 且非 /login 时 Navigate 到 /login）；登录页独立全屏渲染；Header/Sider/Content 主界面 Layout 布局"
+    },
+    {
+      "path": "src/types/user.ts",
+      "description": "用户相关类型与常量：USER_TYPE_NORMAL=1/USER_TYPE_ADMIN=2 常量、User（id/loginName/displayName/userType/enabled/createTime/updateTime）、LoginRequest、UserCreateRequest、UserUpdateRequest"
+    },
+    {
+      "path": "src/pages/login/__tests__/Login.test.tsx",
+      "description": "登录页单元测试：mock services/auth login 与 react-router-dom useNavigate，验证管理员（userType=2）登录成功跳转 /users、普通用户（userType=1）跳转 /models、登录失败不跳转"
+    },
+    {
+      "path": "e2e/utils/seedAuth.ts",
+      "description": "e2e 登录态注入工具：seedAdminLogin/seedNormalLogin 通过 page.addInitScript 在页面脚本执行前写入 localStorage currentUser（管理员 userType=2 / 普通用户 userType=1），供 e2e 用例绕过登录守卫直接访问主界面"
+    },
+    {
+      "path": "e2e/Login.spec.ts",
+      "description": "登录守卫与角色落地页 e2e 测试：未登录访问任意页面自动跳转登录页；mock POST /api/auth/login 后管理员登录跳转 /users 且用户管理菜单可见、普通用户跳转 /models 且用户管理菜单不可见"
+    },
+    {
+      "description": "登录守卫与菜单权限行为级补充测试（jsdom 渲染 <App/>）：未登录访问 /models 重定向到登录页且无侧边栏（独立全屏）、管理员（userType=2）根路径 / 落地 /users 且用户管理菜单可见、普通用户（userType=1）落地 /models 且用户管理菜单不可见；mock services/api，作为 E2E 被环境阻断时的运行级替代验证",
+      "path": "src/__tests__/AppGuard.behavior.test.tsx"
     }
   ]
 }

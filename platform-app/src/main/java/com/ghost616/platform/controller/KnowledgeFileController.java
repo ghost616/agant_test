@@ -1,5 +1,6 @@
 package com.ghost616.platform.controller;
 
+import com.ghost616.agentbase.core.ThreadVariableHandler;
 import com.ghost616.agentbase.enums.CommonStatus;
 import com.ghost616.platform.enums.ErrorCode;
 import com.ghost616.platform.exception.BusinessException;
@@ -31,6 +32,7 @@ public class KnowledgeFileController {
 
     private final KnowledgeFileService knowledgeFileService;
     private final KnowledgePublishService knowledgePublishService;
+    private final ThreadVariableHandler threadVariableHandler;
 
     @GetMapping
     public ApiResponse<List<KnowledgeFileDTO>> list(@PathVariable Long kbId,
@@ -53,7 +55,7 @@ public class KnowledgeFileController {
         if (knowledgePublishService.isPublishing(id)) {
             throw new BusinessException(ErrorCode.KNOWLEDGE_FILE_PUBLISHING);
         }
-        knowledgePublishService.publishFile(id);
+        knowledgePublishService.publishFile(id, threadVariableHandler.wrap());
         return ApiResponse.success(null);
     }
 

@@ -23,7 +23,11 @@ import com.ghost616.platform.repository.SkillToolMapper;
 import com.ghost616.platform.repository.ToolConfigMapper;
 import com.ghost616.platform.exception.BusinessException;
 import com.ghost616.agentbase.service.agent.MessageDataProvider;
+import com.ghost616.platform.entity.User;
 import com.ghost616.platform.service.tool.ToolConfigService;
+import com.ghost616.platform.session.UserContext;
+import com.ghost616.platform.session.UserSession;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -60,13 +64,24 @@ class DefaultContextDataProviderTest {
 
     private DefaultContextDataProvider provider;
 
+    private static final Long CURRENT_USER_ID = 42L;
+
     @BeforeEach
     void setUp() {
+        User user = new User();
+        user.setId(CURRENT_USER_ID);
+        UserContext.set(new UserSession("session-test", user, System.currentTimeMillis()));
+
         provider = new DefaultContextDataProvider(sessionMapper, agentConfigMapper,
                 sessionVariableMapper, agentSkillMapper, skillConfigMapper,
                 skillToolMapper, toolConfigService, sessionSkillMapper,
                 modelConfigMapper, toolConfigMapper, sessionToolMapper,
                 messageDataProvider);
+    }
+
+    @AfterEach
+    void tearDown() {
+        UserContext.clear();
     }
 
     @Test
@@ -93,6 +108,7 @@ class DefaultContextDataProviderTest {
         assertEquals("999", result);
         verify(sessionMapper).insert(sessionCaptor.capture());
         Session saved = sessionCaptor.getValue();
+        assertEquals(CURRENT_USER_ID, saved.getUserId());
         assertEquals("test-agent", saved.getTitle());
         assertEquals("system prompt", saved.getSystemPrompt());
         assertEquals("desc", saved.getDescription());
@@ -522,6 +538,46 @@ class DefaultContextDataProviderTest {
     }
 
     @Test
+    void saveSessionVariable_变量不存在_新建并填充当前用户ID() {
+        when(sessionVariableMapper.selectList(any())).thenReturn(List.of());
+
+        provider.saveSessionVariable("10", "key1", "val1");
+
+        ArgumentCaptor<SessionVariable> captor = ArgumentCaptor.forClass(SessionVariable.class);
+        verify(sessionVariableMapper).insert(captor.capture());
+        SessionVariable saved = captor.getValue();
+        assertEquals(10L, saved.getSessionId());
+        assertEquals(CURRENT_USER_ID, saved.getUserId());
+        assertEquals("key1", saved.getVariableKey());
+        assertEquals("val1", saved.getVariableValue());
+    }
+
+    @Test
+    void saveSessionVariable_变量已存在_仅更新值不覆盖用户ID() {
+        SessionVariable existing = new SessionVariable();
+        existing.setId(1L);
+        existing.setSessionId(10L);
+        existing.setUserId(7L);
+        existing.setVariableKey("key1");
+        existing.setVariableValue("old");
+        when(sessionVariableMapper.selectList(any())).thenReturn(List.of(existing));
+
+        provider.saveSessionVariable("10", "key1", "new");
+
+        verify(sessionVariableMapper).updateById(existing);
+        verify(sessionVariableMapper, never()).insert(any(SessionVariable.class));
+        assertEquals("new", existing.getVariableValue());
+        assertEquals(7L, existing.getUserId());
+    }
+
+    @Test
+    void deleteSessionVariable_按会话和key删除() {
+        provider.deleteSessionVariable("10", "key1");
+
+        verify(sessionVariableMapper).delete(any());
+    }
+
+    @Test
     void getLatestChildSessions_查询子会话并映射为ChildSession列表() {
         Long sessionId = 50L;
         Session child1 = new Session();
@@ -566,5 +622,35 @@ class DefaultContextDataProviderTest {
 
         assertNotNull(result);
         assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void saveSessionVariable_无用户上下文_新建变量userId为null() {
+        UserContext.clear();
+        when(sessionVariableMapper.selectList(any())).thenReturn(List.of());
+
+        provider.saveSessionVariable("10", "key1", "val1");
+
+        ArgumentCaptor<SessionVariable> captor = ArgumentCaptor.forClass(SessionVariable.class);
+        verify(sessionVariableMapper).insert(captor.capture());
+        assertEquals(10L, captor.getValue().getSessionId());
+        assertEquals("key1", captor.getValue().getVariableKey());
+        assertNull(captor.getValue().getUserId(), "无用户上下文时新建变量 userId 应为 null（容忍系统级异步流程）");
+    }
+
+    @Test
+    void createChildSession_无用户上下文_子会话userId为null() {
+        UserContext.clear();
+        when(sessionMapper.selectById(1L)).thenReturn(new Session());
+        doAnswer(invocation -> {
+            Session s = invocation.getArgument(0);
+            s.setId(999L);
+            return null;
+        }).when(sessionMapper).insert(any(Session.class));
+
+        provider.createChildSession("1", "a", null, null, null, null, "p");
+
+        verify(sessionMapper).insert(sessionCaptor.capture());
+        assertNull(sessionCaptor.getValue().getUserId(), "无用户上下文时子会话 userId 应为 null（容忍系统级异步流程）");
     }
 }

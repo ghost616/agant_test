@@ -1,5 +1,0 @@
-{
-  "session_id": "ses_05c676690ffeVhJyKNcMnsggbd",
-  "content": "## 待测试功能\n\n### 1. 文件\n- `src/types/evaluation.ts` — 评估管理类型定义\n- `src/services/evaluation.ts` — 评估管理 API 服务封装\n- `src/pages/evaluations/EvaluationList.tsx` — 评估列表页面组件\n- `src/pages/evaluations/EvaluationResultList.tsx` — 评估结果历史列表页面组件\n- `src/App.tsx` — 路由和菜单配置更新\n\n### 2. 编译测试（TypeScript）\n所有新增/修改的 .ts/.tsx 文件需通过 TypeScript 编译检查。\n\n### 3. 单元测试\n- services/evaluation.ts：各 API 函数的正确调用\n- pages/evaluations/EvaluationList.tsx：组件渲染、新增/编辑 Modal、删除 Popconfirm\n- pages/evaluations/EvaluationResultList.tsx：组件渲染、数据加载、按钮交互\n\n### 4. 接口测试\n- GET /api/evaluations — 获取评估列表\n- POST /api/evaluations — 创建评估\n- PUT /api/evaluations/{id} — 更新评估\n- DELETE /api/evaluations/{id} — 删除评估\n- GET /api/evaluations/{id}/results — 获取评估结果列表",
-  "timestamp": "2026-07-27T12:43:14.916Z"
-}

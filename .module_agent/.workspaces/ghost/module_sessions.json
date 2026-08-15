@@ -1,8 +1,29 @@
 {
-  "_checked": [
-    "ses_059a310ddffeAwsrjNeCMR4LnY",
-    "ses_059018ed1ffeitPKMbnB2O6dCC",
-    "ses_058c525c3ffee9X8QANaEy5RYZ",
-    "ses_053f9c467ffe2P0osc6ApgDHNd"
+  "agent-engine": [
+    "56509b41-4005-4bf2-a608-59e594d1e433"
+  ],
+  "agent-base": [
+    "681e9db0-5748-4464-930c-e79a3aa8ca6f"
+  ],
+  "llm-model": [
+    "33a2cd21-3697-4321-9488-1f779d23bae9"
+  ],
+  "tool-registry": [
+    "6b423c68-7a56-45ab-92c4-e27aeb981a94"
+  ],
+  "agent-config": [
+    "0655c0c3-679e-422c-8333-f2bd4bf9ce7f"
+  ],
+  "skill-manager": [
+    "2e17d0f2-72bb-4f62-9b04-dab116da644a"
+  ],
+  "frontend-ui": [
+    "fe69b361-98d7-4533-913c-3dd975e7104b"
+  ],
+  "agent-integration": [
+    "a20e3447-d5ea-4398-8fd7-e326f412515b"
+  ],
+  "platform-app": [
+    "2678e7b6-99c1-4f2f-990f-16d075a60a97"
   ]
 }

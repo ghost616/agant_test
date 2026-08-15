@@ -48,6 +48,14 @@
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/controller/ChatController.java",
       "description": "对话 REST 控制器，SSE 流式端点"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/session/UserContextThreadVariableHandler.java",
+      "description": "用户上下文线程变量处理器：实现 agent-base core 的 ThreadVariableHandler，在异步任务（如工具执行的 CompletableFuture.supplyAsync）提交前捕获 UserContext 线程上下文，异步线程开始执行时通过 apply() 恢复，保证异步场景下 UserContext.get() 仍可取到当前登录用户，配合 AgentContextConfiguration 注入 AgentAssembler 使 ToolExecutionService 异步工具执行路径可读取用户会话。"
+    },
+    {
+      "description": "UserContextThreadVariableHandler 单元测试：覆盖 wrap() 捕获当前用户会话快照、apply() 恢复/无上下文时清空目标线程残留上下文、跨真实线程传播与线程隔离、多次 apply 可重复恢复四种场景。",
+      "path": "platform-app/src/test/java/com/ghost616/platform/session/UserContextThreadVariableHandlerTest.java"
     }
   ]
 }

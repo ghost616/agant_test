@@ -25,6 +25,11 @@ AgentComponentRegistry（com.ghost616.agentbase.core.AgentComponentRegistry）�
 agentLog 字段（@Setter）与 getAgentLog() getter 已添加，参照 MessageSender 模式：getter 直接返回、不校验 null，供外部集成者注入智能体日志实现。
 
 chatDataCacheManager 字段（@Setter）与 getChatDataCacheManager() getter 已添加，参照 messageSender/agentLog 可选模式：getter 直接返回字段值、不抛 requireInitialized 异常，供外部集成者注入聊天数据缓存管理器。
+\nthreadVariableHandler 字段（@Setter）与 getThreadVariableHandler() getter 已添加，参照 messageSender/agentLog 可选模式：getter 直接返回字段值、不抛 requireInitialized 异常，供外部集成者注入线程变量处理器（ThreadVariableHandler），ToolExecutionService 异步执行点通过 registry 获取并使用。',
+        'heading': 'AgentComponentRegistry',
+        'mode': 'add',
+        'module_name': 'agent-base'
+    },
 ## HookInvoker / SystemHook / SystemPostHook
 
 
@@ -110,6 +115,7 @@ injectVariableCallbacks() 方法在子会话上下文中，将 sessionVarPutCall
 ## ToolExecutionService
 
 工具执行服务，非 Spring 组件。构造函数改为接收 (AgentComponentRegistry, ChatService)，通过 registry 延迟获取 ToolCallQueueManager/ToolManager/SystemToolManager/SessionManager/AgentContextManager/ToolExecutionTracker。提供三个核心方法：executeTool(String sessionId) 从队列获取下一个工具调用，解析调用器并异步执行；getToolStatus(String sessionId, String toolId) 查询当前工具执行状态（toolId 为必传参数）；continueAfterTools(String sessionId) 检查无工具在执行后，持久化工具结果、添加历史记录、清理队列和跟踪器，构造 TOOL_CONTINUE_MARKER 请求并调用 chatService.chat()。
+\nexecuteTool 异步执行点（CompletableFuture.supplyAsync）接入线程变量传播：提交任务前通过 registry.getThreadVariableHandler() 获取 ThreadVariableHandler（未注入时为 null），非 null 时调用 wrap() 捕获 ThreadVariableWrapper 传入异步线程，异步线程开始执行时调用 apply() 恢复线程变量（handler 为 null 时静默跳过，不影响原有流程）。
 ## ToolHookContext
 ToolHookContext 数据载体（@Data @AllArgsConstructor @NoArgsConstructor），包含 toolCallId / toolName / arguments / result 四个字段，用于在 BEFORE_TOOL_CALL 和 AFTER_TOOL_CALL 阶段向 HOOK 传递工具执行上下文。
 
@@ -350,3 +356,6 @@ ChatDataCacheManager 通过构造函数注入 ChatDataCacheProvider，提供五�
 
 FinishReason 枚举（com.ghost616.agentbase.enums.FinishReason），定义模型响应的结束原因。包含 STOP("stop", "正常结束")、LENGTH("length", "达到长度限制")、TOOL_CALLS("tool_calls", "触发工具调用")、CONTENT_FILTER("content_filter", "内容被过滤")、ERROR("error", "发生错误")、CANCELLED("cancelled", "被取消") 六个值。code 字段使用 @EnumValue 标注，提供 getCode()/getDescription() 方法及静态 fromCode(String code) 转换（未知/为 null 时返回 null）。供 ChatChunk/ChatResponse 的 finishReason 字段引用。
 - FinishReason 枚举的 getCode() 方法标注 @JsonValue 注解（com.fasterxml.jackson.annotation.JsonValue），使枚举序列化为小写 code（如 "stop"/"error"）而非大写枚举名，保持与前端 SSE 消费端 chunk.finishReason === 'stop'/'error' 协议一致；反序列化仍走 fromCode 或依赖 JSON 值匹配（@JsonValue 同时影响序列化与反序列化）
+## 线程变量传播
+
+线程变量传播双接口（com.ghost616.agentbase.core）：\n- ThreadVariableHandler 接口：唯一方法 ThreadVariableWrapper wrap()，用于在提交任务的线程捕获当前线程变量快照，供异步执行点传播线程变量\n- ThreadVariableWrapper 接口：唯一方法 void apply()，由 ThreadVariableHandler.wrap() 在提交任务的线程创建，传入异步线程后通过 apply() 将捕获的线程变量赋值到当前线程\n\n两者由外部集成者实现并注入（AgentComponentRegistry.setThreadVariableHandler），实现方决定捕获/恢复的具体线程变量（如 MDC、ThreadLocal 等）。

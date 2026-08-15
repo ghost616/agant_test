@@ -2,6 +2,7 @@ package com.ghost616.platform.service.evaluation;
 
 import com.ghost616.platform.enums.ErrorCode;
 import com.ghost616.platform.exception.BusinessException;
+import com.ghost616.agentbase.core.ThreadVariableHandler;
 import com.ghost616.agentbase.service.agent.MessageDataProvider;
 import com.ghost616.platform.dto.evaluation.EvaluationExecutionStatusDTO;
 import com.ghost616.platform.entity.Evaluation;
@@ -52,6 +53,8 @@ class EvaluationExecutionServiceTest {
     private AsyncEvaluationExecutor asyncEvaluationExecutor;
     @Mock
     private DefaultChatDataCacheProvider defaultChatDataCacheProvider;
+    @Mock
+    private ThreadVariableHandler threadVariableHandler;
 
     private EvaluationExecutionService service;
 
@@ -65,7 +68,7 @@ class EvaluationExecutionServiceTest {
                 evaluationMapper, sessionMapper, sessionToolMapper,
                 sessionSkillMapper, messageDataProvider,
                 evaluationResultGenerateService, asyncEvaluationExecutor,
-                defaultChatDataCacheProvider
+                defaultChatDataCacheProvider, threadVariableHandler
         ));
         when(sessionToolMapper.selectList(any())).thenReturn(List.of());
         when(sessionSkillMapper.selectList(any())).thenReturn(List.of());
@@ -245,7 +248,7 @@ class EvaluationExecutionServiceTest {
                         .totalSteps(1)
                         .build());
                 return null;
-            }).when(asyncEvaluationExecutor).executeAsync(eq(EVALUATION_ID), any(Session.class), anyList(), anyMap());
+            }).when(asyncEvaluationExecutor).executeAsync(eq(EVALUATION_ID), any(Session.class), anyList(), anyMap(), any());
 
             EvaluationExecutionStatusDTO result = service.execute(EVALUATION_ID);
 
@@ -490,7 +493,7 @@ class EvaluationExecutionServiceTest {
             assertEquals(EXECUTION_SESSION_ID, result.getExecutionSessionId());
             assertEquals("RUNNING", result.getStatus());
             verify(asyncEvaluationExecutor).generateResultAsync(
-                    eq(EVALUATION_ID), eq(EXECUTION_SESSION_ID), anyMap());
+                    eq(EVALUATION_ID), eq(EXECUTION_SESSION_ID), anyMap(), any());
         }
 
         @Test

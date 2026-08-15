@@ -61,6 +61,7 @@ public class SessionMemoryESClient {
                     .index(INDEX_NAME)
                     .mappings(m -> m
                             .properties("sessionId", p -> p.keyword(k -> k))
+                            .properties("userId", p -> p.keyword(k -> k))
                             .properties("aggregationType", p -> p.keyword(k -> k))
                             .properties("aggregationStartSeq", p -> p.integer(i -> i))
                             .properties("aggregationEndSeq", p -> p.integer(i -> i))
@@ -140,21 +141,24 @@ public class SessionMemoryESClient {
      * 按会话 ID 与聚合类型查询会话记忆文档，按聚合开始时间降序排列并分页返回。
      *
      * @param sessionId 会话 ID（字符串形式）
+     * @param userId    归属用户 ID（可空，非空时按 userId 过滤）
      * @param type      聚合类型（GROUP/DAILY）
      * @param page      页码（从 1 开始）
      * @param size      每页条数
      * @return 分页结果，包含文档列表与总数
      */
-    public PageResult<SessionMemoryDocument> queryBySessionId(String sessionId, AggregationType type, int page, int size) {
+    public PageResult<SessionMemoryDocument> queryBySessionId(String sessionId, Long userId, AggregationType type,
+                                                              int page, int size) {
         ensureIndex();
         int safePage = Math.max(1, page);
         int safeSize = Math.max(1, size);
         try {
             SearchResponse<SessionMemoryDocument> response = elasticsearchClient.search(s -> s
                             .index(INDEX_NAME)
-                            .query(q -> q.bool(b -> b
-                                    .must(m -> m.term(t -> t.field("sessionId").value(sessionId)))
-                                    .must(m -> m.term(t -> t.field("aggregationType").value(type.getCode())))))
+                            .query(q -> q.bool(b -> {
+                                addScopeFilters(b, sessionId, userId, type.getCode(), null, null);
+                                return b;
+                            }))
                             .sort(srt -> srt.field(f -> f.field("aggregationStartTime").order(SortOrder.Desc)))
                             .from((safePage - 1) * safeSize)
                             .size(safeSize),
@@ -174,9 +178,11 @@ public class SessionMemoryESClient {
 
     /**
      * 向量检索会话记忆，按相似度分数降序返回 topK 条记忆文档。
-     * 过滤条件：sessionId（必填）、aggregationType（可空，为空表示所有聚合类型）、aggregationStartTime/aggregationEndTime 范围（可空）。
+     * 过滤条件：sessionId（必填）、userId（可空）、aggregationType（可空，为空表示所有聚合类型）、
+     * aggregationStartTime/aggregationEndTime 范围（可空）。
      *
      * @param sessionId       会话 ID
+     * @param userId          归属用户 ID（可空）
      * @param aggregationType 聚合类型（GROUP/DAILY，可空）
      * @param startTime       起始时间（毫秒时间戳，可空）
      * @param endTime         结束时间（毫秒时间戳，可空）
@@ -184,8 +190,8 @@ public class SessionMemoryESClient {
      * @param topK            返回条数
      * @return 命中的记忆文档列表
      */
-    public List<SessionMemoryDocument> vectorSearch(String sessionId, String aggregationType, Long startTime,
-                                                    Long endTime, List<Float> vector, int topK) {
+    public List<SessionMemoryDocument> vectorSearch(String sessionId, Long userId, String aggregationType,
+                                                    Long startTime, Long endTime, List<Float> vector, int topK) {
         ensureIndex();
         try {
             SearchResponse<SessionMemoryDocument> response = elasticsearchClient.search(s -> s
@@ -195,7 +201,7 @@ public class SessionMemoryESClient {
                                     .queryVector(vector)
                                     .k(topK)
                                     .numCandidates(Math.max(topK * 10, DEFAULT_NUM_CANDIDATES))
-                                    .filter(f -> f.bool(b -> addScopeFilters(b, sessionId, aggregationType, startTime, endTime)))),
+                                    .filter(f -> f.bool(b -> addScopeFilters(b, sessionId, userId, aggregationType, startTime, endTime)))),
                     SessionMemoryDocument.class);
             return toDocuments(response);
         } catch (IOException e) {
@@ -205,9 +211,11 @@ public class SessionMemoryESClient {
 
     /**
      * 全文检索会话记忆（BM25），按相关度分数降序返回 topK 条记忆文档。
-     * 过滤条件：sessionId（必填）、aggregationType（可空）、aggregationStartTime/aggregationEndTime 范围（可空）。
+     * 过滤条件：sessionId（必填）、userId（可空）、aggregationType（可空）、
+     * aggregationStartTime/aggregationEndTime 范围（可空）。
      *
      * @param sessionId       会话 ID
+     * @param userId          归属用户 ID（可空）
      * @param aggregationType 聚合类型（GROUP/DAILY，可空）
      * @param startTime       起始时间（毫秒时间戳，可空）
      * @param endTime         结束时间（毫秒时间戳，可空）
@@ -215,14 +223,14 @@ public class SessionMemoryESClient {
      * @param topK            返回条数
      * @return 命中的记忆文档列表
      */
-    public List<SessionMemoryDocument> fullTextSearch(String sessionId, String aggregationType, Long startTime,
-                                                      Long endTime, String query, int topK) {
+    public List<SessionMemoryDocument> fullTextSearch(String sessionId, Long userId, String aggregationType,
+                                                      Long startTime, Long endTime, String query, int topK) {
         ensureIndex();
         try {
             SearchResponse<SessionMemoryDocument> response = elasticsearchClient.search(s -> s
                             .index(INDEX_NAME)
                             .query(q -> q.bool(b -> {
-                                addScopeFilters(b, sessionId, aggregationType, startTime, endTime);
+                                addScopeFilters(b, sessionId, userId, aggregationType, startTime, endTime);
                                 b.must(m -> m.match(mt -> mt.field("aggregationText").query(query)));
                                 return b;
                             }))
@@ -236,9 +244,11 @@ public class SessionMemoryESClient {
 
     /**
      * 混合检索会话记忆：合并向量检索与全文检索结果并按文档 ID 去重。
-     * 过滤条件：sessionId（必填）、aggregationType（可空）、aggregationStartTime/aggregationEndTime 范围（可空）。
+     * 过滤条件：sessionId（必填）、userId（可空）、aggregationType（可空）、
+     * aggregationStartTime/aggregationEndTime 范围（可空）。
      *
      * @param sessionId       会话 ID
+     * @param userId          归属用户 ID（可空）
      * @param aggregationType 聚合类型（GROUP/DAILY，可空）
      * @param startTime       起始时间（毫秒时间戳，可空）
      * @param endTime         结束时间（毫秒时间戳，可空）
@@ -247,25 +257,30 @@ public class SessionMemoryESClient {
      * @param topK            返回条数
      * @return 合并去重后的记忆文档列表
      */
-    public List<SessionMemoryDocument> hybridSearch(String sessionId, String aggregationType, Long startTime,
-                                                    Long endTime, List<Float> vector, String query, int topK) {
+    public List<SessionMemoryDocument> hybridSearch(String sessionId, Long userId, String aggregationType,
+                                                    Long startTime, Long endTime, List<Float> vector, String query,
+                                                    int topK) {
         ensureIndex();
         Map<String, SessionMemoryDocument> dedup = new LinkedHashMap<>();
-        for (SessionMemoryDocument doc : vectorSearch(sessionId, aggregationType, startTime, endTime, vector, topK)) {
+        for (SessionMemoryDocument doc : vectorSearch(sessionId, userId, aggregationType, startTime, endTime, vector, topK)) {
             dedup.putIfAbsent(docKey(doc), doc);
         }
-        for (SessionMemoryDocument doc : fullTextSearch(sessionId, aggregationType, startTime, endTime, query, topK)) {
+        for (SessionMemoryDocument doc : fullTextSearch(sessionId, userId, aggregationType, startTime, endTime, query, topK)) {
             dedup.putIfAbsent(docKey(doc), doc);
         }
         return new ArrayList<>(dedup.values());
     }
 
     /**
-     * 向 bool 查询添加会话记忆检索的过滤条件：sessionId（必填）、aggregationType（可空）、时间范围（可空）。
+     * 向 bool 查询添加会话记忆检索的过滤条件：sessionId（必填）、userId（可空）、
+     * aggregationType（可空）、时间范围（可空）。
      */
-    private BoolQuery.Builder addScopeFilters(BoolQuery.Builder b, String sessionId, String aggregationType,
-                                              Long startTime, Long endTime) {
+    private BoolQuery.Builder addScopeFilters(BoolQuery.Builder b, String sessionId, Long userId,
+                                              String aggregationType, Long startTime, Long endTime) {
         b.filter(f -> f.term(t -> t.field("sessionId").value(sessionId)));
+        if (userId != null) {
+            b.filter(f -> f.term(t -> t.field("userId").value(userId)));
+        }
         if (aggregationType != null && !aggregationType.isBlank()) {
             b.filter(f -> f.term(t -> t.field("aggregationType").value(aggregationType)));
         }

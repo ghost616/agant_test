@@ -7,8 +7,12 @@ import com.ghost616.platform.dto.PageResult;
 import com.ghost616.platform.dto.agent_log.AgentLogDTO;
 import com.ghost616.platform.entity.AgentLogEntity;
 import com.ghost616.platform.entity.Session;
+import com.ghost616.platform.enums.ErrorCode;
+import com.ghost616.platform.exception.BusinessException;
 import com.ghost616.platform.repository.AgentLogMapper;
 import com.ghost616.platform.repository.SessionMapper;
+import com.ghost616.platform.session.UserContext;
+import com.ghost616.platform.session.UserSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -39,13 +43,15 @@ public class AgentLogServiceImpl implements AgentLogService {
                                         String logLevel, int page, int size) {
         int current = page > 0 ? page : DEFAULT_PAGE;
         int sizeParam = size > 0 ? size : DEFAULT_SIZE;
+        Long userId = currentUserId();
 
-        Set<Long> sessionIds = resolveSessionIdsBySessionName(sessionName);
+        Set<Long> sessionIds = resolveSessionIdsBySessionName(sessionName, userId);
         if (StringUtils.isNotBlank(sessionName) && sessionIds.isEmpty()) {
             return new PageResult<>(List.of(), 0, current, sizeParam);
         }
 
         LambdaQueryWrapper<AgentLogEntity> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(AgentLogEntity::getUserId, userId);
         if (sessionId != null) {
             wrapper.eq(AgentLogEntity::getSessionId, sessionId);
         }
@@ -74,11 +80,12 @@ public class AgentLogServiceImpl implements AgentLogService {
         return PageResult.of(queryPage, dtos);
     }
 
-    private Set<Long> resolveSessionIdsBySessionName(String sessionName) {
+    private Set<Long> resolveSessionIdsBySessionName(String sessionName, Long userId) {
         if (StringUtils.isBlank(sessionName)) {
             return null;
         }
         LambdaQueryWrapper<Session> sessionWrapper = new LambdaQueryWrapper<>();
+        sessionWrapper.eq(Session::getUserId, userId);
         sessionWrapper.like(Session::getTitle, sessionName);
         return sessionMapper.selectList(sessionWrapper).stream()
                 .map(Session::getId)
@@ -128,5 +135,21 @@ public class AgentLogServiceImpl implements AgentLogService {
                 .conversationVariables(entity.getConversationVariables())
                 .createTime(entity.getCreateTime())
                 .build();
+    }
+
+    /**
+     * 获取当前登录用户 ID。
+     *
+     * <p>从 {@link UserContext} 线程上下文读取用户会话；
+     * 未登录时抛出 {@link ErrorCode#USER_NOT_LOGIN}，防止越权查询其他用户日志。</p>
+     *
+     * @return 当前登录用户 ID
+     */
+    private Long currentUserId() {
+        UserSession session = UserContext.get();
+        if (session == null || session.getUser() == null) {
+            throw new BusinessException(ErrorCode.USER_NOT_LOGIN);
+        }
+        return session.getUser().getId();
     }
 }

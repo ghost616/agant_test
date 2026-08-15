@@ -1,0 +1,43 @@
+package com.ghost616.platform.model;
+
+import com.ghost616.platform.enums.AggregationType;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.util.List;
+
+/**
+ * 会话记忆文档模型，对应 Elasticsearch 索引 session_memory 中的文档结构。
+ */
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class SessionMemoryDocument {
+
+    /** 会话 ID（字符串形式，与索引 keyword 映射一致） */
+    private String sessionId;
+
+    /** 聚合类型（GROUP=分组聚合、DAILY=按日聚合，ES 存 keyword） */
+    private AggregationType aggregationType;
+
+    /** 聚合起始消息序号（含） */
+    private Integer aggregationStartSeq;
+
+    /** 聚合结束消息序号（含） */
+    private Integer aggregationEndSeq;
+
+    /** 聚合起始时间（毫秒时间戳） */
+    private Long aggregationStartTime;
+
+    /** 聚合结束时间（毫秒时间戳） */
+    private Long aggregationEndTime;
+
+    /** 聚合摘要文本 */
+    private String aggregationText;
+
+    /** 摘要向量 */
+    private List<Float> vector;
+}

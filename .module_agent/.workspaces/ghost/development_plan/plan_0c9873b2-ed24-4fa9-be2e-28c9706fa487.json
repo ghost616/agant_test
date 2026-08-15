@@ -1,0 +1,10 @@
+{
+  "plan_id": "plan_0c9873b2-ed24-4fa9-be2e-28c9706fa487",
+  "module_name": "agent-integration",
+  "development_plan": "AgentAssembler 添加线程变量处理接口的注册方法：\n1. AgentAssembler 添加 setThreadVariableHandler(ThreadVariableHandler) 方法。\n2. 在 build() 方法中，将传入的 ThreadVariableHandler 设置到 AgentComponentRegistry（通过 registry 的 setter）。",
+  "session_id": "a20e3447-d5ea-4398-8fd7-e326f412515b",
+  "modified_files": [
+    "agent-integration/src/main/java/com/ghost616/agentinteg/AgentAssembler.java",
+    "agent-integration/src/test/java/com/ghost616/agentinteg/AgentAssemblerTest.java"
+  ]
+}

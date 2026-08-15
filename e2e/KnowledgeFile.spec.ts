@@ -1,4 +1,5 @@
 import { test, expect, Page } from '@playwright/test';
+import { seedAdminLogin } from './utils/seedAuth';
 
 const KB_ID = 'kb-100';
 const FILE_ID = 'file-200';
@@ -124,6 +125,10 @@ async function setupMocks(page: Page, opts?: { loadFail?: boolean; saveFail?: bo
     await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
   });
 }
+
+test.beforeEach(async ({ page }) => {
+  await seedAdminLogin(page);
+});
 
 test.describe('知识文件列表页 - 编辑内容按钮与弹窗字段', () => {
   test('操作列应渲染「编辑内容」按钮', async ({ page }) => {

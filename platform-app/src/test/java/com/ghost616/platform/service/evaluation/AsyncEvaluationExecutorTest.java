@@ -50,7 +50,7 @@ class AsyncEvaluationExecutorTest {
         void successfulGenerate_shouldUpdateStatusToCompleted() {
             Map<String, EvaluationExecutionStatusDTO> statusMap = new ConcurrentHashMap<>();
 
-            executor.generateResultAsync(EVALUATION_ID, EXECUTION_SESSION_ID, statusMap);
+            executor.generateResultAsync(EVALUATION_ID, EXECUTION_SESSION_ID, statusMap, null);
 
             verify(evaluationResultGenerateService).generate(EVALUATION_ID, EXECUTION_SESSION_ID);
             EvaluationExecutionStatusDTO status = statusMap.get(STATUS_KEY);
@@ -68,7 +68,7 @@ class AsyncEvaluationExecutorTest {
                     .when(evaluationResultGenerateService).generate(EVALUATION_ID, EXECUTION_SESSION_ID);
             Map<String, EvaluationExecutionStatusDTO> statusMap = new ConcurrentHashMap<>();
 
-            executor.generateResultAsync(EVALUATION_ID, EXECUTION_SESSION_ID, statusMap);
+            executor.generateResultAsync(EVALUATION_ID, EXECUTION_SESSION_ID, statusMap, null);
 
             verify(evaluationResultGenerateService).generate(EVALUATION_ID, EXECUTION_SESSION_ID);
             EvaluationExecutionStatusDTO status = statusMap.get(STATUS_KEY);
@@ -91,7 +91,7 @@ class AsyncEvaluationExecutorTest {
             executionSession.setId(EXECUTION_SESSION_ID);
             executionSession.setThinking(Boolean.TRUE);
 
-            executor.executeAsync(EVALUATION_ID, executionSession, java.util.List.of(), statusMap);
+            executor.executeAsync(EVALUATION_ID, executionSession, java.util.List.of(), statusMap, null);
 
             EvaluationExecutionStatusDTO status = statusMap.get(String.valueOf(EVALUATION_ID));
             assertNotNull(status);

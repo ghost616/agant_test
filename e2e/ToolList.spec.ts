@@ -1,4 +1,5 @@
 import { test, expect, Page } from '@playwright/test';
+import { seedAdminLogin } from './utils/seedAuth';
 
 test.describe.configure({ timeout: 120000 });
 
@@ -11,6 +12,10 @@ async function setupMocks(page: Page) {
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: MOCK_TOOLS }) });
   });
 }
+
+test.beforeEach(async ({ page }) => {
+  await seedAdminLogin(page);
+});
 
 test.describe('ToolList JsonEditor 懒加载', () => {
   test('工具列表应正常渲染，不因懒加载崩溃', async ({ page }) => {

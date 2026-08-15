@@ -231,7 +231,7 @@
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ToolExecutionService.java",
-      "description": "工具执行服务。持有 HookManager 实例，triggerHooks/triggerSessionHooks/executePostHooks 委托给 hookManager。提供 setHookManager(HookManager) setter 支持外部注入共享实例。移除了原有的 chatDataProvider/systemHooks/systemPostHooks/regularPhaseHooks 字段及 refreshHooks/triggerHooks/executePostHooks 方法。在 BEFORE_TOOL_CALL/AFTER_TOOL_CALL 两处 triggerHooks 调用前增加 triggerSessionHooks 调用。continueAfterTools 中保存 tool 角色消息与构造 HistoryEntry 时使用 new ToolInfo(r.toolId(), r.toolName()) 传入工具调用信息。新增私有 addLog 方法与 resolveToolType 辅助方法（_sys_ 前缀→system、$ 前缀→builtin、其他→regular），executeTool 各分支记录 ToolExecuteLogData（队列为空 empty、调用器异常 failed、invoker 不存在 error、会话缺失 error、停止 empty、正常 executing，异步完成/异常各记录一条），continueAfterTools 记录 ToolContinueLogData(INFO)。"
+      "description": "工具执行服务。持有 HookManager 实例，triggerHooks/triggerSessionHooks/executePostHooks 委托给 hookManager。提供 setHookManager(HookManager) setter 支持外部注入共享实例。移除了原有的 chatDataProvider/systemHooks/systemPostHooks/regularPhaseHooks 字段及 refreshHooks/triggerHooks/executePostHooks 方法。在 BEFORE_TOOL_CALL/AFTER_TOOL_CALL 两处 triggerHooks 调用前增加 triggerSessionHooks 调用。continueAfterTools 中保存 tool 角色消息与构造 HistoryEntry 时使用 new ToolInfo(r.toolId(), r.toolName()) 传入工具调用信息。新增私有 addLog 方法与 resolveToolType 辅助方法（_sys_ 前缀→system、$ 前缀→builtin、其他→regular），executeTool 各分支记录 ToolExecuteLogData（队列为空 empty、调用器异常 failed、invoker 不存在 error、会话缺失 error、停止 empty、正常 executing，异步完成/异常各记录一条），continueAfterTools 记录 ToolContinueLogData(INFO)。executeTool 异步执行点（CompletableFuture.supplyAsync）接入线程变量传播：提交任务前通过 registry.getThreadVariableHandler() 获取 ThreadVariableHandler（未注入时为 null），非 null 时调用 wrap() 捕获 ThreadVariableWrapper 传入异步线程，异步线程开始执行时调用 apply() 恢复线程变量。"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/util/JsonMapper.java",
@@ -335,7 +335,7 @@
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/core/AgentComponentRegistry.java",
-      "description": "中央组件注册表，非 Spring 组件。持有所有 Provider/Manager 组件的 @Setter 注入字段，包含 contextDataProvider/messageDataProvider/toolDataProvider/chatDataProvider/modelInvokerDataProvider/systemToolProvider/modelInvokerFactory/toolManager/toolCallQueueManager/systemToolManager/sessionManager/agentContextManager/modelInvokerManager/toolExecutionTracker/toolExecutionProvider/messageSender/hookManager/agentLog/chatDataCacheManager。每个 getter 方法通过 requireInitialized 守卫确保组件已初始化后返回，messageSender/agentLog/chatDataCacheManager 三个可选字段的 getter 直接返回、不抛异常。"
+      "description": "中央组件注册表，非 Spring 组件。持有所有 Provider/Manager 组件的 @Setter 注入字段，包含 contextDataProvider/messageDataProvider/toolDataProvider/chatDataProvider/modelInvokerDataProvider/systemToolProvider/modelInvokerFactory/toolManager/toolCallQueueManager/systemToolManager/sessionManager/agentContextManager/modelInvokerManager/toolExecutionTracker/toolExecutionProvider/messageSender/hookManager/agentLog/chatDataCacheManager/threadVariableHandler。每个 getter 方法通过 requireInitialized 守卫确保组件已初始化后返回，messageSender/agentLog/chatDataCacheManager/threadVariableHandler 四个可选字段的 getter 直接返回、不抛异常。"
     },
     {
       "path": "agent-base/src/test/java/com/ghost616/agentbase/service/agent/SessionManagerTest.java",
@@ -620,6 +620,14 @@
     {
       "path": "agent-base/src/test/java/com/ghost616/agentbase/enums/AgentErrorCodeTest.java",
       "description": "AgentErrorCode 枚举测试，覆盖 12 个错误码的 code/message 断言、错误码唯一性及 message 非空校验。"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/core/ThreadVariableHandler.java",
+      "description": "线程变量处理器接口（com.ghost616.agentbase.core），唯一方法 ThreadVariableWrapper wrap()，用于在提交任务的线程捕获当前线程变量快照，供异步执行点（如工具执行 CompletableFuture.supplyAsync）传播线程变量。"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/core/ThreadVariableWrapper.java",
+      "description": "线程变量包装器接口（com.ghost616.agentbase.core），唯一方法 void apply()，由 ThreadVariableHandler.wrap() 在提交任务的线程创建，传入异步线程后通过 apply() 将捕获的线程变量赋值到当前线程。"
     }
   ]
 }

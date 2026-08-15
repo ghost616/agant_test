@@ -156,3 +156,8 @@
   - 禁止登录 = updateUser(id, { enabled: 0 })，恢复登录 = updateUser(id, { enabled: 1 })
 - src/services/auth.ts：login(data: LoginRequest) 调用 POST /api/auth/login 返回 User 并保存 localStorage（CURRENT_USER_KEY='currentUser'）；getCurrentUser() 读取本地用户（未登录/损坏返回 null）；clearCurrentUser() 清除
 - src/services/user.ts：listUsers({page,size}) 调用 GET /api/users 返回 PageResult<User>；createUser(data) 调用 POST /api/users；updateUser(id, data) 调用 PUT /api/users/{id}；导出 UserListParams 类型
+- 登录守卫（src/App.tsx）：未登录（getCurrentUser() 为 null）访问任意页面（除 /login）渲染 <Navigate to="/login" replace /> 自动跳转登录页；登录页独立全屏展示不套主界面 Layout
+- 角色落地页：登录成功或访问根路径 / 时按 userType 重定向——管理员（USER_TYPE_ADMIN=2）跳 /users，普通用户跳 /models（getLandingPath 函数；根路由 element 为 <Navigate to={landingPath} replace />）
+- 侧边栏菜单角色过滤：getVisibleMenuItems 按当前用户 userType 过滤 MENU_ITEMS，用户管理（/users）菜单仅管理员可见，其余菜单所有登录用户可见；Menu items 使用过滤后的 menuItems
+- 登录成功跳转（src/pages/login/Login.tsx）：login 返回 User 后按 user.userType 跳转落地页（管理员 /users、普通用户 /models），替代原固定 navigate('/')
+- e2e 登录态：e2e/utils/seedAuth.ts 提供 seedAdminLogin/seedNormalLogin（page.addInitScript 注入 localStorage currentUser），12 个既有 e2e spec 顶部 test.beforeEach 注入管理员登录态绕过守卫；e2e/Login.spec.ts 覆盖守卫跳转、管理员/普通用户落地页与菜单可见性

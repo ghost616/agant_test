@@ -1,5 +1,0 @@
-{
-  "session_id": "ses_0532423c3ffeyCfN2JtTVf5K9o",
-  "content": "# ToolExecutionService.java invoker null 处理变更\n\n## 涉及的代码文件\n- `agent-base/src/main/java/com/ghost616/agentbase/service/agent/ToolExecutionService.java`\n\n## 需要测试的功能\n1. **invoker 为 null 时改用 setDone**：poll 队列后调用 `toolExecutionTracker.setDone(sessionId, toolCallId, errorResult)` 写入 JSON 错误结果，返回状态 `\"executing\"`，使前端 getToolStatus 轮询到 done 后自然处理。\n2. **编译检查**。",
-  "timestamp": "2026-07-29T09:54:57.947Z"
-}

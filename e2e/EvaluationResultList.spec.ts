@@ -1,4 +1,5 @@
 import { test, expect, Page } from '@playwright/test';
+import { seedAdminLogin } from './utils/seedAuth';
 
 const EVAL_ID = 'eval-100';
 const RESULT_ID_PREFIX = 'result-';
@@ -48,6 +49,10 @@ async function selectRow(page: Page, index: number) {
     .locator('.ant-checkbox');
   await checkbox.click();
 }
+
+test.beforeEach(async ({ page }) => {
+  await seedAdminLogin(page);
+});
 
 test.describe('EvaluationResultList 批量删除与清空', () => {
   test.beforeEach(async ({ page }) => {

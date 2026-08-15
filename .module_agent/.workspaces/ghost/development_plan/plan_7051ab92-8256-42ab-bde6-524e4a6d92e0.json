@@ -1,0 +1,10 @@
+{
+  "plan_id": "plan_7051ab92-8256-42ab-bde6-524e4a6d92e0",
+  "module_name": "skill-manager",
+  "development_plan": "技能配置数据用户隔离：\n1. SkillConfigServiceImpl 新增技能配置时，从当前用户上下文获取 userId 填充到 user_id 字段。\n2. 查询技能配置列表时按当前 userId 过滤（仅返回当前用户的数据）。",
+  "session_id": "2e17d0f2-72bb-4f62-9b04-dab116da644a",
+  "modified_files": [
+    "platform-app/src/main/java/com/ghost616/platform/service/skill/SkillConfigServiceImpl.java",
+    "platform-app/src/test/java/com/ghost616/platform/service/skill/SkillConfigServiceImplTest.java"
+  ]
+}

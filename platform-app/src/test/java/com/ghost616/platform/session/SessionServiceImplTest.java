@@ -6,9 +6,24 @@ import com.ghost616.platform.repository.SessionMapper;
 import com.ghost616.platform.repository.AgentToolMapper;
 import com.ghost616.platform.repository.SessionToolMapper;
 import com.ghost616.platform.service.session.SessionServiceImpl;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.MybatisConfiguration;
+import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
+import org.apache.ibatis.builder.MapperBuilderAssistant;
+import com.ghost616.agentbase.service.agent.AgentContextManager;
+import com.ghost616.agentbase.service.agent.MessageDataProvider;
+import com.ghost616.agentbase.service.agent.SessionManager;
+import com.ghost616.agentbase.service.agent.invoker.ToolManager;
+import com.ghost616.platform.entity.User;
+import com.ghost616.platform.enums.ErrorCode;
+import com.ghost616.platform.exception.BusinessException;
+import com.ghost616.platform.session.UserContext;
+import com.ghost616.platform.session.UserSession;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -20,15 +35,11 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-import com.ghost616.agentbase.service.agent.AgentContextManager;
-import com.ghost616.agentbase.service.agent.MessageDataProvider;
-import com.ghost616.agentbase.service.agent.SessionManager;
-import com.ghost616.agentbase.service.agent.invoker.ToolManager;
-import com.ghost616.platform.exception.BusinessException;
-
 
 @ExtendWith(MockitoExtension.class)
 class SessionServiceImplTest {
+
+    private static final Long CURRENT_USER_ID = 42L;
 
     @Mock
     private SessionMapper sessionMapper;
@@ -60,6 +71,13 @@ class SessionServiceImplTest {
 
     @BeforeEach
     void setUp() {
+        // 初始化实体表信息，使 LambdaQueryWrapper 可解析 lambda 列名（参考 AgentConfigUserIsolationTest）
+        TableInfoHelper.initTableInfo(new MapperBuilderAssistant(new MybatisConfiguration(), ""), Session.class);
+
+        User user = new User();
+        user.setId(CURRENT_USER_ID);
+        UserContext.set(new UserSession("session-test", user, System.currentTimeMillis()));
+
         parentSession = new Session();
         parentSession.setId(1L);
         parentSession.setTitle("parent");
@@ -86,6 +104,11 @@ class SessionServiceImplTest {
         nonChildSession.setParentSessionId(parentId);
         nonChildSession.setIsChild(false);
         nonChildSession.setTitle("non-child");
+    }
+
+    @AfterEach
+    void tearDown() {
+        UserContext.clear();
     }
 
     @Test
@@ -295,6 +318,60 @@ class SessionServiceImplTest {
 
         assertEquals(1, result.size());
         assertEquals(100L, result.get(0).getAgentId());
+    }
+
+    @Test
+    void listSessions_查询条件包含当前用户ID过滤() {
+        when(sessionMapper.selectList(any())).thenReturn(List.of());
+
+        sessionService.listSessions(null);
+
+        ArgumentCaptor<LambdaQueryWrapper<Session>> captor = ArgumentCaptor.forClass(LambdaQueryWrapper.class);
+        verify(sessionMapper).selectList(captor.capture());
+        LambdaQueryWrapper<Session> wrapper = captor.getValue();
+        // 渲染 SQL 片段以填充 paramNameValuePairs（值与参数映射在渲染时生成）
+        wrapper.getSqlSegment();
+        assertTrue(wrapper.getParamNameValuePairs().containsValue(CURRENT_USER_ID),
+                "查询条件应包含当前用户ID: " + wrapper.getParamNameValuePairs());
+    }
+
+    @Test
+    void listSessions_未登录_抛USER_NOT_LOGIN() {
+        UserContext.clear();
+
+        BusinessException ex = assertThrows(BusinessException.class, () -> sessionService.listSessions(null));
+        assertEquals(ErrorCode.USER_NOT_LOGIN, ex.getErrorCode());
+        verify(sessionMapper, never()).selectList(any());
+    }
+
+    @Test
+    void createSession_填充当前用户ID() {
+        doAnswer(invocation -> {
+            Session s = invocation.getArgument(0);
+            s.setId(999L);
+            return null;
+        }).when(sessionMapper).insert(any(Session.class));
+        when(agentToolMapper.selectList(any())).thenReturn(List.of());
+
+        SessionDTO dto = sessionService.createSession(100L, 300L, "test-title");
+
+        assertEquals(999L, dto.getId());
+        ArgumentCaptor<Session> captor = ArgumentCaptor.forClass(Session.class);
+        verify(sessionMapper).insert(captor.capture());
+        assertEquals(CURRENT_USER_ID, captor.getValue().getUserId());
+        assertEquals(100L, captor.getValue().getAgentId());
+        assertEquals(300L, captor.getValue().getModelId());
+        assertEquals("test-title", captor.getValue().getTitle());
+    }
+
+    @Test
+    void createSession_未登录_抛USER_NOT_LOGIN() {
+        UserContext.clear();
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> sessionService.createSession(100L, 300L, "test-title"));
+        assertEquals(ErrorCode.USER_NOT_LOGIN, ex.getErrorCode());
+        verify(sessionMapper, never()).insert(any(Session.class));
     }
 
     @Test

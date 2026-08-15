@@ -3,7 +3,7 @@
   "files": [
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultMessageDataProvider.java",
-      "description": "默认消息数据提供者实现，负责消息的持久化存储、查询、软回滚和记忆点过滤，实现 agent-base 的 MessageDataProvider 接口。saveMessage 第 5 参为 ToolInfo toolInfo（toolCallId/toolName），将其持久化为 type=tool_result 的 MessageToolCall 行，并在 message 表 tool_call_id 列记录 toolCallId；同时将三种类型的工具调用统一构建进一个 List<MessageToolCall>：function 工具调用行（读 toolCallId/toolCallName/toolCallArguments/type）、webSearchCall 行（type=web_search_call，web_search_call 列存单条 WebSearchCallData 的 JSON）、customToolCall 行（type=custom_tool_call，custom_tool_call 列存单条 CustomToolCallData 的 JSON），合并后通过注入的 MessageToolCallService.saveBatch 一次批量插入；getMessages 从 MessageToolCall 表读取各行，按 type 分类反序列化：web_search_call 行聚合为 List<WebSearchCallData>、custom_tool_call 行聚合为 List<CustomToolCallData>，tool_result 行不进入 toolCalls 列表，并通过匹配 message.tool_call_id 与 MessageToolCall 行构造 ToolInfo 填充 MessageDTO.toolInfo，其余行按普通工具调用处理（读 type 构建 ToolCallData）；getMessages 记忆点过滤：通过 memoryPointCache（ConcurrentHashMap，TTL 60 秒，最大 2000 条时先清理过期条目，sessionId→MemoryPointCacheEntry（含 memoryPointSequenceNum 与 expireAt））缓存会话记忆点，命中未过期缓存直接返回；session.memoryPointSequenceNum 非 null 时在查询追加 sequence_num >= memoryPoint 的 ge 过滤条件，其余消息全量查询返回，不再做消息组截断（已移除 resolveMemoryTruncationBounds 方法与 TruncationBounds record，及 AgentConfig/AgentConfigMapper 依赖）；提供 rollbackToLastUserMessage 软回滚能力"
+      "description": "默认消息数据提供者实现，负责消息的持久化存储、查询、软回滚和记忆点过滤，实现 agent-base 的 MessageDataProvider 接口。saveMessage 第 5 参为 ToolInfo toolInfo（toolCallId/toolName），将其持久化为 type=tool_result 的 MessageToolCall 行，并在 message 表 tool_call_id 列记录 toolCallId；同时将三种类型的工具调用统一构建进一个 List<MessageToolCall>：function 工具调用行（读 toolCallId/toolCallName/toolCallArguments/type）、webSearchCall 行（type=web_search_call，web_search_call 列存单条 WebSearchCallData 的 JSON）、customToolCall 行（type=custom_tool_call，custom_tool_call 列存单条 CustomToolCallData 的 JSON），合并后通过注入的 MessageToolCallService.saveBatch 一次批量插入；getMessages 从 MessageToolCall 表读取各行，按 type 分类反序列化：web_search_call 行聚合为 List<WebSearchCallData>、custom_tool_call 行聚合为 List<CustomToolCallData>，tool_result 行不进入 toolCalls 列表，并通过匹配 message.tool_call_id 与 MessageToolCall 行构造 ToolInfo 填充 MessageDTO.toolInfo，其余行按普通工具调用处理（读 type 构建 ToolCallData）；getMessages 记忆点过滤：通过 memoryPointCache（ConcurrentHashMap，TTL 60 秒，最大 2000 条时先清理过期条目，sessionId→MemoryPointCacheEntry（含 memoryPointSequenceNum 与 expireAt））缓存会话记忆点，命中未过期缓存直接返回；session.memoryPointSequenceNum 非 null 时在查询追加 sequence_num >= memoryPoint 的 ge 过滤条件，其余消息全量查询返回，不再做消息组截断（已移除 resolveMemoryTruncationBounds 方法与 TruncationBounds record，及 AgentConfig/AgentConfigMapper 依赖）；提供 rollbackToLastUserMessage 软回滚能力。数据用户隔离：saveMessage 从 UserContext 获取当前登录用户填充 message.user_id（无用户上下文返回 null 留空，异步工具执行/评估执行场景由线程变量传播保证上下文可取）"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultContextDataProvider.java",
@@ -11,7 +11,7 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/controller/SessionController.java",
-      "description": "会话管理 REST 控制器，提供会话的 CRUD、消息查询、消息序号范围查询（转换为 MessageDTO）、回滚、子会话列表查询、子会话数据获取（映射 thinking 字段）、子会话完成等 HTTP API 端点；注入 SessionMemoryService 提供 GET /api/sessions/{id}/memory/trigger、GET/PUT /api/sessions/{id}/memory-prompt、POST /api/sessions/{id}/memory/regenerate、GET /api/sessions/{id}/memory/regenerate/status、POST /api/sessions/{id}/memory/update 端点；注入 SessionMemoryESClient 提供 GET /api/sessions/{id}/memory 端点（type/page/size 参数，分页返回记忆文档）"
+      "description": "会话管理 REST 控制器，提供会话的 CRUD、消息查询、消息序号范围查询（转换为 MessageDTO）、回滚、子会话列表查询、子会话数据获取（映射 thinking 字段）、子会话完成等 HTTP API 端点；注入 SessionMemoryService 提供 GET /api/sessions/{id}/memory/trigger、GET/PUT /api/sessions/{id}/memory-prompt、POST /api/sessions/{id}/memory/regenerate、GET /api/sessions/{id}/memory/regenerate/status、POST /api/sessions/{id}/memory/update 端点；注入 SessionMemoryESClient 提供 GET /api/sessions/{id}/memory 端点（type/page/size 参数，分页返回记忆文档，查询按当前登录用户 userId 过滤）"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/session/SessionService.java",
@@ -167,7 +167,7 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/evaluation/EvaluationServiceImpl.java",
-      "description": "EvaluationService 实现类，提供评估 CRUD 操作 + EvaluationResult 查询/删除；create 时 executionType 默认 BACKGROUND，update 条件更新，toDTO 映射 executionType；deleteResult 级联清理执行会话相关数据（含 @DS(message) 的 messageMapper 查询/删除），delete/batchDeleteResults/clearResults 均不再声明 @Transactional（拆分事务：级联删除涉及主库 session/session_variable/session_tool/session_skill 与 message 库 message/message_tool_call，主库事务内 @DS 路由失效会导致 message 落到主库报 no such table），使跨库 mapper 在各自数据源上自动提交执行"
+      "description": "EvaluationService 实现类，提供评估 CRUD 操作 + EvaluationResult 查询/删除；create 时 executionType 默认 BACKGROUND，update 条件更新，toDTO 映射 executionType；deleteResult 级联清理执行会话相关数据（含 @DS(message) 的 messageMapper 查询/删除），delete/batchDeleteResults/clearResults 均不再声明 @Transactional（拆分事务：级联删除涉及主库 session/session_variable/session_tool/session_skill 与 message 库 message/message_tool_call，主库事务内 @DS 路由失效会导致 message 落到主库报 no such table），使跨库 mapper 在各自数据源上自动提交执行。数据用户隔离：create 从 UserContext 获取当前登录用户填充 Evaluation 与基准 Session 的 user_id，name 唯一性按 user_id 校验；list 按 user_id 过滤；getById/update/delete/clearResults/getResultById/deleteResult 校验属主（非本人数据按不存在处理）；listResults/clearResults 的 EvaluationResult 查询按 user_id 过滤"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/controller/EvaluationController.java",
@@ -195,7 +195,7 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/agent_evaluation/AgentEvaluationServiceImpl.java",
-      "description": "智能体评估业务服务实现类，包含 name 唯一性校验、级联删除（关联 Evaluation → EvaluationResult → benchmarkSession/executionSession → SessionVariable/SessionTool/SessionSkill/Message → MessageToolCall）、AgentConfigMapper 查询 agentName 等完整业务逻辑；delete 不再声明 @Transactional（级联删除含 @DS(message) 的 messageMapper，主库事务内 @DS 路由失效，拆分事务使 message 操作在 message 数据源上执行）"
+      "description": "智能体评估业务服务实现类，包含 name 唯一性校验、级联删除（关联 Evaluation → EvaluationResult → benchmarkSession/executionSession → SessionVariable/SessionTool/SessionSkill/Message → MessageToolCall）、AgentConfigMapper 查询 agentName 等完整业务逻辑；delete 不再声明 @Transactional（级联删除含 @DS(message) 的 messageMapper，主库事务内 @DS 路由失效，拆分事务使 message 操作在 message 数据源上执行）。数据用户隔离：create 从 UserContext 填充 user_id，name 唯一性按 user_id 校验；list 按 user_id 过滤；getById/update/delete 校验属主（非本人数据按不存在处理）"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/controller/AgentEvaluationController.java",
@@ -211,11 +211,11 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/evaluation/EvaluationExecutionService.java",
-      "description": "评估后台执行服务（EvaluationExecutionService，@Service）：接收 evaluationId 执行异步评估，验证基准会话有用户消息（过滤 rollback 消息），复制基准会话数据创建执行会话（透传 thinking），通过 AsyncEvaluationExecutor 逐条执行用户消息。execute 异步提交后轮询等待：每次 sleep 200ms，先检查 FAILED 状态直接返回，否则通过 defaultChatDataCacheProvider.getCacheIdsBySessionId 获取第一个 cacheId（列表为空则继续轮询），再通过 getMaxChunkIndex(cacheId) > 0 判断数据已写入后退出轮询返回初始 statusDTO。提供 getStatus/createExecutionSession/generateResult/generateResultAsync/getGenerateStatus 方法，内存 ConcurrentHashMap 管理执行与生成状态，TTL(1h)+@Scheduled 清理过期状态"
+      "description": "评估后台执行服务（EvaluationExecutionService，@Service）：接收 evaluationId 执行异步评估，验证基准会话有用户消息（过滤 rollback 消息），复制基准会话数据创建执行会话（透传 thinking），通过 AsyncEvaluationExecutor 逐条执行用户消息。execute 异步提交后轮询等待：每次 sleep 200ms，先检查 FAILED 状态直接返回，否则通过 defaultChatDataCacheProvider.getCacheIdsBySessionId 获取第一个 cacheId（列表为空则继续轮询），再通过 getMaxChunkIndex(cacheId) > 0 判断数据已写入后退出轮询返回初始 statusDTO。提供 getStatus/createExecutionSession/generateResult/generateResultAsync/getGenerateStatus 方法，内存 ConcurrentHashMap 管理执行与生成状态，TTL(1h)+@Scheduled 清理过期状态。线程变量传播：提交 executeAsync/generateResultAsync 前通过注入的 ThreadVariableHandler wrap() 捕获当前登录用户，作为 ThreadVariableWrapper 参数传入异步执行器"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/evaluation/EvaluationResultGenerateService.java",
-      "description": "评估结果生成服务：接收基准会话ID和执行会话ID，获取双方消息构建系统提示词对比差异度，调用 evaluation.modelId 对应模型评估，将结果写入 EvaluationResult 表。buildChatRequest 基于 requestType 分流：RequestType.isResponses() 时将评分规则+消息写入 instructions、messages 仅含 user prompt；RequestType.COMPLETIONS（含 null/空默认）走原 system+user 逻辑；其他值抛 MODEL_UNSUPPORTED。"
+      "description": "评估结果生成服务：接收基准会话ID和执行会话ID，获取双方消息构建系统提示词对比差异度，调用 evaluation.modelId 对应模型评估，将结果写入 EvaluationResult 表。buildChatRequest 基于 requestType 分流：RequestType.isResponses() 时将评分规则+消息写入 instructions、messages 仅含 user prompt；RequestType.COMPLETIONS（含 null/空默认）走原 system+user 逻辑；其他值抛 MODEL_UNSUPPORTED。数据用户隔离：写入 EvaluationResult 时从 UserContext 获取当前登录用户填充 user_id（无用户上下文返回 null 留空，异步评估场景由线程变量传播保证上下文可取）"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/controller/EvaluationExecutionController.java",
@@ -227,7 +227,7 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/evaluation/AsyncEvaluationExecutor.java",
-      "description": "异步评估执行器（独立 @Component），被 EvaluationExecutionService 注入后调用，确保 @Async 通过 Spring AOP 代理生效。executeAsync 接收 Session 作为执行会话（从 Session 获取 thinking 透传给 AgentMessageProxy），注入 ChatDataCacheManager 并在创建 AgentMessageProxy 后调用 proxy.setChatDataCacheManager，通过 AgentMessageProxy.sendUserMessageToSession 逐条发送用户消息并处理工具调用，完成后调用 EvaluationResultGenerateService"
+      "description": "异步评估执行器（独立 @Component），被 EvaluationExecutionService 注入后调用，确保 @Async 通过 Spring AOP 代理生效。executeAsync 接收 Session 作为执行会话（从 Session 获取 thinking 透传给 AgentMessageProxy），注入 ChatDataCacheManager 并在创建 AgentMessageProxy 后调用 proxy.setChatDataCacheManager，通过 AgentMessageProxy.sendUserMessageToSession 逐条发送用户消息并处理工具调用，完成后调用 EvaluationResultGenerateService。线程变量传播：generateResultAsync/executeAsync 新增 ThreadVariableWrapper 参数（提交方捕获的用户上下文快照），执行前 apply() 恢复 UserContext，执行结束 finally 清理避免线程复用串号"
     },
     {
       "path": "platform-app/src/main/resources/evaluation/scoring-rules.txt",
@@ -259,7 +259,7 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/controller/KnowledgeFileController.java",
-      "description": "知识文件管理控制器，提供 /api/knowledge-bases/{kbId}/files 的 list/getById/create/update/delete/toggleStatus 六个接口及 GET/PUT /{id}/content 内容读写端点（GET 返回 ApiResponse<String> JSON 包装的文件内容，PUT 接受纯文本内容），kbId 来自路径参数；新增 POST /{id}/publish 端点（调用 KnowledgePublishService.publishFile 异步发布）与 PUT /refresh 端点（重新查询文件列表，支持 fileName/status 过滤）"
+      "description": "知识文件管理控制器，提供 /api/knowledge-bases/{kbId}/files 的 list/getById/create/update/delete/toggleStatus 六个接口及 GET/PUT /{id}/content 内容读写端点（GET 返回 ApiResponse<String> JSON 包装的文件内容，PUT 接受纯文本内容），kbId 来自路径参数；新增 POST /{id}/publish 端点（调用 KnowledgePublishService.publishFile 异步发布，提交前通过注入的 ThreadVariableHandler wrap() 捕获当前登录用户传入）与 PUT /refresh 端点（重新查询文件列表，支持 fileName/status 过滤）"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/knowledge/KnowledgeBaseService.java",
@@ -267,7 +267,7 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/knowledge/KnowledgeBaseServiceImpl.java",
-      "description": "知识库服务实现，基于 MyBatis-Plus 实现 CRUD，含 name 唯一性校验；delete 时级联删除该知识库下所有关联文件（@Transactional）；create/update 时设置 vectorModelId，esIndex 为空自动生成（agent_+id+_+随机6位小写字母数字下划线组合）；toDTO 映射 vectorModelId/esIndex/rebuilding 字段"
+      "description": "知识库服务实现，基于 MyBatis-Plus 实现 CRUD，含 name 唯一性校验；delete 时级联删除该知识库下所有关联文件（@Transactional）；create/update 时设置 vectorModelId，esIndex 为空自动生成（agent_+id+_+随机6位小写字母数字下划线组合）；toDTO 映射 vectorModelId/esIndex/rebuilding 字段。数据用户隔离：create 从 UserContext 填充 user_id，name 唯一性按 user_id 校验；list 按 user_id 过滤；getById/update/delete/toggleStatus 校验属主（非本人数据按不存在处理）"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/knowledge/KnowledgeFileService.java",
@@ -275,7 +275,7 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/knowledge/KnowledgeFileServiceImpl.java",
-      "description": "知识文件服务实现，创建时校验知识库存在并设置 publishStatus=UNPUBLISHED，getFileContent 读取文件内容，updateFileContent 按新内容重算 fileSize/lineCount（已发布文件改为 PENDING_PUBLISH），CRUD 与状态切换，toDTO 映射 publishStatus"
+      "description": "知识文件服务实现，创建时校验知识库存在并设置 publishStatus=UNPUBLISHED，getFileContent 读取文件内容，updateFileContent 按新内容重算 fileSize/lineCount（已发布文件改为 PENDING_PUBLISH），CRUD 与状态切换，toDTO 映射 publishStatus。数据用户隔离：create 从 UserContext 填充 user_id 并校验所属知识库属主；list 按 user_id 过滤；getById/update/delete/toggleStatus/getFileContent/updateFileContent 校验属主（非本人数据按不存在处理）"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/dto/knowledge/KnowledgeBaseDTO.java",
@@ -315,7 +315,7 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/knowledge/KnowledgePublishService.java",
-      "description": "知识库发布服务（@Service + @EnableAsync）：publishFile(Long) @Async 异步将知识文件按行向量化写入 ES 索引（发布中/成功/失败状态流转，失败时清理索引），索引不存在时由 batchSave 内部 ensureIndex 自动创建（不再显式按维度 createIndex）；rebuildKnowledgeBase(Long) 重建知识库索引（rebuilding 状态标记、删除旧索引、批量重新发布已发布文件）；通过 ModelInvokerManager + 知识库 vectorModelId 对应模型生成向量"
+      "description": "知识库发布服务（@Service + @EnableAsync）：publishFile(Long, ThreadVariableWrapper) @Async 异步将知识文件按行向量化写入 ES 索引（发布中/成功/失败状态流转，失败时清理索引），索引不存在时由 batchSave 内部 ensureIndex 自动创建（不再显式按维度 createIndex）；rebuildKnowledgeBase(Long) 重建知识库索引（rebuilding 状态标记、删除旧索引、批量重新发布已发布文件，提交前通过注入的 ThreadVariableHandler wrap() 捕获用户上下文传入 publishFile）；通过 ModelInvokerManager + 知识库 vectorModelId 对应模型生成向量。线程变量传播：publishFile 接收提交方传播的 ThreadVariableWrapper，执行前 apply() 恢复 UserContext，执行结束 finally 清理避免线程复用串号"
     },
     {
       "path": "platform-app/src/test/java/com/ghost616/platform/service/knowledge/KnowledgePublishServiceTest.java",
@@ -351,7 +351,7 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/DatabaseAgentLog.java",
-      "description": "基于数据库的 AgentLog 实现（@Service），实现 agent-base AgentLog 接口：addLog 将 LogData 序列化为 JSON 存入 agent_log 表 log_data 列（构造函数复制注入的 ObjectMapper 并注册 LogDataMixin/ContextLogDataMixin/SessionLogDataMixin，序列化排除 logLevel/context 字段，SessionLogData 子类额外排除 sessionId/conversationId 字段）；addLog 分支逻辑：ContextLogData 时从 context 提取 sessionId（转 Long）与 conversationId，并通过 getSessionVariableKeys+getSessionVariable / getConversationVariableKeys+getConversationVariable 构建变量 Map 序列化存入 sessionVariables/conversationVariables 列；SessionLogData 时直接提取 sessionId/conversationId；其余直接继承 LogData 的类型按 logType()==CONTEXT_BUILD 强转为 ContextBuildLogData 提取 sessionId（无反射，conversationId 不设置）；写入 logType/logLevel 枚举 code 值后通过 AgentLogMapper 持久化"
+      "description": "基于数据库的 AgentLog 实现（@Service），实现 agent-base AgentLog 接口：addLog 将 LogData 序列化为 JSON 存入 agent_log 表 log_data 列（构造函数复制注入的 ObjectMapper 并注册 LogDataMixin/ContextLogDataMixin/SessionLogDataMixin，序列化排除 logLevel/context 字段，SessionLogData 子类额外排除 sessionId/conversationId 字段）；addLog 分支逻辑：ContextLogData 时从 context 提取 sessionId（转 Long）与 conversationId，并通过 getSessionVariableKeys+getSessionVariable / getConversationVariableKeys+getConversationVariable 构建变量 Map 序列化存入 sessionVariables/conversationVariables 列；SessionLogData 时直接提取 sessionId/conversationId；其余直接继承 LogData 的类型按 logType()==CONTEXT_BUILD 强转为 ContextBuildLogData 提取 sessionId（无反射，conversationId 不设置）；写入 logType/logLevel 枚举 code 值后通过 AgentLogMapper 持久化。数据用户隔离：addLog 从 UserContext 获取当前登录用户填充 user_id（无用户上下文返回 null 留空，不中断系统级流程）"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/dto/agent_log/AgentLogDTO.java",
@@ -363,7 +363,7 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/agent_log/AgentLogServiceImpl.java",
-      "description": "智能体日志查询服务实现：list 通过 MyBatis-Plus Page 分页 + LambdaQueryWrapper 筛选并按 createTime 倒序，支持 sessionId 精确筛选与 sessionName 模糊搜索（先按 Session.title like 查 sessionId 集合，空则返回空分页，否则 IN 过滤），返回时关联 Session 表批量查询会话名 sessionName（title 为 null 或空字符串时兜底为 String.valueOf(Session.getId())），toDTO 映射 sessionVariables/conversationVariables 字段；cleanupExpiredLogs 为 @Scheduled 定时任务删除 30 天前日志"
+      "description": "智能体日志查询服务实现：list 通过 MyBatis-Plus Page 分页 + LambdaQueryWrapper 筛选并按 createTime 倒序，支持 sessionId 精确筛选与 sessionName 模糊搜索（先按 Session.title like 查 sessionId 集合，空则返回空分页，否则 IN 过滤），返回时关联 Session 表批量查询会话名 sessionName（title 为 null 或空字符串时兜底为 String.valueOf(Session.getId())），toDTO 映射 sessionVariables/conversationVariables 字段；cleanupExpiredLogs 为 @Scheduled 定时任务删除 30 天前日志。数据用户隔离：list 按当前登录用户 user_id 过滤（UserContext，未登录抛 USER_NOT_LOGIN），sessionName 模糊搜索限定当前用户会话"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/controller/AgentLogController.java",
@@ -415,15 +415,15 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/model/SessionMemoryDocument.java",
-      "description": "会话记忆 ES 文档模型，对应 Elasticsearch 索引 session_memory 的文档结构，字段 sessionId(String)/aggregationType(AggregationType 枚举，GROUP/DAILY，ES mapping 为 keyword)/aggregationStartSeq(Integer)/aggregationEndSeq(Integer)/aggregationStartTime(Long，聚合起始毫秒时间戳)/aggregationEndTime(Long，聚合结束毫秒时间戳)/aggregationText(String)/vector(List<Float>)"
+      "description": "会话记忆 ES 文档模型，对应 Elasticsearch 索引 session_memory 的文档结构，字段 sessionId(String)/userId(Long，归属用户，ES mapping 为 keyword)/aggregationType(AggregationType 枚举，GROUP/DAILY，ES mapping 为 keyword)/aggregationStartSeq(Integer)/aggregationEndSeq(Integer)/aggregationStartTime(Long，聚合起始毫秒时间戳)/aggregationEndTime(Long，聚合结束毫秒时间戳)/aggregationText(String)/vector(List<Float>)"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/search/SessionMemoryESClient.java",
-      "description": "会话记忆客户端，封装 Elasticsearch 索引 session_memory 的创建与会话记忆文档批量写入；提供 checkDailyExists 按日记忆去重、queryBySessionId 分页查询、updateDocument 按 docId 部分更新（仅 aggregationText 与 vector）；新增记忆搜索方法 vectorSearch/fullTextSearch/hybridSearch（支持 sessionId、aggregationType、aggregationStartTime/EndTime 范围过滤，混合搜索合并去重）"
+      "description": "会话记忆客户端，封装 Elasticsearch 索引 session_memory 的创建与会话记忆文档批量写入；createIndex mapping 含 sessionId/userId(keyword)/aggregationType/aggregationStartSeq/aggregationEndSeq/aggregationStartTime/aggregationEndTime/aggregationText/vector 字段；提供 checkDailyExists 按日记忆去重、queryBySessionId 分页查询、updateDocument 按 docId 部分更新（仅 aggregationText 与 vector）；新增记忆搜索方法 vectorSearch/fullTextSearch/hybridSearch（支持 sessionId、userId（可空，非空时 term 过滤）、aggregationType、aggregationStartTime/EndTime 范围过滤，混合搜索合并去重）"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/memory/SessionMemoryService.java",
-      "description": "会话记忆聚合服务：定时聚合启用记忆功能智能体的会话新增消息生成记忆文档并向量化写入 ES；提供手动触发 triggerSessionMemory；提供记忆提示语读写 getMemoryPrompt/saveMemoryPrompt（session.memory_prompt）；提供聚合文本重生成 regenerateSummary（异步、状态可查询）+ getRegenerateStatus + saveAggregationText（重新向量化并更新 ES）"
+      "description": "会话记忆聚合服务：定时聚合启用记忆功能智能体的会话新增消息生成记忆文档并向量化写入 ES；提供手动触发 triggerSessionMemory；提供记忆提示语读写 getMemoryPrompt/saveMemoryPrompt（session.memory_prompt）；提供聚合文本重生成 regenerateSummary（异步、状态可查询）+ getRegenerateStatus + saveAggregationText（重新向量化并更新 ES）。线程变量传播：regenerateSummary/triggerSessionMemory 的 CompletableFuture.runAsync 提交点通过注入的 ThreadVariableHandler 捕获用户上下文，异步线程内 apply() 恢复、finally 清理。数据用户隔离：buildMemoryDocuments/buildDailyMemoryDocument 新增 userId 参数，生成的记忆文档填充会话属主 userId"
     },
     {
       "path": "platform-app/src/test/java/com/ghost616/platform/model/SessionMemoryDocumentTest.java",
@@ -443,7 +443,7 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/message/MessageServiceImpl.java",
-      "description": "消息查询服务实现，注入 MessageMapper，通过 LambdaQueryWrapper 查询会话消息（sessionId + rollback=false，按 sequenceNum 升序，不做 memoryPoint 记忆点过滤）；getAllMessages 查询全部有效消息，getMessagesBySeqRange 查询 sequenceNum 在 [startSeq, endSeq] 区间的消息（ge/le 条件）"
+      "description": "消息查询服务实现，注入 MessageMapper，通过 LambdaQueryWrapper 查询会话消息（sessionId + rollback=false，按 sequenceNum 升序，不做 memoryPoint 记忆点过滤）；getAllMessages 查询全部有效消息，getMessagesBySeqRange 查询 sequenceNum 在 [startSeq, endSeq] 区间的消息（ge/le 条件）。数据用户隔离：查询按当前登录用户 user_id 过滤（从 UserContext 获取 userId，未登录抛 USER_NOT_LOGIN），仅返回当前用户的消息"
     },
     {
       "path": "platform-app/src/test/java/com/ghost616/platform/service/message/MessageServiceImplTest.java",
@@ -471,7 +471,7 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/memory/MemoryQueryProviderImpl.java",
-      "description": "AI 记忆查询 Provider 实现（实现 agent-integration 的 MemoryQueryProvider 接口，@Component）：getMemories 通过 SessionMemoryESClient 查询 session_memory 索引（VECTOR/FULLTEXT/HYBRID，VECTOR/HYBRID 时用 AgentConfig.vectorModelId 对应向量模型对 query 向量化，支持 sessionId/aggregationType/时间范围过滤）；getMessageSeqsByRole(String, List<SeqRange>) 通过 MessageMapper 一次 SQL 查询（eq sessionId、eq rollback=false、对每个区间 OR 合并 ge/le sequenceNum、orderByAsc）并按 role（user/tool/assistant）分类去重返回序号列表"
+      "description": "AI 记忆查询 Provider 实现（实现 agent-integration 的 MemoryQueryProvider 接口，@Component）：getMemories 通过 SessionMemoryESClient 查询 session_memory 索引（VECTOR/FULLTEXT/HYBRID，VECTOR/HYBRID 时用 AgentConfig.vectorModelId 对应向量模型对 query 向量化，支持 sessionId/aggregationType/时间范围过滤）；getMessageSeqsByRole(String, List<SeqRange>) 通过 MessageMapper 一次 SQL 查询（eq sessionId、eq rollback=false、对每个区间 OR 合并 ge/le sequenceNum、orderByAsc）并按 role（user/tool/assistant）分类去重返回序号列表。数据用户隔离：getMemories 将当前登录用户 userId（UserContext，无上下文为 null）传入 ES 搜索按 userId 过滤记忆文档；getMessageSeqsByRole 在当前用户上下文存在时按 Message.user_id eq 过滤"
     },
     {
       "path": "platform-app/src/test/java/com/ghost616/platform/service/memory/MemoryQueryProviderImplTest.java",
@@ -480,6 +480,14 @@
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/history/HistoryMessageQueryProviderImpl.java",
       "description": "历史消息查询 Provider 实现（实现 agent-integration 的 HistoryMessageQueryProvider 接口，@Component）：getMessagesBySeqs 用 MessageMapper 按 sessionId 且 sequenceNum in seqs 查询有效消息（过滤 rollback、按 sequenceNum 升序），用 MessageToolCallMapper 按 messageId 查询工具调用记录组装——assistant 消息的工具调用（type=function 的 toolCallId/toolCallName/toolCallArguments）、tool 消息的工具结果（toolCallId/toolCallName，content 为消息内容）；includeReasoning=false 时不返回 reasoning"
+    },
+    {
+      "path": "platform-app/src/test/java/com/ghost616/platform/controller/SessionControllerMemoryUserIdSupplementTest.java",
+      "description": "SessionController GET /api/sessions/{id}/memory 接口测试补充：已登录（UserContext 42L）时 queryBySessionId 透传当前 userId；未登录时传 null 不追加 userId 过滤（离朱接口测试新增）"
+    },
+    {
+      "path": "platform-app/src/test/java/com/ghost616/platform/service/search/SessionMemoryESClientUserIdFilterTest.java",
+      "description": "SessionMemoryESClient userId 过滤专项测试：userId 非空时 bool 查询含 term(userId) 过滤（与 sessionId/aggregationType 共 3 个 filter）；userId 为 null 时仅 sessionId/aggregationType 两个 filter（离朱接口测试新增）"
     }
   ]
 }

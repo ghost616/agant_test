@@ -35,6 +35,8 @@ import com.ghost616.platform.model.SessionMemoryDocument;
 import com.ghost616.platform.service.agent.DefaultMessageDataProvider;
 import com.ghost616.platform.service.agent.DefaultSubSessionCallback;
 import com.ghost616.platform.service.search.SessionMemoryESClient;
+import com.ghost616.platform.session.UserContext;
+import com.ghost616.platform.session.UserSession;
 import com.ghost616.platform.util.IdConverter;
 
 import java.util.Map;
@@ -152,7 +154,7 @@ public class SessionController {
                                                                       @RequestParam(defaultValue = "1") int page,
                                                                       @RequestParam(defaultValue = "20") int size) {
         PageResult<SessionMemoryDocument> result = sessionMemoryESClient.queryBySessionId(
-                IdConverter.toString(id), type, page, size);
+                IdConverter.toString(id), currentUserId(), type, page, size);
         return ApiResponse.success(result);
     }
 
@@ -215,5 +217,21 @@ public class SessionController {
     public ApiResponse<Void> deleteSession(@PathVariable Long id) {
         sessionService.deleteSession(id);
         return ApiResponse.success(null);
+    }
+
+    /**
+     * 获取当前登录用户 ID。
+     *
+     * <p>从 {@link UserContext} 线程上下文读取用户会话（由鉴权拦截器写入）；
+     * 未登录时返回 null，查询不追加 userId 过滤。</p>
+     *
+     * @return 当前登录用户 ID，无用户上下文时返回 null
+     */
+    private Long currentUserId() {
+        UserSession session = UserContext.get();
+        if (session == null || session.getUser() == null) {
+            return null;
+        }
+        return session.getUser().getId();
     }
 }

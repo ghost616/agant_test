@@ -1,6 +1,8 @@
 package com.ghost616.agentbase.service.agent;
 
 import com.ghost616.agentbase.core.AgentComponentRegistry;
+import com.ghost616.agentbase.core.ThreadVariableHandler;
+import com.ghost616.agentbase.core.ThreadVariableWrapper;
 import com.ghost616.agentbase.dto.chat.ChatRequest;
 import com.ghost616.agentbase.enums.LogLevel;
 import com.ghost616.agentbase.util.JsonMapper;
@@ -220,7 +222,13 @@ public class ToolExecutionService {
         hookManager.triggerHooks(HookPhase.BEFORE_TOOL_CALL, capturedContext, beforeHookData);
         hookManager.executePostHooks(capturedContext, beforeHookData);
 
+        ThreadVariableHandler threadVariableHandler = registry.getThreadVariableHandler();
+        ThreadVariableWrapper threadVariableWrapper = threadVariableHandler != null ? threadVariableHandler.wrap() : null;
+
         CompletableFuture.supplyAsync(() -> {
+            if (threadVariableWrapper != null) {
+                threadVariableWrapper.apply();
+            }
             try {
                 String res = toolManager.execute(capturedInvoker, capturedContext, toolCallArguments);
                 toolExecutionTracker.setDone(sessionId, toolCallId, res);

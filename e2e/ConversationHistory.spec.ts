@@ -1,4 +1,5 @@
 import { test, expect, Page } from '@playwright/test';
+import { seedAdminLogin } from './utils/seedAuth';
 
 test.describe.configure({ timeout: 120000 });
 
@@ -56,6 +57,10 @@ async function setupHistoryMocks(page: Page) {
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: MOCK_DETAIL_MESSAGES }) });
   });
 }
+
+test.beforeEach(async ({ page }) => {
+  await seedAdminLogin(page);
+});
 
 test.describe('会话历史返回与跳转优化', () => {
   test('用户消息列表点击「查看详情」应跳转到详情页', async ({ page }) => {

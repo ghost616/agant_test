@@ -1,5 +1,0 @@
-{
-  "session_id": "ses_053f94da8ffeL0YE5KmVwV7hbl",
-  "content": "## 重新测试\n\n### Bug 修复说明\n删除了 `EvaluationServiceImpl.deleteResult` 方法上的 `@Transactional` 注解。该注解导致 `BusinessException` 在 Spring AOP 事务拦截器中被包装为 `TransactionSystemException`，从而绕过 `@ExceptionHandler(BaseException.class)` 进入兜底 `Exception` 处理器返回 `SYS-001`。\n\n### 重新测试重点\n1. `DELETE /api/evaluations/results/{nonExistentId}` 应返回 `EVAL-RES-001` 错误码\n2. `DELETE /api/evaluations/results/{validId}` 应返回 200 成功\n3. 原有单元测试是否仍通过",
-  "timestamp": "2026-07-29T04:04:16.883Z"
-}

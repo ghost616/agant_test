@@ -2,6 +2,7 @@ package com.ghost616.platform.service.tool;
 
 import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
 import com.ghost616.agentbase.enums.CommonStatus;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.ghost616.platform.enums.ErrorCode;
 import com.ghost616.agentbase.enums.ToolType;
 import com.ghost616.platform.exception.BusinessException;
@@ -14,17 +15,23 @@ import com.ghost616.platform.dto.tool.ToolCreateRequest;
 import com.ghost616.platform.dto.tool.ToolDetailDTO;
 import com.ghost616.platform.dto.tool.ToolUpdateRequest;
 import com.ghost616.platform.entity.ToolConfig;
+import com.ghost616.platform.entity.User;
 import com.ghost616.platform.enums.SubToolType;
 import com.ghost616.platform.repository.ToolConfigMapper;
+import com.ghost616.platform.session.UserContext;
+import com.ghost616.platform.session.UserSession;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -42,11 +49,22 @@ class ToolConfigServiceImplTest {
     @Mock
     private ToolManager toolManager;
 
+    /** 测试用当前登录用户 ID。 */
+    private static final Long CURRENT_USER_ID = 100L;
+
     private ToolConfigServiceImpl service;
 
     @BeforeEach
     void setUp() {
         service = new ToolConfigServiceImpl(toolConfigMapper, eventPublisher, toolManager);
+        User user = new User();
+        user.setId(CURRENT_USER_ID);
+        UserContext.set(new UserSession("test-session", user, System.currentTimeMillis()));
+    }
+
+    @AfterEach
+    void tearDown() {
+        UserContext.clear();
     }
 
     private ToolConfig createEntity(Long id, String name) {
@@ -276,6 +294,149 @@ class ToolConfigServiceImplTest {
 
             ToolDetailDTO result = service.create(request);
             assertEquals("({[]})", result.getToolScript());
+        }
+
+        @Test
+        void create_shouldFillUserIdFromUserContext() {
+            when(toolConfigMapper.selectCount(any())).thenReturn(0L);
+            doAnswer(inv -> {
+                ToolConfig arg = inv.getArgument(0);
+                arg.setId(1L);
+                arg.setCreateTime(LocalDateTime.now());
+                arg.setUpdateTime(LocalDateTime.now());
+                return null;
+            }).when(toolConfigMapper).insert(any(ToolConfig.class));
+
+            ToolCreateRequest request = ToolCreateRequest.builder()
+                    .name("user_tool")
+                    .toolType(ToolType.CUSTOM)
+                    .subToolType(null)
+                    .implPath("/path/to/tool")
+                    .build();
+
+            service.create(request);
+
+            ArgumentCaptor<ToolConfig> captor = ArgumentCaptor.forClass(ToolConfig.class);
+            verify(toolConfigMapper).insert(captor.capture());
+            assertEquals(CURRENT_USER_ID, captor.getValue().getUserId(),
+                    "create 应把当前登录用户 ID 填充到 user_id 字段");
+        }
+
+        @Test
+        void create_withoutUserContext_shouldThrowUserNotLogin() {
+            UserContext.clear();
+
+            ToolCreateRequest request = ToolCreateRequest.builder()
+                    .name("no_login_tool")
+                    .toolType(ToolType.CUSTOM)
+                    .implPath("/path/to/tool")
+                    .build();
+
+            BusinessException ex = assertThrows(BusinessException.class, () -> service.create(request));
+            assertEquals(ErrorCode.USER_NOT_LOGIN, ex.getErrorCode());
+            verify(toolConfigMapper, never()).insert(any(ToolConfig.class));
+        }
+
+        @Test
+        void create_withDuplicateNameOfSameUser_shouldThrow() {
+            when(toolConfigMapper.selectCount(any())).thenReturn(1L);
+
+            ToolCreateRequest request = ToolCreateRequest.builder()
+                    .name("dup_tool")
+                    .toolType(ToolType.CUSTOM)
+                    .implPath("/path/to/tool")
+                    .build();
+
+            BusinessException ex = assertThrows(BusinessException.class, () -> service.create(request));
+            assertEquals(ErrorCode.TOOL_ALREADY_EXISTS, ex.getErrorCode());
+        }
+    }
+
+    @Nested
+    class ListTests {
+
+        @Test
+        @SuppressWarnings("unchecked")
+        void list_shouldFilterByCurrentUserId() {
+            when(toolConfigMapper.selectList(any())).thenReturn(List.of(createEntity(1L, "my_tool")));
+
+            service.list(null, null, null);
+
+            ArgumentCaptor<LambdaQueryWrapper<ToolConfig>> captor =
+                    ArgumentCaptor.forClass(LambdaQueryWrapper.class);
+            verify(toolConfigMapper).selectList(captor.capture());
+            assertTrue(captor.getValue().getParamNameValuePairs().containsValue(CURRENT_USER_ID),
+                    "list 应使用当前登录用户 ID 过滤 user_id");
+        }
+
+        @Test
+        @SuppressWarnings("unchecked")
+        void list_shouldUseUserFromCurrentContext() {
+            when(toolConfigMapper.selectList(any())).thenReturn(List.of());
+
+            UserContext.clear();
+            User other = new User();
+            other.setId(200L);
+            UserContext.set(new UserSession("other-session", other, System.currentTimeMillis()));
+
+            service.list(null, null, null);
+
+            ArgumentCaptor<LambdaQueryWrapper<ToolConfig>> captor =
+                    ArgumentCaptor.forClass(LambdaQueryWrapper.class);
+            verify(toolConfigMapper).selectList(captor.capture());
+            assertTrue(captor.getValue().getParamNameValuePairs().containsValue(200L),
+                    "list 应使用当前线程上下文的用户 ID 过滤");
+            assertFalse(captor.getValue().getParamNameValuePairs().containsValue(CURRENT_USER_ID),
+                    "不应混入其他用户的 user_id 过滤值");
+        }
+
+        @Test
+        void list_shouldReturnCurrentUserTools() {
+            ToolConfig entity = createEntity(1L, "my_tool");
+            when(toolConfigMapper.selectList(any())).thenReturn(List.of(entity));
+
+            List<ToolDetailDTO> result = service.list(null, null, null);
+
+            assertEquals(1, result.size());
+            assertEquals("my_tool", result.get(0).getName());
+        }
+
+        @Test
+        void list_withoutUserContext_shouldThrowUserNotLogin() {
+            UserContext.clear();
+
+            BusinessException ex = assertThrows(BusinessException.class, () -> service.list(null, null, null));
+            assertEquals(ErrorCode.USER_NOT_LOGIN, ex.getErrorCode());
+            verify(toolConfigMapper, never()).selectList(any());
+        }
+    }
+
+    @Nested
+    class GetImplByNameTests {
+
+        @Test
+        @SuppressWarnings("unchecked")
+        void getImplByName_shouldFilterByCurrentUserId() {
+            when(toolConfigMapper.selectOne(any())).thenReturn(createEntity(1L, "impl_tool"));
+
+            service.getImplByName("impl_tool");
+
+            ArgumentCaptor<LambdaQueryWrapper<ToolConfig>> captor =
+                    ArgumentCaptor.forClass(LambdaQueryWrapper.class);
+            verify(toolConfigMapper).selectOne(captor.capture());
+            assertTrue(captor.getValue().getParamNameValuePairs().containsValue(CURRENT_USER_ID),
+                    "getImplByName 应使用当前登录用户 ID 过滤 user_id");
+            assertTrue(captor.getValue().getParamNameValuePairs().containsValue("impl_tool"),
+                    "getImplByName 应按名称查询");
+        }
+
+        @Test
+        void getImplByName_withoutUserContext_shouldThrowUserNotLogin() {
+            UserContext.clear();
+
+            BusinessException ex = assertThrows(BusinessException.class, () -> service.getImplByName("impl_tool"));
+            assertEquals(ErrorCode.USER_NOT_LOGIN, ex.getErrorCode());
+            verify(toolConfigMapper, never()).selectOne(any());
         }
     }
 

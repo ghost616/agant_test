@@ -9,9 +9,13 @@ import com.ghost616.platform.dto.PageResult;
 import com.ghost616.platform.dto.agent_log.AgentLogDTO;
 import com.ghost616.platform.entity.AgentLogEntity;
 import com.ghost616.platform.entity.Session;
+import com.ghost616.platform.entity.User;
 import com.ghost616.platform.repository.AgentLogMapper;
 import com.ghost616.platform.repository.SessionMapper;
+import com.ghost616.platform.session.UserContext;
+import com.ghost616.platform.session.UserSession;
 import org.apache.ibatis.builder.MapperBuilderAssistant;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,6 +33,8 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class AgentLogServiceImplTest {
 
+    private static final Long CURRENT_USER_ID = 42L;
+
     @Mock
     private AgentLogMapper agentLogMapper;
 
@@ -42,6 +48,15 @@ class AgentLogServiceImplTest {
         TableInfoHelper.initTableInfo(new MapperBuilderAssistant(new MybatisConfiguration(), ""), AgentLogEntity.class);
         TableInfoHelper.initTableInfo(new MapperBuilderAssistant(new MybatisConfiguration(), ""), Session.class);
         agentLogService = new AgentLogServiceImpl(agentLogMapper, sessionMapper);
+        User user = new User();
+        user.setId(CURRENT_USER_ID);
+        UserSession session = new UserSession("session-1", user, System.currentTimeMillis());
+        UserContext.set(session);
+    }
+
+    @AfterEach
+    void tearDown() {
+        UserContext.clear();
     }
 
     private AgentLogEntity buildEntity(Long id, Long sessionId, String conversationId,

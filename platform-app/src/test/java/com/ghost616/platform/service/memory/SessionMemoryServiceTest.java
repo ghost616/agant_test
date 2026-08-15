@@ -3,6 +3,7 @@ package com.ghost616.platform.service.memory;
 import com.baomidou.mybatisplus.core.MybatisConfiguration;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
+import com.ghost616.agentbase.core.ThreadVariableHandler;
 import com.ghost616.agentbase.dto.model.ChatRequest;
 import com.ghost616.agentbase.dto.model.ChatResponse;
 import com.ghost616.agentbase.dto.model.EmbeddingRequest;
@@ -66,6 +67,8 @@ class SessionMemoryServiceTest {
     private ModelInvoker embedInvoker;
     @Mock
     private SessionMemoryESClient sessionMemoryESClient;
+    @Mock
+    private ThreadVariableHandler threadVariableHandler;
 
     private SessionMemoryService service;
 
@@ -77,7 +80,7 @@ class SessionMemoryServiceTest {
     @BeforeEach
     void setUp() {
         service = new SessionMemoryService(agentConfigMapper, sessionMapper, messageMapper,
-                modelConfigMapper, modelInvokerManager, sessionMemoryESClient);
+                modelConfigMapper, modelInvokerManager, sessionMemoryESClient, threadVariableHandler);
         lenient().when(sessionMemoryESClient.checkDailyExists(anyString(), anyLong(), anyLong()))
                 .thenReturn(true);
     }

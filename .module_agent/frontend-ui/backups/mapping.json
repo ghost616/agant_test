@@ -74,5 +74,6 @@
   "src/pages/memory/MemoryDocumentDetail.tsx": "4170bf5ab9d3614a75761d4beb775bc2",
   "src/types/memory.ts": "b73d1b276409bd019d77ece1b5b7edea",
   "src/services/memory.ts": "0d1c479915537d08c52f1dfffb8777e0",
-  "src/services/__tests__/memory.test.ts": "c0ad5f07adf182a7f4927f6b0dfe191e"
+  "src/services/__tests__/memory.test.ts": "c0ad5f07adf182a7f4927f6b0dfe191e",
+  "src/pages/login/Login.tsx": "346bcd4cb81221c27465387267a0c8e3"
 }

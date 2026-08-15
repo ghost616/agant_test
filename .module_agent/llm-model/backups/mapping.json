@@ -9,5 +9,9 @@
   "src/main/java/com/ghost616/platform/service/model/invoker/ModelInvoker.java": "f3b80f8b19182381901c5b8baf20742c",
   "src/main/java/com/ghost616/platform/service/model/invoker/OllamaInvoker.java": "f20cb2af77db97f2f22b0d36e3ec9ce7",
   "src/main/java/com/ghost616/platform/dto/model/Message.java": "eadfbbbd04afda84139124f429d57f95",
-  "src/main/java/com/ghost616/platform/service/model/invoker/ModelInvokerManager.java": "2aed5865e73e6e8de2fd49b8df72669c"
+  "src/main/java/com/ghost616/platform/service/model/invoker/ModelInvokerManager.java": "2aed5865e73e6e8de2fd49b8df72669c",
+  "platform-app/src/main/java/com/ghost616/platform/service/model/ModelConfigServiceImpl.java": "f7957856b566de657d597b1fd738d0fd",
+  "platform-app/src/test/java/com/ghost616/platform/service/model/ModelConfigServiceImplRequestTypeTest.java": "7240658397e9553c6ee4ce2c4dafa0f6",
+  "platform-app/src/test/java/com/ghost616/platform/service/model/ModelConfigServiceImplListFilterTest.java": "3379abeb35ef4207eff8dcf7a06a295c",
+  "platform-app/src/test/java/com/ghost616/platform/service/model/ModelConfigServiceImplModelTypeTest.java": "e7aafa86ac3bffca3bb3469f08bf01af"
 }

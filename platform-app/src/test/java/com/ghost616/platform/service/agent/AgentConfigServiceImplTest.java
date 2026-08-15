@@ -16,11 +16,15 @@ import com.ghost616.platform.entity.AgentSkill;
 import com.ghost616.platform.entity.AgentTool;
 import com.ghost616.platform.entity.KnowledgeBase;
 import com.ghost616.platform.entity.SkillConfig;
+import com.ghost616.platform.entity.User;
 import com.ghost616.platform.repository.AgentConfigMapper;
 import com.ghost616.platform.repository.AgentSkillMapper;
 import com.ghost616.platform.repository.AgentToolMapper;
 import com.ghost616.platform.repository.KnowledgeBaseMapper;
 import com.ghost616.platform.repository.SkillConfigMapper;
+import com.ghost616.platform.session.UserContext;
+import com.ghost616.platform.session.UserSession;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -59,10 +63,21 @@ class AgentConfigServiceImplTest {
     private final Long SKILL_ID = 200L;
     private final Long KB_ID = 300L;
 
+    /** 测试用当前登录用户 ID。 */
+    private static final Long CURRENT_USER_ID = 1000L;
+
     @BeforeEach
     void setUp() {
         service = new AgentConfigServiceImpl(agentConfigMapper, agentToolMapper,
                 agentSkillMapper, skillConfigMapper, agentKnowledgeBaseService, knowledgeBaseMapper);
+        User user = new User();
+        user.setId(CURRENT_USER_ID);
+        UserContext.set(new UserSession("test-session", user, System.currentTimeMillis()));
+    }
+
+    @AfterEach
+    void tearDown() {
+        UserContext.clear();
     }
 
     private AgentConfig createAgentEntity() {

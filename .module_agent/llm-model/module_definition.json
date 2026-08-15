@@ -40,6 +40,10 @@
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/config/RestClientConfig.java",
       "description": "HTTP 客户端配置（RestClient/WebClient Builder 超时设置）"
+    },
+    {
+      "path": "platform-app/src/test/java/com/ghost616/platform/service/model/ModelConfigServiceImplAuthGuardTest.java",
+      "description": "模型配置服务未登录保护单元测试：覆盖 UserContext 为空或会话用户为 null 时 create()/list() 抛出 USER_NOT_LOGIN 且不执行数据库操作（数据用户隔离）"
     }
   ]
 }

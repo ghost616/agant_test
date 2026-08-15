@@ -95,7 +95,7 @@ class SessionMemoryESClientTest {
     }
 
     @Test
-    @DisplayName("createIndex：索引不存在时创建，mapping 含 8 字段")
+    @DisplayName("createIndex：索引不存在时创建，mapping 含 9 字段")
     void createIndex() throws Exception {
         stubExists(false);
         when(indicesClient.create(any(Function.class))).thenReturn(null);
@@ -110,7 +110,7 @@ class SessionMemoryESClientTest {
         assertEquals(SessionMemoryESClient.INDEX_NAME, request.index());
 
         Map<String, Property> properties = request.mappings().properties();
-        assertEquals(8, properties.size());
+        assertEquals(9, properties.size());
 
         Property vector = properties.get("vector");
         assertTrue(vector.isDenseVector(), "vector 应为 dense_vector");
@@ -124,6 +124,7 @@ class SessionMemoryESClientTest {
         assertEquals("ik_smart", tp.searchAnalyzer());
 
         assertTrue(properties.get("sessionId").isKeyword(), "sessionId 应为 keyword");
+        assertTrue(properties.get("userId").isKeyword(), "userId 应为 keyword");
         assertTrue(properties.get("aggregationType").isKeyword(), "aggregationType 应为 keyword");
         assertTrue(properties.get("aggregationStartSeq").isInteger(), "aggregationStartSeq 应为 integer");
         assertTrue(properties.get("aggregationEndSeq").isInteger(), "aggregationEndSeq 应为 integer");
@@ -317,7 +318,7 @@ class SessionMemoryESClientTest {
         when(elasticsearchClient.search(any(Function.class), eq(SessionMemoryDocument.class)))
                 .thenReturn(searchResponse);
 
-        PageResult<SessionMemoryDocument> result = client.queryBySessionId("100", AggregationType.GROUP, 2, 10);
+        PageResult<SessionMemoryDocument> result = client.queryBySessionId("100", null, AggregationType.GROUP, 2, 10);
 
         assertNotNull(result);
         assertEquals(1, result.getList().size());
@@ -335,15 +336,15 @@ class SessionMemoryESClientTest {
 
         Query query = request.query();
         assertTrue(query.isBool(), "应为 bool 查询");
-        assertNotNull(query.bool().must());
-        assertEquals(2, query.bool().must().size(), "bool 查询应包含 2 个 must 条件");
+        assertNotNull(query.bool().filter());
+        assertEquals(2, query.bool().filter().size(), "bool 查询应包含 2 个 filter 条件");
 
-        Query termSession = query.bool().must().get(0);
+        Query termSession = query.bool().filter().get(0);
         assertTrue(termSession.isTerm(), "第1个条件应为 term 查询");
         assertEquals("sessionId", termSession.term().field());
         assertEquals("100", termSession.term().value().stringValue());
 
-        Query termType = query.bool().must().get(1);
+        Query termType = query.bool().filter().get(1);
         assertTrue(termType.isTerm(), "第2个条件应为 term 查询");
         assertEquals("aggregationType", termType.term().field());
         assertEquals("GROUP", termType.term().value().stringValue());
@@ -381,7 +382,7 @@ class SessionMemoryESClientTest {
         when(elasticsearchClient.search(any(Function.class), eq(SessionMemoryDocument.class)))
                 .thenReturn(searchResponse);
 
-        PageResult<SessionMemoryDocument> result = client.queryBySessionId("100", AggregationType.DAILY, 1, 20);
+        PageResult<SessionMemoryDocument> result = client.queryBySessionId("100", null, AggregationType.DAILY, 1, 20);
 
         assertEquals(1, result.getList().size(), "source()==null 的命中应被过滤");
         assertSame(doc, result.getList().get(0));
@@ -402,7 +403,7 @@ class SessionMemoryESClientTest {
         when(elasticsearchClient.search(any(Function.class), eq(SessionMemoryDocument.class)))
                 .thenReturn(searchResponse);
 
-        PageResult<SessionMemoryDocument> result = client.queryBySessionId("100", AggregationType.GROUP, 1, 20);
+        PageResult<SessionMemoryDocument> result = client.queryBySessionId("100", null, AggregationType.GROUP, 1, 20);
 
         assertNotNull(result.getList());
         assertTrue(result.getList().isEmpty());
@@ -423,7 +424,7 @@ class SessionMemoryESClientTest {
         when(elasticsearchClient.search(any(Function.class), eq(SessionMemoryDocument.class)))
                 .thenReturn(searchResponse);
 
-        PageResult<SessionMemoryDocument> result = client.queryBySessionId("100", AggregationType.DAILY, 0, 0);
+        PageResult<SessionMemoryDocument> result = client.queryBySessionId("100", null, AggregationType.DAILY, 0, 0);
 
         assertEquals(1, result.getPage(), "page 至少为 1");
         assertEquals(1, result.getSize(), "size 至少为 1");
@@ -451,7 +452,7 @@ class SessionMemoryESClientTest {
         when(elasticsearchClient.search(any(Function.class), eq(SessionMemoryDocument.class)))
                 .thenReturn(searchResponse);
 
-        PageResult<SessionMemoryDocument> result = client.queryBySessionId("100", AggregationType.GROUP, -5, -2);
+        PageResult<SessionMemoryDocument> result = client.queryBySessionId("100", null, AggregationType.GROUP, -5, -2);
 
         assertEquals(1, result.getPage());
         assertEquals(1, result.getSize());
@@ -480,7 +481,7 @@ class SessionMemoryESClientTest {
         when(elasticsearchClient.search(any(Function.class), eq(SessionMemoryDocument.class)))
                 .thenReturn(searchResponse);
 
-        client.queryBySessionId("100", AggregationType.GROUP, 1, 20);
+        client.queryBySessionId("100", null, AggregationType.GROUP, 1, 20);
 
         verify(indicesClient).create(any(Function.class));
         verify(elasticsearchClient).search(any(Function.class), eq(SessionMemoryDocument.class));
@@ -503,7 +504,7 @@ class SessionMemoryESClientTest {
         when(elasticsearchClient.search(any(Function.class), eq(SessionMemoryDocument.class)))
                 .thenReturn(searchResponse);
 
-        List<SessionMemoryDocument> result = client.vectorSearch("100", "GROUP", 1000L, 2000L,
+        List<SessionMemoryDocument> result = client.vectorSearch("100", null, "GROUP", 1000L, 2000L,
                 List.of(0.1f, 0.2f), 5);
 
         assertEquals(1, result.size());
@@ -541,7 +542,7 @@ class SessionMemoryESClientTest {
         when(elasticsearchClient.search(any(Function.class), eq(SessionMemoryDocument.class)))
                 .thenReturn(searchResponse);
 
-        client.vectorSearch("100", null, null, null, List.of(0.1f), 20);
+        client.vectorSearch("100", null, null, null, null, List.of(0.1f), 20);
 
         @SuppressWarnings("unchecked")
         ArgumentCaptor<Function<SearchRequest.Builder, ObjectBuilder<SearchRequest>>> captor =
@@ -563,7 +564,7 @@ class SessionMemoryESClientTest {
                 .thenThrow(new IOException("boom"));
 
         IllegalStateException ex = assertThrows(IllegalStateException.class,
-                () -> client.vectorSearch("100", null, null, null, List.of(0.1f), 5));
+                () -> client.vectorSearch("100", null, null, null, null, List.of(0.1f), 5));
         assertTrue(ex.getMessage().contains(SessionMemoryESClient.INDEX_NAME));
     }
 
@@ -584,7 +585,7 @@ class SessionMemoryESClientTest {
         when(elasticsearchClient.search(any(Function.class), eq(SessionMemoryDocument.class)))
                 .thenReturn(searchResponse);
 
-        List<SessionMemoryDocument> result = client.fullTextSearch("100", "DAILY", 1000L, 2000L, "关键字", 10);
+        List<SessionMemoryDocument> result = client.fullTextSearch("100", null, "DAILY", 1000L, 2000L, "关键字", 10);
 
         assertEquals(1, result.size());
         assertSame(doc, result.get(0));
@@ -622,7 +623,7 @@ class SessionMemoryESClientTest {
         when(elasticsearchClient.search(any(Function.class), eq(SessionMemoryDocument.class)))
                 .thenReturn(searchResponse);
 
-        client.fullTextSearch("100", null, null, null, "q", 5);
+        client.fullTextSearch("100", null, null, null, null, "q", 5);
 
         @SuppressWarnings("unchecked")
         ArgumentCaptor<Function<SearchRequest.Builder, ObjectBuilder<SearchRequest>>> captor =
@@ -641,7 +642,7 @@ class SessionMemoryESClientTest {
                 .thenThrow(new IOException("boom"));
 
         IllegalStateException ex = assertThrows(IllegalStateException.class,
-                () -> client.fullTextSearch("100", null, null, null, "q", 5));
+                () -> client.fullTextSearch("100", null, null, null, null, "q", 5));
         assertTrue(ex.getMessage().contains(SessionMemoryESClient.INDEX_NAME));
     }
 
@@ -688,7 +689,7 @@ class SessionMemoryESClientTest {
         when(elasticsearchClient.search(any(Function.class), eq(SessionMemoryDocument.class)))
                 .thenReturn(vectorResp, fullResp);
 
-        List<SessionMemoryDocument> result = client.hybridSearch("100", null, null, null,
+        List<SessionMemoryDocument> result = client.hybridSearch("100", null, null, null, null,
                 List.of(0.1f), "q", 5);
 
         // 向量返回 A、B，全文返回 A、C，去重后为 A、B、C

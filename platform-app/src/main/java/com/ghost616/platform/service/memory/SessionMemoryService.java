@@ -1,6 +1,8 @@
 package com.ghost616.platform.service.memory;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.ghost616.agentbase.core.ThreadVariableHandler;
+import com.ghost616.agentbase.core.ThreadVariableWrapper;
 import com.ghost616.agentbase.dto.model.ChatRequest;
 import com.ghost616.agentbase.dto.model.ChatResponse;
 import com.ghost616.agentbase.dto.model.EmbeddingRequest;
@@ -22,6 +24,7 @@ import com.ghost616.platform.repository.MessageMapper;
 import com.ghost616.platform.repository.ModelConfigMapper;
 import com.ghost616.platform.repository.SessionMapper;
 import com.ghost616.platform.service.search.SessionMemoryESClient;
+import com.ghost616.platform.session.UserContext;
 import com.ghost616.platform.util.IdConverter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -79,6 +82,7 @@ public class SessionMemoryService {
     private final ModelConfigMapper modelConfigMapper;
     private final ModelInvokerManager modelInvokerManager;
     private final SessionMemoryESClient sessionMemoryESClient;
+    private final ThreadVariableHandler threadVariableHandler;
 
     /** 聚合文本重生成状态缓存（key=sessionId） */
     private final Map<Long, MemoryRegenerateStatusDTO> regenerateStatusMap = new ConcurrentHashMap<>();
@@ -126,7 +130,17 @@ public class SessionMemoryService {
                 .status("RUNNING")
                 .build();
         regenerateStatusMap.put(sessionId, status);
-        CompletableFuture.runAsync(() -> doRegenerateSummary(session, status, startSeq, endSeq, prompt));
+        ThreadVariableWrapper threadVariableWrapper = threadVariableHandler.wrap();
+        CompletableFuture.runAsync(() -> {
+            if (threadVariableWrapper != null) {
+                threadVariableWrapper.apply();
+            }
+            try {
+                doRegenerateSummary(session, status, startSeq, endSeq, prompt);
+            } finally {
+                UserContext.clear();
+            }
+        });
         return status;
     }
 
@@ -250,7 +264,17 @@ public class SessionMemoryService {
         if (!Boolean.TRUE.equals(agentConfig.getMemoryEnabled())) {
             throw new BusinessException(ErrorCode.AGENT_MEMORY_NOT_ENABLED);
         }
-        CompletableFuture.runAsync(() -> processSessionWithRetry(session, agentConfig));
+        ThreadVariableWrapper threadVariableWrapper = threadVariableHandler.wrap();
+        CompletableFuture.runAsync(() -> {
+            if (threadVariableWrapper != null) {
+                threadVariableWrapper.apply();
+            }
+            try {
+                processSessionWithRetry(session, agentConfig);
+            } finally {
+                UserContext.clear();
+            }
+        });
     }
 
     private void processSessionWithRetry(Session session, AgentConfig agentConfig) {
@@ -312,7 +336,7 @@ public class SessionMemoryService {
         }
 
         List<SessionMemoryDocument> documents = buildMemoryDocuments(
-                session.getId(), newMessages, llmInvoker, embedInvoker, agentConfig,
+                session.getId(), session.getUserId(), newMessages, llmInvoker, embedInvoker, agentConfig,
                 AggregationType.GROUP, null, null);
         if (documents.isEmpty()) {
             return;
@@ -354,7 +378,8 @@ public class SessionMemoryService {
         }
 
         SessionMemoryDocument document = buildDailyMemoryDocument(
-                session.getId(), dailyMessages, llmInvoker, embedInvoker, agentConfig, startTime, endTime);
+                session.getId(), session.getUserId(), dailyMessages, llmInvoker, embedInvoker, agentConfig,
+                startTime, endTime);
         if (document == null) {
             return;
         }
@@ -474,7 +499,7 @@ public class SessionMemoryService {
         );
     }
 
-    private List<SessionMemoryDocument> buildMemoryDocuments(Long sessionId, List<Message> messages,
+    private List<SessionMemoryDocument> buildMemoryDocuments(Long sessionId, Long userId, List<Message> messages,
                                                              ModelInvoker llmInvoker, ModelInvoker embedInvoker,
                                                              AgentConfig agentConfig, AggregationType aggregationType,
                                                              Long windowStartTime, Long windowEndTime) {
@@ -517,6 +542,7 @@ public class SessionMemoryService {
             }
             documents.add(SessionMemoryDocument.builder()
                     .sessionId(IdConverter.toString(sessionId))
+                    .userId(userId)
                     .aggregationType(aggregationType)
                     .aggregationStartSeq(topicGroup.get(0).startSeq())
                     .aggregationEndSeq(topicGroup.get(topicGroup.size() - 1).endSeq())
@@ -537,7 +563,7 @@ public class SessionMemoryService {
      *
      * @return 生成的文档，若全量文本/摘要/向量为空返回 null
      */
-    private SessionMemoryDocument buildDailyMemoryDocument(Long sessionId, List<Message> messages,
+    private SessionMemoryDocument buildDailyMemoryDocument(Long sessionId, Long userId, List<Message> messages,
                                                            ModelInvoker llmInvoker, ModelInvoker embedInvoker,
                                                            AgentConfig agentConfig, long startTime, long endTime) {
         String fullContent = extractAllContent(messages);
@@ -554,6 +580,7 @@ public class SessionMemoryService {
         }
         return SessionMemoryDocument.builder()
                 .sessionId(IdConverter.toString(sessionId))
+                .userId(userId)
                 .aggregationType(AggregationType.DAILY)
                 .aggregationStartSeq(messages.get(0).getSequenceNum())
                 .aggregationEndSeq(messages.get(messages.size() - 1).getSequenceNum())

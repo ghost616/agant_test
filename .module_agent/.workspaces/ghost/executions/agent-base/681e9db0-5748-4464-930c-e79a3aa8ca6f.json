@@ -1,0 +1,16 @@
+[
+  {
+    "plan_id": "plan_ad76438c-3e59-40e2-960b-22b2280d5993",
+    "plan": "新增线程变量传播双接口并接入异步执行点",
+    "modified_files": [
+      "agent-base/src/main/java/com/ghost616/agentbase/core/ThreadVariableHandler.java",
+      "agent-base/src/main/java/com/ghost616/agentbase/core/ThreadVariableWrapper.java",
+      "agent-base/src/main/java/com/ghost616/agentbase/core/AgentComponentRegistry.java",
+      "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ToolExecutionService.java",
+      "agent-base/src/test/java/com/ghost616/agentbase/core/AgentComponentRegistryTest.java",
+      "agent-base/src/test/java/com/ghost616/agentbase/service/agent/ToolExecutionServiceTest.java"
+    ],
+    "summary": "执行总结：本轮完成线程变量传播双接口与异步执行点接入，共修改 6 个文件：\n1. 新建 core/ThreadVariableHandler.java 接口，唯一方法 ThreadVariableWrapper wrap()，在提交任务的线程捕获当前线程变量；\n2. 新建 core/ThreadVariableWrapper.java 接口，唯一方法 void apply()，在异步线程将捕获的线程变量赋值到当前线程；\n3. AgentComponentRegistry 新增 threadVariableHandler 字段（@Setter）与 getThreadVariableHandler() getter（参照 messageSender/agentLog 可选模式直接返回、不抛 requireInitialized 异常），供外部集成者注入；\n4. ToolExecutionService.executeTool 异步执行点（CompletableFuture.supplyAsync）接入：提交任务前经 registry.getThreadVariableHandler() 获取 handler（未注入为 null），非 null 时调用 wrap() 获取 wrapper 传入异步线程，异步线程开始执行时调用 apply() 恢复线程变量；\n5. 测试：AgentComponentRegistryTest 新增 2 个用例（getter 默认 null、setter 生效）；ToolExecutionServiceTest 新增 2 个用例（注入 handler 时 wrap 提交前捕获 + apply 异步线程内应用、未注入不影响正常执行）；\n6. 元数据：module_definition.json 新增 2 个文件条目并更新 2 个文件说明；current_spec.md 新增\"线程变量传播\"章节并更新 AgentComponentRegistry/ToolExecutionService 章节；change_history.log 追加变更记录。\n\n测试总结：因环境原因无法执行，skip_count=4, passed_count=0, failed_count=0。离朱测试报告：4 项适用测试（编译测试 mvn test-compile、AgentComponentRegistryTest、ToolExecutionServiceTest、agent-base 全量回归）全部因环境阻塞跳过——当前会话沙箱（workspace-write 模式，批准提示禁用，子代理权限固定）禁止创建任何外部进程，mvn.cmd/java.exe/node.exe 等全部返回 \"Access is denied\" 或被静默拦截；JDK/Maven/.m2 仓库/Playwright 均就绪可读，环境本身完备，仅进程执行被拦。离朱已完成替代性静态验证（代码审查）：对全部 6 个涉及文件逐一审查，两个新接口签名与说明一致；AgentComponentRegistry 字段/getter/setter 可空语义正确；ToolExecutionService 在 supplyAsync 提交前 wrap()、异步线程内空安全 apply()；新增 4 个测试用例静态推演逻辑自洽（含 CountDownLatch 异步断言与\"未注入不受影响\"用例）；回归影响评估：既有用例均不设置 handler，新增路径返回 null 无副作用。未发现编译错误、类型不匹配或逻辑矛盾，无失败用例。修复建议：由风后在允许进程执行的沙箱模式（danger-full-access）下重跑，或在 DSH 外执行 mvn -f E:\\test_tool\\agent-base\\pom.xml test-compile / test 验证；无需修改任何源码或测试文件。",
+    "errors": []
+  }
+]

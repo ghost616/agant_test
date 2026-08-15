@@ -1,18 +1,18 @@
 {
   "limu": {
-    "providerID": "deepseek",
+    "providerID": "deepseek-official",
     "modelID": "deepseek-v4-flash"
   },
   "gaotao": {
-    "providerID": "deepseek",
-    "modelID": "deepseek-v4-pro"
+    "providerID": "deepseek-official",
+    "modelID": "deepseek-v4-flash"
   },
   "lizhu": {
-    "providerID": "deepseek",
+    "providerID": "deepseek-official",
     "modelID": "deepseek-v4-flash"
   },
   "kui": {
-    "providerID": "deepseek",
+    "providerID": "deepseek-official",
     "modelID": "deepseek-v4-flash"
   }
 }

@@ -1,4 +1,5 @@
 import { test, expect, Page } from '@playwright/test';
+import { seedAdminLogin } from './utils/seedAuth';
 
 const AGENT_EVAL_ID = 'agent-eval-100';
 
@@ -27,6 +28,10 @@ async function setupMocks(page: Page, opts?: { clearSuccess?: boolean }) {
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: [{ id: 'model-1', name: '测试模型' }] }) });
   });
 }
+
+test.beforeEach(async ({ page }) => {
+  await seedAdminLogin(page);
+});
 
 test.describe('EvaluationList 清空结果', () => {
   test.beforeEach(async ({ page }) => {

@@ -1,0 +1,5 @@
+{
+  "session_id": "8be6a4cb-095d-4465-b510-be59f563cbe3",
+  "content": "## 待测试功能\n\n编译验证 `platform-app` 模块（Java 17 + Spring Boot 3.2.5，多模块 Maven 工程，根 POM 在 E:\\test_tool\\pom.xml）。\n\n### 本次变更\n- 文件：platform-app/src/main/java/com/ghost616/platform/controller/AuthController.java（第 46 行）\n- 变更：`.sameSite(ResponseCookie.SameSite.LAX)` → `.sameSite(\"Lax\")`\n- 原因：Spring Framework 6.1（Spring Boot 3.2.5 使用）已移除 `ResponseCookie.SameSite` 嵌套枚举，需改用 String 参数重载。\n\n### 需验证\n1. 运行 `mvn -f E:\\test_tool\\pom.xml -pl platform-app compile`（或 `-am` 连带依赖模块）编译通过，无编译错误。\n2. 编译产物出现在 platform-app/target/classes 下（com/ghost616/platform/controller/AuthController.class 等）。\n\n注意：本会话沙箱禁止执行外部程序（java/mvn 被拒绝），故交由离朱在具备构建权限的环境中执行编译验证。",
+  "timestamp": "2026-08-15T07:51:48.763Z"
+}

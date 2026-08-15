@@ -11,9 +11,13 @@ import com.ghost616.platform.dto.knowledge.KnowledgeBaseDTO;
 import com.ghost616.platform.dto.knowledge.KnowledgeBaseUpdateRequest;
 import com.ghost616.platform.entity.KnowledgeBase;
 import com.ghost616.platform.entity.KnowledgeFile;
+import com.ghost616.platform.entity.User;
 import com.ghost616.platform.repository.KnowledgeBaseMapper;
 import com.ghost616.platform.repository.KnowledgeFileMapper;
+import com.ghost616.platform.session.UserContext;
+import com.ghost616.platform.session.UserSession;
 import org.apache.ibatis.builder.MapperBuilderAssistant;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -31,6 +35,8 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class KnowledgeBaseServiceImplTest {
 
+    private static final Long CURRENT_USER_ID = 42L;
+
     @Mock
     private KnowledgeBaseMapper knowledgeBaseMapper;
     @Mock
@@ -43,6 +49,15 @@ class KnowledgeBaseServiceImplTest {
         TableInfoHelper.initTableInfo(new MapperBuilderAssistant(new MybatisConfiguration(), ""), KnowledgeBase.class);
         TableInfoHelper.initTableInfo(new MapperBuilderAssistant(new MybatisConfiguration(), ""), KnowledgeFile.class);
         service = new KnowledgeBaseServiceImpl(knowledgeBaseMapper, knowledgeFileMapper);
+        User user = new User();
+        user.setId(CURRENT_USER_ID);
+        UserSession session = new UserSession("session-1", user, System.currentTimeMillis());
+        UserContext.set(session);
+    }
+
+    @AfterEach
+    void tearDown() {
+        UserContext.clear();
     }
 
     private KnowledgeBase entity(Long id, String name, CommonStatus status) {
@@ -286,7 +301,7 @@ class KnowledgeBaseServiceImplTest {
     }
 
     @Test
-    @DisplayName("list() 全 null 无过滤条件")
+    @DisplayName("list() 全 null 时仅保留 user_id 过滤条件")
     void list_全null() {
         when(knowledgeBaseMapper.selectList(any())).thenReturn(List.of());
 
@@ -295,6 +310,8 @@ class KnowledgeBaseServiceImplTest {
         ArgumentCaptor<LambdaQueryWrapper<KnowledgeBase>> captor = ArgumentCaptor.forClass(LambdaQueryWrapper.class);
         verify(knowledgeBaseMapper).selectList(captor.capture());
         String sql = captor.getValue().getSqlSegment();
-        assertFalse(sql != null && sql.contains("WHERE"));
+        assertTrue(sql != null && sql.contains("user_id"), "全 null 时应保留 user_id 过滤条件, 实际: " + sql);
+        assertFalse(sql != null && sql.contains("name"), "不应包含 name 条件: " + sql);
+        assertFalse(sql != null && sql.contains("status"), "不应包含 status 条件: " + sql);
     }
 }

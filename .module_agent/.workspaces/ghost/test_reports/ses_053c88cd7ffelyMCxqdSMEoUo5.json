@@ -1,5 +1,0 @@
-{
-  "lizhu_session_id": "ses_053c88cd7ffelyMCxqdSMEoUo5",
-  "content": "## 测试报告\n\n### 测试结果\n\n| 测试类型 | 结果 |\n|---------|------|\n| 编译测试（mvn compile） | ✅ 通过 |\n| 单元测试（ToolExecutionServiceTest） | ✅ 16 通过 |\n\n### 变更验证\n- `ToolExecutionService.java` — invoker 为 null 时改用 `setDone` 写入 JSON 错误结果，返回 `\"executing\"` 状态 — 编译/测试通过\n\n### 测试更新\n3 个预存测试用例因返回状态从 `\"failed\"` 改为 `\"executing\"` 更新断言\n",
-  "timestamp": "2026-07-29T09:56:07.029Z"
-}

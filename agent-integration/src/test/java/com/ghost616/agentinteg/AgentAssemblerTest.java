@@ -1,6 +1,7 @@
 package com.ghost616.agentinteg;
 
 import com.ghost616.agentbase.core.AgentComponentRegistry;
+import com.ghost616.agentbase.core.ThreadVariableHandler;
 import com.ghost616.agentbase.service.agent.ChatService;
 import com.ghost616.agentbase.service.agent.ToolExecutionService;
 import com.ghost616.agentbase.service.agent.invoker.HookInvoker;
@@ -238,6 +239,33 @@ class AgentAssemblerTest {
         Field cacheField = agentMessageProxy.getClass().getDeclaredField("chatDataCacheManager");
         cacheField.setAccessible(true);
         assertSame(chatDataCacheManager, cacheField.get(agentMessageProxy));
+    }
+
+    // ========== ThreadVariableHandler 注册验证 ==========
+
+    @Test
+    void setThreadVariableHandler_build前调用_build后注册到registry() throws Exception {
+        ThreadVariableHandler handler = mock(ThreadVariableHandler.class);
+        agentAssembler.setThreadVariableHandler(handler);
+        agentAssembler.build();
+
+        assertSame(handler, getRegistry().getThreadVariableHandler());
+    }
+
+    @Test
+    void setThreadVariableHandler未调用_build后registry为null() throws Exception {
+        agentAssembler.build();
+
+        assertNull(getRegistry().getThreadVariableHandler());
+    }
+
+    @Test
+    void setThreadVariableHandler_build后调用_不影响已建registry() throws Exception {
+        agentAssembler.build();
+        ThreadVariableHandler handler = mock(ThreadVariableHandler.class);
+        agentAssembler.setThreadVariableHandler(handler);
+
+        assertNull(getRegistry().getThreadVariableHandler());
     }
 
     private AgentComponentRegistry getRegistry() throws Exception {

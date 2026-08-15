@@ -1,4 +1,5 @@
 import { test, expect, Page } from '@playwright/test';
+import { seedAdminLogin } from './utils/seedAuth';
 
 const AGENT_ID = 'agent-100';
 
@@ -161,6 +162,10 @@ function vectorModelFormItem(page: Page) {
 function vectorModelSelect(page: Page) {
   return vectorModelFormItem(page).locator('.ant-select');
 }
+
+test.beforeEach(async ({ page }) => {
+  await seedAdminLogin(page);
+});
 
 test.describe('智能体管理页 - 向量模型', () => {
   test.setTimeout(180000);

@@ -2,5 +2,7 @@
   "src/main/java/com/ghost616/platform/dto/skill/SkillCreateRequest.java": "5807d9b2c7149d20b0f39cb88f0d5b67",
   "src/main/java/com/ghost616/platform/dto/skill/SkillUpdateRequest.java": "573a666be20c8a8b153c883b63f6adfe",
   "src/main/java/com/ghost616/platform/controller/SkillConfigController.java": "6b8da8eadbbad35760afff3e2f8f238c",
-  "src/main/java/com/ghost616/platform/dto/skill/SkillConfigDTO.java": "5eeb8b014ca1121248b77a99ed5caca7"
+  "src/main/java/com/ghost616/platform/dto/skill/SkillConfigDTO.java": "5eeb8b014ca1121248b77a99ed5caca7",
+  "platform-app/src/main/java/com/ghost616/platform/service/skill/SkillConfigServiceImpl.java": "24e0131720ab468c8a2e0ab7859c1807",
+  "platform-app/src/test/java/com/ghost616/platform/service/skill/SkillConfigServiceImplTest.java": "c80ba29fa001bb9cbdc64d8230be027e"
 }

@@ -1,4 +1,5 @@
 import { test, expect, Page } from '@playwright/test';
+import { seedAdminLogin } from './utils/seedAuth';
 
 const LONG_DATA = JSON.stringify({ message: '这是一条非常长的日志内容，用于触发展开按钮'.repeat(20) });
 
@@ -42,6 +43,10 @@ async function setupMocks(page: Page) {
     });
   });
 }
+
+test.beforeEach(async ({ page }) => {
+  await seedAdminLogin(page);
+});
 
 test.describe('AgentLogList 运行日志页面', () => {
   test.beforeEach(async ({ page }) => {

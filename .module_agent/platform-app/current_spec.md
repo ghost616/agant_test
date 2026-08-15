@@ -219,3 +219,29 @@ platform-app 模块包含以下功能：
 - 批量消息序号查询：MemoryQueryProviderImpl.getMessageSeqsByRole 签名改为 getMessageSeqsByRole(String sessionId, List<SeqRange> ranges)（SeqRange 为 agent-integration memory 包 record，含 startSeq/endSeq）；实现用 MyBatis-Plus LambdaQueryWrapper 一次 SQL 查询（eq sessionId、eq rollback=false、.and 内对每个区间 OR 合并 ge(sequenceNum,startSeq) 且 le(sequenceNum,endSeq) 条件、orderByAsc sequenceNum），查询结果按 role（user/tool/assistant）分类并用 LinkedHashSet 去重后返回 MessageSeqByRole；sessionId 为 null/空白或 ranges 为空时返回空三列表
 - 历史消息查询 Provider（HistoryMessageQueryProviderImpl，@Component）：实现 agent-integration 的 HistoryMessageQueryProvider 接口，供 HistoryQueryTool（default_tool_history_query）使用。getMessagesBySeqs 用 MessageMapper 按 sessionId 且 sequenceNum in seqs 查询有效消息（eq rollback=false、in sequenceNum、orderByAsc sequenceNum），用 MessageToolCallMapper 按 messageId 查询工具调用记录组装 HistoryMessageItem：assistant 消息的工具调用列表（type=function 的 toolCallId/toolCallName/toolCallArguments）、tool 消息的工具结果（按 message.toolCallId 或 type=tool_result 记录匹配，toolCallId/toolCallName，content 为消息内容）；includeReasoning=false 时不返回 reasoning。注入 MessageMapper/MessageToolCallMapper 依赖
 - DefaultToolDataProvider 历史查询工具自动注入：getSessionToolIds 在 session 对应 agent 的 memoryEnabled=true 时同时注入 default_tool_memory_search 与 default_tool_history_query 工具（均 SessionAuthType.ALL）；getToolById/getCustomInvoker 支持历史查询工具名（getHistoryToolConfig 返回 HistoryQueryTool.createToolConfig() 并设置 id、createHistoryTool 通过 ObjectProvider 获取 HistoryMessageQueryProvider 构造 HistoryQueryTool 实例）；新增注入 ObjectProvider&lt;HistoryMessageQueryProvider&gt; 依赖
+## 数据用户隔离与线程变量传播
+
+## 数据用户隔离与线程变量传播
+
+- 线程变量传播基础设施（agent-base 侧）：ThreadVariableHandler/ThreadVariableWrapper 接口位于 agent-base.core；platform-app 的 UserContextThreadVariableHandler（com.ghost616.platform.session）实现该接口，wrap() 捕获当前线程 UserContext 中的 UserSession，apply() 恢复（捕获为 null 时清空目标线程残留上下文）；AgentContextConfiguration.agentAssembler() 注入该实现并在构建 AgentAssembler 后调用 setThreadVariableHandler 注册到 AgentComponentRegistry，供 agent-base ToolExecutionService 异步工具执行（CompletableFuture.supplyAsync 提交前 wrap、异步线程 apply）使用
+- 异步执行点上下文传播（platform-app 侧）：
+  - SessionMemoryService：regenerateSummary/triggerSessionMemory 的 CompletableFuture.runAsync 提交前通过注入的 ThreadVariableHandler wrap() 捕获用户上下文，异步 lambda 内 apply() 恢复、finally 中 UserContext.clear() 清理
+  - AsyncEvaluationExecutor：generateResultAsync/executeAsync 两个 @Async 方法新增 ThreadVariableWrapper 参数，方法入口 apply() 恢复 UserContext，整体 try/finally 在 finally 清理；EvaluationExecutionService 提交异步任务前通过注入的 ThreadVariableHandler wrap() 捕获并传入
+  - KnowledgePublishService：publishFile 签名改为 (Long fileId, ThreadVariableWrapper)，方法入口 apply()、finally 清理；调用方 KnowledgeFileController.publish 与 rebuildKnowledgeBase 在提交前 wrap() 捕获传入
+- 业务数据用户隔离（写入侧，create/新增方法从 UserContext 获取当前 userId 填充 user_id）：
+  - message：DefaultMessageDataProvider.saveMessage 填充 Message.userId（无上下文返回 null 留空）
+  - agent_log：DatabaseAgentLog.addLog 填充 AgentLogEntity.userId（无上下文返回 null 留空）
+  - evaluation：EvaluationServiceImpl.create 填充 Evaluation.userId 与基准 Session.userId
+  - evaluation_result：EvaluationResultGenerateService.generate 填充 EvaluationResult.userId（无上下文返回 null）
+  - agent_evaluation：AgentEvaluationServiceImpl.create 填充 AgentEvaluation.userId
+  - knowledge_base：KnowledgeBaseServiceImpl.create 填充 KnowledgeBase.userId
+  - knowledge_file：KnowledgeFileServiceImpl.create 填充 KnowledgeFile.userId
+  - memory：SessionMemoryService.buildMemoryDocuments/buildDailyMemoryDocument 填充记忆文档 userId（取会话属主 session.getUserId()）；SessionMemoryDocument 新增 userId 字段，SessionMemoryESClient.createIndex mapping 新增 userId keyword
+- 业务数据用户隔离（查询/列表侧，按当前 userId 过滤，未登录抛 USER_NOT_LOGIN）：
+  - message：MessageServiceImpl.getAllMessages/getMessagesBySeqRange 追加 eq(Message::getUserId, currentUserId)
+  - agent_log：AgentLogServiceImpl.list 追加 eq(user_id)，sessionName 模糊搜索限定当前用户会话（Session 查询追加 eq userId）
+  - evaluation：list 按 user_id 过滤；getById/update/delete/clearResults/getResultById/deleteResult 属主校验（非本人数据按不存在处理）；listResults/clearResults 的 EvaluationResult 查询按 user_id 过滤；name 唯一性校验按 user_id 限定
+  - agent_evaluation：list 按 user_id 过滤；getById/update/delete 属主校验；name 唯一性校验按 user_id 限定
+  - knowledge_base：list 按 user_id 过滤；getById/update/delete/toggleStatus 属主校验；name 唯一性校验按 user_id 限定
+  - knowledge_file：list 按 user_id 过滤；getById/create（含所属知识库属主校验）/update/delete/toggleStatus/getFileContent/updateFileContent 属主校验
+  - memory：MemoryQueryProviderImpl.getMemories 将当前用户 userId 传入 SessionMemoryESClient 搜索按 userId 过滤（无上下文为 null 不追加）；getMessageSeqsByRole 在有用户上下文时按 Message.user_id eq 过滤；SessionController GET /api/sessions/{id}/memory 分页查询按当前登录用户 userId 过滤记忆文档

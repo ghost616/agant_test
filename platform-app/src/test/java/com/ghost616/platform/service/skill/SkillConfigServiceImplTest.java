@@ -4,12 +4,17 @@ import com.ghost616.agentbase.dto.skill.SkillConfigDTO;
 import com.ghost616.agentbase.enums.CommonStatus;
 import com.ghost616.platform.entity.SkillConfig;
 import com.ghost616.platform.entity.SkillTool;
+import com.ghost616.platform.entity.User;
 import com.ghost616.platform.repository.SkillConfigMapper;
 import com.ghost616.platform.repository.SkillToolMapper;
 import com.ghost616.platform.repository.ToolConfigMapper;
+import com.ghost616.platform.session.UserContext;
+import com.ghost616.platform.session.UserSession;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -23,6 +28,8 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class SkillConfigServiceImplTest {
 
+    private static final Long CURRENT_USER_ID = 42L;
+
     @Mock
     private SkillConfigMapper skillConfigMapper;
     @Mock
@@ -35,6 +42,15 @@ class SkillConfigServiceImplTest {
     @BeforeEach
     void setUp() {
         service = new SkillConfigServiceImpl(skillConfigMapper, skillToolMapper, toolConfigMapper);
+        User user = new User();
+        user.setId(CURRENT_USER_ID);
+        UserSession session = new UserSession("session-1", user, System.currentTimeMillis());
+        UserContext.set(session);
+    }
+
+    @AfterEach
+    void tearDown() {
+        UserContext.clear();
     }
 
     private SkillConfig createSkill(Long id, String name) {
@@ -63,6 +79,7 @@ class SkillConfigServiceImplTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void list_shouldReturnDTOs() {
         SkillConfig sc1 = createSkill(1L, "skill_1");
         SkillConfig sc2 = createSkill(2L, "skill_2");
@@ -74,6 +91,11 @@ class SkillConfigServiceImplTest {
         assertEquals(2, dtos.size());
         assertNull(dtos.get(0).getSessionAuth());
         assertNull(dtos.get(1).getSessionAuth());
+
+        ArgumentCaptor<com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<SkillConfig>> wrapperCaptor =
+                ArgumentCaptor.forClass(com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper.class);
+        verify(skillConfigMapper).selectList(wrapperCaptor.capture());
+        assertTrue(wrapperCaptor.getValue().getParamNameValuePairs().containsValue(CURRENT_USER_ID));
     }
 
     @Test
@@ -98,6 +120,10 @@ class SkillConfigServiceImplTest {
         assertNotNull(dto);
         assertNull(dto.getSessionAuth());
         assertEquals("new_skill", dto.getName());
+
+        ArgumentCaptor<SkillConfig> entityCaptor = ArgumentCaptor.forClass(SkillConfig.class);
+        verify(skillConfigMapper).insert(entityCaptor.capture());
+        assertEquals(CURRENT_USER_ID, entityCaptor.getValue().getUserId());
     }
 
     @Test

@@ -1,4 +1,5 @@
 import { test, expect, Page } from '@playwright/test';
+import { seedAdminLogin } from './utils/seedAuth';
 
 const MOCK_SESSIONS = [
   {
@@ -216,6 +217,10 @@ async function setupMocks(page: Page) {
     });
   });
 }
+
+test.beforeEach(async ({ page }) => {
+  await seedAdminLogin(page);
+});
 
 test.describe('记忆修改 MemoryList 页面', () => {
   test.describe.configure({ timeout: 120000 });
