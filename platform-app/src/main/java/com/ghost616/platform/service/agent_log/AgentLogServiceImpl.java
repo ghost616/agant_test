@@ -15,6 +15,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -36,8 +37,8 @@ public class AgentLogServiceImpl implements AgentLogService {
     private final SessionMapper sessionMapper;
 
     @Override
-    public PageResult<AgentLogDTO> list(Long sessionId, String sessionName, String conversationId, String logType,
-                                        String logLevel, int page, int size) {
+    public PageResult<AgentLogDTO> list(Long sessionId, Long rootSessionId, String sessionName, String conversationId,
+                                        String logType, String logLevel, int page, int size) {
         int current = page > 0 ? page : DEFAULT_PAGE;
         int sizeParam = size > 0 ? size : DEFAULT_SIZE;
         Long userId = UserContextUtil.requireUserId();
@@ -47,10 +48,18 @@ public class AgentLogServiceImpl implements AgentLogService {
             return new PageResult<>(List.of(), 0, current, sizeParam);
         }
 
+        Set<Long> rootSessionIds = resolveSessionIdsByRootSession(rootSessionId, userId);
+        if (rootSessionId != null && rootSessionIds.isEmpty()) {
+            return new PageResult<>(List.of(), 0, current, sizeParam);
+        }
+
         LambdaQueryWrapper<AgentLogEntity> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(AgentLogEntity::getUserId, userId);
         if (sessionId != null) {
             wrapper.eq(AgentLogEntity::getSessionId, sessionId);
+        }
+        if (rootSessionId != null) {
+            wrapper.in(AgentLogEntity::getSessionId, rootSessionIds);
         }
         if (StringUtils.isNotBlank(sessionName)) {
             wrapper.in(AgentLogEntity::getSessionId, sessionIds);
@@ -70,11 +79,36 @@ public class AgentLogServiceImpl implements AgentLogService {
         agentLogMapper.selectPage(queryPage, wrapper);
 
         List<AgentLogEntity> records = queryPage.getRecords();
-        Map<Long, String> sessionNameMap = loadSessionNames(records);
+        Map<Long, Session> sessionMap = loadSessions(records);
         List<AgentLogDTO> dtos = records.stream()
-                .map(entity -> toDTO(entity, sessionNameMap))
+                .map(entity -> toDTO(entity, sessionMap))
                 .toList();
         return PageResult.of(queryPage, dtos);
+    }
+
+    /**
+     * 解析主会话及其所有子会话的 sessionId 集合（含主会话自身）。
+     * 主会话不存在或不属于当前用户时返回空集合；rootSessionId 为 null 时返回 null（不追加过滤）。
+     */
+    private Set<Long> resolveSessionIdsByRootSession(Long rootSessionId, Long userId) {
+        if (rootSessionId == null) {
+            return null;
+        }
+        Session root = sessionMapper.selectById(rootSessionId);
+        if (root == null || !Objects.equals(root.getUserId(), userId)) {
+            return Set.of();
+        }
+        Set<Long> ids = new HashSet<>();
+        ids.add(rootSessionId);
+
+        LambdaQueryWrapper<Session> childWrapper = new LambdaQueryWrapper<>();
+        childWrapper.eq(Session::getParentSessionId, rootSessionId);
+        childWrapper.eq(Session::getIsChild, true);
+        List<Session> children = sessionMapper.selectList(childWrapper);
+        for (Session child : children) {
+            ids.add(child.getId());
+        }
+        return ids;
     }
 
     private Set<Long> resolveSessionIdsBySessionName(String sessionName, Long userId) {
@@ -98,7 +132,7 @@ public class AgentLogServiceImpl implements AgentLogService {
         agentLogMapper.delete(wrapper);
     }
 
-    private Map<Long, String> loadSessionNames(List<AgentLogEntity> records) {
+    private Map<Long, Session> loadSessions(List<AgentLogEntity> records) {
         Set<Long> sessionIds = records.stream()
                 .map(AgentLogEntity::getSessionId)
                 .filter(Objects::nonNull)
@@ -108,7 +142,7 @@ public class AgentLogServiceImpl implements AgentLogService {
         }
         List<Session> sessions = sessionMapper.selectBatchIds(sessionIds);
         return sessions.stream()
-                .collect(Collectors.toMap(Session::getId, this::resolveSessionName, (a, b) -> a));
+                .collect(Collectors.toMap(Session::getId, s -> s, (a, b) -> a));
     }
 
     private String resolveSessionName(Session session) {
@@ -119,11 +153,13 @@ public class AgentLogServiceImpl implements AgentLogService {
         return title;
     }
 
-    private AgentLogDTO toDTO(AgentLogEntity entity, Map<Long, String> sessionNameMap) {
+    private AgentLogDTO toDTO(AgentLogEntity entity, Map<Long, Session> sessionMap) {
+        Session session = entity.getSessionId() != null ? sessionMap.get(entity.getSessionId()) : null;
         return AgentLogDTO.builder()
                 .id(entity.getId())
                 .sessionId(entity.getSessionId())
-                .sessionName(entity.getSessionId() != null ? sessionNameMap.get(entity.getSessionId()) : null)
+                .sessionName(session != null ? resolveSessionName(session) : null)
+                .isChild(session != null ? session.getIsChild() : null)
                 .conversationId(entity.getConversationId())
                 .logType(entity.getLogType())
                 .logLevel(entity.getLogLevel())

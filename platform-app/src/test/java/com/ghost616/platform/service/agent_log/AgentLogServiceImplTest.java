@@ -86,7 +86,7 @@ class AgentLogServiceImplTest {
     void list_分页参数正确传递并返回PageResult() {
         stubSelectPage();
 
-        PageResult<AgentLogDTO> result = agentLogService.list(null, null, null, null, null, 2, 15);
+        PageResult<AgentLogDTO> result = agentLogService.list(null, null, null, null, null, null, 2, 15);
 
         ArgumentCaptor<Page<AgentLogEntity>> pageCaptor = ArgumentCaptor.forClass(Page.class);
         verify(agentLogMapper).selectPage(pageCaptor.capture(), any(Wrapper.class));
@@ -104,7 +104,7 @@ class AgentLogServiceImplTest {
     void list_非法的page和size使用默认值() {
         stubSelectPage();
 
-        agentLogService.list(null, null, null, null, null, 0, 0);
+        agentLogService.list(null, null, null, null, null, null, 0, 0);
 
         ArgumentCaptor<Page<AgentLogEntity>> pageCaptor = ArgumentCaptor.forClass(Page.class);
         verify(agentLogMapper).selectPage(pageCaptor.capture(), any(Wrapper.class));
@@ -117,7 +117,7 @@ class AgentLogServiceImplTest {
     void list_筛选条件非空时构造对应eq条件() {
         stubSelectPage();
 
-        agentLogService.list(10L, null, "conv-1", "MODEL_CALL", "INFO", 1, 20);
+        agentLogService.list(10L, null, null, "conv-1", "MODEL_CALL", "INFO", 1, 20);
 
         ArgumentCaptor<LambdaQueryWrapper<AgentLogEntity>> wrapperCaptor =
                 ArgumentCaptor.forClass(LambdaQueryWrapper.class);
@@ -133,7 +133,7 @@ class AgentLogServiceImplTest {
     void list_筛选条件为空时不添加对应条件() {
         stubSelectPage();
 
-        agentLogService.list(null, null, null, "  ", null, 1, 20);
+        agentLogService.list(null, null, null, null, "  ", null, 1, 20);
 
         ArgumentCaptor<LambdaQueryWrapper<AgentLogEntity>> wrapperCaptor =
                 ArgumentCaptor.forClass(LambdaQueryWrapper.class);
@@ -160,7 +160,7 @@ class AgentLogServiceImplTest {
         session.setTitle("测试会话");
         when(sessionMapper.selectBatchIds(anyCollection())).thenReturn(List.of(session));
 
-        PageResult<AgentLogDTO> result = agentLogService.list(null, null, null, null, null, 1, 20);
+        PageResult<AgentLogDTO> result = agentLogService.list(null, null, null, null, null, null, 1, 20);
 
         assertEquals(1, result.getList().size());
         assertEquals("测试会话", result.getList().get(0).getSessionName());
@@ -189,7 +189,7 @@ class AgentLogServiceImplTest {
         session2.setTitle("");
         when(sessionMapper.selectBatchIds(anyCollection())).thenReturn(List.of(session1, session2));
 
-        PageResult<AgentLogDTO> result = agentLogService.list(null, null, null, null, null, 1, 20);
+        PageResult<AgentLogDTO> result = agentLogService.list(null, null, null, null, null, null, 1, 20);
 
         assertEquals(2, result.getList().size());
         assertEquals("10", result.getList().get(0).getSessionName());
@@ -211,7 +211,7 @@ class AgentLogServiceImplTest {
         session.setTitle("   ");
         when(sessionMapper.selectBatchIds(anyCollection())).thenReturn(List.of(session));
 
-        PageResult<AgentLogDTO> result = agentLogService.list(null, null, null, null, null, 1, 20);
+        PageResult<AgentLogDTO> result = agentLogService.list(null, null, null, null, null, null, 1, 20);
 
         assertEquals("   ", result.getList().get(0).getSessionName());
     }
@@ -233,7 +233,7 @@ class AgentLogServiceImplTest {
         session.setTitle("测试会话");
         when(sessionMapper.selectBatchIds(anyCollection())).thenReturn(List.of(session));
 
-        PageResult<AgentLogDTO> result = agentLogService.list(null, null, null, null, null, 1, 20);
+        PageResult<AgentLogDTO> result = agentLogService.list(null, null, null, null, null, null, 1, 20);
 
         assertEquals("{\"skill\":\"java\"}", result.getList().get(0).getSessionVariables());
         assertEquals("{\"topic\":\"log\"}", result.getList().get(0).getConversationVariables());
@@ -251,7 +251,7 @@ class AgentLogServiceImplTest {
         });
         when(sessionMapper.selectBatchIds(anyCollection())).thenReturn(List.of());
 
-        PageResult<AgentLogDTO> result = agentLogService.list(null, null, null, null, null, 1, 20);
+        PageResult<AgentLogDTO> result = agentLogService.list(null, null, null, null, null, null, 1, 20);
 
         assertNull(result.getList().get(0).getSessionName());
     }
@@ -266,7 +266,7 @@ class AgentLogServiceImplTest {
             return page;
         });
 
-        PageResult<AgentLogDTO> result = agentLogService.list(null, null, null, null, null, 1, 20);
+        PageResult<AgentLogDTO> result = agentLogService.list(null, null, null, null, null, null, 1, 20);
 
         assertNull(result.getList().get(0).getSessionName());
         verify(sessionMapper, never()).selectBatchIds(anyCollection());
@@ -291,7 +291,7 @@ class AgentLogServiceImplTest {
         });
         when(sessionMapper.selectBatchIds(anyCollection())).thenReturn(List.of(session1));
 
-        PageResult<AgentLogDTO> result = agentLogService.list(null, "测试会话", null, null, null, 1, 20);
+        PageResult<AgentLogDTO> result = agentLogService.list(null, null, "测试会话", null, null, null, 1, 20);
 
         ArgumentCaptor<LambdaQueryWrapper<AgentLogEntity>> wrapperCaptor =
                 ArgumentCaptor.forClass(LambdaQueryWrapper.class);
@@ -312,7 +312,7 @@ class AgentLogServiceImplTest {
     void list_sessionName匹配不到任何会话时返回空分页结果() {
         when(sessionMapper.selectList(any(Wrapper.class))).thenReturn(List.of());
 
-        PageResult<AgentLogDTO> result = agentLogService.list(null, "不存在的会话", null, null, null, 1, 20);
+        PageResult<AgentLogDTO> result = agentLogService.list(null, null, "不存在的会话", null, null, null, 1, 20);
 
         assertTrue(result.getList().isEmpty());
         assertEquals(0, result.getTotal());
@@ -325,9 +325,139 @@ class AgentLogServiceImplTest {
     void list_sessionName为空时不查询session() {
         stubSelectPage();
 
-        agentLogService.list(null, "  ", null, null, null, 1, 20);
+        agentLogService.list(null, null, "  ", null, null, null, 1, 20);
 
         verify(sessionMapper, never()).selectList(any(Wrapper.class));
+    }
+
+    @Test
+    void list_rootSessionId_解析主会话及子会话并按IN过滤() {
+        Session root = new Session();
+        root.setId(10L);
+        root.setUserId(CURRENT_USER_ID);
+        root.setTitle("主会话");
+        Session child = new Session();
+        child.setId(11L);
+        child.setParentSessionId(10L);
+        child.setIsChild(true);
+        child.setTitle("子会话");
+        when(sessionMapper.selectById(10L)).thenReturn(root);
+        when(sessionMapper.selectList(any(Wrapper.class))).thenReturn(List.of(child));
+        stubSelectPage();
+
+        PageResult<AgentLogDTO> result = agentLogService.list(null, 10L, null, null, null, null, 1, 20);
+
+        ArgumentCaptor<LambdaQueryWrapper<AgentLogEntity>> wrapperCaptor =
+                ArgumentCaptor.forClass(LambdaQueryWrapper.class);
+        verify(agentLogMapper).selectPage(any(Page.class), wrapperCaptor.capture());
+        LambdaQueryWrapper<AgentLogEntity> capturedWrapper = wrapperCaptor.getValue();
+        String sqlSegment = capturedWrapper.getSqlSegment();
+        assertTrue(sqlSegment.contains("session_id"), "应包含 session_id 条件: " + sqlSegment);
+        assertTrue(sqlSegment.contains("IN"), "应为 IN 条件: " + sqlSegment);
+        assertTrue(capturedWrapper.getParamNameValuePairs().values().contains(10L),
+                "IN 参数应包含主会话 id 10: " + capturedWrapper.getParamNameValuePairs());
+        assertTrue(capturedWrapper.getParamNameValuePairs().values().contains(11L),
+                "IN 参数应包含子会话 id 11: " + capturedWrapper.getParamNameValuePairs());
+        assertEquals(1, result.getList().size());
+        verify(sessionMapper).selectById(10L);
+    }
+
+    @Test
+    void list_rootSessionId_无子会话时IN集合仅含主会话() {
+        Session root = new Session();
+        root.setId(10L);
+        root.setUserId(CURRENT_USER_ID);
+        root.setTitle("主会话");
+        when(sessionMapper.selectById(10L)).thenReturn(root);
+        when(sessionMapper.selectList(any(Wrapper.class))).thenReturn(List.of());
+        stubSelectPage();
+
+        PageResult<AgentLogDTO> result = agentLogService.list(null, 10L, null, null, null, null, 1, 20);
+
+        ArgumentCaptor<LambdaQueryWrapper<AgentLogEntity>> wrapperCaptor =
+                ArgumentCaptor.forClass(LambdaQueryWrapper.class);
+        verify(agentLogMapper).selectPage(any(Page.class), wrapperCaptor.capture());
+        LambdaQueryWrapper<AgentLogEntity> capturedWrapper = wrapperCaptor.getValue();
+        // 渲染 SQL 片段以填充 paramNameValuePairs（值与参数映射在渲染时生成）
+        capturedWrapper.getSqlSegment();
+        assertTrue(capturedWrapper.getParamNameValuePairs().values().contains(10L),
+                "IN 参数应包含主会话 id 10: " + capturedWrapper.getParamNameValuePairs());
+        assertFalse(capturedWrapper.getParamNameValuePairs().values().contains(11L),
+                "IN 参数不应包含子会话 id 11: " + capturedWrapper.getParamNameValuePairs());
+        assertEquals(1, result.getList().size());
+    }
+
+    @Test
+    void list_rootSessionId_主会话不存在返回空分页结果() {
+        when(sessionMapper.selectById(999L)).thenReturn(null);
+
+        PageResult<AgentLogDTO> result = agentLogService.list(null, 999L, null, null, null, null, 1, 20);
+
+        assertTrue(result.getList().isEmpty());
+        assertEquals(0, result.getTotal());
+        assertEquals(1, result.getPage());
+        assertEquals(20, result.getSize());
+        verify(agentLogMapper, never()).selectPage(any(Page.class), any(Wrapper.class));
+    }
+
+    @Test
+    void list_rootSessionId_主会话不属于当前用户返回空分页结果() {
+        Session other = new Session();
+        other.setId(10L);
+        other.setUserId(999L);
+        when(sessionMapper.selectById(10L)).thenReturn(other);
+
+        PageResult<AgentLogDTO> result = agentLogService.list(null, 10L, null, null, null, null, 1, 20);
+
+        assertTrue(result.getList().isEmpty());
+        verify(agentLogMapper, never()).selectPage(any(Page.class), any(Wrapper.class));
+    }
+
+    @Test
+    void list_DTO根据session表isChild标注主会话或子会话() {
+        when(agentLogMapper.selectPage(any(Page.class), any(Wrapper.class))).thenAnswer(inv -> {
+            Page<AgentLogEntity> page = inv.getArgument(0);
+            page.setRecords(List.of(
+                    buildEntity(1L, 10L, "conv-1", "ROUTE", "INFO",
+                            LocalDateTime.of(2026, 8, 9, 0, 0)),
+                    buildEntity(2L, 11L, "conv-2", "ROUTE", "INFO",
+                            LocalDateTime.of(2026, 8, 9, 0, 0))));
+            page.setTotal(2);
+            return page;
+        });
+        Session main = new Session();
+        main.setId(10L);
+        main.setTitle("主会话");
+        main.setIsChild(false);
+        Session child = new Session();
+        child.setId(11L);
+        child.setTitle("子会话");
+        child.setIsChild(true);
+        when(sessionMapper.selectBatchIds(anyCollection())).thenReturn(List.of(main, child));
+
+        PageResult<AgentLogDTO> result = agentLogService.list(null, null, null, null, null, null, 1, 20);
+
+        assertEquals(2, result.getList().size());
+        assertEquals(Boolean.FALSE, result.getList().get(0).getIsChild());
+        assertEquals(Boolean.TRUE, result.getList().get(1).getIsChild());
+    }
+
+    @Test
+    void list_session不存在时isChild为null() {
+        when(agentLogMapper.selectPage(any(Page.class), any(Wrapper.class))).thenAnswer(inv -> {
+            Page<AgentLogEntity> page = inv.getArgument(0);
+            page.setRecords(List.of(
+                    buildEntity(1L, 999L, "conv-1", "ROUTE", "INFO",
+                            LocalDateTime.of(2026, 8, 9, 0, 0))));
+            page.setTotal(1);
+            return page;
+        });
+        when(sessionMapper.selectBatchIds(anyCollection())).thenReturn(List.of());
+
+        PageResult<AgentLogDTO> result = agentLogService.list(null, null, null, null, null, null, 1, 20);
+
+        assertNull(result.getList().get(0).getSessionName());
+        assertNull(result.getList().get(0).getIsChild());
     }
 
     @Test

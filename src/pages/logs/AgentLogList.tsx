@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { Button, Input, message, Modal, Select, Space, Table, Tag, Typography } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import type { AgentLog } from '../../types/log';
+import type { AgentLog, AgentLogQueryParams } from '../../types/log';
 import { LogLevel, LogType } from '../../types/log';
 import { listAgentLogs } from '../../services/log';
 import useTableScrollY from '../../hooks/useTableScrollY';
@@ -44,6 +45,9 @@ function formatLogData(data: string): string {
 }
 
 function AgentLogList(): JSX.Element {
+  // 从路由参数读取主会话 sessionId，日志查询按该主会话及其子会话过滤
+  const { sessionId } = useParams<{ sessionId: string }>();
+  const scrollY = useTableScrollY(272);
   const [dataSource, setDataSource] = useState<AgentLog[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchName, setSearchName] = useState('');
@@ -60,13 +64,17 @@ function AgentLogList(): JSX.Element {
   const fetchList = useCallback(async () => {
     setLoading(true);
     try {
-      const result = await listAgentLogs({
+      const params: AgentLogQueryParams = {
         sessionName: searchName || undefined,
         logType: filterLogType,
         logLevel: filterLogLevel,
         page,
         size: pageSize,
-      });
+      };
+      if (sessionId) {
+        params.rootSessionId = sessionId;
+      }
+      const result = await listAgentLogs(params);
       setDataSource(result.list);
       setTotal(result.total);
     } catch {
@@ -74,7 +82,7 @@ function AgentLogList(): JSX.Element {
     } finally {
       setLoading(false);
     }
-  }, [searchName, filterLogType, filterLogLevel, page, pageSize]);
+  }, [searchName, filterLogType, filterLogLevel, page, pageSize, sessionId]);
 
   useEffect(() => {
     fetchList();
@@ -130,6 +138,14 @@ function AgentLogList(): JSX.Element {
       width: 160,
       ellipsis: true,
       render: (value?: string, record?: AgentLog) => value || record?.sessionId || '-',
+    },
+    {
+      title: '会话类型',
+      dataIndex: 'isChild',
+      width: 110,
+      render: (value?: boolean) => (
+        <Tag color={value ? 'blue' : 'default'}>{value ? '子会话' : '主会话'}</Tag>
+      ),
     },
     {
       title: '对话ID',
@@ -211,7 +227,7 @@ function AgentLogList(): JSX.Element {
         columns={columns}
         dataSource={dataSource}
         loading={loading}
-        scroll={{ x: 1630, y: useTableScrollY(272) }}
+        scroll={{ x: 1740, y: scrollY }}
         pagination={{
           current: page,
           pageSize,

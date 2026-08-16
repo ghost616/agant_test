@@ -8,6 +8,15 @@ export async function listSessions(agentId?: string): Promise<Session[]> {
   return res.data.data;
 }
 
+/**
+ * 获取当前用户的所有主会话（含评估会话），用于会话日志页，按创建时间倒序。
+ * @returns 主会话列表（isChild 为 null/false，不过滤 isEvaluation）
+ */
+export async function listLogSessions(): Promise<Session[]> {
+  const res = await api.get<ApiResponse<Session[]>>('/sessions/log-sessions');
+  return res.data.data;
+}
+
 export async function createSession(data: CreateSessionParams): Promise<Session> {
   const res = await api.post<ApiResponse<Session>>('/sessions', data);
   return res.data.data;

@@ -59,6 +59,12 @@ public class SessionController {
         return ApiResponse.success(result);
     }
 
+    @GetMapping("/log-sessions")
+    public ApiResponse<List<SessionDTO>> listLogSessions() {
+        List<SessionDTO> result = sessionService.listLogSessions();
+        return ApiResponse.success(result);
+    }
+
     @PostMapping
     public ApiResponse<SessionDTO> createSession(@Valid @RequestBody CreateSessionRequest request) {
         SessionDTO result = sessionService.createSession(

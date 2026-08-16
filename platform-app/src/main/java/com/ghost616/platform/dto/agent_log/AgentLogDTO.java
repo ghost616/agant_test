@@ -27,6 +27,9 @@ public class AgentLogDTO {
     /** 会话名（来自 session 表 title） */
     private String sessionName;
 
+    /** 是否为子会话（来自 session 表 isChild，null 表示主会话） */
+    private Boolean isChild;
+
     private String conversationId;
 
     private String logType;

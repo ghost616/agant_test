@@ -4,7 +4,7 @@ import api from './api';
 
 /**
  * 分页查询智能体日志。
- * @param params 查询参数（会话名/日志类型/日志等级/分页）
+ * @param params 查询参数（会话名/日志类型/日志等级/主会话 rootSessionId/分页）
  * @returns 分页日志结果
  */
 export async function listAgentLogs(

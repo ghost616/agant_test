@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import type { AgentLog } from '../../../types/log';
 
 const mocks = vi.hoisted(() => ({
@@ -43,8 +44,15 @@ function makeLog(overrides: Partial<AgentLog> = {}): AgentLog {
   };
 }
 
-function renderComponent() {
-  return render(<AgentLogList />);
+function renderComponent(entry = '/logs/100') {
+  // 需经 Routes 匹配 /logs/:sessionId，useParams 才能读到路由参数
+  return render(
+    <MemoryRouter initialEntries={[entry]}>
+      <Routes>
+        <Route path="/logs/:sessionId" element={<AgentLogList />} />
+      </Routes>
+    </MemoryRouter>,
+  );
 }
 
 function defaultMockResult(overrides: Partial<AgentLog> = {}) {
@@ -57,7 +65,7 @@ describe('AgentLogList 初始加载与表格渲染', () => {
     mocks.listAgentLogs.mockResolvedValue(defaultMockResult());
   });
 
-  it('初始加载调用 listAgentLogs（page=1, size=20，无筛选）', async () => {
+  it('初始加载调用 listAgentLogs（page=1, size=20，携带路由 rootSessionId）', async () => {
     renderComponent();
 
     await waitFor(() => {
@@ -67,12 +75,13 @@ describe('AgentLogList 初始加载与表格渲染', () => {
       sessionName: undefined,
       logType: undefined,
       logLevel: undefined,
+      rootSessionId: '100',
       page: 1,
       size: 20,
     });
   });
 
-  it('渲染表格列（会话名/对话ID/日志类型/日志等级/日志数据/会话变量/对话变量/创建时间）', async () => {
+  it('渲染表格列（会话名/会话类型/对话ID/日志类型/日志等级/日志数据/会话变量/对话变量/创建时间）', async () => {
     renderComponent();
     await waitFor(() => {
       expect(screen.getAllByText('会话A').length).toBeGreaterThan(0);
@@ -83,6 +92,7 @@ describe('AgentLogList 初始加载与表格渲染', () => {
     ).map((el) => el?.textContent ?? '');
     for (const title of [
       '会话名',
+      '会话类型',
       '对话ID',
       '日志类型',
       '日志等级',
@@ -463,10 +473,62 @@ describe('AgentLogList 筛选与分页', () => {
   });
 });
 
+describe('AgentLogList 会话类型列与 rootSessionId', () => {
+  beforeEach(() => {
+    mocks.listAgentLogs.mockReset();
+    mocks.listAgentLogs.mockResolvedValue(defaultMockResult());
+  });
+
+  it('会话类型列：isChild=true 显示子会话 Tag，false/缺省显示主会话 Tag', async () => {
+    mocks.listAgentLogs.mockResolvedValue({
+      list: [
+        makeLog({ id: '1', sessionId: '100', sessionName: '主会话A', isChild: false }),
+        makeLog({ id: '2', sessionId: '200', sessionName: '子会话B', isChild: true }),
+        makeLog({ id: '3', sessionId: '300', sessionName: '会话C' }),
+      ],
+      total: 3,
+      page: 1,
+      size: 20,
+    });
+    renderComponent();
+    await screen.findByText('主会话A');
+
+    const tags = Array.from(document.querySelectorAll('.ant-table-tbody .ant-tag')).map(
+      (el) => el?.textContent?.trim() ?? '',
+    );
+    expect(tags).toContain('子会话');
+    expect(tags.filter((t) => t === '主会话').length).toBe(2);
+  });
+
+  it('子会话日志的会话名列展示其会话名', async () => {
+    mocks.listAgentLogs.mockResolvedValue({
+      list: [makeLog({ id: '2', sessionId: '200', sessionName: '子会话B', isChild: true })],
+      total: 1,
+      page: 1,
+      size: 20,
+    });
+    renderComponent();
+    await screen.findByText('子会话B');
+    expect(screen.getByText('子会话B')).toBeTruthy();
+  });
+
+  it('从路由参数读取 sessionId 并作为 rootSessionId 传入查询', async () => {
+    renderComponent('/logs/abc-123');
+
+    await waitFor(() => {
+      expect(mocks.listAgentLogs).toHaveBeenCalledTimes(1);
+    });
+    const call = mocks.listAgentLogs.mock.calls[0][0] as { rootSessionId?: string };
+    expect(call.rootSessionId).toBe('abc-123');
+  });
+});
+
 describe('AgentLogList 表格滚动 (useTableScrollY)', () => {
   it('表格 scroll 使用 useTableScrollY 实现固定表头动态高度', () => {
     const source = readFileSync(resolve(__dirname, '../AgentLogList.tsx'), 'utf-8');
     expect(source).toContain("import useTableScrollY from '../../hooks/useTableScrollY'");
-    expect(source).toContain('scroll={{ x: 1630, y: useTableScrollY(272) }}');
+    // hook 在组件顶层调用（React Hooks 规范），JSX 中引用 scrollY
+    expect(source).toContain('const scrollY = useTableScrollY(272);');
+    expect(source).toContain('scroll={{ x: 1740, y: scrollY }}');
   });
 });

@@ -11,6 +11,15 @@ public interface SessionService {
 
     List<SessionDTO> listSessions(Long agentId);
 
+    /**
+     * 返回当前用户的所有主会话（isChild 为 null 或 false），
+     * 不过滤 isEvaluation（含评估会话），按创建时间倒序。
+     * 用于会话日志页等需要展示全部主会话的场景。
+     *
+     * @return 主会话 DTO 列表
+     */
+    List<SessionDTO> listLogSessions();
+
     SessionDTO createSession(Long agentId, Long modelId, String title);
 
     SessionDTO getSession(Long id);

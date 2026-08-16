@@ -36,6 +36,7 @@ import EvaluationList from './pages/evaluations/EvaluationList';
 import EvaluationResultList from './pages/evaluations/EvaluationResultList';
 import EvaluationResultDetail from './pages/evaluations/EvaluationResultDetail';
 import AgentLogList from './pages/logs/AgentLogList';
+import SessionLogList from './pages/logs/SessionLogList';
 import MemoryList from './pages/memory/MemoryList';
 import MemoryDetail from './pages/memory/MemoryDetail';
 import MemoryDocumentDetail from './pages/memory/MemoryDocumentDetail';
@@ -299,7 +300,8 @@ function App() {
             <Route path="/evaluations/:agentEvalId/items" element={<EvaluationList />} />
             <Route path="/evaluations/items/:evaluationId/results" element={<EvaluationResultList />} />
             <Route path="/evaluations/results/:resultId" element={<EvaluationResultDetail />} />
-            <Route path="/logs" element={<AgentLogList />} />
+            <Route path="/logs" element={<SessionLogList />} />
+            <Route path="/logs/:sessionId" element={<AgentLogList />} />
             <Route path="/memory" element={<MemoryList />} />
             <Route path="/memory/:sessionId/:type" element={<MemoryDetail />} />
             <Route path="/memory/:sessionId/:type/:seqRange" element={<MemoryDocumentDetail />} />

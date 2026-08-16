@@ -9,6 +9,7 @@ import com.ghost616.platform.dto.memory.MemoryPromptSaveRequest;
 import com.ghost616.platform.dto.memory.MemoryRegenerateRequest;
 import com.ghost616.platform.dto.memory.MemoryRegenerateStatusDTO;
 import com.ghost616.platform.dto.memory.MemoryUpdateRequest;
+import com.ghost616.platform.dto.session.SessionDTO;
 import com.ghost616.platform.dto.session.SubSessionDataDTO;
 import com.ghost616.platform.enums.AggregationType;
 import com.ghost616.platform.enums.ErrorCode;
@@ -400,6 +401,36 @@ class SessionControllerTest {
 
         assertTrue(response.isSuccess());
         verify(sessionMemoryService).saveAggregationText(100L, "100_GROUP_2_3", "更新后的摘要");
+    }
+
+    @Test
+    void listLogSessions_shouldDelegateAndReturnSessions() {
+        SessionDTO dto = SessionDTO.builder()
+                .id(100L)
+                .agentId(5L)
+                .title("评估会话")
+                .isEvaluation(true)
+                .isChild(false)
+                .build();
+        when(sessionService.listLogSessions()).thenReturn(List.of(dto));
+
+        ApiResponse<List<SessionDTO>> response = controller.listLogSessions();
+
+        assertTrue(response.isSuccess());
+        assertSame(dto, response.getData().get(0));
+        verify(sessionService).listLogSessions();
+    }
+
+    @Test
+    void listLogSessions_shouldReturnEmptyListWhenNoSessions() {
+        when(sessionService.listLogSessions()).thenReturn(List.of());
+
+        ApiResponse<List<SessionDTO>> response = controller.listLogSessions();
+
+        assertTrue(response.isSuccess());
+        assertNotNull(response.getData());
+        assertTrue(response.getData().isEmpty());
+        verify(sessionService).listLogSessions();
     }
 
     private MessageDataProvider.MessageDTO buildMessageDTO(String role, String content, String reasoning,

@@ -6,6 +6,8 @@ export interface Session {
   systemPrompt?: string;
   parentSessionId?: string;
   isChild?: boolean;
+  /** 是否为评估会话（true 表示由评估执行创建的会话）。 */
+  isEvaluation?: boolean;
   thinking?: boolean;
   createTime: string;
   updateTime: string;

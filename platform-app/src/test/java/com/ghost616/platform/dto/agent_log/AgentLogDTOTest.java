@@ -24,6 +24,7 @@ class AgentLogDTOTest {
                 .id(100L)
                 .sessionId(200L)
                 .sessionName("测试会话")
+                .isChild(false)
                 .conversationId("conv-1")
                 .logType("MODEL_CALL")
                 .logLevel("INFO")
@@ -34,11 +35,33 @@ class AgentLogDTOTest {
         assertEquals(100L, dto.getId());
         assertEquals(200L, dto.getSessionId());
         assertEquals("测试会话", dto.getSessionName());
+        assertEquals(Boolean.FALSE, dto.getIsChild());
         assertEquals("conv-1", dto.getConversationId());
         assertEquals("MODEL_CALL", dto.getLogType());
         assertEquals("INFO", dto.getLogLevel());
         assertEquals("{\"k\":1}", dto.getLogData());
         assertEquals(now, dto.getCreateTime());
+    }
+
+    @Test
+    void builder构造_含isChild字段() {
+        AgentLogDTO dto = AgentLogDTO.builder()
+                .id(1L)
+                .sessionId(2L)
+                .isChild(true)
+                .build();
+
+        assertEquals(Boolean.TRUE, dto.getIsChild());
+    }
+
+    @Test
+    void builder构造_isChild默认为null() {
+        AgentLogDTO dto = AgentLogDTO.builder()
+                .id(1L)
+                .sessionId(2L)
+                .build();
+
+        assertNull(dto.getIsChild());
     }
 
     @Test
@@ -81,6 +104,7 @@ class AgentLogDTOTest {
         AgentLogDTO dto = AgentLogDTO.builder()
                 .id(1L)
                 .sessionId(2L)
+                .isChild(true)
                 .sessionVariables("{\"skill\":\"java\"}")
                 .conversationVariables("{\"topic\":\"log\"}")
                 .build();
@@ -88,6 +112,7 @@ class AgentLogDTOTest {
         String json = objectMapper.writeValueAsString(dto);
         assertTrue(json.contains("sessionVariables"), "应包含 sessionVariables: " + json);
         assertTrue(json.contains("conversationVariables"), "应包含 conversationVariables: " + json);
+        assertTrue(json.contains("isChild"), "应包含 isChild: " + json);
     }
 
     @Test

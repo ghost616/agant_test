@@ -31,6 +31,8 @@ export interface AgentLogQueryParams {
   sessionName?: string;
   logType?: string;
   logLevel?: string;
+  /** 主会话 ID，非空时按该主会话及其所有子会话的 sessionId 集合过滤日志。 */
+  rootSessionId?: string;
   page: number;
   size: number;
 }
@@ -47,4 +49,6 @@ export interface AgentLog {
   sessionVariables?: string;
   conversationVariables?: string;
   createTime: string;
+  /** 是否为子会话日志（来自 session 表 isChild，null/undefined 表示主会话）。 */
+  isChild?: boolean;
 }

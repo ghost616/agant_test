@@ -23,13 +23,14 @@ public class AgentLogController {
     @GetMapping
     public ApiResponse<PageResult<AgentLogDTO>> list(
             @RequestParam(required = false) Long sessionId,
+            @RequestParam(required = false) Long rootSessionId,
             @RequestParam(required = false) String sessionName,
             @RequestParam(required = false) String conversationId,
             @RequestParam(required = false) String logType,
             @RequestParam(required = false) String logLevel,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int size) {
-        PageResult<AgentLogDTO> result = agentLogService.list(sessionId, sessionName, conversationId, logType, logLevel, page, size);
+        PageResult<AgentLogDTO> result = agentLogService.list(sessionId, rootSessionId, sessionName, conversationId, logType, logLevel, page, size);
         return ApiResponse.success(result);
     }
 }

@@ -417,6 +417,112 @@ class SessionServiceImplTest {
         assertEquals("older", result.get(1).getTitle());
     }
 
+    // ========== listLogSessions 日志会话查询（含评估会话） ==========
+
+    @Test
+    void listLogSessions_返回所有主会话_含评估会话() {
+        Session normal = new Session();
+        normal.setId(1L);
+        normal.setTitle("normal");
+        normal.setIsEvaluation(false);
+        normal.setIsChild(false);
+
+        Session eval = new Session();
+        eval.setId(2L);
+        eval.setTitle("eval");
+        eval.setIsEvaluation(true);
+        eval.setIsChild(false);
+
+        when(sessionMapper.selectList(any())).thenReturn(List.of(normal, eval));
+
+        List<SessionDTO> result = sessionService.listLogSessions();
+
+        assertEquals(2, result.size());
+        assertFalse(result.get(0).getIsEvaluation());
+        assertTrue(result.get(1).getIsEvaluation());
+    }
+
+    @Test
+    void listLogSessions_不过滤isEvaluation但过滤子会话() {
+        when(sessionMapper.selectList(any())).thenReturn(List.of());
+
+        sessionService.listLogSessions();
+
+        ArgumentCaptor<LambdaQueryWrapper<Session>> captor = ArgumentCaptor.forClass(LambdaQueryWrapper.class);
+        verify(sessionMapper).selectList(captor.capture());
+        LambdaQueryWrapper<Session> wrapper = captor.getValue();
+        String sqlSegment = wrapper.getSqlSegment();
+        assertFalse(sqlSegment.contains("is_evaluation"), "不应包含 is_evaluation 条件: " + sqlSegment);
+        assertTrue(sqlSegment.contains("is_child"), "应包含 is_child 条件: " + sqlSegment);
+    }
+
+    @Test
+    void listLogSessions_查询条件包含当前用户ID过滤() {
+        when(sessionMapper.selectList(any())).thenReturn(List.of());
+
+        sessionService.listLogSessions();
+
+        ArgumentCaptor<LambdaQueryWrapper<Session>> captor = ArgumentCaptor.forClass(LambdaQueryWrapper.class);
+        verify(sessionMapper).selectList(captor.capture());
+        LambdaQueryWrapper<Session> wrapper = captor.getValue();
+        wrapper.getSqlSegment();
+        assertTrue(wrapper.getParamNameValuePairs().containsValue(CURRENT_USER_ID),
+                "查询条件应包含当前用户ID: " + wrapper.getParamNameValuePairs());
+    }
+
+    @Test
+    void listLogSessions_按创建时间倒序() {
+        Session s1 = new Session();
+        s1.setId(1L);
+        s1.setTitle("older");
+        s1.setIsEvaluation(false);
+        s1.setIsChild(false);
+        s1.setCreateTime(LocalDateTime.of(2026, 1, 1, 0, 0));
+
+        Session s2 = new Session();
+        s2.setId(2L);
+        s2.setTitle("newer");
+        s2.setIsEvaluation(true);
+        s2.setIsChild(false);
+        s2.setCreateTime(LocalDateTime.of(2026, 1, 2, 0, 0));
+
+        when(sessionMapper.selectList(any())).thenReturn(List.of(s2, s1));
+
+        List<SessionDTO> result = sessionService.listLogSessions();
+
+        assertEquals(2, result.size());
+        assertEquals("newer", result.get(0).getTitle());
+        assertEquals("older", result.get(1).getTitle());
+    }
+
+    @Test
+    void listLogSessions_DTO映射isChild和parentSessionId字段() {
+        Session main = new Session();
+        main.setId(10L);
+        main.setTitle("主会话");
+        main.setIsChild(false);
+        main.setParentSessionId(null);
+        main.setIsEvaluation(false);
+
+        when(sessionMapper.selectList(any())).thenReturn(List.of(main));
+
+        List<SessionDTO> result = sessionService.listLogSessions();
+
+        assertEquals(1, result.size());
+        assertEquals(Boolean.FALSE, result.get(0).getIsChild());
+        assertNull(result.get(0).getParentSessionId());
+        assertEquals(10L, result.get(0).getId());
+    }
+
+    @Test
+    void listLogSessions_未登录_抛USER_NOT_LOGIN() {
+        UserContext.clear();
+
+        BusinessException ex = assertThrows(BusinessException.class, () -> sessionService.listLogSessions());
+        assertEquals(ErrorCode.USER_NOT_LOGIN, ex.getErrorCode());
+        verify(sessionMapper, never()).selectList(any());
+    }
+
     // ========== getMessages ==========
 
     @Test

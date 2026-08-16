@@ -13,9 +13,14 @@ describe('Session 类型字段', () => {
     expect(source).toContain('isChild?: boolean');
   });
 
-  it('Session 接口应包含 totalTokenUsed?: number 字段', () => {
+  it('Session 接口应包含 isEvaluation?: boolean 字段', () => {
     const source = readFileSync(resolve(__dirname, '../session.ts'), 'utf-8');
-    expect(source).toContain('totalTokenUsed?: number');
+    expect(source).toContain('isEvaluation?: boolean');
+  });
+
+  it('Session 接口应包含 totalTokenUsed?: string 字段', () => {
+    const source = readFileSync(resolve(__dirname, '../session.ts'), 'utf-8');
+    expect(source).toContain('totalTokenUsed?: string');
   });
 
   it('Session 接口应定义在 export interface Session 中', () => {
@@ -25,7 +30,7 @@ describe('Session 类型字段', () => {
     if (sessionMatch) {
       expect(sessionMatch[0]).toContain('parentSessionId?: string');
       expect(sessionMatch[0]).toContain('isChild?: boolean');
-      expect(sessionMatch[0]).toContain('totalTokenUsed?: number');
+      expect(sessionMatch[0]).toContain('totalTokenUsed?: string');
     }
   });
 });

@@ -58,6 +58,17 @@ public class SessionServiceImpl implements SessionService {
     }
 
     @Override
+    public List<SessionDTO> listLogSessions() {
+        LambdaQueryWrapper<Session> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Session::getUserId, UserContextUtil.requireUserId());
+        wrapper.and(w -> w.isNull(Session::getIsChild).or().eq(Session::getIsChild, false));
+        wrapper.orderByDesc(Session::getCreateTime);
+
+        List<Session> entities = sessionMapper.selectList(wrapper);
+        return entities.stream().map(this::toDTO).toList();
+    }
+
+    @Override
     @Transactional
     public SessionDTO createSession(Long agentId, Long modelId, String title) {
         Session entity = new Session();
