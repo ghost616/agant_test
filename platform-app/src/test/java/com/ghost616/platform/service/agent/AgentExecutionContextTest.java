@@ -20,7 +20,6 @@ import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import com.ghost616.agentbase.dto.model.Message;
 import com.ghost616.agentbase.dto.skill.SkillConfigDTO;
 import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
 import com.ghost616.agentbase.service.agent.AgentExecutionContext;
@@ -341,45 +340,44 @@ class AgentExecutionContextTest {
         }
 
         @Test
-        void 正向_mutator_sendUserMessage_调用回调返回Message() {
-            Message expected = Message.builder().role("user").content("hello").build();
+        void 正向_mutator_sendUserMessage_调用回调() {
+            AtomicReference<String> capturedSessionId = new AtomicReference<>();
+            AtomicReference<String> capturedContent = new AtomicReference<>();
             setCallback(new AgentExecutionContext.AgentContextMutator.SendUserMessageCallback() {
                 @Override
-                public Message send(String childSessionId, String content, String modelId, Boolean thinking) {
-                    return expected;
+                public void send(String childSessionId, String content, String modelId, Boolean thinking) {
+                    capturedSessionId.set(childSessionId);
+                    capturedContent.set(content);
                 }
             });
 
-            Message result = mutator.sendUserMessage("1", "hello", "100", null);
-            assertNotNull(result);
-            assertEquals("user", result.getRole());
-            assertEquals("hello", result.getContent());
+            mutator.sendUserMessage("1", "hello", "100", null);
+            assertEquals("1", capturedSessionId.get());
+            assertEquals("hello", capturedContent.get());
         }
 
         @Test
-        void 反向_mutator_sendUserMessage_回调为null返回null() {
-            assertNull(mutator.sendUserMessage("1", "hello", "100", null));
+        void 反向_mutator_sendUserMessage_回调为null不抛异常() {
+            assertDoesNotThrow(() -> mutator.sendUserMessage("1", "hello", "100", null));
         }
 
         @Test
         void 正向_context_sendUserMessage_透传调用mutator() {
-            Message expected = Message.builder().role("user").content("from context").build();
+            AtomicReference<String> capturedSessionId = new AtomicReference<>();
             setCallback(new AgentExecutionContext.AgentContextMutator.SendUserMessageCallback() {
                 @Override
-                public Message send(String childSessionId, String content, String modelId, Boolean thinking) {
-                    return expected;
+                public void send(String childSessionId, String content, String modelId, Boolean thinking) {
+                    capturedSessionId.set(childSessionId);
                 }
             });
 
-            Message result = context.sendUserMessage("2", "from context", "200", null);
-            assertNotNull(result);
-            assertEquals("user", result.getRole());
-            assertEquals("from context", result.getContent());
+            context.sendUserMessage("2", "from context", "200", null);
+            assertEquals("2", capturedSessionId.get());
         }
 
         @Test
-        void 反向_context_sendUserMessage_mutator回调为null返回null() {
-            assertNull(context.sendUserMessage("2", "any", "200", null));
+        void 反向_context_sendUserMessage_mutator回调为null不抛异常() {
+            assertDoesNotThrow(() -> context.sendUserMessage("2", "any", "200", null));
         }
 
         @Test
@@ -390,12 +388,11 @@ class AgentExecutionContextTest {
             AtomicReference<Boolean> capturedThinking = new AtomicReference<>();
             setCallback(new AgentExecutionContext.AgentContextMutator.SendUserMessageCallback() {
                 @Override
-                public Message send(String childSessionId, String content, String modelId, Boolean thinking) {
+                public void send(String childSessionId, String content, String modelId, Boolean thinking) {
                     capturedSessionId.set(childSessionId);
                     capturedContent.set(content);
                     capturedModelId.set(modelId);
                     capturedThinking.set(thinking);
-                    return Message.builder().role("user").content(content).build();
                 }
             });
 

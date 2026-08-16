@@ -2,7 +2,6 @@ package com.ghost616.agentbase.service.agent;
 
 import com.ghost616.agentbase.core.AgentComponentRegistry;
 import com.ghost616.agentbase.dto.model.CustomToolCall;
-import com.ghost616.agentbase.dto.model.Message;
 import com.ghost616.agentbase.dto.model.ToolCall;
 import com.ghost616.agentbase.dto.model.UsageInfo;
 import com.ghost616.agentbase.dto.model.WebSearchCall;
@@ -31,6 +30,7 @@ import com.ghost616.agentbase.service.agent.log.SessionErrorLogData;
 
 import lombok.extern.slf4j.Slf4j;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -265,11 +265,22 @@ public class AgentContextManager {
         return childSessionId;
     }
 
-    private Message sendUserMessage(String parentSessionId, String childSessionId, String content, String modelId, Boolean thinking, String conversationId) {
-        Message result = null;
-        if (agentMessageProxy != null) {
-            result = agentMessageProxy.sendUserMessage(childSessionId, content, modelId, thinking);
+    private void sendUserMessage(String parentSessionId, String childSessionId, String content, String modelId, Boolean thinking, String conversationId) {
+        sessionManager.messageSave().sessionId(childSessionId).role("user").content(content)
+                .conversationId(conversationId).save();
+
+        AgentSessionContext childCtx = cache.get(childSessionId);
+        int sequenceNum = 1;
+        if (childCtx != null) {
+            sequenceNum = childCtx.context().getHistory().size() + 1;
         }
+        addHistoryEntry(childSessionId, new AgentExecutionContext.HistoryEntry(
+                "user", content, null, null,
+                sequenceNum,
+                LocalDateTime.now(),
+                Collections.emptyList(),
+                null, null, null));
+
         addLog(SendMessageLogData.builder()
                 .logLevel(LogLevel.INFO)
                 .sessionId(parentSessionId)
@@ -279,7 +290,6 @@ public class AgentContextManager {
                 .modelId(modelId)
                 .thinking(thinking)
                 .build());
-        return result;
     }
 
     public AgentSessionContext get(String sessionId) {

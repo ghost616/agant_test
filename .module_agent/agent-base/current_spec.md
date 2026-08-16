@@ -112,6 +112,7 @@ AgentContextManager 提供 4 个 public handler 方法供外部系统在收到�
 ### 父子会话变量委托
 injectVariableCallbacks() 方法在子会话上下文中，将 sessionVarPutCallback/sessionVarRemoveCallback 直接指向父会话上下文的 putSessionVariable/removeSessionVariable，实现子会话变量读写直接委托给父会话，不经过 MessageSender。ConversationVariable 同理。
 - AgentExecutionContext.HistoryEntry record 新增 List&lt;ChatChunk.WebSearchCall&gt; webSearchCall 和 List&lt;ChatChunk.CustomToolCall&gt; customToolCall 字段（类型复用 ChatChunk 内部类）；convertMessagesToHistory 通过 toWebSearchCall/toCustomToolCall 私有方法将 MessageDTO 的 List&lt;WebSearchCallData&gt;/List&lt;CustomToolCallData&gt; 转为 ChatChunk List 后传入 HistoryEntry
+sendUserMessage 逻辑改造：AgentExecutionContext.sendUserMessage / AgentContextMutator.sendUserMessage / SendUserMessageCallback.send 返回类型由 Message 改为 void（不再返回模型回复）。AgentContextManager.sendUserMessage 不再调用 agentMessageProxy 执行模型对话，改为通过 sessionManager.messageSave().sessionId(childSessionId).role("user").content(content).conversationId(conversationId).save() 保存 user 消息，并调用 addHistoryEntry(childSessionId, HistoryEntry("user", content, ..., sequenceNum=子会话 context history.size()+1, ...)) 更新子会话缓存 context 的 HistoryEntry（子会话 context 未构建时 addHistoryEntry 自动 no-op，下次 build 从 DB 加载）；保留 SendMessageLogData 日志记录。
 ## ToolExecutionService
 
 工具执行服务，非 Spring 组件。构造函数改为接收 (AgentComponentRegistry, ChatService)，通过 registry 延迟获取 ToolCallQueueManager/ToolManager/SystemToolManager/SessionManager/AgentContextManager/ToolExecutionTracker。提供三个核心方法：executeTool(String sessionId) 从队列获取下一个工具调用，解析调用器并异步执行；getToolStatus(String sessionId, String toolId) 查询当前工具执行状态（toolId 为必传参数）；continueAfterTools(String sessionId) 检查无工具在执行后，持久化工具结果、添加历史记录、清理队列和跟踪器，构造 TOOL_CONTINUE_MARKER 请求并调用 chatService.chat()。
@@ -195,7 +196,7 @@ VariableMessage 消息类，继承 SessionMessage。messageName 为 SESSION_VARI
 ChildCreateSession 消息类，继承 SessionMessage，messageName=CHILD_SESSION。携带 String parentSessionId 和 ChildSession childSession 字段。由 AgentContextMutator.createChildSession() 在创建子会话后触发。
 ## ChildMessageEvent
 
-ChildMessageEvent 消息类，继承 SessionMessage，messageName=CHILD_MESSAGE。携带 String childSessionId、String content、String modelId、Boolean thinking、Message result 字段。由 AgentContextMutator.sendUserMessage() 在子会话消息完成时触发。
+ChildMessageEvent 消息类，继承 SessionMessage，messageName=CHILD_MESSAGE。携带 String childSessionId、String content、String modelId、Boolean thinking 字段（result 字段已移除）。由 AgentContextMutator.sendUserMessage() 在子会话消息完成时触发（sendUserMessage 已改为 void，事件不再携带模型回复）。
 ## 资源文件
 
 从 platform-app 迁移而来。agent-base/src/main/resources/agent/ 目录下包含两个工具运行桥接脚本：

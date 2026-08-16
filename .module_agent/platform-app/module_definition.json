@@ -82,14 +82,6 @@
       "description": "默认工具数据提供者实现，实现 ToolDataProvider 接口，负责工具和技能工具查询（getSessionToolIds/getToolById/getSkillToolIds）：getSessionToolIds 在 session 对应 agent memoryEnabled=true 时注入 default_tool_memory_search 与 default_tool_history_query 工具（SessionAuthType.ALL）；getToolById/getCustomInvoker 支持记忆搜索工具（MemoryQueryTool）与历史查询工具（HistoryQueryTool）及知识库工具；自定义工具调用器分发（getCustomInvoker，CUSTOM+BROWSER 返回 BrowserToolInvoker）；内置工具查询（getBuiltinTools：根据模型配置的 platformType/requestType 判断是否返回 web_search）"
     },
     {
-      "path": "platform-app/src/main/java/com/ghost616/platform/systemtest/SystemTestSubSessionTool.java",
-      "description": "系统测试工具实现，实现 SystemTool 接口。工具名 system_test，用于创建子会话并发送用户消息获取回复。注入 ObjectMapper 进行 JSON 解析，通过 AgentExecutionContext 的 createChildSession 和 sendUserMessage 方法操作子会话。支持从 JSON 参数中读取 thinking 字段传入 sendUserMessage。"
-    },
-    {
-      "path": "platform-app/src/test/java/com/ghost616/platform/systemtest/SystemTestSubSessionToolTest.java",
-      "description": "SystemTestSubSessionTool 单元测试，覆盖 getToolName/getDescription/getParameterSchema/execute 正常路径、createChildSession返回null、JSON解析异常、运行时异常、空sessionName、超长message 等 9 个用例"
-    },
-    {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultSubSessionCallback.java",
       "description": "SubSessionCallback 默认实现。注入 SessionMapper 通过子会话 ID 获取父会话 ID；维护 ConcurrentHashMap 以 parentSessionId 为键管理 SubSessionData（含 childSessionId、userMessage、thinking、CompletableFuture<Message>）；execute 方法阻塞等待子会话消息结果，完成后自动清理；提供 getSubSessionData 公共方法供外部组件通过父会话 ID 获取数据并完成 future。"
     },

@@ -246,9 +246,17 @@ class AgentContextManagerLogTest {
     @Test
     void sendUserMessage应记录SEND_MESSAGE日志() {
         stubBasicContext();
+        SessionManager.MessageSaveBuilder msgBuilder = mock(SessionManager.MessageSaveBuilder.class, RETURNS_SELF);
+        when(sessionManager.messageSave()).thenReturn(msgBuilder);
 
         AgentContextManager.AgentSessionContext ctx = agentContextManager.build(sessionId).build();
         ctx.context().sendUserMessage("99", "hello", "300", true);
+
+        verify(msgBuilder).sessionId("99");
+        verify(msgBuilder).role("user");
+        verify(msgBuilder).content("hello");
+        verify(msgBuilder).conversationId(null);
+        verify(msgBuilder).save();
 
         ArgumentCaptor<LogData> captor = ArgumentCaptor.forClass(LogData.class);
         verify(agentLog, atLeastOnce()).addLog(captor.capture());
@@ -283,12 +291,21 @@ class AgentContextManagerLogTest {
 
         AgentContextManager.AgentSessionContext childCtx = agentContextManager.build(childId).build();
 
+        SessionManager.MessageSaveBuilder msgBuilder = mock(SessionManager.MessageSaveBuilder.class, RETURNS_SELF);
+        when(sessionManager.messageSave()).thenReturn(msgBuilder);
+
         when(dataProvider.createChildSession(eq(parentId), eq("child"), eq("desc"), eq("300"),
                 any(), any(), any())).thenReturn("99");
 
         String newChildId = childCtx.mutator().createChildSessionCallback.create(parentId, "child", "desc", "300",
                 List.of("t1"), List.of("s1"), "prompt");
         childCtx.context().sendUserMessage("88", "hello", "300", true);
+
+        verify(msgBuilder).sessionId("88");
+        verify(msgBuilder).role("user");
+        verify(msgBuilder).content("hello");
+        verify(msgBuilder).conversationId("conv-100");
+        verify(msgBuilder).save();
 
         assertEquals("99", newChildId);
         ArgumentCaptor<LogData> captor = ArgumentCaptor.forClass(LogData.class);

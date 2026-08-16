@@ -89,6 +89,7 @@ platform-app 模块包含以下功能：
 - DefaultChatDataProvider.getHooks(Long sessionId) 已实现，返回空列表（List.of()），作为 ChatDataProvider 接口带参 getHooks 的重载实现
 - DefaultToolDataProvider 实现 ToolDataProvider 新增的 getCustomInvoker 方法（抛出 UnsupportedOperationException）
 - 已删除 DefaultCustomToolInvokerProvider（原实现 CustomToolInvokerProvider），AgentContextConfiguration 中移除相关 @Bean、import 及 agentAssembler 参数，AgentContextConfigurationTest 同步清理
+- 已移除 SystemTestSubSessionTool（systemtest 包系统测试工具）及其测试：该工具为未接线遗留代码（无业务引用），是 AgentExecutionContext.sendUserMessage 的唯一业务调用方；sendUserMessage 现为 void 语义，AgentExecutionContextTest 中相关测试改为通过 SendUserMessageCallback 验证调用行为
 ## ID 类型转换层
 
 - IdConverter 工具类（com.ghost616.platform.util.IdConverter）提供 parse/toString/parseList/toStringList 方法，统一处理 agent-base（String）与 platform-app（Long）之间的 ID 类型转换
@@ -139,6 +140,7 @@ platform-app 模块包含以下功能：
 - 新增 MessageService.getMessagesBySeqRange(Long sessionId, Integer startSeq, Integer endSeq) 方法：查询 sessionId + rollback=false + sequenceNum 在 [startSeq, endSeq] 区间的消息，按 sequenceNum 升序，MessageServiceImpl 注入 MessageMapper 通过 LambdaQueryWrapper（ge/le）实现
 - SessionController 新增 GET /api/sessions/{id}/messages/range 端点：接收 startSeq/endSeq 查询参数，调用 MessageService.getMessagesBySeqRange 返回消息实体列表（ApiResponse<List<Message>>），注入 MessageService 依赖
 - SessionController 注入 DefaultMessageDataProvider，GET /api/sessions/{id}/messages/range 端点返回类型从 ApiResponse<List<Message>> 实体列表改为 ApiResponse<List<MessageDataProvider.MessageDTO>>：调用 MessageService.getMessagesBySeqRange 获取实体后通过 defaultMessageDataProvider.toMessageDTOs 转换为 MessageDTO，与 GET /api/sessions/{id}/messages 端点返回结构对齐；SessionControllerTest 同步更新断言（mock defaultMessageDataProvider.toMessageDTOs，断言 MessageDTO 返回）
+- SessionService 新增 listLogSessions 方法，SessionController 新增 GET /api/sessions/log-sessions 端点：查询当前用户所有主会话（isChild 为 null 或 false），不过滤 isEvaluation（含评估会话），按创建时间倒序返回 SessionDTO（含 isEvaluation/isChild/parentSessionId）；现有 listSessions（GET /api/sessions）仅返回普通主会话（isEvaluation=false），保持不变
 ## 知识库管理
 
 - 知识库(KnowledgeBase) CRUD 接口：DTO（KnowledgeBaseDTO/KnowledgeBaseCreateRequest/KnowledgeBaseUpdateRequest）、Service（KnowledgeBaseService 接口与 KnowledgeBaseServiceImpl 实现）、Controller（KnowledgeBaseController，路径 /api/knowledge-bases）
@@ -189,6 +191,8 @@ platform-app 模块包含以下功能：
 - 测试期缺陷修复：ContextLogDataMixin 的 @JsonIgnoreProperties 需同时包含 logLevel 与 context（Jackson 在类层次上取最近派生注解且不跨层合并，若仅排除 context 会覆盖父类 LogData 的 logLevel 排除规则，导致 ContextLogData 子类 logData JSON 中 logLevel 未排除）；DatabaseAgentLogTest 10 用例全部通过
 - serializeLogData 进一步排除会话字段：新增 SessionLogDataMixin（@JsonIgnoreProperties({"logLevel","sessionId","conversationId"})），DatabaseAgentLog 构造函数注册 objectMapper.copy().addMixIn(SessionLogData.class, SessionLogDataMixin.class)，使 SessionLogData 子类（SessionErrorLogData 等）的 logData JSON 不再冗余包含会话 ID/对话 ID（已单独存储于 agent_log 表对应列）
 - addLog 反射兜底移除：非 ContextLogData/非 SessionLogData 时不再通过反射调用 getSessionId()/getConversationId()（已删除 invokeGetter 私有方法及 java.lang.reflect.Method import），改为按 logType() 强转——当 logData.logType()==LogType.CONTEXT_BUILD 时强转为 ContextBuildLogData 提取 getSessionId()（ContextBuildLogData 无 conversationId，不设置该列）
+- AgentLogService.list / AgentLogController（GET /api/agent-logs）新增 rootSessionId 参数（主会话 id）：非空时解析该主会话（属主校验）及其所有子会话（parentSessionId=rootSessionId 且 isChild=true）的 sessionId 集合，按集合 in 过滤日志，主会话不存在或非本人时返回空分页结果；rootSessionId 为空保持原有查询行为不变
+- AgentLogDTO 新增 isChild(Boolean) 字段；AgentLogServiceImpl 通过 session 表 isChild 标注每条日志属于主会话还是子会话（session 不存在时为 null），会话名与 isChild 共用同一次 selectBatchIds 查询（loadSessions 返回 sessionId→Session 映射）
 ## 聊天数据缓存
 
 - AgentContextConfiguration 新增独立 @Bean defaultChatDataCacheProvider() 返回 new DefaultChatDataCacheProvider()

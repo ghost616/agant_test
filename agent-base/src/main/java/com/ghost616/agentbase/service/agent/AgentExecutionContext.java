@@ -1,7 +1,6 @@
 package com.ghost616.agentbase.service.agent;
 
 import com.ghost616.agentbase.dto.model.CustomToolCall;
-import com.ghost616.agentbase.dto.model.Message;
 import com.ghost616.agentbase.dto.model.ToolCall;
 import com.ghost616.agentbase.dto.model.ToolInfo;
 import com.ghost616.agentbase.dto.model.UsageInfo;
@@ -109,8 +108,8 @@ public class AgentExecutionContext {
         return childSessionId;
     }
 
-        public Message sendUserMessage(String childSessionId, String content, String modelId, Boolean thinking) {
-        return mutator.sendUserMessage(childSessionId, content, modelId, thinking);
+    public void sendUserMessage(String childSessionId, String content, String modelId, Boolean thinking) {
+        mutator.sendUserMessage(childSessionId, content, modelId, thinking);
     }
 
     public record ChildSession(String sessionId, String sessionName, String description, String modelId) {
@@ -226,7 +225,7 @@ public class AgentExecutionContext {
 
         @FunctionalInterface
         public interface SendUserMessageCallback {
-            Message send(String childSessionId, String content, String modelId, Boolean thinking);
+            void send(String childSessionId, String content, String modelId, Boolean thinking);
         }
 
         public void bind(AgentExecutionContext context) {
@@ -393,15 +392,13 @@ public class AgentExecutionContext {
             return childSessionId;
         }
 
-    public Message sendUserMessage(String childSessionId, String content, String modelId, Boolean thinking) {
-            Message result = null;
+    public void sendUserMessage(String childSessionId, String content, String modelId, Boolean thinking) {
             if (sendUserMessageCallback != null) {
-                result = sendUserMessageCallback.send(childSessionId, content, modelId, thinking);
+                sendUserMessageCallback.send(childSessionId, content, modelId, thinking);
             }
             if (messageSender != null) {
-                messageSender.send(new ChildMessageEvent(childSessionId, childSessionId, content, modelId, thinking, result));
+                messageSender.send(new ChildMessageEvent(childSessionId, childSessionId, content, modelId, thinking));
             }
-            return result;
         }
 
         public void setMessageSender(MessageSender messageSender) {

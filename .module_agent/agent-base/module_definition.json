@@ -23,7 +23,7 @@
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/AgentContextManager.java",
-      "description": "管理会话上下文缓存 ConcurrentHashMap<String, AgentSessionContext>；doBuild 构造 AgentExecutionContext 后，若 ctxData.lastResponseId() 非空则通过 mutator.setLastResponseId() 注入会话最近响应 ID。提供 build/get/remove/addHistoryEntry 方法及 4 个刷新方法（refreshHistory/refreshSessionVariables/refreshConversationVariables/refreshChildSessions），含 sendUserMessage 消息持久化与 AgentMessageProxy 代理委托。injectVariableCallbacks() 在 parentCtx != null 时获取父会话 conversationId 并传入 createChildSession/sendUserMessage 回调，两私有方法签名携带 conversationId 参数，构建 ChildSessionLogData/SendMessageLogData 日志时写入 conversationId。convertMessagesToHistory 将 MessageDTO 的 ToolInfo toolInfo 直接传入 HistoryEntry，并通过 toWebSearchCall/toCustomToolCall 私有方法将 List<WebSearchCallData>/List<CustomToolCallData> 转为独立类 List<WebSearchCall>/List<CustomToolCall>。"
+      "description": "管理会话上下文缓存 ConcurrentHashMap<String, AgentSessionContext>；doBuild 构造 AgentExecutionContext 后，若 ctxData.lastResponseId() 非空则通过 mutator.setLastResponseId() 注入会话最近响应 ID。提供 build/get/remove/addHistoryEntry 方法及 4 个刷新方法（refreshHistory/refreshSessionVariables/refreshConversationVariables/refreshChildSessions）。sendUserMessage（void）不再委托 AgentMessageProxy 执行模型对话，改为 sessionManager.messageSave() 持久化 user 消息 + addHistoryEntry 更新子会话 context 的 HistoryEntry（sequenceNum=子会话 history.size()+1），保留 SendMessageLogData 日志。injectVariableCallbacks() 在 parentCtx != null 时获取父会话 conversationId 并传入 createChildSession/sendUserMessage 回调，两私有方法签名携带 conversationId 参数，构建 ChildSessionLogData/SendMessageLogData 日志时写入 conversationId。convertMessagesToHistory 将 MessageDTO 的 ToolInfo toolInfo 直接传入 HistoryEntry，并通过 toWebSearchCall/toCustomToolCall 私有方法将 List<WebSearchCallData>/List<CustomToolCallData> 转为独立类 List<WebSearchCall>/List<CustomToolCall>。"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/SystemTool.java",
@@ -287,7 +287,7 @@
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/sendmessage/ChildMessageEvent.java",
-      "description": "子会话消息事件类，继承 SessionMessage，包含 childSessionId、content、modelId、thinking、result 属性，getMessageName() 返回 CHILD_MESSAGE"
+      "description": "子会话消息事件类，继承 SessionMessage，包含 childSessionId、content、modelId、thinking 属性（result 字段已移除），getMessageName() 返回 CHILD_MESSAGE，由 AgentContextMutator.sendUserMessage() 触发发送（sendUserMessage 已改为 void）"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/sendmessage/ChildCreateSession.java",
