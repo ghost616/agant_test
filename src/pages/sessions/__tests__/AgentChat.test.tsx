@@ -197,3 +197,67 @@ describe('AgentChat 工具消息头部 (静态验证)', () => {
     expect(source).toContain('msg.toolInfo?.toolName');
   });
 });
+
+describe('AgentChat 子会话标签化展示 (静态验证)', () => {
+  it('标签由「主会话」与各子会话组成，标签名为子会话 title', () => {
+    const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
+    const tabBlock = source.match(/const tabItems[\s\S]*?\];/);
+    expect(tabBlock).not.toBeNull();
+    if (tabBlock) {
+      expect(tabBlock[0]).toContain("key: 'main'");
+      expect(tabBlock[0]).toContain("label: '主会话'");
+      expect(tabBlock[0]).toContain('childSessions.map');
+      expect(tabBlock[0]).toContain('label: child.title || child.id');
+    }
+  });
+
+  it('子会话无 title 时标签名回退为子会话 id', () => {
+    const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
+    expect(source).toContain('label: child.title || child.id');
+  });
+
+  it('无子会话时仅显示「主会话」一个标签（childSessions 为空数组时不产生子标签）', () => {
+    const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
+    const tabBlock = source.match(/const tabItems[\s\S]*?\];/);
+    expect(tabBlock).not.toBeNull();
+    if (tabBlock) {
+      expect(tabBlock[0]).toContain('...childSessions.map');
+      expect(tabBlock[0]).not.toContain('子会话列表');
+    }
+  });
+
+  it('进入页面时自动加载一次子会话列表', () => {
+    const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
+    expect(source).toContain('loadChildSessions();');
+  });
+
+  it('切换到子会话标签时通过 ChildSessionView 加载子会话消息', () => {
+    const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
+    expect(source).toContain('function ChildSessionView');
+    expect(source).toContain('getSessionMessages(childId)');
+    expect(source).toContain('<ChildSessionView childId={child.id} />');
+  });
+
+  it('子会话视图为只读：不含输入框/模型选择/思考开关/发送/回滚/停止', () => {
+    const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
+    const childViewBlock = source.match(/function ChildSessionView[\s\S]*?\n\nfunction AgentChat/);
+    expect(childViewBlock).not.toBeNull();
+    if (childViewBlock) {
+      expect(childViewBlock[0]).not.toContain('Input.TextArea');
+      expect(childViewBlock[0]).not.toContain('<Select');
+      expect(childViewBlock[0]).not.toContain('<Switch');
+      expect(childViewBlock[0]).not.toContain('发送');
+      expect(childViewBlock[0]).not.toContain('回滚');
+      expect(childViewBlock[0]).not.toContain('停止');
+    }
+  });
+
+  it('已移除旧的子会话列表表格与二级查看逻辑', () => {
+    const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
+    expect(source).not.toContain('childSessionColumns');
+    expect(source).not.toContain('viewingChildId');
+    expect(source).not.toContain('查看会话');
+    expect(source).not.toContain('返回子会话列表');
+    expect(source).not.toContain("label: '子会话列表'");
+  });
+});

@@ -1,4 +1,4 @@
-import { test, expect, Page, Route } from '@playwright/test';
+import { test, expect, Page } from '@playwright/test';
 import { seedAdminLogin } from './utils/seedAuth';
 
 const MOCK_SESSION = {
@@ -21,6 +21,10 @@ const MOCK_MESSAGES = [
 const MOCK_CHILD_SESSIONS = [
   { id: 'child-1', agentId: 'agent-1', modelId: 'gpt-4', title: '子会话1', isChild: true, parentSessionId: 'session-1', createTime: '2026-07-11T03:10:00Z', updateTime: '2026-07-11T03:20:00Z' },
   { id: 'child-2', agentId: 'agent-1', modelId: 'gpt-4', title: '子会话2', isChild: true, parentSessionId: 'session-1', createTime: '2026-07-11T03:15:00Z', updateTime: '2026-07-11T03:25:00Z' },
+];
+
+const MOCK_CHILD_WITHOUT_TITLE = [
+  { id: 'child-3', agentId: 'agent-1', modelId: 'gpt-4', title: '', isChild: true, parentSessionId: 'session-1', createTime: '2026-07-11T03:10:00Z', updateTime: '2026-07-11T03:20:00Z' },
 ];
 
 const MOCK_CHILD_MESSAGES = [
@@ -50,16 +54,46 @@ test.beforeEach(async ({ page }) => {
   await seedAdminLogin(page);
 });
 
-test.describe('AgentChat Tab 切换与子会话只读查看', () => {
-  test('应展示「主会话」和「子会话列表」两个 Tab', async ({ page }) => {
+test.describe('AgentChat 子会话标签化展示', () => {
+  test('应展示「主会话」标签和每个子会话标签', async ({ page }) => {
     await setupMocks(page);
     await page.goto('/sessions/session-1/chat');
     await page.waitForSelector('.ant-tabs');
 
     const tabs = page.locator('.ant-tabs-tab');
-    await expect(tabs).toHaveCount(2);
+    await expect(tabs).toHaveCount(3);
     await expect(tabs.nth(0)).toHaveText('主会话');
-    await expect(tabs.nth(1)).toHaveText('子会话列表');
+    await expect(tabs.nth(1)).toHaveText('子会话1');
+    await expect(tabs.nth(2)).toHaveText('子会话2');
+  });
+
+  test('子会话无 title 时标签显示子会话 id', async ({ page }) => {
+    await setupMocks(page, MOCK_CHILD_WITHOUT_TITLE);
+    await page.goto('/sessions/session-1/chat');
+    await page.waitForSelector('.ant-tabs');
+
+    const tabs = page.locator('.ant-tabs-tab');
+    await expect(tabs).toHaveCount(2);
+    await expect(tabs.nth(1)).toHaveText('child-3');
+  });
+
+  test('无子会话时仅显示「主会话」一个标签', async ({ page }) => {
+    await setupMocks(page, []);
+    await page.goto('/sessions/session-1/chat');
+    await page.waitForSelector('.ant-tabs');
+
+    const tabs = page.locator('.ant-tabs-tab');
+    await expect(tabs).toHaveCount(1);
+    await expect(tabs.nth(0)).toHaveText('主会话');
+  });
+
+  test('进入页面自动加载子会话标签，无需手动刷新', async ({ page }) => {
+    await setupMocks(page);
+    await page.goto('/sessions/session-1/chat');
+    await page.waitForSelector('.ant-tabs');
+
+    await expect(page.locator('.ant-tabs-tab').nth(1)).toHaveText('子会话1');
+    await expect(page.locator('.ant-tabs-tab').nth(2)).toHaveText('子会话2');
   });
 
   test('「主会话」Tab 应包含完整的聊天界面组件', async ({ page }) => {
@@ -72,79 +106,30 @@ test.describe('AgentChat Tab 切换与子会话只读查看', () => {
     await expect(page.locator('.ant-switch')).toBeVisible();
   });
 
-  test('切换到「子会话列表」Tab 应显示子会话列表', async ({ page }) => {
+  test('切换到子会话标签应加载并展示该子会话消息', async ({ page }) => {
     await setupMocks(page);
     await page.goto('/sessions/session-1/chat');
     await page.waitForSelector('.ant-tabs');
 
     await page.locator('.ant-tabs-tab').nth(1).click();
-    await page.waitForSelector('.ant-table');
-
-    const rows = page.locator('.ant-table-tbody tr');
-    await expect(rows).toHaveCount(2);
-  });
-
-  test('子会话列表为空时应显示「暂无子会话」', async ({ page }) => {
-    await setupMocks(page, []);
-    await page.goto('/sessions/session-1/chat');
-    await page.waitForSelector('.ant-tabs');
-
-    await page.locator('.ant-tabs-tab').nth(1).click();
-    await expect(page.locator('text=暂无子会话')).toBeVisible();
-  });
-
-  test('子会话列表应包含「查看会话」按钮', async ({ page }) => {
-    await setupMocks(page);
-    await page.goto('/sessions/session-1/chat');
-    await page.waitForSelector('.ant-tabs');
-
-    await page.locator('.ant-tabs-tab').nth(1).click();
-    await page.waitForSelector('.ant-table');
-
-    await expect(page.locator('text=查看会话').first()).toBeVisible();
-  });
-
-  test('点击「查看会话」应加载子会话历史消息', async ({ page }) => {
-    await setupMocks(page);
-    await page.goto('/sessions/session-1/chat');
-    await page.waitForSelector('.ant-tabs');
-
-    await page.locator('.ant-tabs-tab').nth(1).click();
-    await page.waitForSelector('.ant-table');
-    await page.locator('text=查看会话').first().click();
     await page.waitForTimeout(500);
 
     await expect(page.locator('text=子会话问题')).toBeVisible();
     await expect(page.locator('text=子会话回答')).toBeVisible();
   });
 
-  test('子会话查看模式下应显示「返回子会话列表」按钮', async ({ page }) => {
+  test('子会话标签为只读视图：无输入框、模型选择、思考开关及发送/回滚按钮', async ({ page }) => {
     await setupMocks(page);
     await page.goto('/sessions/session-1/chat');
     await page.waitForSelector('.ant-tabs');
 
     await page.locator('.ant-tabs-tab').nth(1).click();
-    await page.waitForSelector('.ant-table');
-    await page.locator('text=查看会话').first().click();
-    await page.waitForTimeout(500);
-
-    await expect(page.locator('text=返回子会话列表')).toBeVisible();
-  });
-
-  test('子会话查看模式下不应显示消息输入框、模型选择器和思考模式开关', async ({ page }) => {
-    await setupMocks(page);
-    await page.goto('/sessions/session-1/chat');
-    await page.waitForSelector('.ant-tabs');
-
-    await page.locator('.ant-tabs-tab').nth(1).click();
-    await page.waitForSelector('.ant-table');
-    await page.locator('text=查看会话').first().click();
     await page.waitForTimeout(500);
 
     await expect(page.getByPlaceholder('输入消息，Enter 发送，Shift+Enter 换行')).not.toBeVisible();
     await expect(page.locator('.ant-select')).not.toBeVisible();
     await expect(page.locator('.ant-switch')).not.toBeVisible();
+    await expect(page.getByRole('button', { name: '发送' })).not.toBeVisible();
+    await expect(page.getByRole('button', { name: '回滚' })).not.toBeVisible();
   });
 });
-
-

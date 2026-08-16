@@ -39,11 +39,11 @@
     },
     {
       "path": "src/types/session.ts",
-      "description": "会话相关 TypeScript 类型定义：Session、CreateSessionParams、ChatRequest（含 conversationId 可选字段，对应后端 ChatRequest DTO）、ToolCallData、ToolInfo、SessionMessage（含 conversationId 可选字段）、SubSessionData 接口；Session 包含 totalTokenUsed 可选字段；新增 WebSearchResult/WebSearchCall 接口，SessionMessage 新增 webSearchCall 可选字段（数组 WebSearchCall[]，web 搜索引用，每项含标题/链接/摘要）；新增 ToolInfo 接口（toolCallId/toolName），SessionMessage 的 toolCallId 字段改为 toolInfo 可选字段（ToolInfo 对象）"
+      "description": "会话相关 TypeScript 类型定义：Session（含 isChild/isEvaluation/totalTokenUsed 可选字段）、CreateSessionParams、ChatRequest（含 conversationId 可选字段，对应后端 ChatRequest DTO）、ToolCallData、ToolInfo、SessionMessage（含 conversationId 可选字段）、SubSessionData 接口；新增 WebSearchResult/WebSearchCall 接口，SessionMessage 新增 webSearchCall 可选字段（数组 WebSearchCall[]，web 搜索引用，每项含标题/链接/摘要）；新增 ToolInfo 接口（toolCallId/toolName），SessionMessage 的 toolCallId 字段改为 toolInfo 可选字段（ToolInfo 对象）"
     },
     {
       "path": "src/services/session.ts",
-      "description": "会话相关 API 封装，包括列表/创建/获取/删除会话、获取子会话列表（listChildSessions）、获取历史消息（getSessionMessages）、按序列号区间查询会话消息（getSessionMessagesRange，GET /api/sessions/{id}/messages/range，params startSeq/endSeq 返回 SessionMessage[]，对应后端 SessionController messages/range 端点）、按 conversationId 获取对话消息（getConversationMessages，GET /api/conversations/{conversationId}/messages）、SSE 流式聊天（agentChatStream/continueChatStream）、工具执行（executeTools/getToolStatus）、工具执行状态轮询（pollToolStatus）、回滚会话（rollbackSession）、停止 AI 回复（stopChat）、子会话回调工具（getSubSessionData/completeSubSession）以及 SubSessionData 类型定义；fetchConversationId（GET /conversation-id 获取新 conversationId）；ChatRequest 类型来源于 types/session.ts；ExecuteToolsResult 和 ToolStatusResult 接口新增 needsSubSessionFlow 可选字段；ChatChunk 接口新增 responseId/webSearchCall/customToolCall 字段（webSearchCall 为 WebSearchCall[] 数组）、StreamCallbacks 新增 onResponseId/onWebSearchCall 回调（processSSEStream 解析 chunk.responseId 与 chunk.webSearchCall 数组并回调）、agentChatStream 新增 previousResponseId 参数且参数类型改为 ChatRequest（Responses 有状态模式多轮续接透传，conversationId 用户发送前获取传入）；新增 SessionContextBasic 类型与 getSessionContextBasic API（GET /api/context/{sessionId}/basic 获取会话上下文基础信息含 lastResponseId）；导出 ChatChunk/StreamCallbacks/processSSEStream 供评估流式接口等复用"
+      "description": "会话相关 API 封装，包括列表/创建/获取/删除会话、获取所有主会话含评估会话（listLogSessions，GET /api/sessions/log-sessions）、获取子会话列表（listChildSessions）、获取历史消息（getSessionMessages）、按序列号区间查询会话消息（getSessionMessagesRange，GET /api/sessions/{id}/messages/range，params startSeq/endSeq 返回 SessionMessage[]，对应后端 SessionController messages/range 端点）、按 conversationId 获取对话消息（getConversationMessages，GET /api/conversations/{conversationId}/messages）、SSE 流式聊天（agentChatStream/continueChatStream）、工具执行（executeTools/getToolStatus）、工具执行状态轮询（pollToolStatus）、回滚会话（rollbackSession）、停止 AI 回复（stopChat）、子会话回调工具（getSubSessionData/completeSubSession）以及 SubSessionData 类型定义；fetchConversationId（GET /conversation-id 获取新 conversationId）；ChatRequest 类型来源于 types/session.ts；ExecuteToolsResult 和 ToolStatusResult 接口新增 needsSubSessionFlow 可选字段；ChatChunk 接口新增 responseId/webSearchCall/customToolCall 字段（webSearchCall 为 WebSearchCall[] 数组）、StreamCallbacks 新增 onResponseId/onWebSearchCall 回调（processSSEStream 解析 chunk.responseId 与 chunk.webSearchCall 数组并回调）、agentChatStream 新增 previousResponseId 参数且参数类型改为 ChatRequest（Responses 有状态模式多轮续接透传，conversationId 用户发送前获取传入）；新增 SessionContextBasic 类型与 getSessionContextBasic API（GET /api/context/{sessionId}/basic 获取会话上下文基础信息含 lastResponseId）；导出 ChatChunk/StreamCallbacks/processSSEStream 供评估流式接口等复用"
     },
     {
       "path": "src/pages/sessions/SessionList.tsx",
@@ -51,7 +51,7 @@
     },
     {
       "path": "src/pages/sessions/AgentChat.tsx",
-      "description": "智能体对话页面：loadHistory 提取为独立 useCallback 供回滚复用；底部按钮区新增回滚按钮（loading/toolExecuting 时禁用），调用 rollbackSession+loadHistory 刷新；renderMessage 仅 content 非空时渲染气泡；onDone 回调条件扩展为检查 content 或 reasoning 任一非空；工具气泡补充 arguments JSON 参数显示；loadHistory 中 tool 角色且 toolResult 非空时解析 JSON 格式化为完整工具执行结果 markdown 作为 content；新增主会话/子会话列表 Tab 切换，子会话支持只读查看消息（Tabs + 子会话 Table + 只读消息视图）；子会话驱动流程（独立 Modal/独立状态/流式渲染/工具执行循环/完成后 completeSubSession+继续主会话）；子会话列表区域新增刷新按钮（ReloadOutlined）；pollToolStatus 检测 status.needsSubSessionFlow 时调用 handleSubSessionFlow 启动子会话流程后继续轮询；executeToolLoop 移除 _sys_callback_sub_session 硬编码检测，所有工具统一走显示工具消息 + pollToolStatus 流程；Responses 有状态模式支持：页面挂载时调用 getSessionContextBasic 获取 lastResponseId 初始化 responseIdRef，根据当前模型 requestType==='responses' 判断有状态模式，agentChatStream onResponseId 回调更新 ref，发送消息时透传 previousResponseId（Completions/responses_stateless 不传）；实时对话接收 onWebSearchCall 回调（WebSearchCall[] 数组）并遍历展示多个搜索结果引用（标题+链接+摘要），handleSend 与 executeToolLoop continueChatStream 均支持，onDone 时附加 webSearchCall 数组到 assistant 消息，加载历史消息从 SessionMessage.webSearchCall 数组渲染已持久化的搜索结果"
+      "description": "智能体对话页面：loadHistory 提取为独立 useCallback 供回滚复用；底部按钮区新增回滚按钮（loading/toolExecuting 时禁用），调用 rollbackSession+loadHistory 刷新；renderMessage 仅 content 非空时渲染气泡；onDone 回调条件扩展为检查 content 或 reasoning 任一非空；工具气泡补充 arguments JSON 参数显示；loadHistory 中 tool 角色且 toolResult 非空时解析 JSON 格式化为完整工具执行结果 markdown 作为 content；主会话与子会话标签化展示（Tabs：主会话 + 每个子会话一个独立标签，标签名=子会话 title 无 title 时回退 id，进入页面自动加载子会话列表，切换到子会话标签时 ChildSessionView 自动加载消息并只读展示，无子会话时仅显示主会话标签；已移除子会话列表 Table/刷新按钮/查看会话/返回子会话列表/viewingChildId 二级状态）；子会话驱动流程（独立 Modal/独立状态/流式渲染/工具执行循环/完成后 completeSubSession+继续主会话）；pollToolStatus 检测 status.needsSubSessionFlow 时调用 handleSubSessionFlow 启动子会话流程后继续轮询；executeToolLoop 移除 _sys_callback_sub_session 硬编码检测，所有工具统一走显示工具消息 + pollToolStatus 流程；Responses 有状态模式支持：页面挂载时调用 getSessionContextBasic 获取 lastResponseId 初始化 responseIdRef，根据当前模型 requestType==='responses' 判断有状态模式，agentChatStream onResponseId 回调更新 ref，发送消息时透传 previousResponseId（Completions/responses_stateless 不传）；实时对话接收 onWebSearchCall 回调（WebSearchCall[] 数组）并遍历展示多个搜索结果引用（标题+链接+摘要），handleSend 与 executeToolLoop continueChatStream 均支持，onDone 时附加 webSearchCall 数组到 assistant 消息，加载历史消息从 SessionMessage.webSearchCall 数组渲染已持久化的搜索结果"
     },
     {
       "path": "src/components/JsonEditor.tsx",
@@ -71,7 +71,7 @@
     },
     {
       "path": "src/pages/sessions/__tests__/AgentChat.test.tsx",
-      "description": "AgentChat 组件静态测试：通过读取源文件验证子会话相关函数/状态/UI 的正确性，包括 handleSubSessionFlow、completeSubSession、pollToolStatus 的 needsSubSessionFlow 检测、handleAbort、renderSubSessionModal 等"
+      "description": "AgentChat 组件静态测试：通过读取源文件验证子会话相关函数/状态/UI 的正确性，包括 handleSubSessionFlow、completeSubSession、pollToolStatus 的 needsSubSessionFlow 检测、handleAbort、renderSubSessionModal 等；以及子会话标签化展示（tabItems 结构、标签名 title/id 回退、进入页面自动加载子会话列表、ChildSessionView 只读加载消息、移除旧表格与二级查看逻辑的负向断言）"
     },
     {
       "path": "src/types/common.ts",
@@ -183,15 +183,15 @@
     },
     {
       "path": "src/types/log.ts",
-      "description": "智能体日志类型定义：AgentLog 接口（对应后端 AgentLogDTO，含 id/sessionId/sessionName/conversationId/logType/logLevel/logData/createTime）、AgentLogQueryParams 分页筛选查询参数、LogType/LogLevel 常量枚举（code 对应后端 LogType/LogLevel 枚举 code 值，label 为中文显示名）"
+      "description": "智能体日志类型定义：AgentLog 接口（对应后端 AgentLogDTO，含 id/sessionId/sessionName/conversationId/logType/logLevel/logData/createTime 及 isChild 可选字段标识子会话日志）、AgentLogQueryParams 分页筛选查询参数（会话名/日志类型/日志等级/rootSessionId 主会话过滤/分页）、LogType/LogLevel 常量枚举（code 对应后端 LogType/LogLevel 枚举 code 值，label 为中文显示名）"
     },
     {
       "path": "src/services/log.ts",
-      "description": "智能体日志查询服务封装：listAgentLogs 调用 GET /api/agent-logs，支持会话名/日志类型/日志等级筛选与 page/size 分页，返回 PageResult<AgentLog>"
+      "description": "智能体日志查询服务封装：listAgentLogs 调用 GET /api/agent-logs，支持会话名/日志类型/日志等级/rootSessionId（主会话及子会话过滤）筛选与 page/size 分页，返回 PageResult<AgentLog>"
     },
     {
       "path": "src/pages/logs/AgentLogList.tsx",
-      "description": "运行日志列表页面（/logs）：顶部筛选栏（会话名 Input.Search、日志类型/日志等级 Select 下拉，日志等级选项由 LogLevel 枚举自动生成），Table 展示日志列表（会话名/对话ID/日志类型中文 Tag/日志等级彩色 Badge INFO=blue/ERROR=red 未知回退 default/日志数据截断+展开按钮/创建时间），分页支持每页 20/50/100 切换默认创建时间倒序，日志详情 Modal 展示完整日志数据（JSON 美化）"
+      "description": "运行日志列表页面（/logs/:sessionId）：从路由参数读取主会话 sessionId，日志查询携带 rootSessionId（按该主会话及其全部子会话过滤，路由参数缺失时不传）；顶部返回按钮（ArrowLeftOutlined 图标 + 返回文案，点击 navigate('/logs') 返回会话日志列表页）；筛选栏（会话名 Input.Search、日志类型/日志等级 Select 下拉，日志等级选项由 LogLevel 枚举自动生成）；Table 展示日志列表（会话名/会话类型 Tag 基于 isChild 区分主会话 default 与子会话 blue/对话ID/日志类型中文 Tag/日志等级彩色 Badge INFO=blue/ERROR=red 未知回退 default/日志数据截断+展开按钮/会话变量/对话变量/创建时间），分页支持每页 20/50/100 切换默认创建时间倒序，日志详情/变量详情 Modal 展示完整数据（JSON 美化）"
     },
     {
       "path": "src/types/__tests__/log.test.ts",
@@ -235,11 +235,11 @@
     },
     {
       "path": "src/services/auth.ts",
-      "description": "认证服务封装：login 调用 POST /api/auth/login（返回 User 并写入 localStorage currentUser）；getCurrentUser 读取本地当前登录用户；clearCurrentUser 清除本地登录用户信息"
+      "description": "认证服务封装：login 调用 POST /api/auth/login（返回 User 并写入 localStorage currentUser）；getCurrentUser 读取本地当前登录用户；clearCurrentUser 清除本地登录用户信息；saveCurrentUser 更新本地当前登录用户（修改显示名等自助操作后同步）；logout 调用 POST /api/auth/logout 注销会话并无论成败清除本地登录状态"
     },
     {
       "path": "src/services/user.ts",
-      "description": "用户管理 API 封装：listUsers 分页查询用户（GET /api/users）、createUser 添加用户（POST /api/users）、updateUser 修改用户（PUT /api/users/{id}，支持 enabled 0/1 禁止/恢复登录）；导出 UserListParams 分页参数类型"
+      "description": "用户管理 API 封装：listUsers 分页查询用户（GET /api/users）、createUser 添加用户（POST /api/users）、updateUser 修改用户（PUT /api/users/{id}，支持 enabled 0/1 禁止/恢复登录）、updateCurrentUser 自助修改当前登录用户显示名/密码（PUT /api/auth/me，返回更新后 User）；导出 UserListParams 分页参数类型"
     },
     {
       "path": "src/pages/login/Login.tsx",
@@ -247,11 +247,11 @@
     },
     {
       "path": "src/pages/users/UserList.tsx",
-      "description": "用户管理页（仅管理员可见可操作，非管理员显示无权限 Result）：分页表格展示用户列表，支持添加/修改用户 Modal 与禁止/恢复登录（Popconfirm 调 updateUser enabled 0/1）；用户类型/登录状态 Tag 展示；分页支持每页条数切换"
+      "description": "用户管理页（仅管理员可见可操作，非管理员显示无权限 Result）：页面头部 flex/justify-between 布局（标题「用户管理」在左、添加用户按钮在最右）；分页表格展示用户列表（列：登录名/显示名/登录状态/创建时间/操作，无用户类型列，管理员由后端过滤）；添加用户 Modal（仅登录名/显示名/密码，不含用户类型选择器与允许登录开关）；修改用户 Modal（仅显示名/密码，密码留空不修改）；禁止/恢复登录（Popconfirm 调 updateUser enabled 0/1）；分页支持每页条数切换"
     },
     {
       "path": "src/App.tsx",
-      "description": "应用入口组件（BrowserRouter 内）：注册全部页面路由与根路径 '/' 按角色重定向落地页；侧边栏菜单（MENU_ITEMS 常量 + getVisibleMenuItems 按角色过滤，用户管理仅管理员可见）；登录守卫（getCurrentUser 为 null 且非 /login 时 Navigate 到 /login）；登录页独立全屏渲染；Header/Sider/Content 主界面 Layout 布局"
+      "description": "应用入口组件（BrowserRouter 内）：注册全部页面路由与根路径 '/' 按角色重定向落地页；侧边栏菜单（MENU_ITEMS 常量 + getVisibleMenuItems 按角色过滤，用户管理仅管理员可见）；登录守卫（getCurrentUser 为 null 且非 /login 时 Navigate 到 /login）；登录页独立全屏渲染；Header/Sider/Content 主界面 Layout 布局；Header 右上角用户信息 Dropdown（Avatar + 显示名，hover 菜单按角色区分：普通用户含修改显示名/修改密码/退出，管理员仅修改密码/退出），修改显示名/修改密码 Modal（调 updateCurrentUser 自助修改，修改显示名成功后 saveCurrentUser 同步 localStorage 并重渲染刷新 Header）与退出登录（调 logout 清除本地登录状态跳 /login）；运行日志路由：/logs 渲染 SessionLogList（会话日志页）、/logs/:sessionId 渲染 AgentLogList（运行日志页）"
     },
     {
       "path": "src/types/user.ts",
@@ -272,6 +272,14 @@
     {
       "description": "登录守卫与菜单权限行为级补充测试（jsdom 渲染 <App/>）：未登录访问 /models 重定向到登录页且无侧边栏（独立全屏）、管理员（userType=2）根路径 / 落地 /users 且用户管理菜单可见、普通用户（userType=1）落地 /models 且用户管理菜单不可见；mock services/api，作为 E2E 被环境阻断时的运行级替代验证",
       "path": "src/__tests__/AppGuard.behavior.test.tsx"
+    },
+    {
+      "description": "会话日志页（/logs）：调用 listLogSessions（GET /api/sessions/log-sessions）展示当前用户所有主会话（含评估会话）表格（会话名/是否评估 Tag 评估会话 gold 或普通会话 default/创建时间/操作列「查看日志」按钮），点击按钮跳转 /logs/{sessionId} 进入该主会话运行日志页；分页关闭全量展示，scroll 使用 useTableScrollY(216)",
+      "path": "src/pages/logs/SessionLogList.tsx"
+    },
+    {
+      "path": "e2e/AgentChat.spec.ts",
+      "description": "AgentChat 页面端到端测试：mock 主会话/子会话列表/子会话消息/模型接口，断言主会话与各子会话标签渲染（子会话标签名 title/id 回退、无子会话仅主会话标签、进入页面自动加载子会话标签）、切换到子会话标签加载并展示消息、子会话标签只读（无输入框/模型选择/思考开关/发送回滚按钮）"
     }
   ]
 }

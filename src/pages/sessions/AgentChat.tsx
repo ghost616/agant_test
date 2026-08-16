@@ -2,9 +2,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Button, Input, message, Modal, Select, Spin, Switch, Table, Tabs, Typography } from 'antd';
+import { Button, Input, message, Modal, Select, Spin, Switch, Tabs, Typography } from 'antd';
+import type { TabsProps } from 'antd';
 import {
-  ReloadOutlined,
   UserOutlined,
   RobotOutlined,
   ToolOutlined,
@@ -73,6 +73,184 @@ const BUBBLE_STYLES: Record<MessageRole, React.CSSProperties> = {
   },
 };
 
+/**
+ * 将后端会话消息映射为前端聊天消息。
+ * @param historyMessages 后端会话消息列表
+ * @returns 前端聊天消息列表
+ */
+function mapSessionMessages(historyMessages: SessionMessage[]): ChatMessage[] {
+  return historyMessages.map((msg: SessionMessage) => {
+    let content = msg.content;
+    if (msg.role === 'tool' && msg.toolResult) {
+      try {
+        const tr = JSON.parse(msg.toolResult);
+        const toolName = msg.toolInfo?.toolName || tr.toolName;
+        content = `**工具: ${toolName}**\n\n**参数:**\n\`\`\`json\n${tr.arguments}\n\`\`\`\n\n**执行结果:**\n${tr.result}`;
+      } catch {
+        // keep original content
+      }
+    }
+    return {
+      role: (['user', 'assistant', 'tool', 'system'].includes(msg.role)
+        ? msg.role
+        : 'assistant') as MessageRole,
+      content,
+      reasoning: msg.reasoning || undefined,
+      toolResult: msg.toolResult || undefined,
+      toolInfo: msg.toolInfo || undefined,
+      webSearchCall: msg.webSearchCall || undefined,
+    };
+  });
+}
+
+const renderRoleHeader = (role: MessageRole): JSX.Element => {
+  const config = ROLE_CONFIG[role];
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
+      <span style={{ color: config.color, fontSize: 14 }}>{config.icon}</span>
+      <Typography.Text strong style={{ color: config.color, fontSize: 12 }}>
+        {config.label}
+      </Typography.Text>
+    </div>
+  );
+};
+
+const renderReasoning = (reasoning: string): JSX.Element => (
+  <div
+    style={{
+      background: '#252525',
+      borderLeft: '3px solid #ffd700',
+      borderRadius: 4,
+      padding: '8px 12px',
+      marginBottom: 8,
+    }}
+    className="agent-chat-markdown"
+  >
+    <Typography.Text
+      style={{ color: '#ffd700', fontSize: 12, marginBottom: 4, display: 'block' }}
+    >
+      思考过程
+    </Typography.Text>
+    <div style={{ color: '#aaa', fontSize: 13, lineHeight: 1.7 }}>
+      <ReactMarkdown remarkPlugins={[remarkGfm]}>{reasoning}</ReactMarkdown>
+    </div>
+  </div>
+);
+
+const renderWebSearchCall = (calls: WebSearchCall[]): JSX.Element => (
+  <div
+    style={{
+      background: '#1e3a4f',
+      borderLeft: '3px solid #569cd6',
+      borderRadius: 4,
+      padding: '8px 12px',
+      marginBottom: 8,
+    }}
+  >
+    <Typography.Text style={{ color: '#9cdcfe', fontSize: 12, marginBottom: 4, display: 'block' }}>
+      搜索结果
+    </Typography.Text>
+    {calls.map((call, ci) => (
+      <div key={ci}>
+        {call.results.map((r, i) => (
+          <div key={i} style={{ marginBottom: 6 }}>
+            <a
+              href={r.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: '#569cd6', fontSize: 13 }}
+            >
+              {r.title}
+            </a>
+            <div style={{ color: '#aaa', fontSize: 12, lineHeight: 1.6, marginTop: 2 }}>
+              {r.snippet}
+            </div>
+          </div>
+        ))}
+      </div>
+    ))}
+  </div>
+);
+
+const renderMessage = (msg: ChatMessage, idx: number): JSX.Element => {
+  const isUser = msg.role === 'user';
+  return (
+    <div
+      key={idx}
+      style={{
+        display: 'flex',
+        justifyContent: isUser ? 'flex-end' : 'flex-start',
+        marginBottom: 16,
+      }}
+    >
+      <div style={{ maxWidth: '75%' }}>
+        {renderRoleHeader(msg.role)}
+        {msg.reasoning && renderReasoning(msg.reasoning)}
+        {msg.webSearchCall && msg.webSearchCall.length > 0 && renderWebSearchCall(msg.webSearchCall)}
+        {msg.content.trim() && (
+          <div style={BUBBLE_STYLES[msg.role]} className="agent-chat-markdown">
+            <div style={{ color: '#d4d4d4', fontSize: 14, lineHeight: 1.8 }}>
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+/**
+ * 子会话只读展示视图：加载并展示指定子会话的历史消息。
+ * 不含输入框、模型选择、思考模式及发送/回滚/停止等交互控件。
+ */
+function ChildSessionView({ childId }: { childId: string }): JSX.Element {
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    getSessionMessages(childId)
+      .then((historyMessages) => {
+        if (!cancelled) setMessages(mapSessionMessages(historyMessages));
+      })
+      .catch(() => {
+        if (!cancelled) message.error('加载子会话消息失败');
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [childId]);
+
+  return (
+    <div
+      style={{
+        flex: 1,
+        background: '#1e1e1e',
+        borderRadius: 8,
+        padding: 16,
+        overflowY: 'auto',
+        minHeight: 200,
+        height: '100%',
+      }}
+    >
+      {loading && (
+        <div style={{ textAlign: 'center', padding: 40 }}>
+          <Spin tip="加载消息..." />
+        </div>
+      )}
+      {!loading && messages.length === 0 && (
+        <Typography.Text style={{ color: '#6a6a6a', fontSize: 14 }}>
+          暂无消息
+        </Typography.Text>
+      )}
+      {!loading && messages.map((msg, idx) => renderMessage(msg, idx))}
+    </div>
+  );
+}
+
 function AgentChat(): JSX.Element {
   const { id } = useParams<{ id: string }>();
   const sessionId = id!;
@@ -116,12 +294,6 @@ function AgentChat(): JSX.Element {
 
   const [activeTab, setActiveTab] = useState<string>('main');
   const [childSessions, setChildSessions] = useState<Session[]>([]);
-  const [childSessionsLoading, setChildSessionsLoading] = useState(false);
-  const [viewingChildId, setViewingChildId] = useState<string | null>(null);
-  const [viewingChildMessages, setViewingChildMessages] = useState<ChatMessage[]>([]);
-  const [viewingChildLoading, setViewingChildLoading] = useState(false);
-  const childListLoadedRef = useRef(false);
-  const childMessagesCalledRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (containerRef.current) {
@@ -145,28 +317,7 @@ function AgentChat(): JSX.Element {
       setModelList(models);
       setModelId(session.modelId);
       if (session.thinking !== undefined) setThinking(session.thinking);
-      const mapped: ChatMessage[] = historyMessages.map((msg: SessionMessage) => {
-        let content = msg.content;
-        if (msg.role === 'tool' && msg.toolResult) {
-          try {
-            const tr = JSON.parse(msg.toolResult);
-            const toolName = msg.toolInfo?.toolName || tr.toolName;
-            content = `**工具: ${toolName}**\n\n**参数:**\n\`\`\`json\n${tr.arguments}\n\`\`\`\n\n**执行结果:**\n${tr.result}`;
-          } catch {
-            // keep original content
-          }
-        }
-        return {
-          role: (['user', 'assistant', 'tool', 'system'].includes(msg.role)
-            ? msg.role
-            : 'assistant') as MessageRole,
-          content,
-          reasoning: msg.reasoning || undefined,
-          toolResult: msg.toolResult || undefined,
-          toolInfo: msg.toolInfo || undefined,
-          webSearchCall: msg.webSearchCall || undefined,
-        };
-      });
+      const mapped: ChatMessage[] = mapSessionMessages(historyMessages);
       setMessages(mapped);
     } catch {
       message.error('加载历史消息失败');
@@ -176,50 +327,13 @@ function AgentChat(): JSX.Element {
   }, [sessionId]);
 
   const loadChildSessions = useCallback(async (): Promise<void> => {
-    setChildSessionsLoading(true);
     try {
       const list = await listChildSessions(sessionId);
       setChildSessions(list);
     } catch {
       message.error('加载子会话列表失败');
-    } finally {
-      setChildSessionsLoading(false);
     }
   }, [sessionId]);
-
-  const loadChildMessages = useCallback(async (childId: string): Promise<void> => {
-    setViewingChildLoading(true);
-    try {
-      const historyMessages = await getSessionMessages(childId);
-      const mapped: ChatMessage[] = historyMessages.map((msg: SessionMessage) => {
-        let content = msg.content;
-        if (msg.role === 'tool' && msg.toolResult) {
-          try {
-            const tr = JSON.parse(msg.toolResult);
-            const toolName = msg.toolInfo?.toolName || tr.toolName;
-            content = `**工具: ${toolName}**\n\n**参数:**\n\`\`\`json\n${tr.arguments}\n\`\`\`\n\n**执行结果:**\n${tr.result}`;
-          } catch {
-            // keep original content
-          }
-        }
-        return {
-          role: (['user', 'assistant', 'tool', 'system'].includes(msg.role)
-            ? msg.role
-            : 'assistant') as MessageRole,
-          content,
-          reasoning: msg.reasoning || undefined,
-          toolResult: msg.toolResult || undefined,
-          toolInfo: msg.toolInfo || undefined,
-          webSearchCall: msg.webSearchCall || undefined,
-        };
-      });
-      setViewingChildMessages(mapped);
-    } catch {
-      message.error('加载子会话消息失败');
-    } finally {
-      setViewingChildLoading(false);
-    }
-  }, []);
 
   useEffect(() => {
     if (!sessionId || calledRef.current) return;
@@ -234,7 +348,8 @@ function AgentChat(): JSX.Element {
       .catch(() => {});
 
     loadHistory();
-  }, [sessionId, loadHistory]);
+    loadChildSessions();
+  }, [sessionId, loadHistory, loadChildSessions]);
 
   const handleAbort = useCallback(() => {
     stopChat(sessionId).catch(() => {});
@@ -805,102 +920,6 @@ function AgentChat(): JSX.Element {
     [handleSend],
   );
 
-  const renderRoleHeader = (role: MessageRole): JSX.Element => {
-    const config = ROLE_CONFIG[role];
-    return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
-        <span style={{ color: config.color, fontSize: 14 }}>{config.icon}</span>
-        <Typography.Text strong style={{ color: config.color, fontSize: 12 }}>
-          {config.label}
-        </Typography.Text>
-      </div>
-    );
-  };
-
-  const renderReasoning = (reasoning: string): JSX.Element => (
-    <div
-      style={{
-        background: '#252525',
-        borderLeft: '3px solid #ffd700',
-        borderRadius: 4,
-        padding: '8px 12px',
-        marginBottom: 8,
-      }}
-      className="agent-chat-markdown"
-    >
-      <Typography.Text
-        style={{ color: '#ffd700', fontSize: 12, marginBottom: 4, display: 'block' }}
-      >
-        思考过程
-      </Typography.Text>
-      <div style={{ color: '#aaa', fontSize: 13, lineHeight: 1.7 }}>
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>{reasoning}</ReactMarkdown>
-      </div>
-    </div>
-  );
-
-  const renderWebSearchCall = (calls: WebSearchCall[]): JSX.Element => (
-    <div
-      style={{
-        background: '#1e3a4f',
-        borderLeft: '3px solid #569cd6',
-        borderRadius: 4,
-        padding: '8px 12px',
-        marginBottom: 8,
-      }}
-    >
-      <Typography.Text style={{ color: '#9cdcfe', fontSize: 12, marginBottom: 4, display: 'block' }}>
-        搜索结果
-      </Typography.Text>
-      {calls.map((call, ci) => (
-        <div key={ci}>
-          {call.results.map((r, i) => (
-            <div key={i} style={{ marginBottom: 6 }}>
-              <a
-                href={r.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ color: '#569cd6', fontSize: 13 }}
-              >
-                {r.title}
-              </a>
-              <div style={{ color: '#aaa', fontSize: 12, lineHeight: 1.6, marginTop: 2 }}>
-                {r.snippet}
-              </div>
-            </div>
-          ))}
-        </div>
-      ))}
-    </div>
-  );
-
-  const renderMessage = (msg: ChatMessage, idx: number): JSX.Element => {
-    const isUser = msg.role === 'user';
-    return (
-      <div
-        key={idx}
-        style={{
-          display: 'flex',
-          justifyContent: isUser ? 'flex-end' : 'flex-start',
-          marginBottom: 16,
-        }}
-      >
-        <div style={{ maxWidth: '75%' }}>
-          {renderRoleHeader(msg.role)}
-          {msg.reasoning && renderReasoning(msg.reasoning)}
-          {msg.webSearchCall && msg.webSearchCall.length > 0 && renderWebSearchCall(msg.webSearchCall)}
-          {msg.content.trim() && (
-            <div style={BUBBLE_STYLES[msg.role]} className="agent-chat-markdown">
-              <div style={{ color: '#d4d4d4', fontSize: 14, lineHeight: 1.8 }}>
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  };
-
   const renderMainChat = (): JSX.Element => (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <style>{`
@@ -1106,133 +1125,14 @@ function AgentChat(): JSX.Element {
     </div>
   );
 
-  const renderChildSessionView = (): JSX.Element => {
-    const childSession = childSessions.find((s) => s.id === viewingChildId);
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-        <Button
-          icon={<ArrowLeftOutlined />}
-          style={{ marginBottom: 12, alignSelf: 'flex-start' }}
-          onClick={() => setViewingChildId(null)}
-        >
-          返回子会话列表
-        </Button>
-        {childSession && (
-          <Typography.Title level={5} style={{ color: '#e0e0e0', marginBottom: 12 }}>
-            {childSession.title || '未命名会话'}
-          </Typography.Title>
-        )}
-        <div
-          style={{
-            flex: 1,
-            background: '#1e1e1e',
-            borderRadius: 8,
-            padding: 16,
-            overflowY: 'auto',
-            minHeight: 200,
-          }}
-        >
-          {viewingChildLoading && (
-            <div style={{ textAlign: 'center', padding: 40 }}>
-              <Spin tip="加载消息..." />
-            </div>
-          )}
-          {!viewingChildLoading && viewingChildMessages.length === 0 && (
-            <Typography.Text style={{ color: '#6a6a6a', fontSize: 14 }}>
-              暂无消息
-            </Typography.Text>
-          )}
-          {!viewingChildLoading && viewingChildMessages.map((msg, idx) => renderMessage(msg, idx))}
-        </div>
-      </div>
-    );
-  };
-
-  const childSessionColumns = [
-    {
-      title: '标题',
-      dataIndex: 'title',
-      key: 'title',
-      render: (text: string) => text || '未命名会话',
-    },
-    {
-      title: '描述',
-      dataIndex: 'description',
-      key: 'description',
-      render: (text: string) => text || '-',
-    },
-    {
-      title: '创建时间',
-      dataIndex: 'createTime',
-      key: 'createTime',
-      width: 180,
-    },
-    {
-      title: 'Token 消耗',
-      dataIndex: 'totalTokenUsed',
-      key: 'totalTokenUsed',
-      width: 120,
-      render: (value: string) => value != null ? Number(value).toLocaleString() : '-',
-    },
-    {
-      title: '操作',
-      key: 'action',
-      width: 120,
-      render: (_: unknown, record: Session) => (
-        <Button
-          type="link"
-          onClick={() => {
-            setViewingChildId(record.id);
-            childMessagesCalledRef.current = null;
-          }}
-        >
-          查看会话
-        </Button>
-      ),
-    },
+  const tabItems: TabsProps['items'] = [
+    { key: 'main', label: '主会话', children: renderMainChat() },
+    ...childSessions.map((child) => ({
+      key: child.id,
+      label: child.title || child.id,
+      children: <ChildSessionView childId={child.id} />,
+    })),
   ];
-
-  const renderChildSessionList = (): JSX.Element => (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
-        <Button
-          icon={<ReloadOutlined />}
-          loading={childSessionsLoading}
-          onClick={() => loadChildSessions()}
-        >
-          刷新
-        </Button>
-      </div>
-      {childSessionsLoading && (
-        <div style={{ textAlign: 'center', padding: 40 }}>
-          <Spin tip="加载子会话列表..." />
-        </div>
-      )}
-      {!childSessionsLoading && childSessions.length === 0 && (
-        <div style={{ textAlign: 'center', padding: 40 }}>
-          <Typography.Text style={{ color: '#6a6a6a', fontSize: 14 }}>
-            暂无子会话
-          </Typography.Text>
-        </div>
-      )}
-      {!childSessionsLoading && childSessions.length > 0 && (
-        <Table
-          dataSource={childSessions}
-          columns={childSessionColumns}
-          rowKey="id"
-          pagination={false}
-          style={{ background: 'transparent' }}
-        />
-      )}
-    </div>
-  );
-
-  const renderChildTab = (): JSX.Element => {
-    if (viewingChildId) {
-      return renderChildSessionView();
-    }
-    return renderChildSessionList();
-  };
 
   if (!id) {
     return (
@@ -1241,21 +1141,6 @@ function AgentChat(): JSX.Element {
       </div>
     );
   }
-
-  const handleTabChange = (key: string): void => {
-    setActiveTab(key);
-    if (key === 'children' && !childListLoadedRef.current) {
-      childListLoadedRef.current = true;
-      loadChildSessions();
-    }
-  };
-
-  useEffect(() => {
-    if (viewingChildId && childMessagesCalledRef.current !== viewingChildId) {
-      childMessagesCalledRef.current = viewingChildId;
-      loadChildMessages(viewingChildId);
-    }
-  }, [viewingChildId, loadChildMessages]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 180px)' }}>
@@ -1294,12 +1179,9 @@ function AgentChat(): JSX.Element {
       <Tabs
         className="agent-chat-tabs"
         activeKey={activeTab}
-        onChange={handleTabChange}
+        onChange={setActiveTab}
         style={{ display: 'flex', flexDirection: 'column', height: '100%' }}
-        items={[
-          { key: 'main', label: '主会话', children: renderMainChat() },
-          { key: 'children', label: '子会话列表', children: renderChildTab() },
-        ]}
+        items={tabItems}
       />
     </div>
   );

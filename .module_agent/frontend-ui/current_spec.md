@@ -57,10 +57,8 @@
 - 记忆功能表单联动：memoryEnabled=false 时"保留消息组数量"（memoryGroupCount，label="保留消息组数量"，extra 辅助说明"保留最近 N 个消息组对 AI 可见，更早的消息组归档为记忆"）与"向量模型"（vectorModelId）表单项均隐藏（hidden={!memoryEnabled}），memoryEnabled=true 时显示；提交时 memoryEnabled 为 false 则 vectorModelId 置 undefined
 ## 会话管理界面
 
-- Web 搜索结果显示：ChatChunk 新增 webSearchCall 字段（WebSearchCall[] 数组，每项 { itemId, outputIndex, results: [{ title, url, snippet }] }）和 customToolCall 字段，StreamCallbacks 新增 onWebSearchCall 回调（(calls: WebSearchCall[]) => void），processSSEStream 解析 chunk.webSearchCall 数组并回调
-- SessionMessage 新增 webSearchCall 可选字段（WebSearchCall[] 数组），存储持久化的搜索结果引用
-- AgentChat 实时对话：handleSend 与 executeToolLoop continueChatStream 的流回调接收 onWebSearchCall，通过 currentWebSearchCall 数组状态在消息区域遍历展示多个搜索结果引用（标题链接+摘要），onDone 时将 webSearchCall 数组附加到 assistant 消息
-- AgentChat 历史消息加载：loadHistory/loadChildMessages 从 SessionMessage.webSearchCall 数组映射渲染已持久化的多个搜索结果引用
+- AgentChat 历史消息加载：loadHistory/ChildSessionView 从 SessionMessage.webSearchCall 数组映射渲染已持久化的多个搜索结果引用
+- AgentChat 子会话标签化展示：Tabs 由「主会话 + 子会话列表」改为「主会话 + 每个子会话一个独立标签」（标签名=子会话 title 无 title 时回退 id，key=子会话 id），进入页面自动加载一次子会话列表（不再依赖手动刷新），切换到子会话标签时 ChildSessionView 自动加载消息并只读展示（无输入框/模型选择/思考模式/发送/回滚/停止），无子会话时仅显示「主会话」一个标签；已移除子会话列表 Table、childSessionColumns、「查看会话」「返回子会话列表」「刷新」按钮及 viewingChildId 二级切换状态
 - 对话 conversationId 支持：ChatRequest 类型（src/types/session.ts）新增 conversationId?: string 可选字段（对应后端 ChatRequest DTO）；services/session.ts 新增 fetchConversationId() 调用 GET /conversation-id 返回 conversationId，agentChatStream 参数类型改为 ChatRequest；AgentChat handleSend 每次用户发送前先 await fetchConversationId() 获取新 conversationId 传入 agentChatStream，获取失败时 message.error 并中止发送；工具续接 continueChatStream（[tool_continue]）请求不传 conversationId
 - 会话历史功能：SessionMessage 接口新增 conversationId?: string 可选字段；services/session.ts 新增 getConversationMessages(conversationId) 调用 GET /api/conversations/{conversationId}/messages 返回对话消息列表；新建 ConversationHistory.tsx（路由 /conversations 展示主会话列表复用 listSessions，点击行跳转 /conversations/:sessionId；该页基于路由参数 sessionId 用 getSessionMessages 拉取并按 role==='user' 过滤展示用户消息列表，每条显示内容/时间，有 conversationId 的显示「查看详情」按钮跳转 /conversations/:conversationId/detail）；新建 ConversationDetail.tsx（路由 /conversations/:conversationId/detail，调用 getConversationMessages 展示该 conversationId 下所有消息，列：角色 Tag/内容/时间）；App.tsx 新增「会话历史」菜单项（HistoryOutlined）与 /conversations、/conversations/:sessionId、/conversations/:conversationId/detail 路由
 - 对话详情页增强（ConversationDetail.tsx）：内容列对 assistant 且有 toolCalls 的消息显示「查看工具 (N)」按钮，对 tool 角色消息显示「查看结果」按钮，点击弹出 Modal 以 <pre> 展示 JSON.stringify(toolCalls/toolResult, null, 2)；新增「来源会话」列展示 sessionId（Tooltip 悬浮完整 ID，可见截短为前8后4…）；Table 使用 rowClassName 按 record.sessionId===sessionId 区分主/子会话背景色（conversation-main-row 暖黄 / conversation-child-row 浅蓝，样式定义在 index.css）
@@ -120,13 +118,15 @@
 - KnowledgeFileEdit：文件 publishStatus=PUBLISHING 时禁用 TextArea 与保存按钮，文件名旁显示「发布中，暂不可编辑」Tag
 ## 日志查看界面
 
-- 运行日志页面 /logs：筛选栏含会话名搜索(Input.Search)、日志类型 Select、日志等级 Select，变更后重置到第 1 页
-- Table 列：会话名(sessionName)、对话ID(conversationId)、日志类型(中文 Tag)、日志等级(彩色 Badge: INFO=blue/ERROR=red)、日志数据(超 60 字符截断+展开按钮)、创建时间
+- 会话日志页 src/pages/logs/SessionLogList.tsx（路由 /logs）：调用 listLogSessions（GET /api/sessions/log-sessions）展示当前用户所有主会话（含评估会话），Table 列：会话名(title ellipsis)、是否评估(Tag：评估会话 gold/普通会话 default)、创建时间、操作（「查看日志」按钮跳转 /logs/{sessionId}）；分页关闭全量展示，scroll={{ x: 720, y: useTableScrollY(216) }}
+- 运行日志页面 src/pages/logs/AgentLogList.tsx（路由 /logs/:sessionId）：从路由参数读取主会话 sessionId，日志查询携带 rootSessionId（按该主会话及其全部子会话过滤；路由参数缺失时不传）；筛选栏含会话名搜索(Input.Search)、日志类型 Select、日志等级 Select，变更后重置到第 1 页
+- Table 列：会话名(sessionName)、会话类型(Tag：isChild=true 子会话 blue/否则主会话 default)、对话ID(conversationId)、日志类型(中文 Tag)、日志等级(彩色 Badge: INFO=blue/ERROR=red)、日志数据(超 60 字符截断+展开按钮)、会话变量/对话变量(截断+展开)、创建时间
 - 分页支持每页条数切换(20/50/100)，默认按创建时间倒序（后端排序），showTotal 展示总条数
-- 日志详情 Modal：展示会话名/对话ID/日志类型/日志等级/创建时间元信息 + 完整日志数据(<pre> JSON 美化)
-- types/log.ts 提供 AgentLog 类型、AgentLogQueryParams 查询参数、LogType/LogLevel 常量枚举（code 对齐后端枚举，label 中文）；LogType 不含 CALL_SOURCE，LogLevel 仅含 INFO/ERROR（不含 WARN）
+- 日志详情/变量详情 Modal：展示会话名/对话ID/日志类型/日志等级/创建时间元信息 + 完整日志数据(<pre> JSON 美化)
+- types/log.ts 提供 AgentLog 类型（含 isChild 可选字段标识子会话日志）、AgentLogQueryParams 查询参数（含 rootSessionId 主会话过滤）、LogType/LogLevel 常量枚举（code 对齐后端枚举，label 中文）；LogType 不含 CALL_SOURCE，LogLevel 仅含 INFO/ERROR（不含 WARN）
 - AgentLogList 中 LOG_LEVEL_LABELS/LOG_LEVEL_OPTIONS 由 LogLevel 枚举自动生成，LOG_LEVEL_COLORS 仅映射 INFO/ERROR（未知等级回退 default 颜色与原始值）
-- services/log.ts 提供 listAgentLogs(params) 调用 GET /api/agent-logs 返回 PageResult<AgentLog>
+- services/log.ts 提供 listAgentLogs(params) 调用 GET /api/agent-logs（params 含 rootSessionId）返回 PageResult<AgentLog>
+- services/session.ts 提供 listLogSessions() 调用 GET /api/sessions/log-sessions 返回 Session[]（当前用户所有主会话含评估会话，按创建时间倒序）；types/session.ts Session 接口含 isEvaluation 可选字段
 - src/types/__tests__/log.test.ts 提供 LogType/LogLevel 枚举结构静态测试（不含 CALL_SOURCE/WARN、仅 INFO/ERROR、code/label 非空）
 ## 记忆回看界面
 
@@ -149,15 +149,17 @@
 
 - 登录页 src/pages/login/Login.tsx：登录名 + 密码表单（Form + Input.Password），调用 login 接口，成功后 message.success 并 navigate('/') 进入主界面，失败展示接口错误信息；独立全屏居中 Card 布局（不依赖主界面 Layout）
 - 用户管理页 src/pages/users/UserList.tsx：仅管理员可见可操作（getCurrentUser()?.userType === USER_TYPE_ADMIN 拦截，非管理员渲染 Result 403「无权限访问」；后端接口同样强制校验）
+  - 页面头部 flex/justify-between 布局：「用户管理」标题在左、「添加用户」按钮在最右
   - 分页表格（page/size，pageSizeOptions 10/20/50，showTotal，scroll={{ x: 940, y: useTableScrollY(272) }}）
-  - 列：登录名、显示名（空显示 '-'）、用户类型（Tag：普通用户 default/管理员 gold）、登录状态（Tag：允许登录 green/禁止登录 red）、创建时间、操作（修改/禁止登录|恢复登录 Popconfirm）
-  - 添加用户 Modal：loginName（必填）、displayName、userType（Select 默认普通用户）、password（必填）、enabled（Switch 默认允许）；提交组装 UserCreateRequest
-  - 修改用户 Modal：displayName、userType、password（留空则不修改密码）、enabled（Switch 回填 record.enabled === 1）；提交组装 UserUpdateRequest
+  - 列：登录名、显示名（空显示 '-'）、登录状态（Tag：允许登录 green/禁止登录 red）、创建时间、操作（修改/禁止登录|恢复登录 Popconfirm）——无「用户类型」列，列表仅含普通用户（管理员由后端过滤，前端不过滤）
+  - 添加用户 Modal：loginName（必填）、displayName、password（必填）；提交组装 UserCreateRequest（不含 userType/enabled，用户类型固定普通用户、登录开关由后端默认允许）
+  - 修改用户 Modal：displayName、password（留空则不修改密码）；提交组装 UserUpdateRequest（不含 userType/enabled）
   - 禁止登录 = updateUser(id, { enabled: 0 })，恢复登录 = updateUser(id, { enabled: 1 })
-- src/services/auth.ts：login(data: LoginRequest) 调用 POST /api/auth/login 返回 User 并保存 localStorage（CURRENT_USER_KEY='currentUser'）；getCurrentUser() 读取本地用户（未登录/损坏返回 null）；clearCurrentUser() 清除
-- src/services/user.ts：listUsers({page,size}) 调用 GET /api/users 返回 PageResult<User>；createUser(data) 调用 POST /api/users；updateUser(id, data) 调用 PUT /api/users/{id}；导出 UserListParams 类型
+- src/services/auth.ts：login(data: LoginRequest) 调用 POST /api/auth/login 返回 User 并保存 localStorage（CURRENT_USER_KEY='currentUser'）；getCurrentUser() 读取本地用户（未登录/损坏返回 null）；clearCurrentUser() 清除；saveCurrentUser(user) 更新本地当前用户（修改显示名等自助操作后同步）；logout() 调用 POST /api/auth/logout 注销会话并无论成败清除本地登录状态
+- src/services/user.ts：listUsers({page,size}) 调用 GET /api/users 返回 PageResult<User>；createUser(data) 调用 POST /api/users；updateUser(id, data) 调用 PUT /api/users/{id}；updateCurrentUser(data) 调用 PUT /api/auth/me 自助修改当前用户显示名/密码（返回更新后 User）；导出 UserListParams 类型
 - 登录守卫（src/App.tsx）：未登录（getCurrentUser() 为 null）访问任意页面（除 /login）渲染 <Navigate to="/login" replace /> 自动跳转登录页；登录页独立全屏展示不套主界面 Layout
 - 角色落地页：登录成功或访问根路径 / 时按 userType 重定向——管理员（USER_TYPE_ADMIN=2）跳 /users，普通用户跳 /models（getLandingPath 函数；根路由 element 为 <Navigate to={landingPath} replace />）
 - 侧边栏菜单角色过滤：getVisibleMenuItems 按当前用户 userType 过滤 MENU_ITEMS，用户管理（/users）菜单仅管理员可见，其余菜单所有登录用户可见；Menu items 使用过滤后的 menuItems
+- Header 用户菜单（src/App.tsx）：Header 右上角 Avatar + 显示名 Dropdown（hover 展开），菜单按角色区分——普通用户显示「修改显示名/修改密码/退出」三项，管理员显示「修改密码/退出」两项（无修改显示名）；「修改显示名」「修改密码」分别弹出 Modal（修改密码不需验证旧密码）；修改显示名成功后 updateCurrentUser 返回的用户经 saveCurrentUser 同步 localStorage 并触发重渲染（refreshUser 版本号 state）刷新 Header 显示；「退出」调用 logout 接口清除本地登录状态并跳转 /login
 - 登录成功跳转（src/pages/login/Login.tsx）：login 返回 User 后按 user.userType 跳转落地页（管理员 /users、普通用户 /models），替代原固定 navigate('/')
 - e2e 登录态：e2e/utils/seedAuth.ts 提供 seedAdminLogin/seedNormalLogin（page.addInitScript 注入 localStorage currentUser），12 个既有 e2e spec 顶部 test.beforeEach 注入管理员登录态绕过守卫；e2e/Login.spec.ts 覆盖守卫跳转、管理员/普通用户落地页与菜单可见性
