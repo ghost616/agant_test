@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
+import { ArrowLeftOutlined } from '@ant-design/icons';
 import { Button, Input, message, Modal, Select, Space, Table, Tag, Typography } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import type { AgentLog, AgentLogQueryParams } from '../../types/log';
@@ -47,6 +48,7 @@ function formatLogData(data: string): string {
 function AgentLogList(): JSX.Element {
   // 从路由参数读取主会话 sessionId，日志查询按该主会话及其子会话过滤
   const { sessionId } = useParams<{ sessionId: string }>();
+  const navigate = useNavigate();
   const scrollY = useTableScrollY(272);
   const [dataSource, setDataSource] = useState<AgentLog[]>([]);
   const [loading, setLoading] = useState(false);
@@ -197,6 +199,12 @@ function AgentLogList(): JSX.Element {
 
   return (
     <div>
+      <Space style={{ marginBottom: 16 }}>
+        <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/logs')}>
+          返回
+        </Button>
+      </Space>
+
       <Space style={{ marginBottom: 16 }} wrap>
         <Input.Search
           placeholder="搜索会话名"

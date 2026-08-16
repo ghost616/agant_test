@@ -50,6 +50,7 @@ function renderComponent(entry = '/logs/100') {
     <MemoryRouter initialEntries={[entry]}>
       <Routes>
         <Route path="/logs/:sessionId" element={<AgentLogList />} />
+        <Route path="/logs" element={<div>会话日志列表页</div>} />
       </Routes>
     </MemoryRouter>,
   );
@@ -63,6 +64,20 @@ describe('AgentLogList 初始加载与表格渲染', () => {
   beforeEach(() => {
     mocks.listAgentLogs.mockReset();
     mocks.listAgentLogs.mockResolvedValue(defaultMockResult());
+  });
+
+  it('顶部渲染返回按钮，点击后跳转 /logs 会话日志列表页', async () => {
+    renderComponent();
+    await screen.findByText('会话A');
+
+    const backBtn = screen.getByRole('button', { name: /返回/ });
+    expect(backBtn).toBeTruthy();
+    expect(backBtn.querySelector('.anticon-arrow-left')).toBeTruthy();
+
+    fireEvent.click(backBtn);
+    await waitFor(() => {
+      expect(screen.getByText('会话日志列表页')).toBeTruthy();
+    });
   });
 
   it('初始加载调用 listAgentLogs（page=1, size=20，携带路由 rootSessionId）', async () => {
