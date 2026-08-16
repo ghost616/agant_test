@@ -75,7 +75,7 @@ describe('App 路由注册 (记忆修改)', () => {
 describe('App 登录守卫与菜单权限', () => {
   it('应导入 getCurrentUser、USER_TYPE_ADMIN 与 Navigate', () => {
     const source = readFileSync(appPath, 'utf-8');
-    expect(source).toContain("import { getCurrentUser } from './services/auth'");
+    expect(source).toContain("import { getCurrentUser, logout, saveCurrentUser } from './services/auth'");
     expect(source).toContain("import { USER_TYPE_ADMIN } from './types/user'");
     expect(source).toContain('Navigate');
   });

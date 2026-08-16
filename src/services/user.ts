@@ -1,5 +1,10 @@
-﻿import type { ApiResponse, PageResult } from '../types/common';
-import type { User, UserCreateRequest, UserUpdateRequest } from '../types/user';
+import type { ApiResponse, PageResult } from '../types/common';
+import type {
+  User,
+  UserCreateRequest,
+  UserSelfUpdateRequest,
+  UserUpdateRequest,
+} from '../types/user';
 import api from './api';
 
 /** 用户列表查询参数。 */
@@ -29,7 +34,7 @@ export async function createUser(data: UserCreateRequest): Promise<User> {
 }
 
 /**
- * 修改用户（仅管理员），支持修改显示名/用户类型/密码/登录开关。
+ * 修改用户（仅管理员），支持修改显示名/密码/登录开关。
  * 禁止登录传 { enabled: 0 }，恢复登录传 { enabled: 1 }。
  * @param id 用户 ID
  * @param data 修改字段
@@ -37,5 +42,15 @@ export async function createUser(data: UserCreateRequest): Promise<User> {
  */
 export async function updateUser(id: string, data: UserUpdateRequest): Promise<User> {
   const res = await api.put<ApiResponse<User>>(`/users/${id}`, data);
+  return res.data.data;
+}
+
+/**
+ * 修改当前登录用户信息（自助修改显示名/密码），调用 PUT /api/auth/me。
+ * @param data 自助修改请求（字段为空不修改，enabled 不可自助修改）
+ * @returns 修改后的用户信息
+ */
+export async function updateCurrentUser(data: UserSelfUpdateRequest): Promise<User> {
+  const res = await api.put<ApiResponse<User>>('/auth/me', data);
   return res.data.data;
 }

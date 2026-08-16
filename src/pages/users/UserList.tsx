@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   Button,
   Form,
@@ -7,15 +7,13 @@ import {
   Modal,
   Popconfirm,
   Result,
-  Select,
   Space,
-  Switch,
   Table,
   Tag,
   Typography,
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import { USER_TYPE_ADMIN, USER_TYPE_NORMAL } from '../../types/user';
+import { USER_TYPE_ADMIN } from '../../types/user';
 import type { User, UserCreateRequest, UserUpdateRequest } from '../../types/user';
 import { createUser, listUsers, updateUser } from '../../services/user';
 import { getCurrentUser } from '../../services/auth';
@@ -23,28 +21,10 @@ import useTableScrollY from '../../hooks/useTableScrollY';
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50];
 
-const USER_TYPE_LABELS: Record<number, string> = {
-  [USER_TYPE_NORMAL]: '普通用户',
-  [USER_TYPE_ADMIN]: '管理员',
-};
-
-const USER_TYPE_COLORS: Record<number, string> = {
-  [USER_TYPE_NORMAL]: 'default',
-  [USER_TYPE_ADMIN]: 'gold',
-};
-
-const USER_TYPE_OPTIONS = [
-  { value: USER_TYPE_NORMAL, label: '普通用户' },
-  { value: USER_TYPE_ADMIN, label: '管理员' },
-];
-
 interface UserFormData {
   loginName?: string;
   displayName?: string;
-  userType?: number;
   password?: string;
-  /** Switch 勾选值：true 允许登录，false 禁止登录。 */
-  enabled?: boolean;
 }
 
 /**
@@ -87,7 +67,6 @@ function UserList(): JSX.Element {
   const handleAdd = (): void => {
     setEditingUser(null);
     form.resetFields();
-    form.setFieldsValue({ userType: USER_TYPE_NORMAL, enabled: true });
     setModalVisible(true);
   };
 
@@ -95,8 +74,6 @@ function UserList(): JSX.Element {
     setEditingUser(record);
     form.setFieldsValue({
       displayName: record.displayName,
-      userType: record.userType,
-      enabled: record.enabled === 1,
     });
     setModalVisible(true);
   };
@@ -113,9 +90,7 @@ function UserList(): JSX.Element {
       if (editingUser) {
         const payload: UserUpdateRequest = {
           displayName: values.displayName,
-          userType: values.userType,
           password: values.password || undefined,
-          enabled: values.enabled ? 1 : 0,
         };
         await updateUser(editingUser.id, payload);
         message.success('修改成功');
@@ -123,9 +98,7 @@ function UserList(): JSX.Element {
         const payload: UserCreateRequest = {
           loginName: values.loginName as string,
           displayName: values.displayName,
-          userType: values.userType,
           password: values.password as string,
-          enabled: values.enabled ? 1 : 0,
         };
         await createUser(payload);
         message.success('添加成功');
@@ -175,16 +148,6 @@ function UserList(): JSX.Element {
       render: (value?: string) => value || '-',
     },
     {
-      title: '用户类型',
-      dataIndex: 'userType',
-      width: 120,
-      render: (value: number) => (
-        <Tag color={USER_TYPE_COLORS[value] || 'default'}>
-          {USER_TYPE_LABELS[value] || value}
-        </Tag>
-      ),
-    },
-    {
       title: '登录状态',
       dataIndex: 'enabled',
       width: 120,
@@ -228,14 +191,21 @@ function UserList(): JSX.Element {
 
   return (
     <div>
-      <Space style={{ marginBottom: 16 }} wrap>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: 16,
+        }}
+      >
         <Typography.Title level={4} style={{ margin: 0 }}>
           用户管理
         </Typography.Title>
         <Button type="primary" onClick={handleAdd}>
           添加用户
         </Button>
-      </Space>
+      </div>
 
       <Table<User>
         rowKey="id"
@@ -279,9 +249,6 @@ function UserList(): JSX.Element {
           <Form.Item name="displayName" label="显示名">
             <Input placeholder="请输入显示名" maxLength={50} />
           </Form.Item>
-          <Form.Item name="userType" label="用户类型">
-            <Select placeholder="请选择用户类型" options={USER_TYPE_OPTIONS} />
-          </Form.Item>
           <Form.Item
             name="password"
             label="密码"
@@ -291,9 +258,6 @@ function UserList(): JSX.Element {
               placeholder={editingUser ? '留空则不修改密码' : '请输入密码'}
               maxLength={100}
             />
-          </Form.Item>
-          <Form.Item name="enabled" label="允许登录" valuePropName="checked">
-            <Switch checkedChildren="允许" unCheckedChildren="禁止" />
           </Form.Item>
         </Form>
       </Modal>

@@ -8,6 +8,7 @@ import com.ghost616.platform.dto.PageResult;
 import com.ghost616.platform.dto.user.LoginRequest;
 import com.ghost616.platform.dto.user.UserCreateRequest;
 import com.ghost616.platform.dto.user.UserDTO;
+import com.ghost616.platform.dto.user.UserSelfUpdateRequest;
 import com.ghost616.platform.dto.user.UserUpdateRequest;
 import com.ghost616.platform.entity.User;
 import com.ghost616.platform.enums.ErrorCode;
@@ -52,7 +53,9 @@ public class UserServiceImpl implements UserService {
         int safePage = Math.max(page, 1);
         int safeSize = size > 0 ? size : 10;
         Page<User> pager = new Page<>(safePage, safeSize);
-        userMapper.selectPage(pager, new LambdaQueryWrapper<User>().orderByDesc(User::getCreateTime));
+        userMapper.selectPage(pager, new LambdaQueryWrapper<User>()
+                .eq(User::getUserType, USER_TYPE_NORMAL)
+                .orderByDesc(User::getCreateTime));
         List<UserDTO> list = pager.getRecords().stream().map(UserDTO::of).toList();
         return PageResult.of(pager, list);
     }
@@ -66,7 +69,8 @@ public class UserServiceImpl implements UserService {
         user.setId(IdWorker.getId());
         user.setLoginName(request.getLoginName());
         user.setDisplayName(request.getDisplayName());
-        user.setUserType(validateUserType(request.getUserType()));
+        // 用户管理仅面向普通用户，新建用户固定为普通用户类型
+        user.setUserType(USER_TYPE_NORMAL);
         user.setEnabled(request.getEnabled() != null ? request.getEnabled() : ENABLED_YES);
         LocalDateTime createTime = LocalDateTime.now().withNano(0);
         user.setCreateTime(createTime);
@@ -86,9 +90,6 @@ public class UserServiceImpl implements UserService {
         if (StringUtils.isNotBlank(request.getDisplayName())) {
             user.setDisplayName(request.getDisplayName());
         }
-        if (request.getUserType() != null) {
-            user.setUserType(validateUserType(request.getUserType()));
-        }
         if (StringUtils.isNotBlank(request.getPassword())) {
             if (user.getCreateTime() == null) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "用户缺少创建时间，无法重置密码");
@@ -97,6 +98,26 @@ public class UserServiceImpl implements UserService {
         }
         if (request.getEnabled() != null) {
             user.setEnabled(validateEnabled(request.getEnabled()));
+        }
+        userMapper.updateById(user);
+        return UserDTO.of(user);
+    }
+
+    @Override
+    @Transactional
+    public UserDTO updateSelf(Long userId, UserSelfUpdateRequest request) {
+        User user = userMapper.selectById(userId);
+        if (user == null) {
+            throw new BusinessException(ErrorCode.USER_NOT_FOUND);
+        }
+        if (StringUtils.isNotBlank(request.getDisplayName())) {
+            user.setDisplayName(request.getDisplayName());
+        }
+        if (StringUtils.isNotBlank(request.getPassword())) {
+            if (user.getCreateTime() == null) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "用户缺少创建时间，无法重置密码");
+            }
+            user.setPassword(encryptPassword(request.getPassword(), user.getId(), user.getCreateTime()));
         }
         userMapper.updateById(user);
         return UserDTO.of(user);
@@ -111,14 +132,6 @@ public class UserServiceImpl implements UserService {
         if (userMapper.selectCount(wrapper) > 0) {
             throw new BusinessException(ErrorCode.USER_ALREADY_EXISTS);
         }
-    }
-
-    private int validateUserType(Integer userType) {
-        int type = userType != null ? userType : USER_TYPE_NORMAL;
-        if (type != USER_TYPE_NORMAL && type != USER_TYPE_ADMIN) {
-            throw new BusinessException(ErrorCode.PARAM_INVALID, "userType 只能为 1（普通用户）或 2（管理员）");
-        }
-        return type;
     }
 
     private int validateEnabled(Integer enabled) {

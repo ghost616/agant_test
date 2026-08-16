@@ -161,6 +161,35 @@ class AuthAspectTest {
     }
 
     @Test
+    void 未登录访问authMe接口抛USER_NOT_LOGIN() throws Throwable {
+        bindRequest(mockRequest("PUT", "/api/auth/me"));
+        UserContext.clear();
+        StubJoinPoint jp = new StubJoinPoint();
+        BusinessException ex = assertThrows(BusinessException.class, () -> aspect.checkAuth(jp));
+        assertEquals(ErrorCode.USER_NOT_LOGIN, ex.getErrorCode());
+        assertFalse(jp.proceeded);
+    }
+
+    @Test
+    void 未登录访问logout接口抛USER_NOT_LOGIN() throws Throwable {
+        bindRequest(mockRequest("POST", "/api/auth/logout"));
+        UserContext.clear();
+        StubJoinPoint jp = new StubJoinPoint();
+        BusinessException ex = assertThrows(BusinessException.class, () -> aspect.checkAuth(jp));
+        assertEquals(ErrorCode.USER_NOT_LOGIN, ex.getErrorCode());
+        assertFalse(jp.proceeded);
+    }
+
+    @Test
+    void 普通用户访问authMe接口放行() throws Throwable {
+        bindRequest(mockRequest("PUT", "/api/auth/me"));
+        UserContext.set(sessionOfType(UserService.USER_TYPE_NORMAL));
+        StubJoinPoint jp = new StubJoinPoint();
+        assertEquals("ok", aspect.checkAuth(jp));
+        assertTrue(jp.proceeded);
+    }
+
+    @Test
     void 未登录访问users接口抛USER_NOT_LOGIN而非FORBIDDEN() throws Throwable {
         bindRequest(mockRequest("GET", "/api/users"));
         UserContext.clear();

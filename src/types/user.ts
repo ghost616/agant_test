@@ -28,14 +28,18 @@ export interface LoginRequest {
 export interface UserCreateRequest {
   loginName: string;
   displayName?: string;
-  userType?: number;
   password: string;
   enabled?: number;
 }
 
 export interface UserUpdateRequest {
   displayName?: string;
-  userType?: number;
   password?: string;
   enabled?: number;
+}
+
+/** 当前登录用户自助修改请求（显示名/密码，字段为空不修改，enabled 不可自助修改）。 */
+export interface UserSelfUpdateRequest {
+  displayName?: string;
+  password?: string;
 }

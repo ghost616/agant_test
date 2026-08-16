@@ -20,9 +20,6 @@ public class UserCreateRequest {
 
     private String displayName;
 
-    /** 用户类型：1 普通用户（默认），2 管理员。 */
-    private Integer userType;
-
     @NotBlank(message = "密码不能为空")
     private String password;
 

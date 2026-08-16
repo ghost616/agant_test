@@ -4,6 +4,7 @@ import com.ghost616.platform.dto.PageResult;
 import com.ghost616.platform.dto.user.LoginRequest;
 import com.ghost616.platform.dto.user.UserCreateRequest;
 import com.ghost616.platform.dto.user.UserDTO;
+import com.ghost616.platform.dto.user.UserSelfUpdateRequest;
 import com.ghost616.platform.dto.user.UserUpdateRequest;
 import com.ghost616.platform.entity.User;
 
@@ -51,4 +52,13 @@ public interface UserService {
      * @return 修改后的用户信息
      */
     UserDTO updateUser(Long id, UserUpdateRequest request);
+
+    /**
+     * 当前登录用户自助修改自己的显示名与密码（enabled 不可自助修改）。
+     *
+     * @param userId  当前登录用户 ID
+     * @param request 自助修改请求，字段为空表示不修改
+     * @return 修改后的用户信息
+     */
+    UserDTO updateSelf(Long userId, UserSelfUpdateRequest request);
 }

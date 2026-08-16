@@ -1,4 +1,4 @@
-﻿import type { ApiResponse } from '../types/common';
+import type { ApiResponse } from '../types/common';
 import type { LoginRequest, User } from '../types/user';
 import api from './api';
 
@@ -39,4 +39,24 @@ export function getCurrentUser(): User | null {
  */
 export function clearCurrentUser(): void {
   localStorage.removeItem(CURRENT_USER_KEY);
+}
+
+/**
+ * 更新本地保存的当前登录用户（修改显示名等自助操作成功后同步 localStorage）。
+ * @param user 最新的用户信息
+ */
+export function saveCurrentUser(user: User): void {
+  localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
+}
+
+/**
+ * 退出登录：调用 POST /api/auth/logout 通知后端注销会话，
+ * 无论接口是否成功都清除本地保存的当前登录用户。
+ */
+export async function logout(): Promise<void> {
+  try {
+    await api.post<ApiResponse<null>>('/auth/logout');
+  } finally {
+    clearCurrentUser();
+  }
 }

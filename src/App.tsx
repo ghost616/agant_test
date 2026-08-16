@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Navigate, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
-import { Layout, Menu } from 'antd';
+import { Avatar, Dropdown, Form, Input, Layout, Menu, message, Modal, Space } from 'antd';
 import type { MenuProps } from 'antd';
-import { getCurrentUser } from './services/auth';
+import { getCurrentUser, logout, saveCurrentUser } from './services/auth';
+import { updateCurrentUser } from './services/user';
 import { USER_TYPE_ADMIN } from './types/user';
 import type { User } from './types/user';
 import {
@@ -126,7 +127,79 @@ function App() {
   const navigate = useNavigate();
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
+  // 版本号状态：修改显示名/退出等自助操作后触发重渲染，重新从 localStorage 读取当前用户
+  const [, refreshUser] = useState(0);
+  const [displayNameModalVisible, setDisplayNameModalVisible] = useState(false);
+  const [passwordModalVisible, setPasswordModalVisible] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [displayNameForm] = Form.useForm<{ displayName: string }>();
+  const [passwordForm] = Form.useForm<{ password: string }>();
   const currentUser = getCurrentUser();
+
+  /** 修改显示名：调用自助修改接口，成功后同步 localStorage 中的当前用户并刷新 Header 显示。 */
+  const handleDisplayNameOk = async (): Promise<void> => {
+    let values: { displayName: string };
+    try {
+      values = await displayNameForm.validateFields();
+    } catch {
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const updated = await updateCurrentUser({ displayName: values.displayName });
+      saveCurrentUser(updated);
+      refreshUser((v) => v + 1);
+      message.success('显示名修改成功');
+      setDisplayNameModalVisible(false);
+    } catch {
+      message.error('修改显示名失败');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  /** 修改密码：调用自助修改接口（不需验证旧密码），成功后关闭弹窗。 */
+  const handlePasswordOk = async (): Promise<void> => {
+    let values: { password: string };
+    try {
+      values = await passwordForm.validateFields();
+    } catch {
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await updateCurrentUser({ password: values.password });
+      message.success('密码修改成功');
+      setPasswordModalVisible(false);
+      passwordForm.resetFields();
+    } catch {
+      message.error('修改密码失败');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  /** 退出登录：调用退出接口并清除本地登录状态，跳转登录页。 */
+  const handleLogout = async (): Promise<void> => {
+    try {
+      await logout();
+    } catch {
+      // 后端退出失败也继续清除本地登录状态并跳转登录页
+    } finally {
+      navigate('/login');
+    }
+  };
+
+  /** Header 用户菜单点击：按菜单 key 打开对应弹窗或执行退出。 */
+  const handleUserMenuClick: MenuProps['onClick'] = ({ key }) => {
+    if (key === 'editDisplayName') {
+      setDisplayNameModalVisible(true);
+    } else if (key === 'editPassword') {
+      setPasswordModalVisible(true);
+    } else if (key === 'logout') {
+      void handleLogout();
+    }
+  };
 
   // 路由守卫：未登录访问任意页面（除 /login）自动跳转登录页
   if (!currentUser && location.pathname !== '/login') {
@@ -141,6 +214,14 @@ function App() {
   const landingPath = getLandingPath(currentUser);
   const menuItems = getVisibleMenuItems(currentUser);
   const selectedKeys = [location.pathname === '/' ? landingPath : location.pathname];
+
+  // Header 用户下拉菜单：普通用户含「修改显示名/修改密码/退出」，管理员仅「修改密码/退出」
+  const isAdmin = currentUser?.userType === USER_TYPE_ADMIN;
+  const userMenuItems: NonNullable<MenuProps['items']> = [
+    ...(isAdmin ? [] : [{ key: 'editDisplayName', label: '修改显示名' }]),
+    { key: 'editPassword', label: '修改密码' },
+    { key: 'logout', label: '退出' },
+  ];
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
@@ -180,7 +261,22 @@ function App() {
             borderBottom: '1px solid #f0f0f0',
           }}
         >
-          <h2 style={{ margin: 0 }}>智能化 Agent 低代码平台</h2>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              height: '100%',
+            }}
+          >
+            <h2 style={{ margin: 0 }}>智能化 Agent 低代码平台</h2>
+            <Dropdown menu={{ items: userMenuItems, onClick: handleUserMenuClick }}>
+              <Space style={{ cursor: 'pointer' }}>
+                <Avatar size="small" icon={<UserOutlined />} />
+                <span>{currentUser?.displayName || currentUser?.loginName}</span>
+              </Space>
+            </Dropdown>
+          </div>
         </Header>
         <Content style={{ margin: 24 }}>
           <Routes>
@@ -210,6 +306,46 @@ function App() {
           </Routes>
         </Content>
       </Layout>
+
+      <Modal
+        title="修改显示名"
+        open={displayNameModalVisible}
+        onOk={handleDisplayNameOk}
+        onCancel={() => setDisplayNameModalVisible(false)}
+        confirmLoading={submitting}
+        width={420}
+        destroyOnClose
+      >
+        <Form form={displayNameForm} layout="vertical" preserve={false}>
+          <Form.Item
+            name="displayName"
+            label="显示名"
+            rules={[{ required: true, message: '请输入显示名' }]}
+          >
+            <Input placeholder="请输入显示名" maxLength={50} />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      <Modal
+        title="修改密码"
+        open={passwordModalVisible}
+        onOk={handlePasswordOk}
+        onCancel={() => setPasswordModalVisible(false)}
+        confirmLoading={submitting}
+        width={420}
+        destroyOnClose
+      >
+        <Form form={passwordForm} layout="vertical" preserve={false}>
+          <Form.Item
+            name="password"
+            label="新密码"
+            rules={[{ required: true, message: '请输入新密码' }]}
+          >
+            <Input.Password placeholder="请输入新密码" maxLength={100} />
+          </Form.Item>
+        </Form>
+      </Modal>
     </Layout>
   );
 }
