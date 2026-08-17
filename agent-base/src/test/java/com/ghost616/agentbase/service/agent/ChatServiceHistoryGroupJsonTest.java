@@ -107,14 +107,14 @@ class ChatServiceHistoryGroupJsonTest {
         List<AgentExecutionContext.HistoryEntry> history = new ArrayList<>();
         for (int g = 0; g < groupCount - 1; g++) {
             history.add(new AgentExecutionContext.HistoryEntry(
-                    "user", "q" + g, null, null, g * 2 + 1, java.time.LocalDateTime.now(),
+                    "user", "q" + g, null, null, java.time.LocalDateTime.now(),
                     List.of(), null, null, null));
             history.add(new AgentExecutionContext.HistoryEntry(
-                    "assistant", "a" + g, null, null, g * 2 + 2, java.time.LocalDateTime.now(),
+                    "assistant", "a" + g, null, null, java.time.LocalDateTime.now(),
                     List.of(), null, null, null));
         }
         history.add(new AgentExecutionContext.HistoryEntry(
-                "user", "hello", null, null, groupCount * 2 - 1, java.time.LocalDateTime.now(),
+                "user", "hello", null, null, java.time.LocalDateTime.now(),
                 List.of(), null, null, null));
         return history;
     }
@@ -157,29 +157,29 @@ class ChatServiceHistoryGroupJsonTest {
                 .build();
         List<AgentExecutionContext.HistoryEntry> history = new ArrayList<>();
         history.add(new AgentExecutionContext.HistoryEntry(
-                "user", "q0", null, null, 1, java.time.LocalDateTime.now(), List.of(), null, null, null));
+                "user", "q0", null, null, java.time.LocalDateTime.now(), List.of(), null, null, null));
         history.add(new AgentExecutionContext.HistoryEntry(
-                "assistant", "a0", null, null, 2, java.time.LocalDateTime.now(), List.of(), null, null, null));
+                "assistant", "a0", null, null, java.time.LocalDateTime.now(), List.of(), null, null, null));
         history.add(new AgentExecutionContext.HistoryEntry(
-                "user", "q1", null, null, 3, java.time.LocalDateTime.now(), List.of(), null, null, null));
+                "user", "q1", null, null, java.time.LocalDateTime.now(), List.of(), null, null, null));
         history.add(new AgentExecutionContext.HistoryEntry(
-                "assistant", "a1", null, null, 4, java.time.LocalDateTime.now(), List.of(), null, null, null));
+                "assistant", "a1", null, null, java.time.LocalDateTime.now(), List.of(), null, null, null));
         history.add(new AgentExecutionContext.HistoryEntry(
-                "user", "q2", null, null, 5, java.time.LocalDateTime.now(), List.of(), null, null, null));
+                "user", "q2", null, null, java.time.LocalDateTime.now(), List.of(), null, null, null));
         history.add(new AgentExecutionContext.HistoryEntry(
-                "assistant", "调用工具", "reasoning_text", null, 6, java.time.LocalDateTime.now(),
+                "assistant", "调用工具", "reasoning_text", null, java.time.LocalDateTime.now(),
                 List.of(toolCall), null, null, null));
         history.add(new AgentExecutionContext.HistoryEntry(
-                "tool", "{\"temp\":25}", null, new ToolInfo("tc1", "get_weather"), 7, java.time.LocalDateTime.now(),
+                "tool", "{\"temp\":25}", null, new ToolInfo("tc1", "get_weather"), java.time.LocalDateTime.now(),
                 List.of(), null, null, null));
         for (int g = 3; g < 13; g++) {
             history.add(new AgentExecutionContext.HistoryEntry(
-                    "user", "q" + g, null, null, g * 2 + 1, java.time.LocalDateTime.now(), List.of(), null, null, null));
+                    "user", "q" + g, null, null, java.time.LocalDateTime.now(), List.of(), null, null, null));
             history.add(new AgentExecutionContext.HistoryEntry(
-                    "assistant", "a" + g, null, null, g * 2 + 2, java.time.LocalDateTime.now(), List.of(), null, null, null));
+                    "assistant", "a" + g, null, null, java.time.LocalDateTime.now(), List.of(), null, null, null));
         }
         history.add(new AgentExecutionContext.HistoryEntry(
-                "user", "hello", null, null, 27, java.time.LocalDateTime.now(), List.of(), null, null, null));
+                "user", "hello", null, null, java.time.LocalDateTime.now(), List.of(), null, null, null));
 
         com.ghost616.agentbase.dto.model.ChatRequest captured = executeFoldChat(history, 3, "[2]");
 

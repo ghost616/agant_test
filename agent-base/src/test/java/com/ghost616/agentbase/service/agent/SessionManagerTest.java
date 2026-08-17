@@ -198,7 +198,7 @@ class SessionManagerTest {
     @Test
     void getMessages应记录MESSAGE_QUERY日志() {
         when(dataProvider.getMessages("1")).thenReturn(List.of(
-                new MessageDataProvider.MessageDTO("m1", "1", "user", "hello", null, null, 0,
+                new MessageDataProvider.MessageDTO("m1", "1", "user", "hello", null, null,
                         LocalDateTime.now(), null, null, null, null, null, null, null)));
 
         sessionManager.getMessages("1");

@@ -13,7 +13,6 @@ export interface HistoryEntry {
     content?: string;
     reasoning?: string;
     toolInfo?: { toolCallId?: string; toolName?: string };
-    sequenceNum: number;
     createTime?: string;
     toolCalls?: ToolCall[];
 }

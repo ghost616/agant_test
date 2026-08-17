@@ -1,0 +1,22 @@
+[
+  {
+    "kui_plan_id": "kui_plan_520fea33-c05c-4aa2-8524-ef856d37c41f",
+    "plans": [
+      {
+        "module_name": "agent-base",
+        "development_plan": "删除 HistoryEntry.sequenceNum 与 MessageDataProvider.MessageDTO.sequenceNum 字段，并同步调整所有相关构造、序列化和测试代码，确保编译与测试通过。具体包括：AgentExecutionContext.HistoryEntry 移除 sequenceNum；MessageDataProvider.MessageDTO 移除 sequenceNum；更新 AgentContextManager、ChatService、ToolExecutionService、MessageSavePostHook 中的 HistoryEntry 构造；ContextSerializer 不再输出 sequenceNum；_runner.py 和 _runner.ts 移除 sequenceNum；更新 ChatServiceTest、ChatServiceHistoryGroupJsonTest、ChatServiceResponsesTest、AgentContextManagerTest、AgentContextManagerLogTest 等测试。"
+      },
+      {
+        "module_name": "agent-engine",
+        "development_plan": "删除工具 TS 接口中 HistoryEntry.sequenceNum 字段声明，涉及 tools/file-reader/index.ts、tools/session-var-write-ts/index.ts、tools/session-var-read-ts/index.ts，保持与 agent-base 上下文序列化变更一致。"
+      },
+      {
+        "module_name": "platform-app",
+        "development_plan": "控制器返回的 MessageDataProvider.MessageDTO 全部改为新的 SessionMessageDTO。新增 platform-app/src/main/java/com/ghost616/platform/dto/session/SessionMessageDTO，字段与内部 MessageDTO 一致并保留 sequenceNum；DefaultMessageDataProvider 保留内部 toMessageDTOs（返回无 sequenceNum 的内部 MessageDTO），新增 API 映射方法返回 SessionMessageDTO；SessionService/SessionServiceImpl 的消息查询返回类型改为 SessionMessageDTO；SessionController 的 /messages、/messages/range、completeSubSession 内部逻辑和 ConversationController 的 /conversations/{conversationId}/messages 改用 SessionMessageDTO；同步更新 SessionControllerTest、ConversationControllerTest、EvaluationResultGenerateServiceTest、EvaluationExecutionServiceTest 等相关测试。"
+      }
+    ],
+    "plan_ids": [],
+    "status": "pending",
+    "result": ""
+  }
+]

@@ -1,10 +1,9 @@
 package com.ghost616.platform.service.session;
 
 import com.ghost616.platform.dto.session.SessionDTO;
+import com.ghost616.platform.dto.session.SessionMessageDTO;
 
 import java.util.List;
-
-import com.ghost616.agentbase.service.agent.MessageDataProvider;
 
 
 public interface SessionService {
@@ -26,9 +25,9 @@ public interface SessionService {
 
     void deleteSession(Long id);
 
-    List<MessageDataProvider.MessageDTO> getMessages(Long sessionId);
+    List<SessionMessageDTO> getMessages(Long sessionId);
 
-    List<MessageDataProvider.MessageDTO> getMessagesByConversationId(String conversationId);
+    List<SessionMessageDTO> getMessagesByConversationId(String conversationId);
 
     int rollback(Long sessionId);
 

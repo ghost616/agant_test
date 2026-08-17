@@ -480,6 +480,10 @@
     {
       "path": "platform-app/src/test/java/com/ghost616/platform/service/search/SessionMemoryESClientUserIdFilterTest.java",
       "description": "SessionMemoryESClient userId 过滤专项测试：userId 非空时 bool 查询含 term(userId) 过滤（与 sessionId/aggregationType 共 3 个 filter）；userId 为 null 时仅 sessionId/aggregationType 两个 filter（离朱接口测试新增）"
+    },
+    {
+      "description": "会话消息 API 传输对象：字段与 agent-base 内部 MessageDataProvider.MessageDTO（14 字段，无 sequenceNum）保持一致并额外保留 sequenceNum（共 15 字段），供 SessionController/ConversationController 等 Controller 层对外返回消息列表使用；由 DefaultMessageDataProvider.toSessionMessageDTOs/toSessionMessageDTO 从消息实体映射生成（注意：该文件因 E: 卷不支持硬链接无法由代理工具创建，需人工按测试报告附录内容创建后再编译）。",
+      "path": "platform-app/src/main/java/com/ghost616/platform/dto/session/SessionMessageDTO.java"
     }
   ]
 }

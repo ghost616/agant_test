@@ -1,0 +1,19 @@
+{
+  "plan_id": "plan_a044633e-2592-44eb-900a-866d06ee0501",
+  "module_name": "agent-base",
+  "development_plan": "1. MessageName 常量类新增 SEND_USER_MESSAGE 消息类型常量。2. SessionMessage 抽象类新增 conversationId、parentSessionId、mainSessionId 三个字段（含 getter/setter，可序列化）。3. 新建 SendUserMessage 消息类（继承 SessionMessage，实现 MessageDefinition，getMessageName 返回 SEND_USER_MESSAGE）。4. AgentContextManager.sendUserMessage 方法增加发送机制：构造 SendUserMessage 消息（sessionId=childSessionId，conversationId、parentSessionId 透传，mainSessionId 沿 parentSessionId 链逐级向上查询 ContextDataProvider 找到无父会话的主会话 ID），通过 registry 的 MessageSender.send() 发送，仅在 MessageSender 非空时发送且发送异常不影响原有保存逻辑。5. ChatService.chat 支持特殊标记 content 值（新增与 TOOL_CONTINUE_MARKER 同类的常量标记，如 SEND_USER_MESSAGE_MARKER）：识别该标记时与 TOOL_CONTINUE_MARKER 同样处理——不保存用户消息、不加入历史、直接触发模型执行，ChatRequest.content 保持 @NotBlank 校验不变。",
+  "session_id": "20b84998-8807-43f6-b4fa-b84e91664241",
+  "modified_files": [
+    "agent-base/src/main/java/com/ghost616/agentbase/sendmessage/MessageName.java",
+    "agent-base/src/main/java/com/ghost616/agentbase/sendmessage/SessionMessage.java",
+    "agent-base/src/main/java/com/ghost616/agentbase/sendmessage/SendUserMessage.java",
+    "agent-base/src/main/java/com/ghost616/agentbase/sendmessage/ConversationIdMessage.java",
+    "agent-base/src/main/java/com/ghost616/agentbase/sendmessage/ChildCreateSession.java",
+    "agent-base/src/main/java/com/ghost616/agentbase/service/agent/AgentContextManager.java",
+    "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ChatService.java",
+    "agent-base/src/test/java/com/ghost616/agentbase/sendmessage/SendUserMessageTest.java",
+    "agent-base/src/test/java/com/ghost616/agentbase/service/agent/AgentContextManagerTest.java",
+    "agent-base/src/test/java/com/ghost616/agentbase/service/agent/ChatServiceTest.java",
+    "agent-base/src/test/java/com/ghost616/agentbase/service/agent/log/HandleMessageLogDataTest.java"
+  ]
+}

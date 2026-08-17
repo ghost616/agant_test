@@ -34,7 +34,6 @@ public class AgentContextDTO {
         private String content;
         private String reasoning;
         private ToolInfo toolInfo;
-        private int sequenceNum;
         private LocalDateTime createTime;
         private List<ToolCall> toolCalls;
         private UsageInfo usage;

@@ -173,9 +173,9 @@ class AgentContextManagerLogTest {
         when(toolManager.getSessionTools(eq(sessionId), anyBoolean())).thenReturn(List.of(
                 new ToolManager.ToolSessionObject(tool, null, null, List.of(), List.of())));
         when(sessionManager.getMessages(sessionId)).thenReturn(List.of(
-                new MessageDataProvider.MessageDTO("1", sessionId, "user", "hello", null, null, 0,
+                new MessageDataProvider.MessageDTO("1", sessionId, "user", "hello", null, null,
                         LocalDateTime.now(), null, null, null, null, null, null, null),
-                new MessageDataProvider.MessageDTO("2", sessionId, "assistant", "hi", null, null, 1,
+                new MessageDataProvider.MessageDTO("2", sessionId, "assistant", "hi", null, null,
                         LocalDateTime.now(), null, null, null, null, null, null, null)));
 
         agentContextManager.build(sessionId).build();
@@ -458,7 +458,7 @@ class AgentContextManagerLogTest {
         buildContext();
 
         HistoryMessage message = new HistoryMessage(sessionId,
-                new AgentExecutionContext.HistoryEntry("user", "hello", null, null, 0,
+                new AgentExecutionContext.HistoryEntry("user", "hello", null, null,
                         LocalDateTime.now(), List.of(), null, null, null));
         agentContextManager.handleHistoryMessage(message);
 

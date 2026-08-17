@@ -1,15 +1,14 @@
 package com.ghost616.agentbase.sendmessage;
 
-import lombok.Getter;
-
-@Getter
+/**
+ * ConversationIdMessage 消息类，继承 SessionMessage，messageName=CONVERSATION_ID。
+ * conversationId 由父类 SessionMessage 承载。
+ */
 public class ConversationIdMessage extends SessionMessage {
-
-    private final String conversationId;
 
     public ConversationIdMessage(String sessionId, String conversationId) {
         setSessionId(sessionId);
-        this.conversationId = conversationId;
+        setConversationId(conversationId);
     }
 
     @Override

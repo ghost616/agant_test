@@ -1,0 +1,5 @@
+{
+  "session_id": "2a30d758-01de-40ea-948a-cbfaf9c750b6",
+  "content": "## 运行日志页返回按钮功能 - 断言修复后复测（frontend-ui 模块）\n\n### 涉及文件\n- src/pages/logs/AgentLogList.tsx（组件修改：新增返回按钮，本轮未再改动）\n- src/pages/logs/__tests__/AgentLogList.test.tsx（断言修复：getByRole name 由精确匹配 '返回' 改为正则 /返回/）\n\n### 背景\n首轮测试 25/26 通过，唯一失败为测试断言假阴性：antd Button 的 icon 图标 aria-label=\"arrow-left\" 参与可访问名称计算，按钮实际 accessible name 为「arrow-left返回」，精确匹配 '返回' 失败。已按修复建议方案 A 将断言改为正则 /返回/（组件功能本身正确，E2E 已验证跳转正常）。\n\n### 待测试功能\n1. src/pages/logs/__tests__/AgentLogList.test.tsx 全部用例通过（含「顶部渲染返回按钮，点击后跳转 /logs 会话日志列表页」用例：getByRole('button', { name: /返回/ }) 匹配成功、含 .anticon-arrow-left 图标、点击后跳转 /logs 列表页）。\n2. 回归：其余 25 个既有用例（加载/筛选/分页/详情与变量 Modal/会话类型 Tag/useTableScrollY）保持通过。\n3. AgentLogList.tsx 编译/类型检查零错误。\n\n### 测试建议\n- 运行 npx vitest run src/pages/logs/__tests__/AgentLogList.test.tsx。\n- 对 AgentLogList.tsx 做 tsc 类型检查（仅验证本次变更文件，全量既有问题与本任务无关）。\n",
+  "timestamp": "2026-08-16T07:24:39.644Z"
+}

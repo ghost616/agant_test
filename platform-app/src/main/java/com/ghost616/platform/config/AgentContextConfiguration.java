@@ -15,6 +15,7 @@ import com.ghost616.agentbase.service.agent.invoker.ToolManager;
 import com.ghost616.agentbase.service.model.invoker.ModelInvokerFactory;
 import com.ghost616.agentbase.service.model.invoker.ModelInvokerManager;
 import com.ghost616.agentbase.service.agent.ToolExecutionProvider;
+import com.ghost616.agentbase.sendmessage.MessageSender;
 import com.ghost616.agentinteg.AgentAssembler;
 import com.ghost616.agentinteg.model.invoker.DefaultModelInvokerFactory;
 import com.ghost616.platform.repository.ModelConfigMapper;
@@ -86,9 +87,10 @@ public class AgentContextConfiguration {
                             ModelInvokerFactory modelInvokerFactory,
                             ChatDataProvider chatDataProvider,
                             ToolExecutionProvider toolExecutionProvider,
-                            UserContextThreadVariableHandler userContextThreadVariableHandler) {
+                            UserContextThreadVariableHandler userContextThreadVariableHandler,
+                            MessageSender messageSender) {
         AgentAssembler assembler = new AgentAssembler(contextDataProvider, messageDataProvider, toolDataProvider,
-                systemToolProvider, modelInvokerFactory, chatDataProvider, null, toolExecutionProvider);
+                systemToolProvider, modelInvokerFactory, chatDataProvider, messageSender, toolExecutionProvider);
         assembler.setThreadVariableHandler(userContextThreadVariableHandler);
         return assembler;
     }

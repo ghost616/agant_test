@@ -23,7 +23,7 @@
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/AgentContextManager.java",
-      "description": "管理会话上下文缓存 ConcurrentHashMap<String, AgentSessionContext>；doBuild 构造 AgentExecutionContext 后，若 ctxData.lastResponseId() 非空则通过 mutator.setLastResponseId() 注入会话最近响应 ID。提供 build/get/remove/addHistoryEntry 方法及 4 个刷新方法（refreshHistory/refreshSessionVariables/refreshConversationVariables/refreshChildSessions）。sendUserMessage（void）不再委托 AgentMessageProxy 执行模型对话，改为 sessionManager.messageSave() 持久化 user 消息 + addHistoryEntry 更新子会话 context 的 HistoryEntry（sequenceNum=子会话 history.size()+1），保留 SendMessageLogData 日志。injectVariableCallbacks() 在 parentCtx != null 时获取父会话 conversationId 并传入 createChildSession/sendUserMessage 回调，两私有方法签名携带 conversationId 参数，构建 ChildSessionLogData/SendMessageLogData 日志时写入 conversationId。convertMessagesToHistory 将 MessageDTO 的 ToolInfo toolInfo 直接传入 HistoryEntry，并通过 toWebSearchCall/toCustomToolCall 私有方法将 List<WebSearchCallData>/List<CustomToolCallData> 转为独立类 List<WebSearchCall>/List<CustomToolCall>。"
+      "description": "管理会话上下文缓存 ConcurrentHashMap<String, AgentSessionContext>；doBuild 构造 AgentExecutionContext 后，若 ctxData.lastResponseId() 非空则通过 mutator.setLastResponseId() 注入会话最近响应 ID。提供 build/get/remove/addHistoryEntry 方法及 4 个刷新方法（refreshHistory/refreshSessionVariables/refreshConversationVariables/refreshChildSessions）。sendUserMessage（void）不再委托 AgentMessageProxy 执行模型对话，改为 sessionManager.messageSave() 持久化 user 消息 + addHistoryEntry 更新子会话 context 的 HistoryEntry，保留 SendMessageLogData 日志；并在持久化后通过 registry.getMessageSender() 发送 SendUserMessage（sessionId=childSessionId，conversationId/parentSessionId 透传，mainSessionId 沿 parentSessionId 链经 ContextDataProvider.loadAgentContext 逐级向上解析到无父会话的主会话 ID），仅 MessageSender 非空时发送且发送异常不影响原有保存逻辑（sendSendUserMessage/resolveMainSessionId 私有方法）。injectVariableCallbacks() 在 parentCtx != null 时获取父会话 conversationId 并传入 createChildSession/sendUserMessage 回调，两私有方法签名携带 conversationId 参数，构建 ChildSessionLogData/SendMessageLogData 日志时写入 conversationId。convertMessagesToHistory 将 MessageDTO 的 ToolInfo toolInfo 直接传入 HistoryEntry，并通过 toWebSearchCall/toCustomToolCall 私有方法将 List<WebSearchCallData>/List<CustomToolCallData> 转为独立类 List<WebSearchCall>/List<CustomToolCall>。"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/SystemTool.java",
@@ -95,7 +95,7 @@
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ChatService.java",
-      "description": "ChatService 聊天服务，非 Spring 组件。构造函数接收 AgentComponentRegistry，通过 registry 延迟获取 AgentContextManager/SessionManager/ModelInvokerManager/SystemToolManager/ToolManager/ChatDataProvider。chat(ChatRequest) 为入口路由方法，基于 RequestType 三路分发：RESPONSES 走 chatViaResponses（有状态）、RESPONSES_STATELESS 走 chatViaResponsesStateless（无状态）、COMPLETIONS/null/其他 走 chatViaChatCompletions。buildContextSystemInfo 返回 ContextSystemInfo（systemMessages/filteredLoadedSkills/loadedSkillMessages 三字段），已加载技能 prompt 消息归入 loadedSkillMessages，systemMessages 仅含可用技能列表与子会话权限说明。foldMessageGroups/filterAndFold 返回 FoldResult(messages/anchorMessages)（提升 KV Cache 命中率）：按 user 边界分组、system 前缀单独提出；foldedCount=max(0,(groups.size()-recentCount)/DEFAULT_FOLD_INTERVAL)*DEFAULT_FOLD_INTERVAL，groups<=recentCount 或 foldedCount==0 时不折叠；旧区 0..foldedCount-1 折叠为 user 首条+占位 assistant「此为历史消息索引为N，如果想要展开请调用历史消息工具」，近端区完整展开；读取 _sys_his_msgs_index 对话变量，对 <foldedCount 的索引组装【历史消息组{N}】system 锚点消息独立放入 anchorMessages（buildHistoryGroupMessage），锚点补全 assistant 推理（reasoning 行，仅 toolCalls 非空时）、tool_call 名称(参数)、tool_result 名称(id):内容。chatViaChatCompletions 最终顺序：[SYSTEM 底座prompt][SYSTEM 系统信息][折叠区+近端区][SYSTEM loadedSkills][SYSTEM 锚点][USER 当前消息]：拆包 FoldResult 后先 insertLoadedSkillMessages（最后 user 前）再 insertAnchorMessages（最后 user 前）；两者共用 findLastUserIndex，无 user 时追加列表末尾。chatViaResponses/chatViaResponsesStateless 拆包 FoldResult 并将 anchorMessages 传入 buildInstructions（在 loadedSkillMessages 之后追加锚点内容），使 Responses 系列 instructions 也包含锚点。chatViaResponses/chatViaResponsesStateless 构建模型 ChatRequest 时通过 toolManager.getBuiltinTools(configData.id()) 设置 builtinTools。buildMessageFromEntry 将 HistoryEntry 的 ToolInfo toolInfo 透传到 Message 构建器。新增私有方法 addLog(LogData logData)：从 registry.getAgentLog() 获取 AgentLog，非 null 时调用 agentLog.addLog(logData)（try-catch 包裹，捕获异常以 WARN 级别记录日志，不中断主流程）；chat() 入口在 context 构建后、isToolContinue 判断后，一次 addLog 以 RequestEntryLogData.builder() 构建完整日志（.logLevel(LogLevel.INFO)、context、sessionId、modelId、content、isToolContinue）并记录。全流程智能体日志埋点：conversationId 为空抛异常前、modelId 无配置抛异常前、parseLoadedSkills/parseExpandedIndices JSON 解析异常、buildHistoryGroupMessage 序列化失败（WARN 级）记录 ErrorLogData；请求路由后记录 RouteLogData（requestType）；chatViaChatCompletions 模型调用前记录 ModelCallLogData（messageCount/toolCount/toolNames=工具名列表/thinking）；toSseStream 首次检测 tool calls、finishReason 非空、doOnCancel 时记录 StreamEventLogData（ToolCallDetected/StreamComplete/StreamCancelled）；foldMessageGroups 实际折叠时记录 HistoryExpandLogData（foldedCount/expandedMessages=锚点消息内容列表，由 buildHistoryGroupMessage 结果收集）；buildContextSystemInfo 已加载技能非空时记录 SkillLoadLogData（skillNames/skillCount）。parseExpandedIndices/buildHistoryGroupMessage 私有方法签名新增 context 参数以支持日志上下文。"
+      "description": "ChatService 聊天服务，非 Spring 组件。构造函数接收 AgentComponentRegistry，通过 registry 延迟获取 AgentContextManager/SessionManager/ModelInvokerManager/SystemToolManager/ToolManager/ChatDataProvider。chat(ChatRequest) 为入口路由方法，基于 RequestType 三路分发：RESPONSES 走 chatViaResponses（有状态）、RESPONSES_STATELESS 走 chatViaResponsesStateless（无状态）、COMPLETIONS/null/其他 走 chatViaChatCompletions。chat() 支持 TOOL_CONTINUE_MARKER 与 SEND_USER_MESSAGE_MARKER（\"[send_user_message]\"）两个标记：content 为任一标记时不保存用户消息、不加入历史，直接触发模型执行。buildContextSystemInfo 返回 ContextSystemInfo（systemMessages/filteredLoadedSkills/loadedSkillMessages 三字段），已加载技能 prompt 消息归入 loadedSkillMessages，systemMessages 仅含可用技能列表与子会话权限说明。foldMessageGroups/filterAndFold 返回 FoldResult(messages/anchorMessages)（提升 KV Cache 命中率）：按 user 边界分组、system 前缀单独提出；foldedCount=max(0,(groups.size()-recentCount)/DEFAULT_FOLD_INTERVAL)*DEFAULT_FOLD_INTERVAL，groups<=recentCount 或 foldedCount==0 时不折叠；旧区 0..foldedCount-1 折叠为 user 首条+占位 assistant「此为历史消息索引为N，如果想要展开请调用历史消息工具」，近端区完整展开；读取 _sys_his_msgs_index 对话变量，对 <foldedCount 的索引组装【历史消息组{N}】system 锚点消息独立放入 anchorMessages（buildHistoryGroupMessage），锚点补全 assistant 推理（reasoning 行，仅 toolCalls 非空时）、tool_call 名称(参数)、tool_result 名称(id):内容。chatViaChatCompletions 最终顺序：[SYSTEM 底座prompt][SYSTEM 系统信息][折叠区+近端区][SYSTEM loadedSkills][SYSTEM 锚点][USER 当前消息]：拆包 FoldResult 后先 insertLoadedSkillMessages（最后 user 前）再 insertAnchorMessages（最后 user 前）；两者共用 findLastUserIndex，无 user 时追加列表末尾。chatViaResponses/chatViaResponsesStateless 拆包 FoldResult 并将 anchorMessages 传入 buildInstructions（在 loadedSkillMessages 之后追加锚点内容），使 Responses 系列 instructions 也包含锚点。chatViaResponses/chatViaResponsesStateless 构建模型 ChatRequest 时通过 toolManager.getBuiltinTools(configData.id()) 设置 builtinTools。buildMessageFromEntry 将 HistoryEntry 的 ToolInfo toolInfo 透传到 Message 构建器。新增私有方法 addLog(LogData logData)：从 registry.getAgentLog() 获取 AgentLog，非 null 时调用 agentLog.addLog(logData)（try-catch 包裹，捕获异常以 WARN 级别记录日志，不中断主流程）；chat() 入口在 context 构建后、isToolContinue 判断后，一次 addLog 以 RequestEntryLogData.builder() 构建完整日志（.logLevel(LogLevel.INFO)、context、sessionId、modelId、content、isToolContinue）并记录。全流程智能体日志埋点：conversationId 为空抛异常前、modelId 无配置抛异常前、parseLoadedSkills/parseExpandedIndices JSON 解析异常、buildHistoryGroupMessage 序列化失败（WARN 级）记录 ErrorLogData；请求路由后记录 RouteLogData（requestType）；chatViaChatCompletions 模型调用前记录 ModelCallLogData（messageCount/toolCount/toolNames=工具名列表/thinking）；toSseStream 首次检测 tool calls、finishReason 非空、doOnCancel 时记录 StreamEventLogData（ToolCallDetected/StreamComplete/StreamCancelled）；foldMessageGroups 实际折叠时记录 HistoryExpandLogData（foldedCount/expandedMessages=锚点消息内容列表，由 buildHistoryGroupMessage 结果收集）；buildContextSystemInfo 已加载技能非空时记录 SkillLoadLogData（skillNames/skillCount）。parseExpandedIndices/buildHistoryGroupMessage 私有方法签名新增 context 参数以支持日志上下文。"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/ContextSerializer.java",
@@ -271,11 +271,11 @@
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/sendmessage/SessionMessage.java",
-      "description": "消息抽象基类，实现 MessageDefinition 接口，提供 sessionId 属性的 getter/setter，getMessageName() 交由子类实现"
+      "description": "消息抽象基类，实现 MessageDefinition 接口，提供 sessionId、conversationId、parentSessionId、mainSessionId 四个属性的 getter/setter（可序列化），getMessageName() 交由子类实现。"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/sendmessage/MessageName.java",
-      "description": "消息名称常量类，定义 HISTORY_MESSAGE、SESSION_VARIABLE、CONVERSATION_VARIABLE、CHILD_SESSION、CHILD_MESSAGE"
+      "description": "消息名称常量类，定义 HISTORY_MESSAGE、SESSION_VARIABLE、CONVERSATION_VARIABLE、CHILD_SESSION、CHILD_MESSAGE、CONVERSATION_ID、SEND_USER_MESSAGE 消息名称常量。"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/sendmessage/HistoryMessage.java",
@@ -291,7 +291,7 @@
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/sendmessage/ChildCreateSession.java",
-      "description": "子会话创建消息类，继承 SessionMessage，包含 parentSessionId 和 ChildSession 属性，getMessageName() 返回 CHILD_SESSION"
+      "description": "子会话创建消息类，继承 SessionMessage，包含 ChildSession 属性，parentSessionId 由父类 SessionMessage 承载（构造器经 setParentSessionId 写入），getMessageName() 返回 CHILD_SESSION。"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ToolExecutionProvider.java",
@@ -391,7 +391,7 @@
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/sendmessage/ConversationIdMessage.java",
-      "description": "ConversationIdMessage 消息类，继承 SessionMessage，messageName=CONVERSATION_ID，携带 String conversationId 字段。由 AgentContextMutator.setConversationId() 在设置对话 ID 时触发发送，供外部系统经 AgentContextManager.handleConversationIdMessage() 同步更新缓存上下文。"
+      "description": "ConversationIdMessage 消息类，继承 SessionMessage，messageName=CONVERSATION_ID，conversationId 由父类 SessionMessage 承载（构造器经 setConversationId 写入）。由 AgentContextMutator.setConversationId() 在设置对话 ID 时触发发送，供外部系统经 AgentContextManager.handleConversationIdMessage() 同步更新缓存上下文。"
     },
     {
       "path": "agent-base/src/test/java/com/ghost616/agentbase/sendmessage/ConversationIdMessageTest.java",
@@ -628,6 +628,14 @@
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/core/ThreadVariableWrapper.java",
       "description": "线程变量包装器接口（com.ghost616.agentbase.core），唯一方法 void apply()，由 ThreadVariableHandler.wrap() 在提交任务的线程创建，传入异步线程后通过 apply() 将捕获的线程变量赋值到当前线程。"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/sendmessage/SendUserMessage.java",
+      "description": "发送用户消息事件类，继承 SessionMessage，携带 final String content 字段，getMessageName() 返回 SEND_USER_MESSAGE。由 AgentContextManager.sendUserMessage() 在持久化子会话用户消息后触发发送，携带 conversationId、parentSessionId 与 mainSessionId（沿父会话链向上追溯的主会话 ID），供外部系统感知用户消息已发送至子会话。"
+    },
+    {
+      "path": "agent-base/src/test/java/com/ghost616/agentbase/sendmessage/SendUserMessageTest.java",
+      "description": "SendUserMessage 消息类单元测试：验证 MessageName.SEND_USER_MESSAGE 常量值、构造器写入 sessionId/content/conversationId/parentSessionId/mainSessionId、getMessageName 返回常量、null 字段存取及继承自 SessionMessage 的 getter/setter 使用。"
     }
   ]
 }

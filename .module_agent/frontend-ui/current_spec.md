@@ -163,3 +163,23 @@
 - Header 用户菜单（src/App.tsx）：Header 右上角 Avatar + 显示名 Dropdown（hover 展开），菜单按角色区分——普通用户显示「修改显示名/修改密码/退出」三项，管理员显示「修改密码/退出」两项（无修改显示名）；「修改显示名」「修改密码」分别弹出 Modal（修改密码不需验证旧密码）；修改显示名成功后 updateCurrentUser 返回的用户经 saveCurrentUser 同步 localStorage 并触发重渲染（refreshUser 版本号 state）刷新 Header 显示；「退出」调用 logout 接口清除本地登录状态并跳转 /login
 - 登录成功跳转（src/pages/login/Login.tsx）：login 返回 User 后按 user.userType 跳转落地页（管理员 /users、普通用户 /models），替代原固定 navigate('/')
 - e2e 登录态：e2e/utils/seedAuth.ts 提供 seedAdminLogin/seedNormalLogin（page.addInitScript 注入 localStorage currentUser），12 个既有 e2e spec 顶部 test.beforeEach 注入管理员登录态绕过守卫；e2e/Login.spec.ts 覆盖守卫跳转、管理员/普通用户落地页与菜单可见性
+## WebSocket 实时消息
+
+## WebSocket 实时消息
+
+- 全局 WebSocket 客户端（src/services/websocket.ts，单例 webSocketClient）：
+  - 登录后建立一条到后端 /ws 端点的连接（连接地址由当前站点协议+主机+WS_ENDPOINT 构建，复用后端 SESSION_ID Cookie 完成握手鉴权；开发环境经 vite.config.ts /ws 代理（ws:true）转发，生产环境经 serve.js upgrade 事件代理转发）
+  - 登录/登出生命周期：auth.ts login 成功后 connect()、logout 时 close()；App.tsx 登录态 useEffect 调 connect()/close()（页面刷新后自动重连兜底）
+  - 会话绑定：bindSession(sessionId) 记录当前会话 ID 并发送 {type:'BIND', sessionId}，切换绑定前先发 UNBIND 更新旧绑定（切换页面只更新绑定不断链）；连接未就绪先建立连接，由连接建立（handleOpen）补发当前绑定；断线自动重连（指数退避 1s→30s 上限，重连成功后自动重发当前会话绑定消息）；unbindSession 发送 UNBIND
+  - 消息监听：onMessage/offMessage 注册监听器，服务端 JSON 消息解析后分发（单个监听器异常隔离）
+  - 测试模式（vitest MODE=test）与无 WebSocket 环境（jsdom）静默跳过连接
+- 消息分发处理（src/services/messageDispatcher.ts）：
+  - 订阅全局 WS 客户端，按 messageName 分发 SEND_USER_MESSAGE（与后端 SendUserMessage 序列化结构一致：sessionId/parentSessionId/mainSessionId/conversationId/content/messageName）
+  - 会话页面注册机制：registerSessionPage/unregisterSessionPage（SessionPageHandler：mainSessionId/isChildActive/streamChildReply/refreshChildSessions，当前仅支持继续会话页面 AgentChat 注册）
+  - 定位规则：按消息的 mainSessionId/parentSessionId/sessionId 任一匹配页面主会话 ID
+  - 分发结果：对应子会话为激活视图 → streamChildReply 以特殊标记 [send_user_message]（SEND_USER_MESSAGE_MARKER，对应后端 ChatService.SEND_USER_MESSAGE_MARKER）调用对话接口请求数据流流式展示回复；否则 → refreshChildSessions 刷新子会话列表；找不到对应会话页面 → 触发子会话列表变更事件（subscribeChildSessionsChanged/unsubscribeChildSessionsChanged，SessionList 订阅后 fetchList 刷新）
+- AgentChat.tsx 接入：
+  - 挂载时 webSocketClient.bindSession(sessionId) 绑定当前主会话并 registerSessionPage（unmount 时 unregisterSessionPage）
+  - ChildSessionView 新增 stream 属性（ChildStreamState：messages/currentResponse/currentReasoning/loading）：合并渲染历史消息与实时流式消息（历史末条与流式首条相同用户消息去重），流式中展示思考过程块/流式气泡/加载指示
+  - streamChildReply：以特殊标记调用 agentChatStream 流式展示子会话回复（childStreams 状态 + activeTabRef/childStreamsRef/streamChildReplyRef 供 WS 回调读取最新值，同一子会话流式中忽略新消息，完成后 assistant 消息并入 messages）
+- 类型支持：src/vite-env.d.ts 引入 vite/client 类型（import.meta.env）

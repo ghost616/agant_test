@@ -42,7 +42,6 @@ public final class ContextSerializer {
                     toolInfoNode.put("toolName", entry.toolInfo().toolName());
                     entryNode.set("toolInfo", toolInfoNode);
                 }
-                entryNode.put("sequenceNum", entry.sequenceNum());
                 entryNode.put("createTime", entry.createTime() != null ? entry.createTime().toString() : null);
                 if (entry.toolCalls() != null) {
                     ArrayNode toolCallsArray = MAPPER.createArrayNode();

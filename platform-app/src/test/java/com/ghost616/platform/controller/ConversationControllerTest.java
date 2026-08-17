@@ -1,6 +1,6 @@
 package com.ghost616.platform.controller;
 
-import com.ghost616.agentbase.service.agent.MessageDataProvider;
+import com.ghost616.platform.dto.session.SessionMessageDTO;
 import com.ghost616.platform.dto.ApiResponse;
 import com.ghost616.platform.dto.ConversationIdDTO;
 import com.ghost616.platform.service.session.SessionService;
@@ -60,19 +60,26 @@ class ConversationControllerTest {
 
     @Test
     void getMessagesByConversationId_shouldReturnMessages() {
-        MessageDataProvider.MessageDTO dto = new MessageDataProvider.MessageDTO(
-                "1", "10", "user", "hello", null, null, 1,
-                LocalDateTime.of(2026, 1, 1, 0, 0), null, List.of(), null,
-                false, null, null, "conv-1");
+        SessionMessageDTO dto = SessionMessageDTO.builder()
+                .id("1")
+                .sessionId("10")
+                .role("user")
+                .content("hello")
+                .sequenceNum(1)
+                .createTime(LocalDateTime.of(2026, 1, 1, 0, 0))
+                .toolCalls(List.of())
+                .rollback(false)
+                .conversationId("conv-1")
+                .build();
         when(sessionService.getMessagesByConversationId("conv-1")).thenReturn(List.of(dto));
 
-        ApiResponse<List<MessageDataProvider.MessageDTO>> response =
+        ApiResponse<List<SessionMessageDTO>> response =
                 controller.getMessagesByConversationId("conv-1");
 
         assertTrue(response.isSuccess());
         assertEquals(1, response.getData().size());
-        assertEquals("hello", response.getData().get(0).content());
-        assertEquals("conv-1", response.getData().get(0).conversationId());
+        assertEquals("hello", response.getData().get(0).getContent());
+        assertEquals("conv-1", response.getData().get(0).getConversationId());
         verify(sessionService).getMessagesByConversationId("conv-1");
     }
 
@@ -80,7 +87,7 @@ class ConversationControllerTest {
     void getMessagesByConversationId_noMessages_返回空列表() {
         when(sessionService.getMessagesByConversationId("conv-empty")).thenReturn(List.of());
 
-        ApiResponse<List<MessageDataProvider.MessageDTO>> response =
+        ApiResponse<List<SessionMessageDTO>> response =
                 controller.getMessagesByConversationId("conv-empty");
 
         assertTrue(response.isSuccess());

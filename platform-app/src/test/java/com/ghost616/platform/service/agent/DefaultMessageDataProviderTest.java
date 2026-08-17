@@ -11,6 +11,7 @@ import com.ghost616.agentbase.service.agent.MessageDataProvider.ToolCallData;
 import com.ghost616.agentbase.service.agent.MessageDataProvider.CustomToolCallData;
 import com.ghost616.agentbase.service.agent.MessageDataProvider.WebSearchCallData;
 import com.ghost616.agentbase.service.agent.MessageDataProvider.WebSearchResultData;
+import com.ghost616.platform.dto.session.SessionMessageDTO;
 import com.ghost616.platform.entity.Message;
 import com.ghost616.platform.entity.MessageToolCall;
 import com.ghost616.platform.entity.Session;
@@ -197,7 +198,6 @@ class DefaultMessageDataProviderTest {
         assertNotNull(dto.toolInfo());
         assertEquals("tc-id", dto.toolInfo().toolCallId());
         assertNull(dto.toolInfo().toolName());
-        assertEquals(1, dto.sequenceNum());
         assertEquals(msg.getCreateTime(), dto.createTime());
         assertEquals("result", dto.toolResult());
         assertNull(dto.usage());
@@ -1034,5 +1034,73 @@ class DefaultMessageDataProviderTest {
         provider.getMessages("10");
 
         verify(sessionMapper, times(1)).selectById(10L);
+    }
+
+    @Test
+    void toSessionMessageDTOs_映射全部字段含sequenceNum() {
+        Message msg = new Message();
+        msg.setId(1L);
+        msg.setSessionId(10L);
+        msg.setRole("assistant");
+        msg.setContent("response");
+        msg.setReasoning("reason");
+        msg.setSequenceNum(3);
+        msg.setToolCallId("call-1");
+        msg.setCreateTime(LocalDateTime.of(2026, 1, 1, 0, 0));
+        msg.setToolResult("result");
+        when(messageMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Collections.singletonList(msg));
+
+        MessageToolCall mtc = new MessageToolCall();
+        mtc.setToolCallId("call-1");
+        mtc.setToolCallName("func1");
+        mtc.setToolCallArguments("{}");
+        when(messageToolCallMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Collections.singletonList(mtc));
+
+        List<SessionMessageDTO> result = provider.toSessionMessageDTOs(List.of(msg));
+
+        assertEquals(1, result.size());
+        SessionMessageDTO dto = result.get(0);
+        assertEquals("1", dto.getId());
+        assertEquals("10", dto.getSessionId());
+        assertEquals("assistant", dto.getRole());
+        assertEquals("response", dto.getContent());
+        assertEquals("reason", dto.getReasoning());
+        assertEquals(Integer.valueOf(3), dto.getSequenceNum());
+        assertEquals(msg.getCreateTime(), dto.getCreateTime());
+        assertEquals("result", dto.getToolResult());
+        assertNotNull(dto.getToolInfo());
+        assertEquals("call-1", dto.getToolInfo().toolCallId());
+        assertEquals(1, dto.getToolCalls().size());
+        assertEquals("call-1", dto.getToolCalls().get(0).toolCallId());
+        assertEquals("func1", dto.getToolCalls().get(0).toolCallName());
+        assertEquals("{}", dto.getToolCalls().get(0).toolCallArguments());
+    }
+
+    @Test
+    void toSessionMessageDTOs_空列表_返回空列表() {
+        List<SessionMessageDTO> result = provider.toSessionMessageDTOs(List.of());
+
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void toSessionMessageDTO_单条映射保留sequenceNum() {
+        Message msg = new Message();
+        msg.setId(5L);
+        msg.setSessionId(20L);
+        msg.setRole("user");
+        msg.setContent("hi");
+        msg.setSequenceNum(7);
+        msg.setCreateTime(LocalDateTime.now());
+        when(messageMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Collections.singletonList(msg));
+        when(messageToolCallMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Collections.emptyList());
+
+        SessionMessageDTO dto = provider.toSessionMessageDTOs(List.of(msg)).get(0);
+
+        assertEquals(Integer.valueOf(7), dto.getSequenceNum());
+        assertEquals("20", dto.getSessionId());
+        assertEquals("user", dto.getRole());
+        assertTrue(dto.getToolCalls().isEmpty());
     }
 }

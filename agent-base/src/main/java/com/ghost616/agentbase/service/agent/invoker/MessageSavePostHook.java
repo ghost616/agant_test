@@ -132,7 +132,6 @@ public class MessageSavePostHook implements SystemPostHook {
             agentContextManager.addHistoryEntry(sessionId,
                     new AgentExecutionContext.HistoryEntry(
                             "assistant", content, reasoning, null,
-                            ctx.getHistory().size() + 1,
                             LocalDateTime.now(),
                             historyToolCalls != null ? Collections.unmodifiableList(historyToolCalls) : Collections.emptyList(),
                             usage,

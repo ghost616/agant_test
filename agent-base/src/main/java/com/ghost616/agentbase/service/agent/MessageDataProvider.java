@@ -34,7 +34,7 @@ public interface MessageDataProvider {
     }
 
     record MessageDTO(String id, String sessionId, String role, String content, String reasoning,
-                      ToolInfo toolInfo, Integer sequenceNum, LocalDateTime createTime,
+                      ToolInfo toolInfo, LocalDateTime createTime,
                       String toolResult, List<ToolCallData> toolCalls, UsageInfo usage,
                       Boolean rollback, List<WebSearchCallData> webSearchCall, List<CustomToolCallData> customToolCall,
                       String conversationId) {

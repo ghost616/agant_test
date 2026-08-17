@@ -106,7 +106,7 @@ async function serveStatic(req, res) {
   }
 }
 
-createServer((req, res) => {
+const server = createServer((req, res) => {
   try {
     const { pathname } = new URL(req.url, `http://${BACKEND_HOST}:${PORT}`);
     if (pathname.startsWith('/api')) {
@@ -119,8 +119,49 @@ createServer((req, res) => {
     res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
     res.end('500 Internal Server Error');
   }
-}).listen(PORT, () => {
+});
+
+// WebSocket 升级代理：将 /ws 连接转发到后端（支持全局 WebSocket 客户端）
+server.on('upgrade', (req, socket, head) => {
+  const { pathname } = new URL(req.url, `http://${BACKEND_HOST}:${PORT}`);
+  if (!pathname.startsWith('/ws')) {
+    socket.destroy();
+    return;
+  }
+  const proxyReq = request({
+    hostname: BACKEND_HOST,
+    port: BACKEND_PORT,
+    path: req.url,
+    method: req.method,
+    headers: { ...req.headers, host: `${BACKEND_HOST}:${BACKEND_PORT}` },
+  });
+  proxyReq.on('upgrade', (proxyRes, proxySocket, proxyHead) => {
+    const lines = [
+      'HTTP/1.1 101 Switching Protocols',
+      `Upgrade: ${proxyRes.headers.upgrade || 'websocket'}`,
+      `Connection: ${proxyRes.headers.connection || 'Upgrade'}`,
+    ];
+    const accept = proxyRes.headers['sec-websocket-accept'];
+    if (accept) {
+      lines.push(`Sec-WebSocket-Accept: ${accept}`);
+    }
+    socket.write(`${lines.join('\r\n')}\r\n\r\n`);
+    if (proxyHead && proxyHead.length) {
+      socket.write(proxyHead);
+    }
+    proxySocket.pipe(socket);
+    socket.pipe(proxySocket);
+  });
+  proxyReq.on('error', (err) => {
+    console.error(`[serve] /ws proxy error: ${err.message}`);
+    socket.destroy();
+  });
+  proxyReq.end();
+});
+
+server.listen(PORT, () => {
   console.log(`[serve] static server running at http://localhost:${PORT}`);
   console.log(`[serve] /api proxied to http://${BACKEND_HOST}:${BACKEND_PORT}`);
+  console.log(`[serve] /ws proxied to http://${BACKEND_HOST}:${BACKEND_PORT}`);
   console.log(`[serve] serving dist/ directory (SPA fallback to index.html)`);
 });

@@ -11,7 +11,7 @@ import com.baomidou.mybatisplus.core.MybatisConfiguration;
 import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import org.apache.ibatis.builder.MapperBuilderAssistant;
 import com.ghost616.agentbase.service.agent.AgentContextManager;
-import com.ghost616.agentbase.service.agent.MessageDataProvider;
+import com.ghost616.platform.dto.session.SessionMessageDTO;
 import com.ghost616.agentbase.service.agent.SessionManager;
 import com.ghost616.agentbase.service.agent.invoker.ToolManager;
 import com.ghost616.platform.entity.User;
@@ -541,17 +541,23 @@ class SessionServiceImplTest {
         msg.setSequenceNum(1);
         when(messageService.getAllMessages(100L)).thenReturn(List.of(msg));
 
-        MessageDataProvider.MessageDTO dto = new MessageDataProvider.MessageDTO(
-                "1", "100", "user", "hello", null, null, 1, null, null,
-                List.of(), null, false, null, null, null);
-        when(defaultMessageDataProvider.toMessageDTOs(List.of(msg))).thenReturn(List.of(dto));
+        SessionMessageDTO dto = SessionMessageDTO.builder()
+                .id("1")
+                .sessionId("100")
+                .role("user")
+                .content("hello")
+                .sequenceNum(1)
+                .toolCalls(List.of())
+                .rollback(false)
+                .build();
+        when(defaultMessageDataProvider.toSessionMessageDTOs(List.of(msg))).thenReturn(List.of(dto));
 
-        List<MessageDataProvider.MessageDTO> result = sessionService.getMessages(100L);
+        List<SessionMessageDTO> result = sessionService.getMessages(100L);
 
         assertEquals(1, result.size());
-        assertEquals("hello", result.get(0).content());
+        assertEquals("hello", result.get(0).getContent());
         verify(messageService).getAllMessages(100L);
-        verify(defaultMessageDataProvider).toMessageDTOs(List.of(msg));
+        verify(defaultMessageDataProvider).toSessionMessageDTOs(List.of(msg));
         verify(sessionManager, never()).getMessages(any());
     }
 
@@ -575,25 +581,31 @@ class SessionServiceImplTest {
         msg.setSequenceNum(1);
         when(messageMapper.selectByConversationId("conv-1")).thenReturn(List.of(msg));
 
-        MessageDataProvider.MessageDTO dto = new MessageDataProvider.MessageDTO(
-                "1", null, "user", "hello", null, null, 1, null, null,
-                List.of(), null, false, null, null, "conv-1");
-        when(defaultMessageDataProvider.toMessageDTOs(List.of(msg))).thenReturn(List.of(dto));
+        SessionMessageDTO dto = SessionMessageDTO.builder()
+                .id("1")
+                .role("user")
+                .content("hello")
+                .sequenceNum(1)
+                .toolCalls(List.of())
+                .rollback(false)
+                .conversationId("conv-1")
+                .build();
+        when(defaultMessageDataProvider.toSessionMessageDTOs(List.of(msg))).thenReturn(List.of(dto));
 
-        List<MessageDataProvider.MessageDTO> result = sessionService.getMessagesByConversationId("conv-1");
+        List<SessionMessageDTO> result = sessionService.getMessagesByConversationId("conv-1");
 
         assertEquals(1, result.size());
-        assertEquals("hello", result.get(0).content());
+        assertEquals("hello", result.get(0).getContent());
         verify(messageMapper).selectByConversationId("conv-1");
-        verify(defaultMessageDataProvider).toMessageDTOs(List.of(msg));
+        verify(defaultMessageDataProvider).toSessionMessageDTOs(List.of(msg));
     }
 
     @Test
     void getMessagesByConversationId_无消息_返回空列表() {
         when(messageMapper.selectByConversationId("conv-empty")).thenReturn(List.of());
-        when(defaultMessageDataProvider.toMessageDTOs(List.of())).thenReturn(List.of());
+        when(defaultMessageDataProvider.toSessionMessageDTOs(List.of())).thenReturn(List.of());
 
-        List<MessageDataProvider.MessageDTO> result = sessionService.getMessagesByConversationId("conv-empty");
+        List<SessionMessageDTO> result = sessionService.getMessagesByConversationId("conv-empty");
 
         assertNotNull(result);
         assertTrue(result.isEmpty());

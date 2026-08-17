@@ -9,6 +9,7 @@ import com.ghost616.agentbase.enums.ToolType;
 import com.ghost616.agentbase.exception.AgentException;
 import com.ghost616.agentbase.sendmessage.ConversationIdMessage;
 import com.ghost616.agentbase.sendmessage.MessageSender;
+import com.ghost616.agentbase.sendmessage.SendUserMessage;
 import com.ghost616.agentbase.service.agent.invoker.ToolManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -26,6 +27,7 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
@@ -429,9 +431,9 @@ class AgentContextManagerTest {
 
         @Test
         void 正向_refreshHistory后历史为最新数据() {
-            var msg1 = new MessageDataProvider.MessageDTO("1", sessionId, "user", "hello", null, null, 0,
+            var msg1 = new MessageDataProvider.MessageDTO("1", sessionId, "user", "hello", null, null,
                     LocalDateTime.now(), null, null, null, null, null, null, null);
-            var msg2 = new MessageDataProvider.MessageDTO("2", sessionId, "assistant", "hi", null, null, 1,
+            var msg2 = new MessageDataProvider.MessageDTO("2", sessionId, "assistant", "hi", null, null,
                     LocalDateTime.now(), null, null, null, null, null, null, null);
             when(dataProvider.getLatestMessages(sessionId)).thenReturn(List.of(msg1, msg2));
 
@@ -492,7 +494,7 @@ class AgentContextManagerTest {
         void 正向_refreshHistory后getHistory返回新数据而非旧数据() {
             agentContextManager.remove(sessionId);
 
-            var oldMsg = new MessageDataProvider.MessageDTO("1", sessionId, "user", "old", null, null, 0,
+            var oldMsg = new MessageDataProvider.MessageDTO("1", sessionId, "user", "old", null, null,
                     LocalDateTime.now(), null, null, null, null, null, null, null);
             when(sessionManager.getMessages(sessionId)).thenReturn(List.of(oldMsg));
 
@@ -500,7 +502,7 @@ class AgentContextManagerTest {
             assertEquals(1, ctx.context().getHistory().size());
             assertEquals("old", ctx.context().getHistory().get(0).content());
 
-            var newMsg = new MessageDataProvider.MessageDTO("2", sessionId, "user", "new", null, null, 1,
+            var newMsg = new MessageDataProvider.MessageDTO("2", sessionId, "user", "new", null, null,
                     LocalDateTime.now(), null, null, null, null, null, null, null);
             when(dataProvider.getLatestMessages(sessionId)).thenReturn(List.of(newMsg));
 
@@ -813,6 +815,95 @@ class AgentContextManagerTest {
 
             assertDoesNotThrow(() -> agentContextManager.handleConversationIdMessage(
                     new ConversationIdMessage(nonExistentSession, "conv-500")));
+        }
+    }
+
+    @Nested
+    class SendUserMessageSendTest {
+
+        @Test
+        void 正向_messageSender非空时sendUserMessage发送SendUserMessage() {
+            stubBasicContext();
+            registry.setMessageSender(messageSender);
+            SessionManager.MessageSaveBuilder msgBuilder = mock(SessionManager.MessageSaveBuilder.class, RETURNS_SELF);
+            when(sessionManager.messageSave()).thenReturn(msgBuilder);
+            when(dataProvider.loadAgentContext("child-1")).thenReturn(
+                    new ContextDataProvider.AgentContextData(agentId, "child", "200", 10, List.of(), Map.of(), sessionId, null, null, null));
+
+            AgentContextManager.AgentSessionContext ctx = agentContextManager.build(sessionId).build();
+            ctx.context().sendUserMessage("child-1", "hello", "300", true);
+
+            verify(messageSender).send(argThat(msg -> msg instanceof SendUserMessage
+                    && "child-1".equals(((SendUserMessage) msg).getSessionId())
+                    && "hello".equals(((SendUserMessage) msg).getContent())
+                    && sessionId.equals(((SendUserMessage) msg).getParentSessionId())
+                    && sessionId.equals(((SendUserMessage) msg).getMainSessionId())));
+        }
+
+        @Test
+        void 正向_mainSessionId沿父链逐级向上解析到无父会话的主会话() {
+            String grandchild = "grandchild";
+            String level2 = "level2";
+            String level1 = "level1";
+            String main = "main";
+            when(dataProvider.loadAgentContext(grandchild)).thenReturn(
+                    new ContextDataProvider.AgentContextData(agentId, "g", "200", 10, List.of(), Map.of(), level2, null, null, null));
+            when(dataProvider.loadAgentContext(level2)).thenReturn(
+                    new ContextDataProvider.AgentContextData(agentId, "l2", "200", 10, List.of(), Map.of(), level1, null, null, null));
+            when(dataProvider.loadAgentContext(level1)).thenReturn(
+                    new ContextDataProvider.AgentContextData(agentId, "l1", "200", 10, List.of(), Map.of(), main, null, null, null));
+            when(dataProvider.loadAgentContext(main)).thenReturn(
+                    new ContextDataProvider.AgentContextData(agentId, "m", "200", 10, List.of(), Map.of(), null, null, null, null));
+            when(sessionManager.getMessages(anyString())).thenReturn(List.of());
+            when(toolManager.getSessionTools(anyString(), anyBoolean())).thenReturn(List.of());
+
+            registry.setMessageSender(messageSender);
+            SessionManager.MessageSaveBuilder msgBuilder = mock(SessionManager.MessageSaveBuilder.class, RETURNS_SELF);
+            when(sessionManager.messageSave()).thenReturn(msgBuilder);
+
+            AgentContextManager.AgentSessionContext ctx = agentContextManager.build(level2).build();
+            ctx.context().sendUserMessage(grandchild, "hello", "300", true);
+
+            verify(messageSender).send(argThat(msg -> msg instanceof SendUserMessage
+                    && grandchild.equals(((SendUserMessage) msg).getSessionId())
+                    && level2.equals(((SendUserMessage) msg).getParentSessionId())
+                    && main.equals(((SendUserMessage) msg).getMainSessionId())));
+        }
+
+        @Test
+        void 反向_messageSender为null时不发送且保存逻辑不受影响() {
+            stubBasicContext();
+            registry.setMessageSender(null);
+            SessionManager.MessageSaveBuilder msgBuilder = mock(SessionManager.MessageSaveBuilder.class, RETURNS_SELF);
+            when(sessionManager.messageSave()).thenReturn(msgBuilder);
+
+            AgentContextManager.AgentSessionContext ctx = agentContextManager.build(sessionId).build();
+            ctx.context().sendUserMessage("child-1", "hello", "300", true);
+
+            verify(msgBuilder).sessionId("child-1");
+            verify(msgBuilder).role("user");
+            verify(msgBuilder).content("hello");
+            verify(msgBuilder).save();
+            verify(messageSender, never()).send(any());
+        }
+
+        @Test
+        void 反向_SendUserMessage发送异常不影响原有消息保存逻辑() {
+            stubBasicContext();
+            registry.setMessageSender(messageSender);
+            doThrow(new RuntimeException("send failed"))
+                    .when(messageSender).send(argThat(msg -> msg instanceof SendUserMessage));
+            SessionManager.MessageSaveBuilder msgBuilder = mock(SessionManager.MessageSaveBuilder.class, RETURNS_SELF);
+            when(sessionManager.messageSave()).thenReturn(msgBuilder);
+
+            AgentContextManager.AgentSessionContext ctx = agentContextManager.build(sessionId).build();
+
+            assertDoesNotThrow(() -> ctx.context().sendUserMessage("child-1", "hello", "300", true));
+
+            verify(msgBuilder).sessionId("child-1");
+            verify(msgBuilder).role("user");
+            verify(msgBuilder).content("hello");
+            verify(msgBuilder).save();
         }
     }
 }

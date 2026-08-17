@@ -15,7 +15,7 @@ class HandleMessageLogDataTest {
 
     private SessionMessage createMessage() {
         return new HistoryMessage("s1",
-                new AgentExecutionContext.HistoryEntry("user", "hello", null, null, 0,
+                new AgentExecutionContext.HistoryEntry("user", "hello", null, null,
                         LocalDateTime.now(), List.of(), null, null, null));
     }
 

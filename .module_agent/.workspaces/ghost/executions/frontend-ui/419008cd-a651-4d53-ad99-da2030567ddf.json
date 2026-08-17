@@ -1,0 +1,20 @@
+[
+  {
+    "plan_id": "plan_0cf3a582-13fd-4c39-a5b6-b24792464251",
+    "plan": "全局 WebSocket 客户端 + 消息分发 + AgentChat 接入",
+    "modified_files": [
+      "src/services/websocket.ts",
+      "src/services/messageDispatcher.ts",
+      "src/services/auth.ts",
+      "src/App.tsx",
+      "src/pages/sessions/AgentChat.tsx",
+      "src/pages/sessions/SessionList.tsx",
+      "src/pages/sessions/__tests__/AgentChat.test.tsx",
+      "src/vite-env.d.ts",
+      "vite.config.ts",
+      "serve.js"
+    ],
+    "summary": "执行总结：本轮完成全局 WebSocket 客户端与消息分发功能，共修改 10 个文件——1) 新增 src/services/websocket.ts：全局 WS 客户端单例（登录后建立到后端 /ws 端点连接，复用 SESSION_ID Cookie 鉴权；bindSession/unbindSession 发送 BIND/UNBIND 会话绑定消息，切换页面只更新绑定不断链；断线指数退避自动重连 1s→30s，重连成功后自动重发当前会话绑定；close 手动关闭；onMessage/offMessage 监听器；测试模式与无 WS 环境静默跳过）；2) 新增 src/services/messageDispatcher.ts：SEND_USER_MESSAGE 消息分发（按 mainSessionId/parentSessionId/sessionId 定位已注册会话页面：对应子会话激活时以特殊标记 [send_user_message] 调用对话接口流式展示回复，否则刷新子会话列表，找不到页面触发子会话列表变更事件供会话列表页刷新）；3) src/services/auth.ts：login 成功后 connect()、logout 时 close()；4) src/App.tsx：登录态 useEffect 调 connect()/close()（页面刷新后自动重连兜底）；5) src/pages/sessions/AgentChat.tsx：挂载时 bindSession+registerSessionPage（unmount 注销），ChildSessionView 新增 stream 属性合并渲染历史与流式消息（历史末条与流式首条相同用户消息去重），streamChildReply 以特殊标记调用 agentChatStream 流式展示子会话回复（childStreams 状态 + 三个 ref 供 WS 回调读取最新值）；6) src/pages/sessions/SessionList.tsx：订阅子会话列表变更事件刷新列表；7) vite.config.ts 新增 /ws 代理（ws:true）；8) serve.js 新增 /ws WebSocket 升级代理（upgrade 事件转发后端）；9) 新增 src/vite-env.d.ts（vite/client 类型声明）；10) 同步更新 AgentChat.test.tsx ChildSessionView 断言（stream 属性）。修复离朱第一轮发现的 2 处编译/运行时缺陷（messageDispatcher matched never 窄化改 for...of；AgentChat streamChildReply 参数 message 遮蔽 antd message 改 payload）。\n测试总结：全部通过。离朱两轮验证——第二轮：单元测试 36/36 通过（websocket.test.ts 22 + messageDispatcher.test.ts 14，覆盖 connect/bind/unbind/重连退避与补发绑定/消息分发各分支）、变更源码 tsc 零错误（上轮 4 个错误全部消除；剩余 264 个均为项目基线：ToolList.tsx(213)/EvaluationResultList.tsx(261) 2 个 + 静态验证测试文件缺 node types 262 个，非本次变更引入）、既有测试回归 105/105 通过（AgentChat 35 含更新断言、SessionList 8、App 3、App.userMenu 6、AppGuard 3、auth.selfupdate、Login、session）、streamChildReply 语义验证通过（特殊标记调用/流式追加/onDone 并入/loading 去重/onError 指向 antd message）、配置与代理检查通过（vite.config.ts /ws 代理 + serve.js upgrade 代理 node --check 通过）。E2E 因环境原因未执行：后端 localhost:8080 与前端 localhost:3000 服务均未运行（Playwright 已安装，e2e 用例依赖完整 Java 后端 + DB 环境），属环境问题非代码缺陷。补充说明：serve.js 与 vite.config.ts 的 /ws 代理需与后端 /ws 端点配合，生产部署（serve.js 3000 端口）已具备 WebSocket 转发能力。",
+    "errors": []
+  }
+]

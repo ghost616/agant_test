@@ -55,6 +55,7 @@ import com.ghost616.agentbase.service.model.invoker.ModelInvoker;
 public class ChatService {
 
     public static final String TOOL_CONTINUE_MARKER = "[tool_continue]";
+    public static final String SEND_USER_MESSAGE_MARKER = "[send_user_message]";
 
     private static final int DEFAULT_FOLD_INTERVAL = 10;
     private static final String HISTORY_GROUP_PREFIX = "【历史消息组";
@@ -114,9 +115,10 @@ public class ChatService {
         AgentExecutionContext.AgentContextMutator contextMutator = sessionContext.mutator();
 
         boolean isToolContinue = TOOL_CONTINUE_MARKER.equals(content);
+        boolean isSendUserMessage = SEND_USER_MESSAGE_MARKER.equals(content);
         String conversationId = request.getConversationId();
 
-        if (!isToolContinue) {
+        if (!isToolContinue && !isSendUserMessage) {
             contextMutator.resetStopped();
             contextMutator.clearConversationVariables();
             if (context.getParentSessionId() == null
@@ -135,7 +137,6 @@ public class ChatService {
 
             AgentExecutionContext.HistoryEntry userEntry = new AgentExecutionContext.HistoryEntry(
                     "user", content, null, null,
-                    context.getHistory().size() + 1,
                     LocalDateTime.now(),
                     Collections.emptyList(),
                     null, null, null);

@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.security.SecureRandom;
 import java.util.List;
 
-import com.ghost616.agentbase.service.agent.MessageDataProvider;
+import com.ghost616.platform.dto.session.SessionMessageDTO;
 
 @RestController
 @RequestMapping("/api")
@@ -32,7 +32,7 @@ public class ConversationController {
     }
 
     @GetMapping("/conversations/{conversationId}/messages")
-    public ApiResponse<List<MessageDataProvider.MessageDTO>> getMessagesByConversationId(@PathVariable String conversationId) {
+    public ApiResponse<List<SessionMessageDTO>> getMessagesByConversationId(@PathVariable String conversationId) {
         return ApiResponse.success(sessionService.getMessagesByConversationId(conversationId));
     }
 

@@ -18,7 +18,6 @@ class HistoryEntry:
         self.content = data.get("content")
         self.reasoning = data.get("reasoning")
         self.tool_info = data.get("toolInfo")
-        self.sequence_num = data.get("sequenceNum", 0)
         self.create_time = data.get("createTime")
         tool_calls_data = data.get("toolCalls")
         self.tool_calls = [ToolCall(tc) for tc in tool_calls_data] if tool_calls_data else []

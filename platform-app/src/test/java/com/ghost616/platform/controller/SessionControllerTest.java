@@ -10,6 +10,7 @@ import com.ghost616.platform.dto.memory.MemoryRegenerateRequest;
 import com.ghost616.platform.dto.memory.MemoryRegenerateStatusDTO;
 import com.ghost616.platform.dto.memory.MemoryUpdateRequest;
 import com.ghost616.platform.dto.session.SessionDTO;
+import com.ghost616.platform.dto.session.SessionMessageDTO;
 import com.ghost616.platform.dto.session.SubSessionDataDTO;
 import com.ghost616.platform.enums.AggregationType;
 import com.ghost616.platform.enums.ErrorCode;
@@ -144,7 +145,7 @@ class SessionControllerTest {
         when(subSessionCallback.getSubSessionData(1L)).thenReturn(data);
 
         ToolInfo toolInfo = new ToolInfo("call-1", "getWeather");
-        MessageDataProvider.MessageDTO assistantMsg = buildMessageDTO(
+        SessionMessageDTO assistantMsg = buildMessageDTO(
                 "assistant", "response", "thinking", toolInfo, "tc1", "func1", "{}");
         when(sessionService.getMessages(100L)).thenReturn(List.of(
                 buildMessageDTO("user", "hi", null, null, null, null, null),
@@ -295,38 +296,38 @@ class SessionControllerTest {
         msg.setId(1L);
         msg.setSessionId(100L);
         msg.setSequenceNum(2);
-        MessageDataProvider.MessageDTO dto =
+        SessionMessageDTO dto =
                 buildMessageDTO("user", "hello", null, null, null, null, null);
         when(messageService.getMessagesBySeqRange(100L, 1, 5))
                 .thenReturn(List.of(msg));
-        when(defaultMessageDataProvider.toMessageDTOs(List.of(msg)))
+        when(defaultMessageDataProvider.toSessionMessageDTOs(List.of(msg)))
                 .thenReturn(List.of(dto));
 
-        ApiResponse<List<MessageDataProvider.MessageDTO>> response =
+        ApiResponse<List<SessionMessageDTO>> response =
                 controller.getMessagesBySeqRange(100L, 1, 5);
 
         assertTrue(response.isSuccess());
         assertEquals(1, response.getData().size());
-        assertEquals("hello", response.getData().get(0).content());
+        assertEquals("hello", response.getData().get(0).getContent());
         verify(messageService).getMessagesBySeqRange(100L, 1, 5);
-        verify(defaultMessageDataProvider).toMessageDTOs(List.of(msg));
+        verify(defaultMessageDataProvider).toSessionMessageDTOs(List.of(msg));
     }
 
     @Test
     void getMessagesBySeqRange_shouldReturnEmptyListWhenNoMessages() {
         when(messageService.getMessagesBySeqRange(999L, 10, 20))
                 .thenReturn(List.of());
-        when(defaultMessageDataProvider.toMessageDTOs(List.of()))
+        when(defaultMessageDataProvider.toSessionMessageDTOs(List.of()))
                 .thenReturn(List.of());
 
-        ApiResponse<List<MessageDataProvider.MessageDTO>> response =
+        ApiResponse<List<SessionMessageDTO>> response =
                 controller.getMessagesBySeqRange(999L, 10, 20);
 
         assertTrue(response.isSuccess());
         assertNotNull(response.getData());
         assertTrue(response.getData().isEmpty());
         verify(messageService).getMessagesBySeqRange(999L, 10, 20);
-        verify(defaultMessageDataProvider).toMessageDTOs(List.of());
+        verify(defaultMessageDataProvider).toSessionMessageDTOs(List.of());
     }
 
     @Test
@@ -433,12 +434,22 @@ class SessionControllerTest {
         verify(sessionService).listLogSessions();
     }
 
-    private MessageDataProvider.MessageDTO buildMessageDTO(String role, String content, String reasoning,
+    private SessionMessageDTO buildMessageDTO(String role, String content, String reasoning,
                                                            ToolInfo toolInfo, String tcId,
                                                            String tcName, String tcArgs) {
         List<MessageDataProvider.ToolCallData> toolCalls = tcId == null ? null
                 : List.of(new MessageDataProvider.ToolCallData(tcId, tcName, tcArgs));
-        return new MessageDataProvider.MessageDTO("1", "100", role, content, reasoning,
-                toolInfo, 1, LocalDateTime.now(), null, toolCalls, null, false, null, null, null);
+        return SessionMessageDTO.builder()
+                .id("1")
+                .sessionId("100")
+                .role(role)
+                .content(content)
+                .reasoning(reasoning)
+                .toolInfo(toolInfo)
+                .sequenceNum(1)
+                .createTime(LocalDateTime.now())
+                .toolCalls(toolCalls)
+                .rollback(false)
+                .build();
     }
 }

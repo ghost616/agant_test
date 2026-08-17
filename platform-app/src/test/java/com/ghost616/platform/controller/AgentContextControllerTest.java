@@ -78,7 +78,7 @@ class AgentContextControllerTest {
         when(sessionCtx.context()).thenReturn(ctx);
 
         AgentExecutionContext.HistoryEntry entry = new AgentExecutionContext.HistoryEntry(
-                "user", "hello", null, new ToolInfo("call-1", "getWeather"), 1,
+                "user", "hello", null, new ToolInfo("call-1", "getWeather"),
                 LocalDateTime.of(2026, 7, 24, 12, 0), List.of(), null, null, null);
         when(ctx.getHistory()).thenReturn(List.of(entry));
         when(ctx.getSessionVariableKeys()).thenReturn(Set.of());
@@ -91,7 +91,6 @@ class AgentContextControllerTest {
         assertEquals(1, history.size());
         assertEquals("user", history.get(0).getRole());
         assertEquals("hello", history.get(0).getContent());
-        assertEquals(1, history.get(0).getSequenceNum());
     }
 
     @Test

@@ -8,6 +8,7 @@ public final class MessageName {
     public static final String CHILD_SESSION = "CHILD_SESSION";
     public static final String CHILD_MESSAGE = "CHILD_MESSAGE";
     public static final String CONVERSATION_ID = "CONVERSATION_ID";
+    public static final String SEND_USER_MESSAGE = "SEND_USER_MESSAGE";
 
     private MessageName() {
     }

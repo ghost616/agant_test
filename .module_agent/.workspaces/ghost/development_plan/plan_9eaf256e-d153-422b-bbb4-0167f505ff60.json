@@ -1,0 +1,11 @@
+{
+  "plan_id": "plan_9eaf256e-d153-422b-bbb4-0167f505ff60",
+  "module_name": "agent-engine",
+  "development_plan": "删除工具 TS 接口中 HistoryEntry.sequenceNum 字段声明，涉及 tools/file-reader/index.ts、tools/session-var-write-ts/index.ts、tools/session-var-read-ts/index.ts，保持与 agent-base 上下文序列化变更一致。",
+  "session_id": "3e2b7927-efd3-4def-b6d2-a0dd535c1421",
+  "modified_files": [
+    "tools/file-reader/index.ts",
+    "tools/session-var-write-ts/index.ts",
+    "tools/session-var-read-ts/index.ts"
+  ]
+}

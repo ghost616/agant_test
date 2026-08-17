@@ -83,6 +83,7 @@ foldMessageGroups 批量折叠 + 锚点展开（KV Cache 优化）：新增常�
 FoldResult 拆分 + 锚点修复：foldMessageGroups/filterAndFold 返回 FoldResult(messages/anchorMessages)，锚点 system 消息不再嵌入 messages 列表而是独立返回；chatViaChatCompletions 拆包后先 insertLoadedSkillMessages（最后 user 前）再 insertAnchorMessages（最后 user 前），共用 findLastUserIndex，最终顺序 [SYSTEM 底座][SYSTEM 系统信息][折叠区+近端区][SYSTEM loadedSkills][SYSTEM 锚点][USER 当前]；chatViaResponses/chatViaResponsesStateless 拆包 FoldResult 并将 anchorMessages 传入 buildInstructions（在 loadedSkillMessages 之后追加），修复 Responses API 锚点未纳入 instructions 的问题；buildHistoryGroupMessage 补全信息：assistant 含非空 reasoning 且 toolCalls 非空时输出 reasoning 行、toolCalls 逐条输出 tool_call 名称(参数)、toolInfo 非空输出 tool_result 名称(id):内容。
 buildHistoryGroupMessage 输出格式改为 JSON 行格式：每条 Message 通过 JsonMapper.MAPPER 序列化为一行独立 JSON 对象（LinkedHashMap 保持字段顺序），结构为 {role, content[, reasoning][, tool_calls:[{name, arguments}]][, tool_info:{name, id}]}，assistant 消息在 reasoning 与 toolCalls 均非空时输出 reasoning，tool 消息输出 tool_info(name=toolName/id=toolCallId)；首行保留 HISTORY_GROUP_PREFIX 提示行「【历史消息组{N}】完整内容如下：」，消除 role 消息与 tool_call/tool_result 同级平铺的歧义，LLM 可天然解析。新增 ChatServiceHistoryGroupJsonTest 覆盖 JSON 行格式严格断言。
 toHistoryGroupJson 的 tool_calls 数组元素补充 id 字段：构建 callJson 时 name 之后，若 toolCall.getId() 非空则输出 id（与 tool 消息 tool_info.id/toolCallId 一致），使 LLM 可依据 tool_call_id 关联工具调用与结果。
+新增 SEND_USER_MESSAGE_MARKER 常量（"[send_user_message]"）：chat() 识别 content 为该标记时与 TOOL_CONTINUE_MARKER 同样处理——不保存用户消息、不加入历史、直接触发模型执行（配合 AgentContextManager.sendUserMessage 先持久化再以标记触发模型回复）。
 ## ChatDataProvider
 
 聊天数据提供者接口（com.ghost616.agentbase.service.agent.ChatDataProvider），定义四个方法：getModelConfig(String modelId) 按 ID 获取 ModelConfigData、updateSessionModelId(String sessionId, String modelId) 更新会话的模型 ID、getHooks() 获取所有已注册的 HookInvoker、getHooks(String sessionId) 按会话 ID 获取对应的 HookInvoker 列表。用于解耦 ChatService 与具体数据访问层。
@@ -113,6 +114,7 @@ AgentContextManager 提供 4 个 public handler 方法供外部系统在收到�
 injectVariableCallbacks() 方法在子会话上下文中，将 sessionVarPutCallback/sessionVarRemoveCallback 直接指向父会话上下文的 putSessionVariable/removeSessionVariable，实现子会话变量读写直接委托给父会话，不经过 MessageSender。ConversationVariable 同理。
 - AgentExecutionContext.HistoryEntry record 新增 List&lt;ChatChunk.WebSearchCall&gt; webSearchCall 和 List&lt;ChatChunk.CustomToolCall&gt; customToolCall 字段（类型复用 ChatChunk 内部类）；convertMessagesToHistory 通过 toWebSearchCall/toCustomToolCall 私有方法将 MessageDTO 的 List&lt;WebSearchCallData&gt;/List&lt;CustomToolCallData&gt; 转为 ChatChunk List 后传入 HistoryEntry
 sendUserMessage 逻辑改造：AgentExecutionContext.sendUserMessage / AgentContextMutator.sendUserMessage / SendUserMessageCallback.send 返回类型由 Message 改为 void（不再返回模型回复）。AgentContextManager.sendUserMessage 不再调用 agentMessageProxy 执行模型对话，改为通过 sessionManager.messageSave().sessionId(childSessionId).role("user").content(content).conversationId(conversationId).save() 保存 user 消息，并调用 addHistoryEntry(childSessionId, HistoryEntry("user", content, ..., sequenceNum=子会话 context history.size()+1, ...)) 更新子会话缓存 context 的 HistoryEntry（子会话 context 未构建时 addHistoryEntry 自动 no-op，下次 build 从 DB 加载）；保留 SendMessageLogData 日志记录。
+- AgentExecutionContext.HistoryEntry 与 MessageDataProvider.MessageDTO 已移除 sequenceNum 字段（2026-08-17）：sendUserMessage 不再计算子会话 history.size()+1 序号，直接构造 HistoryEntry("user", content, null, null, LocalDateTime.now(), emptyList, null, null, null)；convertMessagesToHistory 构造 HistoryEntry 时不再传 msg.sequenceNum()。ChatService/ToolExecutionService/MessageSavePostHook 的 HistoryEntry 构造同步移除 sequenceNum 参数。ContextSerializer 序列化 history 时不再输出 sequenceNum 字段。
 ## ToolExecutionService
 
 工具执行服务，非 Spring 组件。构造函数改为接收 (AgentComponentRegistry, ChatService)，通过 registry 延迟获取 ToolCallQueueManager/ToolManager/SystemToolManager/SessionManager/AgentContextManager/ToolExecutionTracker。提供三个核心方法：executeTool(String sessionId) 从队列获取下一个工具调用，解析调用器并异步执行；getToolStatus(String sessionId, String toolId) 查询当前工具执行状态（toolId 为必传参数）；continueAfterTools(String sessionId) 检查无工具在执行后，持久化工具结果、添加历史记录、清理队列和跟踪器，构造 TOOL_CONTINUE_MARKER 请求并调用 chatService.chat()。
@@ -202,9 +204,10 @@ ChildMessageEvent 消息类，继承 SessionMessage，messageName=CHILD_MESSAGE�
 从 platform-app 迁移而来。agent-base/src/main/resources/agent/ 目录下包含两个工具运行桥接脚本：
 - _runner.py：Python 工具运行桥接，供 PythonToolInvoker 调用
 - _runner.ts：TypeScript 工具运行桥接，供 TypeScriptToolInvoker 调用
+- _runner.py 的 HistoryEntry 已移除 sequence_num 字段（2026-08-17），不再从 context JSON 读取 "sequenceNum"；_runner.ts 的 HistoryEntry 接口同步移除 sequenceNum: number 字段（与 ContextSerializer 不再输出 sequenceNum 保持一致）。
 ## MessageDataProvider
 
-消息数据提供者接口（com.ghost616.agentbase.service.agent.MessageDataProvider），定义消息保存、查询、回退方法。内部 record MessageDTO 包含字段：String id, String sessionId, String role, String content, String reasoning, String toolCallId, Integer sequenceNum, LocalDateTime createTime, String toolResult, List&lt;ToolCallData&gt; toolCalls, UsageInfo usage, Boolean rollback（默认 null）。内部 record ToolCallData 包含字段：String toolCallId, String toolCallName, String toolCallArguments。
+消息数据提供者接口（com.ghost616.agentbase.service.agent.MessageDataProvider），定义消息保存、查询、回退方法。内部 record MessageDTO 包含字段：String id, String sessionId, String role, String content, String reasoning, ToolInfo toolInfo, LocalDateTime createTime, String toolResult, List&lt;ToolCallData&gt; toolCalls, UsageInfo usage, Boolean rollback（默认 null）, List&lt;WebSearchCallData&gt; webSearchCall, List&lt;CustomToolCallData&gt; customToolCall, String conversationId。sequenceNum 字段已于 2026-08-17 移除（DB 实体的 sequenceNum 仍保留用于排序/记忆点）。内部 record ToolCallData 包含字段：String toolCallId, String toolCallName, String toolCallArguments, String type。
 - ToolCallData record 新增 String type 字段（默认 "function"，保留 3 参构造器以兼容旧调用）；新增 WebSearchCallData（itemId/outputIndex/results，results 为 List&lt;WebSearchResultData&gt;，每项含 title/url/snippet）和 CustomToolCallData（itemId/outputIndex/input/output）两个 record
 - saveMessage 签名新增 List&lt;WebSearchCallData&gt; webSearchCall、List&lt;CustomToolCallData&gt; customToolCall 两个参数（置于 usage 之后）；MessageDTO record 末尾新增 webSearchCall、customToolCall 两个 List 字段
 ## SessionVariableSystemTool / ConversationVariableSystemTool
@@ -360,3 +363,14 @@ FinishReason 枚举（com.ghost616.agentbase.enums.FinishReason），定义模�
 ## 线程变量传播
 
 线程变量传播双接口（com.ghost616.agentbase.core）：\n- ThreadVariableHandler 接口：唯一方法 ThreadVariableWrapper wrap()，用于在提交任务的线程捕获当前线程变量快照，供异步执行点传播线程变量\n- ThreadVariableWrapper 接口：唯一方法 void apply()，由 ThreadVariableHandler.wrap() 在提交任务的线程创建，传入异步线程后通过 apply() 将捕获的线程变量赋值到当前线程\n\n两者由外部集成者实现并注入（AgentComponentRegistry.setThreadVariableHandler），实现方决定捕获/恢复的具体线程变量（如 MDC、ThreadLocal 等）。
+## 发送用户消息事件
+
+## 发送用户消息事件
+
+消息发送模块新增发送用户消息事件链路：MessageName 新增 SEND_USER_MESSAGE("SEND_USER_MESSAGE") 常量；SessionMessage 抽象基类新增 conversationId/parentSessionId/mainSessionId 三个 String 字段（Lombok @Getter/@Setter，可序列化），所有子类（HistoryMessage/VariableMessage/ChildCreateSession/ChildMessageEvent/ConversationIdMessage/SendUserMessage）自动获得对应 getter/setter。ChildCreateSession 与 ConversationIdMessage 因字段与基类同名，已改为复用父类字段（构造器经 setParentSessionId/setConversationId 写入），getParentSessionId()/getConversationId() 语义不变。
+
+新建 SendUserMessage 消息类（继承 SessionMessage，@Getter）：携带 final String content 字段，构造器参数 (sessionId, content, conversationId, parentSessionId, mainSessionId)，getMessageName() 返回 SEND_USER_MESSAGE。
+
+AgentContextManager.sendUserMessage 增加发送机制：在消息持久化（messageSave）、addHistoryEntry、SendMessageLogData 日志之后，通过 registry.getMessageSender() 获取 MessageSender，仅非 null 时构造 SendUserMessage 发送（sessionId=childSessionId、conversationId 与 parentSessionId 透传、mainSessionId 由新增私有方法 resolveMainSessionId 沿 parentSessionId 链经 ContextDataProvider.loadAgentContext 逐级向上查询直至无父会话的主会话 ID），send() 调用以 try-catch 包裹，发送异常仅 WARN 日志记录、不影响原有保存逻辑。
+
+ChatService 新增 public static final String SEND_USER_MESSAGE_MARKER = "[send_user_message]" 常量：chat() 中 content 为该标记时与 TOOL_CONTINUE_MARKER 同样处理（isSendUserMessage 判断，跳过重置/对话 ID 校验/消息保存/历史追加），直接触发模型执行，ChatRequest.content 的 @NotBlank 校验保持不变。

@@ -16,6 +16,10 @@ import type { Session, CreateSessionParams } from '../../types/session';
 import type { AgentConfig } from '../../types/agent';
 import type { ModelConfig } from '../../types/model';
 import { createSession, deleteSession, listSessions } from '../../services/session';
+import {
+  subscribeChildSessionsChanged,
+  unsubscribeChildSessionsChanged,
+} from '../../services/messageDispatcher';
 import { listAgents } from '../../services/agent';
 import { listModels } from '../../services/model';
 import useTableScrollY from '../../hooks/useTableScrollY';
@@ -66,6 +70,17 @@ function SessionList(): JSX.Element {
 
   useEffect(() => {
     fetchList();
+  }, [fetchList]);
+
+  // 订阅子会话列表变更事件：收到 SEND_USER_MESSAGE 且无对应会话页面打开时刷新列表
+  useEffect(() => {
+    const refreshOnChildSessionsChanged = (): void => {
+      fetchList();
+    };
+    subscribeChildSessionsChanged(refreshOnChildSessionsChanged);
+    return () => {
+      unsubscribeChildSessionsChanged(refreshOnChildSessionsChanged);
+    };
   }, [fetchList]);
 
   useEffect(() => {

@@ -15,7 +15,7 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/controller/AuthController.java",
-      "description": "登录认证接口：POST /api/auth/login，校验登录名与密码，成功后通过 UserSessionManager 创建用户会话并写入 HttpOnly 会话 Cookie（SameSite=Lax），返回登录用户信息。"
+      "description": "认证接口：POST /api/auth/login 登录（校验登录名与密码，成功后创建用户会话并写入 HttpOnly 会话 Cookie）；POST /api/auth/logout 退出登录（清除服务端会话并删除会话 Cookie）；PUT /api/auth/me 当前登录用户自助修改显示名与密码（从 UserContext 获取当前用户，enabled 不可自助修改）。"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/controller/UserController.java",
@@ -23,11 +23,11 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/user/UserService.java",
-      "description": "用户服务接口：定义普通用户/管理员用户类型常量（USER_TYPE_NORMAL=1、USER_TYPE_ADMIN=2），提供登录校验、分页查询用户、添加用户、修改用户方法。"
+      "description": "用户服务接口：定义普通用户/管理员用户类型常量（USER_TYPE_NORMAL=1、USER_TYPE_ADMIN=2），提供登录校验、分页查询用户（仅普通用户）、添加用户、修改用户、自助修改用户（updateSelf）方法。"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/user/UserServiceImpl.java",
-      "description": "用户服务实现：登录时按登录名查用户并校验密码（复用 PasswordUtil 加密公式，创建时间为秒级精度以保障跨存储往返一致）与登录开关；分页查询按创建时间倒序；添加用户预生成雪花 ID、校验登录名唯一性与 userType/enabled 取值、按公式加密密码；修改用户支持更新显示名/用户类型/密码/登录开关。"
+      "description": "用户服务实现：登录时按登录名查用户并校验密码（复用 PasswordUtil 加密公式，创建时间为秒级精度以保障跨存储往返一致）与登录开关；分页查询仅返回普通用户（userType=1）且按创建时间倒序；添加用户预生成雪花 ID、固定普通用户类型、校验登录名唯一性与 enabled 取值、按公式加密密码；修改用户支持更新显示名/密码/登录开关（不再支持用户类型）；updateSelf 支持当前用户自助修改自己的显示名/密码（enabled 不可修改）。"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/dto/user/LoginRequest.java",
@@ -39,11 +39,11 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/dto/user/UserCreateRequest.java",
-      "description": "添加用户请求体 DTO：loginName 与 password 必填，displayName 可选，userType 默认普通用户，enabled 默认允许登录，带校验注解。"
+      "description": "添加用户请求体 DTO：loginName 与 password 必填（带校验注解），displayName 可选，enabled 默认允许登录；不含 userType 字段（新建用户固定为普通用户）。"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/dto/user/UserUpdateRequest.java",
-      "description": "修改用户请求体 DTO：displayName、userType、password、enabled 均可选，字段为空表示不修改。"
+      "description": "修改用户请求体 DTO：displayName、password、enabled 均可选，字段为空表示不修改；不含 userType 字段（用户类型不可修改）。"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/config/DefaultAdminInitializer.java",
@@ -51,7 +51,7 @@
     },
     {
       "path": "src/types/user.ts",
-      "description": "前端用户类型定义：User/LoginRequest/UserCreateRequest/UserUpdateRequest 接口及用户类型常量 USER_TYPE_NORMAL/USER_TYPE_ADMIN。"
+      "description": "前端用户类型定义：User/LoginRequest/UserCreateRequest/UserUpdateRequest/UserSelfUpdateRequest 接口及用户类型常量 USER_TYPE_NORMAL/USER_TYPE_ADMIN；UserCreateRequest/UserUpdateRequest 不含 userType 字段。"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/session/UserContextUtil.java",
@@ -60,6 +60,30 @@
     {
       "description": "UserContextUtil 单元测试（JUnit 5）：覆盖 requireUserId / currentUserIdOrNull 的正向、会话为空、用户为空、用户 id 为 null、线程隔离等场景。",
       "path": "platform-app/src/test/java/com/ghost616/platform/session/UserContextUtilTest.java"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/dto/user/UserSelfUpdateRequest.java",
+      "description": "用户自助修改请求体 DTO：displayName 与 password 均可选，字段为空表示不修改；不包含 enabled 字段（登录开关不可自助修改）。"
+    },
+    {
+      "description": "用户服务实现单元测试：手写 UserMapper 桩 + TableInfoHelper 初始化，覆盖分页仅返回普通用户（userType=1 过滤、total 不含管理员、分页参数归一）、添加用户固定普通用户/enabled 缺省 1/密码公式加密、修改用户不支持用户类型（请求体无 userType 字段）、updateSelf 自助修改（不改 userType/enabled、用户不存在/无创建时间异常）。",
+      "path": "platform-app/src/test/java/com/ghost616/platform/service/user/UserServiceImplTest.java"
+    },
+    {
+      "description": "认证控制器单元测试：PUT /api/auth/me 当前登录用户自助修改（以 UserContextUtil 获取当前用户 ID 调用服务层）、未登录抛 USER_NOT_LOGIN、返回 UserDTO 不含密码、请求体无 enabled 字段；POST /api/auth/logout 清除服务端会话并下发 Max-Age=0 HttpOnly 会话 Cookie。",
+      "path": "platform-app/src/test/java/com/ghost616/platform/controller/AuthControllerTest.java"
+    },
+    {
+      "description": "用户模块接口测试（Playwright 真实后端）：未登录访问 /api/auth/me、/api/auth/logout、/api/users 抛 USER-NOT-LOGIN；分页仅返回普通用户；创建用户固定 userType=1/enabled 缺省 1；修改用户忽略 userType；改密后新密码可登录旧密码失败；自助修改 enabled 被忽略；普通用户访问 /api/users 抛 USER-FORBIDDEN；logout 后会话失效。",
+      "path": "e2e/userApi.spec.ts"
+    },
+    {
+      "description": "用户模块端到端测试（Playwright 真实前后端）：未登录跳转登录页、管理员登录落地 /users 且列表仅含普通用户无用户类型列、添加/修改/禁止-恢复登录、普通用户落地 /models 无用户管理菜单。",
+      "path": "e2e/userJourney.spec.ts"
+    },
+    {
+      "description": "Playwright 测试专用配置：为接口/E2E 测试提供 baseURL、webServer 启动与重试等设置。",
+      "path": "playwright.lizhu.config.ts"
     }
   ]
 }

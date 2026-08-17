@@ -235,7 +235,7 @@ describe('AgentChat 子会话标签化展示 (静态验证)', () => {
     const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
     expect(source).toContain('function ChildSessionView');
     expect(source).toContain('getSessionMessages(childId)');
-    expect(source).toContain('<ChildSessionView childId={child.id} />');
+    expect(source).toContain('<ChildSessionView childId={child.id} stream={childStreams[child.id]} />');
   });
 
   it('子会话视图为只读：不含输入框/模型选择/思考开关/发送/回滚/停止', () => {

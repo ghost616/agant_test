@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Navigate, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { Avatar, Dropdown, Form, Input, Layout, Menu, message, Modal, Space } from 'antd';
 import type { MenuProps } from 'antd';
 import { getCurrentUser, logout, saveCurrentUser } from './services/auth';
+import { webSocketClient } from './services/websocket';
 import { updateCurrentUser } from './services/user';
 import { USER_TYPE_ADMIN } from './types/user';
 import type { User } from './types/user';
@@ -136,6 +137,16 @@ function App() {
   const [displayNameForm] = Form.useForm<{ displayName: string }>();
   const [passwordForm] = Form.useForm<{ password: string }>();
   const currentUser = getCurrentUser();
+  const isLoggedIn = currentUser !== null;
+
+  // 全局 WebSocket 连接生命周期：登录态下建立连接（含页面刷新后重连），登出/未登录时关闭
+  useEffect(() => {
+    if (isLoggedIn) {
+      webSocketClient.connect();
+    } else {
+      webSocketClient.close();
+    }
+  }, [isLoggedIn]);
 
   /** 修改显示名：调用自助修改接口，成功后同步 localStorage 中的当前用户并刷新 Header 显示。 */
   const handleDisplayNameOk = async (): Promise<void> => {

@@ -197,7 +197,7 @@ public class AgentExecutionContext {
     }
 
     public record HistoryEntry(String role, String content, String reasoning, ToolInfo toolInfo,
-                               int sequenceNum, LocalDateTime createTime, List<ToolCall> toolCalls,
+                               LocalDateTime createTime, List<ToolCall> toolCalls,
                                UsageInfo usage, List<WebSearchCall> webSearchCall,
                                List<CustomToolCall> customToolCall) {
     }

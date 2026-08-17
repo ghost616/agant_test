@@ -9,6 +9,7 @@ import com.ghost616.agentbase.service.agent.ToolDataProvider;
 import com.ghost616.agentbase.service.agent.ToolExecutionService;
 import com.ghost616.agentbase.service.agent.ToolExecutionProvider;
 import com.ghost616.agentbase.service.agent.invoker.SystemToolProvider;
+import com.ghost616.agentbase.sendmessage.MessageSender;
 import com.ghost616.agentbase.service.agent.log.LogData;
 import com.ghost616.agentbase.service.model.invoker.ModelInvokerFactory;
 import com.ghost616.agentinteg.AgentAssembler;
@@ -74,7 +75,7 @@ class AgentContextConfigurationTest {
         ChatDataProvider chatDataProvider = mock(ChatDataProvider.class);
 
         AgentAssembler agentAssembler = config.agentAssembler(systemToolProvider, modelInvokerFactory, chatDataProvider,
-                toolExecutionProvider, new UserContextThreadVariableHandler());
+                toolExecutionProvider, new UserContextThreadVariableHandler(), mock(MessageSender.class));
 
         assertNotNull(agentAssembler);
     }
@@ -86,7 +87,7 @@ class AgentContextConfigurationTest {
         ChatDataProvider chatDataProvider = mock(ChatDataProvider.class);
 
         AgentAssembler agentAssembler = config.agentAssembler(systemToolProvider, modelInvokerFactory, chatDataProvider,
-                toolExecutionProvider, new UserContextThreadVariableHandler());
+                toolExecutionProvider, new UserContextThreadVariableHandler(), mock(MessageSender.class));
         ChatService chatService = config.chatService(agentAssembler, databaseAgentLog);
 
         assertNotNull(chatService);
@@ -126,7 +127,7 @@ class AgentContextConfigurationTest {
         ChatDataProvider chatDataProvider = mock(ChatDataProvider.class);
 
         AgentAssembler agentAssembler = config.agentAssembler(systemToolProvider, modelInvokerFactory, chatDataProvider,
-                toolExecutionProvider, new UserContextThreadVariableHandler());
+                toolExecutionProvider, new UserContextThreadVariableHandler(), mock(MessageSender.class));
         ToolExecutionService toolExecutionService = config.toolExecutionService(agentAssembler);
 
         assertNotNull(toolExecutionService);

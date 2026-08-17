@@ -1,0 +1,21 @@
+{
+  "plan_id": "plan_3aa65153-7685-499f-9695-d0175987b3c8",
+  "module_name": "platform-app",
+  "development_plan": "1. 新建 WebSocket 服务端基础设施：WebSocket 配置类（注册 Handler 与握手拦截器，路径如 /ws）；握手时复用现有 SESSION_ID Cookie 完成用户鉴权。2. 新建会话连接注册中心：维护 用户+会话ID → WebSocket 连接的映射；支持前端绑定/解绑当前会话 ID 的消息处理；注册时校验会话存在性（查 SessionMapper）；连接关闭时清理注册。3. 新建推送服务：按会话 ID 定位连接推送 JSON 消息；无连接或推送失败时静默丢弃并记录 WARN 日志。4. 新建 MessageSender 实现类（Spring Bean，实现 agent-base 的 MessageSender 接口，注册到 AgentAssembler 构造注入链）：收到消息后开独立线程，按消息类型（getMessageName）分发到不同业务流程；当前仅实现 SEND_USER_MESSAGE 流程：将消息经推送服务通过 WebSocket 发送到前端。",
+  "session_id": "d0ca82e5-b2ac-432c-9980-331d4b29df81",
+  "modified_files": [
+    "platform-app/src/main/java/com/ghost616/platform/config/WebSocketConfig.java",
+    "platform-app/src/main/java/com/ghost616/platform/websocket/AuthHandshakeInterceptor.java",
+    "platform-app/src/main/java/com/ghost616/platform/websocket/SessionConnectionRegistry.java",
+    "platform-app/src/main/java/com/ghost616/platform/websocket/SessionWebSocketHandler.java",
+    "platform-app/src/main/java/com/ghost616/platform/websocket/WebSocketPushService.java",
+    "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultMessageSender.java",
+    "platform-app/src/main/java/com/ghost616/platform/config/AgentContextConfiguration.java",
+    "platform-app/src/test/java/com/ghost616/platform/config/AgentContextConfigurationTest.java",
+    "platform-app/src/test/java/com/ghost616/platform/websocket/SessionConnectionRegistryTest.java",
+    "platform-app/src/test/java/com/ghost616/platform/websocket/WebSocketPushServiceTest.java",
+    "platform-app/src/test/java/com/ghost616/platform/websocket/AuthHandshakeInterceptorTest.java",
+    "platform-app/src/test/java/com/ghost616/platform/websocket/SessionWebSocketHandlerTest.java",
+    "platform-app/src/test/java/com/ghost616/platform/service/agent/DefaultMessageSenderTest.java"
+  ]
+}

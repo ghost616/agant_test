@@ -1,0 +1,18 @@
+{
+  "plan_id": "plan_0cf3a582-13fd-4c39-a5b6-b24792464251",
+  "module_name": "frontend-ui",
+  "development_plan": "1. 新建全局 WebSocket 客户端模块：登录后建立一条 WebSocket 连接（连接地址按后端 /ws 约定），进入会话页面时向后端发送绑定当前会话 ID 的消息（切换页面只更新绑定不断链），退出登录时关闭连接；实现断线自动重连，重连成功后重新发送当前会话绑定消息。2. 新建消息分发处理：收到 SEND_USER_MESSAGE 消息后，根据消息中的 mainSessionId/parentSessionId/sessionId 定位对应会话页面（当前仅支持继续会话页面 AgentChat）；若当前不在主会话或子会话页面（找不到对应会话页面）则触发刷新子会话列表；若找到对应子会话，则在子会话页面调用对话接口（content 传与后端约定的特殊标记）请求数据流，展示流式回复。3. AgentChat.tsx 及必要页面接入全局 WebSocket 客户端与消息分发逻辑。",
+  "session_id": "419008cd-a651-4d53-ad99-da2030567ddf",
+  "modified_files": [
+    "src/services/websocket.ts",
+    "src/services/messageDispatcher.ts",
+    "src/services/auth.ts",
+    "src/App.tsx",
+    "src/pages/sessions/AgentChat.tsx",
+    "src/pages/sessions/SessionList.tsx",
+    "src/pages/sessions/__tests__/AgentChat.test.tsx",
+    "src/vite-env.d.ts",
+    "vite.config.ts",
+    "serve.js"
+  ]
+}

@@ -12,7 +12,6 @@ export interface HistoryEntry {
     content?: string;
     reasoning?: string;
     toolCallId?: string;
-    sequenceNum: number;
     createTime?: string;
     toolCalls?: ToolCall[];
 }

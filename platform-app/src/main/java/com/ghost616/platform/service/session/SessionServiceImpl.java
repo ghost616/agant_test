@@ -21,8 +21,8 @@ import java.util.List;
 import com.ghost616.platform.enums.ErrorCode;
 import com.ghost616.platform.exception.BusinessException;
 import com.ghost616.platform.session.UserContextUtil;
+import com.ghost616.platform.dto.session.SessionMessageDTO;
 import com.ghost616.agentbase.service.agent.AgentContextManager;
-import com.ghost616.agentbase.service.agent.MessageDataProvider;
 import com.ghost616.agentbase.service.agent.SessionManager;
 import com.ghost616.agentbase.service.agent.invoker.ToolManager;
 import com.ghost616.platform.util.IdConverter;
@@ -134,18 +134,18 @@ public class SessionServiceImpl implements SessionService {
     }
 
     @Override
-    public List<MessageDataProvider.MessageDTO> getMessages(Long sessionId) {
+    public List<SessionMessageDTO> getMessages(Long sessionId) {
         Session entity = sessionMapper.selectById(sessionId);
         if (entity == null) {
             throw new BusinessException(ErrorCode.SESSION_NOT_FOUND);
         }
-        return defaultMessageDataProvider.toMessageDTOs(messageService.getAllMessages(sessionId));
+        return defaultMessageDataProvider.toSessionMessageDTOs(messageService.getAllMessages(sessionId));
     }
 
     @Override
-    public List<MessageDataProvider.MessageDTO> getMessagesByConversationId(String conversationId) {
+    public List<SessionMessageDTO> getMessagesByConversationId(String conversationId) {
         List<Message> messages = messageMapper.selectByConversationId(conversationId);
-        return defaultMessageDataProvider.toMessageDTOs(messages);
+        return defaultMessageDataProvider.toSessionMessageDTOs(messages);
     }
 
     @Override

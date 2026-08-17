@@ -8,65 +8,57 @@
     "test_passed": true
   },
   {
-    "plan_id": "plan_a13863e4-5364-45ed-8078-dcb2552db206",
-    "plan_summary": "新增 UserContextUtil 静态工具类，提供 requireUserId/currentUserIdOrNull 统一用户上下文入口",
-    "starter_session_id": "93912fae-4acb-4f52-be83-671bed2f26f1",
+    "plan_id": "plan_d45a8d41-01a8-4208-8e47-4edc29187a14",
+    "plan_summary": "删除 HistoryEntry.sequenceNum 与 MessageDataProvider.MessageDTO.sequenceNum，同步调整构造/序列化/测试",
+    "starter_session_id": "session-440d442d-dd8a-427b-b22f-a06bb882fca5",
+    "code_reviewed": false,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_1cf239bd-567a-4d8e-b269-0b70fc966231",
+    "plan_summary": "控制器消息返回改用新 SessionMessageDTO，内部 MessageDTO 去掉 sequenceNum 并保留 API sequenceNum",
+    "starter_session_id": "session-440d442d-dd8a-427b-b22f-a06bb882fca5",
+    "code_reviewed": false,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_9eaf256e-d153-422b-bbb4-0167f505ff60",
+    "plan_summary": "删除工具 TS 接口 HistoryEntry.sequenceNum 字段声明",
+    "starter_session_id": "session-440d442d-dd8a-427b-b22f-a06bb882fca5",
+    "code_reviewed": false,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_9c0ba912-ba4d-4935-9b94-acc36607ec98",
+    "plan_summary": "根 pom.xml 新增 spring-boot-starter-websocket 依赖",
+    "starter_session_id": "0c160234-39c5-42bb-9ba0-9dbadf9f9fae",
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
   },
   {
-    "plan_id": "plan_2f9ce822-fa4e-491d-ac91-7d0740c644b8",
-    "plan_summary": "修复 AgentAssembler 的 ThreadVariableHandler 注册顺序及对应测试用例",
-    "starter_session_id": "93912fae-4acb-4f52-be83-671bed2f26f1",
+    "plan_id": "plan_a044633e-2592-44eb-900a-866d06ee0501",
+    "plan_summary": "agent-base 新增 SEND_USER_MESSAGE 消息链路（常量、消息类、发送机制、ChatService 特殊标记）",
+    "starter_session_id": "0c160234-39c5-42bb-9ba0-9dbadf9f9fae",
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
   },
   {
-    "plan_id": "plan_d4766315-fe0c-4f2a-b6be-18202b7606ca",
-    "plan_summary": "SessionServiceImpl 与 DefaultContextDataProvider 改用 UserContextUtil 统一入口",
-    "starter_session_id": "93912fae-4acb-4f52-be83-671bed2f26f1",
+    "plan_id": "plan_3aa65153-7685-499f-9695-d0175987b3c8",
+    "plan_summary": "platform-app WebSocket 服务端基础设施（配置/注册中心/推送服务/MessageSender 实现）",
+    "starter_session_id": "0c160234-39c5-42bb-9ba0-9dbadf9f9fae",
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
   },
   {
-    "plan_id": "plan_64a41cec-1d85-4972-875f-6840a0dc6df4",
-    "plan_summary": "ModelConfigServiceImpl 改用 UserContextUtil 统一入口",
-    "starter_session_id": "93912fae-4acb-4f52-be83-671bed2f26f1",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": true
-  },
-  {
-    "plan_id": "plan_0296b6a7-5a70-4ffd-9c7d-336e4dff189e",
-    "plan_summary": "ToolConfigServiceImpl 改用 UserContextUtil 统一入口",
-    "starter_session_id": "93912fae-4acb-4f52-be83-671bed2f26f1",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": true
-  },
-  {
-    "plan_id": "plan_27fe9233-6192-4ea9-a5d3-91bae78203e2",
-    "plan_summary": "AgentConfigServiceImpl 改用 UserContextUtil 统一入口",
-    "starter_session_id": "93912fae-4acb-4f52-be83-671bed2f26f1",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": true
-  },
-  {
-    "plan_id": "plan_be049c57-77dd-4d31-b853-48ad1d01a6bc",
-    "plan_summary": "SkillConfigServiceImpl 改用 UserContextUtil 统一入口",
-    "starter_session_id": "93912fae-4acb-4f52-be83-671bed2f26f1",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": true
-  },
-  {
-    "plan_id": "plan_af9b4128-ae4e-4ef0-9696-9f187709f8b6",
-    "plan_summary": "多个 service/controller 改用 UserContextUtil 并修复 ModelConfigServiceImplAuthGuardTest 编译错误",
-    "starter_session_id": "93912fae-4acb-4f52-be83-671bed2f26f1",
+    "plan_id": "plan_0cf3a582-13fd-4c39-a5b6-b24792464251",
+    "plan_summary": "frontend-ui 全局 WebSocket 客户端、消息分发与 AgentChat 接入",
+    "starter_session_id": "0c160234-39c5-42bb-9ba0-9dbadf9f9fae",
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true

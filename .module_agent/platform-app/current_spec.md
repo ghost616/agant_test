@@ -141,6 +141,13 @@ platform-app 模块包含以下功能：
 - SessionController 新增 GET /api/sessions/{id}/messages/range 端点：接收 startSeq/endSeq 查询参数，调用 MessageService.getMessagesBySeqRange 返回消息实体列表（ApiResponse<List<Message>>），注入 MessageService 依赖
 - SessionController 注入 DefaultMessageDataProvider，GET /api/sessions/{id}/messages/range 端点返回类型从 ApiResponse<List<Message>> 实体列表改为 ApiResponse<List<MessageDataProvider.MessageDTO>>：调用 MessageService.getMessagesBySeqRange 获取实体后通过 defaultMessageDataProvider.toMessageDTOs 转换为 MessageDTO，与 GET /api/sessions/{id}/messages 端点返回结构对齐；SessionControllerTest 同步更新断言（mock defaultMessageDataProvider.toMessageDTOs，断言 MessageDTO 返回）
 - SessionService 新增 listLogSessions 方法，SessionController 新增 GET /api/sessions/log-sessions 端点：查询当前用户所有主会话（isChild 为 null 或 false），不过滤 isEvaluation（含评估会话），按创建时间倒序返回 SessionDTO（含 isEvaluation/isChild/parentSessionId）；现有 listSessions（GET /api/sessions）仅返回普通主会话（isEvaluation=false），保持不变
+- 会话消息 API DTO 迁移：新增 SessionMessageDTO（com.ghost616.platform.dto.session，15 字段 = agent-base 内部 MessageDataProvider.MessageDTO 14 字段 + sequenceNum），Controller 层对外返回消息一律改用 SessionMessageDTO，内部 MessageDTO（agent-base）已去除 sequenceNum 仅用于 provider 内部
+- DefaultMessageDataProvider 保留内部 toMessageDTOs（返回无 sequenceNum 的内部 MessageDTO），新增 API 映射方法 toSessionMessageDTOs(List<Message>) 与 toSessionMessageDTO(MessageDTO, Integer)：复用内部解析逻辑（工具调用/用量等）后将 sequenceNum（来自消息实体）补充进 SessionMessageDTO 返回
+- SessionService/SessionServiceImpl 消息查询返回类型改为 List<SessionMessageDTO>：getMessages(Long) 与 getMessagesByConversationId(String) 内部改调 defaultMessageDataProvider.toSessionMessageDTOs
+- SessionController GET /api/sessions/{id}/messages、GET /api/sessions/{id}/messages/range 返回 ApiResponse<List<SessionMessageDTO>>（range 改用 toSessionMessageDTOs），POST /api/sessions/{id}/complete-sub-session 内部逻辑改用 SessionMessageDTO（getRole/getContent/getReasoning/getToolInfo/getToolCalls）
+- ConversationController GET /api/conversations/{conversationId}/messages 返回 ApiResponse<List<SessionMessageDTO>>
+- 同步更新测试：SessionControllerTest/ConversationControllerTest/SessionServiceImplTest 改用 SessionMessageDTO 与 toSessionMessageDTOs mock；DefaultMessageDataProviderTest 新增 toSessionMessageDTOs 3 个映射用例（全字段含 sequenceNum/空列表/单条保留 sequenceNum）；EvaluationResultGenerateServiceTest/EvaluationExecutionServiceTest/EvaluationSessionControllerTest/DefaultContextDataProviderTest 适配内部 MessageDTO 去除 sequenceNum 后的 14 字段构造
+- 环境备注：新文件 SessionMessageDTO.java 因 E: 卷不支持硬链接（str_replace_editor create 的 fs.link 原子发布失败，EISDIR）无法由代理工具创建，需人工创建（内容见测试报告附录）
 ## 知识库管理
 
 - 知识库(KnowledgeBase) CRUD 接口：DTO（KnowledgeBaseDTO/KnowledgeBaseCreateRequest/KnowledgeBaseUpdateRequest）、Service（KnowledgeBaseService 接口与 KnowledgeBaseServiceImpl 实现）、Controller（KnowledgeBaseController，路径 /api/knowledge-bases）

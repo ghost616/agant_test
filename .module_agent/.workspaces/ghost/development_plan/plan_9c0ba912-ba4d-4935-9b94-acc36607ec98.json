@@ -1,0 +1,9 @@
+{
+  "plan_id": "plan_9c0ba912-ba4d-4935-9b94-acc36607ec98",
+  "module_name": "framework",
+  "development_plan": "在根 pom.xml 中新增 spring-boot-starter-websocket 依赖（版本由 spring-boot-starter-parent 3.2.5 管理），为全项目提供 WebSocket 支持。保持其他依赖不变。",
+  "session_id": "df6ab3a9-7393-47c4-801b-43867972c8a7",
+  "modified_files": [
+    "pom.xml"
+  ]
+}

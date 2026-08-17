@@ -270,14 +270,14 @@ class ChatServiceLogTest {
         List<AgentExecutionContext.HistoryEntry> history = new ArrayList<>();
         for (int g = 0; g < 12; g++) {
             history.add(new AgentExecutionContext.HistoryEntry(
-                    "user", "q" + g, null, null, g * 2 + 1, LocalDateTime.now(),
+                    "user", "q" + g, null, null, LocalDateTime.now(),
                     List.of(), null, null, null));
             history.add(new AgentExecutionContext.HistoryEntry(
-                    "assistant", "a" + g, null, null, g * 2 + 2, LocalDateTime.now(),
+                    "assistant", "a" + g, null, null, LocalDateTime.now(),
                     List.of(), null, null, null));
         }
         history.add(new AgentExecutionContext.HistoryEntry(
-                "user", "hello", null, null, 25, LocalDateTime.now(),
+                "user", "hello", null, null, LocalDateTime.now(),
                 List.of(), null, null, null));
 
         Map<String, String> convVars = new HashMap<>();

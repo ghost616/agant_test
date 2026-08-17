@@ -134,5 +134,12 @@
   "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/McpJsonRpcClient.java": "58f6e5461d6004c62c6d2460151a295f",
   "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/McpHttpToolInvoker.java": "2dd3efafa0301356625e74975a84d5e0",
   "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/McpAuthConfigParser.java": "1e08c43c0ce55b7670dcdf3f266fbc5c",
-  "agent-base/src/test/java/com/ghost616/agentbase/enums/ErrorCodeTest.java": "e8972da1bb672007ebbd2d018c268736"
+  "agent-base/src/test/java/com/ghost616/agentbase/enums/ErrorCodeTest.java": "e8972da1bb672007ebbd2d018c268736",
+  "platform-app/src/main/java/com/ghost616/platform/systemtest/SystemTestSubSessionTool.java": "f09c85e40d68555b4d952ae9be6a1446",
+  "platform-app/src/test/java/com/ghost616/platform/systemtest/SystemTestSubSessionToolTest.java": "e496ddc6906a233f56c66a6b9116929f",
+  "platform-app/src/main/java/com/ghost616/platform/controller/AgentContextController.java": "e06bad959dd10a439d86a62e07bfcacb",
+  "platform-app/src/main/java/com/ghost616/platform/dto/AgentContextDTO.java": "7f33d7fb0dd0d9df0bf37ccea550319c",
+  "platform-app/src/test/java/com/ghost616/platform/controller/AgentContextControllerTest.java": "24cef5786d8bd68fb50e65163bd4e0cd",
+  "platform-app/src/test/java/com/ghost616/platform/controller/ConversationControllerTest.java": "bd67f655c0d2e2d0387aaa9fc2bec2bc",
+  "agent-base/src/main/java/com/ghost616/agentbase/sendmessage/ConversationIdMessage.java": "d8a339c63b45512315a2704c57d3c769"
 }

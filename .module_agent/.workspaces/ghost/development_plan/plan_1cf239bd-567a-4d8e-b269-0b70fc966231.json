@@ -1,0 +1,22 @@
+{
+  "plan_id": "plan_1cf239bd-567a-4d8e-b269-0b70fc966231",
+  "module_name": "platform-app",
+  "development_plan": "控制器返回的 MessageDataProvider.MessageDTO 全部改为新的 SessionMessageDTO。新增 platform-app/src/main/java/com/ghost616/platform/dto/session/SessionMessageDTO，字段与内部 MessageDTO 一致并保留 sequenceNum；DefaultMessageDataProvider 保留内部 toMessageDTOs（返回无 sequenceNum 的内部 MessageDTO），新增 API 映射方法返回 SessionMessageDTO；SessionService/SessionServiceImpl 的消息查询返回类型改为 SessionMessageDTO；SessionController 的 /messages、/messages/range、completeSubSession 内部逻辑和 ConversationController 的 /conversations/{conversationId}/messages 改用 SessionMessageDTO；同步更新 SessionControllerTest、ConversationControllerTest、EvaluationResultGenerateServiceTest、EvaluationExecutionServiceTest 等相关测试。",
+  "session_id": "15c35344-f761-4320-abbe-3b0a79977f34",
+  "modified_files": [
+    "platform-app/src/main/java/com/ghost616/platform/dto/session/SessionMessageDTO.java",
+    "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultMessageDataProvider.java",
+    "platform-app/src/main/java/com/ghost616/platform/service/session/SessionService.java",
+    "platform-app/src/main/java/com/ghost616/platform/service/session/SessionServiceImpl.java",
+    "platform-app/src/main/java/com/ghost616/platform/controller/SessionController.java",
+    "platform-app/src/main/java/com/ghost616/platform/controller/ConversationController.java",
+    "platform-app/src/test/java/com/ghost616/platform/controller/SessionControllerTest.java",
+    "platform-app/src/test/java/com/ghost616/platform/controller/ConversationControllerTest.java",
+    "platform-app/src/test/java/com/ghost616/platform/session/SessionServiceImplTest.java",
+    "platform-app/src/test/java/com/ghost616/platform/service/agent/DefaultMessageDataProviderTest.java",
+    "platform-app/src/test/java/com/ghost616/platform/service/evaluation/EvaluationResultGenerateServiceTest.java",
+    "platform-app/src/test/java/com/ghost616/platform/service/evaluation/EvaluationExecutionServiceTest.java",
+    "platform-app/src/test/java/com/ghost616/platform/controller/EvaluationSessionControllerTest.java",
+    "platform-app/src/test/java/com/ghost616/platform/service/agent/DefaultContextDataProviderTest.java"
+  ]
+}

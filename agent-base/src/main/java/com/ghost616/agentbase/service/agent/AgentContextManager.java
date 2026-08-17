@@ -16,6 +16,8 @@ import com.ghost616.agentbase.exception.AgentException;
 import com.ghost616.agentbase.sendmessage.ChildCreateSession;
 import com.ghost616.agentbase.sendmessage.ConversationIdMessage;
 import com.ghost616.agentbase.sendmessage.HistoryMessage;
+import com.ghost616.agentbase.sendmessage.MessageSender;
+import com.ghost616.agentbase.sendmessage.SendUserMessage;
 import com.ghost616.agentbase.sendmessage.VariableMessage;
 import com.ghost616.agentbase.service.agent.invoker.ToolManager;
 import com.ghost616.agentbase.service.agent.log.AgentLog;
@@ -269,14 +271,8 @@ public class AgentContextManager {
         sessionManager.messageSave().sessionId(childSessionId).role("user").content(content)
                 .conversationId(conversationId).save();
 
-        AgentSessionContext childCtx = cache.get(childSessionId);
-        int sequenceNum = 1;
-        if (childCtx != null) {
-            sequenceNum = childCtx.context().getHistory().size() + 1;
-        }
         addHistoryEntry(childSessionId, new AgentExecutionContext.HistoryEntry(
                 "user", content, null, null,
-                sequenceNum,
                 LocalDateTime.now(),
                 Collections.emptyList(),
                 null, null, null));
@@ -290,6 +286,34 @@ public class AgentContextManager {
                 .modelId(modelId)
                 .thinking(thinking)
                 .build());
+
+        sendSendUserMessage(childSessionId, content, conversationId, parentSessionId);
+    }
+
+    private void sendSendUserMessage(String childSessionId, String content, String conversationId, String parentSessionId) {
+        MessageSender messageSender = registry.getMessageSender();
+        if (messageSender == null) {
+            return;
+        }
+        String mainSessionId = resolveMainSessionId(childSessionId);
+        SendUserMessage message = new SendUserMessage(childSessionId, content, conversationId, parentSessionId, mainSessionId);
+        try {
+            messageSender.send(message);
+        } catch (Exception e) {
+            log.warn("发送 SendUserMessage 失败: {}", e.getMessage(), e);
+        }
+    }
+
+    private String resolveMainSessionId(String sessionId) {
+        String current = sessionId;
+        while (current != null) {
+            ContextDataProvider.AgentContextData data = dataProvider.loadAgentContext(current);
+            if (data == null || data.parentSessionId() == null) {
+                return current;
+            }
+            current = data.parentSessionId();
+        }
+        return null;
     }
 
     public AgentSessionContext get(String sessionId) {
@@ -330,7 +354,7 @@ public class AgentContextManager {
             }
             history.add(new AgentExecutionContext.HistoryEntry(
                     msg.role(), msg.content(), msg.reasoning(), msg.toolInfo(),
-                    msg.sequenceNum(), msg.createTime(), Collections.unmodifiableList(toolCalls),
+                    msg.createTime(), Collections.unmodifiableList(toolCalls),
                     msg.usage(), toWebSearchCall(msg.webSearchCall()), toCustomToolCall(msg.customToolCall())));
         }
         return history;

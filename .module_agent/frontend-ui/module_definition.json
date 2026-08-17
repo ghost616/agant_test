@@ -47,11 +47,11 @@
     },
     {
       "path": "src/pages/sessions/SessionList.tsx",
-      "description": "会话列表页面，新建会话 Modal（选择智能体/模型）、表格展示、继续会话跳转、删除确认"
+      "description": "会话列表页面，新建会话 Modal（选择智能体/模型）、表格展示、继续会话跳转、删除确认；订阅子会话列表变更事件（subscribeChildSessionsChanged，收到 SEND_USER_MESSAGE 且无对应会话页面打开时 fetchList 刷新列表，unmount 时 unsubscribeChildSessionsChanged 取消订阅）"
     },
     {
       "path": "src/pages/sessions/AgentChat.tsx",
-      "description": "智能体对话页面：loadHistory 提取为独立 useCallback 供回滚复用；底部按钮区新增回滚按钮（loading/toolExecuting 时禁用），调用 rollbackSession+loadHistory 刷新；renderMessage 仅 content 非空时渲染气泡；onDone 回调条件扩展为检查 content 或 reasoning 任一非空；工具气泡补充 arguments JSON 参数显示；loadHistory 中 tool 角色且 toolResult 非空时解析 JSON 格式化为完整工具执行结果 markdown 作为 content；主会话与子会话标签化展示（Tabs：主会话 + 每个子会话一个独立标签，标签名=子会话 title 无 title 时回退 id，进入页面自动加载子会话列表，切换到子会话标签时 ChildSessionView 自动加载消息并只读展示，无子会话时仅显示主会话标签；已移除子会话列表 Table/刷新按钮/查看会话/返回子会话列表/viewingChildId 二级状态）；子会话驱动流程（独立 Modal/独立状态/流式渲染/工具执行循环/完成后 completeSubSession+继续主会话）；pollToolStatus 检测 status.needsSubSessionFlow 时调用 handleSubSessionFlow 启动子会话流程后继续轮询；executeToolLoop 移除 _sys_callback_sub_session 硬编码检测，所有工具统一走显示工具消息 + pollToolStatus 流程；Responses 有状态模式支持：页面挂载时调用 getSessionContextBasic 获取 lastResponseId 初始化 responseIdRef，根据当前模型 requestType==='responses' 判断有状态模式，agentChatStream onResponseId 回调更新 ref，发送消息时透传 previousResponseId（Completions/responses_stateless 不传）；实时对话接收 onWebSearchCall 回调（WebSearchCall[] 数组）并遍历展示多个搜索结果引用（标题+链接+摘要），handleSend 与 executeToolLoop continueChatStream 均支持，onDone 时附加 webSearchCall 数组到 assistant 消息，加载历史消息从 SessionMessage.webSearchCall 数组渲染已持久化的搜索结果"
+      "description": "智能体对话页面：loadHistory 提取为独立 useCallback 供回滚复用；底部按钮区新增回滚按钮（loading/toolExecuting 时禁用），调用 rollbackSession+loadHistory 刷新；renderMessage 仅 content 非空时渲染气泡；onDone 回调条件扩展为检查 content 或 reasoning 任一非空；工具气泡补充 arguments JSON 参数显示；loadHistory 中 tool 角色且 toolResult 非空时解析 JSON 格式化为完整工具执行结果 markdown 作为 content；主会话与子会话标签化展示（Tabs：主会话 + 每个子会话一个独立标签，标签名=子会话 title 无 title 时回退 id，进入页面自动加载子会话列表，切换到子会话标签时 ChildSessionView 自动加载消息并只读展示，无子会话时仅显示主会话标签；已移除子会话列表 Table/刷新按钮/查看会话/返回子会话列表/viewingChildId 二级状态）；子会话驱动流程（独立 Modal/独立状态/流式渲染/工具执行循环/完成后 completeSubSession+继续主会话）；pollToolStatus 检测 status.needsSubSessionFlow 时调用 handleSubSessionFlow 启动子会话流程后继续轮询；executeToolLoop 移除 _sys_callback_sub_session 硬编码检测，所有工具统一走显示工具消息 + pollToolStatus 流程；Responses 有状态模式支持：页面挂载时调用 getSessionContextBasic 获取 lastResponseId 初始化 responseIdRef，根据当前模型 requestType==='responses' 判断有状态模式，agentChatStream onResponseId 回调更新 ref，发送消息时透传 previousResponseId（Completions/responses_stateless 不传）；实时对话接收 onWebSearchCall 回调（WebSearchCall[] 数组）并遍历展示多个搜索结果引用（标题+链接+摘要），handleSend 与 executeToolLoop continueChatStream 均支持，onDone 时附加 webSearchCall 数组到 assistant 消息，加载历史消息从 SessionMessage.webSearchCall 数组渲染已持久化的搜索结果；全局 WebSocket 接入：挂载时 webSocketClient.bindSession(sessionId) 绑定当前会话（切换页面只更新绑定不断链），registerSessionPage 注册消息分发页面处理器（unmount 时 unregisterSessionPage 注销）；ChildSessionView 新增 stream 属性（ChildStreamState：messages/currentResponse/currentReasoning/loading）合并渲染历史与实时流式消息（历史末条与流式首条相同用户消息去重）；收到 SEND_USER_MESSAGE 且对应子会话为激活标签时 streamChildReply 以特殊标记 [send_user_message] 调用 agentChatStream 流式展示子会话回复（childStreams 状态 + activeTabRef/childStreamsRef/streamChildReplyRef 供 WS 回调读取最新值），否则 refreshChildSessions 刷新子会话列表"
     },
     {
       "path": "src/components/JsonEditor.tsx",
@@ -235,7 +235,7 @@
     },
     {
       "path": "src/services/auth.ts",
-      "description": "认证服务封装：login 调用 POST /api/auth/login（返回 User 并写入 localStorage currentUser）；getCurrentUser 读取本地当前登录用户；clearCurrentUser 清除本地登录用户信息；saveCurrentUser 更新本地当前登录用户（修改显示名等自助操作后同步）；logout 调用 POST /api/auth/logout 注销会话并无论成败清除本地登录状态"
+      "description": "认证服务封装：login 调用 POST /api/auth/login（返回 User 并写入 localStorage currentUser），登录成功后建立全局 WebSocket 连接（webSocketClient.connect，复用 SESSION_ID Cookie 鉴权）；getCurrentUser 读取本地当前登录用户；clearCurrentUser 清除本地登录用户信息；saveCurrentUser 更新本地当前登录用户（修改显示名等自助操作后同步）；logout 调用 POST /api/auth/logout 注销会话并无论成败清除本地登录状态与关闭全局 WebSocket 连接（webSocketClient.close）"
     },
     {
       "path": "src/services/user.ts",
@@ -251,7 +251,7 @@
     },
     {
       "path": "src/App.tsx",
-      "description": "应用入口组件（BrowserRouter 内）：注册全部页面路由与根路径 '/' 按角色重定向落地页；侧边栏菜单（MENU_ITEMS 常量 + getVisibleMenuItems 按角色过滤，用户管理仅管理员可见）；登录守卫（getCurrentUser 为 null 且非 /login 时 Navigate 到 /login）；登录页独立全屏渲染；Header/Sider/Content 主界面 Layout 布局；Header 右上角用户信息 Dropdown（Avatar + 显示名，hover 菜单按角色区分：普通用户含修改显示名/修改密码/退出，管理员仅修改密码/退出），修改显示名/修改密码 Modal（调 updateCurrentUser 自助修改，修改显示名成功后 saveCurrentUser 同步 localStorage 并重渲染刷新 Header）与退出登录（调 logout 清除本地登录状态跳 /login）；运行日志路由：/logs 渲染 SessionLogList（会话日志页）、/logs/:sessionId 渲染 AgentLogList（运行日志页）"
+      "description": "应用入口组件（BrowserRouter 内）：注册全部页面路由与根路径 '/' 按角色重定向落地页；侧边栏菜单（MENU_ITEMS 常量 + getVisibleMenuItems 按角色过滤，用户管理仅管理员可见）；登录守卫（getCurrentUser 为 null 且非 /login 时 Navigate 到 /login）；登录页独立全屏渲染；Header/Sider/Content 主界面 Layout 布局；Header 右上角用户信息 Dropdown（Avatar + 显示名，hover 菜单按角色区分：普通用户含修改显示名/修改密码/退出，管理员仅修改密码/退出），修改显示名/修改密码 Modal（调 updateCurrentUser 自助修改，修改显示名成功后 saveCurrentUser 同步 localStorage 并重渲染刷新 Header）与退出登录（调 logout 清除本地登录状态跳 /login）；运行日志路由：/logs 渲染 SessionLogList（会话日志页）、/logs/:sessionId 渲染 AgentLogList（运行日志页）；全局 WebSocket 连接生命周期（useEffect 按登录态 isLoggedIn 调 webSocketClient.connect/close，页面刷新后自动重连）"
     },
     {
       "path": "src/types/user.ts",
@@ -280,6 +280,26 @@
     {
       "path": "e2e/AgentChat.spec.ts",
       "description": "AgentChat 页面端到端测试：mock 主会话/子会话列表/子会话消息/模型接口，断言主会话与各子会话标签渲染（子会话标签名 title/id 回退、无子会话仅主会话标签、进入页面自动加载子会话标签）、切换到子会话标签加载并展示消息、子会话标签只读（无输入框/模型选择/思考开关/发送回滚按钮）"
+    },
+    {
+      "path": "src/services/websocket.ts",
+      "description": "全局 WebSocket 客户端（单例）：登录后建立到后端 /ws 端点的连接（复用后端 SESSION_ID Cookie 完成握手鉴权，连接地址由当前站点协议+主机+WS_ENDPOINT 构建）；bindSession/unbindSession 发送 BIND/UNBIND 会话绑定消息（切换页面只更新绑定不断链，连接未就绪时先建立连接由 open 补发绑定）；断线自动重连（指数退避 1s→30s 上限，重连成功后重新发送当前绑定的会话绑定消息）；close 手动关闭（退出登录时调用，清除重连定时器与绑定）；onMessage/offMessage 消息监听器注册与分发（JSON 解析，单监听器异常隔离）；测试模式（vitest MODE=test）与无 WebSocket 环境静默跳过"
+    },
+    {
+      "path": "src/services/messageDispatcher.ts",
+      "description": "WebSocket 消息分发处理：订阅全局 WebSocket 客户端推送，按 messageName 分发 SEND_USER_MESSAGE 消息；根据消息的 mainSessionId/parentSessionId/sessionId 定位已注册的会话页面处理器（SessionPageHandler，当前支持继续会话页面 AgentChat）：对应子会话为激活视图时调用 streamChildReply 流式展示回复，否则调用 refreshChildSessions 刷新子会话列表，找不到对应会话页面时触发子会话列表变更事件（subscribeChildSessionsChanged/unsubscribeChildSessionsChanged 供会话列表页订阅刷新）；导出 SEND_USER_MESSAGE_MARKER='[send_user_message]' 特殊标记（与后端 ChatService.SEND_USER_MESSAGE_MARKER 约定一致）与 SendUserMessagePayload/SessionPageHandler 类型"
+    },
+    {
+      "path": "src/vite-env.d.ts",
+      "description": "Vite 客户端类型声明（/// <reference types=\"vite/client\" />），为 src 提供 import.meta.env 等 Vite 客户端类型支持"
+    },
+    {
+      "path": "vite.config.ts",
+      "description": "Vite 构建配置：React 插件、开发服务器端口 3000、/api 与 /ws 代理（/ws 启用 ws:true 支持 WebSocket 转发到后端 http://localhost:8080）"
+    },
+    {
+      "path": "serve.js",
+      "description": "前端生产静态服务（Node http，端口 3000）：serve dist/ 目录（SPA 回退 index.html）、/api HTTP 代理到后端 8080、/ws WebSocket 升级代理（server upgrade 事件将 /ws 连接转发到后端 8080，支持全局 WebSocket 客户端）"
     }
   ]
 }

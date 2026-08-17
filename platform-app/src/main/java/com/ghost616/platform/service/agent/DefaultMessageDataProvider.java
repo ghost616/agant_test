@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.ghost616.agentbase.dto.model.ToolInfo;
 import com.ghost616.agentbase.dto.model.UsageInfo;
 import com.ghost616.platform.enums.ErrorCode;
+import com.ghost616.platform.dto.session.SessionMessageDTO;
 import com.ghost616.platform.exception.BusinessException;
 import com.ghost616.agentbase.service.agent.MessageDataProvider;
 import com.ghost616.agentbase.service.agent.MessageDataProvider.CustomToolCallData;
@@ -242,12 +243,56 @@ public class DefaultMessageDataProvider implements MessageDataProvider {
             }
             result.add(new MessageDTO(
                     IdConverter.toString(msg.getId()), IdConverter.toString(msg.getSessionId()), msg.getRole(), msg.getContent(),
-                    msg.getReasoning(), buildToolInfo(msg, toolCalls), msg.getSequenceNum(),
+                    msg.getReasoning(), buildToolInfo(msg, toolCalls),
                     msg.getCreateTime(), msg.getToolResult(), toolCallDataList, usageInfo,
                     msg.getRollback(), webSearchCallDataList, customToolCallDataList, msg.getConversationId()));
         }
 
         return result;
+    }
+
+    /**
+     * API 层消息映射：将消息实体转换为对外返回的 SessionMessageDTO 列表。
+     * 复用内部 {@link #toMessageDTOs} 的实体解析逻辑（含工具调用/用量等），
+     * 再补充 sequenceNum（内部 MessageDTO 不含该字段，从实体读取）。
+     *
+     * @param messages 消息实体列表
+     * @return SessionMessageDTO 列表
+     */
+    public List<SessionMessageDTO> toSessionMessageDTOs(List<Message> messages) {
+        List<MessageDTO> dtos = toMessageDTOs(messages);
+        List<SessionMessageDTO> result = new ArrayList<>(dtos.size());
+        for (int i = 0; i < dtos.size(); i++) {
+            result.add(toSessionMessageDTO(dtos.get(i), messages.get(i).getSequenceNum()));
+        }
+        return result;
+    }
+
+    /**
+     * 将内部 MessageDTO 映射为 API 层 SessionMessageDTO（字段一致，补充 sequenceNum）。
+     *
+     * @param dto          内部 MessageDTO
+     * @param sequenceNum  消息序号（来自消息实体）
+     * @return SessionMessageDTO
+     */
+    public SessionMessageDTO toSessionMessageDTO(MessageDTO dto, Integer sequenceNum) {
+        return SessionMessageDTO.builder()
+                .id(dto.id())
+                .sessionId(dto.sessionId())
+                .role(dto.role())
+                .content(dto.content())
+                .reasoning(dto.reasoning())
+                .toolInfo(dto.toolInfo())
+                .sequenceNum(sequenceNum)
+                .createTime(dto.createTime())
+                .toolResult(dto.toolResult())
+                .toolCalls(dto.toolCalls())
+                .usage(dto.usage())
+                .rollback(dto.rollback())
+                .webSearchCall(dto.webSearchCall())
+                .customToolCall(dto.customToolCall())
+                .conversationId(dto.conversationId())
+                .build();
     }
 
     @Override

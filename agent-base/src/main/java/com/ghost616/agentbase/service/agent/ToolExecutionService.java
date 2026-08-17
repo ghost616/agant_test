@@ -326,7 +326,7 @@ public class ToolExecutionService {
             for (ToolExecutionTracker.ToolResult r : results) {
                 AgentExecutionContext.HistoryEntry entry = new AgentExecutionContext.HistoryEntry(
                         "tool", r.result(), null, new ToolInfo(r.toolId(), r.toolName()),
-                        0, LocalDateTime.now(), Collections.emptyList(),
+                        LocalDateTime.now(), Collections.emptyList(),
                         null, null, null);
                 agentContextManager.addHistoryEntry(sessionId, entry);
             }

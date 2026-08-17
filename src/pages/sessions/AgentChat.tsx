@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -29,6 +29,13 @@ import {
 } from '../../services/session';
 import { executeBrowserTool } from '../../services/toolExecutor';
 import { listModels } from '../../services/model';
+import {
+  registerSessionPage,
+  SEND_USER_MESSAGE_MARKER,
+  unregisterSessionPage,
+} from '../../services/messageDispatcher';
+import type { SendUserMessagePayload, SessionPageHandler } from '../../services/messageDispatcher';
+import { webSocketClient } from '../../services/websocket';
 import type { Session, SessionMessage, ToolInfo, WebSearchCall } from '../../types/session';
 import type { ModelConfig } from '../../types/model';
 
@@ -41,6 +48,14 @@ interface ChatMessage {
   toolResult?: string;
   toolInfo?: ToolInfo;
   webSearchCall?: WebSearchCall[];
+}
+
+/** 子会话流式回复展示状态（WS 消息分发触发，展示到子会话标签视图）。 */
+interface ChildStreamState {
+  messages: ChatMessage[];
+  currentResponse: string;
+  currentReasoning: string;
+  loading: boolean;
 }
 
 const ROLE_CONFIG: Record<MessageRole, { label: string; icon: JSX.Element; color: string }> = {
@@ -201,9 +216,16 @@ const renderMessage = (msg: ChatMessage, idx: number): JSX.Element => {
 
 /**
  * 子会话只读展示视图：加载并展示指定子会话的历史消息。
+ * 收到 SEND_USER_MESSAGE 消息时可通过 stream 属性实时展示流式回复。
  * 不含输入框、模型选择、思考模式及发送/回滚/停止等交互控件。
  */
-function ChildSessionView({ childId }: { childId: string }): JSX.Element {
+function ChildSessionView({
+  childId,
+  stream,
+}: {
+  childId: string;
+  stream?: ChildStreamState;
+}): JSX.Element {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -224,6 +246,30 @@ function ChildSessionView({ childId }: { childId: string }): JSX.Element {
     };
   }, [childId]);
 
+  // 合并历史消息与实时流式消息：历史最后一条与流式首条用户消息相同时去重，避免重复展示
+  const mergedMessages = useMemo(() => {
+    if (!stream || stream.messages.length === 0) {
+      return messages;
+    }
+    const history = [...messages];
+    const last = history[history.length - 1];
+    const firstStream = stream.messages[0];
+    if (
+      last &&
+      last.role === 'user' &&
+      firstStream.role === 'user' &&
+      last.content === firstStream.content
+    ) {
+      history.pop();
+    }
+    return [...history, ...stream.messages];
+  }, [messages, stream]);
+
+  const showStreaming =
+    stream !== undefined &&
+    (stream.loading || stream.currentResponse !== '' || stream.currentReasoning !== '');
+  const showHistorySpinner = loading && !showStreaming;
+
   return (
     <div
       style={{
@@ -236,17 +282,46 @@ function ChildSessionView({ childId }: { childId: string }): JSX.Element {
         height: '100%',
       }}
     >
-      {loading && (
+      {showHistorySpinner && (
         <div style={{ textAlign: 'center', padding: 40 }}>
           <Spin tip="加载消息..." />
         </div>
       )}
-      {!loading && messages.length === 0 && (
+      {!showHistorySpinner && mergedMessages.length === 0 && !showStreaming && (
         <Typography.Text style={{ color: '#6a6a6a', fontSize: 14 }}>
           暂无消息
         </Typography.Text>
       )}
-      {!loading && messages.map((msg, idx) => renderMessage(msg, idx))}
+      {!showHistorySpinner && mergedMessages.map((msg, idx) => renderMessage(msg, idx))}
+      {showStreaming && (
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'flex-start',
+            marginBottom: 16,
+          }}
+        >
+          <div style={{ maxWidth: '75%' }}>
+            {renderRoleHeader('assistant')}
+            {stream!.currentReasoning && renderReasoning(stream!.currentReasoning)}
+            {stream!.currentResponse ? (
+              <div style={BUBBLE_STYLES.assistant} className="agent-chat-markdown">
+                <div style={{ color: '#d4d4d4', fontSize: 14, lineHeight: 1.8 }}>
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {stream!.currentResponse}
+                  </ReactMarkdown>
+                </div>
+              </div>
+            ) : (
+              !stream!.currentReasoning && (
+                <div style={{ marginTop: 8 }}>
+                  <Spin size="small" />
+                </div>
+              )
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -294,6 +369,11 @@ function AgentChat(): JSX.Element {
 
   const [activeTab, setActiveTab] = useState<string>('main');
   const [childSessions, setChildSessions] = useState<Session[]>([]);
+  // 子会话流式回复展示状态（按子会话 ID 索引，由 WS 消息分发触发）
+  const [childStreams, setChildStreams] = useState<Record<string, ChildStreamState>>({});
+  const activeTabRef = useRef<string>('main');
+  const childStreamsRef = useRef<Record<string, ChildStreamState>>({});
+  const streamChildReplyRef = useRef<(message: SendUserMessagePayload) => void>(() => {});
 
   useEffect(() => {
     if (containerRef.current) {
@@ -350,6 +430,119 @@ function AgentChat(): JSX.Element {
     loadHistory();
     loadChildSessions();
   }, [sessionId, loadHistory, loadChildSessions]);
+
+  // 同步激活标签到 ref（供 WS 消息分发读取最新值）
+  useEffect(() => {
+    activeTabRef.current = activeTab;
+  }, [activeTab]);
+
+  // 同步子会话流式状态到 ref（供 WS 回调判断是否正在流式）
+  useEffect(() => {
+    childStreamsRef.current = childStreams;
+  }, [childStreams]);
+
+  /**
+   * 更新指定子会话的流式展示状态。
+   * @param childId 子会话 ID
+   * @param updater 状态更新函数
+   */
+  const updateChildStream = useCallback(
+    (childId: string, updater: (state: ChildStreamState) => ChildStreamState): void => {
+      setChildStreams((prev) => {
+        const current = prev[childId];
+        if (!current) return prev;
+        return { ...prev, [childId]: updater(current) };
+      });
+    },
+    [],
+  );
+
+  /**
+   * 子会话消息分发：收到 SEND_USER_MESSAGE 且对应子会话处于激活视图时，
+   * 以特殊标记 [send_user_message] 调用对话接口，流式展示该子会话的 AI 回复。
+   * @param payload SEND_USER_MESSAGE 消息负载
+   */
+  const streamChildReply = useCallback(
+    (payload: SendUserMessagePayload): void => {
+      const childId = payload.sessionId;
+      if (!childId) return;
+      // 同一子会话已有流式请求进行中时忽略新消息（一次流式覆盖全部已持久化消息）
+      if (childStreamsRef.current[childId]?.loading) return;
+      const userMsg: ChatMessage = { role: 'user', content: payload.content || '' };
+      setChildStreams((prev) => {
+        const existing = prev[childId];
+        const baseMessages = existing ? existing.messages : [];
+        return {
+          ...prev,
+          [childId]: {
+            messages: [...baseMessages, userMsg],
+            currentResponse: '',
+            currentReasoning: '',
+            loading: true,
+          },
+        };
+      });
+      agentChatStream(
+        { sessionId: childId, content: SEND_USER_MESSAGE_MARKER },
+        {
+          onDelta: (text) =>
+            updateChildStream(childId, (s) => ({
+              ...s,
+              currentResponse: s.currentResponse + text,
+            })),
+          onReasoning: (text) =>
+            updateChildStream(childId, (s) => ({
+              ...s,
+              currentReasoning: s.currentReasoning + text,
+            })),
+          onDone: () =>
+            updateChildStream(childId, (s) => {
+              const hasContent = Boolean(s.currentResponse.trim() || s.currentReasoning.trim());
+              return {
+                messages: hasContent
+                  ? [
+                      ...s.messages,
+                      {
+                        role: 'assistant',
+                        content: s.currentResponse,
+                        reasoning: s.currentReasoning || undefined,
+                      },
+                    ]
+                  : s.messages,
+                currentResponse: '',
+                currentReasoning: '',
+                loading: false,
+              };
+            }),
+          onError: (err) => {
+            message.error(err.message || '子会话回复请求失败');
+            updateChildStream(childId, (s) => ({ ...s, loading: false }));
+          },
+        },
+      );
+    },
+    [updateChildStream],
+  );
+
+  streamChildReplyRef.current = streamChildReply;
+
+  // 进入会话页面：绑定当前会话 ID（切换页面只更新绑定不断链）并注册消息分发页面处理器
+  useEffect(() => {
+    if (!sessionId) return;
+    webSocketClient.bindSession(sessionId);
+    const handler: SessionPageHandler = {
+      mainSessionId: sessionId,
+      isChildActive: (childId) => activeTabRef.current === childId,
+      streamChildReply: (msg) => streamChildReplyRef.current(msg),
+      refreshChildSessions: () => {
+        loadChildSessions();
+      },
+    };
+    registerSessionPage(handler);
+    return () => {
+      unregisterSessionPage(sessionId);
+    };
+  }, [sessionId, loadChildSessions]);
 
   const handleAbort = useCallback(() => {
     stopChat(sessionId).catch(() => {});
@@ -1130,7 +1323,7 @@ function AgentChat(): JSX.Element {
     ...childSessions.map((child) => ({
       key: child.id,
       label: child.title || child.id,
-      children: <ChildSessionView childId={child.id} />,
+      children: <ChildSessionView childId={child.id} stream={childStreams[child.id]} />,
     })),
   ];
 

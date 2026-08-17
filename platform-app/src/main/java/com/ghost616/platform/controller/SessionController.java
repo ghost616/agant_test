@@ -30,7 +30,7 @@ import com.ghost616.agentbase.dto.model.Message;
 import com.ghost616.agentbase.dto.model.ToolCall;
 import com.ghost616.platform.enums.AggregationType;
 import com.ghost616.platform.enums.ErrorCode;
-import com.ghost616.agentbase.service.agent.MessageDataProvider;
+import com.ghost616.platform.dto.session.SessionMessageDTO;
 import com.ghost616.platform.model.SessionMemoryDocument;
 import com.ghost616.platform.service.agent.DefaultMessageDataProvider;
 import com.ghost616.platform.service.agent.DefaultSubSessionCallback;
@@ -79,18 +79,18 @@ public class SessionController {
     }
 
     @GetMapping("/{id}/messages")
-    public ApiResponse<List<MessageDataProvider.MessageDTO>> getMessages(@PathVariable Long id) {
-        List<MessageDataProvider.MessageDTO> result = sessionService.getMessages(id);
+    public ApiResponse<List<SessionMessageDTO>> getMessages(@PathVariable Long id) {
+        List<SessionMessageDTO> result = sessionService.getMessages(id);
         return ApiResponse.success(result);
     }
 
     @GetMapping("/{id}/messages/range")
-    public ApiResponse<List<MessageDataProvider.MessageDTO>> getMessagesBySeqRange(
+    public ApiResponse<List<SessionMessageDTO>> getMessagesBySeqRange(
             @PathVariable Long id,
             @RequestParam Integer startSeq,
             @RequestParam Integer endSeq) {
-        List<MessageDataProvider.MessageDTO> result =
-                defaultMessageDataProvider.toMessageDTOs(messageService.getMessagesBySeqRange(id, startSeq, endSeq));
+        List<SessionMessageDTO> result =
+                defaultMessageDataProvider.toSessionMessageDTOs(messageService.getMessagesBySeqRange(id, startSeq, endSeq));
         return ApiResponse.success(result);
     }
 
@@ -183,13 +183,13 @@ public class SessionController {
         if (data == null) {
             return ApiResponse.fail(ErrorCode.SUB_SESSION_DATA_NOT_FOUND);
         }
-        List<MessageDataProvider.MessageDTO> messages = sessionService.getMessages(data.getChildSessionId());
+        List<SessionMessageDTO> messages = sessionService.getMessages(data.getChildSessionId());
         if (messages == null || messages.isEmpty()) {
             return ApiResponse.fail(ErrorCode.CHILD_SESSION_NO_MESSAGES);
         }
-        MessageDataProvider.MessageDTO lastAssistantMsg = null;
+        SessionMessageDTO lastAssistantMsg = null;
         for (int i = messages.size() - 1; i >= 0; i--) {
-            if ("assistant".equals(messages.get(i).role())) {
+            if ("assistant".equals(messages.get(i).getRole())) {
                 lastAssistantMsg = messages.get(i);
                 break;
             }
@@ -198,8 +198,8 @@ public class SessionController {
             return ApiResponse.fail(ErrorCode.CHILD_SESSION_NO_MESSAGES);
         }
         List<ToolCall> toolCalls = null;
-        if (lastAssistantMsg.toolCalls() != null && !lastAssistantMsg.toolCalls().isEmpty()) {
-            toolCalls = lastAssistantMsg.toolCalls().stream()
+        if (lastAssistantMsg.getToolCalls() != null && !lastAssistantMsg.getToolCalls().isEmpty()) {
+            toolCalls = lastAssistantMsg.getToolCalls().stream()
                     .map(tc -> ToolCall.builder()
                             .id(tc.toolCallId())
                             .name(tc.toolCallName())
@@ -208,10 +208,10 @@ public class SessionController {
                     .toList();
         }
         Message message = Message.builder()
-                .role(lastAssistantMsg.role())
-                .content(lastAssistantMsg.content())
-                .reasoning(lastAssistantMsg.reasoning())
-                .toolInfo(lastAssistantMsg.toolInfo())
+                .role(lastAssistantMsg.getRole())
+                .content(lastAssistantMsg.getContent())
+                .reasoning(lastAssistantMsg.getReasoning())
+                .toolInfo(lastAssistantMsg.getToolInfo())
                 .toolCalls(toolCalls)
                 .build();
         data.getMessageResult().complete(message);
