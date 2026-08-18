@@ -297,11 +297,10 @@ describe('AgentChat 路径式导航 (静态验证)', () => {
     expect(source).toContain('const idx = activePath.indexOf(key);');
   });
 
-  it('计数标签作为路径项紧跟末位层级标签后插入（"子会话 N"文案+Dropdown+数量+上下箭头，仅路径末位且有子会话时插入）', () => {
+  it('计数标签作为路径项紧跟各层级标签后插入（Dropdown+数量+上下箭头，无子会话时不插入）', () => {
     const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
     expect(source).toContain('const levelChildren = childListCache[sid];');
-    expect(source).toContain('levelChildren && levelChildren.length > 0 && i === activePath.length - 1');
-    expect(source).toContain('<span>子会话 {levelChildren.length}</span>');
+    expect(source).toContain('levelChildren && levelChildren.length > 0');
     expect(source).toContain('items.push({');
     expect(source).toContain('key: `${sid}-count`');
     expect(source).toContain('items: levelChildren.map((c) => ({ key: c.id, label: c.title || c.id }))');

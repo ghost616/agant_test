@@ -1,0 +1,11 @@
+{
+  "plan_id": "plan_07acc3a1-133c-41d3-8a86-1279f0998da5",
+  "module_name": "frontend-ui",
+  "development_plan": "需求：子会话计数标签由仅显示数量改为\"子会话 N\"（文字+空格+数量+保留下拉箭头）；从下拉面板选中某个子会话后，该层级的计数标签隐藏；点击主会话标签回到主会话后，计数标签恢复显示。\n\n修改文件 1：src/pages/sessions/AgentChat.tsx\n- 计数标签文案：在 sessionTabItems 生成的计数标签中，将 <span>{levelChildren.length}</span> 改为 <span>子会话 {levelChildren.length}</span>（约 1445-1448 行）。\n- 隐藏逻辑：计数标签插入条件由 levelChildren && levelChildren.length > 0 增强为该层级是路径末位（i === activePath.length - 1）时才插入——即选中子会话后父层级不再显示计数标签；点击主会话截断路径后恢复显示。\n- 下拉展开（Dropdown open=expandedPickerFor === sid）、选中追加路径（handleSelectChild）、handleTabChange 拦截 -count key 等现有行为保持不变。\n\n修改文件 2：src/pages/sessions/__tests__/AgentChat.test.tsx\n- 同步更新静态验证测试：\n  - \"计数标签作为路径项紧跟各层级标签后插入\"用例补充断言\"子会话 \"文案（如 expect(source).toContain('子会话 {levelChildren.length}') 或等价文案）与末位层级才插入的条件断言（如 i === activePath.length - 1）。\n  - 检查其他用例（如 341-346 行\"点击计数标签展开下拉面板，选中后标签变为子会话名称并追加路径\"）是否需要适配隐藏逻辑，如有冲突同步调整断言。\n- 运行测试确认通过（npm test 或 vitest run src/pages/sessions/__tests__/AgentChat.test.tsx）。",
+  "session_id": "1e1e5feb-31c1-4777-b296-c670d2d3a4a8",
+  "modified_files": [
+    "src/pages/sessions/AgentChat.tsx",
+    "src/pages/sessions/__tests__/AgentChat.test.tsx",
+    "e2e/AgentChat.spec.ts"
+  ]
+}

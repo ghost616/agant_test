@@ -1412,8 +1412,8 @@ function AgentChat(): JSX.Element {
   };
 
   /** 路径标签项：主会话 + 各级激活子会话（末位为当前激活视图，内容区沿用 ChildSessionView）；
-   *  仅路径末位层级标签后紧跟其下一级计数标签项（Dropdown+数量+上下箭头，无子会话时不插入，
-   *  选中子会话后父层级计数标签隐藏，点击仅展开下拉不切换内容区，key 为 `${sid}-count`）。 */
+   *  每个层级标签后紧跟其下一级计数标签项（Dropdown+数量+上下箭头，无子会话时不插入，
+   *  点击仅展开下拉不切换内容区，key 为 `${sid}-count`）。 */
   const sessionTabItems: TabsProps['items'] = activePath.flatMap((sid, i) => {
     const levelChildren = childListCache[sid];
     const items: NonNullable<TabsProps['items']> = [
@@ -1428,8 +1428,8 @@ function AgentChat(): JSX.Element {
           ),
       },
     ];
-    // 该层级为路径末位且有子会话时，在标签后追加其下一级计数标签项（选中子会话后父层级不再显示）
-    if (levelChildren && levelChildren.length > 0 && i === activePath.length - 1) {
+    // 该层级有子会话时，在标签后追加其下一级计数标签项（无子会话时不插入）
+    if (levelChildren && levelChildren.length > 0) {
       items.push({
         key: `${sid}-count`,
         label: (
@@ -1443,7 +1443,7 @@ function AgentChat(): JSX.Element {
             onOpenChange={(open) => setExpandedPickerFor(open ? sid : null)}
           >
             <div className="agent-chat-count-tab">
-              <span>子会话 {levelChildren.length}</span>
+              <span>{levelChildren.length}</span>
               {expandedPickerFor === sid ? <UpOutlined /> : <DownOutlined />}
             </div>
           </Dropdown>

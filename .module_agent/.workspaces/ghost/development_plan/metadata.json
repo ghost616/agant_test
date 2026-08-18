@@ -94,5 +94,13 @@
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": false
+  },
+  {
+    "plan_id": "plan_07acc3a1-133c-41d3-8a86-1279f0998da5",
+    "plan_summary": "子会话计数标签文案改为\"子会话 N\"并保留下拉箭头；选中子会话后该层级计数标签隐藏、回主会话恢复；同步更新静态验证测试",
+    "starter_session_id": "session-bf647ef4-4b8e-4273-ba6f-50bfb760c7b5",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
   }
 ]

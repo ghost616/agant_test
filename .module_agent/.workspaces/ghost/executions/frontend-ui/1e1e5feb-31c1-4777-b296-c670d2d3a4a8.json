@@ -1,0 +1,16 @@
+[
+  {
+    "plan_id": "plan_07acc3a1-133c-41d3-8a86-1279f0998da5",
+    "plan": "1. 修改 AgentChat.tsx 计数标签文案与插入条件 2. 同步更新 AgentChat.test.tsx 断言 3. 运行测试确认",
+    "modified_files": [
+      "src/pages/sessions/AgentChat.tsx",
+      "src/pages/sessions/__tests__/AgentChat.test.tsx",
+      "e2e/AgentChat.spec.ts"
+    ],
+    "summary": "执行总结：本轮共修改 3 个文件。src/pages/sessions/AgentChat.tsx：计数标签文案由纯数量改为\"子会话 N\"（文字+空格+数量+保留下拉箭头，第 1446 行 <span>子会话 {levelChildren.length}</span>）；计数标签插入条件由 levelChildren && levelChildren.length > 0 增强为 levelChildren && levelChildren.length > 0 && i === activePath.length - 1（仅路径末位层级插入，第 1432 行）——选中子会话后父层级计数标签隐藏，点击主会话截断路径后恢复显示；同步更新 JSDoc 注释。src/pages/sessions/__tests__/AgentChat.test.tsx：计数标签静态验证用例更新为断言\"子会话 {levelChildren.length}\"文案与末位层级条件（i === activePath.length - 1），其余用例（handleTabChange 拦截 -count、handleSelectChild 追加路径、路径截断等）无冲突无需调整。e2e/AgentChat.spec.ts（离朱同步）：文案断言 '2'/'1' → '子会话 2'/'子会话 1'，选中子会话后标签数与 nth 索引按新行为调整，用例 115 改为验证父层级计数标签隐藏与恢复。\n\n测试总结：本次改动相关测试全部通过。① 单元测试 npx vitest run src/pages/sessions/__tests__/AgentChat.test.tsx：46/46 通过，覆盖新文案断言、末位层级条件断言及全部回归断言；② E2E 测试 npx playwright test --config=playwright.agentchat.config.ts：7/7 通过（基线 5 失败经同步断言后全部通过，验证了选中后父层级计数标签隐藏、点击主会话恢复显示及下拉/追加/拦截等回归行为）；③ 完整 src 套件回归：AgentChat.test.tsx 通过，仅 toolExecutor.test.ts 14 项失败为预先存在环境问题（ToolHostBridge is not defined，jsdom 缺浏览器扩展全局对象，与本改动无关）；④ 编译检查 tsc --noEmit：AgentChat.tsx 生产源码零错误，测试文件 __dirname/fs 报错为项目级既有 tsconfig 配置问题（所有测试文件一致）。离朱建议后续修复 toolExecutor.test.ts 环境 mock 与 tsconfig Node 类型配置（非本次改动引入）。",
+    "errors": [
+      "toolExecutor.test.ts 14 项失败为预先存在环境问题（ToolHostBridge is not defined），与本改动无关",
+      "tsc 测试文件 __dirname/fs 报错为项目级预先存在配置问题，AgentChat.tsx 生产源码零错误"
+    ]
+  }
+]

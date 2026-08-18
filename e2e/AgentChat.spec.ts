@@ -64,11 +64,11 @@ test.describe('AgentChat 路径式导航', () => {
     await page.goto('/sessions/session-1/chat');
     await page.waitForSelector('.ant-tabs');
 
-    // 计数标签作为路径项紧跟主会话标签之后：[主会话][▾ 2]
+    // 计数标签作为路径项紧跟主会话标签之后：[主会话][子会话 2]
     await expect(page.locator('.ant-tabs-tab')).toHaveCount(2);
     await expect(page.locator('.ant-tabs-tab').first()).toHaveText('主会话');
-    await expect(page.locator('.agent-chat-count-tab')).toHaveText('2');
-    await expect(page.locator('.ant-tabs-tab').nth(1).locator('.agent-chat-count-tab')).toHaveText('2');
+    await expect(page.locator('.agent-chat-count-tab')).toHaveText('子会话 2');
+    await expect(page.locator('.ant-tabs-tab').nth(1).locator('.agent-chat-count-tab')).toHaveText('子会话 2');
   });
 
   test('子会话无 title 时选中后路径标签显示子会话 id', async ({ page }) => {
@@ -76,13 +76,13 @@ test.describe('AgentChat 路径式导航', () => {
     await page.goto('/sessions/session-1/chat');
     await page.waitForSelector('.ant-tabs');
 
-    await expect(page.locator('.agent-chat-count-tab')).toHaveText('1');
+    await expect(page.locator('.agent-chat-count-tab')).toHaveText('子会话 1');
     await page.locator('.agent-chat-count-tab').click();
     await page.locator('.ant-dropdown-menu-item', { hasText: 'child-3' }).click();
     await page.waitForTimeout(300);
-    // 路径 [主会话][▾ 1][child-3]，child-3 为末位路径项
-    await expect(page.locator('.ant-tabs-tab')).toHaveCount(3);
-    await expect(page.locator('.ant-tabs-tab').nth(2)).toHaveText('child-3');
+    // 路径 [主会话][child-3]，child-3 为末位路径项（选中后父层级计数标签隐藏）
+    await expect(page.locator('.ant-tabs-tab')).toHaveCount(2);
+    await expect(page.locator('.ant-tabs-tab').nth(1)).toHaveText('child-3');
   });
 
   test('无子会话时不显示计数标签，仅「主会话」一个路径标签', async ({ page }) => {
@@ -105,14 +105,14 @@ test.describe('AgentChat 路径式导航', () => {
     await page.locator('.ant-dropdown-menu-item', { hasText: '子会话1' }).click();
     await page.waitForTimeout(500);
 
-    // 路径 [主会话][▾ 2][子会话1]，子会话1 为末位路径项
-    await expect(page.locator('.ant-tabs-tab')).toHaveCount(3);
-    await expect(page.locator('.ant-tabs-tab').nth(2)).toHaveText('子会话1');
+    // 路径 [主会话][子会话1]，子会话1 为末位路径项（选中后父层级计数标签隐藏）
+    await expect(page.locator('.ant-tabs-tab')).toHaveCount(2);
+    await expect(page.locator('.ant-tabs-tab').nth(1)).toHaveText('子会话1');
     await expect(page.locator('text=子会话问题')).toBeVisible();
     await expect(page.locator('text=子会话回答')).toBeVisible();
   });
 
-  test('选中子会话后：主会话计数标签保留，无子级的子会话后不显示计数标签', async ({ page }) => {
+  test('选中子会话后：父层级计数标签隐藏，无子级的子会话后不显示计数标签', async ({ page }) => {
     await setupMocks(page);
     await page.goto('/sessions/session-1/chat');
     await page.waitForSelector('.ant-tabs');
@@ -121,9 +121,9 @@ test.describe('AgentChat 路径式导航', () => {
     await page.locator('.ant-dropdown-menu-item', { hasText: '子会话1' }).click();
     await page.waitForTimeout(500);
 
-    // 路径 [主会话][▾ 2][子会话1]：主会话计数标签保留，子会话1 无子级故其后无计数标签
-    await expect(page.locator('.ant-tabs-tab')).toHaveCount(3);
-    await expect(page.locator('.agent-chat-count-tab')).toHaveCount(1);
+    // 路径 [主会话][子会话1]：主会话不再是末位层级故计数标签隐藏，子会话1 无子级故其后也无计数标签
+    await expect(page.locator('.ant-tabs-tab')).toHaveCount(2);
+    await expect(page.locator('.agent-chat-count-tab')).toHaveCount(0);
     await expect(page.locator('.ant-tabs-tab').last()).toHaveText('子会话1');
   });
 
@@ -139,10 +139,10 @@ test.describe('AgentChat 路径式导航', () => {
     await page.locator('.ant-tabs-tab', { hasText: '主会话' }).click();
     await page.waitForTimeout(300);
 
-    // 回到 [主会话][▾ 2]
+    // 回到 [主会话][子会话 2]（主会话回到末位层级，计数标签恢复显示）
     await expect(page.locator('.ant-tabs-tab')).toHaveCount(2);
     await expect(page.locator('.ant-tabs-tab').first()).toHaveText('主会话');
-    await expect(page.locator('.agent-chat-count-tab')).toHaveText('2');
+    await expect(page.locator('.agent-chat-count-tab')).toHaveText('子会话 2');
   });
 
   test('子会话视图为只读：无输入框、模型选择、思考开关及发送/回滚按钮', async ({ page }) => {
