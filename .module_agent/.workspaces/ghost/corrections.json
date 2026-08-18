@@ -11,6 +11,14 @@
     {
       "content": "对话页面子会话执行与从 WebSocket 获取会话 ID 后的对话执行应使用同一套逻辑（统一展示通道：均写入 childStreams 按子会话 ID 索引的状态、标签内实时展示），但工具触发的子会话需保留完整流程（工具轮询、continueChat、completeSubSession）。",
       "timestamp": "2026-08-18T10:30:21.559Z"
+    },
+    {
+      "content": "子会话对话没有展示最新数据（统一改造后问题）。",
+      "timestamp": "2026-08-18T11:08:58.158Z"
+    },
+    {
+      "content": "子会话标签内对话数据是最新的，但滚动条不会自动跟随数据滚动到底部，用户需手动拖动滚动条才能看到最新内容（ChildSessionView 缺少自动滚动逻辑；原 Modal 方案有 subContainerRef 自动滚动，移除 Modal 后未在标签视图中补上）。",
+      "timestamp": "2026-08-18T11:11:25.299Z"
     }
   ]
 }

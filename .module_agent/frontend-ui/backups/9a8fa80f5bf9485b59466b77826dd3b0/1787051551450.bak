@@ -245,7 +245,6 @@ function ChildSessionView({
 }): JSX.Element {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(true);
-  const childContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -283,19 +282,6 @@ function ChildSessionView({
     return [...history, ...stream.messages];
   }, [messages, stream]);
 
-  // 消息或流式状态（回复/推理/工具执行/加载）变化时自动滚动到底部，与主会话容器滚动行为一致
-  useEffect(() => {
-    if (childContainerRef.current) {
-      childContainerRef.current.scrollTop = childContainerRef.current.scrollHeight;
-    }
-  }, [
-    mergedMessages,
-    stream?.currentResponse,
-    stream?.currentReasoning,
-    stream?.toolExecuting,
-    stream?.loading,
-  ]);
-
   const showStreaming =
     stream !== undefined &&
     (stream.loading ||
@@ -306,7 +292,6 @@ function ChildSessionView({
 
   return (
     <div
-      ref={childContainerRef}
       style={{
         flex: 1,
         background: '#1e1e1e',

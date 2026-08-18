@@ -46,5 +46,21 @@
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": false
+  },
+  {
+    "plan_id": "plan_02bf82b7-50bd-4b04-bb4e-57e617230e00",
+    "plan_summary": "修复子会话标签对话不自动滚动 bug：ChildSessionView 添加滚动容器 ref 与自动滚动 useEffect，测试同步",
+    "starter_session_id": "session-cbd1ed98-519d-47de-b1cf-ac005137dc70",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_3641aff2-2a04-43bb-a913-bff18e00506c",
+    "plan_summary": "修复子会话标签对话不自动滚动 bug：ChildSessionView 添加自动滚动",
+    "starter_session_id": "session-cbd1ed98-519d-47de-b1cf-ac005137dc70",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": false
   }
 ]

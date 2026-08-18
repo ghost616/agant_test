@@ -66,6 +66,7 @@
 - App.tsx MENU_ITEMS：「会话历史」（HistoryOutlined）菜单位置从评估管理之前调整到评估管理之后，路由不变
 - AgentChat 子会话对话统一执行器（runChildSessionFlow，WS 消息分发与主会话工具回调两种触发方式共用）：写入 childStreams[childId] 初始化状态 → agentChatStream 流式回复（推理+内容）→ onDone(hasToolCalls) 为 true 时执行工具循环（executeTools → pollSubToolStatus → continueChatStream）直至无工具调用 → completeSubSession 收尾；入口差异仅参数：WS 触发 streamContent 传 SEND_USER_MESSAGE_MARKER（switchTab=false），工具触发传 data.userMessage + thinking（switchTab=true）；已移除子会话对话 Modal（renderSubSessionModal 及 subSessionModalVisible/subMessages/subCurrentResponse/subCurrentReasoning/subLoading/subToolExecuting/subContainerRef 等弹窗状态），子会话过程消息与错误直接在对应子会话标签内渲染（ChildStreamState 新增 toolExecuting/error 字段，ChildSessionView 展示工具执行中提示与错误信息）
 - AgentChat 子会话标签缺失处理与切换：执行前检查 childSessions 是否含对应子会话，缺失时调用 listChildSessions 刷新列表补出标签（刷新失败忽略继续执行），两种触发均适用；工具触发开始自动切换到对应子会话标签、结束（含失败）自动切回主会话标签，WS 触发不切换标签；子会话流程失败时标签内保留已产生的过程消息并通过 error 字段提示错误
+- AgentChat 子会话标签自动滚动：ChildSessionView 滚动容器（overflowY:auto div）添加 childContainerRef；useEffect 监听 mergedMessages 与 stream 的 currentResponse/currentReasoning/toolExecuting/loading 变化，内容变化时 scrollTop = scrollHeight 自动滚动到底部（与主会话 containerRef 自动滚动行为一致）
 ## 技能管理界面
 
 - 技能配置管理页面 `/skills`，支持技能列表展示、搜索筛选、新增/编辑/删除/启用禁用

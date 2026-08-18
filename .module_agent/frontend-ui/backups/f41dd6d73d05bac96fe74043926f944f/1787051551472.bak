@@ -307,32 +307,6 @@ describe('AgentChat 子会话标签化展示 (静态验证)', () => {
     expect(source).toContain('<ChildSessionView childId={child.id} stream={childStreams[child.id]} />');
   });
 
-  it('ChildSessionView 滚动容器应添加 ref 并在内容变化时自动滚动到底部', () => {
-    const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
-    const childViewBlock = source.match(/function ChildSessionView[\s\S]*?\n\nfunction AgentChat/);
-    expect(childViewBlock).not.toBeNull();
-    if (childViewBlock) {
-      expect(childViewBlock[0]).toContain('const childContainerRef = useRef<HTMLDivElement>(null);');
-      expect(childViewBlock[0]).toContain('ref={childContainerRef}');
-      expect(childViewBlock[0]).toContain(
-        'childContainerRef.current.scrollTop = childContainerRef.current.scrollHeight;',
-      );
-    }
-  });
-
-  it('ChildSessionView 自动滚动 useEffect 应监听消息与流式状态变化', () => {
-    const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
-    const childViewBlock = source.match(/function ChildSessionView[\s\S]*?\n\nfunction AgentChat/);
-    expect(childViewBlock).not.toBeNull();
-    if (childViewBlock) {
-      expect(childViewBlock[0]).toContain('mergedMessages,');
-      expect(childViewBlock[0]).toContain('stream?.currentResponse');
-      expect(childViewBlock[0]).toContain('stream?.currentReasoning');
-      expect(childViewBlock[0]).toContain('stream?.toolExecuting');
-      expect(childViewBlock[0]).toContain('stream?.loading');
-    }
-  });
-
   it('子会话视图为只读：不含输入框/模型选择/思考开关/发送/回滚/停止', () => {
     const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
     const childViewBlock = source.match(/function ChildSessionView[\s\S]*?\n\nfunction AgentChat/);

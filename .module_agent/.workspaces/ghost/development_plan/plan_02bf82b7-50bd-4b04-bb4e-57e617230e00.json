@@ -1,0 +1,10 @@
+{
+  "plan_id": "plan_02bf82b7-50bd-4b04-bb4e-57e617230e00",
+  "module_name": "frontend-ui",
+  "development_plan": "1. ChildSessionView 增加自动滚动：为子会话标签的滚动容器（overflowY: auto 的 div）添加 ref；新增 useEffect 监听 mergedMessages 与 stream 的 currentResponse/currentReasoning/toolExecuting/loading 变化，内容变化时自动 scrollTop = scrollHeight 滚动到底部；与主会话 containerRef 自动滚动及原 Modal subContainerRef 自动滚动行为保持一致。2. 测试同步：更新/新增 AgentChat.test.tsx 静态验证，断言 ChildSessionView 容器含 ref 与自动滚动 useEffect，滚动依赖包含消息与流式状态。",
+  "session_id": "5e4036eb-36ac-4674-869a-23993761645d",
+  "modified_files": [
+    "src/pages/sessions/AgentChat.tsx",
+    "src/pages/sessions/__tests__/AgentChat.test.tsx"
+  ]
+}
