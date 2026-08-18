@@ -1,0 +1,13 @@
+[
+  {
+    "plan_id": "plan_62482b4f-e3bc-4e05-b704-5bf74d0c99dd",
+    "plan": "WebSocket 客户端废弃会话绑定协议",
+    "modified_files": [
+      "src/services/websocket.ts",
+      "src/pages/sessions/AgentChat.tsx",
+      "src/services/__tests__/websocket.test.ts"
+    ],
+    "summary": "执行总结：本轮共修改 3 个文件——① src/services/websocket.ts 重构：删除 WS_TYPE_BIND/WS_TYPE_UNBIND/WS_MESSAGE_NAME_BIND_RESULT 常量、bindSession/unbindSession 方法、boundSessionId 状态、close 中绑定清理、重连成功后补发绑定逻辑及无调用方的私有 send 方法，同步更新文件头注释与类注释，保留连接建立/断线自动重连（指数退避 1s→30s）/消息监听分发能力；② src/pages/sessions/AgentChat.tsx：移除进入会话页面时的 webSocketClient.bindSession(sessionId) 调用、对应注释及不再使用的 webSocketClient import，registerSessionPage 消息分发处理器逻辑保留；③ src/services/__tests__/websocket.test.ts：移除 BIND/UNBIND 相关测试用例与常量引用，适配新客户端 API（连接/重连/消息监听测试保留）。全局搜索确认 src 目录无 bindSession/unbindSession/WS_TYPE_BIND/WS_TYPE_UNBIND/WS_MESSAGE_NAME_BIND_RESULT/boundSessionId 残留引用；已同步模块元数据（append_history + update_definition）。\n\n测试总结：全部测试通过。单元测试（vitest run src/services/__tests__/websocket.test.ts）15 passed / 15，失败 0，跳过 0，exit code 0：常量导出、connect（测试模式跳过/无 WS 环境/建连/幂等）、close（手动关闭/关闭后不重连）、断线自动重连（退避起点 1s、递增至 30s 上限、成功后计数重置）、onMessage/offMessage（JSON 分发/非 JSON 忽略/异常隔离/注销后不分发）全部通过；编译检查通过：变更文件与相关模块（messageDispatcher.ts、App.tsx、auth.ts）tsc --noEmit 均无类型错误，全项目残留引用检查 6 个关键字 0 匹配。E2E 不适用跳过。说明：全量 tsc --noEmit 仍有预存错误（测试文件缺 @types/node、EvaluationResultList.tsx:261 RefObject 类型、ToolList.tsx:213 authorization 参数类型），离朱确认均与本次变更无关（对应文件不在本次 diff 中），非阻塞项。",
+    "errors": []
+  }
+]

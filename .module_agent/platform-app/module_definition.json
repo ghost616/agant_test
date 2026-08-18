@@ -484,6 +484,38 @@
     {
       "description": "会话消息 API 传输对象：字段与 agent-base 内部 MessageDataProvider.MessageDTO（14 字段，无 sequenceNum）保持一致并额外保留 sequenceNum（共 15 字段），供 SessionController/ConversationController 等 Controller 层对外返回消息列表使用；由 DefaultMessageDataProvider.toSessionMessageDTOs/toSessionMessageDTO 从消息实体映射生成（注意：该文件因 E: 卷不支持硬链接无法由代理工具创建，需人工按测试报告附录内容创建后再编译）。",
       "path": "platform-app/src/main/java/com/ghost616/platform/dto/session/SessionMessageDTO.java"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/websocket/SessionConnectionRegistry.java",
+      "description": "用户会话连接注册中心（@Component）：维护「用户会话 ID → WebSocket 连接集合」映射（同一用户会话允许多个连接）与「连接 → 已绑定用户会话 ID 集合」反向索引；bind(String userSessionId, WebSocketSession) 仅校验连接有效性后纯内存注册，不查询会话表、不做属主校验（用户会话级绑定）；提供 unbind/getSessions（null/空白 ID 返回空列表）/removeAll（连接关闭时清理全部绑定）"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/websocket/SessionWebSocketHandler.java",
+      "description": "用户会话 WebSocket 处理器（@Component，继承 TextWebSocketHandler）：连接建立（afterConnectionEstablished）时从握手属性取 UserSession（AuthHandshakeInterceptor.USER_SESSION_ATTR）自动按用户会话 ID 绑定注册；握手属性无 UserSession 时不绑定并 WARN 日志；连接关闭（afterConnectionClosed）时 removeAll 清理；不再处理 BIND/UNBIND 入站消息（入站文本由 TextWebSocketHandler 默认空实现静默忽略）"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/websocket/WebSocketPushService.java",
+      "description": "WebSocket 推送服务（@Service）：pushToSession(Object payload) 从 UserContext 获取当前用户会话，按用户会话 ID 定位已绑定连接，将消息对象序列化为 JSON 后推送；无用户上下文/用户会话 ID 无效/无已绑定连接/连接已关闭/序列化失败/发送异常时 WARN 静默丢弃，不影响业务主流程"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultMessageSender.java",
+      "description": "agent-base MessageSender 默认实现（@Component）：send(MessageDefinition) 捕获当前线程 UserContext 快照并在 CompletableFuture.runAsync 异步线程中恢复（快照为 null 时清空目标线程残留上下文，finally 清理防串号），按消息类型分发；SEND_USER_MESSAGE 流程简化为单次 pushService.pushToSession(message)，推送目标由 WebSocketPushService 按当前用户会话 ID 定位"
+    },
+    {
+      "path": "platform-app/src/test/java/com/ghost616/platform/websocket/SessionConnectionRegistryTest.java",
+      "description": "SessionConnectionRegistry 单元测试：bind 连接有效绑定成功/用户会话 ID 为空绑定失败/连接为 null 绑定失败、unbind 解绑后连接移除、多连接绑定同一用户会话、未绑定用户会话返回空列表、null/空白用户会话 ID 返回空列表、removeAll 连接关闭清理全部绑定与未绑定连接不抛异常"
+    },
+    {
+      "path": "platform-app/src/test/java/com/ghost616/platform/websocket/SessionWebSocketHandlerTest.java",
+      "description": "SessionWebSocketHandler 单元测试：连接建立时握手属性有 UserSession 自动绑定（registry.bind(userSessionId, session)）、无 UserSession 不绑定、入站文本消息被静默忽略（不调用注册中心）、连接关闭时 removeAll 清理"
+    },
+    {
+      "path": "platform-app/src/test/java/com/ghost616/platform/websocket/WebSocketPushServiceTest.java",
+      "description": "WebSocketPushService 单元测试：UserContext 存在且有连接时序列化并推送 JSON、无连接/连接已关闭/发送异常/序列化失败时静默丢弃、无 UserContext 时静默丢弃（不查询注册中心）、null 负载直接忽略"
+    },
+    {
+      "path": "platform-app/src/test/java/com/ghost616/platform/service/agent/DefaultMessageSenderTest.java",
+      "description": "DefaultMessageSender 单元测试：SEND_USER_MESSAGE 单次调用 pushToSession(message)、未知消息类型静默跳过、null 消息忽略、UserContext 上下文传递（send 时设置 UserContext，异步线程内经 RecordingPushService 捕获验证上下文已恢复）与缺失场景（无 UserContext 时异步线程内上下文为空）"
     }
   ]
 }

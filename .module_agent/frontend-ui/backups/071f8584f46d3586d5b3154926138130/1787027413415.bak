@@ -1,5 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { webSocketClient, WS_ENDPOINT, WS_MESSAGE_NAME_SEND_USER_MESSAGE } from '../websocket';
+import {
+  webSocketClient,
+  WS_ENDPOINT,
+  WS_TYPE_BIND,
+  WS_TYPE_UNBIND,
+  WS_MESSAGE_NAME_BIND_RESULT,
+  WS_MESSAGE_NAME_SEND_USER_MESSAGE,
+} from '../websocket';
 
 /**
  * 伪 WebSocket：记录实例与发送消息，测试中手动触发 open/close/message。
@@ -49,6 +56,9 @@ class MockWebSocket {
   }
 }
 
+const BIND = (sessionId: string) => JSON.stringify({ type: 'BIND', sessionId });
+const UNBIND = (sessionId: string) => JSON.stringify({ type: 'UNBIND', sessionId });
+
 beforeEach(() => {
   MockWebSocket.instances = [];
   webSocketClient.close();
@@ -66,6 +76,9 @@ afterEach(() => {
 describe('websocket 常量', () => {
   it('导出与后端约定的常量', () => {
     expect(WS_ENDPOINT).toBe('/ws');
+    expect(WS_TYPE_BIND).toBe('BIND');
+    expect(WS_TYPE_UNBIND).toBe('UNBIND');
+    expect(WS_MESSAGE_NAME_BIND_RESULT).toBe('BIND_RESULT');
     expect(WS_MESSAGE_NAME_SEND_USER_MESSAGE).toBe('SEND_USER_MESSAGE');
   });
 });
@@ -104,11 +117,71 @@ describe('connect', () => {
   });
 });
 
-describe('close', () => {
-  it('手动关闭后调用底层 close 并清除重连定时器', () => {
+describe('bindSession / unbindSession', () => {
+  it('连接未就绪时先建立连接，open 后补发 BIND', () => {
+    webSocketClient.bindSession('s1');
+    expect(MockWebSocket.instances).toHaveLength(1);
+    const ws = MockWebSocket.instances[0];
+    expect(ws.sent).toHaveLength(0);
+    ws.open();
+    expect(ws.sent).toEqual([BIND('s1')]);
+  });
+
+  it('已连接时 bindSession 直接发送 BIND', () => {
     webSocketClient.connect();
     const ws = MockWebSocket.instances[0];
     ws.open();
+    webSocketClient.bindSession('s1');
+    expect(ws.sent).toEqual([BIND('s1')]);
+  });
+
+  it('切换绑定先发送 UNBIND 再发送 BIND（只更新绑定不断链）', () => {
+    webSocketClient.connect();
+    const ws = MockWebSocket.instances[0];
+    ws.open();
+    webSocketClient.bindSession('s1');
+    webSocketClient.bindSession('s2');
+    expect(ws.sent).toEqual([BIND('s1'), UNBIND('s1'), BIND('s2')]);
+    expect(MockWebSocket.instances).toHaveLength(1);
+  });
+
+  it('相同会话重复 bindSession 不发送 UNBIND', () => {
+    webSocketClient.connect();
+    const ws = MockWebSocket.instances[0];
+    ws.open();
+    webSocketClient.bindSession('s1');
+    webSocketClient.bindSession('s1');
+    expect(ws.sent).toEqual([BIND('s1'), BIND('s1')]);
+    expect(ws.sent.some((m) => m.includes('UNBIND'))).toBe(false);
+  });
+
+  it('unbindSession 发送 UNBIND 并清除本地绑定', () => {
+    webSocketClient.connect();
+    const ws = MockWebSocket.instances[0];
+    ws.open();
+    webSocketClient.bindSession('s1');
+    ws.sent.length = 0;
+    webSocketClient.unbindSession('s1');
+    expect(ws.sent).toEqual([UNBIND('s1')]);
+    // 解绑后再触发 open 不应补发 BIND
+    ws.open();
+    expect(ws.sent).toEqual([UNBIND('s1')]);
+  });
+
+  it('unbindSession 在连接未就绪时不发送消息仅清除绑定', () => {
+    webSocketClient.bindSession('s1');
+    const ws = MockWebSocket.instances[0];
+    webSocketClient.unbindSession('s1');
+    expect(ws.sent).toHaveLength(0);
+  });
+});
+
+describe('close', () => {
+  it('手动关闭后调用底层 close 并清除绑定', () => {
+    webSocketClient.connect();
+    const ws = MockWebSocket.instances[0];
+    ws.open();
+    webSocketClient.bindSession('s1');
     webSocketClient.close();
     expect(ws.readyState).toBe(MockWebSocket.CLOSED);
     // 手动关闭后 ws 引用被置空：再次连接会创建新实例
@@ -159,6 +232,19 @@ describe('断线自动重连（指数退避）', () => {
     expect(MockWebSocket.instances).toHaveLength(delays.length + 1);
     vi.advanceTimersByTime(1);
     expect(MockWebSocket.instances).toHaveLength(delays.length + 2);
+  });
+
+  it('重连成功（onopen）后重新发送当前绑定的 BIND', () => {
+    webSocketClient.connect();
+    const ws0 = MockWebSocket.instances[0];
+    ws0.open();
+    webSocketClient.bindSession('s1');
+    ws0.serverClose();
+    vi.advanceTimersByTime(1000);
+    const ws1 = MockWebSocket.instances[1];
+    expect(ws1.sent).toHaveLength(0);
+    ws1.open();
+    expect(ws1.sent).toEqual([BIND('s1')]);
   });
 
   it('重连成功后将退避计数重置（下次断线仍从 1s 起）', () => {

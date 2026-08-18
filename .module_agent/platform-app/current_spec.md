@@ -182,6 +182,12 @@ platform-app 模块包含以下功能：
 ## 消息分发
 
 - 消息分发链路已从 platform-app 移除：MessageHandler/MessageDispatcher/ConversationIdMessageHandler 及对应测试已删除；AgentContextConfiguration.agentAssembler() 不再接收 MessageSender 参数（第 7 参传 null），platform-app 不再装配消息分发链路。MessageSender 接口仍保留在 agent-base（sendmessage 包），由 agent-base 内部按需使用
+- WebSocket 推送链路从「对话会话级绑定」重构为「用户会话级绑定」：
+  - SessionConnectionRegistry：移除 SessionMapper 依赖与对话会话查询/属主校验，bind(String userSessionId, WebSocketSession) 仅校验连接有效性后纯内存注册，绑定 key 由对话会话 ID 改为用户会话 ID（UserSession.getSessionId()），提供 unbind/getSessions/removeAll，连接关闭时清理全部绑定
+  - SessionWebSocketHandler：连接建立（afterConnectionEstablished）时从握手属性取 UserSession 自动绑定（registry.bind(userSession.getSessionId(), session)）；移除 BIND/UNBIND 入站消息处理及回执逻辑（TYPE_BIND/TYPE_UNBIND/MESSAGE_NAME_BIND_RESULT 常量、handleBind/handleUnbind/sendBindResult 方法、ObjectMapper 依赖）；握手属性无 UserSession 时不绑定并 WARN 日志；连接关闭保持 removeAll 清理
+  - WebSocketPushService：pushToSession 移除 sessionId 参数，改为从 UserContext 获取当前用户会话（UserSession.getSessionId()）定位连接推送；UserContext 为空时 WARN 静默丢弃
+  - DefaultMessageSender：send() 捕获 UserContext 快照并在 CompletableFuture.runAsync 异步线程中恢复（finally 清理防串号）；handleSendUserMessage 简化为单次 pushService.pushToSession(message)
+  - 同步更新 4 个单元测试（SessionConnectionRegistryTest/SessionWebSocketHandlerTest/WebSocketPushServiceTest/DefaultMessageSenderTest）适配新签名与自动绑定语义，新增 UserContext 上下文传递与缺失场景测试
 ## 智能体日志
 
 - 新增 DatabaseAgentLog（实现 agent-base 的 AgentLog 接口，@Service）：addLog 将 LogData 序列化为 JSON 存入 agent_log.log_data，从 ContextLogData 的 context 提取 sessionId（IdConverter 转 Long，解析失败返回 null）与 conversationId 写入对应列，logType/logLevel 存储枚举 code 值，通过 AgentLogMapper 持久化

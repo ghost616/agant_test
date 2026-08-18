@@ -147,5 +147,13 @@
   "platform-app/src/main/java/com/ghost616/platform/service/memory/MemoryQueryProviderImpl.java": "a6eca5f6d2098997ec1e7fea0cd79ca4",
   "platform-app/src/test/java/com/ghost616/platform/service/memory/MemoryQueryProviderImplTest.java": "38d211c67d1e607c013b5bb4ebef233f",
   "platform-app/src/test/java/com/ghost616/platform/service/model/ModelConfigServiceImplAuthGuardTest.java": "bf3c0d77cefa8d5d4ffdefd326feab58",
-  "platform-app/src/test/java/com/ghost616/platform/controller/ConversationControllerTest.java": "bd67f655c0d2e2d0387aaa9fc2bec2bc"
+  "platform-app/src/test/java/com/ghost616/platform/controller/ConversationControllerTest.java": "bd67f655c0d2e2d0387aaa9fc2bec2bc",
+  "platform-app/src/main/java/com/ghost616/platform/websocket/SessionConnectionRegistry.java": "07fa3f9b5decaa7b9b186a151a887c51",
+  "platform-app/src/main/java/com/ghost616/platform/websocket/SessionWebSocketHandler.java": "1a83963246d00fe3e3d16fb6ee7f8c29",
+  "platform-app/src/main/java/com/ghost616/platform/websocket/WebSocketPushService.java": "6a608f477ba2c699b40ebec077da98b6",
+  "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultMessageSender.java": "443a79cc9911f9a3b4c79a8e1f7fd957",
+  "platform-app/src/test/java/com/ghost616/platform/websocket/SessionConnectionRegistryTest.java": "16ffd97829906f316aa1470989240297",
+  "platform-app/src/test/java/com/ghost616/platform/websocket/SessionWebSocketHandlerTest.java": "f87721328f052577d3f936c6d92697d5",
+  "platform-app/src/test/java/com/ghost616/platform/websocket/WebSocketPushServiceTest.java": "7c0bad1049b639b5a5d60a58f934f125",
+  "platform-app/src/test/java/com/ghost616/platform/service/agent/DefaultMessageSenderTest.java": "66a865cc87668ce6f6c2800901ca53b0"
 }

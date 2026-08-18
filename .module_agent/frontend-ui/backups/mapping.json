@@ -83,5 +83,7 @@
   "e2e/AgentLogList.spec.ts": "4947f86ed890c4b5e0d7b1ed5462439f",
   "e2e/AgentChat.spec.ts": "14af086a43b0a6ef19428e82711becd0",
   "vite.config.ts": "42fa0279e7ed9dc617c63ce8e30b9601",
-  "serve.js": "5e34577a9834205dd9edb7e9e023f22b"
+  "serve.js": "5e34577a9834205dd9edb7e9e023f22b",
+  "src/services/websocket.ts": "b9d1ead279374df0f971c60ad6d337f9",
+  "src/services/__tests__/websocket.test.ts": "071f8584f46d3586d5b3154926138130"
 }

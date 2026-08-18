@@ -51,7 +51,7 @@
     },
     {
       "path": "src/pages/sessions/AgentChat.tsx",
-      "description": "智能体对话页面：loadHistory 提取为独立 useCallback 供回滚复用；底部按钮区新增回滚按钮（loading/toolExecuting 时禁用），调用 rollbackSession+loadHistory 刷新；renderMessage 仅 content 非空时渲染气泡；onDone 回调条件扩展为检查 content 或 reasoning 任一非空；工具气泡补充 arguments JSON 参数显示；loadHistory 中 tool 角色且 toolResult 非空时解析 JSON 格式化为完整工具执行结果 markdown 作为 content；主会话与子会话标签化展示（Tabs：主会话 + 每个子会话一个独立标签，标签名=子会话 title 无 title 时回退 id，进入页面自动加载子会话列表，切换到子会话标签时 ChildSessionView 自动加载消息并只读展示，无子会话时仅显示主会话标签；已移除子会话列表 Table/刷新按钮/查看会话/返回子会话列表/viewingChildId 二级状态）；子会话驱动流程（独立 Modal/独立状态/流式渲染/工具执行循环/完成后 completeSubSession+继续主会话）；pollToolStatus 检测 status.needsSubSessionFlow 时调用 handleSubSessionFlow 启动子会话流程后继续轮询；executeToolLoop 移除 _sys_callback_sub_session 硬编码检测，所有工具统一走显示工具消息 + pollToolStatus 流程；Responses 有状态模式支持：页面挂载时调用 getSessionContextBasic 获取 lastResponseId 初始化 responseIdRef，根据当前模型 requestType==='responses' 判断有状态模式，agentChatStream onResponseId 回调更新 ref，发送消息时透传 previousResponseId（Completions/responses_stateless 不传）；实时对话接收 onWebSearchCall 回调（WebSearchCall[] 数组）并遍历展示多个搜索结果引用（标题+链接+摘要），handleSend 与 executeToolLoop continueChatStream 均支持，onDone 时附加 webSearchCall 数组到 assistant 消息，加载历史消息从 SessionMessage.webSearchCall 数组渲染已持久化的搜索结果；全局 WebSocket 接入：挂载时 webSocketClient.bindSession(sessionId) 绑定当前会话（切换页面只更新绑定不断链），registerSessionPage 注册消息分发页面处理器（unmount 时 unregisterSessionPage 注销）；ChildSessionView 新增 stream 属性（ChildStreamState：messages/currentResponse/currentReasoning/loading）合并渲染历史与实时流式消息（历史末条与流式首条相同用户消息去重）；收到 SEND_USER_MESSAGE 且对应子会话为激活标签时 streamChildReply 以特殊标记 [send_user_message] 调用 agentChatStream 流式展示子会话回复（childStreams 状态 + activeTabRef/childStreamsRef/streamChildReplyRef 供 WS 回调读取最新值），否则 refreshChildSessions 刷新子会话列表"
+      "description": "智能体对话页面：loadHistory 提取为独立 useCallback 供回滚复用；底部按钮区新增回滚按钮（loading/toolExecuting 时禁用），调用 rollbackSession+loadHistory 刷新；renderMessage 仅 content 非空时渲染气泡；onDone 回调条件扩展为检查 content 或 reasoning 任一非空；工具气泡补充 arguments JSON 参数显示；loadHistory 中 tool 角色且 toolResult 非空时解析 JSON 格式化为完整工具执行结果 markdown 作为 content；主会话与子会话标签化展示（Tabs：主会话 + 每个子会话一个独立标签，标签名=子会话 title 无 title 时回退 id，进入页面自动加载子会话列表，切换到子会话标签时 ChildSessionView 自动加载消息并只读展示，无子会话时仅显示主会话标签；已移除子会话列表 Table/刷新按钮/查看会话/返回子会话列表/viewingChildId 二级状态）；子会话驱动流程（独立 Modal/独立状态/流式渲染/工具执行循环/完成后 completeSubSession+继续主会话）；pollToolStatus 检测 status.needsSubSessionFlow 时调用 handleSubSessionFlow 启动子会话流程后继续轮询；executeToolLoop 移除 _sys_callback_sub_session 硬编码检测，所有工具统一走显示工具消息 + pollToolStatus 流程；Responses 有状态模式支持：页面挂载时调用 getSessionContextBasic 获取 lastResponseId 初始化 responseIdRef，根据当前模型 requestType==='responses' 判断有状态模式，agentChatStream onResponseId 回调更新 ref，发送消息时透传 previousResponseId（Completions/responses_stateless 不传）；实时对话接收 onWebSearchCall 回调（WebSearchCall[] 数组）并遍历展示多个搜索结果引用（标题+链接+摘要），handleSend 与 executeToolLoop continueChatStream 均支持，onDone 时附加 webSearchCall 数组到 assistant 消息，加载历史消息从 SessionMessage.webSearchCall 数组渲染已持久化的搜索结果；全局 WebSocket 接入：registerSessionPage 注册消息分发页面处理器（unmount 时 unregisterSessionPage 注销）；ChildSessionView 新增 stream 属性（ChildStreamState：messages/currentResponse/currentReasoning/loading）合并渲染历史与实时流式消息（历史末条与流式首条相同用户消息去重）；收到 SEND_USER_MESSAGE 且对应子会话为激活标签时 streamChildReply 以特殊标记 [send_user_message] 调用 agentChatStream 流式展示子会话回复（childStreams 状态 + activeTabRef/childStreamsRef/streamChildReplyRef 供 WS 回调读取最新值），否则 refreshChildSessions 刷新子会话列表"
     },
     {
       "path": "src/components/JsonEditor.tsx",
@@ -283,7 +283,7 @@
     },
     {
       "path": "src/services/websocket.ts",
-      "description": "全局 WebSocket 客户端（单例）：登录后建立到后端 /ws 端点的连接（复用后端 SESSION_ID Cookie 完成握手鉴权，连接地址由当前站点协议+主机+WS_ENDPOINT 构建）；bindSession/unbindSession 发送 BIND/UNBIND 会话绑定消息（切换页面只更新绑定不断链，连接未就绪时先建立连接由 open 补发绑定）；断线自动重连（指数退避 1s→30s 上限，重连成功后重新发送当前绑定的会话绑定消息）；close 手动关闭（退出登录时调用，清除重连定时器与绑定）；onMessage/offMessage 消息监听器注册与分发（JSON 解析，单监听器异常隔离）；测试模式（vitest MODE=test）与无 WebSocket 环境静默跳过"
+      "description": "全局 WebSocket 客户端（单例）：登录后建立到后端 /ws 端点的连接（复用后端 SESSION_ID Cookie 完成握手鉴权，连接地址由当前站点协议+主机+WS_ENDPOINT 构建）；断线自动重连（指数退避 1s→30s 上限）；close 手动关闭（退出登录时调用，清除重连定时器）；onMessage/offMessage 消息监听器注册与分发（JSON 解析，单监听器异常隔离）；导出 WS_ENDPOINT 与 WS_MESSAGE_NAME_SEND_USER_MESSAGE 常量；测试模式（vitest MODE=test）与无 WebSocket 环境静默跳过"
     },
     {
       "path": "src/services/messageDispatcher.ts",
@@ -300,6 +300,10 @@
     {
       "path": "serve.js",
       "description": "前端生产静态服务（Node http，端口 3000）：serve dist/ 目录（SPA 回退 index.html）、/api HTTP 代理到后端 8080、/ws WebSocket 升级代理（server upgrade 事件将 /ws 连接转发到后端 8080，支持全局 WebSocket 客户端）"
+    },
+    {
+      "path": "src/services/__tests__/websocket.test.ts",
+      "description": "WebSocket 客户端单元测试：覆盖连接建立、手动关闭、断线自动重连（指数退避）、消息监听分发与常量导出"
     }
   ]
 }

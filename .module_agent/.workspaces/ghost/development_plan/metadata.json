@@ -32,33 +32,17 @@
     "test_passed": true
   },
   {
-    "plan_id": "plan_9c0ba912-ba4d-4935-9b94-acc36607ec98",
-    "plan_summary": "根 pom.xml 新增 spring-boot-starter-websocket 依赖",
-    "starter_session_id": "0c160234-39c5-42bb-9ba0-9dbadf9f9fae",
+    "plan_id": "plan_17581c4f-4bb6-47f0-9e98-e05063885158",
+    "plan_summary": "WebSocket 推送链路改造：从对话会话级绑定改为用户会话级绑定",
+    "starter_session_id": "6feaff69-6399-486e-9348-d7c354e018f2",
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
   },
   {
-    "plan_id": "plan_a044633e-2592-44eb-900a-866d06ee0501",
-    "plan_summary": "agent-base 新增 SEND_USER_MESSAGE 消息链路（常量、消息类、发送机制、ChatService 特殊标记）",
-    "starter_session_id": "0c160234-39c5-42bb-9ba0-9dbadf9f9fae",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": true
-  },
-  {
-    "plan_id": "plan_3aa65153-7685-499f-9695-d0175987b3c8",
-    "plan_summary": "platform-app WebSocket 服务端基础设施（配置/注册中心/推送服务/MessageSender 实现）",
-    "starter_session_id": "0c160234-39c5-42bb-9ba0-9dbadf9f9fae",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": true
-  },
-  {
-    "plan_id": "plan_0cf3a582-13fd-4c39-a5b6-b24792464251",
-    "plan_summary": "frontend-ui 全局 WebSocket 客户端、消息分发与 AgentChat 接入",
-    "starter_session_id": "0c160234-39c5-42bb-9ba0-9dbadf9f9fae",
+    "plan_id": "plan_62482b4f-e3bc-4e05-b704-5bf74d0c99dd",
+    "plan_summary": "WebSocket 客户端废弃会话绑定协议（BIND/UNBIND）",
+    "starter_session_id": "6feaff69-6399-486e-9348-d7c354e018f2",
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true

@@ -1,0 +1,5 @@
+{
+  "session_id": "73e67793-e3e3-45df-9501-6f6d06ea4c1d",
+  "content": "## WebSocket 客户端废弃会话绑定协议（frontend-ui 模块）\n\n### 变更涉及文件\n- src/services/websocket.ts（重构）\n- src/pages/sessions/AgentChat.tsx（移除 bindSession 调用）\n- src/services/__tests__/websocket.test.ts（测试更新）\n\n### 需要测试的功能\n\n**单元测试（src/services/__tests__/websocket.test.ts，vitest）**\n1. websocket 常量导出：WS_ENDPOINT='/ws'、WS_MESSAGE_NAME_SEND_USER_MESSAGE='SEND_USER_MESSAGE'（BIND/UNBIND/BIND_RESULT 常量已删除，不得再被引用）\n2. connect：测试模式静默跳过；无 WebSocket 环境不抛错；非测试模式建立到 /ws 端点连接；连接中/已连接时幂等不重复建连\n3. close：手动关闭后调用底层 close；关闭后不再自动重连\n4. 断线自动重连：非手动关闭触发重连退避起点 1s；连续失败退避递增 1s→2s→4s→8s→16s 上限 30s；重连成功后退避计数重置\n5. onMessage/offMessage：JSON 消息解析分发；非 JSON 静默忽略；单个监听器异常隔离；offMessage 后不再分发\n\n**编译检查（TypeScript 编译 / tsc --noEmit 或 vite build）**\n1. src/services/websocket.ts 重构后无类型错误、无对已删除常量/方法的引用\n2. src/pages/sessions/AgentChat.tsx 移除 webSocketClient import 与 bindSession 调用后编译通过\n3. 全项目无 bindSession/unbindSession/WS_TYPE_BIND/WS_TYPE_UNBIND/WS_MESSAGE_NAME_BIND_RESULT/boundSessionId 残留引用\n4. 相关模块（messageDispatcher.ts、App.tsx、auth.ts）不受影响仍编译通过",
+  "timestamp": "2026-08-18T04:31:16.536Z"
+}

@@ -1,0 +1,18 @@
+[
+  {
+    "plan_id": "plan_17581c4f-4bb6-47f0-9e98-e05063885158",
+    "plan": "WebSocket 推送链路改造：从「对话会话级绑定」改为「用户会话级绑定」",
+    "modified_files": [
+      "platform-app/src/main/java/com/ghost616/platform/websocket/SessionConnectionRegistry.java",
+      "platform-app/src/main/java/com/ghost616/platform/websocket/SessionWebSocketHandler.java",
+      "platform-app/src/main/java/com/ghost616/platform/websocket/WebSocketPushService.java",
+      "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultMessageSender.java",
+      "platform-app/src/test/java/com/ghost616/platform/websocket/SessionConnectionRegistryTest.java",
+      "platform-app/src/test/java/com/ghost616/platform/websocket/SessionWebSocketHandlerTest.java",
+      "platform-app/src/test/java/com/ghost616/platform/websocket/WebSocketPushServiceTest.java",
+      "platform-app/src/test/java/com/ghost616/platform/service/agent/DefaultMessageSenderTest.java"
+    ],
+    "summary": "执行总结：本轮共修改 8 个文件，实现 WebSocket 推送链路「对话会话级绑定 → 用户会话级绑定」重构：\n1. SessionConnectionRegistry：移除 SessionMapper 依赖与对话会话查询/属主校验，bind 改为 (String userSessionId, WebSocketSession) 仅校验连接有效性后纯内存注册，绑定 key 为用户会话 ID（UserSession.getSessionId()），同步更新类注释与日志\n2. SessionWebSocketHandler：afterConnectionEstablished 从握手属性取 UserSession 自动绑定（registry.bind(userSession.getSessionId(), session)）；移除 BIND/UNBIND 入站消息处理及回执逻辑（TYPE_BIND/TYPE_UNBIND/MESSAGE_NAME_BIND_RESULT 常量、handleBind/handleUnbind/sendBindResult、ObjectMapper 依赖）；afterConnectionClosed 保持 removeAll 清理；握手属性无 UserSession 时不绑定并 WARN 日志\n3. WebSocketPushService：pushToSession 移除 sessionId 参数，改为从 UserContext 获取当前用户会话（UserSession.getSessionId()）定位连接推送；UserContext 为空时 WARN 静默丢弃\n4. DefaultMessageSender：send() 捕获 UserContext 快照并在 CompletableFuture.runAsync 异步线程中恢复（finally 清理防串号）；handleSendUserMessage 简化为单次 pushService.pushToSession(message)\n5. 同步更新 4 个单元测试适配新签名与自动绑定语义，新增 UserContext 上下文传递与缺失场景测试；并将 8 个文件补登记到模块定义、更新 spec 与变更历史\n\n测试总结：全部测试通过。离朱报告：静态检查（全项目 Java/TS/Markdown 无旧签名残留引用）通过；编译测试 platform-app（-am test-compile，149 主文件 + 85 测试文件）BUILD SUCCESS；4 个目标测试文件 25/25 全部通过（SessionConnectionRegistryTest 9、SessionWebSocketHandlerTest 4、WebSocketPushServiceTest 7、DefaultMessageSenderTest 5，Failures 0/Errors 0/Skipped 0），覆盖绑定正反向/多连接/清理、自动绑定与不绑定、推送丢弃各场景及 UserContext 上下文传递与缺失场景；全量回归 1074 例中 4 个失败均为与本次变更无关的既有问题（ToolDetailDTOTest 字段类型断言、DefaultChatDataCacheProviderTest 消息数断言、DefaultMessageDataProviderTest 2 处多余 stubbing，均经 grep 确认与本次变更文件零引用且未被修改）；E2E 不适用（纯后端链路改造）。",
+    "errors": []
+  }
+]

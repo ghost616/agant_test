@@ -35,7 +35,6 @@ import {
   unregisterSessionPage,
 } from '../../services/messageDispatcher';
 import type { SendUserMessagePayload, SessionPageHandler } from '../../services/messageDispatcher';
-import { webSocketClient } from '../../services/websocket';
 import type { Session, SessionMessage, ToolInfo, WebSearchCall } from '../../types/session';
 import type { ModelConfig } from '../../types/model';
 
@@ -526,10 +525,9 @@ function AgentChat(): JSX.Element {
 
   streamChildReplyRef.current = streamChildReply;
 
-  // 进入会话页面：绑定当前会话 ID（切换页面只更新绑定不断链）并注册消息分发页面处理器
+  // 进入会话页面：注册消息分发页面处理器
   useEffect(() => {
     if (!sessionId) return;
-    webSocketClient.bindSession(sessionId);
     const handler: SessionPageHandler = {
       mainSessionId: sessionId,
       isChildActive: (childId) => activeTabRef.current === childId,
