@@ -19,6 +19,10 @@
     {
       "content": "子会话标签内对话数据是最新的，但滚动条不会自动跟随数据滚动到底部，用户需手动拖动滚动条才能看到最新内容（ChildSessionView 缺少自动滚动逻辑；原 Modal 方案有 subContainerRef 自动滚动，移除 Modal 后未在标签视图中补上）。",
       "timestamp": "2026-08-18T11:11:25.299Z"
+    },
+    {
+      "content": "子会话计数标签未紧贴主会话标签：当前通过 tabBarExtraContent.right 渲染被推到标签栏最右侧，应改为作为 Tabs items 路径项紧贴激活层级标签之后。",
+      "timestamp": "2026-08-18T14:10:19.293Z"
     }
   ]
 }

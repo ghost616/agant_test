@@ -1411,20 +1411,53 @@ function AgentChat(): JSX.Element {
     return list?.find((c) => c.id === sid)?.title || sid;
   };
 
-  /** 路径标签项：主会话 + 各级激活子会话（末位为当前激活视图，内容区沿用 ChildSessionView）。 */
-  const sessionTabItems: TabsProps['items'] = activePath.map((sid, i) => ({
-    key: sid,
-    label: i === 0 ? '主会话' : sessionLabel(sid, activePath[i - 1]),
-    children:
-      i === 0 ? (
-        renderMainChat()
-      ) : (
-        <ChildSessionView childId={sid} stream={childStreams[sid]} />
-      ),
-  }));
+  /** 路径标签项：主会话 + 各级激活子会话（末位为当前激活视图，内容区沿用 ChildSessionView）；
+   *  每个层级标签后紧跟其下一级计数标签项（Dropdown+数量+上下箭头，无子会话时不插入，
+   *  点击仅展开下拉不切换内容区，key 为 `${sid}-count`）。 */
+  const sessionTabItems: TabsProps['items'] = activePath.flatMap((sid, i) => {
+    const levelChildren = childListCache[sid];
+    const items: NonNullable<TabsProps['items']> = [
+      {
+        key: sid,
+        label: i === 0 ? '主会话' : sessionLabel(sid, activePath[i - 1]),
+        children:
+          i === 0 ? (
+            renderMainChat()
+          ) : (
+            <ChildSessionView childId={sid} stream={childStreams[sid]} />
+          ),
+      },
+    ];
+    // 该层级有子会话时，在标签后追加其下一级计数标签项（无子会话时不插入）
+    if (levelChildren && levelChildren.length > 0) {
+      items.push({
+        key: `${sid}-count`,
+        label: (
+          <Dropdown
+            menu={{
+              items: levelChildren.map((c) => ({ key: c.id, label: c.title || c.id })),
+              onClick: ({ key }) => handleSelectChild(key),
+            }}
+            trigger={['click']}
+            open={expandedPickerFor === sid}
+            onOpenChange={(open) => setExpandedPickerFor(open ? sid : null)}
+          >
+            <div className="agent-chat-count-tab">
+              <span>{levelChildren.length}</span>
+              {expandedPickerFor === sid ? <UpOutlined /> : <DownOutlined />}
+            </div>
+          </Dropdown>
+        ),
+        children: null,
+      });
+    }
+    return items;
+  });
 
   /** 点击路径标签：截断路径至该层级并关闭下拉（点击主会话恢复其下一级计数显示）。 */
   const handleTabChange = (key: string): void => {
+    // 计数标签项：仅展开下拉，不切换内容区
+    if (key.endsWith('-count')) return;
     setExpandedPickerFor(null);
     const idx = activePath.indexOf(key);
     if (idx < 0) return;
@@ -1436,27 +1469,6 @@ function AgentChat(): JSX.Element {
     setExpandedPickerFor(null);
     setActivePath((prev) => [...prev, childId]);
   };
-
-  // 激活层级的子会话列表（下拉面板复用该缓存数据，不重复请求）
-  const activeChildren = childListCache[activeTab];
-  // 激活层级右侧的下一级计数标签：显示子会话数量与上下箭头（默认下箭头不展开），无子会话时不显示
-  const countTabNode =
-    activeChildren && activeChildren.length > 0 ? (
-      <Dropdown
-        menu={{
-          items: activeChildren.map((c) => ({ key: c.id, label: c.title || c.id })),
-          onClick: ({ key }) => handleSelectChild(key),
-        }}
-        trigger={['click']}
-        open={expandedPickerFor === activeTab}
-        onOpenChange={(open) => setExpandedPickerFor(open ? activeTab : null)}
-      >
-        <div className="agent-chat-count-tab">
-          <span>{activeChildren.length}</span>
-          {expandedPickerFor === activeTab ? <UpOutlined /> : <DownOutlined />}
-        </div>
-      </Dropdown>
-    ) : undefined;
 
   if (!id) {
     return (
@@ -1502,12 +1514,8 @@ function AgentChat(): JSX.Element {
           display: inline-flex;
           align-items: center;
           gap: 4px;
-          height: 30px;
-          padding: 0 12px;
-          margin: 0 8px 0 4px;
-          border: 1px solid #303030;
-          border-radius: 6px;
-          background: #1f1f1f;
+          padding: 0;
+          margin: 0;
           color: #8c8c8c;
           font-size: 13px;
           cursor: pointer;
@@ -1516,14 +1524,16 @@ function AgentChat(): JSX.Element {
         }
         .agent-chat-count-tab:hover {
           color: #569cd6;
-          border-color: #569cd6;
+        }
+        /* 计数标签所在 tab 贴紧前一个层级标签（覆盖 antd 默认 tab 间距） */
+        .agent-chat-tabs .ant-tabs-tab:has(.agent-chat-count-tab) {
+          margin-left: 4px;
         }
       `}</style>
       <Tabs
         className="agent-chat-tabs"
         activeKey={activeTab}
         onChange={handleTabChange}
-        tabBarExtraContent={{ right: countTabNode }}
         style={{ display: 'flex', flexDirection: 'column', height: '100%' }}
         items={sessionTabItems}
       />

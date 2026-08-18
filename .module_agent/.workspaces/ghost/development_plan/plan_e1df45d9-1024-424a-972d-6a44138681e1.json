@@ -1,0 +1,11 @@
+{
+  "plan_id": "plan_e1df45d9-1024-424a-972d-6a44138681e1",
+  "module_name": "frontend-ui",
+  "development_plan": "1. 计数标签改为路径项插入（src/pages/sessions/AgentChat.tsx）：移除 tabBarExtraContent={{ right: countTabNode }} 方式；将计数标签（Dropdown + 数量 + 上下箭头）作为 Tabs items 中的路径项，紧跟激活层级标签之后插入——sessionTabItems 中每个层级标签后追加其下一级计数标签项（无子会话时不插入）；计数标签项使用独立 key（如 `${sid}-count`），点击不切换内容区（仅展开下拉），保持路径式导航视觉：[主会话] [▾ 3] [子会话A] [▾ 2] [孙会话B]；调整 .agent-chat-count-tab 样式使其与 Tabs 标签视觉一致（贴紧、同高、无多余边距）。2. 测试同步（src/pages/sessions/__tests__/AgentChat.test.tsx）：更新静态验证，计数标签不再使用 tabBarExtraContent，改为 items 路径项插入；断言各层级后紧跟计数标签项。",
+  "session_id": "5e4036eb-36ac-4674-869a-23993761645d",
+  "modified_files": [
+    "src/pages/sessions/AgentChat.tsx",
+    "src/pages/sessions/__tests__/AgentChat.test.tsx",
+    "e2e/AgentChat.spec.ts"
+  ]
+}

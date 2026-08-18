@@ -78,5 +78,21 @@
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
+  },
+  {
+    "plan_id": "plan_e1df45d9-1024-424a-972d-6a44138681e1",
+    "plan_summary": "修复子会话计数标签未紧贴主会话标签布局 bug：计数标签从 tabBarExtraContent 改为 Tabs items 路径项插入，测试同步",
+    "starter_session_id": "session-cbd1ed98-519d-47de-b1cf-ac005137dc70",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_4bdc3b73-20f5-4477-8950-23226140f754",
+    "plan_summary": "修复子会话计数标签未紧贴主会话标签布局 bug：计数标签从 tabBarExtraContent 改为 Tabs items 路径项插入",
+    "starter_session_id": "session-cbd1ed98-519d-47de-b1cf-ac005137dc70",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": false
   }
 ]

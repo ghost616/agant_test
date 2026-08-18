@@ -18,5 +18,16 @@
     ],
     "summary": "执行总结：本轮修改 2 个文件 —— 1) src/pages/sessions/AgentChat.tsx：ChildSessionView 滚动容器（overflowY:auto div）新增 childContainerRef（useRef<HTMLDivElement>(null)）并挂载 ref={childContainerRef}；新增自动滚动 useEffect，监听 mergedMessages 与 stream 的 currentResponse/currentReasoning/toolExecuting/loading 变化，内容变化时 childContainerRef.current.scrollTop = scrollHeight 自动滚动到底部，与主会话 containerRef 自动滚动及原 Modal subContainerRef 自动滚动行为一致。2) src/pages/sessions/__tests__/AgentChat.test.tsx：「子会话标签化展示」块新增 2 条静态断言——滚动容器含 childContainerRef 声明/ref 挂载/scrollTop=scrollHeight；自动滚动 useEffect 依赖含 mergedMessages 与 stream?.currentResponse/stream?.currentReasoning/stream?.toolExecuting/stream?.loading。模块元数据（current_spec 会话管理界面章节、module_definition 两文件说明、change_history）已同步更新。\n\n测试总结：全部测试通过。静态验证单元测试 37/37 通过（AgentChat.test.tsx，原 35 + 新增 2 条自动滚动断言，含统一执行器/Modal 移除/标签化展示等既有断言无回归）；TypeScript 编译检查通过（AgentChat.tsx 零错误，无新增编译错误，仅项目既有 websocket.ts import.meta.env 缺 vite/client types 报错）；回归测试 56/56 通过（ConversationHistory 11 + ConversationDetail 24 + SessionList 6 + messageDispatcher 15），无回归。环境说明：vitest 扫描 .lizhu_env 历史测试副本为项目既有配置问题（已用 --exclude 隔离），tsc 缺 @types/node/vite/client types 亦为既有问题，均非本次变更引入。",
     "errors": []
+  },
+  {
+    "plan_id": "plan_e1df45d9-1024-424a-972d-6a44138681e1",
+    "plan": "计数标签改为路径项插入",
+    "modified_files": [
+      "src/pages/sessions/AgentChat.tsx",
+      "src/pages/sessions/__tests__/AgentChat.test.tsx",
+      "e2e/AgentChat.spec.ts"
+    ],
+    "summary": "执行总结：本轮修改 3 个文件 —— 1) src/pages/sessions/AgentChat.tsx：移除 tabBarExtraContent={{ right: countTabNode }} 方式及 activeChildren/countTabNode 变量；sessionTabItems 由 activePath.map 改为 activePath.flatMap，每个层级标签后紧跟其下一级计数标签项（key 为 `${sid}-count`，label 为 Dropdown+数量+上下箭头，数据取 childListCache[sid]，levelChildren 为空时不插入，children:null 点击不切换内容区），保持路径式导航视觉 [主会话] [▾ 3] [子会话A] [▾ 2] [孙会话B]；handleTabChange 对以 -count 结尾的 key 直接 return（仅展开下拉不切换内容区）；计数标签 Dropdown 的 open/onOpenChange 由 expandedPickerFor === activeTab 改为 === sid（对应各层级父会话）；.agent-chat-count-tab 样式与 Tabs 标签视觉一致（去掉固定 height 30px/边框/背景/多余 margin，改 margin:0 贴紧、同高，新增 .agent-chat-tabs .ant-tabs-tab:has(.agent-chat-count-tab) 覆盖 antd 默认 32px tab 间距为 4px）。2) src/pages/sessions/__tests__/AgentChat.test.tsx：「路径式导航」块路径标签断言更新为 activePath.flatMap；计数标签测试改为路径项插入断言（levelChildren 判断/items.push/${sid}-count/children:null/expandedPickerFor===sid），新增 tabBarExtraContent/countTabNode/activeChildren 移除负向断言、handleTabChange -count 拦截断言、计数标签样式贴紧断言。3) e2e/AgentChat.spec.ts：离朱第四轮发现 5 个 E2E 失败为旧断言未同步（计数标签 tabBarExtraContent 时代），已按新行为同步——.ant-tabs-tab 计数 +1（计数标签已成为 tab）、子会话标签 nth 偏移、'主会话计数保留 + 无子级子会话后无计数'断言。模块元数据（current_spec 会话管理界面章节、module_definition 三文件说明、change_history）已同步更新。\n\n测试总结：全部测试通过。静态验证单元测试 46/46 通过（AgentChat.test.tsx，含路径式导航/计数标签路径项/统一执行器/Modal 移除/自动滚动等全部断言）；TypeScript 编译检查通过（AgentChat.tsx 零错误，无新增编译错误，仅项目既有 websocket.ts import.meta.env 缺 vite/client types 报错）；回归 57/57 通过（ConversationHistory 11 + ConversationDetail 24 + SessionList 7 + messageDispatcher 15）；E2E 7/7 全部通过（e2e/AgentChat.spec.ts 路径式导航 7 用例，3000 构建产物 + page.route mock 方式）。环境说明：5173 vite dev server 在 Playwright 下加载失败为环境不兼容（以 3000 构建产物为准），.lizhu_env 历史副本与 tsconfig 缺 types 均为项目既有问题，非本次变更引入。",
+    "errors": []
   }
 ]

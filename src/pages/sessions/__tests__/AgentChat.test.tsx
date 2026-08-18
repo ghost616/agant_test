@@ -280,7 +280,7 @@ describe('AgentChat 路径式导航 (静态验证)', () => {
   it('路径标签由 activePath 生成：主会话 + 各级激活子会话（层级路径 [主会话][子会话A][孙会话B]...）', () => {
     const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
     expect(source).toContain('const [activePath, setActivePath] = useState<string[]>([sessionId]);');
-    expect(source).toContain("const sessionTabItems: TabsProps['items'] = activePath.map((sid, i) => ({");
+    expect(source).toContain("const sessionTabItems: TabsProps['items'] = activePath.flatMap((sid, i) => {");
     expect(source).toContain('key: sid');
     expect(source).toContain("label: i === 0 ? '主会话' : sessionLabel(sid, activePath[i - 1])");
     expect(source).toContain('<ChildSessionView childId={sid} stream={childStreams[sid]} />');
@@ -297,13 +297,45 @@ describe('AgentChat 路径式导航 (静态验证)', () => {
     expect(source).toContain('const idx = activePath.indexOf(key);');
   });
 
-  it('激活层级右侧显示下一级计数标签（数量+上下箭头，默认下箭头），无子会话时不显示', () => {
+  it('计数标签作为路径项紧跟各层级标签后插入（Dropdown+数量+上下箭头，无子会话时不插入）', () => {
     const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
-    expect(source).toContain('const activeChildren = childListCache[activeTab];');
-    expect(source).toContain('activeChildren && activeChildren.length > 0 ? (');
-    expect(source).toContain('items: activeChildren.map((c) => ({ key: c.id, label: c.title || c.id }))');
-    expect(source).toContain('expandedPickerFor === activeTab ? <UpOutlined /> : <DownOutlined />');
-    expect(source).toContain('open={expandedPickerFor === activeTab}');
+    expect(source).toContain('const levelChildren = childListCache[sid];');
+    expect(source).toContain('levelChildren && levelChildren.length > 0');
+    expect(source).toContain('items.push({');
+    expect(source).toContain('key: `${sid}-count`');
+    expect(source).toContain('items: levelChildren.map((c) => ({ key: c.id, label: c.title || c.id }))');
+    expect(source).toContain('expandedPickerFor === sid ? <UpOutlined /> : <DownOutlined />');
+    expect(source).toContain('open={expandedPickerFor === sid}');
+    expect(source).toContain('children: null');
+  });
+
+  it('已移除 tabBarExtraContent 方式，计数标签不再显示在标签栏右侧', () => {
+    const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
+    expect(source).not.toContain('tabBarExtraContent');
+    expect(source).not.toContain('countTabNode');
+    expect(source).not.toContain('activeChildren');
+  });
+
+  it('点击计数标签项仅展开下拉不切换内容区（handleTabChange 拦截 -count key）', () => {
+    const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
+    const handleTabBlock = source.match(/const handleTabChange[\s\S]*?\n  \};/);
+    expect(handleTabBlock).not.toBeNull();
+    if (handleTabBlock) {
+      expect(handleTabBlock[0]).toContain("if (key.endsWith('-count')) return;");
+    }
+  });
+
+  it('计数标签样式与 Tabs 标签视觉一致：贴紧、同高、无多余边距', () => {
+    const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
+    const styleBlock = source.match(/\.agent-chat-count-tab \{[\s\S]*?\n        \}/);
+    expect(styleBlock).not.toBeNull();
+    if (styleBlock) {
+      expect(styleBlock[0]).not.toContain('height: 30px');
+      expect(styleBlock[0]).not.toContain('border:');
+      expect(styleBlock[0]).not.toContain('margin: 0 8px');
+      expect(styleBlock[0]).toContain('align-items: center');
+    }
+    expect(source).toContain('.agent-chat-tabs .ant-tabs-tab:has(.agent-chat-count-tab)');
   });
 
   it('点击计数标签展开下拉面板，选中后标签变为子会话名称并追加路径（箭头隐藏由新计数标签替代）', () => {
