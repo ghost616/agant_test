@@ -14,7 +14,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.List;
 import java.util.function.BooleanSupplier;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -54,7 +53,7 @@ class DefaultMessageSenderTest {
 
     @Test
     void send_SEND_USER_MESSAGE_推送一次() {
-        SendUserMessage message = new SendUserMessage("child-1", "hello", "conv-1", List.of("parent-1", "main-1"));
+        SendUserMessage message = new SendUserMessage("child-1", "hello", "conv-1", "parent-1", "main-1");
         DefaultMessageSender sender = newSender();
 
         sender.send(message);
@@ -90,7 +89,7 @@ class DefaultMessageSenderTest {
         RecordingPushService recording = new RecordingPushService();
         DefaultMessageSender sender = new DefaultMessageSender(recording);
 
-        sender.send(new SendUserMessage("child-1", "hello", "conv-1", List.of("parent-1", "main-1")));
+        sender.send(new SendUserMessage("child-1", "hello", "conv-1", "parent-1", "main-1"));
 
         awaitUntil(() -> recording.seenSession != null);
         assertEquals(snapshot, recording.seenSession);
@@ -101,7 +100,7 @@ class DefaultMessageSenderTest {
         RecordingPushService recording = new RecordingPushService();
         DefaultMessageSender sender = new DefaultMessageSender(recording);
 
-        sender.send(new SendUserMessage("child-1", "hello", "conv-1", List.of("parent-1", "main-1")));
+        sender.send(new SendUserMessage("child-1", "hello", "conv-1", "parent-1", "main-1"));
 
         awaitUntil(() -> recording.called);
         assertNull(recording.seenSession);

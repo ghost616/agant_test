@@ -1,0 +1,16 @@
+[
+  {
+    "plan_id": "plan_5ea8c847-b796-4d3e-b9ee-5f3458ff1d32",
+    "plan": "AgentChat 路径式导航标签改造 + SendUserMessagePayload 父会话列表重构",
+    "modified_files": [
+      "src/services/messageDispatcher.ts",
+      "src/services/__tests__/messageDispatcher.test.ts",
+      "src/pages/sessions/AgentChat.tsx",
+      "src/pages/sessions/__tests__/AgentChat.test.tsx",
+      "e2e/AgentChat.spec.ts",
+      "playwright.agentchat.config.ts"
+    ],
+    "summary": "执行总结：本轮完成 5 个文件修改——1) src/services/messageDispatcher.ts：SendUserMessagePayload 移除 parentSessionId/mainSessionId 单字段，新增 parentSessionIds 数组字段（与后端 SendUserMessage/SessionMessage 序列化一致：第一个=直接父，最后一个=主会话）；归属匹配改为 sessionId 等于主会话或 parentSessionIds 包含主会话；SessionPageHandler 精简为 mainSessionId/streamChildReply（移除 isChildActive/refreshChildSessions），命中后始终 streamChildReply；2) src/pages/sessions/AgentChat.tsx：扁平子会话标签改为路径式导航（activePath 层级链 [主会话][子会话A][孙会话B]...，激活层级右侧计数标签 数量+上下箭头，点击展开 Dropdown 复用 childListCache 选择子会话，选中后标签变为子会话名称、内容区切换 ChildSessionView，点击主会话截断恢复计数，无子会话不显示计数，不设深度限制）；层级数据按需获取 ensureChildList（listChildSessions 缓存 + 去重 + force）；WS 消息驱动路径展开 expandPathFromPayload（按 parentSessionIds 构建主会话→...→直接父→目标子会话链）后沿用统一执行器流式展示；3) 同步更新 messageDispatcher.test.ts（15 用例）与 AgentChat.test.tsx（43 用例）；4) e2e/AgentChat.spec.ts 重写为路径式导航用例。\n测试总结：全部通过——单元测试 messageDispatcher 15/15、AgentChat 43/43（合计 58/58）；编译/类型检查变更源码（messageDispatcher.ts/AgentChat.tsx/e2e spec）tsc 零错误（全局 275 个报错均为项目已知基线：静态测试文件缺 node types 与 ToolList/EvaluationResultList 既有问题）；E2E AgentChat.spec.ts 7/7 通过（路径标签/计数标签/无 title 回退/无子会话不显示计数/下拉选择路径变化/箭头隐藏/点击主会话恢复计数/只读视图），E2E 因本机 vite dev server 依赖预构建无法完成，改为 vite build 静态产物 + node serve.js(3000) 后通过，非代码问题。遗留：src/services/__tests__/toolExecutor.test.ts 14 项既有失败未涉及本计划，属已知基线；.module_agent/frontend-ui/current_spec.md 存在重复的「WebSocket 实时消息」标题（历史遗留，工具按首个标题更新，第二个旧段落待后续清理）。",
+    "errors": []
+  }
+]

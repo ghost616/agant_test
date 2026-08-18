@@ -85,5 +85,7 @@
   "vite.config.ts": "42fa0279e7ed9dc617c63ce8e30b9601",
   "serve.js": "5e34577a9834205dd9edb7e9e023f22b",
   "src/services/websocket.ts": "b9d1ead279374df0f971c60ad6d337f9",
-  "src/services/__tests__/websocket.test.ts": "071f8584f46d3586d5b3154926138130"
+  "src/services/__tests__/websocket.test.ts": "071f8584f46d3586d5b3154926138130",
+  "src/services/messageDispatcher.ts": "a1ab1cba17bb75cbbcb263b1cae37581",
+  "src/services/__tests__/messageDispatcher.test.ts": "67c3af7924c1096920f969ad84f5d43e"
 }

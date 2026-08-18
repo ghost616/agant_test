@@ -141,5 +141,8 @@
   "platform-app/src/main/java/com/ghost616/platform/dto/AgentContextDTO.java": "7f33d7fb0dd0d9df0bf37ccea550319c",
   "platform-app/src/test/java/com/ghost616/platform/controller/AgentContextControllerTest.java": "24cef5786d8bd68fb50e65163bd4e0cd",
   "platform-app/src/test/java/com/ghost616/platform/controller/ConversationControllerTest.java": "bd67f655c0d2e2d0387aaa9fc2bec2bc",
-  "agent-base/src/main/java/com/ghost616/agentbase/sendmessage/ConversationIdMessage.java": "d8a339c63b45512315a2704c57d3c769"
+  "agent-base/src/main/java/com/ghost616/agentbase/sendmessage/ConversationIdMessage.java": "d8a339c63b45512315a2704c57d3c769",
+  "agent-base/src/main/java/com/ghost616/agentbase/sendmessage/SendUserMessage.java": "8c4b105b03bc3b981018a26520209ade",
+  "agent-base/src/test/java/com/ghost616/agentbase/sendmessage/SendUserMessageTest.java": "63b7206cceaf845290174ac1f14da652",
+  "platform-app/src/test/java/com/ghost616/platform/service/agent/DefaultMessageSenderTest.java": "66a865cc87668ce6f6c2800901ca53b0"
 }

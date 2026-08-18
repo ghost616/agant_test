@@ -3,8 +3,6 @@ package com.ghost616.agentbase.sendmessage;
 import com.ghost616.agentbase.service.agent.AgentExecutionContext.ChildSession;
 import lombok.Getter;
 
-import java.util.List;
-
 @Getter
 public class ChildCreateSession extends SessionMessage {
 
@@ -13,7 +11,7 @@ public class ChildCreateSession extends SessionMessage {
     public ChildCreateSession(String parentSessionId, ChildSession childSession) {
         this.childSession = childSession;
         setSessionId(parentSessionId);
-        setParentSessionIds(List.of(parentSessionId));
+        setParentSessionId(parentSessionId);
     }
 
     @Override

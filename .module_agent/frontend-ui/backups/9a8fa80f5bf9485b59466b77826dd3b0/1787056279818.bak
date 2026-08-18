@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Button, Dropdown, Input, message, Select, Spin, Switch, Tabs, Typography } from 'antd';
+import { Button, Input, message, Select, Spin, Switch, Tabs, Typography } from 'antd';
 import type { TabsProps } from 'antd';
 import {
   UserOutlined,
@@ -10,8 +10,6 @@ import {
   ToolOutlined,
   InfoCircleOutlined,
   ArrowLeftOutlined,
-  DownOutlined,
-  UpOutlined,
 } from '@ant-design/icons';
 import {
   agentChatStream,
@@ -75,8 +73,6 @@ interface ChildSessionFlowParams {
   thinking?: boolean;
   /** 是否自动切换标签（工具触发 true：开始切到子会话标签、结束切回主会话；WS 触发 false）。 */
   switchTab?: boolean;
-  /** 子会话的直接父会话 ID（用于标签缺失时的子列表刷新；缺省取页面主会话）。 */
-  parentId?: string;
 }
 
 const ROLE_CONFIG: Record<MessageRole, { label: string; icon: JSX.Element; color: string }> = {
@@ -419,23 +415,13 @@ function AgentChat(): JSX.Element {
   const subAbortRef = useRef<AbortController | null>(null);
   const subToolAbortRef = useRef(false);
 
-  // 路径式导航：从主会话到当前激活子会话的层级链（首位为主会话 ID，末位为当前激活视图）
-  const [activePath, setActivePath] = useState<string[]>([sessionId]);
-  // 各层级子会话列表缓存：父会话 ID → 子会话列表（按需获取，获取计数时即缓存，支持任意层级）
-  const [childListCache, setChildListCache] = useState<Record<string, Session[]>>({});
-  // 当前展开下拉面板的父会话 ID（null 表示无展开）
-  const [expandedPickerFor, setExpandedPickerFor] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<string>('main');
+  const [childSessions, setChildSessions] = useState<Session[]>([]);
   // 子会话流式回复展示状态（按子会话 ID 索引，由 WS 消息分发触发）
   const [childStreams, setChildStreams] = useState<Record<string, ChildStreamState>>({});
-  // 子会话列表缓存 ref（供异步流程读取最新值，避免闭包过期）
-  const childListCacheRef = useRef<Record<string, Session[]>>({});
-  // 子会话列表按需获取中的请求（按父会话 ID 去重，避免并发重复请求）
-  const childListPromisesRef = useRef<Partial<Record<string, Promise<Session[] | null>>>>({});
+  const activeTabRef = useRef<string>('main');
   const childStreamsRef = useRef<Record<string, ChildStreamState>>({});
   const streamChildReplyRef = useRef<(message: SendUserMessagePayload) => void>(() => {});
-
-  /** 当前激活视图会话 ID（路径末位）。 */
-  const activeTab = activePath[activePath.length - 1];
 
   useEffect(() => {
     if (containerRef.current) {
@@ -462,39 +448,14 @@ function AgentChat(): JSX.Element {
     }
   }, [sessionId]);
 
-  /**
-   * 按需获取指定父会话的子会话列表（获取计数时即调用 listChildSessions 并缓存，
-   * 下拉面板复用缓存数据不重复请求；支持任意层级）。
-   * @param parentId 父会话 ID
-   * @param force 是否强制刷新（绕过缓存）
-   * @returns 子会话列表，获取失败返回 null
-   */
-  const ensureChildList = useCallback(
-    async (parentId: string, force = false): Promise<Session[] | null> => {
-      if (!force && childListCacheRef.current[parentId]) {
-        return childListCacheRef.current[parentId];
-      }
-      if (!force && childListPromisesRef.current[parentId]) {
-        return childListPromisesRef.current[parentId];
-      }
-      const promise = listChildSessions(parentId)
-        .then((list) => {
-          childListCacheRef.current = { ...childListCacheRef.current, [parentId]: list };
-          setChildListCache(childListCacheRef.current);
-          return list;
-        })
-        .catch(() => {
-          message.error('加载子会话列表失败');
-          return null;
-        })
-        .finally(() => {
-          delete childListPromisesRef.current[parentId];
-        });
-      childListPromisesRef.current[parentId] = promise;
-      return promise;
-    },
-    [],
-  );
+  const loadChildSessions = useCallback(async (): Promise<void> => {
+    try {
+      const list = await listChildSessions(sessionId);
+      setChildSessions(list);
+    } catch {
+      message.error('加载子会话列表失败');
+    }
+  }, [sessionId]);
 
   useEffect(() => {
     if (!sessionId || calledRef.current) return;
@@ -509,20 +470,13 @@ function AgentChat(): JSX.Element {
       .catch(() => {});
 
     loadHistory();
-  }, [sessionId, loadHistory]);
+    loadChildSessions();
+  }, [sessionId, loadHistory, loadChildSessions]);
 
-  // 激活层级变化时按需获取其子会话列表（用于计数标签与下拉面板，任意层级均适用）
+  // 同步激活标签到 ref（供 WS 消息分发读取最新值）
   useEffect(() => {
-    const activeId = activePath[activePath.length - 1];
-    if (!activeId) return;
-    void ensureChildList(activeId);
-  }, [activePath, ensureChildList]);
-
-  // 切换会话时重置路径与下拉展开状态
-  useEffect(() => {
-    setActivePath([sessionId]);
-    setExpandedPickerFor(null);
-  }, [sessionId]);
+    activeTabRef.current = activeTab;
+  }, [activeTab]);
 
   // 同步子会话流式状态到 ref（供 WS 回调判断是否正在流式）
   useEffect(() => {
@@ -625,20 +579,23 @@ function AgentChat(): JSX.Element {
    */
   const runChildSessionFlow = useCallback(
     async (params: ChildSessionFlowParams): Promise<void> => {
-      const { childId, userContent, streamContent, thinking, switchTab, parentId } = params;
+      const { childId, userContent, streamContent, thinking, switchTab } = params;
       if (!childId) return;
       // 同一子会话已有流式请求进行中时忽略新消息（WS 路径；工具路径为一次性调用不受此限制）
       if (!switchTab && childStreamsRef.current[childId]?.loading) return;
 
-      // 标签缺失处理：直接父会话的子列表无对应子会话时强制刷新补出标签（刷新失败忽略，继续执行）
-      const flowParentId = parentId || sessionId;
-      const parentList = childListCacheRef.current[flowParentId];
-      if (!parentList || !parentList.some((c) => c.id === childId)) {
-        await ensureChildList(flowParentId, true);
+      // 标签缺失处理：childSessions 中无对应子会话时刷新列表补出标签（刷新失败忽略，继续执行）
+      if (!childSessions.some((c) => c.id === childId)) {
+        try {
+          const list = await listChildSessions(sessionId);
+          setChildSessions(list);
+        } catch {
+          // 刷新失败忽略，继续执行
+        }
       }
 
-      // 工具触发自动切换到对应子会话路径标签（子会话为页面主会话的直接子级）
-      if (switchTab) setActivePath([sessionId, childId]);
+      // 工具触发自动切换到对应子会话标签
+      if (switchTab) setActiveTab(childId);
       subToolAbortRef.current = false;
 
       // 写入 childStreams[childId] 初始化状态
@@ -813,65 +770,29 @@ function AgentChat(): JSX.Element {
       } finally {
         subAbortRef.current = null;
         // 工具触发执行完成后自动切回主会话标签
-        if (switchTab) setActivePath([sessionId]);
+        if (switchTab) setActiveTab('main');
       }
     },
-    [ensureChildList, pollSubToolStatus, sessionId, updateChildStream],
+    [childSessions, pollSubToolStatus, sessionId, updateChildStream],
   );
 
   runChildSessionFlowRef.current = runChildSessionFlow;
 
   /**
-   * 根据 SEND_USER_MESSAGE 负载的父会话链确定目标子会话在路径中的位置，
-   * 展开/补出从主会话到目标子会话的路径标签（父链：第一个=直接父，最后一个=主会话）。
-   * @param payload WS 消息负载
-   * @returns 是否成功确定路径（父链包含页面主会话时 true）
-   */
-  const expandPathFromPayload = useCallback(
-    async (payload: SendUserMessagePayload): Promise<boolean> => {
-      const targetId = payload.sessionId;
-      if (!targetId) return false;
-      if (targetId === sessionId) {
-        setActivePath([sessionId]);
-        return true;
-      }
-      const mainIdx = payload.parentSessionIds.indexOf(sessionId);
-      if (mainIdx < 0) return false;
-      // 从主会话到目标子会话的层级链：[主会话, ..., 直接父, 目标子会话]
-      const chain = [sessionId, ...payload.parentSessionIds.slice(0, mainIdx).reverse(), targetId];
-      // 逐级补出：确保每级父会话的子列表已获取（用于路径标签名称，获取失败不影响继续）
-      for (let i = 0; i < chain.length - 1; i++) {
-        await ensureChildList(chain[i]);
-      }
-      setActivePath(chain);
-      return true;
-    },
-    [sessionId, ensureChildList],
-  );
-
-  /**
-   * 子会话消息分发（WS 触发）：收到 SEND_USER_MESSAGE 时按父会话链展开/补出路径标签，
-   * 并以特殊标记 [send_user_message] 调用统一子会话执行器，流式展示该子会话的 AI 回复。
+   * 子会话消息分发（WS 触发）：收到 SEND_USER_MESSAGE 且对应子会话处于激活视图时，
+   * 以特殊标记 [send_user_message] 调用统一子会话执行器，流式展示该子会话的 AI 回复。
    * @param payload SEND_USER_MESSAGE 消息负载
    */
-  const streamChildReply = useCallback(
-    (payload: SendUserMessagePayload): void => {
-      const childId = payload.sessionId;
-      if (!childId) return;
-      void (async (): Promise<void> => {
-        // 按父会话链展开/补出对应路径标签（失败时仍继续执行流式回复）
-        const expanded = await expandPathFromPayload(payload);
-        void runChildSessionFlowRef.current!({
-          childId,
-          userContent: payload.content || '',
-          streamContent: SEND_USER_MESSAGE_MARKER,
-          switchTab: false,
-          parentId: expanded ? payload.parentSessionIds[0] || sessionId : sessionId,
-        });
-      })();
-    },
-    [expandPathFromPayload, sessionId],
-  );
+  const streamChildReply = useCallback((payload: SendUserMessagePayload): void => {
+    const childId = payload.sessionId;
+    if (!childId) return;
+    void runChildSessionFlowRef.current!({
+      childId,
+      userContent: payload.content || '',
+      streamContent: SEND_USER_MESSAGE_MARKER,
+      switchTab: false,
+    });
+  }, []);
 
   streamChildReplyRef.current = streamChildReply;
 
@@ -912,13 +833,17 @@ function AgentChat(): JSX.Element {
     if (!sessionId) return;
     const handler: SessionPageHandler = {
       mainSessionId: sessionId,
+      isChildActive: (childId) => activeTabRef.current === childId,
       streamChildReply: (msg) => streamChildReplyRef.current(msg),
+      refreshChildSessions: () => {
+        loadChildSessions();
+      },
     };
     registerSessionPage(handler);
     return () => {
       unregisterSessionPage(sessionId);
     };
-  }, [sessionId]);
+  }, [sessionId, loadChildSessions]);
 
   const handleAbort = useCallback(() => {
     stopChat(sessionId).catch(() => {});
@@ -1400,63 +1325,14 @@ function AgentChat(): JSX.Element {
     </div>
   );
 
-  /**
-   * 获取路径中指定会话的展示名称（子会话名称取自其父会话的子列表缓存，无缓存时回退 id）。
-   * @param sid 会话 ID
-   * @param parentId 直接父会话 ID（用于查找子列表中的名称）
-   * @returns 展示名称
-   */
-  const sessionLabel = (sid: string, parentId?: string): string => {
-    const list = parentId ? childListCache[parentId] : undefined;
-    return list?.find((c) => c.id === sid)?.title || sid;
-  };
-
-  /** 路径标签项：主会话 + 各级激活子会话（末位为当前激活视图，内容区沿用 ChildSessionView）。 */
-  const sessionTabItems: TabsProps['items'] = activePath.map((sid, i) => ({
-    key: sid,
-    label: i === 0 ? '主会话' : sessionLabel(sid, activePath[i - 1]),
-    children:
-      i === 0 ? (
-        renderMainChat()
-      ) : (
-        <ChildSessionView childId={sid} stream={childStreams[sid]} />
-      ),
-  }));
-
-  /** 点击路径标签：截断路径至该层级并关闭下拉（点击主会话恢复其下一级计数显示）。 */
-  const handleTabChange = (key: string): void => {
-    setExpandedPickerFor(null);
-    const idx = activePath.indexOf(key);
-    if (idx < 0) return;
-    setActivePath(activePath.slice(0, idx + 1));
-  };
-
-  /** 从下拉面板选中子会话：追加到路径末位成为新的激活视图（计数标签变为子会话名称、箭头隐藏）。 */
-  const handleSelectChild = (childId: string): void => {
-    setExpandedPickerFor(null);
-    setActivePath((prev) => [...prev, childId]);
-  };
-
-  // 激活层级的子会话列表（下拉面板复用该缓存数据，不重复请求）
-  const activeChildren = childListCache[activeTab];
-  // 激活层级右侧的下一级计数标签：显示子会话数量与上下箭头（默认下箭头不展开），无子会话时不显示
-  const countTabNode =
-    activeChildren && activeChildren.length > 0 ? (
-      <Dropdown
-        menu={{
-          items: activeChildren.map((c) => ({ key: c.id, label: c.title || c.id })),
-          onClick: ({ key }) => handleSelectChild(key),
-        }}
-        trigger={['click']}
-        open={expandedPickerFor === activeTab}
-        onOpenChange={(open) => setExpandedPickerFor(open ? activeTab : null)}
-      >
-        <div className="agent-chat-count-tab">
-          <span>{activeChildren.length}</span>
-          {expandedPickerFor === activeTab ? <UpOutlined /> : <DownOutlined />}
-        </div>
-      </Dropdown>
-    ) : undefined;
+  const tabItems: TabsProps['items'] = [
+    { key: 'main', label: '主会话', children: renderMainChat() },
+    ...childSessions.map((child) => ({
+      key: child.id,
+      label: child.title || child.id,
+      children: <ChildSessionView childId={child.id} stream={childStreams[child.id]} />,
+    })),
+  ];
 
   if (!id) {
     return (
@@ -1498,34 +1374,13 @@ function AgentChat(): JSX.Element {
         .agent-chat-tabs .ant-tabs-tabpane {
           height: 100%;
         }
-        .agent-chat-count-tab {
-          display: inline-flex;
-          align-items: center;
-          gap: 4px;
-          height: 30px;
-          padding: 0 12px;
-          margin: 0 8px 0 4px;
-          border: 1px solid #303030;
-          border-radius: 6px;
-          background: #1f1f1f;
-          color: #8c8c8c;
-          font-size: 13px;
-          cursor: pointer;
-          user-select: none;
-          white-space: nowrap;
-        }
-        .agent-chat-count-tab:hover {
-          color: #569cd6;
-          border-color: #569cd6;
-        }
       `}</style>
       <Tabs
         className="agent-chat-tabs"
         activeKey={activeTab}
-        onChange={handleTabChange}
-        tabBarExtraContent={{ right: countTabNode }}
+        onChange={setActiveTab}
         style={{ display: 'flex', flexDirection: 'column', height: '100%' }}
-        items={sessionTabItems}
+        items={tabItems}
       />
     </div>
   );

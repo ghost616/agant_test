@@ -47,7 +47,7 @@ describe('AgentChat conversationId (静态验证)', () => {
 describe('AgentChat 子会话相关 (静态验证)', () => {
   // 统一子会话执行器块（含 deps 行）与 handleSubSessionFlow 块（多行 deps）
   const RUN_CHILD_FLOW_RE =
-    /const runChildSessionFlow = useCallback[\s\S]*?\n    \[ensureChildList, pollSubToolStatus, sessionId, updateChildStream\],\n  \);/;
+    /const runChildSessionFlow = useCallback[\s\S]*?\n    \[childSessions, pollSubToolStatus, sessionId, updateChildStream\],\n  \);/;
   const HANDLE_SUB_FLOW_RE = /const handleSubSessionFlow = useCallback[\s\S]*?\n    \[sessionId\],\n  \);/;
 
   it('应导入 getSubSessionData 和 completeSubSession', () => {
@@ -161,7 +161,7 @@ describe('AgentChat 子会话相关 (静态验证)', () => {
 
   it('统一执行器入口差异：WS 触发 streamContent 传 SEND_USER_MESSAGE_MARKER 且不切换标签', () => {
     const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
-    const streamBlock = source.match(/const streamChildReply = useCallback[\s\S]*?\n    \[expandPathFromPayload, sessionId\],\n  \);/);
+    const streamBlock = source.match(/const streamChildReply = useCallback[\s\S]*?}, \[\]\);/);
     expect(streamBlock).not.toBeNull();
     if (streamBlock) {
       expect(streamBlock[0]).toContain('streamContent: SEND_USER_MESSAGE_MARKER');
@@ -169,24 +169,24 @@ describe('AgentChat 子会话相关 (静态验证)', () => {
     }
   });
 
-  it('统一执行器应做标签缺失处理：直接父会话子列表无对应子会话时强制刷新补出标签', () => {
+  it('统一执行器应做标签缺失处理：childSessions 无对应子会话时调用 listChildSessions 刷新补出标签', () => {
     const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
     const executorBlock = source.match(RUN_CHILD_FLOW_RE);
     expect(executorBlock).not.toBeNull();
     if (executorBlock) {
-      expect(executorBlock[0]).toContain('const flowParentId = parentId || sessionId;');
-      expect(executorBlock[0]).toContain('childListCacheRef.current[flowParentId]');
-      expect(executorBlock[0]).toContain('ensureChildList(flowParentId, true)');
+      expect(executorBlock[0]).toContain('childSessions.some((c) => c.id === childId)');
+      expect(executorBlock[0]).toContain('await listChildSessions(sessionId)');
+      expect(executorBlock[0]).toContain('setChildSessions(list)');
     }
   });
 
-  it('统一执行器标签切换：工具触发开始切到子会话路径标签、结束切回主会话', () => {
+  it('统一执行器标签切换：工具触发开始切到子会话标签、结束切回主会话', () => {
     const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
     const executorBlock = source.match(RUN_CHILD_FLOW_RE);
     expect(executorBlock).not.toBeNull();
     if (executorBlock) {
-      expect(executorBlock[0]).toContain('if (switchTab) setActivePath([sessionId, childId]);');
-      expect(executorBlock[0]).toContain('if (switchTab) setActivePath([sessionId]);');
+      expect(executorBlock[0]).toContain('if (switchTab) setActiveTab(childId);');
+      expect(executorBlock[0]).toContain("if (switchTab) setActiveTab('main');");
     }
   });
 
@@ -207,15 +207,6 @@ describe('AgentChat 子会话相关 (静态验证)', () => {
     expect(source).toContain('currentReasoning: string;');
     expect(source).toContain('toolExecuting?: boolean;');
     expect(source).toContain('error?: string;');
-  });
-
-  it('会话页面处理器仅含 mainSessionId 与 streamChildReply（移除 isChildActive/refreshChildSessions）', () => {
-    const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
-    expect(source).toContain('mainSessionId: sessionId,');
-    expect(source).toContain('streamChildReply: (msg) => streamChildReplyRef.current(msg),');
-    expect(source).not.toContain('isChildActive');
-    expect(source).not.toContain('refreshChildSessions');
-    expect(source).not.toContain('activeTabRef');
   });
 });
 
@@ -276,84 +267,44 @@ describe('AgentChat 工具消息头部 (静态验证)', () => {
   });
 });
 
-describe('AgentChat 路径式导航 (静态验证)', () => {
-  it('路径标签由 activePath 生成：主会话 + 各级激活子会话（层级路径 [主会话][子会话A][孙会话B]...）', () => {
+describe('AgentChat 子会话标签化展示 (静态验证)', () => {
+  it('标签由「主会话」与各子会话组成，标签名为子会话 title', () => {
     const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
-    expect(source).toContain('const [activePath, setActivePath] = useState<string[]>([sessionId]);');
-    expect(source).toContain("const sessionTabItems: TabsProps['items'] = activePath.map((sid, i) => ({");
-    expect(source).toContain('key: sid');
-    expect(source).toContain("label: i === 0 ? '主会话' : sessionLabel(sid, activePath[i - 1])");
-    expect(source).toContain('<ChildSessionView childId={sid} stream={childStreams[sid]} />');
+    const tabBlock = source.match(/const tabItems[\s\S]*?\];/);
+    expect(tabBlock).not.toBeNull();
+    if (tabBlock) {
+      expect(tabBlock[0]).toContain("key: 'main'");
+      expect(tabBlock[0]).toContain("label: '主会话'");
+      expect(tabBlock[0]).toContain('childSessions.map');
+      expect(tabBlock[0]).toContain('label: child.title || child.id');
+    }
   });
 
   it('子会话无 title 时标签名回退为子会话 id', () => {
     const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
-    expect(source).toContain('return list?.find((c) => c.id === sid)?.title || sid;');
+    expect(source).toContain('label: child.title || child.id');
   });
 
-  it('点击路径标签截断路径至该层级（点击主会话恢复其下一级计数显示）', () => {
+  it('无子会话时仅显示「主会话」一个标签（childSessions 为空数组时不产生子标签）', () => {
     const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
-    expect(source).toContain('setActivePath(activePath.slice(0, idx + 1));');
-    expect(source).toContain('const idx = activePath.indexOf(key);');
-  });
-
-  it('激活层级右侧显示下一级计数标签（数量+上下箭头，默认下箭头），无子会话时不显示', () => {
-    const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
-    expect(source).toContain('const activeChildren = childListCache[activeTab];');
-    expect(source).toContain('activeChildren && activeChildren.length > 0 ? (');
-    expect(source).toContain('items: activeChildren.map((c) => ({ key: c.id, label: c.title || c.id }))');
-    expect(source).toContain('expandedPickerFor === activeTab ? <UpOutlined /> : <DownOutlined />');
-    expect(source).toContain('open={expandedPickerFor === activeTab}');
-  });
-
-  it('点击计数标签展开下拉面板，选中后标签变为子会话名称并追加路径（箭头隐藏由新计数标签替代）', () => {
-    const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
-    expect(source).toContain('const handleSelectChild = (childId: string): void => {');
-    expect(source).toContain('setActivePath((prev) => [...prev, childId]);');
-    expect(source).toContain('onClick: ({ key }) => handleSelectChild(key),');
-  });
-
-  it('层级数据按需获取：获取计数时即调用 listChildSessions(parentId) 并缓存（复用不重复请求）', () => {
-    const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
-    expect(source).toContain('const ensureChildList = useCallback(');
-    expect(source).toContain('listChildSessions(parentId)');
-    expect(source).toContain('childListCacheRef.current[parentId]');
-    expect(source).toContain('childListPromisesRef.current[parentId]');
-    expect(source).toContain('void ensureChildList(activeId);');
-  });
-
-  it('WS 消息驱动路径展开：按父会话链确定目标子会话位置并补出路径标签', () => {
-    const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
-    expect(source).toContain('payload.parentSessionIds.indexOf(sessionId)');
-    expect(source).toContain(
-      'const chain = [sessionId, ...payload.parentSessionIds.slice(0, mainIdx).reverse(), targetId];',
-    );
-    expect(source).toContain('setActivePath(chain);');
-    expect(source).toContain('await ensureChildList(chain[i]);');
-  });
-
-  it('WS 消息展开路径后沿用统一执行器流式展示回复（switchTab=false）', () => {
-    const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
-    const streamBlock = source.match(/const streamChildReply = useCallback[\s\S]*?\n    \[expandPathFromPayload, sessionId\],\n  \);/);
-    expect(streamBlock).not.toBeNull();
-    if (streamBlock) {
-      expect(streamBlock[0]).toContain('await expandPathFromPayload(payload)');
-      expect(streamBlock[0]).toContain('runChildSessionFlowRef.current!({');
-      expect(streamBlock[0]).toContain('switchTab: false');
-      expect(streamBlock[0]).toContain('parentId: expanded ? payload.parentSessionIds[0] || sessionId : sessionId,');
+    const tabBlock = source.match(/const tabItems[\s\S]*?\];/);
+    expect(tabBlock).not.toBeNull();
+    if (tabBlock) {
+      expect(tabBlock[0]).toContain('...childSessions.map');
+      expect(tabBlock[0]).not.toContain('子会话列表');
     }
   });
 
-  it('进入页面时自动加载一次主会话的子会话列表（计数标签数据按需获取）', () => {
+  it('进入页面时自动加载一次子会话列表', () => {
     const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
-    expect(source).toContain('void ensureChildList(activeId);');
+    expect(source).toContain('loadChildSessions();');
   });
 
-  it('切换到子会话标签时通过 ChildSessionView 加载子会话消息（沿用只读视图）', () => {
+  it('切换到子会话标签时通过 ChildSessionView 加载子会话消息', () => {
     const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
     expect(source).toContain('function ChildSessionView');
     expect(source).toContain('getSessionMessages(childId)');
-    expect(source).toContain('<ChildSessionView childId={sid} stream={childStreams[sid]} />');
+    expect(source).toContain('<ChildSessionView childId={child.id} stream={childStreams[child.id]} />');
   });
 
   it('ChildSessionView 滚动容器应添加 ref 并在内容变化时自动滚动到底部', () => {
@@ -396,14 +347,12 @@ describe('AgentChat 路径式导航 (静态验证)', () => {
     }
   });
 
-  it('已移除旧的扁平子会话标签与子会话列表表格/二级查看逻辑', () => {
+  it('已移除旧的子会话列表表格与二级查看逻辑', () => {
     const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
-    expect(source).not.toContain('childSessions.map');
     expect(source).not.toContain('childSessionColumns');
     expect(source).not.toContain('viewingChildId');
     expect(source).not.toContain('查看会话');
     expect(source).not.toContain('返回子会话列表');
     expect(source).not.toContain("label: '子会话列表'");
-    expect(source).not.toContain('setActiveTab');
   });
 });

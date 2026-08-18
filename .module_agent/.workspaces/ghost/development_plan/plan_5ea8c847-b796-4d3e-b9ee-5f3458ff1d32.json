@@ -1,0 +1,14 @@
+{
+  "plan_id": "plan_5ea8c847-b796-4d3e-b9ee-5f3458ff1d32",
+  "module_name": "frontend-ui",
+  "development_plan": "1. SendUserMessagePayload（messageDispatcher.ts）：移除 parentSessionId/mainSessionId 单字段，新增父会话列表数组字段（与后端 SessionMessage 序列化结构一致：第一个=直接父，最后一个=主会话）；同步更新 messageDispatcher 消息归属匹配逻辑（基于父会话列表判断消息是否归属于页面）及对应测试。2. AgentChat.tsx 路径式导航标签改造（替换现有平铺子会话标签）：标签栏形成层级路径 [主会话] [子会话A] [孙会话B]...，每激活一级其右侧显示下一级计数标签（数量+上下箭头，默认下箭头不展开）；点击计数标签展开下拉面板显示子会话列表（复用已获取的 listChildSessions 数据，不重复请求），选中后标签变为子会话名称、箭头隐藏、内容区切换展示该子会话（沿用 ChildSessionView）；点击主会话恢复计数显示；无子会话时不显示计数标签；不设层级深度限制；层级数据按需获取（获取计数时即调用 listChildSessions(parentId) 缓存，支持任意层级）。3. WS 消息驱动路径展开：收到 SEND_USER_MESSAGE 时，按 payload 的父会话列表确定该子会话在路径中的位置，展开/补出对应路径标签并展示流式回复（沿用 childStreams 统一执行器）。4. 同步更新 AgentChat.test.tsx 与 messageDispatcher.test.ts 测试。",
+  "session_id": "dc8b69a3-258d-4762-a5c4-c617f8493320",
+  "modified_files": [
+    "src/services/messageDispatcher.ts",
+    "src/services/__tests__/messageDispatcher.test.ts",
+    "src/pages/sessions/AgentChat.tsx",
+    "src/pages/sessions/__tests__/AgentChat.test.tsx",
+    "e2e/AgentChat.spec.ts",
+    "playwright.agentchat.config.ts"
+  ]
+}

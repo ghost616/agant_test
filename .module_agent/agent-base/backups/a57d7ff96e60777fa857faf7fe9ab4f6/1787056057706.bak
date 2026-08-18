@@ -7,7 +7,6 @@ import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
 import com.ghost616.agentbase.enums.SessionAuthType;
 import com.ghost616.agentbase.enums.ToolType;
 import com.ghost616.agentbase.exception.AgentException;
-import com.ghost616.agentbase.sendmessage.ChildCreateSession;
 import com.ghost616.agentbase.sendmessage.ConversationIdMessage;
 import com.ghost616.agentbase.sendmessage.MessageSender;
 import com.ghost616.agentbase.sendmessage.SendUserMessage;
@@ -837,11 +836,12 @@ class AgentContextManagerTest {
             verify(messageSender).send(argThat(msg -> msg instanceof SendUserMessage
                     && "child-1".equals(((SendUserMessage) msg).getSessionId())
                     && "hello".equals(((SendUserMessage) msg).getContent())
-                    && List.of(sessionId).equals(((SendUserMessage) msg).getParentSessionIds())));
+                    && sessionId.equals(((SendUserMessage) msg).getParentSessionId())
+                    && sessionId.equals(((SendUserMessage) msg).getMainSessionId())));
         }
 
         @Test
-        void 正向_parentSessionIds构建完整父链从直接父到主会话() {
+        void 正向_mainSessionId沿父链逐级向上解析到无父会话的主会话() {
             String grandchild = "grandchild";
             String level2 = "level2";
             String level1 = "level1";
@@ -866,7 +866,8 @@ class AgentContextManagerTest {
 
             verify(messageSender).send(argThat(msg -> msg instanceof SendUserMessage
                     && grandchild.equals(((SendUserMessage) msg).getSessionId())
-                    && List.of(level2, level1, main).equals(((SendUserMessage) msg).getParentSessionIds())));
+                    && level2.equals(((SendUserMessage) msg).getParentSessionId())
+                    && main.equals(((SendUserMessage) msg).getMainSessionId())));
         }
 
         @Test
@@ -903,87 +904,6 @@ class AgentContextManagerTest {
             verify(msgBuilder).role("user");
             verify(msgBuilder).content("hello");
             verify(msgBuilder).save();
-        }
-    }
-
-    @Nested
-    class HandleChildCreateSessionTest {
-
-        private final AgentExecutionContext.ChildSession child =
-                new AgentExecutionContext.ChildSession("10", "sub-agent", "desc", "300");
-
-        @BeforeEach
-        void setUp() {
-            stubBasicContext();
-            agentContextManager.build(sessionId).build();
-        }
-
-        @Test
-        void 正向_从父会话链首元素解析父会话ID并更新其子会话列表() {
-            when(dataProvider.loadAgentContext("level2")).thenReturn(
-                    new ContextDataProvider.AgentContextData(agentId, "level2", "200", 10, List.of(), Map.of(), "level1", null, null, null));
-            when(dataProvider.loadAgentContext("level1")).thenReturn(
-                    new ContextDataProvider.AgentContextData(agentId, "level1", "200", 10, List.of(), Map.of(), null, null, null, null));
-            when(sessionManager.getMessages(anyString())).thenReturn(List.of());
-            when(toolManager.getSessionTools(anyString(), anyBoolean())).thenReturn(List.of());
-            agentContextManager.build("level2").build();
-
-            ChildCreateSession message = new ChildCreateSession("level2", child);
-            message.setParentSessionIds(List.of("level2", "level1", "main"));
-
-            agentContextManager.handleChildCreateSession(message);
-
-            AgentExecutionContext context = agentContextManager.get("level2").context();
-            assertEquals(1, context.getChildSessions().size());
-            assertEquals("10", context.getChildSessions().get(0).sessionId());
-            assertEquals("sub-agent", context.getChildSessions().get(0).sessionName());
-        }
-
-        @Test
-        void 正向_parentSessionIds为null时回退使用sessionId解析() {
-            ChildCreateSession message = new ChildCreateSession(sessionId, child);
-            message.setParentSessionIds(null);
-
-            agentContextManager.handleChildCreateSession(message);
-
-            AgentExecutionContext context = agentContextManager.get(sessionId).context();
-            assertEquals(1, context.getChildSessions().size());
-            assertEquals("10", context.getChildSessions().get(0).sessionId());
-        }
-
-        @Test
-        void 正向_parentSessionIds为空列表时回退使用sessionId解析() {
-            ChildCreateSession message = new ChildCreateSession(sessionId, child);
-            message.setParentSessionIds(List.of());
-
-            agentContextManager.handleChildCreateSession(message);
-
-            AgentExecutionContext context = agentContextManager.get(sessionId).context();
-            assertEquals(1, context.getChildSessions().size());
-            assertEquals("10", context.getChildSessions().get(0).sessionId());
-        }
-
-        @Test
-        void 反向_父会话链首元素对应上下文不在缓存中时不抛异常() {
-            ChildCreateSession message = new ChildCreateSession("not-cached", child);
-            message.setParentSessionIds(List.of("not-cached", "main"));
-
-            assertDoesNotThrow(() -> agentContextManager.handleChildCreateSession(message));
-        }
-
-        @Test
-        void 正向_多次handle追加到子会话列表() {
-            ChildCreateSession msg1 = new ChildCreateSession(sessionId, child);
-            ChildCreateSession msg2 = new ChildCreateSession(sessionId,
-                    new AgentExecutionContext.ChildSession("11", "sub2", "desc2", "301"));
-
-            agentContextManager.handleChildCreateSession(msg1);
-            agentContextManager.handleChildCreateSession(msg2);
-
-            AgentExecutionContext context = agentContextManager.get(sessionId).context();
-            assertEquals(2, context.getChildSessions().size());
-            assertEquals("10", context.getChildSessions().get(0).sessionId());
-            assertEquals("11", context.getChildSessions().get(1).sessionId());
         }
     }
 }

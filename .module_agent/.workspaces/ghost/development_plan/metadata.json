@@ -62,5 +62,21 @@
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": false
+  },
+  {
+    "plan_id": "plan_edc4da4b-f7ec-443d-8a01-bee380236c9e",
+    "plan_summary": "后端父会话链改造：SessionMessage/SendUserMessage 由单字段 parentSessionId+mainSessionId 改为父会话列表数组，AgentContextManager 构建完整父链",
+    "starter_session_id": "56042935-d179-4d6f-8717-667e01fd66f9",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_5ea8c847-b796-4d3e-b9ee-5f3458ff1d32",
+    "plan_summary": "前端父会话链与路径式导航改造：SendUserMessagePayload 改为父会话列表数组，AgentChat.tsx 层级路径标签导航，WS 消息驱动路径展开",
+    "starter_session_id": "56042935-d179-4d6f-8717-667e01fd66f9",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
   }
 ]

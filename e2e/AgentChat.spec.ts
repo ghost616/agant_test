@@ -42,6 +42,10 @@ async function setupMocks(page: Page, childSessions = MOCK_CHILD_SESSIONS, child
   await page.route('**/api/sessions/session-1/children', async (route) => {
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: childSessions }) });
   });
+  // 子会话无下一级：计数标签按需获取其子列表为空（验证不显示计数）
+  await page.route('**/api/sessions/child-1/children', async (route) => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: [] }) });
+  });
   await page.route('**/api/sessions/child-1/messages', async (route) => {
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: childMessages }) });
   });
@@ -54,76 +58,92 @@ test.beforeEach(async ({ page }) => {
   await seedAdminLogin(page);
 });
 
-test.describe('AgentChat 子会话标签化展示', () => {
-  test('应展示「主会话」标签和每个子会话标签', async ({ page }) => {
+test.describe('AgentChat 路径式导航', () => {
+  test('进入页面显示「主会话」路径标签与右侧子会话计数标签', async ({ page }) => {
     await setupMocks(page);
     await page.goto('/sessions/session-1/chat');
     await page.waitForSelector('.ant-tabs');
 
-    const tabs = page.locator('.ant-tabs-tab');
-    await expect(tabs).toHaveCount(3);
-    await expect(tabs.nth(0)).toHaveText('主会话');
-    await expect(tabs.nth(1)).toHaveText('子会话1');
-    await expect(tabs.nth(2)).toHaveText('子会话2');
+    await expect(page.locator('.ant-tabs-tab')).toHaveCount(1);
+    await expect(page.locator('.ant-tabs-tab').first()).toHaveText('主会话');
+    await expect(page.locator('.agent-chat-count-tab')).toHaveText('2');
   });
 
-  test('子会话无 title 时标签显示子会话 id', async ({ page }) => {
+  test('子会话无 title 时选中后路径标签显示子会话 id', async ({ page }) => {
     await setupMocks(page, MOCK_CHILD_WITHOUT_TITLE);
     await page.goto('/sessions/session-1/chat');
     await page.waitForSelector('.ant-tabs');
 
-    const tabs = page.locator('.ant-tabs-tab');
-    await expect(tabs).toHaveCount(2);
-    await expect(tabs.nth(1)).toHaveText('child-3');
+    await expect(page.locator('.agent-chat-count-tab')).toHaveText('1');
+    await page.locator('.agent-chat-count-tab').click();
+    await page.locator('.ant-dropdown-menu-item', { hasText: 'child-3' }).click();
+    await page.waitForTimeout(300);
+    await expect(page.locator('.ant-tabs-tab').nth(1)).toHaveText('child-3');
   });
 
-  test('无子会话时仅显示「主会话」一个标签', async ({ page }) => {
+  test('无子会话时不显示计数标签，仅「主会话」一个路径标签', async ({ page }) => {
     await setupMocks(page, []);
     await page.goto('/sessions/session-1/chat');
     await page.waitForSelector('.ant-tabs');
 
-    const tabs = page.locator('.ant-tabs-tab');
-    await expect(tabs).toHaveCount(1);
-    await expect(tabs.nth(0)).toHaveText('主会话');
+    await expect(page.locator('.ant-tabs-tab')).toHaveCount(1);
+    await expect(page.locator('.ant-tabs-tab').first()).toHaveText('主会话');
+    await expect(page.locator('.agent-chat-count-tab')).toHaveCount(0);
   });
 
-  test('进入页面自动加载子会话标签，无需手动刷新', async ({ page }) => {
+  test('点击计数标签展开下拉选择子会话，路径变为 [主会话][子会话] 并展示子会话消息', async ({ page }) => {
     await setupMocks(page);
     await page.goto('/sessions/session-1/chat');
     await page.waitForSelector('.ant-tabs');
 
-    await expect(page.locator('.ant-tabs-tab').nth(1)).toHaveText('子会话1');
-    await expect(page.locator('.ant-tabs-tab').nth(2)).toHaveText('子会话2');
-  });
-
-  test('「主会话」Tab 应包含完整的聊天界面组件', async ({ page }) => {
-    await setupMocks(page);
-    await page.goto('/sessions/session-1/chat');
-    await page.waitForSelector('.ant-tabs');
-
-    await expect(page.getByPlaceholder('输入消息，Enter 发送，Shift+Enter 换行')).toBeVisible();
-    await expect(page.locator('.ant-select')).toBeVisible();
-    await expect(page.locator('.ant-switch')).toBeVisible();
-  });
-
-  test('切换到子会话标签应加载并展示该子会话消息', async ({ page }) => {
-    await setupMocks(page);
-    await page.goto('/sessions/session-1/chat');
-    await page.waitForSelector('.ant-tabs');
-
-    await page.locator('.ant-tabs-tab').nth(1).click();
+    await page.locator('.agent-chat-count-tab').click();
+    await expect(page.locator('.ant-dropdown-menu-item')).toHaveCount(2);
+    await page.locator('.ant-dropdown-menu-item', { hasText: '子会话1' }).click();
     await page.waitForTimeout(500);
 
+    await expect(page.locator('.ant-tabs-tab')).toHaveCount(2);
+    await expect(page.locator('.ant-tabs-tab').nth(1)).toHaveText('子会话1');
     await expect(page.locator('text=子会话问题')).toBeVisible();
     await expect(page.locator('text=子会话回答')).toBeVisible();
   });
 
-  test('子会话标签为只读视图：无输入框、模型选择、思考开关及发送/回滚按钮', async ({ page }) => {
+  test('选中子会话后无下一级子会话时不显示计数标签（箭头隐藏）', async ({ page }) => {
     await setupMocks(page);
     await page.goto('/sessions/session-1/chat');
     await page.waitForSelector('.ant-tabs');
 
-    await page.locator('.ant-tabs-tab').nth(1).click();
+    await page.locator('.agent-chat-count-tab').click();
+    await page.locator('.ant-dropdown-menu-item', { hasText: '子会话1' }).click();
+    await page.waitForTimeout(500);
+
+    // 主会话计数标签已被子会话名称标签替代，子会话自身无子级 → 无计数标签
+    await expect(page.locator('.agent-chat-count-tab')).toHaveCount(0);
+  });
+
+  test('点击主会话恢复计数显示并返回主会话视图', async ({ page }) => {
+    await setupMocks(page);
+    await page.goto('/sessions/session-1/chat');
+    await page.waitForSelector('.ant-tabs');
+
+    await page.locator('.agent-chat-count-tab').click();
+    await page.locator('.ant-dropdown-menu-item', { hasText: '子会话1' }).click();
+    await page.waitForTimeout(300);
+
+    await page.locator('.ant-tabs-tab', { hasText: '主会话' }).click();
+    await page.waitForTimeout(300);
+
+    await expect(page.locator('.ant-tabs-tab')).toHaveCount(1);
+    await expect(page.locator('.ant-tabs-tab').first()).toHaveText('主会话');
+    await expect(page.locator('.agent-chat-count-tab')).toHaveText('2');
+  });
+
+  test('子会话视图为只读：无输入框、模型选择、思考开关及发送/回滚按钮', async ({ page }) => {
+    await setupMocks(page);
+    await page.goto('/sessions/session-1/chat');
+    await page.waitForSelector('.ant-tabs');
+
+    await page.locator('.agent-chat-count-tab').click();
+    await page.locator('.ant-dropdown-menu-item', { hasText: '子会话1' }).click();
     await page.waitForTimeout(500);
 
     await expect(page.getByPlaceholder('输入消息，Enter 发送，Shift+Enter 换行')).not.toBeVisible();

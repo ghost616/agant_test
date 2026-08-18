@@ -2,13 +2,10 @@ package com.ghost616.agentbase.sendmessage;
 
 import lombok.Getter;
 
-import java.util.List;
-
 /**
  * 发送用户消息事件类，继承 SessionMessage。
  * 由 AgentContextManager.sendUserMessage() 在持久化子会话用户消息后触发发送，
- * 携带 conversationId 与 parentSessionIds（父会话链：第一个为直接父会话 ID，
- * 最后一个为沿父链向上追溯的主会话 ID，中间为各层父会话），
+ * 携带 conversationId、parentSessionId 与 mainSessionId（沿父会话链向上追溯的主会话 ID），
  * 供外部系统感知用户消息已发送至子会话。
  */
 @Getter
@@ -17,11 +14,12 @@ public class SendUserMessage extends SessionMessage {
     private final String content;
 
     public SendUserMessage(String sessionId, String content, String conversationId,
-                           List<String> parentSessionIds) {
+                           String parentSessionId, String mainSessionId) {
         setSessionId(sessionId);
         this.content = content;
         setConversationId(conversationId);
-        setParentSessionIds(parentSessionIds);
+        setParentSessionId(parentSessionId);
+        setMainSessionId(mainSessionId);
     }
 
     @Override

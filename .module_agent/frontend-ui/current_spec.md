@@ -58,14 +58,15 @@
 ## 会话管理界面
 
 - AgentChat 历史消息加载：loadHistory/ChildSessionView 从 SessionMessage.webSearchCall 数组映射渲染已持久化的多个搜索结果引用
-- AgentChat 子会话标签化展示：Tabs 由「主会话 + 子会话列表」改为「主会话 + 每个子会话一个独立标签」（标签名=子会话 title 无 title 时回退 id，key=子会话 id），进入页面自动加载一次子会话列表（不再依赖手动刷新），切换到子会话标签时 ChildSessionView 自动加载消息并只读展示（无输入框/模型选择/思考模式/发送/回滚/停止），无子会话时仅显示「主会话」一个标签；已移除子会话列表 Table、childSessionColumns、「查看会话」「返回子会话列表」「刷新」按钮及 viewingChildId 二级切换状态
+- AgentChat 路径式导航标签栏（替换原扁平子会话标签）：Tabs 项由 activePath 层级链生成 [主会话][子会话A][孙会话B]...（首位=主会话，末位=当前激活视图，key=会话 id；子会话标签名取自其父会话子列表缓存的 title，无缓存或 title 为空时回退 id）；激活层级右侧经 tabBarExtraContent 显示下一级计数标签（子会话数量+上下箭头，默认下箭头不展开），点击展开 Dropdown 下拉面板展示该层级子会话列表（复用 childListCache 缓存数据不重复请求），选中后标签变为子会话名称、箭头隐藏、内容区切换展示该子会话（沿用 ChildSessionView 只读视图，无输入框/模型选择/思考模式/发送/回滚/停止）；点击主会话截断路径恢复其下一级计数显示；无子会话时不显示计数标签；不设层级深度限制
+- AgentChat 层级数据按需获取：ensureChildList(parentId) 获取计数时即调用 listChildSessions(parentId) 并写入 childListCache 缓存（childListPromisesRef 按父会话 ID 去重避免并发重复请求，force=true 强制刷新），激活层级变化 effect 自动获取激活级子列表，支持任意层级；已移除扁平子会话列表 Table、childSessionColumns、「查看会话」「返回子会话列表」「刷新」按钮、viewingChildId 二级状态及 childSessions 单层状态
 - 对话 conversationId 支持：ChatRequest 类型（src/types/session.ts）新增 conversationId?: string 可选字段（对应后端 ChatRequest DTO）；services/session.ts 新增 fetchConversationId() 调用 GET /conversation-id 返回 conversationId，agentChatStream 参数类型改为 ChatRequest；AgentChat handleSend 每次用户发送前先 await fetchConversationId() 获取新 conversationId 传入 agentChatStream，获取失败时 message.error 并中止发送；工具续接 continueChatStream（[tool_continue]）请求不传 conversationId
 - 会话历史功能：SessionMessage 接口新增 conversationId?: string 可选字段；services/session.ts 新增 getConversationMessages(conversationId) 调用 GET /api/conversations/{conversationId}/messages 返回对话消息列表；新建 ConversationHistory.tsx（路由 /conversations 展示主会话列表复用 listSessions，点击行跳转 /conversations/:sessionId；该页基于路由参数 sessionId 用 getSessionMessages 拉取并按 role==='user' 过滤展示用户消息列表，每条显示内容/时间，有 conversationId 的显示「查看详情」按钮跳转 /conversations/:conversationId/detail）；新建 ConversationDetail.tsx（路由 /conversations/:conversationId/detail，调用 getConversationMessages 展示该 conversationId 下所有消息，列：角色 Tag/内容/时间）；App.tsx 新增「会话历史」菜单项（HistoryOutlined）与 /conversations、/conversations/:sessionId、/conversations/:conversationId/detail 路由
 - 对话详情页增强（ConversationDetail.tsx）：内容列对 assistant 且有 toolCalls 的消息显示「查看工具 (N)」按钮，对 tool 角色消息显示「查看结果」按钮，点击弹出 Modal 以 <pre> 展示 JSON.stringify(toolCalls/toolResult, null, 2)；新增「来源会话」列展示 sessionId（Tooltip 悬浮完整 ID，可见截短为前8后4…）；Table 使用 rowClassName 按 record.sessionId===sessionId 区分主/子会话背景色（conversation-main-row 暖黄 / conversation-child-row 浅蓝，样式定义在 index.css）
 - 对话详情页内容列重构（ConversationDetail.tsx）：内容列改为可点击纵向三行展示（单行省略，LINE_ROW_STYLE nowrap/ellipsis）——💭 reasoning（有则）、📝 content（有则）、操作按钮（assistant 有 toolCalls 显示「🔧 工具调用 (N)」，tool 角色显示「📋 工具结果」）；点击内容区域（onClick setDetailVisible(true)）打开「对话详情」Modal 展示完整对话流（renderMessageFlow）：user 消息显示 content，assistant 消息显示 💭reasoning/📝content/🔧工具调用列表（renderToolCallFlow 展示 each 工具名称+参数 JSON，并按 toolCallId 通过 findToolResult 遍历后续 tool 消息配对展示该工具的 📋结果 JSON），tool 消息显示 toolName 与 result JSON；「来源会话」列与 rowClassName 主/子会话背景色逻辑保留
 - App.tsx MENU_ITEMS：「会话历史」（HistoryOutlined）菜单位置从评估管理之前调整到评估管理之后，路由不变
 - AgentChat 子会话对话统一执行器（runChildSessionFlow，WS 消息分发与主会话工具回调两种触发方式共用）：写入 childStreams[childId] 初始化状态 → agentChatStream 流式回复（推理+内容）→ onDone(hasToolCalls) 为 true 时执行工具循环（executeTools → pollSubToolStatus → continueChatStream）直至无工具调用 → completeSubSession 收尾；入口差异仅参数：WS 触发 streamContent 传 SEND_USER_MESSAGE_MARKER（switchTab=false），工具触发传 data.userMessage + thinking（switchTab=true）；已移除子会话对话 Modal（renderSubSessionModal 及 subSessionModalVisible/subMessages/subCurrentResponse/subCurrentReasoning/subLoading/subToolExecuting/subContainerRef 等弹窗状态），子会话过程消息与错误直接在对应子会话标签内渲染（ChildStreamState 新增 toolExecuting/error 字段，ChildSessionView 展示工具执行中提示与错误信息）
-- AgentChat 子会话标签缺失处理与切换：执行前检查 childSessions 是否含对应子会话，缺失时调用 listChildSessions 刷新列表补出标签（刷新失败忽略继续执行），两种触发均适用；工具触发开始自动切换到对应子会话标签、结束（含失败）自动切回主会话标签，WS 触发不切换标签；子会话流程失败时标签内保留已产生的过程消息并通过 error 字段提示错误
+- AgentChat 子会话标签缺失处理与切换：执行前检查直接父会话子列表（childListCacheRef[parentId||sessionId]）是否含对应子会话，缺失时 ensureChildList(parentId, true) 强制刷新补出标签（刷新失败忽略继续执行），两种触发均适用；工具触发开始自动切换路径标签 setActivePath([sessionId, childId])、结束（含失败）自动切回主会话 setActivePath([sessionId])，WS 触发不自动切回（路径标签由 WS 按父会话链展开）；子会话流程失败时标签内保留已产生的过程消息并通过 error 字段提示错误
 - AgentChat 子会话标签自动滚动：ChildSessionView 滚动容器（overflowY:auto div）添加 childContainerRef；useEffect 监听 mergedMessages 与 stream 的 currentResponse/currentReasoning/toolExecuting/loading 变化，内容变化时 scrollTop = scrollHeight 自动滚动到底部（与主会话 containerRef 自动滚动行为一致）
 ## 技能管理界面
 
@@ -168,6 +169,21 @@
 - e2e 登录态：e2e/utils/seedAuth.ts 提供 seedAdminLogin/seedNormalLogin（page.addInitScript 注入 localStorage currentUser），12 个既有 e2e spec 顶部 test.beforeEach 注入管理员登录态绕过守卫；e2e/Login.spec.ts 覆盖守卫跳转、管理员/普通用户落地页与菜单可见性
 ## WebSocket 实时消息
 
+- 全局 WebSocket 客户端（src/services/websocket.ts，单例 webSocketClient）：
+  - 登录后建立一条到后端 /ws 端点的连接（连接地址由当前站点协议+主机+WS_ENDPOINT 构建，复用后端 SESSION_ID Cookie 完成握手鉴权；开发环境经 vite.config.ts /ws 代理（ws:true）转发，生产环境经 serve.js upgrade 事件代理转发）
+  - 登录/登出生命周期：auth.ts login 成功后 connect()、logout 时 close()；App.tsx 登录态 useEffect 调 connect()/close()（页面刷新后自动重连兜底）
+  - 消息监听：onMessage/offMessage 注册监听器，服务端 JSON 消息解析后分发（单个监听器异常隔离）
+  - 测试模式（vitest MODE=test）与无 WebSocket 环境（jsdom）静默跳过连接
+- 消息分发处理（src/services/messageDispatcher.ts）：
+  - 订阅全局 WS 客户端，按 messageName 分发 SEND_USER_MESSAGE（与后端 SendUserMessage/SessionMessage 序列化结构一致：sessionId/parentSessionIds/conversationId/content/messageName；parentSessionIds 为父会话链有序数组：第一个=直接父会话 ID，最后一个=主会话 ID，中间为各层父会话，主会话自身无父链时为 null 或空列表）
+  - 会话页面注册机制：registerSessionPage/unregisterSessionPage（SessionPageHandler：mainSessionId/streamChildReply，当前仅支持继续会话页面 AgentChat 注册）
+  - 定位规则：消息 sessionId 等于页面主会话 ID，或消息 parentSessionIds 包含页面主会话 ID（消息来自页面主会话的某层子会话）即归属该页面
+  - 分发结果：命中 → streamChildReply 以特殊标记 [send_user_message]（SEND_USER_MESSAGE_MARKER，对应后端 ChatService.SEND_USER_MESSAGE_MARKER）调用对话接口流式展示回复（页面负责按父会话链展开/补出路径标签）；找不到对应会话页面 → 触发子会话列表变更事件（subscribeChildSessionsChanged/unsubscribeChildSessionsChanged，SessionList 订阅后 fetchList 刷新）
+- AgentChat.tsx 接入（路径式导航 + WS 消息驱动路径展开）：
+  - 挂载时 registerSessionPage（unmount 时 unregisterSessionPage）
+  - ChildSessionView 新增 stream 属性（ChildStreamState：messages/currentResponse/currentReasoning/loading/toolExecuting/error）：合并渲染历史消息与实时流式消息（历史末条与流式首条相同用户消息去重），流式中展示思考过程块/流式气泡/加载指示；滚动容器 childContainerRef 内容变化自动滚动到底部
+  - WS 消息驱动路径展开：streamChildReply 收到 SEND_USER_MESSAGE 时按 payload.parentSessionIds（第一个=直接父，最后一个=主会话）调用 expandPathFromPayload 确定目标子会话在路径中的位置并逐级补出路径标签（链：主会话→...→直接父→目标子会话，逐级 ensureChildList 补出名称），随后沿用统一子会话执行器 runChildSessionFlow 流式展示回复（switchTab=false，childStreams 状态 + childStreamsRef/streamChildReplyRef 供回调读取最新值，同一子会话流式中忽略新消息）
+  - 路径展开成功后直接父会话为 payload.parentSessionIds[0]，作为 runChildSessionFlow 的 parentId 用于标签缺失刷新
 ## WebSocket 实时消息
 
 - 全局 WebSocket 客户端（src/services/websocket.ts，单例 webSocketClient）：

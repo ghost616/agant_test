@@ -219,7 +219,7 @@
     },
     {
       "path": "agent-base/src/test/java/com/ghost616/agentbase/service/agent/AgentContextManagerTest.java",
-      "description": "AgentContextManager 单元测试"
+      "description": "AgentContextManager 单元测试：覆盖上下文构建（含 MCP 工具展开、父会话构建、子会话构建异常路径）、SendUserMessageSendTest（sendUserMessage 消息保存与父会话链构建发送 SendUserMessage、messageSender 为 null 不发送、发送异常不影响保存）、HandleChildCreateSessionTest（从父会话链首元素解析父会话 ID 更新子会话列表、null/空列表回退、目标不在缓存不抛异常）、刷新方法、变量委托、消息处理与边界场景。"
     },
     {
       "path": "agent-base/src/test/java/com/ghost616/agentbase/service/agent/invoker/SystemToolManagerTest.java",
@@ -635,7 +635,11 @@
     },
     {
       "path": "agent-base/src/test/java/com/ghost616/agentbase/sendmessage/SendUserMessageTest.java",
-      "description": "SendUserMessage 消息类单元测试：验证 MessageName.SEND_USER_MESSAGE 常量值、构造器写入 sessionId/content/conversationId/parentSessionId/mainSessionId、getMessageName 返回常量、null 字段存取及继承自 SessionMessage 的 getter/setter 使用。"
+      "description": "SendUserMessage 消息类单元测试：验证 MessageName.SEND_USER_MESSAGE 常量值、4 参构造器写入 sessionId/content/conversationId/parentSessionIds 父会话链、getMessageName 返回常量、null 字段存取及继承自 SessionMessage 的 getter/setter 使用。"
+    },
+    {
+      "path": "agent-base/src/test/java/com/ghost616/agentbase/sendmessage/ChildCreateSessionTest.java",
+      "description": "ChildCreateSession 消息类单元测试：验证构造器写入 sessionId 与 parentSessionIds（单元素父链 [parentSessionId]）、childSession 存取、getMessageName 返回 CHILD_SESSION、继承自 SessionMessage 的字段可写。"
     }
   ]
 }

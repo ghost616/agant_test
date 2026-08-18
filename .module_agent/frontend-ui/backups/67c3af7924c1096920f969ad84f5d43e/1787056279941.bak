@@ -31,28 +31,17 @@ import {
 
 interface Handler {
   mainSessionId: string;
+  isChildActive: Mock<(childSessionId: string) => boolean>;
   streamChildReply: Mock<(message: SendUserMessagePayload) => void>;
+  refreshChildSessions: Mock<() => void>;
 }
 
-function makeHandler(mainSessionId: string): Handler {
+function makeHandler(mainSessionId: string, active = true): Handler {
   return {
     mainSessionId,
+    isChildActive: vi.fn((_childId: string) => active),
     streamChildReply: vi.fn((_message: SendUserMessagePayload) => {}),
-  };
-}
-
-/** 构造消息负载：sessionId 为消息所在会话，parentSessionIds 为父会话链（第一个=直接父，最后一个=主会话）。 */
-function makeMessage(
-  sessionId: string,
-  parentSessionIds: string[] = [],
-  extra: Partial<SendUserMessagePayload> = {},
-): SendUserMessagePayload {
-  return {
-    messageName: 'SEND_USER_MESSAGE',
-    sessionId,
-    parentSessionIds,
-    content: '',
-    ...extra,
+    refreshChildSessions: vi.fn(() => {}),
   };
 }
 
@@ -67,16 +56,6 @@ describe('messageDispatcher 常量', () => {
   });
 });
 
-describe('SendUserMessagePayload 结构', () => {
-  it('负载包含父会话链数组 parentSessionIds（与后端 SessionMessage 序列化一致）', () => {
-    const payload = makeMessage('grandchild', ['child', 'main'], { conversationId: 'conv-1' });
-    expect(payload.parentSessionIds).toEqual(['child', 'main']);
-    expect(payload.sessionId).toBe('grandchild');
-    expect(payload.conversationId).toBe('conv-1');
-    expect(payload.messageName).toBe('SEND_USER_MESSAGE');
-  });
-});
-
 describe('模块级订阅', () => {
   it('模块加载时订阅 webSocketClient.onMessage', () => {
     expect(mockClient.onMessage).toHaveBeenCalledTimes(1);
@@ -86,13 +65,14 @@ describe('模块级订阅', () => {
     const handler = makeHandler('m1');
     registerSessionPage(handler);
     // 非 SEND_USER_MESSAGE 消息：不触发任何页面处理
-    mockClient._dispatch({ messageName: 'OTHER', sessionId: 'c1', parentSessionIds: ['m1'] });
+    mockClient._dispatch({ messageName: 'OTHER', sessionId: 'c1', mainSessionId: 'm1' });
     expect(handler.streamChildReply).not.toHaveBeenCalled();
-    // SEND_USER_MESSAGE 消息：命中 → streamChildReply
+    expect(handler.refreshChildSessions).not.toHaveBeenCalled();
+    // SEND_USER_MESSAGE 消息：命中并激活 → streamChildReply
     mockClient._dispatch({
       messageName: 'SEND_USER_MESSAGE',
       sessionId: 'c1',
-      parentSessionIds: ['m1'],
+      mainSessionId: 'm1',
       content: '',
     });
     expect(handler.streamChildReply).toHaveBeenCalledTimes(1);
@@ -102,13 +82,19 @@ describe('模块级订阅', () => {
 
 describe('handleSendUserMessage 分发', () => {
   it('未命中页面且无监听器时不抛错', () => {
-    expect(() => handleSendUserMessage(makeMessage('x'))).not.toThrow();
+    expect(() =>
+      handleSendUserMessage({ messageName: 'SEND_USER_MESSAGE', sessionId: 'x', content: '' }),
+    ).not.toThrow();
   });
 
   it('未命中页面时触发 childSessionsChanged 监听器', () => {
     const listener = vi.fn((_payload: SendUserMessagePayload) => {});
     subscribeChildSessionsChanged(listener);
-    const msg = makeMessage('c1');
+    const msg: SendUserMessagePayload = {
+      messageName: 'SEND_USER_MESSAGE',
+      sessionId: 'c1',
+      content: '',
+    };
     handleSendUserMessage(msg);
     expect(listener).toHaveBeenCalledWith(msg);
     unsubscribeChildSessionsChanged(listener);
@@ -118,77 +104,110 @@ describe('handleSendUserMessage 分发', () => {
     const listener = vi.fn((_payload: SendUserMessagePayload) => {});
     subscribeChildSessionsChanged(listener);
     unsubscribeChildSessionsChanged(listener);
-    handleSendUserMessage(makeMessage('c1'));
+    handleSendUserMessage({ messageName: 'SEND_USER_MESSAGE', sessionId: 'c1', content: '' });
     expect(listener).not.toHaveBeenCalled();
   });
 
-  it('父会话链包含主会话（最后一个为主会话）→ 调用 streamChildReply', () => {
-    const handler = makeHandler('m1');
+  it('mainSessionId 匹配且子会话激活 → 调用 streamChildReply', () => {
+    const handler = makeHandler('m1', true);
     registerSessionPage(handler);
-    const msg = makeMessage('grandchild', ['child', 'm1']);
+    const msg: SendUserMessagePayload = {
+      messageName: 'SEND_USER_MESSAGE',
+      sessionId: 'c1',
+      mainSessionId: 'm1',
+      content: '',
+    };
+    handleSendUserMessage(msg);
+    expect(handler.isChildActive).toHaveBeenCalledWith('c1');
+    expect(handler.streamChildReply).toHaveBeenCalledWith(msg);
+    expect(handler.refreshChildSessions).not.toHaveBeenCalled();
+    unregisterSessionPage('m1');
+  });
+
+  it('parentSessionId 匹配 → 命中页面', () => {
+    const handler = makeHandler('m1', true);
+    registerSessionPage(handler);
+    const msg: SendUserMessagePayload = {
+      messageName: 'SEND_USER_MESSAGE',
+      sessionId: 'c1',
+      parentSessionId: 'm1',
+      content: '',
+    };
     handleSendUserMessage(msg);
     expect(handler.streamChildReply).toHaveBeenCalledWith(msg);
     unregisterSessionPage('m1');
   });
 
-  it('父会话链仅含直接父（子会话为直接子级）→ 命中页面', () => {
-    const handler = makeHandler('m1');
+  it('sessionId 匹配 → 命中页面（子会话自身即主会话）', () => {
+    const handler = makeHandler('m1', true);
     registerSessionPage(handler);
-    const msg = makeMessage('c1', ['m1']);
+    const msg: SendUserMessagePayload = {
+      messageName: 'SEND_USER_MESSAGE',
+      sessionId: 'm1',
+      content: '',
+    };
     handleSendUserMessage(msg);
     expect(handler.streamChildReply).toHaveBeenCalledWith(msg);
     unregisterSessionPage('m1');
   });
 
-  it('父会话链不包含主会话 → 不命中，转由 childSessionsChanged 处理', () => {
-    const handler = makeHandler('m1');
+  it('命中但子会话非激活 → 调用 refreshChildSessions', () => {
+    const handler = makeHandler('m1', false);
     registerSessionPage(handler);
-    const listener = vi.fn((_payload: SendUserMessagePayload) => {});
-    subscribeChildSessionsChanged(listener);
-    // 消息来自其他主会话树（父链为 other-main → other-child）
-    handleSendUserMessage(makeMessage('other-grandchild', ['other-child', 'other-main']));
+    handleSendUserMessage({
+      messageName: 'SEND_USER_MESSAGE',
+      sessionId: 'c1',
+      mainSessionId: 'm1',
+      content: '',
+    });
     expect(handler.streamChildReply).not.toHaveBeenCalled();
-    expect(listener).toHaveBeenCalledTimes(1);
-    unsubscribeChildSessionsChanged(listener);
+    expect(handler.refreshChildSessions).toHaveBeenCalled();
     unregisterSessionPage('m1');
   });
 
-  it('sessionId 匹配 → 命中页面（消息所在会话即页面主会话自身，父链为空）', () => {
-    const handler = makeHandler('m1');
+  it('message.sessionId 为空时不调用 isChildActive，而是刷新子会话列表', () => {
+    const handler = makeHandler('m1', true);
     registerSessionPage(handler);
-    const msg = makeMessage('m1');
-    handleSendUserMessage(msg);
-    expect(handler.streamChildReply).toHaveBeenCalledWith(msg);
-    unregisterSessionPage('m1');
-  });
-
-  it('message.sessionId 为空时仍调用 streamChildReply（页面侧守卫空会话 ID）', () => {
-    const handler = makeHandler('m1');
-    registerSessionPage(handler);
-    const msg = makeMessage('', ['m1']);
-    handleSendUserMessage(msg);
-    expect(handler.streamChildReply).toHaveBeenCalledWith(msg);
+    handleSendUserMessage({
+      messageName: 'SEND_USER_MESSAGE',
+      sessionId: '',
+      mainSessionId: 'm1',
+      content: '',
+    });
+    expect(handler.isChildActive).not.toHaveBeenCalled();
+    expect(handler.streamChildReply).not.toHaveBeenCalled();
+    expect(handler.refreshChildSessions).toHaveBeenCalled();
     unregisterSessionPage('m1');
   });
 
   it('unregisterSessionPage 后不再命中，转由 childSessionsChanged 处理', () => {
-    const handler = makeHandler('m1');
+    const handler = makeHandler('m1', true);
     registerSessionPage(handler);
     unregisterSessionPage('m1');
     const listener = vi.fn((_payload: SendUserMessagePayload) => {});
     subscribeChildSessionsChanged(listener);
-    handleSendUserMessage(makeMessage('c1', ['m1']));
+    handleSendUserMessage({
+      messageName: 'SEND_USER_MESSAGE',
+      sessionId: 'c1',
+      mainSessionId: 'm1',
+      content: '',
+    });
     expect(handler.streamChildReply).not.toHaveBeenCalled();
     expect(listener).toHaveBeenCalled();
     unsubscribeChildSessionsChanged(listener);
   });
 
   it('重复注册同一 mainSessionId 时后注册的处理器生效（覆盖）', () => {
-    const h1 = makeHandler('m1');
-    const h2 = makeHandler('m1');
+    const h1 = makeHandler('m1', true);
+    const h2 = makeHandler('m1', true);
     registerSessionPage(h1);
     registerSessionPage(h2);
-    handleSendUserMessage(makeMessage('c1', ['m1']));
+    handleSendUserMessage({
+      messageName: 'SEND_USER_MESSAGE',
+      sessionId: 'c1',
+      mainSessionId: 'm1',
+      content: '',
+    });
     expect(h1.streamChildReply).not.toHaveBeenCalled();
     expect(h2.streamChildReply).toHaveBeenCalled();
     unregisterSessionPage('m1');
@@ -201,7 +220,7 @@ describe('handleSendUserMessage 分发', () => {
     const good = vi.fn((_payload: SendUserMessagePayload) => {});
     subscribeChildSessionsChanged(bad);
     subscribeChildSessionsChanged(good);
-    handleSendUserMessage(makeMessage('c1'));
+    handleSendUserMessage({ messageName: 'SEND_USER_MESSAGE', sessionId: 'c1', content: '' });
     expect(good).toHaveBeenCalled();
     unsubscribeChildSessionsChanged(bad);
     unsubscribeChildSessionsChanged(good);

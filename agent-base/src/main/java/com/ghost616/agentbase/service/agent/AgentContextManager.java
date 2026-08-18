@@ -287,16 +287,16 @@ public class AgentContextManager {
                 .thinking(thinking)
                 .build());
 
-        sendSendUserMessage(childSessionId, content, conversationId, parentSessionId);
+        sendSendUserMessage(childSessionId, content, conversationId);
     }
 
-    private void sendSendUserMessage(String childSessionId, String content, String conversationId, String parentSessionId) {
+    private void sendSendUserMessage(String childSessionId, String content, String conversationId) {
         MessageSender messageSender = registry.getMessageSender();
         if (messageSender == null) {
             return;
         }
-        String mainSessionId = resolveMainSessionId(childSessionId);
-        SendUserMessage message = new SendUserMessage(childSessionId, content, conversationId, parentSessionId, mainSessionId);
+        List<String> parentSessionIds = resolveParentSessionIds(childSessionId);
+        SendUserMessage message = new SendUserMessage(childSessionId, content, conversationId, parentSessionIds);
         try {
             messageSender.send(message);
         } catch (Exception e) {
@@ -304,16 +304,23 @@ public class AgentContextManager {
         }
     }
 
-    private String resolveMainSessionId(String sessionId) {
+    /**
+     * 构建父会话链：沿 parentSessionId 逐级向上解析，
+     * 收集直接父会话 → ... → 主会话（无父会话的根）的完整有序列表，
+     * 第一个元素为直接父会话 ID，最后一个元素为主会话 ID。
+     */
+    private List<String> resolveParentSessionIds(String sessionId) {
+        List<String> parentIds = new ArrayList<>();
         String current = sessionId;
         while (current != null) {
             ContextDataProvider.AgentContextData data = dataProvider.loadAgentContext(current);
             if (data == null || data.parentSessionId() == null) {
-                return current;
+                break;
             }
             current = data.parentSessionId();
+            parentIds.add(current);
         }
-        return null;
+        return parentIds;
     }
 
     public AgentSessionContext get(String sessionId) {
@@ -470,7 +477,8 @@ public class AgentContextManager {
 
     public void handleChildCreateSession(ChildCreateSession message) {
         ensureInitialized();
-        String parentSessionId = message.getParentSessionId();
+        List<String> parentIds = message.getParentSessionIds();
+        String parentSessionId = (parentIds != null && !parentIds.isEmpty()) ? parentIds.get(0) : message.getSessionId();
         AgentSessionContext ctx = cache.get(parentSessionId);
         if (ctx != null) {
             List<AgentExecutionContext.ChildSession> current = ctx.context().getChildSessions();
