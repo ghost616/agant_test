@@ -1,0 +1,32 @@
+﻿LOGIN OK
+PASS | log-sessions ���� 200 �� success | code=200
+PASS | log-sessions ����Ϊ�б� | type=list
+PASS | log-sessions �������Ự��isChild null/false��
+PASS | log-sessions �������Ự(isEvaluation=true) | total=63
+PASS | log-sessions ������ʱ�䵹�� | first=2026-08-11T11:22:23.5597031
+PASS | log-sessions DTO �� isChild/parentSessionId/isEvaluation | ['id', 'agentId', 'modelId', 'title', 'systemPrompt', 'parentSessionId', 'isChild', 'description', 'isEvaluation', 'thinking', 'createTime', 'updateTime', 'totalTokenUsed']
+PASS | log-sessions id ���л�Ϊ�ַ��� | id='2087016753372413954'
+PASS | sessions ���� 200 �� success
+PASS | sessions ���������Ự(isEvaluation=true) | total=14
+PASS | sessions �������Ự
+PASS | log-sessions ���� >= sessions ���� | log=63 plain=14
+PASS | log-sessions ���е������Ự���� sessions �� | eval_count=49
+PASS | agent-logs?rootSessionId ���� 200 �� success
+PASS | rootSessionId �����н�� | total=76
+PASS | rootSessionId ������־���������Ự����ȫ���ӻỰ | sids={'2077246397967323137', '2086453378972237826', '2086369644872814594'}
+PASS | rootSessionId ��������Ự��־
+PASS | rootSessionId ������ӻỰ��־
+PASS | �� rootSessionId ��ѯ������ total>= ����ֵ | all=2563 filtered=76
+PASS | rootSessionId ���ӻỰʱ���ظ����Ự��־ | total=21
+PASS | rootSessionId ���ӻỰʱ�������Ự��־ | sids={'2085634076849287170'}
+PASS | rootSessionId Ϊ��ɾ���Ự �� ���б� | {'list': [], 'total': 0, 'page': 1, 'size': 20}
+PASS | rootSessionId ������ �� ���б� | {'list': [], 'total': 0, 'page': 1, 'size': 20}
+SKIP | �����û��Ự�����ڣ�����������
+PASS | �ӻỰ��־ isChild=true | isChild=[True, True, True, True, True]
+PASS | ���Ự��־ isChild=false | isChild=[False, False, False, False, False]
+PASS | agent-logs ��Ӧ�� isChild �ֶ�
+PASS | δ��¼ log-sessions �� USER_NOT_LOGIN | USER-NOT-LOGIN
+PASS | δ��¼ agent-logs �� USER_NOT_LOGIN | USER-NOT-LOGIN
+
+============================================================
+TOTAL: 27, PASS: 27, FAIL: 0

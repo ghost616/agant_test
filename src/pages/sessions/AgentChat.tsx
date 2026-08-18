@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Button, Input, message, Modal, Select, Spin, Switch, Tabs, Typography } from 'antd';
+import { Button, Input, message, Select, Spin, Switch, Tabs, Typography } from 'antd';
 import type { TabsProps } from 'antd';
 import {
   UserOutlined,
@@ -49,12 +49,30 @@ interface ChatMessage {
   webSearchCall?: WebSearchCall[];
 }
 
-/** 子会话流式回复展示状态（WS 消息分发触发，展示到子会话标签视图）。 */
+/** 子会话流式回复展示状态（写入子会话标签视图，由统一子会话执行器维护）。 */
 interface ChildStreamState {
   messages: ChatMessage[];
   currentResponse: string;
   currentReasoning: string;
   loading: boolean;
+  /** 子会话工具调用执行中（标签内展示执行中提示）。 */
+  toolExecuting?: boolean;
+  /** 子会话流程错误信息（标签内保留已产生消息并提示错误）。 */
+  error?: string;
+}
+
+/** 子会话对话完整执行器参数（两种触发方式的入口差异仅在此参数）。 */
+interface ChildSessionFlowParams {
+  /** 子会话 ID。 */
+  childId: string;
+  /** 展示用用户消息内容。 */
+  userContent: string;
+  /** 传给对话接口的请求内容（WS 触发传 SEND_USER_MESSAGE_MARKER，工具触发传 data.userMessage）。 */
+  streamContent: string;
+  /** 思考模式（仅工具触发传 data.thinking）。 */
+  thinking?: boolean;
+  /** 是否自动切换标签（工具触发 true：开始切到子会话标签、结束切回主会话；WS 触发 false）。 */
+  switchTab?: boolean;
 }
 
 const ROLE_CONFIG: Record<MessageRole, { label: string; icon: JSX.Element; color: string }> = {
@@ -266,7 +284,10 @@ function ChildSessionView({
 
   const showStreaming =
     stream !== undefined &&
-    (stream.loading || stream.currentResponse !== '' || stream.currentReasoning !== '');
+    (stream.loading ||
+      stream.toolExecuting ||
+      stream.currentResponse !== '' ||
+      stream.currentReasoning !== '');
   const showHistorySpinner = loading && !showStreaming;
 
   return (
@@ -315,10 +336,29 @@ function ChildSessionView({
               !stream!.currentReasoning && (
                 <div style={{ marginTop: 8 }}>
                   <Spin size="small" />
+                  {stream!.toolExecuting && (
+                    <Typography.Text style={{ color: '#aaa', fontSize: 12, marginLeft: 8 }}>
+                      正在执行工具调用...
+                    </Typography.Text>
+                  )}
                 </div>
               )
             )}
           </div>
+        </div>
+      )}
+      {stream?.error && (
+        <div
+          style={{
+            background: '#3a1d1d',
+            borderRadius: 4,
+            padding: '8px 12px',
+            marginTop: 8,
+          }}
+        >
+          <Typography.Text style={{ color: '#ff6b6b', fontSize: 13 }}>
+            {stream.error}
+          </Typography.Text>
         </div>
       )}
     </div>
@@ -352,19 +392,13 @@ function AgentChat(): JSX.Element {
   const calledRef = useRef(false);
   const responseIdRef = useRef<string | null>(null);
   const executeToolLoopRef = useRef<() => Promise<void>>();
+  const runChildSessionFlowRef = useRef<(params: ChildSessionFlowParams) => Promise<void>>();
   const handleSubSessionFlowRef = useRef<(toolId: string) => Promise<void>>();
   const toolCallCounts = useRef<Map<string, number>>(new Map());
 
-  const [subSessionModalVisible, setSubSessionModalVisible] = useState(false);
-  const [subSessionId, setSubSessionId] = useState<string | null>(null);
-  const [subMessages, setSubMessages] = useState<ChatMessage[]>([]);
-  const [subCurrentResponse, setSubCurrentResponse] = useState('');
-  const [subCurrentReasoning, setSubCurrentReasoning] = useState('');
-  const [subLoading, setSubLoading] = useState(false);
-  const [subToolExecuting, setSubToolExecuting] = useState(false);
+  // 子会话流程中止控制（WS 触发与工具触发共用）
   const subAbortRef = useRef<AbortController | null>(null);
   const subToolAbortRef = useRef(false);
-  const subContainerRef = useRef<HTMLDivElement>(null);
 
   const [activeTab, setActiveTab] = useState<string>('main');
   const [childSessions, setChildSessions] = useState<Session[]>([]);
@@ -379,12 +413,6 @@ function AgentChat(): JSX.Element {
       containerRef.current.scrollTop = containerRef.current.scrollHeight;
     }
   }, [messages, currentResponse, currentReasoning]);
-
-  useEffect(() => {
-    if (subContainerRef.current) {
-      subContainerRef.current.scrollTop = subContainerRef.current.scrollHeight;
-    }
-  }, [subMessages, subCurrentResponse, subCurrentReasoning]);
 
   const loadHistory = useCallback(async (): Promise<void> => {
     try {
@@ -457,73 +485,333 @@ function AgentChat(): JSX.Element {
   );
 
   /**
-   * 子会话消息分发：收到 SEND_USER_MESSAGE 且对应子会话处于激活视图时，
-   * 以特殊标记 [send_user_message] 调用对话接口，流式展示该子会话的 AI 回复。
-   * @param payload SEND_USER_MESSAGE 消息负载
+   * 子会话工具状态轮询：轮询指定子会话的工具执行状态，完成后更新子会话标签内工具消息。
+   * @param sid 子会话 ID
+   * @param tid 工具 ID
+   * @returns 工具是否执行成功
    */
-  const streamChildReply = useCallback(
-    (payload: SendUserMessagePayload): void => {
-      const childId = payload.sessionId;
+  const pollSubToolStatus = useCallback(
+    async (sid: string, tid: string): Promise<boolean> =>
+      new Promise<boolean>((resolve) => {
+        let done = false;
+        const poll = async (): Promise<void> => {
+          while (!done && !subToolAbortRef.current) {
+            await new Promise((r) => setTimeout(r, 1000));
+            if (subToolAbortRef.current) {
+              resolve(false);
+              return;
+            }
+            try {
+              const status = await getToolStatus(sid, tid);
+              if (status.status === 'done') {
+                done = true;
+                updateChildStream(sid, (s) => {
+                  const updated = [...s.messages];
+                  const lastIdx = updated.length - 1;
+                  if (lastIdx >= 0 && updated[lastIdx].role === 'tool') {
+                    updated[lastIdx] = {
+                      role: 'tool',
+                      content: `**工具: ${status.toolName}**\n\n**参数:**\n\`\`\`json\n${status.arguments}\n\`\`\`\n\n**执行结果:**\n${status.result || '无返回结果'}`,
+                    };
+                  }
+                  return { ...s, messages: updated };
+                });
+                resolve(true);
+                return;
+              }
+              if (status.status === 'idle') continue;
+              if (status.toolConfig?.subToolType === 'BROWSER') {
+                await executeBrowserTool(sid, tid, status);
+                await new Promise((r) => setTimeout(r, 500));
+                continue;
+              }
+              if (status.status === 'failed' || status.status === 'error') {
+                done = true;
+                updateChildStream(sid, (s) => {
+                  const updated = [...s.messages];
+                  const lastIdx = updated.length - 1;
+                  if (lastIdx >= 0 && updated[lastIdx].role === 'tool') {
+                    updated[lastIdx] = {
+                      role: 'tool',
+                      content: `**工具: ${status.toolName}**\n\n**参数:**\n\`\`\`json\n${status.arguments}\n\`\`\`\n\n**执行失败:** ${status.result || '未知错误'}`,
+                    };
+                  }
+                  return { ...s, messages: updated };
+                });
+                resolve(false);
+                return;
+              }
+            } catch {
+              done = true;
+              resolve(false);
+              return;
+            }
+          }
+          resolve(false);
+        };
+        poll();
+      }),
+    [updateChildStream],
+  );
+
+  /**
+   * 子会话对话完整执行器（WS 消息分发与主会话工具回调两种触发方式共用）：
+   * 写入 childStreams[childId] 初始化状态 → agentChatStream 流式回复（推理+内容）→
+   * onDone(hasToolCalls) 为 true 时执行工具循环（executeTools → pollSubToolStatus →
+   * continueChatStream）直至无工具调用 → completeSubSession 收尾。
+   * 入口差异仅参数：WS 触发 streamContent 传 SEND_USER_MESSAGE_MARKER，工具触发传 data.userMessage + thinking。
+   * @param params 子会话执行参数
+   */
+  const runChildSessionFlow = useCallback(
+    async (params: ChildSessionFlowParams): Promise<void> => {
+      const { childId, userContent, streamContent, thinking, switchTab } = params;
       if (!childId) return;
-      // 同一子会话已有流式请求进行中时忽略新消息（一次流式覆盖全部已持久化消息）
-      if (childStreamsRef.current[childId]?.loading) return;
-      const userMsg: ChatMessage = { role: 'user', content: payload.content || '' };
+      // 同一子会话已有流式请求进行中时忽略新消息（WS 路径；工具路径为一次性调用不受此限制）
+      if (!switchTab && childStreamsRef.current[childId]?.loading) return;
+
+      // 标签缺失处理：childSessions 中无对应子会话时刷新列表补出标签（刷新失败忽略，继续执行）
+      if (!childSessions.some((c) => c.id === childId)) {
+        try {
+          const list = await listChildSessions(sessionId);
+          setChildSessions(list);
+        } catch {
+          // 刷新失败忽略，继续执行
+        }
+      }
+
+      // 工具触发自动切换到对应子会话标签
+      if (switchTab) setActiveTab(childId);
+      subToolAbortRef.current = false;
+
+      // 写入 childStreams[childId] 初始化状态
       setChildStreams((prev) => {
         const existing = prev[childId];
         const baseMessages = existing ? existing.messages : [];
         return {
           ...prev,
           [childId]: {
-            messages: [...baseMessages, userMsg],
+            messages: [...baseMessages, { role: 'user', content: userContent }],
             currentResponse: '',
             currentReasoning: '',
             loading: true,
+            toolExecuting: false,
+            error: undefined,
           },
         };
       });
-      agentChatStream(
-        { sessionId: childId, content: SEND_USER_MESSAGE_MARKER },
-        {
-          onDelta: (text) =>
-            updateChildStream(childId, (s) => ({
-              ...s,
-              currentResponse: s.currentResponse + text,
-            })),
-          onReasoning: (text) =>
-            updateChildStream(childId, (s) => ({
-              ...s,
-              currentReasoning: s.currentReasoning + text,
-            })),
-          onDone: () =>
-            updateChildStream(childId, (s) => {
-              const hasContent = Boolean(s.currentResponse.trim() || s.currentReasoning.trim());
-              return {
-                messages: hasContent
-                  ? [
-                      ...s.messages,
-                      {
-                        role: 'assistant',
-                        content: s.currentResponse,
-                        reasoning: s.currentReasoning || undefined,
-                      },
-                    ]
-                  : s.messages,
-                currentResponse: '',
-                currentReasoning: '',
+
+      /** 将当前流式回复提交为 assistant 消息并入标签消息列表。 */
+      const commitAssistant = (): void => {
+        updateChildStream(childId, (s) => {
+          const hasContent = Boolean(s.currentResponse.trim() || s.currentReasoning.trim());
+          return {
+            messages: hasContent
+              ? [
+                  ...s.messages,
+                  {
+                    role: 'assistant',
+                    content: s.currentResponse,
+                    reasoning: s.currentReasoning || undefined,
+                  },
+                ]
+              : s.messages,
+            currentResponse: '',
+            currentReasoning: '',
+            loading: false,
+          };
+        });
+      };
+
+      /** 发起一轮流式回复（agentChatStream），返回是否需继续工具调用。 */
+      const streamReply = (content: string): Promise<boolean> =>
+        new Promise((resolve) => {
+          updateChildStream(childId, (s) => ({ ...s, loading: true, toolExecuting: false }));
+          subAbortRef.current = agentChatStream(
+            { sessionId: childId, content, thinking },
+            {
+              onDelta: (text) =>
+                updateChildStream(childId, (s) => ({
+                  ...s,
+                  currentResponse: s.currentResponse + text,
+                })),
+              onReasoning: (text) =>
+                updateChildStream(childId, (s) => ({
+                  ...s,
+                  currentReasoning: s.currentReasoning + text,
+                })),
+              onDone: (hasToolCalls) => {
+                commitAssistant();
+                resolve(hasToolCalls);
+              },
+              onError: (err) => {
+                updateChildStream(childId, (s) => ({
+                  ...s,
+                  loading: false,
+                  error: err.message || '子会话请求失败',
+                }));
+                resolve(false);
+              },
+            },
+          );
+        });
+
+      /** 工具执行后的流式续接（continueChatStream），返回是否需继续工具调用。 */
+      const continueChildChat = (): Promise<boolean> =>
+        new Promise((resolve) => {
+          updateChildStream(childId, (s) => ({
+            ...s,
+            loading: true,
+            currentResponse: '',
+            currentReasoning: '',
+          }));
+          subAbortRef.current = continueChatStream(childId, {
+            onDelta: (text) =>
+              updateChildStream(childId, (s) => ({
+                ...s,
+                currentResponse: s.currentResponse + text,
+              })),
+            onReasoning: (text) =>
+              updateChildStream(childId, (s) => ({
+                ...s,
+                currentReasoning: s.currentReasoning + text,
+              })),
+            onDone: (hasToolCalls) => {
+              commitAssistant();
+              resolve(hasToolCalls);
+            },
+            onError: (err) => {
+              updateChildStream(childId, (s) => ({
+                ...s,
                 loading: false,
-              };
-            }),
-          onError: (err) => {
-            message.error(err.message || '子会话回复请求失败');
-            updateChildStream(childId, (s) => ({ ...s, loading: false }));
-          },
-        },
-      );
+                error: err.message || '子会话请求失败',
+              }));
+              resolve(false);
+            },
+          });
+        });
+
+      /** 子会话工具执行循环：executeTools → pollSubToolStatus，直至无更多工具调用。 */
+      const runChildTools = async (): Promise<boolean> => {
+        updateChildStream(childId, (s) => ({ ...s, toolExecuting: true }));
+        subToolAbortRef.current = false;
+        try {
+          let hasMore = true;
+          while (hasMore && !subToolAbortRef.current) {
+            const execResult = await executeTools(childId);
+            if (subToolAbortRef.current) break;
+            if (execResult.status === 'empty') {
+              hasMore = false;
+              continue;
+            }
+            hasMore = execResult.hasMore;
+            if (!execResult.toolId) {
+              hasMore = false;
+              continue;
+            }
+            const key = `${execResult.toolName}:${execResult.arguments}`;
+            const count = (toolCallCounts.current.get(key) || 0) + 1;
+            toolCallCounts.current.set(key, count);
+            if (count >= 5) {
+              updateChildStream(childId, (s) => ({
+                ...s,
+                error: `子会话工具 ${execResult.toolName} 同一参数调用已达 ${count} 次，已终止`,
+              }));
+              hasMore = false;
+              continue;
+            }
+            updateChildStream(childId, (s) => ({
+              ...s,
+              messages: [
+                ...s.messages,
+                {
+                  role: 'tool',
+                  content: `**正在执行工具: ${execResult.toolName}**\n\n**参数:**\n\`\`\`json\n${execResult.arguments}\n\`\`\``,
+                },
+              ],
+            }));
+            const succeeded = await pollSubToolStatus(childId, execResult.toolId);
+            if (!succeeded) hasMore = false;
+          }
+          return !subToolAbortRef.current;
+        } catch {
+          updateChildStream(childId, (s) => ({ ...s, error: '子会话工具执行失败' }));
+          return false;
+        } finally {
+          updateChildStream(childId, (s) => ({ ...s, toolExecuting: false }));
+        }
+      };
+
+      try {
+        let hasToolCalls = await streamReply(streamContent);
+        while (hasToolCalls && !subToolAbortRef.current) {
+          const ok = await runChildTools();
+          if (!ok) break;
+          hasToolCalls = await continueChildChat();
+        }
+        // 收尾：通知后端子会话完成
+        await completeSubSession(sessionId);
+      } catch {
+        updateChildStream(childId, (s) => ({ ...s, loading: false, error: '子会话流程执行失败' }));
+      } finally {
+        subAbortRef.current = null;
+        // 工具触发执行完成后自动切回主会话标签
+        if (switchTab) setActiveTab('main');
+      }
     },
-    [updateChildStream],
+    [childSessions, pollSubToolStatus, sessionId, updateChildStream],
   );
 
+  runChildSessionFlowRef.current = runChildSessionFlow;
+
+  /**
+   * 子会话消息分发（WS 触发）：收到 SEND_USER_MESSAGE 且对应子会话处于激活视图时，
+   * 以特殊标记 [send_user_message] 调用统一子会话执行器，流式展示该子会话的 AI 回复。
+   * @param payload SEND_USER_MESSAGE 消息负载
+   */
+  const streamChildReply = useCallback((payload: SendUserMessagePayload): void => {
+    const childId = payload.sessionId;
+    if (!childId) return;
+    void runChildSessionFlowRef.current!({
+      childId,
+      userContent: payload.content || '',
+      streamContent: SEND_USER_MESSAGE_MARKER,
+      switchTab: false,
+    });
+  }, []);
+
   streamChildReplyRef.current = streamChildReply;
+
+  /**
+   * 子会话回调工具流程（工具触发）：主会话工具轮询检测到 needsSubSessionFlow 时，
+   * 获取子会话数据后调用统一子会话执行器（自动切换子会话标签，完成后切回主会话）。
+   * @param toolId 主会话工具 ID
+   */
+  const handleSubSessionFlow = useCallback(
+    async (toolId: string): Promise<void> => {
+      try {
+        const data = await getSubSessionData(sessionId);
+        if (!data) {
+          message.error('获取子会话数据失败');
+          return;
+        }
+        await runChildSessionFlowRef.current!({
+          childId: data.childSessionId,
+          userContent: data.userMessage,
+          streamContent: data.userMessage,
+          thinking: data.thinking,
+          switchTab: true,
+        });
+      } catch {
+        message.error('子会话流程执行失败');
+        setToolExecuting(false);
+        setLoading(false);
+        abortRef.current = null;
+      }
+    },
+    [sessionId],
+  );
+
+  handleSubSessionFlowRef.current = handleSubSessionFlow;
 
   // 进入会话页面：注册消息分发页面处理器
   useEffect(() => {
@@ -611,216 +899,6 @@ function AgentChat(): JSX.Element {
     }
     return false;
   }, []);
-
-  const handleSubSessionFlow = useCallback(async (toolId: string): Promise<void> => {
-    try {
-      const data = await getSubSessionData(sessionId);
-      if (!data) {
-        message.error('获取子会话数据失败');
-        return;
-      }
-      const childId = data.childSessionId;
-      setSubSessionId(childId);
-      setSubMessages([{ role: 'user', content: data.userMessage }]);
-      setSubCurrentResponse('');
-      setSubCurrentReasoning('');
-      subToolAbortRef.current = false;
-      setSubSessionModalVisible(true);
-
-      const runSubChat = async (): Promise<void> => {
-        const sendMessage = (content: string): Promise<boolean> =>
-          new Promise((resolve) => {
-            setSubLoading(true);
-            setSubCurrentResponse('');
-            setSubCurrentReasoning('');
-            subAbortRef.current = agentChatStream(
-              { sessionId: childId, content, thinking: data.thinking },
-              {
-                onDelta: (text) => setSubCurrentResponse((prev) => prev + text),
-                onReasoning: (text) => setSubCurrentReasoning((prev) => prev + text),
-                onDone: (hasToolCalls) => {
-                  setSubCurrentResponse((prev) => {
-                    setSubCurrentReasoning((reasoning) => {
-                      if ((prev && prev.trim()) || (reasoning && reasoning.trim())) {
-                        setSubMessages((msgs) => [
-                          ...msgs,
-                          { role: 'assistant', content: prev, reasoning: reasoning || undefined },
-                        ]);
-                      }
-                      return '';
-                    });
-                    return '';
-                  });
-                  setSubLoading(false);
-                  resolve(hasToolCalls);
-                },
-                onError: (err) => {
-                  message.error(err.message || '子会话请求失败');
-                  setSubLoading(false);
-                  resolve(false);
-                },
-              },
-            );
-          });
-
-        const continueChat = (): Promise<boolean> =>
-          new Promise((resolve) => {
-            setSubLoading(true);
-            setSubCurrentResponse('');
-            setSubCurrentReasoning('');
-            subAbortRef.current = continueChatStream(childId, {
-              onDelta: (text) => setSubCurrentResponse((prev) => prev + text),
-              onReasoning: (text) => setSubCurrentReasoning((prev) => prev + text),
-              onDone: (hasToolCalls) => {
-                setSubCurrentResponse((prev) => {
-                  setSubCurrentReasoning((reasoning) => {
-                    if ((prev && prev.trim()) || (reasoning && reasoning.trim())) {
-                      setSubMessages((msgs) => [
-                        ...msgs,
-                        { role: 'assistant', content: prev, reasoning: reasoning || undefined },
-                      ]);
-                    }
-                    return '';
-                  });
-                  return '';
-                });
-                setSubLoading(false);
-                resolve(hasToolCalls);
-              },
-              onError: (err) => {
-                message.error(err.message || '子会话请求失败');
-                setSubLoading(false);
-                resolve(false);
-              },
-            });
-          });
-
-        const pollSubToolStatus = async (sid: string, tid: string): Promise<boolean> =>
-          new Promise<boolean>((resolve) => {
-            let done = false;
-            const poll = async (): Promise<void> => {
-              while (!done && !subToolAbortRef.current) {
-                await new Promise((r) => setTimeout(r, 1000));
-                if (subToolAbortRef.current) { resolve(false); return; }
-                try {
-                  const status = await getToolStatus(sid, tid);
-                  if (status.status === 'done') {
-                    done = true;
-                    setSubMessages((msgs) => {
-                      const updated = [...msgs];
-                      const lastIdx = updated.length - 1;
-                      if (lastIdx >= 0 && updated[lastIdx].role === 'tool') {
-                        updated[lastIdx] = {
-                          role: 'tool',
-                          content: `**工具: ${status.toolName}**\n\n**参数:**\n\`\`\`json\n${status.arguments}\n\`\`\`\n\n**执行结果:**\n${status.result || '无返回结果'}`,
-                        };
-                      }
-                      return updated;
-                    });
-                    resolve(true);
-                    return;
-                  }
-                  if (status.status === 'idle') continue;
-                  if (status.toolConfig?.subToolType === 'BROWSER') {
-                    await executeBrowserTool(sid, tid, status);
-                    await new Promise((r) => setTimeout(r, 500));
-                    continue;
-                  }
-                  if (status.status === 'failed' || status.status === 'error') {
-                    done = true;
-                    setSubMessages((msgs) => {
-                      const updated = [...msgs];
-                      const lastIdx = updated.length - 1;
-                      if (lastIdx >= 0 && updated[lastIdx].role === 'tool') {
-                        updated[lastIdx] = {
-                          role: 'tool',
-                          content: `**工具: ${status.toolName}**\n\n**参数:**\n\`\`\`json\n${status.arguments}\n\`\`\`\n\n**执行失败:** ${status.result || '未知错误'}`,
-                        };
-                      }
-                      return updated;
-                    });
-                    resolve(false);
-                    return;
-                  }
-                } catch {
-                  done = true;
-                  resolve(false);
-                  return;
-                }
-              }
-              resolve(false);
-            };
-            poll();
-          });
-
-        const runTools = async (): Promise<boolean> => {
-          setSubToolExecuting(true);
-          subToolAbortRef.current = false;
-          try {
-            let hasMore = true;
-            while (hasMore && !subToolAbortRef.current) {
-              const execResult = await executeTools(childId);
-              if (subToolAbortRef.current) break;
-              if (execResult.status === 'empty') {
-                hasMore = false;
-                continue;
-              }
-              hasMore = execResult.hasMore;
-              if (!execResult.toolId) {
-                hasMore = false;
-                continue;
-              }
-              const key = `${execResult.toolName}:${execResult.arguments}`;
-              const count = (toolCallCounts.current.get(key) || 0) + 1;
-              toolCallCounts.current.set(key, count);
-              if (count >= 5) {
-                message.warning(`子会话工具 ${execResult.toolName} 同一参数调用已达 ${count} 次，已终止`);
-                hasMore = false;
-                continue;
-              }
-              setSubMessages((prev) => [
-                ...prev,
-                {
-                  role: 'tool',
-                  content: `**正在执行工具: ${execResult.toolName}**\n\n**参数:**\n\`\`\`json\n${execResult.arguments}\n\`\`\``,
-                },
-              ]);
-              const succeeded = await pollSubToolStatus(childId, execResult.toolId);
-              if (!succeeded) hasMore = false;
-            }
-            return !subToolAbortRef.current;
-          } catch {
-            message.error('子会话工具执行失败');
-            return false;
-          } finally {
-            setSubToolExecuting(false);
-          }
-        };
-
-        let hasToolCalls = await sendMessage(data.userMessage);
-        while (hasToolCalls && !subToolAbortRef.current) {
-          const ok = await runTools();
-          if (!ok) break;
-          hasToolCalls = await continueChat();
-        }
-      };
-
-      await runSubChat();
-      await completeSubSession(sessionId);
-      setSubSessionModalVisible(false);
-      const succeeded = await pollToolStatus(sessionId, toolId);
-      if (!succeeded) {
-        setToolExecuting(false);
-        setLoading(false);
-        abortRef.current = null;
-      }
-    } catch {
-      message.error('子会话流程执行失败');
-      setToolExecuting(false);
-      setLoading(false);
-      abortRef.current = null;
-    }
-  }, [sessionId, pollToolStatus]);
 
   const executeToolLoop = useCallback(async () => {
     setToolExecuting(true);
@@ -933,91 +1011,7 @@ function AgentChat(): JSX.Element {
     }
   }, [sessionId, pollToolStatus]);
 
-  handleSubSessionFlowRef.current = handleSubSessionFlow;
-
   executeToolLoopRef.current = executeToolLoop;
-
-  const renderSubSessionModal = (): JSX.Element => (
-    <Modal
-      title="子会话对话"
-      open={subSessionModalVisible}
-      onCancel={() => {
-        subToolAbortRef.current = true;
-        if (subAbortRef.current) {
-          subAbortRef.current.abort();
-          subAbortRef.current = null;
-        }
-        setSubSessionModalVisible(false);
-      }}
-      width={800}
-      footer={null}
-      destroyOnClose
-    >
-      <div
-        ref={subContainerRef}
-        style={{
-          background: '#1e1e1e',
-          borderRadius: 8,
-          padding: 16,
-          overflowY: 'auto',
-          maxHeight: '60vh',
-          minHeight: 200,
-        }}
-      >
-        {subMessages.map((msg, idx) => renderMessage(msg, idx))}
-
-        {subToolExecuting && (
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'flex-start',
-              marginBottom: 16,
-            }}
-          >
-            <div style={{ maxWidth: '75%' }}>
-              {renderRoleHeader('assistant')}
-              <div style={{ marginTop: 8 }}>
-                <Spin size="small" />
-                <Typography.Text style={{ color: '#aaa', fontSize: 12, marginLeft: 8 }}>
-                  正在执行工具调用...
-                </Typography.Text>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {subLoading && !subToolExecuting && (
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'flex-start',
-              marginBottom: 16,
-            }}
-          >
-            <div style={{ maxWidth: '75%' }}>
-              {renderRoleHeader('assistant')}
-              {subCurrentReasoning && renderReasoning(subCurrentReasoning)}
-              {subCurrentResponse ? (
-                <div style={BUBBLE_STYLES.assistant} className="agent-chat-markdown">
-                  <div style={{ color: '#d4d4d4', fontSize: 14, lineHeight: 1.8 }}>
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                      {subCurrentResponse}
-                    </ReactMarkdown>
-                  </div>
-                </div>
-              ) : (
-                !subCurrentReasoning && (
-                  <div style={{ marginTop: 8 }}>
-                    <Spin size="small" />
-                  </div>
-                )
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-    </Modal>
-  );
 
   const handleSend = useCallback(async () => {
     if (!inputValue.trim() || loading) return;
@@ -1335,7 +1329,6 @@ function AgentChat(): JSX.Element {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 180px)' }}>
-      {renderSubSessionModal()}
       {isBenchmark && (
         <div style={{ padding: '12px 0 0 12px' }}>
           <Button

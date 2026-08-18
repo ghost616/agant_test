@@ -1,0 +1,5 @@
+{
+  "session_id": "5e4036eb-36ac-4674-869a-23993761645d",
+  "content": "## 待测试功能说明（第二轮）\n\n变更文件：src/pages/sessions/__tests__/AgentChat.test.tsx\n\n### 本轮修复内容\n上一轮离朱报告 33/35 通过、2 个失败均为测试文件自身断言 bug，已修复：\n\n1. 「统一执行器应使用 pollSubToolStatus 轮询子会话工具状态」：`getToolStatus(sid, tid)` 断言作用域错误——该实现位于独立 useCallback pollSubToolStatus 内而非 runChildSessionFlow 块内；已改为对全源码断言（executorBlock 内保留 pollSubToolStatus(childId, execResult.toolId) 断言，getToolStatus(sid, tid) 改为 source 级断言）。\n2. 「统一执行器入口差异：WS 触发 streamContent 传 SEND_USER_MESSAGE_MARKER 且不切换标签」：正则 `}, \\[\\];\\)` 中 `;` 与 `)` 顺序写反（源码为 `}, []);`），已改为 `}, \\[\\]\\)\\;`。\n\n### 测试要求\n- 重新运行 `npx vitest run src/pages/sessions/__tests__/AgentChat.test.tsx`，全部用例通过（期望 35/35）。\n- 变更源码 AgentChat.tsx 无需改动（上一轮 tsc 零错误已确认），若执行环境允许可顺带复跑 tsc 与回归确认无回归。",
+  "timestamp": "2026-08-18T10:50:18.321Z"
+}

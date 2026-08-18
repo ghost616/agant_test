@@ -32,11 +32,19 @@
     "test_passed": true
   },
   {
-    "plan_id": "plan_7244cfbe-f109-459c-a44f-c8395129b9a7",
-    "plan_summary": "WebSocket 绑定改为双维度（userId + userSessionId）索引，支持按 userId 广播与按 userSessionId 精准推送",
-    "starter_session_id": "session-886aa2f4-b3eb-4813-afde-bcc4d7cbf279",
+    "plan_id": "plan_4b7dfe2b-b1b3-47e2-a56f-593a78d17262",
+    "plan_summary": "子会话执行统一为标签内完整流程：移除子会话 Modal，抽取统一子会话对话完整执行器（WS 触发与工具触发共用），写入 childStreams 标签内展示，标签缺失时刷新列表补出，工具触发完成自动切回主会话，测试同步更新",
+    "starter_session_id": "session-cbd1ed98-519d-47de-b1cf-ac005137dc70",
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
+  },
+  {
+    "plan_id": "plan_e55cfc37-3845-41e1-8565-d73cc1e4cfb6",
+    "plan_summary": "子会话执行统一为标签内完整流程（移除 Modal、抽取统一执行器、测试同步）",
+    "starter_session_id": "session-cbd1ed98-519d-47de-b1cf-ac005137dc70",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": false
   }
 ]

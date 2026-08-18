@@ -45,11 +45,6 @@ describe('AgentChat conversationId (静态验证)', () => {
 });
 
 describe('AgentChat 子会话相关 (静态验证)', () => {
-  // 统一子会话执行器块（含 deps 行）与 handleSubSessionFlow 块（多行 deps）
-  const RUN_CHILD_FLOW_RE =
-    /const runChildSessionFlow = useCallback[\s\S]*?\n    \[childSessions, pollSubToolStatus, sessionId, updateChildStream\],\n  \);/;
-  const HANDLE_SUB_FLOW_RE = /const handleSubSessionFlow = useCallback[\s\S]*?\n    \[sessionId\],\n  \);/;
-
   it('应导入 getSubSessionData 和 completeSubSession', () => {
     const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
     expect(source).toContain('getSubSessionData');
@@ -58,29 +53,37 @@ describe('AgentChat 子会话相关 (静态验证)', () => {
 
   it('handleSubSessionFlow 应调用 getSubSessionData(sessionId)', () => {
     const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
-    const handleSubBlock = source.match(HANDLE_SUB_FLOW_RE);
+    const handleSubBlock = source.match(/const handleSubSessionFlow[\s\S]*?}, \[sessionId, pollToolStatus\]\);/);
     expect(handleSubBlock).not.toBeNull();
     if (handleSubBlock) {
       expect(handleSubBlock[0]).toContain('getSubSessionData(sessionId)');
     }
   });
 
+  it('handleSubSessionFlow 应在获取子会话数据后设置 Modal 状态', () => {
+    const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
+    expect(source).toContain("setSubSessionId(childId)");
+    expect(source).toContain("setSubSessionModalVisible(true)");
+  });
+
+  it('handleSubSessionFlow 应在子会话完成后调用 completeSubSession', () => {
+    const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
+    expect(source).toContain('await completeSubSession(sessionId)');
+  });
+
   it('handleSubSessionFlow 的 getSubSessionData 返回 null 时应提示错误并返回', () => {
     const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
     expect(source).toContain("message.error('获取子会话数据失败')");
-    expect(source).toContain('if (!data) {');
+    expect(source).toContain("if (!data) {");
   });
 
-  it('handleSubSessionFlow 应调用统一执行器并传 data.userMessage + thinking（工具触发）', () => {
+  it('handleSubSessionFlow 应将 data.thinking 传递给 agentChatStream', () => {
     const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
-    const handleSubBlock = source.match(HANDLE_SUB_FLOW_RE);
+    const handleSubBlock = source.match(/const handleSubSessionFlow[\s\S]*?}, \[sessionId, pollToolStatus\]\);/);
     expect(handleSubBlock).not.toBeNull();
     if (handleSubBlock) {
-      expect(handleSubBlock[0]).toContain('runChildSessionFlowRef.current!({');
-      expect(handleSubBlock[0]).toContain('childId: data.childSessionId');
-      expect(handleSubBlock[0]).toContain('streamContent: data.userMessage');
       expect(handleSubBlock[0]).toContain('thinking: data.thinking');
-      expect(handleSubBlock[0]).toContain('switchTab: true');
+      expect(handleSubBlock[0]).toContain('{ sessionId: childId, content, thinking: data.thinking }');
     }
   });
 
@@ -94,16 +97,6 @@ describe('AgentChat 子会话相关 (静态验证)', () => {
     }
   });
 
-  it('pollToolStatus 在子会话流程完成后 continue 继续轮询主会话工具', () => {
-    const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
-    const pollBlock = source.match(/const pollToolStatus[\s\S]*?}, \[\]\);/);
-    expect(pollBlock).not.toBeNull();
-    if (pollBlock) {
-      expect(pollBlock[0]).toContain('await handleSubSessionFlowRef.current!(toolId)');
-      expect(pollBlock[0]).toContain('continue;');
-    }
-  });
-
   it('handleAbort 应同步中止子会话 (subToolAbortRef + subAbortRef)', () => {
     const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
     const handleAbortBlock = source.match(/const handleAbort[\s\S]*?}, \[sessionId\]\);/);
@@ -114,99 +107,37 @@ describe('AgentChat 子会话相关 (静态验证)', () => {
     }
   });
 
-  it('统一执行器应使用 pollSubToolStatus 轮询子会话工具状态', () => {
+  it('renderSubSessionModal 应包含子会话对话标题', () => {
     const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
-    const executorBlock = source.match(RUN_CHILD_FLOW_RE);
-    expect(executorBlock).not.toBeNull();
-    if (executorBlock) {
-      expect(executorBlock[0]).toContain('pollSubToolStatus(childId, execResult.toolId)');
-    }
+    expect(source).toContain('title=\"子会话对话\"');
+  });
+
+  it('handleSubSessionFlow 应使用 pollSubToolStatus 轮询子会话工具状态', () => {
+    const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
+    expect(source).toContain('pollSubToolStatus');
     expect(source).toContain('getToolStatus(sid, tid)');
   });
 
-  it('已移除子会话 Modal 及弹窗状态', () => {
+  it('handleSubSessionFlow 应轮询主会话工具状态完成子会话流程', () => {
     const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
-    expect(source).not.toContain('renderSubSessionModal');
-    expect(source).not.toContain('title="子会话对话"');
-    expect(source).not.toContain('subSessionModalVisible');
-    expect(source).not.toContain('subMessages');
-    expect(source).not.toContain('subCurrentResponse');
-    expect(source).not.toContain('subCurrentReasoning');
-    expect(source).not.toContain('subLoading');
-    expect(source).not.toContain('subToolExecuting');
-    expect(source).not.toContain('subContainerRef');
+    expect(source).toContain('await pollToolStatus(sessionId, toolId)');
   });
 
-  it('应抽取统一子会话执行器 runChildSessionFlow 且两种触发方式共用', () => {
+  it('子会话 Modal 应显示流式内容和推理内容', () => {
     const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
-    expect(source).toContain('const runChildSessionFlow = useCallback(');
-    expect(source).toContain('runChildSessionFlowRef.current = runChildSessionFlow;');
-    expect(source).toContain('void runChildSessionFlowRef.current!({');
-    expect(source).toContain('await runChildSessionFlowRef.current!({');
+    expect(source).toContain('subCurrentResponse');
+    expect(source).toContain('subCurrentReasoning');
+    expect(source).toContain('subLoading');
+    expect(source).toContain('subToolExecuting');
   });
 
-  it('统一执行器流程：agentChatStream → 工具循环（executeTools/pollSubToolStatus/continueChatStream）→ completeSubSession 收尾', () => {
+  it('子会话 Modal 关闭时应中止子会话', () => {
     const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
-    const executorBlock = source.match(RUN_CHILD_FLOW_RE);
-    expect(executorBlock).not.toBeNull();
-    if (executorBlock) {
-      expect(executorBlock[0]).toContain('agentChatStream(');
-      expect(executorBlock[0]).toContain('executeTools(childId)');
-      expect(executorBlock[0]).toContain('pollSubToolStatus(childId, execResult.toolId)');
-      expect(executorBlock[0]).toContain('continueChatStream(childId');
-      expect(executorBlock[0]).toContain('while (hasToolCalls && !subToolAbortRef.current)');
-      expect(executorBlock[0]).toContain('await completeSubSession(sessionId)');
+    const modalBlock = source.match(/onCancel=\{\(\) => \{[\s\S]*?setSubSessionModalVisible\(false\);\s+\}\}/);
+    expect(modalBlock).not.toBeNull();
+    if (modalBlock) {
+      expect(modalBlock[0]).toContain('subToolAbortRef.current = true');
     }
-  });
-
-  it('统一执行器入口差异：WS 触发 streamContent 传 SEND_USER_MESSAGE_MARKER 且不切换标签', () => {
-    const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
-    const streamBlock = source.match(/const streamChildReply = useCallback[\s\S]*?}, \[\]\);/);
-    expect(streamBlock).not.toBeNull();
-    if (streamBlock) {
-      expect(streamBlock[0]).toContain('streamContent: SEND_USER_MESSAGE_MARKER');
-      expect(streamBlock[0]).toContain('switchTab: false');
-    }
-  });
-
-  it('统一执行器应做标签缺失处理：childSessions 无对应子会话时调用 listChildSessions 刷新补出标签', () => {
-    const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
-    const executorBlock = source.match(RUN_CHILD_FLOW_RE);
-    expect(executorBlock).not.toBeNull();
-    if (executorBlock) {
-      expect(executorBlock[0]).toContain('childSessions.some((c) => c.id === childId)');
-      expect(executorBlock[0]).toContain('await listChildSessions(sessionId)');
-      expect(executorBlock[0]).toContain('setChildSessions(list)');
-    }
-  });
-
-  it('统一执行器标签切换：工具触发开始切到子会话标签、结束切回主会话', () => {
-    const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
-    const executorBlock = source.match(RUN_CHILD_FLOW_RE);
-    expect(executorBlock).not.toBeNull();
-    if (executorBlock) {
-      expect(executorBlock[0]).toContain('if (switchTab) setActiveTab(childId);');
-      expect(executorBlock[0]).toContain("if (switchTab) setActiveTab('main');");
-    }
-  });
-
-  it('统一执行器失败处理：标签内保留已产生消息并通过 error 字段提示，工具触发切回主会话', () => {
-    const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
-    const executorBlock = source.match(RUN_CHILD_FLOW_RE);
-    expect(executorBlock).not.toBeNull();
-    if (executorBlock) {
-      expect(executorBlock[0]).toContain("error: err.message || '子会话请求失败'");
-      expect(executorBlock[0]).toContain("error: '子会话流程执行失败'");
-      expect(executorBlock[0]).toContain('loading: false, error');
-    }
-  });
-
-  it('子会话流式状态在标签内渲染：ChildStreamState 含 currentResponse/currentReasoning/toolExecuting/error', () => {
-    const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
-    expect(source).toContain('currentResponse: string;');
-    expect(source).toContain('currentReasoning: string;');
-    expect(source).toContain('toolExecuting?: boolean;');
-    expect(source).toContain('error?: string;');
   });
 });
 

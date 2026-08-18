@@ -1,0 +1,13 @@
+import sqlite3
+con = sqlite3.connect(r"E:\test_tool\platform-app\data\agent_platform.db")
+cur = con.cursor()
+cur.execute("SELECT id, user_id, is_child, title FROM session WHERE id = 2087004655850450946")
+print("root session:", cur.fetchall())
+cur.execute("SELECT user_id, COUNT(*) FROM agent_log WHERE session_id = 2087004655850450946 GROUP BY user_id")
+print("logs by user for that session:", cur.fetchall())
+cur.execute("SELECT id, is_child FROM session WHERE parent_session_id = 2087004655850450946")
+print("children of that session:", cur.fetchall())
+# compare: how many logs for a known good root (2077246397967323137)
+cur.execute("SELECT user_id, COUNT(*) FROM agent_log WHERE session_id IN (2077246397967323137, 2086369644872814594, 2086453378972237826) GROUP BY user_id")
+print("logs by user for good root+children:", cur.fetchall())
+con.close()

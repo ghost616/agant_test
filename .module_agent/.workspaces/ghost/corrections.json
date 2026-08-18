@@ -7,6 +7,10 @@
     {
       "content": "运行日志页（AgentLogList，路由 /logs/:sessionId）从会话日志页点击「查看日志」进入后缺少返回按钮，需在页面顶部新增「返回」按钮，点击返回会话日志列表页（/logs）。",
       "timestamp": "2026-08-16T07:14:34.711Z"
+    },
+    {
+      "content": "对话页面子会话执行与从 WebSocket 获取会话 ID 后的对话执行应使用同一套逻辑（统一展示通道：均写入 childStreams 按子会话 ID 索引的状态、标签内实时展示），但工具触发的子会话需保留完整流程（工具轮询、continueChat、completeSubSession）。",
+      "timestamp": "2026-08-18T10:30:21.559Z"
     }
   ]
 }

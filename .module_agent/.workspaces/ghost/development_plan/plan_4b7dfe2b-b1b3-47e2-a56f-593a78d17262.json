@@ -1,0 +1,10 @@
+{
+  "plan_id": "plan_4b7dfe2b-b1b3-47e2-a56f-593a78d17262",
+  "module_name": "frontend-ui",
+  "development_plan": "1. 移除子会话 Modal：删除 renderSubSessionModal 及相关弹窗状态（subSessionModalVisible、subMessages、subCurrentResponse、subCurrentReasoning、subLoading、subToolExecuting、subContainerRef 等），Modal 从页面移除。2. 抽取统一子会话对话完整执行器：在 AgentChat.tsx 内抽取共享执行函数，两种触发方式（WS 的 streamChildReply、工具的 handleSubSessionFlow）共用；流程：写入 childStreams[childId] 初始化状态 → agentChatStream 流式回复（推理+内容）→ onDone(hasToolCalls) 为 true 时执行工具循环（executeTools → pollSubToolStatus → continueChat）→ 循环直至无工具调用 → completeSubSession 收尾；入口差异仅参数：WS 触发 content 传 SEND_USER_MESSAGE_MARKER；工具触发传 data.userMessage + thinking。3. 标签缺失处理：执行前检查 childSessions 是否含对应子会话；缺失时调用 listChildSessions 刷新列表补出标签（刷新失败忽略，继续执行），两种触发均适用。4. 标签切换：工具触发自动切到对应子会话标签，完成后自动切回主会话标签；WS 触发不切换标签。5. 执行失败处理：标签内保留已产生的过程消息并提示错误；工具触发额外自动切回主会话。6. 测试同步：更新 AgentChat.test.tsx——将 Modal 相关静态验证改为标签内完整流程验证（统一执行器、工具循环、completeSubSession、标签切换等）。7. 相关文件评估：检查 messageDispatcher.ts 是否需要配合微调（如触发路径、状态接口），若无需改动则保持原样。",
+  "session_id": "5e4036eb-36ac-4674-869a-23993761645d",
+  "modified_files": [
+    "src/pages/sessions/AgentChat.tsx",
+    "src/pages/sessions/__tests__/AgentChat.test.tsx"
+  ]
+}
