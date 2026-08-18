@@ -10,12 +10,6 @@
     }
   ],
   "bindings": {
-    "ses_01bcc3ac5ffehWWOznsHNV0aRe": "header",
-    "ses_01aa73841ffebdqHRf5mkCnJPy": "header",
-    "ses_0168b7778ffeZm7AZsEiDToWIV": "header",
-    "ses_011001adcffeJfuvbAJO6kbdvF": "header",
-    "ses_00c9a6a87ffetUtC5ZjBU5QoRN": "header",
-    "ses_0024dcd60ffeO52mz15FBbAjpI": "header",
     "session-95dc2c68-8102-4ee1-94bf-a114a5fd7bf9": "header",
     "session-b62076d8-a1d3-4e95-9ed1-27da4ac39ff9": "ghost",
     "session-7a133b8b-cd05-4e84-9afb-52aad0233777": "ghost",
