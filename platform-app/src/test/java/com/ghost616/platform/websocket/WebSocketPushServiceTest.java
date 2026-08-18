@@ -46,14 +46,15 @@ class WebSocketPushServiceTest {
     }
 
     @Test
-    void pushToSession_有连接时序列化并推送JSON() throws Exception {
+    void pushToSession_广播路径_按用户推送全部连接() throws Exception {
         stubUserContext("usr-1");
         when(session.isOpen()).thenReturn(true);
-        when(registry.getSessions("usr-1")).thenReturn(List.of(session));
+        when(registry.getSessionsByUser(42L)).thenReturn(List.of(session));
         WebSocketPushService service = newService();
 
         service.pushToSession(Map.of("messageName", "SEND_USER_MESSAGE", "sessionId", "100"));
 
+        verify(registry).getSessionsByUser(42L);
         ArgumentCaptor<TextMessage> captor = ArgumentCaptor.forClass(TextMessage.class);
         verify(session).sendMessage(captor.capture());
         String json = captor.getValue().getPayload();
@@ -64,7 +65,7 @@ class WebSocketPushServiceTest {
     @Test
     void pushToSession_无连接时静默丢弃() throws Exception {
         stubUserContext("usr-1");
-        when(registry.getSessions("usr-1")).thenReturn(List.of());
+        when(registry.getSessionsByUser(42L)).thenReturn(List.of());
         WebSocketPushService service = newService();
 
         service.pushToSession(Map.of("messageName", "SEND_USER_MESSAGE"));
@@ -76,7 +77,7 @@ class WebSocketPushServiceTest {
     void pushToSession_连接已关闭时丢弃() throws Exception {
         stubUserContext("usr-1");
         when(session.isOpen()).thenReturn(false);
-        when(registry.getSessions("usr-1")).thenReturn(List.of(session));
+        when(registry.getSessionsByUser(42L)).thenReturn(List.of(session));
         WebSocketPushService service = newService();
 
         service.pushToSession(Map.of("messageName", "SEND_USER_MESSAGE"));
@@ -88,7 +89,7 @@ class WebSocketPushServiceTest {
     void pushToSession_发送异常时静默丢弃() throws Exception {
         stubUserContext("usr-1");
         when(session.isOpen()).thenReturn(true);
-        when(registry.getSessions("usr-1")).thenReturn(List.of(session));
+        when(registry.getSessionsByUser(42L)).thenReturn(List.of(session));
         doThrow(new IllegalStateException("send failed"))
                 .when(session).sendMessage(any(TextMessage.class));
         WebSocketPushService service = newService();
@@ -102,7 +103,18 @@ class WebSocketPushServiceTest {
 
         service.pushToSession(Map.of("messageName", "SEND_USER_MESSAGE"));
 
-        verify(registry, never()).getSessions(any());
+        verify(registry, never()).getSessionsByUser(any());
+        verify(session, never()).sendMessage(any());
+    }
+
+    @Test
+    void pushToSession_user为null_静默丢弃() throws Exception {
+        UserContext.set(new UserSession("usr-1", null, System.currentTimeMillis()));
+        WebSocketPushService service = newService();
+
+        service.pushToSession(Map.of("messageName", "SEND_USER_MESSAGE"));
+
+        verify(registry, never()).getSessionsByUser(any());
         verify(session, never()).sendMessage(any());
     }
 
@@ -113,13 +125,13 @@ class WebSocketPushServiceTest {
 
         service.pushToSession(null);
 
-        verify(registry, never()).getSessions(any());
+        verify(registry, never()).getSessionsByUser(any());
     }
 
     @Test
     void pushToSession_序列化失败时静默丢弃() throws Exception {
         stubUserContext("usr-1");
-        when(registry.getSessions("usr-1")).thenReturn(List.of(session));
+        when(registry.getSessionsByUser(42L)).thenReturn(List.of(session));
         Object circular = new Object() {
             @SuppressWarnings("unused")
             public final Object self = this;
@@ -128,5 +140,85 @@ class WebSocketPushServiceTest {
 
         assertDoesNotThrow(() -> service.pushToSession(circular));
         verify(session, never()).sendMessage(any());
+    }
+
+    @Test
+    void pushToUserSession_精准路径_按用户会话推送() throws Exception {
+        when(session.isOpen()).thenReturn(true);
+        when(registry.getSessions("usr-1")).thenReturn(List.of(session));
+        WebSocketPushService service = newService();
+
+        service.pushToUserSession("usr-1", Map.of("messageName", "SEND_USER_MESSAGE", "sessionId", "100"));
+
+        verify(registry).getSessions("usr-1");
+        ArgumentCaptor<TextMessage> captor = ArgumentCaptor.forClass(TextMessage.class);
+        verify(session).sendMessage(captor.capture());
+        String json = captor.getValue().getPayload();
+        assertEquals("SEND_USER_MESSAGE", objectMapper.readTree(json).get("messageName").asText());
+        assertEquals("100", objectMapper.readTree(json).get("sessionId").asText());
+    }
+
+    @Test
+    void pushToUserSession_userSessionId无效_静默丢弃() throws Exception {
+        WebSocketPushService service = newService();
+
+        service.pushToUserSession("  ", Map.of("messageName", "SEND_USER_MESSAGE"));
+
+        verify(registry, never()).getSessions(any());
+        verify(session, never()).sendMessage(any());
+    }
+
+    @Test
+    void pushToUserSession_无连接时静默丢弃() throws Exception {
+        when(registry.getSessions("usr-1")).thenReturn(List.of());
+        WebSocketPushService service = newService();
+
+        service.pushToUserSession("usr-1", Map.of("messageName", "SEND_USER_MESSAGE"));
+
+        verify(session, never()).sendMessage(any());
+    }
+
+    @Test
+    void pushToUserSession_连接已关闭时丢弃() throws Exception {
+        when(session.isOpen()).thenReturn(false);
+        when(registry.getSessions("usr-1")).thenReturn(List.of(session));
+        WebSocketPushService service = newService();
+
+        service.pushToUserSession("usr-1", Map.of("messageName", "SEND_USER_MESSAGE"));
+
+        verify(session, never()).sendMessage(any());
+    }
+
+    @Test
+    void pushToUserSession_发送异常时静默丢弃() throws Exception {
+        when(session.isOpen()).thenReturn(true);
+        when(registry.getSessions("usr-1")).thenReturn(List.of(session));
+        doThrow(new IllegalStateException("send failed"))
+                .when(session).sendMessage(any(TextMessage.class));
+        WebSocketPushService service = newService();
+
+        assertDoesNotThrow(() -> service.pushToUserSession("usr-1", Map.of("messageName", "SEND_USER_MESSAGE")));
+    }
+
+    @Test
+    void pushToUserSession_序列化失败时静默丢弃() throws Exception {
+        when(registry.getSessions("usr-1")).thenReturn(List.of(session));
+        Object circular = new Object() {
+            @SuppressWarnings("unused")
+            public final Object self = this;
+        };
+        WebSocketPushService service = newService();
+
+        assertDoesNotThrow(() -> service.pushToUserSession("usr-1", circular));
+        verify(session, never()).sendMessage(any());
+    }
+
+    @Test
+    void pushToUserSession_null负载直接忽略() {
+        WebSocketPushService service = newService();
+
+        service.pushToUserSession("usr-1", null);
+
+        verify(registry, never()).getSessions(any());
     }
 }

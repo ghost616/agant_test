@@ -42,12 +42,12 @@ class SessionWebSocketHandlerTest {
     }
 
     @Test
-    void afterConnectionEstablished_有UserSession_以双维度绑定() {
+    void afterConnectionEstablished_有UserSession_自动绑定() {
         stubUserSession("sid-1");
 
         handler.afterConnectionEstablished(session);
 
-        verify(registry).bind(42L, "sid-1", session);
+        verify(registry).bind("sid-1", session);
     }
 
     @Test
@@ -56,27 +56,15 @@ class SessionWebSocketHandlerTest {
 
         handler.afterConnectionEstablished(session);
 
-        verify(registry, never()).bind(any(), any(), any());
-    }
-
-    @Test
-    void afterConnectionEstablished_user为null_不绑定() {
-        Map<String, Object> attributes = new HashMap<>();
-        attributes.put(AuthHandshakeInterceptor.USER_SESSION_ATTR,
-                new UserSession("sid-1", null, System.currentTimeMillis()));
-        when(session.getAttributes()).thenReturn(attributes);
-
-        handler.afterConnectionEstablished(session);
-
-        verify(registry, never()).bind(any(), any(), any());
+        verify(registry, never()).bind(any(), any());
     }
 
     @Test
     void handleMessage_文本消息被静默忽略() throws Exception {
         handler.handleMessage(session, new TextMessage("{\"type\":\"BIND\",\"sessionId\":\"100\"}"));
 
-        verify(registry, never()).bind(any(), any(), any());
-        verify(registry, never()).unbind(any(), any(), any());
+        verify(registry, never()).bind(any(), any());
+        verify(registry, never()).unbind(any(), any());
     }
 
     @Test

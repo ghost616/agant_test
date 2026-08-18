@@ -32,17 +32,9 @@
     "test_passed": true
   },
   {
-    "plan_id": "plan_17581c4f-4bb6-47f0-9e98-e05063885158",
-    "plan_summary": "WebSocket 推送链路改造：从对话会话级绑定改为用户会话级绑定",
-    "starter_session_id": "6feaff69-6399-486e-9348-d7c354e018f2",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": true
-  },
-  {
-    "plan_id": "plan_62482b4f-e3bc-4e05-b704-5bf74d0c99dd",
-    "plan_summary": "WebSocket 客户端废弃会话绑定协议（BIND/UNBIND）",
-    "starter_session_id": "6feaff69-6399-486e-9348-d7c354e018f2",
+    "plan_id": "plan_7244cfbe-f109-459c-a44f-c8395129b9a7",
+    "plan_summary": "WebSocket 绑定改为双维度（userId + userSessionId）索引，支持按 userId 广播与按 userSessionId 精准推送",
+    "starter_session_id": "session-886aa2f4-b3eb-4813-afde-bcc4d7cbf279",
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true

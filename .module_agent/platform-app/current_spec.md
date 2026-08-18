@@ -188,6 +188,11 @@ platform-app 模块包含以下功能：
   - WebSocketPushService：pushToSession 移除 sessionId 参数，改为从 UserContext 获取当前用户会话（UserSession.getSessionId()）定位连接推送；UserContext 为空时 WARN 静默丢弃
   - DefaultMessageSender：send() 捕获 UserContext 快照并在 CompletableFuture.runAsync 异步线程中恢复（finally 清理防串号）；handleSendUserMessage 简化为单次 pushService.pushToSession(message)
   - 同步更新 4 个单元测试（SessionConnectionRegistryTest/SessionWebSocketHandlerTest/WebSocketPushServiceTest/DefaultMessageSenderTest）适配新签名与自动绑定语义，新增 UserContext 上下文传递与缺失场景测试
+- WebSocket 推送链路双维度绑定改造（在用户会话级绑定基础上演进，用户 ID + 用户会话 ID 双维度）：
+  - SessionConnectionRegistry：维护三个映射——connections（用户会话 ID → 连接集合，主索引，同一用户会话允许多个连接）、boundUserSessionIds（连接 → 用户会话 ID，反向索引，单值，连接关闭时清理）、userSessionsByUser（userId → 用户会话 ID 集合，userId 维度索引）；bind(Long userId, String userSessionId, WebSocketSession) 同时更新三个索引（userId/userSessionId 任一无效或连接为 null 时绑定失败），同一连接重复绑定其他用户会话时先解除旧绑定；getSessions(String userSessionId) 精准获取指定用户会话的连接；getSessionsByUser(Long userId) 获取该用户全部用户会话的所有连接（广播用，null 返回空）；unbind(Long userId, String userSessionId, WebSocketSession) 与 removeAll 同步清理三个索引（用户会话仍有其他活跃连接时保留 userId 维度索引条目）
+  - SessionWebSocketHandler：afterConnectionEstablished 从握手属性取 UserSession，以 user.getUserId() 与 userSession.getSessionId() 调用 registry.bind(userId, userSessionId, session)；握手属性无 UserSession 或 user 为 null 时不绑定并 WARN；连接关闭 removeAll 清理
+  - WebSocketPushService：提供两个推送入口——pushToSession(Object payload) 从 UserContext 获取当前用户会话后取其 userId，经 registry.getSessionsByUser(userId) 获取该用户全部连接逐个推送（SEND_USER_MESSAGE 默认广播流程，UserContext 缺失或 user 为 null 时 WARN 静默丢弃）；pushToUserSession(String userSessionId, Object payload) 按用户会话 ID 经 registry.getSessions(userSessionId) 精准推送单个客户端（userSessionId 无效时静默丢弃）；两个入口共用序列化与逐连接发送逻辑，payload 为 null 直接忽略
+  - 同步更新 3 个单元测试（SessionConnectionRegistryTest 16 用例/SessionWebSocketHandlerTest 5 用例/WebSocketPushServiceTest 15 用例）适配双维度绑定语义；DefaultMessageSender 调用 pushToSession 签名不变无需改动，离朱回归 41/41 通过
 ## 智能体日志
 
 - 新增 DatabaseAgentLog（实现 agent-base 的 AgentLog 接口，@Service）：addLog 将 LogData 序列化为 JSON 存入 agent_log.log_data，从 ContextLogData 的 context 提取 sessionId（IdConverter 转 Long，解析失败返回 null）与 conversationId 写入对应列，logType/logLevel 存储枚举 code 值，通过 AgentLogMapper 持久化

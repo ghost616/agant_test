@@ -487,15 +487,15 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/websocket/SessionConnectionRegistry.java",
-      "description": "用户会话连接注册中心（@Component）：维护「用户会话 ID → WebSocket 连接集合」映射（同一用户会话允许多个连接）与「连接 → 已绑定用户会话 ID 集合」反向索引；bind(String userSessionId, WebSocketSession) 仅校验连接有效性后纯内存注册，不查询会话表、不做属主校验（用户会话级绑定）；提供 unbind/getSessions（null/空白 ID 返回空列表）/removeAll（连接关闭时清理全部绑定）"
+      "description": "用户会话连接注册中心（@Component）：维护三个映射——connections（用户会话 ID → 连接集合，主索引，同一用户会话允许多个连接）、boundUserSessionIds（连接 → 用户会话 ID，反向索引，连接关闭时清理）、userSessionsByUser（userId → 用户会话 ID 集合，userId 维度索引）；bind(Long userId, String userSessionId, WebSocketSession) 同时更新三个索引（userId/userSessionId 任一无效或连接为 null 时绑定失败），仅校验参数有效性后纯内存注册，不查询会话表、不做属主校验（用户会话级绑定）；提供 unbind(Long, String, WebSocketSession)/getSessions（null/空白 ID 返回空列表）/getSessionsByUser（null 返回空列表）/removeAll（连接关闭时同步清理三个索引，用户会话仍有其他活跃连接时保留 userId 维度索引条目）"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/websocket/SessionWebSocketHandler.java",
-      "description": "用户会话 WebSocket 处理器（@Component，继承 TextWebSocketHandler）：连接建立（afterConnectionEstablished）时从握手属性取 UserSession（AuthHandshakeInterceptor.USER_SESSION_ATTR）自动按用户会话 ID 绑定注册；握手属性无 UserSession 时不绑定并 WARN 日志；连接关闭（afterConnectionClosed）时 removeAll 清理；不再处理 BIND/UNBIND 入站消息（入站文本由 TextWebSocketHandler 默认空实现静默忽略）"
+      "description": "用户会话 WebSocket 处理器（@Component，继承 TextWebSocketHandler）：连接建立（afterConnectionEstablished）时从握手属性取 UserSession（AuthHandshakeInterceptor.USER_SESSION_ATTR），以 user.getUserId() 与 userSession.getSessionId() 双维度调用 registry.bind(userId, userSessionId, session)；握手属性无 UserSession 或 user 为 null 时不绑定并 WARN 日志；连接关闭（afterConnectionClosed）时 removeAll 清理；不再处理 BIND/UNBIND 入站消息（入站文本由 TextWebSocketHandler 默认空实现静默忽略）"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/websocket/WebSocketPushService.java",
-      "description": "WebSocket 推送服务（@Service）：pushToSession(Object payload) 从 UserContext 获取当前用户会话，按用户会话 ID 定位已绑定连接，将消息对象序列化为 JSON 后推送；无用户上下文/用户会话 ID 无效/无已绑定连接/连接已关闭/序列化失败/发送异常时 WARN 静默丢弃，不影响业务主流程"
+      "description": "WebSocket 推送服务（@Service）：提供两个推送入口——pushToSession(Object payload) 从 UserContext 获取当前用户会话后取其 userId，经 registry.getSessionsByUser(userId) 广播推送该用户全部用户会话的所有连接（SEND_USER_MESSAGE 默认广播流程）；pushToUserSession(String userSessionId, Object payload) 按用户会话 ID 经 registry.getSessions(userSessionId) 精准推送单个客户端；两个入口共用序列化与逐连接发送逻辑，消息对象序列化为 JSON 后推送；无用户上下文/user 为 null/用户会话 ID 无效/无已绑定连接/连接已关闭/序列化失败/发送异常时 WARN 静默丢弃，payload 为 null 直接忽略，不影响业务主流程"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultMessageSender.java",
@@ -503,15 +503,15 @@
     },
     {
       "path": "platform-app/src/test/java/com/ghost616/platform/websocket/SessionConnectionRegistryTest.java",
-      "description": "SessionConnectionRegistry 单元测试：bind 连接有效绑定成功/用户会话 ID 为空绑定失败/连接为 null 绑定失败、unbind 解绑后连接移除、多连接绑定同一用户会话、未绑定用户会话返回空列表、null/空白用户会话 ID 返回空列表、removeAll 连接关闭清理全部绑定与未绑定连接不抛异常"
+      "description": "SessionConnectionRegistry 单元测试：双维度 bind 成功（三个索引同步更新）/userId 为 null 绑定失败/用户会话 ID 空白绑定失败/连接为 null 绑定失败、getSessions 精准获取（同一用户会话多连接）、getSessionsByUser 广播获取（多用户会话多连接、多用户隔离）、null 参数返回空列表、unbind/removeAll 三索引同步清理（含用户会话仍有其他连接时保留用户索引）、未绑定连接不抛异常"
     },
     {
       "path": "platform-app/src/test/java/com/ghost616/platform/websocket/SessionWebSocketHandlerTest.java",
-      "description": "SessionWebSocketHandler 单元测试：连接建立时握手属性有 UserSession 自动绑定（registry.bind(userSessionId, session)）、无 UserSession 不绑定、入站文本消息被静默忽略（不调用注册中心）、连接关闭时 removeAll 清理"
+      "description": "SessionWebSocketHandler 单元测试：连接建立时握手属性有 UserSession 以 userId+userSessionId 双维度绑定（registry.bind(42L, \"sid-1\", session)）、无 UserSession 不绑定、user 为 null 不绑定、入站文本消息被静默忽略（不调用注册中心）、连接关闭时 removeAll 清理"
     },
     {
       "path": "platform-app/src/test/java/com/ghost616/platform/websocket/WebSocketPushServiceTest.java",
-      "description": "WebSocketPushService 单元测试：UserContext 存在且有连接时序列化并推送 JSON、无连接/连接已关闭/发送异常/序列化失败时静默丢弃、无 UserContext 时静默丢弃（不查询注册中心）、null 负载直接忽略"
+      "description": "WebSocketPushService 单元测试：pushToSession 广播路径（registry.getSessionsByUser(userId) 推送全部连接）、无连接/连接已关闭/发送异常/序列化失败/无 UserContext/user 为 null 时静默丢弃、null 负载直接忽略；pushToUserSession 精准路径（registry.getSessions(userSessionId) 推送）、userSessionId 无效/无连接/连接已关闭/发送异常/序列化失败时静默丢弃、null 负载直接忽略"
     },
     {
       "path": "platform-app/src/test/java/com/ghost616/platform/service/agent/DefaultMessageSenderTest.java",
