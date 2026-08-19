@@ -20,6 +20,7 @@
 - **AgentAssembler**：新增 setChatDataCacheManager(ChatDataCacheManager) 公开方法，参考 setAgentLog 模式，仅当 registry 已存在（build() 之后）时设置到 registry，无自有 ChatDataCacheManager 暂存字段；build() 不自动注册 chatDataCacheManager
 - **AgentAssembler**：新增 private AgentMessageProxy agentMessageProxy 字段保留 build() 创建的引用；setChatDataCacheManager(ChatDataCacheManager) 方法在设置 registry 后，若 agentMessageProxy 非 null 则调用 agentMessageProxy.setChatDataCacheManager(chatDataCacheManager) 透传
 - **AgentAssembler**：新增 setThreadVariableHandler(ThreadVariableHandler) 公开方法与 threadVariableHandler 暂存字段，build() 中通过 registry.setThreadVariableHandler(threadVariableHandler) 将线程变量处理器注册到 AgentComponentRegistry；setThreadVariableHandler 在赋值暂存字段后，若 registry 已存在（build() 之后）则立即同步注册到已建 registry（与 setAgentLog/setChatDataCacheManager 注册模式一致），build 前后调用均生效
+- **SubSessionCallbackSystemTool**：execute() 中调用 callback.execute(ctx, childSessionId, userMessage, thinking)，适配 SubSessionCallback 接口新增的 AgentExecutionContext 首参（agent-base 已变更接口签名为 execute(AgentExecutionContext ctx, String sessionId, String userMessage, Boolean thinking)），将当前执行上下文 ctx 透传给回调；测试同步适配 mock 调用增加 ctx 参数
 ## 模块职责
 提供多平台模型调用器的实现（ModelInvoker）和 Agent 组件的组装能力。
 

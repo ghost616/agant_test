@@ -263,3 +263,44 @@ describe('AgentList 表格滚动 (useTableScrollY)', () => {
     expect(source).toContain('scroll={{ x: 1600, y: useTableScrollY(216) }}');
   });
 });
+
+describe('AgentList 子会话打开方式 (静态验证)', () => {
+  it('应定义 SUB_SESSION_OPEN_MODE_LABELS 映射（WEBSOCKET/TOOL_CALL）', () => {
+    const source = readFileSync(resolve(__dirname, '../AgentList.tsx'), 'utf-8');
+    expect(source).toContain("WEBSOCKET: 'WebSocket推送'");
+    expect(source).toContain("TOOL_CALL: '前台工具调用'");
+  });
+
+  it('应定义 SUB_SESSION_OPEN_MODE_COLORS 颜色映射', () => {
+    const source = readFileSync(resolve(__dirname, '../AgentList.tsx'), 'utf-8');
+    expect(source).toContain("WEBSOCKET: 'cyan'");
+    expect(source).toContain("TOOL_CALL: 'geekblue'");
+  });
+
+  it('应定义 SUB_SESSION_OPEN_MODE_OPTIONS 下拉选项', () => {
+    const source = readFileSync(resolve(__dirname, '../AgentList.tsx'), 'utf-8');
+    expect(source).toContain('SUB_SESSION_OPEN_MODE_OPTIONS');
+  });
+
+  it('表格应包含「子会话打开方式」列，缺失时默认 TOOL_CALL', () => {
+    const source = readFileSync(resolve(__dirname, '../AgentList.tsx'), 'utf-8');
+    expect(source).toContain("title: '子会话打开方式'");
+    expect(source).toContain("dataIndex: 'subSessionOpenMode'");
+    expect(source).toContain("value ?? 'TOOL_CALL'");
+  });
+
+  it('表单应包含「子会话打开方式」Select，initialValue 为 TOOL_CALL', () => {
+    const source = readFileSync(resolve(__dirname, '../AgentList.tsx'), 'utf-8');
+    expect(source).toContain('name="subSessionOpenMode"');
+    expect(source).toContain('label="子会话打开方式"');
+    expect(source).toContain('initialValue="TOOL_CALL"');
+    expect(source).toContain('SUB_SESSION_OPEN_MODE_OPTIONS');
+  });
+
+  it('编辑时回填 subSessionOpenMode（缺失时默认 TOOL_CALL）', () => {
+    const source = readFileSync(resolve(__dirname, '../AgentList.tsx'), 'utf-8');
+    expect(source).toContain(
+      "subSessionOpenMode: editingAgent.subSessionOpenMode ?? 'TOOL_CALL'",
+    );
+  });
+});

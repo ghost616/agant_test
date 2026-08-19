@@ -86,5 +86,45 @@
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
+  },
+  {
+    "plan_id": "plan_f679f57b-ba2a-4c21-8e74-55531482ac3c",
+    "plan_summary": "SubSessionCallback 接口新增 AgentExecutionContext 参数并新建 SubSessionOpenMode 枚举",
+    "starter_session_id": "240289dd-b6da-4695-9e9a-43f0a0ff07b9",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_efb7cbbc-3a40-421d-8a59-88a47a344f87",
+    "plan_summary": "AgentConfig 实体新增 subSessionOpenMode 字段及 schema.sql 对应列",
+    "starter_session_id": "240289dd-b6da-4695-9e9a-43f0a0ff07b9",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_00ec7b26-2266-4555-9fd0-41c81a96ffbd",
+    "plan_summary": "适配 SubSessionCallback 接口新增 AgentExecutionContext 参数",
+    "starter_session_id": "240289dd-b6da-4695-9e9a-43f0a0ff07b9",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_0720c3ea-5b99-43a3-b254-1737da310614",
+    "plan_summary": "DefaultSubSessionCallback 适配新签名实现子会话打开方式判断 + AgentConfig DTO/Service 字段贯通",
+    "starter_session_id": "240289dd-b6da-4695-9e9a-43f0a0ff07b9",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_dc4433f4-b8e2-4fad-831e-2c97bca3185d",
+    "plan_summary": "智能体配置页新增子会话打开方式字段的展示与表单配置",
+    "starter_session_id": "240289dd-b6da-4695-9e9a-43f0a0ff07b9",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
   }
 ]

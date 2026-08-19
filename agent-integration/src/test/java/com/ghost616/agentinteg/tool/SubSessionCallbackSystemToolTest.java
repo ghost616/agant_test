@@ -80,13 +80,13 @@ class SubSessionCallbackSystemToolTest {
                 .thenReturn("999");
 
         Message resultMessage = Message.builder().content("执行成功").build();
-        when(callback.execute(eq("999"), eq("hello"), isNull())).thenReturn(resultMessage);
+        when(callback.execute(eq(ctx), eq("999"), eq("hello"), isNull())).thenReturn(resultMessage);
 
         String result = tool.execute(ctx, arguments);
 
         assertEquals("执行成功", result);
         verify(ctx).createChildSession("test-session", "测试描述", "100", List.of("1", "2"), List.of("10"), null);
-        verify(callback).execute("999", "hello", null);
+        verify(callback).execute(ctx, "999", "hello", null);
     }
 
     @Test
@@ -105,13 +105,13 @@ class SubSessionCallbackSystemToolTest {
                 .thenReturn("888");
 
         Message resultMessage = Message.builder().content("ok").build();
-        when(callback.execute(eq("888"), eq("hello"), eq(true))).thenReturn(resultMessage);
+        when(callback.execute(eq(ctx), eq("888"), eq("hello"), eq(true))).thenReturn(resultMessage);
 
         String result = tool.execute(ctx, arguments);
 
         assertEquals("ok", result);
         verify(ctx).createChildSession("thinking-session", null, "100", null, null, null);
-        verify(callback).execute("888", "hello", true);
+        verify(callback).execute(ctx, "888", "hello", true);
     }
 
     @Test
@@ -130,13 +130,13 @@ class SubSessionCallbackSystemToolTest {
                 .thenReturn("777");
 
         Message resultMessage = Message.builder().content("ok").build();
-        when(callback.execute(eq("777"), eq("hello"), eq(false))).thenReturn(resultMessage);
+        when(callback.execute(eq(ctx), eq("777"), eq("hello"), eq(false))).thenReturn(resultMessage);
 
         String result = tool.execute(ctx, arguments);
 
         assertEquals("ok", result);
         verify(ctx).createChildSession("no-thinking-session", null, "100", null, null, null);
-        verify(callback).execute("777", "hello", false);
+        verify(callback).execute(ctx, "777", "hello", false);
     }
 
     @Test
@@ -161,13 +161,13 @@ class SubSessionCallbackSystemToolTest {
                 .thenReturn("888");
 
         Message resultMessage = Message.builder().content("ok").build();
-        when(callback.execute(eq("888"), eq("hello"), isNull())).thenReturn(resultMessage);
+        when(callback.execute(eq(ctx), eq("888"), eq("hello"), isNull())).thenReturn(resultMessage);
 
         String result = tool.execute(ctx, arguments);
 
         assertEquals("ok", result);
         verify(ctx).createChildSession("test-session", null, "100", null, null, null);
-        verify(callback).execute("888", "hello", null);
+        verify(callback).execute(ctx, "888", "hello", null);
     }
 
     @Test
@@ -186,12 +186,12 @@ class SubSessionCallbackSystemToolTest {
                 .thenReturn("777");
 
         Message resultMessage = Message.builder().content("ok").build();
-        when(callback.execute(eq("777"), eq("hello"), isNull())).thenReturn(resultMessage);
+        when(callback.execute(eq(ctx), eq("777"), eq("hello"), isNull())).thenReturn(resultMessage);
 
         tool.execute(ctx, arguments);
 
         verify(ctx).createChildSession("test-session", null, "100", null, null, null);
-        verify(callback).execute("777", "hello", null);
+        verify(callback).execute(ctx, "777", "hello", null);
     }
 
     @Test
@@ -209,7 +209,7 @@ class SubSessionCallbackSystemToolTest {
                 .thenReturn("666");
 
         Message resultMessage = Message.builder().content("ok").build();
-        when(callback.execute(anyString(), anyString(), any())).thenReturn(resultMessage);
+        when(callback.execute(any(), anyString(), anyString(), any())).thenReturn(resultMessage);
 
         tool.execute(ctx, arguments);
 
@@ -232,7 +232,7 @@ class SubSessionCallbackSystemToolTest {
                 .thenReturn("555");
 
         Message resultMessage = Message.builder().content("ok").build();
-        when(callback.execute(eq("555"), eq("hello"), isNull())).thenReturn(resultMessage);
+        when(callback.execute(eq(ctx), eq("555"), eq("hello"), isNull())).thenReturn(resultMessage);
 
         tool.execute(ctx, arguments);
 
@@ -254,12 +254,12 @@ class SubSessionCallbackSystemToolTest {
                 .thenReturn("444");
 
         Message resultMessage = Message.builder().content("ok").build();
-        when(callback.execute(eq("444"), eq("hello"), isNull())).thenReturn(resultMessage);
+        when(callback.execute(eq(ctx), eq("444"), eq("hello"), isNull())).thenReturn(resultMessage);
 
         tool.execute(ctx, arguments);
 
         verify(ctx).createChildSession("test-session", null, "100", null, null, null);
-        verify(callback).execute("444", "hello", null);
+        verify(callback).execute(ctx, "444", "hello", null);
     }
 
     @Test
@@ -284,7 +284,7 @@ class SubSessionCallbackSystemToolTest {
         when(ctx.createChildSession(anyString(), isNull(), anyString(),
                 isNull(), isNull(), isNull()))
                 .thenReturn("333");
-        when(callback.execute(anyString(), anyString(), any())).thenThrow(new RuntimeException("回调失败"));
+        when(callback.execute(any(), anyString(), anyString(), any())).thenThrow(new RuntimeException("回调失败"));
 
         String result = tool.execute(ctx, arguments);
 
@@ -314,12 +314,12 @@ class SubSessionCallbackSystemToolTest {
                 .thenReturn("222");
 
         Message msg = Message.builder().content("done").build();
-        when(callback.execute(eq("222"), eq("hi"), isNull())).thenReturn(msg);
+        when(callback.execute(eq(ctx), eq("222"), eq("hi"), isNull())).thenReturn(msg);
 
         tool.execute(ctx, arguments);
 
         verify(ctx).createChildSession("s1", null, "100", List.of("1", "2", "3"), null, null);
-        verify(callback).execute("222", "hi", null);
+        verify(callback).execute(ctx, "222", "hi", null);
     }
 
     @Test
@@ -341,11 +341,11 @@ class SubSessionCallbackSystemToolTest {
                 .thenReturn("111");
 
         Message msg = Message.builder().content("done").build();
-        when(callback.execute(eq("111"), eq("hi"), isNull())).thenReturn(msg);
+        when(callback.execute(eq(ctx), eq("111"), eq("hi"), isNull())).thenReturn(msg);
 
         tool.execute(ctx, arguments);
 
         verify(ctx).createChildSession("s1", null, "100", List.of("1"), null, null);
-        verify(callback).execute("111", "hi", null);
+        verify(callback).execute(ctx, "111", "hi", null);
     }
 }

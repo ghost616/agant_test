@@ -1,0 +1,10 @@
+{
+  "plan_id": "plan_efb7cbbc-3a40-421d-8a59-88a47a344f87",
+  "module_name": "platform-data",
+  "development_plan": "需求：AgentConfig 实体新增子会话打开方式字段，schema.sql 增加对应列。agent-base 已完成 SubSessionOpenMode 枚举创建（agent-base/src/main/java/com/ghost616/agentbase/enums/SubSessionOpenMode.java，值 WEBSOCKET / TOOL_CALL，含 @EnumValue code 与 description）。\n\n修改文件：\n1. platform-data/src/main/java/com/ghost616/platform/entity/AgentConfig.java\n2. platform-data/src/main/resources/schema.sql\n\n变更内容：\n- AgentConfig 实体新增字段 subSessionOpenMode，类型为枚举 SubSessionOpenMode（import com.ghost616.agentbase.enums.SubSessionOpenMode，与 CommonStatus 同包），字段标注 @TableField(\"sub_session_open_mode\")，默认值语义 TOOL_CALL。\n- schema.sql 中 agent_config 表（约 82-97 行）新增列 sub_session_open_mode VARCHAR(32) DEFAULT 'TOOL_CALL'。\n- 运行相关测试确认通过。",
+  "session_id": "4fa8a570-cac4-4a3c-bba0-7270a0a33c78",
+  "modified_files": [
+    "platform-data/src/main/java/com/ghost616/platform/entity/AgentConfig.java",
+    "platform-data/src/main/resources/schema.sql"
+  ]
+}

@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import com.ghost616.agentbase.enums.CommonStatus;
+import com.ghost616.agentbase.enums.SubSessionOpenMode;
 
 
 @Data
@@ -39,4 +40,7 @@ public class AgentConfig extends BaseEntity {
 
     @TableField("vector_model_id")
     private Long vectorModelId;
+
+    @TableField("sub_session_open_mode")
+    private SubSessionOpenMode subSessionOpenMode = SubSessionOpenMode.DEFAULT;
 }

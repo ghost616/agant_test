@@ -1,7 +1,11 @@
 package com.ghost616.platform.service.agent;
 
 import com.ghost616.agentbase.dto.model.Message;
+import com.ghost616.agentbase.enums.SubSessionOpenMode;
+import com.ghost616.agentbase.service.agent.AgentExecutionContext;
+import com.ghost616.platform.entity.AgentConfig;
 import com.ghost616.platform.entity.Session;
+import com.ghost616.platform.repository.AgentConfigMapper;
 import com.ghost616.platform.repository.SessionMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,13 +27,16 @@ class DefaultSubSessionCallbackTest {
     @Mock
     private SessionMapper sessionMapper;
 
+    @Mock
+    private AgentConfigMapper agentConfigMapper;
+
     private DefaultSubSessionCallback callback;
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     @BeforeEach
     void setUp() {
-        callback = new DefaultSubSessionCallback(sessionMapper);
+        callback = new DefaultSubSessionCallback(sessionMapper, agentConfigMapper);
     }
 
     @Test
@@ -44,7 +51,7 @@ class DefaultSubSessionCallbackTest {
         when(sessionMapper.selectById(sessionId)).thenReturn(session);
 
         CompletableFuture<Message> futureResult = CompletableFuture.supplyAsync(
-                () -> callback.execute(String.valueOf(sessionId), userMessage, null), executor);
+                () -> callback.execute(null, String.valueOf(sessionId), userMessage, null), executor);
 
         DefaultSubSessionCallback.SubSessionData data = waitForMapEntry(parentSessionId);
         assertNotNull(data);
@@ -69,7 +76,7 @@ class DefaultSubSessionCallbackTest {
         when(sessionMapper.selectById(sessionId)).thenReturn(session);
 
         CompletableFuture<Message> futureResult = CompletableFuture.supplyAsync(
-                () -> callback.execute(String.valueOf(sessionId), userMessage, true), executor);
+                () -> callback.execute(null, String.valueOf(sessionId), userMessage, true), executor);
 
         DefaultSubSessionCallback.SubSessionData data = waitForMapEntry(parentSessionId);
         assertNotNull(data);
@@ -88,7 +95,7 @@ class DefaultSubSessionCallbackTest {
         when(session.getParentSessionId()).thenReturn(null);
         when(sessionMapper.selectById(sessionId)).thenReturn(session);
 
-        Message result = callback.execute(String.valueOf(sessionId), "no parent", null);
+        Message result = callback.execute(null, String.valueOf(sessionId), "no parent", null);
         assertNull(result);
     }
 
@@ -97,7 +104,7 @@ class DefaultSubSessionCallbackTest {
         Long sessionId = 300L;
         when(sessionMapper.selectById(sessionId)).thenReturn(null);
 
-        Message result = callback.execute(String.valueOf(sessionId), "not found", null);
+        Message result = callback.execute(null, String.valueOf(sessionId), "not found", null);
         assertNull(result);
     }
 
@@ -111,7 +118,7 @@ class DefaultSubSessionCallbackTest {
         when(sessionMapper.selectById(sessionId)).thenReturn(session);
 
         CompletableFuture<Message> futureResult = CompletableFuture.supplyAsync(
-                () -> callback.execute(String.valueOf(sessionId), "cleanup test", null), executor);
+                () -> callback.execute(null, String.valueOf(sessionId), "cleanup test", null), executor);
 
         DefaultSubSessionCallback.SubSessionData data = waitForMapEntry(parentSessionId);
         assertNotNull(data);
@@ -139,7 +146,7 @@ class DefaultSubSessionCallbackTest {
         when(sessionMapper.selectById(sessionId)).thenReturn(session);
 
         CompletableFuture<Message> futureResult = CompletableFuture.supplyAsync(
-                () -> callback.execute(String.valueOf(sessionId), userMessage, null), executor);
+                () -> callback.execute(null, String.valueOf(sessionId), userMessage, null), executor);
 
         DefaultSubSessionCallback.SubSessionData data = waitForMapEntry(parentSessionId);
         assertNotNull(data);
@@ -164,7 +171,7 @@ class DefaultSubSessionCallbackTest {
 
         Thread testThread = new Thread(() -> {
             try {
-                callback.execute(String.valueOf(sessionId), "interrupt test", null);
+                callback.execute(null, String.valueOf(sessionId), "interrupt test", null);
                 fail("Should have thrown exception");
             } catch (RuntimeException e) {
                 assertTrue(e.getMessage().contains("interrupted"));
@@ -181,6 +188,156 @@ class DefaultSubSessionCallbackTest {
         } catch (InterruptedException e) {
             fail("Test thread join interrupted");
         }
+    }
+
+    @Test
+    void executeWithWebSocketModeShouldSendMessageAndReturnImmediately() {
+        Long sessionId = 900L;
+        Long parentSessionId = 90L;
+        Long mainSessionId = 9L;
+        Long agentId = 5L;
+        String userMessage = "websocket message";
+
+        Session childSession = mock(Session.class);
+        when(childSession.getParentSessionId()).thenReturn(parentSessionId);
+        when(childSession.getTitle()).thenReturn("子会话A");
+        when(sessionMapper.selectById(sessionId)).thenReturn(childSession);
+
+        Session mainSession = mock(Session.class);
+        when(mainSession.getParentSessionId()).thenReturn(null);
+        when(mainSession.getAgentId()).thenReturn(agentId);
+        Session intermediateSession = mock(Session.class);
+        when(intermediateSession.getParentSessionId()).thenReturn(mainSessionId);
+        when(sessionMapper.selectById(parentSessionId)).thenReturn(intermediateSession);
+        when(sessionMapper.selectById(mainSessionId)).thenReturn(mainSession);
+
+        AgentConfig agentConfig = new AgentConfig();
+        agentConfig.setSubSessionOpenMode(SubSessionOpenMode.WEBSOCKET);
+        when(agentConfigMapper.selectById(agentId)).thenReturn(agentConfig);
+
+        AgentExecutionContext ctx = mock(AgentExecutionContext.class);
+        when(ctx.getModelId()).thenReturn("model-1");
+
+        Message result = callback.execute(ctx, String.valueOf(sessionId), userMessage, true);
+
+        assertNotNull(result);
+        assertEquals("已发送消息到子会话子会话A，请等候子会话返回消息", result.getContent());
+        verify(ctx).sendUserMessage(String.valueOf(sessionId), userMessage, "model-1", true);
+        assertNull(callback.getSubSessionData(parentSessionId));
+        verify(agentConfigMapper).selectById(agentId);
+    }
+
+    @Test
+    void executeWithWebSocketModeAndNullTitleUsesSessionId() {
+        Long sessionId = 901L;
+        Long parentSessionId = 91L;
+        Long mainSessionId = 19L;
+        Long agentId = 6L;
+        String userMessage = "no title message";
+
+        Session childSession = mock(Session.class);
+        when(childSession.getParentSessionId()).thenReturn(parentSessionId);
+        when(childSession.getTitle()).thenReturn(null);
+        when(sessionMapper.selectById(sessionId)).thenReturn(childSession);
+
+        Session mainSession = mock(Session.class);
+        when(mainSession.getParentSessionId()).thenReturn(null);
+        when(mainSession.getAgentId()).thenReturn(agentId);
+        Session intermediateSession = mock(Session.class);
+        when(intermediateSession.getParentSessionId()).thenReturn(mainSessionId);
+        when(sessionMapper.selectById(parentSessionId)).thenReturn(intermediateSession);
+        when(sessionMapper.selectById(mainSessionId)).thenReturn(mainSession);
+
+        AgentConfig agentConfig = new AgentConfig();
+        agentConfig.setSubSessionOpenMode(SubSessionOpenMode.WEBSOCKET);
+        when(agentConfigMapper.selectById(agentId)).thenReturn(agentConfig);
+
+        AgentExecutionContext ctx = mock(AgentExecutionContext.class);
+        when(ctx.getModelId()).thenReturn("model-2");
+
+        Message result = callback.execute(ctx, String.valueOf(sessionId), userMessage, false);
+
+        assertEquals("已发送消息到子会话" + sessionId + "，请等候子会话返回消息", result.getContent());
+        verify(ctx).sendUserMessage(String.valueOf(sessionId), userMessage, "model-2", false);
+        assertNull(callback.getSubSessionData(parentSessionId));
+    }
+
+    @Test
+    void executeWithToolCallModeShouldBlockAndReturnResult() throws Exception {
+        Long sessionId = 902L;
+        Long parentSessionId = 92L;
+        Long mainSessionId = 29L;
+        Long agentId = 7L;
+        String userMessage = "tool call message";
+        Message expectedMessage = Message.builder().role("assistant").content("tool call response").build();
+
+        Session childSession = mock(Session.class);
+        when(childSession.getParentSessionId()).thenReturn(parentSessionId);
+        when(sessionMapper.selectById(sessionId)).thenReturn(childSession);
+
+        Session mainSession = mock(Session.class);
+        when(mainSession.getParentSessionId()).thenReturn(null);
+        when(mainSession.getAgentId()).thenReturn(agentId);
+        Session intermediateSession = mock(Session.class);
+        when(intermediateSession.getParentSessionId()).thenReturn(mainSessionId);
+        when(sessionMapper.selectById(parentSessionId)).thenReturn(intermediateSession);
+        when(sessionMapper.selectById(mainSessionId)).thenReturn(mainSession);
+
+        AgentConfig agentConfig = new AgentConfig();
+        agentConfig.setSubSessionOpenMode(SubSessionOpenMode.TOOL_CALL);
+        when(agentConfigMapper.selectById(agentId)).thenReturn(agentConfig);
+
+        AgentExecutionContext ctx = mock(AgentExecutionContext.class);
+
+        CompletableFuture<Message> futureResult = CompletableFuture.supplyAsync(
+                () -> callback.execute(ctx, String.valueOf(sessionId), userMessage, null), executor);
+
+        DefaultSubSessionCallback.SubSessionData data = waitForMapEntry(parentSessionId);
+        assertNotNull(data);
+        assertEquals(sessionId, data.getChildSessionId());
+        assertEquals(userMessage, data.getUserMessage());
+
+        data.getMessageResult().complete(expectedMessage);
+        Message actual = futureResult.get(3, TimeUnit.SECONDS);
+        assertEquals(expectedMessage, actual);
+        verify(ctx, never()).sendUserMessage(anyString(), anyString(), any(), any());
+    }
+
+    @Test
+    void executeWithMissingAgentConfigFallsBackToToolCall() throws Exception {
+        Long sessionId = 903L;
+        Long parentSessionId = 93L;
+        Long mainSessionId = 39L;
+        Long agentId = 8L;
+        String userMessage = "missing config message";
+        Message expectedMessage = Message.builder().role("assistant").content("fallback response").build();
+
+        Session childSession = mock(Session.class);
+        when(childSession.getParentSessionId()).thenReturn(parentSessionId);
+        when(sessionMapper.selectById(sessionId)).thenReturn(childSession);
+
+        Session mainSession = mock(Session.class);
+        when(mainSession.getParentSessionId()).thenReturn(null);
+        when(mainSession.getAgentId()).thenReturn(agentId);
+        Session intermediateSession = mock(Session.class);
+        when(intermediateSession.getParentSessionId()).thenReturn(mainSessionId);
+        when(sessionMapper.selectById(parentSessionId)).thenReturn(intermediateSession);
+        when(sessionMapper.selectById(mainSessionId)).thenReturn(mainSession);
+
+        when(agentConfigMapper.selectById(agentId)).thenReturn(null);
+
+        AgentExecutionContext ctx = mock(AgentExecutionContext.class);
+
+        CompletableFuture<Message> futureResult = CompletableFuture.supplyAsync(
+                () -> callback.execute(ctx, String.valueOf(sessionId), userMessage, null), executor);
+
+        DefaultSubSessionCallback.SubSessionData data = waitForMapEntry(parentSessionId);
+        assertNotNull(data);
+
+        data.getMessageResult().complete(expectedMessage);
+        Message actual = futureResult.get(3, TimeUnit.SECONDS);
+        assertEquals(expectedMessage, actual);
+        verify(ctx, never()).sendUserMessage(anyString(), anyString(), any(), any());
     }
 
     private DefaultSubSessionCallback.SubSessionData waitForMapEntry(Long key) {

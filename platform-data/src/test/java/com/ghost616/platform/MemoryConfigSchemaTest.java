@@ -33,6 +33,13 @@ class MemoryConfigSchemaTest {
     }
 
     @Test
+    void schemaSqlAgentConfigHasSubSessionOpenModeColumn() throws IOException {
+        String sql = readResource("schema.sql");
+        assertTrue(sql.contains("sub_session_open_mode   VARCHAR(32) DEFAULT 'TOOL_CALL'"),
+                "agent_config should contain sub_session_open_mode column with default TOOL_CALL");
+    }
+
+    @Test
     void schemaSqlSessionHasMemoryPointSequenceNumColumn() throws IOException {
         String sql = readResource("schema.sql");
         assertTrue(sql.contains("memory_point_sequence_num INTEGER"),

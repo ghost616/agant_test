@@ -2,6 +2,8 @@ import type { CommonStatus } from './common';
 
 export type SessionAuthType = 'ALL' | 'PARENT' | 'CHILD';
 
+export type SubSessionOpenMode = 'WEBSOCKET' | 'TOOL_CALL';
+
 export interface KnowledgeBaseItem {
   id: string;
   name: string;
@@ -21,6 +23,7 @@ export interface AgentConfig {
   memoryEnabled?: boolean;
   memoryGroupCount?: number;
   vectorModelId?: string;
+  subSessionOpenMode?: SubSessionOpenMode;
   createTime: string;
   updateTime: string;
 }
@@ -37,6 +40,7 @@ export interface AgentFormData {
   memoryEnabled?: boolean;
   memoryGroupCount?: number;
   vectorModelId?: string;
+  subSessionOpenMode?: SubSessionOpenMode;
 }
 
 export interface AgentListParams {

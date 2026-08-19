@@ -90,6 +90,8 @@ platform-app 模块包含以下功能：
 - DefaultToolDataProvider 实现 ToolDataProvider 新增的 getCustomInvoker 方法（抛出 UnsupportedOperationException）
 - 已删除 DefaultCustomToolInvokerProvider（原实现 CustomToolInvokerProvider），AgentContextConfiguration 中移除相关 @Bean、import 及 agentAssembler 参数，AgentContextConfigurationTest 同步清理
 - 已移除 SystemTestSubSessionTool（systemtest 包系统测试工具）及其测试：该工具为未接线遗留代码（无业务引用），是 AgentExecutionContext.sendUserMessage 的唯一业务调用方；sendUserMessage 现为 void 语义，AgentExecutionContextTest 中相关测试改为通过 SendUserMessageCallback 验证调用行为
+- DefaultSubSessionCallback 适配 SubSessionCallback 新签名 execute(AgentExecutionContext ctx, String sessionId, String userMessage, Boolean thinking)，并实现子会话打开方式判断：从子会话沿 parentSessionId 链解析主会话（无父会话的根），读主会话 agentId 查询 AgentConfig.subSessionOpenMode；WEBSOCKET 模式调用 ctx.sendUserMessage(childSessionId, userMessage, ctx.getModelId(), thinking) 直接发送并返回提示 Message（content="已发送消息到子会话{会话名}，请等候子会话返回消息"，会话名取子会话 title，无 title 用子会话 ID），不写 subSessionDataMap、不阻塞；TOOL_CALL 模式（默认）/主会话解析失败/agentConfig 缺失时走原 CompletableFuture 阻塞 + subSessionDataMap 逻辑；新增注入 AgentConfigMapper 依赖（resolveMainSessionId 逐级查询并防环）
+- AgentConfig 子会话打开方式字段贯通：AgentConfigDTO/AgentCreateRequest/AgentUpdateRequest 新增 subSessionOpenMode（SubSessionOpenMode 枚举，值 WEBSOCKET/TOOL_CALL，默认 TOOL_CALL）；AgentConfigServiceImpl.create 在请求为空时默认 SubSessionOpenMode.TOOL_CALL、update 请求非空才设置、toDTO 映射 entity.getSubSessionOpenMode()
 ## ID 类型转换层
 
 - IdConverter 工具类（com.ghost616.platform.util.IdConverter）提供 parse/toString/parseList/toStringList 方法，统一处理 agent-base（String）与 platform-app（Long）之间的 ID 类型转换

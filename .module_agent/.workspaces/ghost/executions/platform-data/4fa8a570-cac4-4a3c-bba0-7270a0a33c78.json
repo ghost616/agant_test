@@ -1,0 +1,12 @@
+[
+  {
+    "plan_id": "plan_efb7cbbc-3a40-421d-8a59-88a47a344f87",
+    "plan": "AgentConfig 实体新增子会话打开方式字段 subSessionOpenMode（SubSessionOpenMode 枚举，默认 TOOL_CALL），schema.sql agent_config 表新增 sub_session_open_mode VARCHAR(32) DEFAULT 'TOOL_CALL' 列，运行相关测试确认通过",
+    "modified_files": [
+      "platform-data/src/main/java/com/ghost616/platform/entity/AgentConfig.java",
+      "platform-data/src/main/resources/schema.sql"
+    ],
+    "summary": "执行总结：本轮共修改 2 个文件 —— platform-data/src/main/java/com/ghost616/platform/entity/AgentConfig.java 新增 subSessionOpenMode 字段（SubSessionOpenMode 枚举，@TableField(\"sub_session_open_mode\")，默认 SubSessionOpenMode.DEFAULT=TOOL_CALL）；platform-data/src/main/resources/schema.sql 中 agent_config 表新增 sub_session_open_mode VARCHAR(32) DEFAULT 'TOOL_CALL' 列。同步更新了 current_spec.md（数据实体层/数据库初始化与迁移）、module_definition.json（两个文件描述）、change_history.log。\n\n测试总结：全部测试通过，通过 749 项，失败 0 项，跳过 0 项。编译测试 ✅（mvn -pl platform-data -am clean compile 全量重编译 BUILD SUCCESS，platform-data 53 个源文件含 AgentConfig 引用 SubSessionOpenMode 无错误）；单元测试 ✅（platform-data 61 用例全过，其中新增 AgentConfigEntityTest.subSessionOpenModeField 4/4、MemoryConfigSchemaTest.schemaSqlAgentConfigHasSubSessionOpenModeColumn 通过；agent-base 499 用例全过含 SubSessionOpenModeTest 6 个；agent-integration 189 用例全过）；实体字段与 schema 列静态验证 ✅ 逐项符合规格。观察项（非本次规格要求）：PrimarySchemaMigration 暂无 sub_session_open_mode 的 ALTER 迁移条目，存量库需开发侧后续迭代补齐（本次任务范围仅限指定 2 文件，未改动迁移组件）。",
+    "errors": []
+  }
+]

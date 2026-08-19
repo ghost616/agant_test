@@ -1,0 +1,5 @@
+{
+  "session_id": "4fa8a570-cac4-4a3c-bba0-7270a0a33c78",
+  "content": "## 待测试功能\n\n本次变更涉及 platform-data 模块（Java 17 / Maven 多模块工程，Spring Boot 3 + MyBatis-Plus）：\n\n### 变更文件\n1. `platform-data/src/main/java/com/ghost616/platform/entity/AgentConfig.java`\n   - 新增字段 `subSessionOpenMode`（类型 `com.ghost616.agentbase.enums.SubSessionOpenMode`，该枚举位于 agent-base 模块，含 @EnumValue code 与 description，值 WEBSOCKET / TOOL_CALL，DEFAULT=TOOL_CALL）\n   - 字段标注 `@TableField(\"sub_session_open_mode\")`，默认值 `SubSessionOpenMode.DEFAULT`（TOOL_CALL）\n2. `platform-data/src/main/resources/schema.sql`\n   - `agent_config` 表新增列 `sub_session_open_mode VARCHAR(32) DEFAULT 'TOOL_CALL'`\n\n### 需要验证的功能点\n- 编译：platform-data 模块（含依赖模块 agent-base）Java 编译通过，AgentConfig 引用 SubSessionOpenMode 枚举无编译错误\n- 实体字段：AgentConfig 新增字段类型、@TableField 注解、默认值正确（与 CommonStatus 同包引用模式一致）\n- schema：schema.sql 中 agent_config 表包含 `sub_session_open_mode VARCHAR(32) DEFAULT 'TOOL_CALL'` 列\n- 相关现有测试：MemoryConfigSchemaTest（校验 schema.sql agent_config 列与 PrimarySchemaMigration 迁移条目）等 platform-data 模块测试不受影响、全部通过\n",
+  "timestamp": "2026-08-19T06:08:18.958Z"
+}

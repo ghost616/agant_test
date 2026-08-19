@@ -27,7 +27,7 @@
     },
     {
       "path": "src/types/agent.ts",
-      "description": "智能体配置类型定义，含 AgentConfig/AgentFormData（tools/skills 替换 toolIds/skillIds，每项含 sessionAuth 字段）/SessionAuthType（ALL/PARENT/CHILD）/KnowledgeBaseItem/AgentListParams；AgentConfig/AgentFormData 含 recentMessageCount/memoryEnabled/memoryGroupCount/knowledgeBaseIds 等可选字段"
+      "description": "智能体配置类型定义，含 AgentConfig/AgentFormData（tools/skills 替换 toolIds/skillIds，每项含 sessionAuth 字段）/SessionAuthType（ALL/PARENT/CHILD）/SubSessionOpenMode（WEBSOCKET/TOOL_CALL）/KnowledgeBaseItem/AgentListParams；AgentConfig/AgentFormData 含 recentMessageCount/memoryEnabled/memoryGroupCount/knowledgeBaseIds/subSessionOpenMode 等可选字段"
     },
     {
       "path": "src/services/agent.ts",
@@ -35,7 +35,7 @@
     },
     {
       "path": "src/pages/agents/AgentList.tsx",
-      "description": "智能体管理列表页面，含筛选搜索、表格展示（新增 tools/skills 列，Tag 颜色区分 sessionAuth）、新增/编辑（name/description/systemPrompt/modelId/tools/skills/recentMessageCount/memoryEnabled/memoryGroupCount 含 SessionAuthSelect 组件支持每项 sessionAuth 配置，memoryEnabled Switch + memoryGroupCount InputNumber，关闭记忆功能时分组数量禁用）/删除 Popconfirm/启用禁用 Switch；关联模型/工具/技能/知识库选择（Promise.all 并行加载）；Table pagination={false} 全量展示"
+      "description": "智能体管理列表页面，含筛选搜索、表格展示（tools/skills 列 Tag 颜色区分 sessionAuth、子会话打开方式列 Tag 展示默认 TOOL_CALL）、新增/编辑（name/description/systemPrompt/modelId/tools/skills/recentMessageCount/memoryEnabled/memoryGroupCount/subSessionOpenMode 含 SessionAuthSelect 组件支持每项 sessionAuth 配置，memoryEnabled Switch + memoryGroupCount InputNumber，关闭记忆功能时分组数量禁用，subSessionOpenMode Select 默认 TOOL_CALL）/删除 Popconfirm/启用禁用 Switch；关联模型/工具/技能/知识库选择（Promise.all 并行加载）；Table pagination={false} 全量展示"
     },
     {
       "path": "src/types/session.ts",
@@ -308,6 +308,14 @@
     {
       "path": "src/services/__tests__/messageDispatcher.test.ts",
       "description": "messageDispatcher 单元测试：通过受控 mock 的 webSocketClient 捕获模块加载时注册的消息回调并手动触发，验证 SEND_USER_MESSAGE_MARKER 常量、SendUserMessagePayload 父会话链结构（parentSessionIds 数组，第一个=直接父、最后一个=主会话）、模块级订阅按 messageName 分发、handleSendUserMessage 按 sessionId/parentSessionIds 定位页面（父链包含主会话/仅直接父/不包含主会话/sessionId 即主会话自身/空 sessionId 均覆盖）、命中后调用 streamChildReply、未命中触发 childSessionsChanged 监听器、unregisterSessionPage 注销、重复注册覆盖、单个监听器异常隔离"
+    },
+    {
+      "path": "src/pages/agents/__tests__/AgentList.test.tsx",
+      "description": "智能体管理页静态验证测试：readFileSync 读取 AgentList.tsx 源码断言 SessionAuthSelect 组件、表单交互、表格列（tools/skills/知识库/子会话打开方式）、记忆功能联动、useTableScrollY 滚动等结构"
+    },
+    {
+      "path": "src/types/__tests__/agent.test.ts",
+      "description": "Agent 类型定义静态验证测试：断言 SessionAuthType/SubSessionOpenMode 联合类型、AgentConfig/AgentFormData 的 tools/skills/knowledgeBases/knowledgeBaseIds/memoryEnabled/memoryGroupCount/subSessionOpenMode 等字段结构"
     }
   ]
 }

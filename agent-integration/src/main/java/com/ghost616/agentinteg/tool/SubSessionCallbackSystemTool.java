@@ -68,7 +68,7 @@ public class SubSessionCallbackSystemTool implements SystemTool {
 
             String childSessionId = ctx.createChildSession(sessionName, description, ctx.getModelId(), toolIds, skillIds, null);
 
-            Message message = callback.execute(childSessionId, userMessage, thinking);
+            Message message = callback.execute(ctx, childSessionId, userMessage, thinking);
 
             return message.getContent();
         } catch (Exception e) {

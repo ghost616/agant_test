@@ -87,5 +87,6 @@
   "src/services/websocket.ts": "b9d1ead279374df0f971c60ad6d337f9",
   "src/services/__tests__/websocket.test.ts": "071f8584f46d3586d5b3154926138130",
   "src/services/messageDispatcher.ts": "a1ab1cba17bb75cbbcb263b1cae37581",
-  "src/services/__tests__/messageDispatcher.test.ts": "67c3af7924c1096920f969ad84f5d43e"
+  "src/services/__tests__/messageDispatcher.test.ts": "67c3af7924c1096920f969ad84f5d43e",
+  "src/types/__tests__/agent.test.ts": "53b4b4741682cc2d054f6851ada3cccb"
 }

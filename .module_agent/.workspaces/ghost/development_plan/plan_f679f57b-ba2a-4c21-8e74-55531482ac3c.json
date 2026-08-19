@@ -1,0 +1,12 @@
+{
+  "plan_id": "plan_f679f57b-ba2a-4c21-8e74-55531482ac3c",
+  "module_name": "agent-base",
+  "development_plan": "需求：① SubSessionCallback 接口增加 AgentExecutionContext 参数；② 新建 SubSessionOpenMode 枚举（供 platform-data 的 AgentConfig 引用）。\n\n修改文件：\n1. agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/SubSessionCallback.java\n2. 新建 agent-base/src/main/java/com/ghost616/agentbase/enums/SubSessionOpenMode.java（与 CommonStatus 同级）\n\n变更内容：\n- 接口 execute 方法签名由 execute(String sessionId, String userMessage, Boolean thinking) 改为 execute(AgentExecutionContext ctx, String sessionId, String userMessage, Boolean thinking)，增加 AgentExecutionContext 参数（import com.ghost616.agentbase.service.agent.AgentExecutionContext）。\n- 更新接口 Javadoc 注释，说明 ctx 参数用途（提供上下文能力，如 sendUserMessage 等）。\n- 保持 @FunctionalInterface 注解不变。\n- 新建枚举 SubSessionOpenMode，包含 WEBSOCKET 与 TOOL_CALL 两个值（参考 CommonStatus 的写法，含 @EnumValue 注解字段 code 与 description 属性，WEBSOCKET 值描述如\"WebSocket推送\"，TOOL_CALL 值描述如\"前台工具调用\"，默认值语义为 TOOL_CALL）。\n\n注意：接口为函数式接口，修改签名后所有实现与调用需同步适配（由其他模块计划处理）。",
+  "session_id": "72534f13-4407-48a7-a5fd-de41196d43e6",
+  "modified_files": [
+    "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/SubSessionCallback.java",
+    "agent-base/src/main/java/com/ghost616/agentbase/enums/SubSessionOpenMode.java",
+    "agent-base/src/test/java/com/ghost616/agentbase/enums/SubSessionOpenModeTest.java",
+    "agent-base/src/test/java/com/ghost616/agentbase/service/agent/invoker/SubSessionCallbackFunctionalTest.java"
+  ]
+}

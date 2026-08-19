@@ -2,6 +2,7 @@ package com.ghost616.platform.service.agent;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.ghost616.agentbase.enums.CommonStatus;
+import com.ghost616.agentbase.enums.SubSessionOpenMode;
 import com.ghost616.platform.enums.ErrorCode;
 import com.ghost616.agentbase.enums.SessionAuthType;
 import com.ghost616.platform.exception.BusinessException;
@@ -400,6 +401,42 @@ class AgentConfigServiceImplTest {
 
             verify(agentConfigMapper).insert(any(AgentConfig.class));
         }
+
+        @Test
+        @DisplayName("subSessionOpenMode 为 null 时默认 TOOL_CALL")
+        void create_subSessionOpenModeNull_defaultsToToolCall() {
+            mockInsertSetsId();
+            mockToDTOReturns(List.of(), List.of());
+            when(agentConfigMapper.selectCount(any())).thenReturn(0L);
+
+            AgentCreateRequest req = AgentCreateRequest.builder()
+                    .name("new-agent")
+                    .build();
+
+            AgentConfigDTO dto = service.create(req);
+
+            verify(agentConfigMapper).insert(agentConfigCaptor.capture());
+            assertEquals(SubSessionOpenMode.TOOL_CALL, agentConfigCaptor.getValue().getSubSessionOpenMode());
+            assertEquals(SubSessionOpenMode.TOOL_CALL, dto.getSubSessionOpenMode());
+        }
+
+        @Test
+        @DisplayName("create 传入 subSessionOpenMode=WEBSOCKET 时正确写入")
+        void create_subSessionOpenModeWebSocket_writtenCorrectly() {
+            mockInsertSetsId();
+            mockToDTOReturns(List.of(), List.of());
+            when(agentConfigMapper.selectCount(any())).thenReturn(0L);
+
+            AgentCreateRequest req = AgentCreateRequest.builder()
+                    .name("new-agent")
+                    .subSessionOpenMode(SubSessionOpenMode.WEBSOCKET)
+                    .build();
+
+            service.create(req);
+
+            verify(agentConfigMapper).insert(agentConfigCaptor.capture());
+            assertEquals(SubSessionOpenMode.WEBSOCKET, agentConfigCaptor.getValue().getSubSessionOpenMode());
+        }
     }
 
     @Nested
@@ -689,6 +726,41 @@ class AgentConfigServiceImplTest {
 
             verify(agentConfigMapper).updateById(any(AgentConfig.class));
         }
+
+        @Test
+        @DisplayName("update 传入 subSessionOpenMode 时正确写入")
+        void update_subSessionOpenMode_writtenCorrectly() {
+            when(agentConfigMapper.selectById(EXISTING_AGENT_ID)).thenReturn(createAgentEntity());
+            mockToDTOReturns(List.of(), List.of());
+
+            AgentUpdateRequest req = AgentUpdateRequest.builder()
+                    .name("updated")
+                    .subSessionOpenMode(SubSessionOpenMode.WEBSOCKET)
+                    .build();
+
+            service.update(EXISTING_AGENT_ID, req);
+
+            verify(agentConfigMapper).updateById(agentConfigCaptor.capture());
+            assertEquals(SubSessionOpenMode.WEBSOCKET, agentConfigCaptor.getValue().getSubSessionOpenMode());
+        }
+
+        @Test
+        @DisplayName("update 未传 subSessionOpenMode 时保持实体原值")
+        void update_subSessionOpenModeNull_keepsEntityValue() {
+            AgentConfig entity = createAgentEntity();
+            entity.setSubSessionOpenMode(SubSessionOpenMode.WEBSOCKET);
+            when(agentConfigMapper.selectById(EXISTING_AGENT_ID)).thenReturn(entity);
+            mockToDTOReturns(List.of(), List.of());
+
+            AgentUpdateRequest req = AgentUpdateRequest.builder()
+                    .name("updated")
+                    .build();
+
+            service.update(EXISTING_AGENT_ID, req);
+
+            verify(agentConfigMapper).updateById(agentConfigCaptor.capture());
+            assertEquals(SubSessionOpenMode.WEBSOCKET, agentConfigCaptor.getValue().getSubSessionOpenMode());
+        }
     }
 
     @Nested
@@ -767,6 +839,19 @@ class AgentConfigServiceImplTest {
 
             assertNotNull(dto.getKnowledgeBases());
             assertTrue(dto.getKnowledgeBases().isEmpty());
+        }
+
+        @Test
+        @DisplayName("getById 返回值包含 subSessionOpenMode")
+        void getById_containsSubSessionOpenMode() {
+            AgentConfig entity = createAgentEntity();
+            entity.setSubSessionOpenMode(SubSessionOpenMode.WEBSOCKET);
+            when(agentConfigMapper.selectById(EXISTING_AGENT_ID)).thenReturn(entity);
+            mockToDTOReturns(List.of(), List.of());
+
+            AgentConfigDTO dto = service.getById(EXISTING_AGENT_ID);
+
+            assertEquals(SubSessionOpenMode.WEBSOCKET, dto.getSubSessionOpenMode());
         }
     }
 }

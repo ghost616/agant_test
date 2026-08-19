@@ -3,6 +3,7 @@ package com.ghost616.platform.service.agent;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.ghost616.agentbase.enums.CommonStatus;
+import com.ghost616.agentbase.enums.SubSessionOpenMode;
 import com.ghost616.platform.enums.ErrorCode;
 import com.ghost616.agentbase.enums.SessionAuthType;
 import com.ghost616.platform.exception.BusinessException;
@@ -94,6 +95,8 @@ public class AgentConfigServiceImpl implements AgentConfigService {
         entity.setMemoryEnabled(request.getMemoryEnabled() != null ? request.getMemoryEnabled() : false);
         entity.setMemoryGroupCount(request.getMemoryGroupCount() != null ? request.getMemoryGroupCount() : 30);
         entity.setVectorModelId(request.getVectorModelId());
+        entity.setSubSessionOpenMode(request.getSubSessionOpenMode() != null
+                ? request.getSubSessionOpenMode() : SubSessionOpenMode.TOOL_CALL);
         entity.setStatus(CommonStatus.ENABLED);
 
         agentConfigMapper.insert(entity);
@@ -165,6 +168,9 @@ public class AgentConfigServiceImpl implements AgentConfigService {
         }
         if (request.getVectorModelId() != null) {
             entity.setVectorModelId(request.getVectorModelId());
+        }
+        if (request.getSubSessionOpenMode() != null) {
+            entity.setSubSessionOpenMode(request.getSubSessionOpenMode());
         }
 
         validateMemoryConfig(
@@ -317,6 +323,7 @@ public class AgentConfigServiceImpl implements AgentConfigService {
                 .memoryEnabled(entity.getMemoryEnabled())
                 .memoryGroupCount(entity.getMemoryGroupCount())
                 .vectorModelId(entity.getVectorModelId())
+                .subSessionOpenMode(entity.getSubSessionOpenMode())
                 .tools(tools)
                 .skills(skills)
                 .knowledgeBases(knowledgeBases)

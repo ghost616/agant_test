@@ -640,6 +640,18 @@
     {
       "path": "agent-base/src/test/java/com/ghost616/agentbase/sendmessage/ChildCreateSessionTest.java",
       "description": "ChildCreateSession 消息类单元测试：验证构造器写入 sessionId 与 parentSessionIds（单元素父链 [parentSessionId]）、childSession 存取、getMessageName 返回 CHILD_SESSION、继承自 SessionMessage 的字段可写。"
+    },
+    {
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/enums/SubSessionOpenMode.java",
+      "description": "子会话打开方式枚举，定义子会话的打开/推送方式（WEBSOCKET WebSocket推送 / TOOL_CALL 前台工具调用），code 字段 @EnumValue 标注并提供 getCode/getDescription 方法，提供 DEFAULT 静态常量指向 TOOL_CALL 作为默认值语义，供 platform-data 的 AgentConfig 引用。"
+    },
+    {
+      "path": "agent-base/src/test/java/com/ghost616/agentbase/enums/SubSessionOpenModeTest.java",
+      "description": "SubSessionOpenMode 枚举的单元测试，覆盖枚举值存在性、code/description 属性、getCode/getDescription 方法、DEFAULT 常量指向 TOOL_CALL 及 code 字段 @EnumValue 注解标注。"
+    },
+    {
+      "path": "agent-base/src/test/java/com/ghost616/agentbase/service/agent/invoker/SubSessionCallbackFunctionalTest.java",
+      "description": "SubSessionCallback 函数式接口的单元测试，覆盖 @FunctionalInterface 注解保留、抽象方法数量为 1、execute(AgentExecutionContext, String, String, Boolean) 四参数签名返回 Message 及 lambda 实现可用性。"
     }
   ]
 }

@@ -167,7 +167,7 @@ processChat 创建 Map<String, Integer> toolCallCounts 以 "toolName:arguments" 
 buildToolResultChunk 补充 toolId：构建的 JSON delta 增加 toolId 字段，格式为 {"toolName":"...","toolId":"...","arguments":"...","result":"..."}，与 ToolExecutionService.messageSave 的 toolInfo（toolCallId/toolName）和 toolResult（toolName/arguments/result）保持一致。
 ## SubSessionCallback
 
-SubSessionCallback 函数式接口（com.ghost616.agentbase.service.agent.invoker），使用 @FunctionalInterface 注解，定义 execute(String sessionId, String userMessage, Boolean thinking) 方法返回 Message，作为子会话消息处理的回调契约。thinking 参数表示是否启用思考模式，可为 null 表示使用默认行为。
+SubSessionCallback 函数式接口（com.ghost616.agentbase.service.agent.invoker），使用 @FunctionalInterface 注解，定义 execute(AgentExecutionContext ctx, String sessionId, String userMessage, Boolean thinking) 方法返回 Message，作为子会话消息处理的回调契约。ctx 为子会话执行上下文（com.ghost616.agentbase.service.agent.AgentExecutionContext），提供上下文能力（如 sendUserMessage 等），可为 null 表示不提供上下文；sessionId 为会话 ID；userMessage 为用户消息内容；thinking 表示是否启用思考模式，可为 null 表示使用默认行为。
 ## ErrorCode
 
 AgentErrorCode 枚举（com.ghost616.agentbase.enums.AgentErrorCode），智能体模块统一错误码，仅保留 agent-base/agent-integration 实际使用的 12 个错误码。系统错误码：SYSTEM_ERROR(SYS-001)/PARAM_INVALID(SYS-002)/NOT_FOUND(SYS-003)/DUPLICATE_KEY(SYS-005)；模型错误码：MODEL_NOT_FOUND(MODEL-CONFIG-001)/MODEL_INVOKE_ERROR(MODEL-INVOKE-001)/MODEL_VERIFY_ERROR(MODEL-VERIFY-001)；工具错误码：TOOL_INVOKE_ERROR(TOOL-INVOKE-001)/TOOL_RUNTIME_NOT_FOUND(TOOL-RUNTIME-001)/TOOL_EXECUTE_TIMEOUT(TOOL-EXEC-001)/TOOL_EXECUTE_ERROR(TOOL-EXEC-002)；会话错误码：SESSION_NOT_FOUND(SESSION-001)。原 ErrorCode 中评估/SKILL/知识库等模块错误码已随 BaseException/BusinessException 迁移至 platform-data 模块。
@@ -375,3 +375,6 @@ FinishReason 枚举（com.ghost616.agentbase.enums.FinishReason），定义模�
 AgentContextManager.sendUserMessage 增加发送机制：在消息持久化（messageSave）、addHistoryEntry、SendMessageLogData 日志之后，通过 registry.getMessageSender() 获取 MessageSender，仅非 null 时构造 SendUserMessage 发送（sessionId=childSessionId、conversationId 与 parentSessionId 透传、mainSessionId 由新增私有方法 resolveMainSessionId 沿 parentSessionId 链经 ContextDataProvider.loadAgentContext 逐级向上查询直至无父会话的主会话 ID），send() 调用以 try-catch 包裹，发送异常仅 WARN 日志记录、不影响原有保存逻辑。
 
 ChatService 新增 public static final String SEND_USER_MESSAGE_MARKER = "[send_user_message]" 常量：chat() 中 content 为该标记时与 TOOL_CONTINUE_MARKER 同样处理（isSendUserMessage 判断，跳过重置/对话 ID 校验/消息保存/历史追加），直接触发模型执行，ChatRequest.content 的 @NotBlank 校验保持不变。
+## 子会话打开方式
+
+SubSessionOpenMode 枚举（com.ghost616.agentbase.enums.SubSessionOpenMode），定义子会话的打开/推送方式，供 platform-data 的 AgentConfig 引用。包含 WEBSOCKET("WEBSOCKET", "WebSocket推送") 与 TOOL_CALL("TOOL_CALL", "前台工具调用") 两个值，code 字段使用 @EnumValue 标注（供 MyBatis-Plus 使用），提供 getCode()/getDescription() 方法。提供 DEFAULT 静态常量指向 TOOL_CALL，默认值语义为前台工具调用。

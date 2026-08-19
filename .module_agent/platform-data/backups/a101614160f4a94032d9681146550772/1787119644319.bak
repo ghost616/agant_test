@@ -1,10 +1,25 @@
+CREATE TABLE IF NOT EXISTS user (
+    id          BIGINT PRIMARY KEY,
+    login_name  VARCHAR(255) NOT NULL,
+    display_name VARCHAR(255),
+    user_type   INTEGER,
+    password    VARCHAR(255),
+    enabled     INTEGER DEFAULT 1,
+    create_time TIMESTAMP,
+    update_time TIMESTAMP,
+    deleted     INTEGER DEFAULT 0
+);
+
 CREATE TABLE IF NOT EXISTS model_config (
     id          BIGINT PRIMARY KEY,
+    user_id     BIGINT DEFAULT 1,
     name        VARCHAR(255) NOT NULL,
     platform_type VARCHAR(64),
     api_key     VARCHAR(255),
     base_url    VARCHAR(512),
     model_name  VARCHAR(255),
+    request_type VARCHAR(32),
+    model_type  VARCHAR(32) DEFAULT 'LLM',
     temperature DOUBLE,
     max_tokens  INTEGER,
     status      VARCHAR(32),
@@ -16,6 +31,7 @@ CREATE TABLE IF NOT EXISTS model_config (
 
 CREATE TABLE IF NOT EXISTS tool_config (
     id               BIGINT PRIMARY KEY,
+    user_id          BIGINT DEFAULT 1,
     name             VARCHAR(255) NOT NULL,
     tool_type        VARCHAR(32),
     description      TEXT,
@@ -33,6 +49,7 @@ CREATE TABLE IF NOT EXISTS tool_config (
 
 CREATE TABLE IF NOT EXISTS session (
     id               BIGINT PRIMARY KEY,
+    user_id          BIGINT DEFAULT 1,
     agent_id         BIGINT,
     model_id         BIGINT,
     title            VARCHAR(200),
@@ -42,38 +59,16 @@ CREATE TABLE IF NOT EXISTS session (
     description      VARCHAR(500),
     thinking         TINYINT(1),
     total_token_used BIGINT,
+    last_response_id VARCHAR(50),
     is_evaluation    TINYINT(1) DEFAULT 0,
+    memory_point_sequence_num INTEGER,
+    memory_prompt     VARCHAR(500),
     create_time      TIMESTAMP,
     update_time      TIMESTAMP,
     deleted          INTEGER DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS idx_session_agent_id ON session(agent_id);
 CREATE INDEX IF NOT EXISTS idx_session_model_id ON session(model_id);
-
-CREATE TABLE IF NOT EXISTS message (
-    id           BIGINT PRIMARY KEY,
-    session_id   BIGINT,
-    role         VARCHAR(20),
-    content      MEDIUMTEXT,
-    reasoning    MEDIUMTEXT,
-    sequence_num INT,
-    tool_call_id VARCHAR(100),
-    token_usage  TEXT,
-    rollback     TINYINT NOT NULL DEFAULT 0,
-    create_time  TIMESTAMP
-);
-CREATE INDEX IF NOT EXISTS idx_message_session_id ON message(session_id);
-CREATE INDEX IF NOT EXISTS idx_message_tool_call_id ON message(tool_call_id);
-
-CREATE TABLE IF NOT EXISTS message_tool_call (
-    id                  BIGINT PRIMARY KEY,
-    message_id          BIGINT,
-    tool_call_id        VARCHAR(100),
-    tool_call_name      VARCHAR(100),
-    tool_call_arguments TEXT
-);
-CREATE INDEX IF NOT EXISTS idx_message_tool_call_message_id ON message_tool_call(message_id);
-CREATE INDEX IF NOT EXISTS idx_message_tool_call_tool_call_id ON message_tool_call(tool_call_id);
 
 CREATE TABLE IF NOT EXISTS session_tool (
     id           BIGINT PRIMARY KEY,
@@ -86,6 +81,7 @@ CREATE INDEX IF NOT EXISTS idx_session_tool_tool_id ON session_tool(tool_id);
 
 CREATE TABLE IF NOT EXISTS agent_config (
     id            BIGINT PRIMARY KEY,
+    user_id       BIGINT DEFAULT 1,
     name          VARCHAR(255) NOT NULL,
     description   TEXT,
     system_prompt TEXT,
@@ -94,6 +90,9 @@ CREATE TABLE IF NOT EXISTS agent_config (
     create_time             TIMESTAMP,
     update_time             TIMESTAMP,
     recent_message_count    INTEGER DEFAULT 10,
+    memory_enabled          TINYINT(1) DEFAULT 0,
+    memory_group_count      INTEGER DEFAULT 30,
+    vector_model_id         BIGINT,
     deleted                 INTEGER DEFAULT 0
 );
 
@@ -119,6 +118,7 @@ CREATE INDEX IF NOT EXISTS idx_agent_skill_skill_id ON agent_skill(skill_id);
 
 CREATE TABLE IF NOT EXISTS skill_config (
     id          BIGINT PRIMARY KEY,
+    user_id     BIGINT DEFAULT 1,
     name        VARCHAR(255) NOT NULL,
     description TEXT,
     prompt      TEXT,
@@ -138,6 +138,7 @@ CREATE INDEX IF NOT EXISTS idx_skill_tool_tool_id ON skill_tool(tool_id);
 
 CREATE TABLE IF NOT EXISTS session_variable (
     id             BIGINT PRIMARY KEY,
+    user_id        BIGINT DEFAULT 1,
     session_id     BIGINT,
     variable_key   VARCHAR(255),
     variable_value TEXT,
@@ -159,6 +160,7 @@ CREATE INDEX IF NOT EXISTS idx_session_skill_skill_id ON session_skill(skill_id)
 
 CREATE TABLE IF NOT EXISTS agent_evaluation (
     id          BIGINT PRIMARY KEY,
+    user_id     BIGINT DEFAULT 1,
     name        VARCHAR(255) NOT NULL,
     description TEXT,
     agent_id    BIGINT,
@@ -169,6 +171,7 @@ CREATE TABLE IF NOT EXISTS agent_evaluation (
 
 CREATE TABLE IF NOT EXISTS evaluation (
     id                  BIGINT PRIMARY KEY,
+    user_id             BIGINT DEFAULT 1,
     name                VARCHAR(255) NOT NULL,
     description         TEXT,
     benchmark_session_id BIGINT,
@@ -183,6 +186,7 @@ CREATE TABLE IF NOT EXISTS evaluation (
 
 CREATE TABLE IF NOT EXISTS evaluation_result (
     id                    BIGINT PRIMARY KEY,
+    user_id               BIGINT DEFAULT 1,
     evaluation_id         BIGINT,
     evaluation_session_id BIGINT,
     result                TEXT,
@@ -193,3 +197,42 @@ CREATE TABLE IF NOT EXISTS evaluation_result (
     update_time           TIMESTAMP,
     deleted               INTEGER DEFAULT 0
 );
+
+CREATE TABLE IF NOT EXISTS knowledge_base (
+    id               BIGINT PRIMARY KEY,
+    user_id          BIGINT DEFAULT 1,
+    name             VARCHAR(255) NOT NULL,
+    description      TEXT,
+    status           VARCHAR(32),
+    vector_model_id  BIGINT,
+    es_index         VARCHAR(255),
+    rebuilding       TINYINT(1) DEFAULT 0,
+    create_time      TIMESTAMP,
+    update_time      TIMESTAMP,
+    deleted          INTEGER DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS knowledge_file (
+    id                 BIGINT PRIMARY KEY,
+    user_id            BIGINT DEFAULT 1,
+    file_name          VARCHAR(255),
+    file_description   TEXT,
+    knowledge_base_id  BIGINT,
+    file_size          BIGINT,
+    line_count         INTEGER,
+    status             VARCHAR(32),
+    publish_status     VARCHAR(32) DEFAULT 'UNPUBLISHED',
+    file_content       LONGTEXT,
+    create_time        TIMESTAMP,
+    update_time        TIMESTAMP,
+    deleted            INTEGER DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_knowledge_file_knowledge_base_id ON knowledge_file(knowledge_base_id);
+
+CREATE TABLE IF NOT EXISTS agent_knowledge_base (
+    id                 BIGINT PRIMARY KEY,
+    agent_id           BIGINT NOT NULL,
+    knowledge_base_id  BIGINT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_agent_knowledge_base_agent_id ON agent_knowledge_base(agent_id);
+CREATE INDEX IF NOT EXISTS idx_agent_knowledge_base_knowledge_base_id ON agent_knowledge_base(knowledge_base_id);

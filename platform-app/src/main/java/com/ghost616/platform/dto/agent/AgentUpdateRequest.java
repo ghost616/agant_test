@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 
 import java.util.List;
 
+import com.ghost616.agentbase.enums.SubSessionOpenMode;
 import com.ghost616.platform.dto.agent.AgentToolItem;
 import com.ghost616.platform.dto.agent.AgentSkillItem;
 
@@ -31,6 +32,8 @@ public class AgentUpdateRequest {
     private Integer memoryGroupCount;
 
     private Long vectorModelId;
+
+    private SubSessionOpenMode subSessionOpenMode;
 
     private List<AgentToolItem> tools;
 

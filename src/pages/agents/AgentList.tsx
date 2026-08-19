@@ -20,6 +20,7 @@ import type {
   AgentFormData,
   KnowledgeBaseItem,
   SessionAuthType,
+  SubSessionOpenMode,
 } from '../../types/agent';
 import type { ModelConfig } from '../../types/model';
 import type { ToolConfig } from '../../types/tool';
@@ -64,6 +65,23 @@ const SESSION_AUTH_OPTIONS = Object.entries(SESSION_AUTH_LABELS).map(([value, la
   value,
   label,
 }));
+
+const SUB_SESSION_OPEN_MODE_LABELS: Record<SubSessionOpenMode, string> = {
+  WEBSOCKET: 'WebSocket推送',
+  TOOL_CALL: '前台工具调用',
+};
+
+const SUB_SESSION_OPEN_MODE_COLORS: Record<SubSessionOpenMode, string> = {
+  WEBSOCKET: 'cyan',
+  TOOL_CALL: 'geekblue',
+};
+
+const SUB_SESSION_OPEN_MODE_OPTIONS = Object.entries(SUB_SESSION_OPEN_MODE_LABELS).map(
+  ([value, label]) => ({
+    value,
+    label,
+  }),
+);
 
 function SessionAuthSelect({
   value = [],
@@ -240,6 +258,7 @@ function AgentList(): JSX.Element {
       memoryEnabled: editingAgent.memoryEnabled,
       memoryGroupCount: editingAgent.memoryGroupCount,
       vectorModelId: editingAgent.vectorModelId,
+      subSessionOpenMode: editingAgent.subSessionOpenMode ?? 'TOOL_CALL',
     });
   }, [editingAgent, modalVisible, form]);
 
@@ -373,6 +392,19 @@ function AgentList(): JSX.Element {
         value === undefined || value === null ? '-' : value,
     },
     {
+      title: '子会话打开方式',
+      dataIndex: 'subSessionOpenMode',
+      width: 140,
+      render: (value: SubSessionOpenMode | undefined) => {
+        const mode: SubSessionOpenMode = value ?? 'TOOL_CALL';
+        return (
+          <Tag color={SUB_SESSION_OPEN_MODE_COLORS[mode]}>
+            {SUB_SESSION_OPEN_MODE_LABELS[mode]}
+          </Tag>
+        );
+      },
+    },
+    {
       title: '状态',
       dataIndex: 'status',
       width: 80,
@@ -479,6 +511,16 @@ function AgentList(): JSX.Element {
                 value: m.id,
                 label: m.name,
               }))}
+            />
+          </Form.Item>
+          <Form.Item
+            name="subSessionOpenMode"
+            label="子会话打开方式"
+            initialValue="TOOL_CALL"
+          >
+            <Select
+              placeholder="请选择子会话打开方式"
+              options={SUB_SESSION_OPEN_MODE_OPTIONS}
             />
           </Form.Item>
           <Form.Item name="tools" label="挂载工具">

@@ -1,13 +1,19 @@
 package com.ghost616.platform.service.agent;
 
 import com.ghost616.agentbase.dto.model.Message;
+import com.ghost616.agentbase.enums.SubSessionOpenMode;
+import com.ghost616.agentbase.service.agent.AgentExecutionContext;
 import com.ghost616.agentbase.service.agent.invoker.SubSessionCallback;
+import com.ghost616.platform.entity.AgentConfig;
 import com.ghost616.platform.entity.Session;
+import com.ghost616.platform.repository.AgentConfigMapper;
 import com.ghost616.platform.repository.SessionMapper;
 import com.ghost616.platform.util.IdConverter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
@@ -17,17 +23,30 @@ import java.util.concurrent.ExecutionException;
 public class DefaultSubSessionCallback implements SubSessionCallback {
 
     private final SessionMapper sessionMapper;
+    private final AgentConfigMapper agentConfigMapper;
 
     private final ConcurrentHashMap<Long, SubSessionData> subSessionDataMap = new ConcurrentHashMap<>();
 
     @Override
-    public Message execute(String sessionId, String userMessage, Boolean thinking) {
+    public Message execute(AgentExecutionContext ctx, String sessionId, String userMessage, Boolean thinking) {
         Long sid = IdConverter.parse(sessionId);
         Session session = sessionMapper.selectById(sid);
         if (session == null || session.getParentSessionId() == null) {
             return null;
         }
         Long parentSessionId = session.getParentSessionId();
+
+        if (ctx != null && isWebSocketMode(session)) {
+            ctx.sendUserMessage(sessionId, userMessage, ctx.getModelId(), thinking);
+            String sessionName = session.getTitle();
+            if (sessionName == null || sessionName.isBlank()) {
+                sessionName = sessionId;
+            }
+            return Message.builder()
+                    .role("assistant")
+                    .content("已发送消息到子会话" + sessionName + "，请等候子会话返回消息")
+                    .build();
+        }
 
         CompletableFuture<Message> messageResult = new CompletableFuture<>();
         SubSessionData data = new SubSessionData(sid, userMessage, thinking, messageResult);
@@ -47,6 +66,44 @@ public class DefaultSubSessionCallback implements SubSessionCallback {
 
     public SubSessionData getSubSessionData(Long parentSessionId) {
         return subSessionDataMap.get(parentSessionId);
+    }
+
+    /**
+     * 判断子会话所属主会话配置的子会话打开方式是否为 WEBSOCKET。
+     * 主会话解析失败或智能体配置缺失时返回 false，由调用方按默认（TOOL_CALL）行为处理。
+     */
+    private boolean isWebSocketMode(Session childSession) {
+        Long mainSessionId = resolveMainSessionId(childSession);
+        if (mainSessionId == null) {
+            return false;
+        }
+        Session mainSession = sessionMapper.selectById(mainSessionId);
+        if (mainSession == null || mainSession.getAgentId() == null) {
+            return false;
+        }
+        AgentConfig agentConfig = agentConfigMapper.selectById(mainSession.getAgentId());
+        return agentConfig != null && SubSessionOpenMode.WEBSOCKET == agentConfig.getSubSessionOpenMode();
+    }
+
+    /**
+     * 从子会话的 parentSessionId 出发，沿 parentSessionId 链解析主会话（无父会话的根）。
+     *
+     * @return 主会话 ID；解析失败（会话缺失或出现环）时返回 null
+     */
+    private Long resolveMainSessionId(Session childSession) {
+        Long current = childSession.getParentSessionId();
+        Set<Long> visited = new HashSet<>();
+        while (current != null && visited.add(current)) {
+            Session session = sessionMapper.selectById(current);
+            if (session == null) {
+                return null;
+            }
+            if (session.getParentSessionId() == null) {
+                return current;
+            }
+            current = session.getParentSessionId();
+        }
+        return null;
     }
 
     public static class SubSessionData {

@@ -1,6 +1,7 @@
 package com.ghost616.platform.entity;
 
 import com.baomidou.mybatisplus.annotation.TableField;
+import com.ghost616.agentbase.enums.SubSessionOpenMode;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
@@ -8,6 +9,7 @@ import java.lang.reflect.Field;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 class AgentConfigEntityTest {
 
@@ -43,5 +45,21 @@ class AgentConfigEntityTest {
         AgentConfig config = new AgentConfig();
         config.setVectorModelId(100L);
         assertEquals(100L, config.getVectorModelId());
+    }
+
+    @Test
+    void subSessionOpenModeField() throws Exception {
+        Field field = AgentConfig.class.getDeclaredField("subSessionOpenMode");
+        assertNotNull(field);
+        assertEquals(SubSessionOpenMode.class, field.getType());
+        assertEquals("sub_session_open_mode", field.getAnnotation(TableField.class).value());
+
+        AgentConfig config = new AgentConfig();
+        assertSame(SubSessionOpenMode.DEFAULT, config.getSubSessionOpenMode(),
+                "subSessionOpenMode default value should be SubSessionOpenMode.DEFAULT (TOOL_CALL)");
+        assertEquals(SubSessionOpenMode.TOOL_CALL, config.getSubSessionOpenMode());
+
+        config.setSubSessionOpenMode(SubSessionOpenMode.WEBSOCKET);
+        assertEquals(SubSessionOpenMode.WEBSOCKET, config.getSubSessionOpenMode());
     }
 }

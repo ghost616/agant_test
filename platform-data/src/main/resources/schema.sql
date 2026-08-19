@@ -93,6 +93,7 @@ CREATE TABLE IF NOT EXISTS agent_config (
     memory_enabled          TINYINT(1) DEFAULT 0,
     memory_group_count      INTEGER DEFAULT 30,
     vector_model_id         BIGINT,
+    sub_session_open_mode   VARCHAR(32) DEFAULT 'TOOL_CALL',
     deleted                 INTEGER DEFAULT 0
 );
 

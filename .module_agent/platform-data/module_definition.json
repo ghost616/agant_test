@@ -15,7 +15,7 @@
     },
     {
       "path": "platform-data/src/main/java/com/ghost616/platform/entity/AgentConfig.java",
-      "description": "智能体配置实体类，继承 BaseEntity，映射 agent_config 表，含 userId（归属用户）字段"
+      "description": "智能体配置实体类，继承 BaseEntity，映射 agent_config 表，含 userId（归属用户）、name/description/systemPrompt/modelId/status/recentMessageCount/memoryEnabled/memoryGroupCount/vectorModelId（关联 model_config.id）/subSessionOpenMode（子会话打开方式，SubSessionOpenMode 枚举，默认 TOOL_CALL）字段"
     },
     {
       "path": "platform-data/src/main/java/com/ghost616/platform/entity/AgentTool.java",
@@ -119,7 +119,7 @@
     },
     {
       "path": "platform-data/src/main/resources/schema.sql",
-      "description": "主数据源 DDL 初始化脚本，定义 user 表及除 message、agent_log、message_tool_call 外的所有业务表（model_config、tool_config、session、session_tool、agent_config、agent_tool、agent_skill、skill_config、skill_tool、session_variable、session_skill、agent_evaluation、evaluation、evaluation_result、knowledge_base、knowledge_file、agent_knowledge_base）的建表语句和索引；user 表含 login_name/display_name/user_type/password/enabled（默认 1）列；model_config/tool_config/session/session_variable/agent_config/skill_config/agent_evaluation/evaluation/evaluation_result/knowledge_base/knowledge_file 11 张表含 user_id BIGINT DEFAULT 1 列；knowledge_base 含 vector_model_id/es_index/rebuilding 列，knowledge_file 含 publish_status 列；message、agent_log、message_tool_call 表已移至 schema-message.sql"
+      "description": "主数据源 DDL 初始化脚本，定义 user 表及除 message、agent_log、message_tool_call 外的所有业务表（model_config、tool_config、session、session_tool、agent_config、agent_tool、agent_skill、skill_config、skill_tool、session_variable、session_skill、agent_evaluation、evaluation、evaluation_result、knowledge_base、knowledge_file、agent_knowledge_base）的建表语句和索引；user 表含 login_name/display_name/user_type/password/enabled（默认 1）列；model_config/tool_config/session/session_variable/agent_config/skill_config/agent_evaluation/evaluation/evaluation_result/knowledge_base/knowledge_file 11 张表含 user_id BIGINT DEFAULT 1 列；knowledge_base 含 vector_model_id/es_index/rebuilding 列，knowledge_file 含 publish_status 列；agent_config 表含 sub_session_open_mode VARCHAR(32) DEFAULT 'TOOL_CALL' 列；message、agent_log、message_tool_call 表已移至 schema-message.sql"
     },
     {
       "path": "platform-data/src/main/java/com/ghost616/platform/entity/Evaluation.java",

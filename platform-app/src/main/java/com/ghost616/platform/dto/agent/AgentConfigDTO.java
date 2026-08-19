@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import com.ghost616.agentbase.enums.CommonStatus;
+import com.ghost616.agentbase.enums.SubSessionOpenMode;
 import com.ghost616.platform.dto.agent.AgentToolItem;
 import com.ghost616.platform.dto.agent.AgentSkillItem;
 import com.ghost616.platform.dto.knowledge.KnowledgeBaseDTO;
@@ -35,6 +36,7 @@ public class AgentConfigDTO {
     private Integer memoryGroupCount;
     @JsonSerialize(using = ToStringSerializer.class)
     private Long vectorModelId;
+    private SubSessionOpenMode subSessionOpenMode;
     private List<AgentToolItem> tools;
     private List<AgentSkillItem> skills;
     private List<KnowledgeBaseDTO> knowledgeBases;
