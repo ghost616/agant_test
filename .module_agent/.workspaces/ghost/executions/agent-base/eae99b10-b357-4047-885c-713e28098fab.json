@@ -1,0 +1,11 @@
+[
+  {
+    "plan_id": "plan_9c4f762f-d8e3-48cf-bebf-7e67697587a0",
+    "plan": "优化 ChatService 三个 insert 方法重复调用 findLastUserIndex 的问题，改为收集器模式",
+    "modified_files": [
+      "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ChatService.java"
+    ],
+    "summary": "执行总结：本轮仅修改 1 个文件 agent-base/src/main/java/com/ghost616/agentbase/service/agent/ChatService.java。完成收集器模式重构：1) insertLoadedSkillMessages → collectLoadedSkillMessages(List<Message> target, List<Message>)，null/空列表跳过，已加载技能 system 消息追加到 target；2) insertAnchorMessages → collectAnchorMessages(List<Message> target, List<Message>)，null/空列表跳过，锚点 system 消息追加到 target；3) insertPostSystemPrompt → collectPostSystemPrompt(List<Message> target, String)，空白字符串跳过，构建 role=system 消息追加到 target；4) 新增 insertPostSystemMessages(List<Message> messages, List<Message> postMessages)，仅一次 findLastUserIndex，将统一后置消息列表插入到最后一条 user 消息之前（无 user 时追加末尾，null/空直接返回原列表）；5) chatViaChatCompletions 调用点改为先收集（技能消息→anchor 消息→后置提示词）到统一 postMessages 列表再一次插入，注入顺序不变（后置最贴近 user 消息）；6) 行为与现状完全等价，未修改任何测试用例。旧方法名已全局无引用。同步更新 module_definition.json 中 ChatService 描述与 change_history.log。\n\n测试总结：全部测试通过。编译测试通过（mvn test-compile BUILD SUCCESS），全量回归测试通过（mvn test：Tests run 508, Failures 0, Errors 0, Skipped 0, BUILD SUCCESS），行为等价性验证通过（代码审查+git diff 逐条核对：消息顺序、无 user 追加末尾、空白/null 跳过、注入顺序技能→锚点→后置、仅一次 findLastUserIndex 均符合要求）。无环境问题，无失败用例，无需修复。",
+    "errors": []
+  }
+]

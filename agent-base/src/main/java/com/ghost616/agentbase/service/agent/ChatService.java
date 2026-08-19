@@ -216,9 +216,12 @@ public class ChatService {
 
         FoldResult foldResult = filterAndFold(messages, context);
         messages = foldResult.messages();
-        messages = insertLoadedSkillMessages(messages, systemInfo.loadedSkillMessages());
-        messages = insertAnchorMessages(messages, foldResult.anchorMessages());
-        messages = insertPostSystemPrompt(messages, chatDataProvider.getPostSystemPrompt(sessionId));
+
+        List<Message> postMessages = new ArrayList<>();
+        collectLoadedSkillMessages(postMessages, systemInfo.loadedSkillMessages());
+        collectAnchorMessages(postMessages, foldResult.anchorMessages());
+        collectPostSystemPrompt(postMessages, chatDataProvider.getPostSystemPrompt(sessionId));
+        messages = insertPostSystemMessages(messages, postMessages);
 
         ModelInvoker invoker = modelInvokerManager.getInvoker(configData);
 
@@ -572,48 +575,53 @@ public class ChatService {
         return new ContextSystemInfo(systemMessages, filteredLoadedSkills, loadedSkillMessages);
     }
 
-    private List<Message> insertLoadedSkillMessages(List<Message> messages, List<Message> loadedSkillMessages) {
+    /**
+     * 将已加载技能 system 消息收集到统一后置消息列表（null/空列表跳过）。
+     */
+    private void collectLoadedSkillMessages(List<Message> target, List<Message> loadedSkillMessages) {
         if (loadedSkillMessages == null || loadedSkillMessages.isEmpty()) {
-            return messages;
+            return;
         }
-        List<Message> result = new ArrayList<>(messages);
-        int insertIndex = findLastUserIndex(result);
-        if (insertIndex < 0) {
-            result.addAll(loadedSkillMessages);
-        } else {
-            result.addAll(insertIndex, loadedSkillMessages);
-        }
-        return result;
+        target.addAll(loadedSkillMessages);
     }
 
-    private List<Message> insertAnchorMessages(List<Message> messages, List<Message> anchorMessages) {
+    /**
+     * 将锚点展开 system 消息收集到统一后置消息列表（null/空列表跳过）。
+     */
+    private void collectAnchorMessages(List<Message> target, List<Message> anchorMessages) {
         if (anchorMessages == null || anchorMessages.isEmpty()) {
-            return messages;
+            return;
         }
-        List<Message> result = new ArrayList<>(messages);
-        int insertIndex = findLastUserIndex(result);
-        if (insertIndex < 0) {
-            result.addAll(anchorMessages);
-        } else {
-            result.addAll(insertIndex, anchorMessages);
-        }
-        return result;
+        target.addAll(anchorMessages);
     }
 
-    private List<Message> insertPostSystemPrompt(List<Message> messages, String postSystemPrompt) {
+    /**
+     * 将会话级后置提示词构建为 system 消息收集到统一后置消息列表（空白字符串跳过）。
+     */
+    private void collectPostSystemPrompt(List<Message> target, String postSystemPrompt) {
         if (postSystemPrompt == null || postSystemPrompt.isBlank()) {
-            return messages;
+            return;
         }
-        List<Message> result = new ArrayList<>(messages);
-        Message postMessage = Message.builder()
+        target.add(Message.builder()
                 .role("system")
                 .content(postSystemPrompt)
-                .build();
+                .build());
+    }
+
+    /**
+     * 将统一后置消息列表插入到最后一条 user 消息之前（无 user 消息时追加到列表末尾），
+     * 仅调用一次 findLastUserIndex；postMessages 为 null 或空时直接返回原列表。
+     */
+    private List<Message> insertPostSystemMessages(List<Message> messages, List<Message> postMessages) {
+        if (postMessages == null || postMessages.isEmpty()) {
+            return messages;
+        }
+        List<Message> result = new ArrayList<>(messages);
         int insertIndex = findLastUserIndex(result);
         if (insertIndex < 0) {
-            result.add(postMessage);
+            result.addAll(postMessages);
         } else {
-            result.add(insertIndex, postMessage);
+            result.addAll(insertIndex, postMessages);
         }
         return result;
     }
