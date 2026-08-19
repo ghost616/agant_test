@@ -102,7 +102,7 @@ class ToolExecutionControllerTest {
     @Test
     void toolStatus_检测子会话回调设置needsSubSessionFlow() {
         ToolExecutionService.ToolStatusResult serviceResult =
-                new ToolExecutionService.ToolStatusResult("done", "tc-1", "callback_sub_session", "{}", false, "ok");
+                new ToolExecutionService.ToolStatusResult("done", "tc-1", "_sys_callback_sub_session", "{}", false, "ok");
         when(toolExecutionService.getToolStatus(sessionIdStr, "tc-1")).thenReturn(serviceResult);
         DefaultSubSessionCallback.SubSessionData subData = mock(DefaultSubSessionCallback.SubSessionData.class);
         when(defaultSubSessionCallback.getSubSessionData(sessionId)).thenReturn(subData);
@@ -117,7 +117,7 @@ class ToolExecutionControllerTest {
     @Test
     void toolStatus_子会话回调无数据时不设置needsSubSessionFlow() {
         ToolExecutionService.ToolStatusResult serviceResult =
-                new ToolExecutionService.ToolStatusResult("done", "tc-1", "callback_sub_session", "{}", false, "ok");
+                new ToolExecutionService.ToolStatusResult("done", "tc-1", "_sys_callback_sub_session", "{}", false, "ok");
         when(toolExecutionService.getToolStatus(sessionIdStr, "tc-1")).thenReturn(serviceResult);
         when(defaultSubSessionCallback.getSubSessionData(sessionId)).thenReturn(null);
 
@@ -186,18 +186,18 @@ class ToolExecutionControllerTest {
     @Test
     void toolStatus_原有子会话回调逻辑不受影响() {
         ToolExecutionService.ToolStatusResult serviceResult =
-                new ToolExecutionService.ToolStatusResult("done", "tc-1", "callback_sub_session", "{}", false, "ok");
+                new ToolExecutionService.ToolStatusResult("done", "tc-1", "_sys_callback_sub_session", "{}", false, "ok");
         when(toolExecutionService.getToolStatus(sessionIdStr, "tc-1")).thenReturn(serviceResult);
         DefaultSubSessionCallback.SubSessionData subData = mock(DefaultSubSessionCallback.SubSessionData.class);
         when(defaultSubSessionCallback.getSubSessionData(sessionId)).thenReturn(subData);
-        when(toolConfigService.getToolConfigBySessionAndName(sessionId, "callback_sub_session")).thenReturn(null);
+        when(toolConfigService.getToolConfigBySessionAndName(sessionId, "_sys_callback_sub_session")).thenReturn(null);
 
         ApiResponse<ToolStatusResultDTO> response = controller.toolStatus(sessionId, "tc-1");
 
         assertTrue(response.getData().isNeedsSubSessionFlow());
         assertNull(response.getData().getToolConfig());
         verify(defaultSubSessionCallback).getSubSessionData(sessionId);
-        verify(toolConfigService).getToolConfigBySessionAndName(sessionId, "callback_sub_session");
+        verify(toolConfigService).getToolConfigBySessionAndName(sessionId, "_sys_callback_sub_session");
     }
 
     @Test

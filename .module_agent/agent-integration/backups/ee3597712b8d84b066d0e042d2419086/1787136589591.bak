@@ -47,7 +47,7 @@ public class ToolExecutionController {
         ToolStatusResultDTO dto = new ToolStatusResultDTO(
                 result.status(), result.toolId(), result.toolName(), result.arguments(),
                 result.hasMore(), result.result(), null, false);
-        if ("callback_sub_session".equals(result.toolName())) {
+        if ("_sys_callback_sub_session".equals(result.toolName())) {
             DefaultSubSessionCallback.SubSessionData subData = defaultSubSessionCallback.getSubSessionData(sessionId);
             if (subData != null) {
                 dto.setNeedsSubSessionFlow(true);

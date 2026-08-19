@@ -150,5 +150,21 @@
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
+  },
+  {
+    "plan_id": "plan_a527e213-c54a-47f2-b0a5-c14cec25d416",
+    "plan_summary": "将 SubSessionCallbackSystemTool 改造为继承 CustomToolInvoker 的自定义工具 SubSessionCallbackTool",
+    "starter_session_id": "18798954-dfde-40ad-adf6-1356d78ebed3",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_60493497-f0ec-41a7-a06b-eb161ba6412f",
+    "plan_summary": "将 callback_sub_session 工具从系统工具注册迁移为自定义工具注册（多数改动已完成，验证性执行）",
+    "starter_session_id": "18798954-dfde-40ad-adf6-1356d78ebed3",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
   }
 ]

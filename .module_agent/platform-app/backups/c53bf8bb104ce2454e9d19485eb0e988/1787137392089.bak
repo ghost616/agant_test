@@ -68,7 +68,7 @@ public class DefaultToolDataProvider implements ToolDataProvider {
 
     private static final String HISTORY_TOOL_NAME = HistoryQueryTool.TOOL_NAME;
 
-    private static final String CALLBACK_SUB_SESSION_TOOL_NAME = SubSessionCallbackTool.TOOL_NAME;
+    private static final String SUBSESSION_TOOL_NAME = SubSessionCallbackTool.TOOL_NAME;
 
     private final SessionToolMapper sessionToolMapper;
     private final SessionMapper sessionMapper;
@@ -98,7 +98,7 @@ public class DefaultToolDataProvider implements ToolDataProvider {
                 })
                 .collect(Collectors.toCollection(ArrayList::new));
 
-        result.add(new SessionToolInfo(CALLBACK_SUB_SESSION_TOOL_NAME, SessionAuthType.ALL));
+        result.add(new SessionToolInfo(SUBSESSION_TOOL_NAME, SessionAuthType.ALL));
 
         if (sid != null) {
             Session session = sessionMapper.selectById(sid);
@@ -132,7 +132,7 @@ public class DefaultToolDataProvider implements ToolDataProvider {
         if (HISTORY_TOOL_NAME.equals(toolId)) {
             return getHistoryToolConfig(toolId);
         }
-        if (CALLBACK_SUB_SESSION_TOOL_NAME.equals(toolId)) {
+        if (SUBSESSION_TOOL_NAME.equals(toolId)) {
             return getSubSessionCallbackToolConfig(toolId);
         }
         Long tid = IdConverter.parse(toolId);
@@ -150,7 +150,7 @@ public class DefaultToolDataProvider implements ToolDataProvider {
         if (HISTORY_TOOL_NAME.equals(toolConfig.getId())) {
             return createHistoryTool(toolConfig);
         }
-        if (CALLBACK_SUB_SESSION_TOOL_NAME.equals(toolConfig.getId())) {
+        if (SUBSESSION_TOOL_NAME.equals(toolConfig.getId())) {
             return new SubSessionCallbackTool(toolConfig, defaultSubSessionCallback);
         }
         ToolDetailDTO detail = toolConfigService.getById(IdConverter.parse(toolConfig.getId()));

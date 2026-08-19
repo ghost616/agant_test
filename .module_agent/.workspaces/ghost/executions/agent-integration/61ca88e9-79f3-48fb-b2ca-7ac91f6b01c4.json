@@ -1,0 +1,18 @@
+[
+  {
+    "plan_id": "plan_a527e213-c54a-47f2-b0a5-c14cec25d416",
+    "plan": "将 SubSessionCallbackSystemTool 改造为继承 CustomToolInvoker 的自定义工具（工具名 callback_sub_session），同步更新测试与 platform-app 注册方",
+    "modified_files": [
+      "agent-integration/src/main/java/com/ghost616/agentinteg/tool/SubSessionCallbackTool.java",
+      "agent-integration/src/test/java/com/ghost616/agentinteg/tool/SubSessionCallbackToolTest.java",
+      "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultToolDataProvider.java",
+      "platform-app/src/main/java/com/ghost616/platform/config/AgentContextConfiguration.java",
+      "platform-app/src/main/java/com/ghost616/platform/controller/ToolExecutionController.java",
+      "platform-app/src/test/java/com/ghost616/platform/controller/ToolExecutionControllerTest.java",
+      "platform-app/src/test/java/com/ghost616/platform/config/AgentContextConfigurationTest.java",
+      "platform-app/src/test/java/com/ghost616/platform/service/agent/DefaultToolDataProviderTest.java"
+    ],
+    "summary": "执行总结：本轮共修改 8 个文件，实现 SubSessionCallbackSystemTool → SubSessionCallbackTool 的 CustomToolInvoker 化改造——1) agent-integration 主类重命名并改为 extends CustomToolInvoker，构造函数 (ToolConfigDTO, SubSessionCallback)，新增静态 createToolConfig()（toolType=CUSTOM、id=null、name=callback_sub_session，描述与参数 schema 与原先一致，id 由注册方设置为工具名），移除 SystemTool 的 getToolName/getDescription/getParameterSchema，execute 核心逻辑与错误返回行为不变；2) 测试文件重命名并适配构造方式，原 4 个元数据测试改为 createToolConfig 断言，16 个 execute 用例保持不变；3) platform-app 注册方由 AgentContextConfiguration.systemToolProvider 迁移至 DefaultToolDataProvider（getSessionToolIds 恒注入 callback_sub_session、getToolById 返回 createToolConfig+setId、getCustomInvoker 构造 SubSessionCallbackTool），ToolExecutionController 特判 _sys_callback_sub_session 改为 callback_sub_session，三个测试文件同步适配；模块元数据（spec/definition/history）已更新。\n\n测试总结：全部测试通过。编译测试通过（全量 test-compile 4 模块 BUILD SUCCESS），残留引用检查 0 处（无 SubSessionCallbackSystemTool/_sys_callback_sub_session）；核心单元测试 79/79 通过（SubSessionCallbackToolTest 19、DefaultToolDataProviderTest 37、ToolExecutionControllerTest 12、AgentContextConfigurationTest 11）；回归测试 95/95 通过（SystemToolManagerTest/ToolExecutionServiceTest/ToolManagerTest/CustomToolInvokerTest/SubSessionCallbackFunctionalTest/AgentAssemblerTest/DefaultSubSessionCallbackTest）；全量模块测试 agent-base 499 ✅、agent-integration 212 ✅、platform-data ✅，platform-app 1102 中 3 个失败均为改动前已存在的无关失败（ToolDetailDTOTest 的 id Long/String 断言、DefaultMessageDataProviderTest 的 Mockito UnnecessaryStubbingException，相关文件工作区均未修改，与本次重构无关联）；接口测试与 E2E 判定不适用（纯后端重构，接口行为已由 ToolExecutionControllerTest 单元覆盖）。",
+    "errors": []
+  }
+]

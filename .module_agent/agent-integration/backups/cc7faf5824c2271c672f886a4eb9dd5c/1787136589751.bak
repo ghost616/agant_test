@@ -20,7 +20,6 @@ import com.ghost616.agentinteg.tool.KnowledgeFileChunkTool;
 import com.ghost616.agentinteg.tool.KnowledgeFileInfoTool;
 import com.ghost616.agentinteg.tool.KnowledgeSearchTool;
 import com.ghost616.agentinteg.tool.MemoryQueryTool;
-import com.ghost616.agentinteg.tool.SubSessionCallbackTool;
 import com.ghost616.platform.dto.tool.ToolDetailDTO;
 import com.ghost616.platform.entity.AgentConfig;
 import com.ghost616.platform.entity.AgentKnowledgeBase;
@@ -72,7 +71,6 @@ class DefaultToolDataProviderTest {
     @Mock private ObjectProvider<MemoryQueryProvider> memoryQueryProviderProvider;
     @Mock private HistoryMessageQueryProvider historyMessageQueryProvider;
     @Mock private ObjectProvider<HistoryMessageQueryProvider> historyMessageQueryProviderProvider;
-    @Mock private DefaultSubSessionCallback defaultSubSessionCallback;
 
     private DefaultToolDataProvider provider;
 
@@ -82,7 +80,7 @@ class DefaultToolDataProviderTest {
                 agentSkillMapper, skillToolMapper, sessionSkillMapper, toolConfigService,
                 browserToolCallback, modelConfigMapper, knowledgeBaseQueryProviderProvider,
                 agentKnowledgeBaseMapper, agentConfigMapper, memoryQueryProviderProvider,
-                historyMessageQueryProviderProvider, defaultSubSessionCallback);
+                historyMessageQueryProviderProvider);
     }
 
     private SessionTool createSessionTool(Long toolId, SessionAuthType auth) {
@@ -130,13 +128,11 @@ class DefaultToolDataProviderTest {
 
             List<SessionToolInfo> result = provider.getSessionToolIds("1");
 
-            assertEquals(3, result.size());
+            assertEquals(2, result.size());
             assertEquals("100", result.get(0).toolId());
             assertEquals(SessionAuthType.CHILD, result.get(0).sessionAuth());
             assertEquals("101", result.get(1).toolId());
             assertEquals(SessionAuthType.PARENT, result.get(1).sessionAuth());
-            assertEquals(SubSessionCallbackTool.TOOL_NAME, result.get(2).toolId());
-            assertEquals(SessionAuthType.ALL, result.get(2).sessionAuth());
         }
 
         @Test
@@ -147,23 +143,19 @@ class DefaultToolDataProviderTest {
 
             List<SessionToolInfo> result = provider.getSessionToolIds("1");
 
-            assertEquals(2, result.size());
+            assertEquals(1, result.size());
             assertEquals("200", result.get(0).toolId());
             assertEquals(SessionAuthType.ALL, result.get(0).sessionAuth());
-            assertEquals(SubSessionCallbackTool.TOOL_NAME, result.get(1).toolId());
-            assertEquals(SessionAuthType.ALL, result.get(1).sessionAuth());
         }
 
         @Test
-        @DisplayName("无关联工具时仅返回子会话回调工具")
-        void emptyTools_shouldOnlyContainSubSessionTool() {
+        @DisplayName("无关联工具时返回空列表")
+        void emptyTools_shouldReturnEmptyList() {
             when(sessionToolMapper.selectList(any())).thenReturn(List.of());
 
             List<SessionToolInfo> result = provider.getSessionToolIds("1");
 
-            assertEquals(1, result.size());
-            assertEquals(SubSessionCallbackTool.TOOL_NAME, result.get(0).toolId());
-            assertEquals(SessionAuthType.ALL, result.get(0).sessionAuth());
+            assertTrue(result.isEmpty());
         }
 
         @Test
@@ -176,12 +168,11 @@ class DefaultToolDataProviderTest {
 
             List<SessionToolInfo> result = provider.getSessionToolIds("1");
 
-            assertEquals(5, result.size());
+            assertEquals(4, result.size());
             assertTrue(result.stream().anyMatch(i -> "default_tool_rag_info".equals(i.toolId())));
             assertTrue(result.stream().anyMatch(i -> "default_tool_rag_file_info".equals(i.toolId())));
             assertTrue(result.stream().anyMatch(i -> "default_tool_rag_search".equals(i.toolId())));
             assertTrue(result.stream().anyMatch(i -> "default_tool_rag_file_chunk".equals(i.toolId())));
-            assertTrue(result.stream().anyMatch(i -> SubSessionCallbackTool.TOOL_NAME.equals(i.toolId())));
             assertTrue(result.stream().allMatch(i -> SessionAuthType.ALL == i.sessionAuth()));
         }
 
@@ -194,9 +185,7 @@ class DefaultToolDataProviderTest {
 
             List<SessionToolInfo> result = provider.getSessionToolIds("1");
 
-            assertEquals(1, result.size());
-            assertEquals(SubSessionCallbackTool.TOOL_NAME, result.get(0).toolId());
-            assertFalse(result.stream().anyMatch(i -> i.toolId().startsWith("default_tool_rag")));
+            assertTrue(result.isEmpty());
         }
 
         @Test
@@ -209,10 +198,9 @@ class DefaultToolDataProviderTest {
 
             List<SessionToolInfo> result = provider.getSessionToolIds("1");
 
-            assertEquals(3, result.size());
+            assertEquals(2, result.size());
             assertTrue(result.stream().anyMatch(i -> MemoryQueryTool.TOOL_NAME.equals(i.toolId())));
             assertTrue(result.stream().anyMatch(i -> HistoryQueryTool.TOOL_NAME.equals(i.toolId())));
-            assertTrue(result.stream().anyMatch(i -> SubSessionCallbackTool.TOOL_NAME.equals(i.toolId())));
             assertTrue(result.stream().allMatch(i -> SessionAuthType.ALL == i.sessionAuth()));
         }
 
@@ -226,10 +214,7 @@ class DefaultToolDataProviderTest {
 
             List<SessionToolInfo> result = provider.getSessionToolIds("1");
 
-            assertEquals(1, result.size());
-            assertEquals(SubSessionCallbackTool.TOOL_NAME, result.get(0).toolId());
-            assertFalse(result.stream().anyMatch(i -> MemoryQueryTool.TOOL_NAME.equals(i.toolId())));
-            assertFalse(result.stream().anyMatch(i -> HistoryQueryTool.TOOL_NAME.equals(i.toolId())));
+            assertTrue(result.isEmpty());
         }
 
         @Test
@@ -243,7 +228,7 @@ class DefaultToolDataProviderTest {
 
             List<SessionToolInfo> result = provider.getSessionToolIds("1");
 
-            assertEquals(7, result.size());
+            assertEquals(6, result.size());
             assertTrue(result.stream().anyMatch(i -> MemoryQueryTool.TOOL_NAME.equals(i.toolId())));
             assertTrue(result.stream().anyMatch(i -> HistoryQueryTool.TOOL_NAME.equals(i.toolId())));
             assertTrue(result.stream().allMatch(i -> SessionAuthType.ALL == i.sessionAuth()));
@@ -295,22 +280,6 @@ class DefaultToolDataProviderTest {
             assertNotNull(result);
             assertEquals(HistoryQueryTool.TOOL_NAME, result.getId());
             assertEquals(HistoryQueryTool.TOOL_NAME, result.getName());
-            assertEquals(ToolType.CUSTOM, result.getToolType());
-            assertNotNull(result.getDescription());
-            assertFalse(result.getDescription().isBlank());
-            assertNotNull(result.getParameterSchema());
-            assertFalse(result.getParameterSchema().isBlank());
-            verify(toolConfigService, never()).getById(anyLong());
-        }
-
-        @Test
-        @DisplayName("传入子会话回调工具名返回 SubSessionCallbackTool 工具配置（id=工具名，toolType=CUSTOM）")
-        void subSessionToolName_shouldReturnSubSessionCallbackToolConfig() {
-            ToolConfigDTO result = provider.getToolById(SubSessionCallbackTool.TOOL_NAME);
-
-            assertNotNull(result);
-            assertEquals(SubSessionCallbackTool.TOOL_NAME, result.getId());
-            assertEquals(SubSessionCallbackTool.TOOL_NAME, result.getName());
             assertEquals(ToolType.CUSTOM, result.getToolType());
             assertNotNull(result.getDescription());
             assertFalse(result.getDescription().isBlank());
@@ -516,21 +485,6 @@ class DefaultToolDataProviderTest {
             CustomToolInvoker result = provider.getCustomInvoker(config);
 
             assertInstanceOf(HistoryQueryTool.class, result);
-            verify(toolConfigService, never()).getById(anyLong());
-        }
-
-        @Test
-        @DisplayName("子会话回调工具配置返回 SubSessionCallbackTool 实例")
-        void subSessionTool_shouldReturnSubSessionCallbackTool() {
-            ToolConfigDTO config = ToolConfigDTO.builder()
-                    .id(SubSessionCallbackTool.TOOL_NAME)
-                    .name(SubSessionCallbackTool.TOOL_NAME)
-                    .toolType(ToolType.CUSTOM)
-                    .build();
-
-            CustomToolInvoker result = provider.getCustomInvoker(config);
-
-            assertInstanceOf(SubSessionCallbackTool.class, result);
             verify(toolConfigService, never()).getById(anyLong());
         }
 

@@ -21,7 +21,6 @@ import com.ghost616.agentinteg.tool.KnowledgeFileChunkTool;
 import com.ghost616.agentinteg.tool.KnowledgeFileInfoTool;
 import com.ghost616.agentinteg.tool.KnowledgeSearchTool;
 import com.ghost616.agentinteg.tool.MemoryQueryTool;
-import com.ghost616.agentinteg.tool.SubSessionCallbackTool;
 import com.ghost616.platform.dto.tool.ToolDetailDTO;
 import com.ghost616.platform.entity.AgentConfig;
 import com.ghost616.platform.entity.AgentKnowledgeBase;
@@ -68,8 +67,6 @@ public class DefaultToolDataProvider implements ToolDataProvider {
 
     private static final String HISTORY_TOOL_NAME = HistoryQueryTool.TOOL_NAME;
 
-    private static final String CALLBACK_SUB_SESSION_TOOL_NAME = SubSessionCallbackTool.TOOL_NAME;
-
     private final SessionToolMapper sessionToolMapper;
     private final SessionMapper sessionMapper;
     private final AgentSkillMapper agentSkillMapper;
@@ -83,7 +80,6 @@ public class DefaultToolDataProvider implements ToolDataProvider {
     private final AgentConfigMapper agentConfigMapper;
     private final ObjectProvider<MemoryQueryProvider> memoryQueryProvider;
     private final ObjectProvider<HistoryMessageQueryProvider> historyMessageQueryProvider;
-    private final DefaultSubSessionCallback defaultSubSessionCallback;
 
     @Override
     public List<SessionToolInfo> getSessionToolIds(String sessionId) {
@@ -97,8 +93,6 @@ public class DefaultToolDataProvider implements ToolDataProvider {
                     return new SessionToolInfo(IdConverter.toString(st.getToolId()), auth != null ? auth : SessionAuthType.ALL);
                 })
                 .collect(Collectors.toCollection(ArrayList::new));
-
-        result.add(new SessionToolInfo(CALLBACK_SUB_SESSION_TOOL_NAME, SessionAuthType.ALL));
 
         if (sid != null) {
             Session session = sessionMapper.selectById(sid);
@@ -132,9 +126,6 @@ public class DefaultToolDataProvider implements ToolDataProvider {
         if (HISTORY_TOOL_NAME.equals(toolId)) {
             return getHistoryToolConfig(toolId);
         }
-        if (CALLBACK_SUB_SESSION_TOOL_NAME.equals(toolId)) {
-            return getSubSessionCallbackToolConfig(toolId);
-        }
         Long tid = IdConverter.parse(toolId);
         return toolConfigService.getById(tid);
     }
@@ -149,9 +140,6 @@ public class DefaultToolDataProvider implements ToolDataProvider {
         }
         if (HISTORY_TOOL_NAME.equals(toolConfig.getId())) {
             return createHistoryTool(toolConfig);
-        }
-        if (CALLBACK_SUB_SESSION_TOOL_NAME.equals(toolConfig.getId())) {
-            return new SubSessionCallbackTool(toolConfig, defaultSubSessionCallback);
         }
         ToolDetailDTO detail = toolConfigService.getById(IdConverter.parse(toolConfig.getId()));
         if (toolConfig.getToolType() == ToolType.CUSTOM && detail.getSubToolType() == SubToolType.BROWSER) {
@@ -176,12 +164,6 @@ public class DefaultToolDataProvider implements ToolDataProvider {
 
     private ToolConfigDTO getHistoryToolConfig(String toolName) {
         ToolConfigDTO config = HistoryQueryTool.createToolConfig();
-        config.setId(toolName);
-        return config;
-    }
-
-    private ToolConfigDTO getSubSessionCallbackToolConfig(String toolName) {
-        ToolConfigDTO config = SubSessionCallbackTool.createToolConfig();
         config.setId(toolName);
         return config;
     }

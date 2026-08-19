@@ -19,6 +19,7 @@ import com.ghost616.platform.repository.SessionMapper;
 import com.ghost616.platform.service.agent.DatabaseAgentLog;
 import com.ghost616.platform.service.agent.DefaultChatDataCacheProvider;
 import com.ghost616.platform.service.agent.DefaultChatDataProvider;
+import com.ghost616.platform.service.agent.DefaultSubSessionCallback;
 import com.ghost616.platform.session.UserContextThreadVariableHandler;
 
 import org.junit.jupiter.api.Test;
@@ -49,6 +50,9 @@ class AgentContextConfigurationTest {
 
     @Mock
     private ApplicationContext applicationContext;
+
+    @Mock
+    private DefaultSubSessionCallback defaultSubSessionCallback;
 
     @Mock
     private ToolExecutionProvider toolExecutionProvider;
@@ -130,14 +134,14 @@ class AgentContextConfigurationTest {
     }
 
     @Test
-    void systemToolProvider不再注册callback_sub_session系统工具() {
+    void systemToolProvider返回的工具Map包含callback_sub_session() {
         when(applicationContext.getBeansOfType(SystemTool.class)).thenReturn(Map.of());
 
-        var provider = config.systemToolProvider(applicationContext);
+        var provider = config.systemToolProvider(applicationContext, defaultSubSessionCallback);
         Map<String, SystemTool> tools = provider.discoverSystemTools();
 
-        assertTrue(tools.isEmpty());
-        assertFalse(tools.containsKey("callback_sub_session"));
+        assertTrue(tools.containsKey("callback_sub_session"));
+        assertNotNull(tools.get("callback_sub_session"));
     }
 
     @Test
@@ -147,12 +151,12 @@ class AgentContextConfigurationTest {
         when(applicationContext.getBeansOfType(SystemTool.class))
                 .thenReturn(Map.of("myCustomTool", mockTool));
 
-        var provider = config.systemToolProvider(applicationContext);
+        var provider = config.systemToolProvider(applicationContext, defaultSubSessionCallback);
         Map<String, SystemTool> tools = provider.discoverSystemTools();
 
         assertTrue(tools.containsKey("my_custom_tool"));
-        assertFalse(tools.containsKey("callback_sub_session"));
-        assertEquals(1, tools.size());
+        assertTrue(tools.containsKey("callback_sub_session"));
+        assertEquals(2, tools.size());
     }
 
     @Test
@@ -162,11 +166,12 @@ class AgentContextConfigurationTest {
         when(applicationContext.getBeansOfType(SystemTool.class))
                 .thenReturn(Map.of("nullNameTool", nullNameTool));
 
-        var provider = config.systemToolProvider(applicationContext);
+        var provider = config.systemToolProvider(applicationContext, defaultSubSessionCallback);
         Map<String, SystemTool> tools = provider.discoverSystemTools();
 
         assertFalse(tools.containsKey(null));
-        assertTrue(tools.isEmpty());
+        assertTrue(tools.containsKey("callback_sub_session"));
+        assertEquals(1, tools.size());
     }
 
     @Test
@@ -176,9 +181,10 @@ class AgentContextConfigurationTest {
         when(applicationContext.getBeansOfType(SystemTool.class))
                 .thenReturn(Map.of("blankNameTool", blankNameTool));
 
-        var provider = config.systemToolProvider(applicationContext);
+        var provider = config.systemToolProvider(applicationContext, defaultSubSessionCallback);
         Map<String, SystemTool> tools = provider.discoverSystemTools();
 
-        assertTrue(tools.isEmpty());
+        assertTrue(tools.containsKey("callback_sub_session"));
+        assertEquals(1, tools.size());
     }
 }

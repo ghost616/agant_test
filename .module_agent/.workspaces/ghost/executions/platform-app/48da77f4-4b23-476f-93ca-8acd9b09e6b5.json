@@ -1,0 +1,11 @@
+[
+  {
+    "plan_id": "plan_60493497-f0ec-41a7-a06b-eb161ba6412f",
+    "plan": "callback_sub_session 工具从系统工具注册迁移为自定义工具注册（验证与补齐）",
+    "modified_files": [
+      "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultToolDataProvider.java"
+    ],
+    "summary": "执行总结：本次为验证+补齐任务。核实前置 agent-integration 计划已完成的主体迁移——AgentContextConfiguration.systemToolProvider 已移除 callback_sub_session 注册、SubSessionCallbackSystemTool import 与 DefaultSubSessionCallback 参数；ToolExecutionController.toolStatus 已改为 \"callback_sub_session\" 判断；DefaultToolDataProvider 已注入 DefaultSubSessionCallback、getSessionToolIds 无条件注入（SessionAuthType.ALL）、getToolById 返回 SubSessionCallbackTool.createToolConfig()（id=工具名）、getCustomInvoker 创建 new SubSessionCallbackTool(toolConfig, callback)。本次实际修改仅 1 处：将 DefaultToolDataProvider 常量 SUBSESSION_TOOL_NAME 对齐重命名为计划要求的 CALLBACK_SUB_SESSION_TOOL_NAME（值不变，=SubSessionCallbackTool.TOOL_NAME=\"callback_sub_session\"），4 处引用同步更新；同步更新 current_spec.md 中过时的系统工具注册/_sys_callback_sub_session 描述并追加变更历史。修改文件：platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultToolDataProvider.java。\n测试总结：全部测试通过。离朱复核：编译检查 BUILD SUCCESS（exit 0，覆盖 agent-base/agent-integration/platform-data/platform-app 全部模块）；单元测试 60/60 通过（AgentContextConfigurationTest 11、DefaultToolDataProviderTest 37 含 GetSessionToolIdsTest 8/GetToolByIdTest 5/GetCustomInvokerTest 14/GetBuiltinToolsTest 10、ToolExecutionControllerTest 12），Failures 0、Errors 0、Skipped 0；迁移正确性静态核验全部通过（无 _sys_callback_sub_session 残留等）；接口测试/E2E 不适用（纯后端逻辑，无新增 HTTP 契约、无 UI 变更）。",
+    "errors": []
+  }
+]
