@@ -1,9 +1,0 @@
-{
-  "plan_id": "plan_fa981a8d-b1f6-4e9e-9db1-d590c0d7572d",
-  "module_name": "agent-integration",
-  "development_plan": "AgentAssembler 内部类 ChatDataProviderProxy 实现 ChatDataProvider 新增的两个方法：getPreSystemPrompt(String sessionId) 与 getPostSystemPrompt(String sessionId)，委托给 delegate 并默认返回 null。同步更新 AgentAssemblerTest 相关测试以覆盖新方法。\n\n重要提示：主体代码已完成——AgentAssembler.ChatDataProviderProxy 已由前置 agent-base 计划的力牧实现了 getPreSystemPrompt/getPostSystemPrompt 两个方法（委托给 delegate.getPreSystemPrompt/getPostSystemPrompt），请先检查现状确认无误。当前缺少的是测试覆盖：请为 AgentAssemblerTest 补充新方法的测试用例（覆盖 ChatDataProviderProxy.getPreSystemPrompt/getPostSystemPrompt 委托 delegate 的行为，含 delegate 返回 null 的场景）。运行相关测试确认通过，勿重复修改已完成的实现代码。",
-  "session_id": "61ca88e9-79f3-48fb-b2ca-7ac91f6b01c4",
-  "modified_files": [
-    "agent-integration/src/test/java/com/ghost616/agentinteg/AgentAssemblerTest.java"
-  ]
-}

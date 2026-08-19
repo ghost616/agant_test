@@ -1,9 +1,0 @@
-{
-  "plan_id": "plan_60493497-f0ec-41a7-a06b-eb161ba6412f",
-  "module_name": "platform-app",
-  "development_plan": "将 callback_sub_session 工具从系统工具注册迁移为自定义工具注册。计划要求：1) AgentContextConfiguration.systemToolProvider 中移除 tools.put(\"callback_sub_session\", ...) 及 SubSessionCallbackSystemTool import，systemToolProvider 方法签名移除 DefaultSubSessionCallback 参数；2) DefaultToolDataProvider 新增 CALLBACK_SUB_SESSION_TOOL_NAME=\"callback_sub_session\" 常量，注入 DefaultSubSessionCallback 依赖；getSessionToolIds 无条件注入该工具（SessionAuthType.ALL）；getToolById 匹配名称时返回 SubSessionCallbackTool.createToolConfig()（id=工具名）；getCustomInvoker 匹配名称时创建 new SubSessionCallbackTool(toolConfig, callback)；3) ToolExecutionController.toolStatus 中 \"_sys_callback_sub_session\" 判断改为 \"callback_sub_session\"；4) 同步更新测试：AgentContextConfigurationTest 移除 callback_sub_session 相关断言并调整数量断言；DefaultToolDataProviderTest 的 getSessionToolIds 相关测试数量断言 +1（新增无条件注入）；ToolExecutionControllerTest 中 \"_sys_callback_sub_session\" 改为 \"callback_sub_session\"。\n\n重要提示：以上要求的大部分改动已由前置 agent-integration 计划的力牧同步完成（DefaultToolDataProvider、AgentContextConfiguration、ToolExecutionController 及三个测试文件均已适配且测试通过）。请先检查现状，已满足要求的部分请勿重复改动或重复提交，仅验证现状并补齐遗漏（如有），最后运行相关测试确认通过。",
-  "session_id": "48da77f4-4b23-476f-93ca-8acd9b09e6b5",
-  "modified_files": [
-    "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultToolDataProvider.java"
-  ]
-}

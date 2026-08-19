@@ -1,9 +1,0 @@
-{
-  "plan_id": "plan_d721b886-c82f-4faf-92f1-d19438e3a790",
-  "module_name": "platform-app",
-  "development_plan": "需求：同步更新 SchemaMigrationTest 的迁移条目计数，适配 PrimarySchemaMigration 新增的 agent_config.sub_session_open_mode 迁移条目。\n\n修改文件：platform-app/src/test/java/com/ghost616/platform/migration/SchemaMigrationTest.java\n- PRIMARY_ALTER_COUNT 常量由 89 更新为 90（PrimarySchemaMigration 新增 1 条迁移条目，所有依赖 PRIMARY_ALTER_COUNT 的 execute 次数断言同步生效）。\n- 可考虑补充一个用例验证迁移包含 sub_session_open_mode 列（可选，不强求）。\n\n运行测试确认通过（SchemaMigrationTest 及 platform-app 相关测试）。",
-  "session_id": "be99ac44-1335-4e37-9c04-b70b6e30711c",
-  "modified_files": [
-    "platform-app/src/test/java/com/ghost616/platform/migration/SchemaMigrationTest.java"
-  ]
-}
