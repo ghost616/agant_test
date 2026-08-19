@@ -78,5 +78,13 @@
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
+  },
+  {
+    "plan_id": "plan_80adc53c-521e-48a3-a31c-c5346f81b6ec",
+    "plan_summary": "子会话路径标签统一 12px 间距，计数标签与子会话名称标签位置一致消除移动感，同步更新测试",
+    "starter_session_id": "session-bf647ef4-4b8e-4273-ba6f-50bfb760c7b5",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
   }
 ]

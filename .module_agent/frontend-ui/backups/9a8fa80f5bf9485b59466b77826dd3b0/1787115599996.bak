@@ -1525,9 +1525,9 @@ function AgentChat(): JSX.Element {
         .agent-chat-count-tab:hover {
           color: #569cd6;
         }
-        /* 统一标签间距：主会话标签、子会话名称标签、计数标签之间统一 12px（覆盖 antd 默认 tab 间距 32px），选中前后位置一致 */
-        .agent-chat-tabs .ant-tabs-tab + .ant-tabs-tab {
-          margin-left: 12px;
+        /* 计数标签所在 tab 贴紧前一个层级标签（覆盖 antd 默认 tab 间距） */
+        .agent-chat-tabs .ant-tabs-tab:has(.agent-chat-count-tab) {
+          margin-left: 4px;
         }
       `}</style>
       <Tabs

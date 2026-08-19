@@ -326,7 +326,7 @@ describe('AgentChat 路径式导航 (静态验证)', () => {
     }
   });
 
-  it('计数标签样式与 Tabs 标签视觉一致：统一间距、同高、无多余边距', () => {
+  it('计数标签样式与 Tabs 标签视觉一致：贴紧、同高、无多余边距', () => {
     const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
     const styleBlock = source.match(/\.agent-chat-count-tab \{[\s\S]*?\n        \}/);
     expect(styleBlock).not.toBeNull();
@@ -336,12 +336,7 @@ describe('AgentChat 路径式导航 (静态验证)', () => {
       expect(styleBlock[0]).not.toContain('margin: 0 8px');
       expect(styleBlock[0]).toContain('align-items: center');
     }
-    // 统一间距规则：主会话/子会话名称/计数标签相邻 tab 间均 12px（覆盖 antd 默认 32px），选中前后位置一致
-    expect(source).toContain('.agent-chat-tabs .ant-tabs-tab + .ant-tabs-tab');
-    expect(source).toContain('margin-left: 12px');
-    // 旧的 4px 特殊间距规则已移除
-    expect(source).not.toContain('margin-left: 4px');
-    expect(source).not.toContain('.agent-chat-tabs .ant-tabs-tab:has(.agent-chat-count-tab)');
+    expect(source).toContain('.agent-chat-tabs .ant-tabs-tab:has(.agent-chat-count-tab)');
   });
 
   it('点击计数标签展开下拉面板，选中后标签变为子会话名称并追加路径（箭头隐藏由新计数标签替代）', () => {

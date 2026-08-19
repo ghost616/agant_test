@@ -1,0 +1,10 @@
+{
+  "plan_id": "plan_80adc53c-521e-48a3-a31c-c5346f81b6ec",
+  "module_name": "frontend-ui",
+  "development_plan": "需求：子会话路径标签间距与位置稳定性优化。① 子会话计数标签与前一个标签间距由 4px 增大到统一 12px；② 选中子会话后，子会话名称标签出现在原\"子会话 N ▾\"计数标签的位置（统一间距规则），位置重合、无移动感。\n\n修改文件 1：src/pages/sessions/AgentChat.tsx（约 1528-1531 行）\n- 将 .agent-chat-tabs .ant-tabs-tab:has(.agent-chat-count-tab) { margin-left: 4px; } 修改为统一间距规则：\n  .agent-chat-tabs .ant-tabs-tab + .ant-tabs-tab { margin-left: 12px; }\n  使主会话标签、子会话名称标签、计数标签之间统一 12px，选中前后位置一致（覆盖 antd 默认 tab 间距 32px）。\n- 保留 .agent-chat-count-tab 其余样式（inline-flex、gap、颜色、hover）不变。\n\n修改文件 2：src/pages/sessions/__tests__/AgentChat.test.tsx\n- 更新\"计数标签样式与 Tabs 标签视觉一致\"用例（约 328-339 行）：将断言 .ant-tabs-tab:has(.agent-chat-count-tab) 的 4px 特殊规则更新为统一间距规则（.ant-tabs-tab + .ant-tabs-tab 与 margin-left: 12px）。\n- 检查其他用例是否有涉及 4px / margin-left 的断言，同步适配。\n- 运行测试确认通过（npx vitest run src/pages/sessions/__tests__/AgentChat.test.tsx）。",
+  "session_id": "e8248f21-c4c5-4675-8c39-f986551b528e",
+  "modified_files": [
+    "src/pages/sessions/AgentChat.tsx",
+    "src/pages/sessions/__tests__/AgentChat.test.tsx"
+  ]
+}
