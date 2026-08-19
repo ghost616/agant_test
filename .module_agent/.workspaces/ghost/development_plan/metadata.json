@@ -142,5 +142,13 @@
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
+  },
+  {
+    "plan_id": "plan_3c8798f8-c7ae-49a7-9ef1-9b7e1c48f098",
+    "plan_summary": "SubSessionCallbackSystemTool 会话复用功能：同名会话复用发送消息，否则新建，参数描述体现复用",
+    "starter_session_id": "session-bf647ef4-4b8e-4273-ba6f-50bfb760c7b5",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
   }
 ]

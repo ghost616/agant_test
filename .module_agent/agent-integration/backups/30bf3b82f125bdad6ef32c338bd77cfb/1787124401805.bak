@@ -31,7 +31,7 @@ public class SubSessionCallbackSystemTool implements SystemTool {
 
     @Override
     public String getDescription() {
-        return "创建或复用子会话并通过回调执行用户消息，支持指定工具和技能";
+        return "创建子会话并通过回调执行用户消息，支持指定工具和技能";
     }
 
     @Override
@@ -40,7 +40,7 @@ public class SubSessionCallbackSystemTool implements SystemTool {
                 {
                   "type": "object",
                   "properties": {
-                    "sessionName": { "type": "string", "description": "子会话名称；若该名称的子会话已存在则复用其会话发送消息，否则新建子会话" },
+                    "sessionName": { "type": "string", "description": "子会话名称" },
                     "description": { "type": "string", "description": "子会话描述" },
                     "toolNames": { "type": "array", "items": { "type": "string" }, "description": "要分配给子会话的工具名称列表" },
                     "skillNames": { "type": "array", "items": { "type": "string" }, "description": "要分配给子会话的技能名称列表" },
@@ -57,20 +57,16 @@ public class SubSessionCallbackSystemTool implements SystemTool {
             JsonNode root = JSON_MAPPER.readTree(arguments);
             String sessionName = root.get("sessionName").asText();
             String userMessage = root.get("userMessage").asText();
+            String description = root.has("description") && !root.get("description").isNull()
+                    ? root.get("description").asText() : null;
 
             Boolean thinking = root.has("thinking") && !root.get("thinking").isNull()
                     ? root.get("thinking").asBoolean() : null;
 
-            String childSessionId = findExistingChildSessionId(ctx, sessionName);
-            if (childSessionId == null) {
-                String description = root.has("description") && !root.get("description").isNull()
-                        ? root.get("description").asText() : null;
+            List<String> toolIds = resolveToolIds(ctx, root.get("toolNames"));
+            List<String> skillIds = resolveSkillIds(ctx, root.get("skillNames"));
 
-                List<String> toolIds = resolveToolIds(ctx, root.get("toolNames"));
-                List<String> skillIds = resolveSkillIds(ctx, root.get("skillNames"));
-
-                childSessionId = ctx.createChildSession(sessionName, description, ctx.getModelId(), toolIds, skillIds, null);
-            }
+            String childSessionId = ctx.createChildSession(sessionName, description, ctx.getModelId(), toolIds, skillIds, null);
 
             Message message = callback.execute(ctx, childSessionId, userMessage, thinking);
 
@@ -83,18 +79,6 @@ public class SubSessionCallbackSystemTool implements SystemTool {
                 return "{\"status\":\"error\",\"errMsg\":\"" + inner.getMessage() + "\"}";
             }
         }
-    }
-
-    private String findExistingChildSessionId(AgentExecutionContext ctx, String sessionName) {
-        List<AgentExecutionContext.ChildSession> childSessions = ctx.getChildSessions();
-        if (childSessions == null || childSessions.isEmpty()) {
-            return null;
-        }
-        return childSessions.stream()
-                .filter(child -> sessionName.equals(child.sessionName()))
-                .map(AgentExecutionContext.ChildSession::sessionId)
-                .findFirst()
-                .orElse(null);
     }
 
     private List<String> resolveToolIds(AgentExecutionContext ctx, JsonNode toolNamesNode) {

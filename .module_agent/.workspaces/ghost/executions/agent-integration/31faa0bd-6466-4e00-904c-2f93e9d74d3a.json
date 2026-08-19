@@ -1,0 +1,12 @@
+[
+  {
+    "plan_id": "plan_3c8798f8-c7ae-49a7-9ef1-9b7e1c48f098",
+    "plan": "callback_sub_session 工具会话复用",
+    "modified_files": [
+      "agent-integration/src/main/java/com/ghost616/agentinteg/tool/SubSessionCallbackSystemTool.java",
+      "agent-integration/src/test/java/com/ghost616/agentinteg/tool/SubSessionCallbackSystemToolTest.java"
+    ],
+    "summary": "执行总结：本轮共修改 2 个文件，实现 callback_sub_session 工具（SubSessionCallbackSystemTool）的会话复用能力：\n1. agent-integration/src/main/java/com/ghost616/agentinteg/tool/SubSessionCallbackSystemTool.java：execute() 创建子会话前先调用 ctx.getChildSessions() 按 sessionName 精确匹配（sessionName.equals(child.sessionName())）查找已存在子会话；命中时复用该 sessionId（忽略 description/toolNames/skillNames，不重新配置会话）直接 callback.execute(ctx, childSessionId, userMessage, thinking) 发消息，未命中时走原逻辑 ctx.createChildSession(...) 新建后回调；新增私有方法 findExistingChildSessionId 做精确匹配查找（含 null/空列表防御）。getParameterSchema 中 sessionName 描述更新为\"子会话名称；若该名称的子会话已存在则复用其会话发送消息，否则新建子会话\"，getDescription 更新为\"创建或复用子会话并通过回调执行用户消息，支持指定工具和技能\"。\n2. agent-integration/src/test/java/com/ghost616/agentinteg/tool/SubSessionCallbackSystemToolTest.java：新增 4 个用例——execute_会话名已存在_复用已有会话ID发消息（验证不调用 createChildSession、用已有 sessionId 调 callback.execute）、execute_会话名已存在_忽略description与工具技能参数（验证复用分支不调用 getTools/getSkills/getModelId/createChildSession）、execute_会话名不存在_新建子会话（空列表走原逻辑）、execute_已存在其他名称子会话_不复用仍新建（精确匹配语义）。\n\n测试总结：全部测试通过，通过 20 项，失败 0 项，跳过 0 项。离朱测试报告：编译测试 3/3 模块 SUCCESS（agent-platform/agent-base/agent-integration），SubSessionCallbackSystemToolTest 20/20 通过（16 个既有用例 + 4 个新增用例），Failures=0, Errors=0, Skipped=0，Surefire XML 权威报告 tests=\"20\" errors=\"0\" skipped=\"0\" failures=\"0\"，Maven 真实退出码 0。既有用例兼容性确认：Mockito mock 默认 getChildSessions 返回空列表，既有用例仍走\"新建\"分支，行为不变。环境说明：PowerShell 管道 exit code 假象非测试失败（Maven 输出 BUILD SUCCESS，经 cmd 复核真实退出码 0）；-am 连带构建需追加 -Dsurefire.failIfNoSpecifiedTests=false 参数。",
+    "errors": []
+  }
+]
