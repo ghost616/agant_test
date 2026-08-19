@@ -6,7 +6,6 @@ import com.ghost616.agentbase.enums.CommonStatus;
 import com.ghost616.agentbase.enums.SubSessionOpenMode;
 import com.ghost616.platform.enums.ErrorCode;
 import com.ghost616.agentbase.enums.SessionAuthType;
-import com.ghost616.platform.event.AgentChangedEvent;
 import com.ghost616.platform.exception.BusinessException;
 import com.ghost616.platform.dto.agent.AgentConfigDTO;
 import com.ghost616.platform.dto.agent.AgentCreateRequest;
@@ -26,7 +25,6 @@ import com.ghost616.platform.repository.KnowledgeBaseMapper;
 import com.ghost616.platform.repository.SkillConfigMapper;
 import com.ghost616.platform.session.UserContextUtil;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,7 +45,6 @@ public class AgentConfigServiceImpl implements AgentConfigService {
     private final SkillConfigMapper skillConfigMapper;
     private final AgentKnowledgeBaseService agentKnowledgeBaseService;
     private final KnowledgeBaseMapper knowledgeBaseMapper;
-    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Override
     public List<AgentConfigDTO> list(String name, CommonStatus status) {
@@ -183,7 +180,6 @@ public class AgentConfigServiceImpl implements AgentConfigService {
                 request.getVectorModelId() != null ? request.getVectorModelId() : entity.getVectorModelId());
 
         agentConfigMapper.updateById(entity);
-        applicationEventPublisher.publishEvent(new AgentChangedEvent(this, entity.getId()));
 
         if (request.getTools() != null) {
             LambdaQueryWrapper<AgentTool> deleteWrapper = new LambdaQueryWrapper<>();

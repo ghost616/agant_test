@@ -16,5 +16,25 @@
     ],
     "summary": "执行总结：核实 DefaultChatDataProvider 已由前置 agent-base 计划实现 getPreSystemPrompt/getPostSystemPrompt（均返回 null，保持现有行为不变），未重复修改实现代码；在现有测试文件 DefaultChatDataProviderTest.java 上补充 4 个用例（getPreSystemPrompt_默认返回null、getPreSystemPrompt_sessionId为空_返回null、getPostSystemPrompt_默认返回null、getPostSystemPrompt_sessionId为空_返回null，覆盖 sessionId 正常值及 null/空串场景），测试文件共 12 用例，已备份并追加变更历史。修改文件：platform-app/src/test/java/com/ghost616/platform/service/agent/DefaultChatDataProviderTest.java。\n测试总结：全部测试通过。离朱复核：编译检查 BUILD SUCCESS（exit 0，覆盖 agent-base/agent-integration/platform-data/platform-app 全模块，含 agent-base ChatDataProvider 接口新增方法声明）；单元测试 12/12 通过（DefaultChatDataProviderTest：新增 4 用例 + 既有 8 回归用例），Failures 0、Errors 0、Skipped 0；接口/E2E 不适用（纯后端 Java 接口默认行为，无 HTTP 契约与 UI 变更）。",
     "errors": []
+  },
+  {
+    "plan_id": "plan_989c1f15-4d99-4134-afe3-23e0e836be2b",
+    "plan": "实现 send_result_to_parent 自定义工具注入、前置提示词注入与缓存机制",
+    "modified_files": [
+      "platform-app/src/main/java/com/ghost616/platform/service/agent/SubSessionWebSocketModeResolver.java",
+      "platform-app/src/main/java/com/ghost616/platform/event/AgentChangedEvent.java",
+      "platform-app/src/main/java/com/ghost616/platform/service/agent/AgentConfigServiceImpl.java",
+      "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultToolDataProvider.java",
+      "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultChatDataProvider.java",
+      "platform-app/src/main/java/com/ghost616/platform/config/AgentContextConfiguration.java",
+      "platform-app/src/test/java/com/ghost616/platform/service/agent/SubSessionWebSocketModeResolverTest.java",
+      "platform-app/src/test/java/com/ghost616/platform/service/agent/DefaultToolDataProviderTest.java",
+      "platform-app/src/test/java/com/ghost616/platform/service/agent/DefaultChatDataProviderTest.java",
+      "platform-app/src/test/java/com/ghost616/platform/service/agent/AgentConfigServiceImplTest.java",
+      "platform-app/src/test/java/com/ghost616/platform/service/agent/AgentConfigUserIsolationTest.java",
+      "platform-app/src/test/java/com/ghost616/platform/config/AgentContextConfigurationTest.java"
+    ],
+    "summary": "执行总结：完成 6 项计划要求。1) 新建 SubSessionWebSocketModeResolver（@Component）：isWebSocketSubSession 判断 isChild=true 且沿 parentSessionId 链防环解析主会话、主会话 AgentConfig.subSessionOpenMode==WEBSOCKET 时 true；ConcurrentHashMap<String,Boolean> 缓存上限 10000 超限 clear、clearCache()。2) 新建 AgentChangedEvent（extends ApplicationEvent 携带 agentId）；AgentConfigServiceImpl 注入 ApplicationEventPublisher，update 在 updateById 成功后发布事件。3) DefaultToolDataProvider 注入 resolver，新增 SEND_RESULT_TO_PARENT_TOOL_NAME 常量（=SendResultToParentTool.TOOL_NAME），getSessionToolIds 在 WEBSOCKET 子会话时无条件注入（SessionAuthType.ALL），getToolById 返回 SendResultToParentTool.createToolConfig()（id=工具名），getCustomInvoker 创建 new SendResultToParentTool(toolConfig)。4) DefaultChatDataProvider 注入 resolver，getPreSystemPrompt 在 WEBSOCKET 子会话时返回前置提示词否则 null，@EventListener(AgentChangedEvent) 清空 resolver 缓存。5) AgentContextConfiguration.defaultChatDataProvider 工厂方法新增 SubSessionWebSocketModeResolver 参数。6) 测试：新建 SubSessionWebSocketModeResolverTest（12 用例）、DefaultToolDataProviderTest 新增 4 用例、DefaultChatDataProviderTest 新增 3 用例、AgentConfigServiceImplTest 新增 1 用例、AgentConfigUserIsolationTest 与 AgentContextConfigurationTest 构造适配。修改文件：6 主代码（2 新建 + 4 修改）+ 6 测试（1 新建 + 5 修改）。已更新 current_spec.md、module_definition.json（登记 3 个新文件）、change_history.log。\n测试总结：全部测试通过。离朱复核：编译检查 BUILD SUCCESS（exit 0，覆盖 agent-base/agent-integration/platform-data/platform-app 全模块）；单元测试 132/132 通过（SubSessionWebSocketModeResolverTest 12、DefaultToolDataProviderTest 41、DefaultChatDataProviderTest 15、AgentConfigServiceImplTest 42、AgentConfigUserIsolationTest 11、AgentContextConfigurationTest 11），Failures 0、Errors 0、Skipped 0；实现静态核验全部通过（resolver 缓存 10000 上限/clearCache、事件发布、工具注入与提示词文本）；接口/E2E 不适用（纯后端逻辑，无新增 HTTP 契约与 UI 变更）。",
+    "errors": []
   }
 ]

@@ -155,5 +155,6 @@
   "platform-app/src/test/java/com/ghost616/platform/websocket/SessionConnectionRegistryTest.java": "16ffd97829906f316aa1470989240297",
   "platform-app/src/test/java/com/ghost616/platform/websocket/SessionWebSocketHandlerTest.java": "f87721328f052577d3f936c6d92697d5",
   "platform-app/src/test/java/com/ghost616/platform/websocket/WebSocketPushServiceTest.java": "7c0bad1049b639b5a5d60a58f934f125",
-  "platform-app/src/test/java/com/ghost616/platform/service/agent/DefaultMessageSenderTest.java": "66a865cc87668ce6f6c2800901ca53b0"
+  "platform-app/src/test/java/com/ghost616/platform/service/agent/DefaultMessageSenderTest.java": "66a865cc87668ce6f6c2800901ca53b0",
+  "platform-app/src/test/java/com/ghost616/platform/service/agent/AgentConfigUserIsolationTest.java": "da9b72110b274c229b65435ad4aa64b3"
 }

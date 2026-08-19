@@ -24,6 +24,7 @@ import com.ghost616.platform.service.agent.DatabaseAgentLog;
 import com.ghost616.platform.service.agent.DefaultChatDataCacheProvider;
 import com.ghost616.platform.service.agent.DefaultChatDataProvider;
 import com.ghost616.platform.service.agent.DefaultToolExecutionProvider;
+import com.ghost616.platform.service.agent.SubSessionWebSocketModeResolver;
 import com.ghost616.platform.session.UserContextThreadVariableHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationContext;
@@ -62,8 +63,10 @@ public class AgentContextConfiguration {
     public DefaultChatDataProvider defaultChatDataProvider(
             ModelConfigMapper modelConfigMapper,
             SessionMapper sessionMapper,
-            ApplicationContext applicationContext) {
-        return new DefaultChatDataProvider(modelConfigMapper, sessionMapper, applicationContext);
+            ApplicationContext applicationContext,
+            SubSessionWebSocketModeResolver subSessionWebSocketModeResolver) {
+        return new DefaultChatDataProvider(modelConfigMapper, sessionMapper, applicationContext,
+                subSessionWebSocketModeResolver);
     }
 
     @Bean

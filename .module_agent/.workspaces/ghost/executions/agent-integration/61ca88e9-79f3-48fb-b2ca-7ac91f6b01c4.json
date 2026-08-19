@@ -23,5 +23,15 @@
     ],
     "summary": "执行总结：本轮仅修改 1 个文件（agent-integration/src/test/java/com/ghost616/agentinteg/AgentAssemblerTest.java），为主体实现补充测试覆盖，未重复修改已完成的主体代码。先确认现状：agent-base ChatDataProvider 接口已声明 getPreSystemPrompt/getPostSystemPrompt 两个方法；AgentAssembler.ChatDataProviderProxy 已实现两方法并委托给 delegate（delegate 返回 null 时透传 null）；platform-app DefaultChatDataProvider 也已实现，全部就绪。在 AgentAssemblerTest 中新增 4 个用例：getPreSystemPrompt 委托 delegate（stub 返回\"前置提示词\"断言透传并 verify 委托）、getPreSystemPrompt delegate 返回 null 时返回 null、getPostSystemPrompt 委托 delegate（\"后置提示词\"）、getPostSystemPrompt delegate 返回 null 时返回 null；用例通过 agentAssembler.build() 后从 registry.getChatDataProvider() 获取 ChatDataProviderProxy 验证委托行为。变更历史已记录。\n\n测试总结：全部测试通过。编译测试通过（agent-integration 含依赖 agent-base test-compile BUILD SUCCESS）；新增 4 个用例 4/4 通过；AgentAssemblerTest 既有 22 个回归用例无回归（合计 26/26）；agent-integration 模块全量测试 196/196 通过（15 个测试类，0 失败 0 错误）；主代码核验一致（接口声明/Proxy 委托/DefaultChatDataProvider 实现均已就位）；接口测试与 E2E 判定不适用（纯后端单元级测试补充，无 HTTP 行为变化、无 UI 场景）。passed_count=200（26+196 去重后按报告口径：AgentAssemblerTest 26 与全量 196 为包含关系，实际全量 196 全部通过，其中含 AgentAssemblerTest 26），failed_count=0，skip_count=0。",
     "errors": []
+  },
+  {
+    "plan_id": "plan_e630ac7f-8a9a-472d-a0cb-2f541afe1019",
+    "plan": "新增子会话向父会话发送执行结果的自定义工具 SendResultToParentTool（extends CustomToolInvoker，工具名 send_result_to_parent）及对应单元测试",
+    "modified_files": [
+      "agent-integration/src/main/java/com/ghost616/agentinteg/tool/SendResultToParentTool.java",
+      "agent-integration/src/test/java/com/ghost616/agentinteg/tool/SendResultToParentToolTest.java"
+    ],
+    "summary": "执行总结：本轮新建 2 个文件——1) agent-integration/src/main/java/com/ghost616/agentinteg/tool/SendResultToParentTool.java：extends CustomToolInvoker（非 SystemTool，无 @Component），构造函数传参 ToolConfigDTO，静态 createToolConfig() 生成 ToolConfigDTO（toolType=CUSTOM、id=null、name=send_result_to_parent、description=向父会话发送子会话执行结果、parameterSchema 含单个必填参数 result（string））；execute() 解析 arguments 获取 result（缺失/空白返回错误 JSON \"缺少 result 参数\"），从 ctx.getParentSessionId() 获取父会话 ID，无父会话 ID 返回 {\"status\":\"error\",\"errMsg\":\"当前会话不是子会话，无法发送结果到父会话\"}，有父会话 ID 时调用 ctx.sendUserMessage(parentSessionId, result, ctx.getModelId(), null) 发送执行结果并返回 {\"status\":\"success\",\"message\":\"已发送执行结果到父会话\"}；错误处理沿用 HistoryQueryTool/SubSessionCallbackTool 风格（JsonMapper 序列化错误 JSON，buildError 兜底）。2) agent-integration/src/test/java/com/ghost616/agentinteg/tool/SendResultToParentToolTest.java：5 个用例（createToolConfig 元数据 + 正常发送/无父会话 ID/缺少 result/JSON 解析异常）。模块元数据（spec/definition/history）已更新。注：本轮未包含工具注册逻辑（未接入 DefaultToolDataProvider 等注册方），如需接入请另行下发计划。另：离朱发现新建文件带 UTF-8 BOM 导致首次编译失败，已由测试方去除 BOM（无逻辑变更）后通过。\n\n测试总结：全部测试通过。编译测试通过（agent-integration 含依赖 agent-base test-compile BUILD SUCCESS，BOM 修复后）；新增 SendResultToParentToolTest 5/5 通过（createToolConfig 元数据、正常路径 verify sendUserMessage(\"parent-1\", result, \"100\", null)、无父会话 ID 错误 JSON、缺少 result 参数错误 JSON、JSON 解析异常错误 JSON）；回归 agent-integration 模块全量 201/201 通过（16 个测试类，含既有 196 例，0 失败 0 错误）；接口测试与 E2E 判定不适用（纯后端自定义工具类，无 HTTP 变更、无 UI 场景）。passed_count=201，failed_count=0，skip_count=0。",
+    "errors": []
   }
 ]

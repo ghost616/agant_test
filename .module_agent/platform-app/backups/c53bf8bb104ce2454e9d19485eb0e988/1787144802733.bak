@@ -21,7 +21,6 @@ import com.ghost616.agentinteg.tool.KnowledgeFileChunkTool;
 import com.ghost616.agentinteg.tool.KnowledgeFileInfoTool;
 import com.ghost616.agentinteg.tool.KnowledgeSearchTool;
 import com.ghost616.agentinteg.tool.MemoryQueryTool;
-import com.ghost616.agentinteg.tool.SendResultToParentTool;
 import com.ghost616.agentinteg.tool.SubSessionCallbackTool;
 import com.ghost616.platform.dto.tool.ToolDetailDTO;
 import com.ghost616.platform.entity.AgentConfig;
@@ -71,8 +70,6 @@ public class DefaultToolDataProvider implements ToolDataProvider {
 
     private static final String CALLBACK_SUB_SESSION_TOOL_NAME = SubSessionCallbackTool.TOOL_NAME;
 
-    private static final String SEND_RESULT_TO_PARENT_TOOL_NAME = SendResultToParentTool.TOOL_NAME;
-
     private final SessionToolMapper sessionToolMapper;
     private final SessionMapper sessionMapper;
     private final AgentSkillMapper agentSkillMapper;
@@ -87,7 +84,6 @@ public class DefaultToolDataProvider implements ToolDataProvider {
     private final ObjectProvider<MemoryQueryProvider> memoryQueryProvider;
     private final ObjectProvider<HistoryMessageQueryProvider> historyMessageQueryProvider;
     private final DefaultSubSessionCallback defaultSubSessionCallback;
-    private final SubSessionWebSocketModeResolver subSessionWebSocketModeResolver;
 
     @Override
     public List<SessionToolInfo> getSessionToolIds(String sessionId) {
@@ -103,10 +99,6 @@ public class DefaultToolDataProvider implements ToolDataProvider {
                 .collect(Collectors.toCollection(ArrayList::new));
 
         result.add(new SessionToolInfo(CALLBACK_SUB_SESSION_TOOL_NAME, SessionAuthType.ALL));
-
-        if (subSessionWebSocketModeResolver.isWebSocketSubSession(sessionId)) {
-            result.add(new SessionToolInfo(SEND_RESULT_TO_PARENT_TOOL_NAME, SessionAuthType.ALL));
-        }
 
         if (sid != null) {
             Session session = sessionMapper.selectById(sid);
@@ -143,9 +135,6 @@ public class DefaultToolDataProvider implements ToolDataProvider {
         if (CALLBACK_SUB_SESSION_TOOL_NAME.equals(toolId)) {
             return getSubSessionCallbackToolConfig(toolId);
         }
-        if (SEND_RESULT_TO_PARENT_TOOL_NAME.equals(toolId)) {
-            return getSendResultToParentToolConfig(toolId);
-        }
         Long tid = IdConverter.parse(toolId);
         return toolConfigService.getById(tid);
     }
@@ -163,9 +152,6 @@ public class DefaultToolDataProvider implements ToolDataProvider {
         }
         if (CALLBACK_SUB_SESSION_TOOL_NAME.equals(toolConfig.getId())) {
             return new SubSessionCallbackTool(toolConfig, defaultSubSessionCallback);
-        }
-        if (SEND_RESULT_TO_PARENT_TOOL_NAME.equals(toolConfig.getId())) {
-            return new SendResultToParentTool(toolConfig);
         }
         ToolDetailDTO detail = toolConfigService.getById(IdConverter.parse(toolConfig.getId()));
         if (toolConfig.getToolType() == ToolType.CUSTOM && detail.getSubToolType() == SubToolType.BROWSER) {
@@ -196,12 +182,6 @@ public class DefaultToolDataProvider implements ToolDataProvider {
 
     private ToolConfigDTO getSubSessionCallbackToolConfig(String toolName) {
         ToolConfigDTO config = SubSessionCallbackTool.createToolConfig();
-        config.setId(toolName);
-        return config;
-    }
-
-    private ToolConfigDTO getSendResultToParentToolConfig(String toolName) {
-        ToolConfigDTO config = SendResultToParentTool.createToolConfig();
         config.setId(toolName);
         return config;
     }

@@ -20,7 +20,6 @@ import com.ghost616.agentinteg.tool.KnowledgeFileChunkTool;
 import com.ghost616.agentinteg.tool.KnowledgeFileInfoTool;
 import com.ghost616.agentinteg.tool.KnowledgeSearchTool;
 import com.ghost616.agentinteg.tool.MemoryQueryTool;
-import com.ghost616.agentinteg.tool.SendResultToParentTool;
 import com.ghost616.agentinteg.tool.SubSessionCallbackTool;
 import com.ghost616.platform.dto.tool.ToolDetailDTO;
 import com.ghost616.platform.entity.AgentConfig;
@@ -74,7 +73,6 @@ class DefaultToolDataProviderTest {
     @Mock private HistoryMessageQueryProvider historyMessageQueryProvider;
     @Mock private ObjectProvider<HistoryMessageQueryProvider> historyMessageQueryProviderProvider;
     @Mock private DefaultSubSessionCallback defaultSubSessionCallback;
-    @Mock private SubSessionWebSocketModeResolver subSessionWebSocketModeResolver;
 
     private DefaultToolDataProvider provider;
 
@@ -84,7 +82,7 @@ class DefaultToolDataProviderTest {
                 agentSkillMapper, skillToolMapper, sessionSkillMapper, toolConfigService,
                 browserToolCallback, modelConfigMapper, knowledgeBaseQueryProviderProvider,
                 agentKnowledgeBaseMapper, agentConfigMapper, memoryQueryProviderProvider,
-                historyMessageQueryProviderProvider, defaultSubSessionCallback, subSessionWebSocketModeResolver);
+                historyMessageQueryProviderProvider, defaultSubSessionCallback);
     }
 
     private SessionTool createSessionTool(Long toolId, SessionAuthType auth) {
@@ -250,32 +248,6 @@ class DefaultToolDataProviderTest {
             assertTrue(result.stream().anyMatch(i -> HistoryQueryTool.TOOL_NAME.equals(i.toolId())));
             assertTrue(result.stream().allMatch(i -> SessionAuthType.ALL == i.sessionAuth()));
         }
-
-        @Test
-        @DisplayName("WEBSOCKET 子会话时无条件注入 send_result_to_parent 工具（SessionAuthType.ALL）")
-        void websocketSubSession_shouldIncludeSendResultToParentTool() {
-            when(sessionToolMapper.selectList(any())).thenReturn(List.of());
-            when(subSessionWebSocketModeResolver.isWebSocketSubSession("1")).thenReturn(true);
-
-            List<SessionToolInfo> result = provider.getSessionToolIds("1");
-
-            assertEquals(2, result.size());
-            assertEquals(SubSessionCallbackTool.TOOL_NAME, result.get(0).toolId());
-            assertEquals(SendResultToParentTool.TOOL_NAME, result.get(1).toolId());
-            assertEquals(SessionAuthType.ALL, result.get(1).sessionAuth());
-        }
-
-        @Test
-        @DisplayName("非 WEBSOCKET 子会话或主会话时不注入 send_result_to_parent 工具")
-        void nonWebsocketSession_shouldNotIncludeSendResultToParentTool() {
-            when(sessionToolMapper.selectList(any())).thenReturn(List.of());
-            when(subSessionWebSocketModeResolver.isWebSocketSubSession("1")).thenReturn(false);
-
-            List<SessionToolInfo> result = provider.getSessionToolIds("1");
-
-            assertEquals(1, result.size());
-            assertFalse(result.stream().anyMatch(i -> SendResultToParentTool.TOOL_NAME.equals(i.toolId())));
-        }
     }
 
     @Nested
@@ -339,22 +311,6 @@ class DefaultToolDataProviderTest {
             assertNotNull(result);
             assertEquals(SubSessionCallbackTool.TOOL_NAME, result.getId());
             assertEquals(SubSessionCallbackTool.TOOL_NAME, result.getName());
-            assertEquals(ToolType.CUSTOM, result.getToolType());
-            assertNotNull(result.getDescription());
-            assertFalse(result.getDescription().isBlank());
-            assertNotNull(result.getParameterSchema());
-            assertFalse(result.getParameterSchema().isBlank());
-            verify(toolConfigService, never()).getById(anyLong());
-        }
-
-        @Test
-        @DisplayName("传入 send_result_to_parent 工具名返回 SendResultToParentTool 工具配置（id=工具名，toolType=CUSTOM）")
-        void sendResultToParentToolName_shouldReturnSendResultToParentToolConfig() {
-            ToolConfigDTO result = provider.getToolById(SendResultToParentTool.TOOL_NAME);
-
-            assertNotNull(result);
-            assertEquals(SendResultToParentTool.TOOL_NAME, result.getId());
-            assertEquals(SendResultToParentTool.TOOL_NAME, result.getName());
             assertEquals(ToolType.CUSTOM, result.getToolType());
             assertNotNull(result.getDescription());
             assertFalse(result.getDescription().isBlank());
@@ -575,21 +531,6 @@ class DefaultToolDataProviderTest {
             CustomToolInvoker result = provider.getCustomInvoker(config);
 
             assertInstanceOf(SubSessionCallbackTool.class, result);
-            verify(toolConfigService, never()).getById(anyLong());
-        }
-
-        @Test
-        @DisplayName("send_result_to_parent 工具配置返回 SendResultToParentTool 实例")
-        void sendResultToParentTool_shouldReturnSendResultToParentTool() {
-            ToolConfigDTO config = ToolConfigDTO.builder()
-                    .id(SendResultToParentTool.TOOL_NAME)
-                    .name(SendResultToParentTool.TOOL_NAME)
-                    .toolType(ToolType.CUSTOM)
-                    .build();
-
-            CustomToolInvoker result = provider.getCustomInvoker(config);
-
-            assertInstanceOf(SendResultToParentTool.class, result);
             verify(toolConfigService, never()).getById(anyLong());
         }
 

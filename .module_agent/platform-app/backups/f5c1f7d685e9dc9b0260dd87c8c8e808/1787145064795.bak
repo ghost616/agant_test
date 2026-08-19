@@ -19,7 +19,6 @@ import com.ghost616.platform.repository.SessionMapper;
 import com.ghost616.platform.service.agent.DatabaseAgentLog;
 import com.ghost616.platform.service.agent.DefaultChatDataCacheProvider;
 import com.ghost616.platform.service.agent.DefaultChatDataProvider;
-import com.ghost616.platform.service.agent.SubSessionWebSocketModeResolver;
 import com.ghost616.platform.session.UserContextThreadVariableHandler;
 
 import org.junit.jupiter.api.Test;
@@ -57,13 +56,10 @@ class AgentContextConfigurationTest {
     @Mock
     private DatabaseAgentLog databaseAgentLog;
 
-    @Mock
-    private SubSessionWebSocketModeResolver subSessionWebSocketModeResolver;
-
     @Test
     void defaultChatDataProvider_正确创建实例() {
         DefaultChatDataProvider provider = config.defaultChatDataProvider(
-                modelConfigMapper, sessionMapper, applicationContext, subSessionWebSocketModeResolver);
+                modelConfigMapper, sessionMapper, applicationContext);
 
         assertNotNull(provider);
     }

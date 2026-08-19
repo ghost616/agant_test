@@ -5,7 +5,6 @@ import com.ghost616.agentbase.enums.CommonStatus;
 import com.ghost616.agentbase.enums.SubSessionOpenMode;
 import com.ghost616.platform.enums.ErrorCode;
 import com.ghost616.agentbase.enums.SessionAuthType;
-import com.ghost616.platform.event.AgentChangedEvent;
 import com.ghost616.platform.exception.BusinessException;
 import com.ghost616.platform.dto.agent.AgentConfigDTO;
 import com.ghost616.platform.dto.agent.AgentCreateRequest;
@@ -36,7 +35,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.List;
 
@@ -53,7 +51,6 @@ class AgentConfigServiceImplTest {
     @Mock private SkillConfigMapper skillConfigMapper;
     @Mock private AgentKnowledgeBaseService agentKnowledgeBaseService;
     @Mock private KnowledgeBaseMapper knowledgeBaseMapper;
-    @Mock private ApplicationEventPublisher applicationEventPublisher;
 
     @Captor private ArgumentCaptor<AgentTool> agentToolCaptor;
     @Captor private ArgumentCaptor<AgentSkill> agentSkillCaptor;
@@ -73,8 +70,7 @@ class AgentConfigServiceImplTest {
     @BeforeEach
     void setUp() {
         service = new AgentConfigServiceImpl(agentConfigMapper, agentToolMapper,
-                agentSkillMapper, skillConfigMapper, agentKnowledgeBaseService, knowledgeBaseMapper,
-                applicationEventPublisher);
+                agentSkillMapper, skillConfigMapper, agentKnowledgeBaseService, knowledgeBaseMapper);
         User user = new User();
         user.setId(CURRENT_USER_ID);
         UserContext.set(new UserSession("test-session", user, System.currentTimeMillis()));
@@ -764,23 +760,6 @@ class AgentConfigServiceImplTest {
 
             verify(agentConfigMapper).updateById(agentConfigCaptor.capture());
             assertEquals(SubSessionOpenMode.WEBSOCKET, agentConfigCaptor.getValue().getSubSessionOpenMode());
-        }
-
-        @Test
-        @DisplayName("update 成功后发布携带 agentId 的 AgentChangedEvent 事件")
-        void update_publishesAgentChangedEvent() {
-            when(agentConfigMapper.selectById(EXISTING_AGENT_ID)).thenReturn(createAgentEntity());
-            mockToDTOReturns(List.of(), List.of());
-
-            AgentUpdateRequest req = AgentUpdateRequest.builder()
-                    .name("updated")
-                    .build();
-
-            service.update(EXISTING_AGENT_ID, req);
-
-            ArgumentCaptor<AgentChangedEvent> eventCaptor = ArgumentCaptor.forClass(AgentChangedEvent.class);
-            verify(applicationEventPublisher).publishEvent(eventCaptor.capture());
-            assertEquals(EXISTING_AGENT_ID, eventCaptor.getValue().getAgentId());
         }
     }
 

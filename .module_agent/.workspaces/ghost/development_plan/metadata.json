@@ -198,5 +198,21 @@
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
+  },
+  {
+    "plan_id": "plan_e630ac7f-8a9a-472d-a0cb-2f541afe1019",
+    "plan_summary": "新增子会话向父会话发送执行结果的自定义工具 SendResultToParentTool",
+    "starter_session_id": "18798954-dfde-40ad-adf6-1356d78ebed3",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_989c1f15-4d99-4134-afe3-23e0e836be2b",
+    "plan_summary": "实现 send_result_to_parent 工具注入、WEBSOCKET 子会话前置提示词注入与缓存机制",
+    "starter_session_id": "18798954-dfde-40ad-adf6-1356d78ebed3",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
   }
 ]

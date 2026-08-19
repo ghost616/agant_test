@@ -4,7 +4,6 @@ import com.ghost616.agentbase.dto.model.ModelConfigData;
 import com.ghost616.agentbase.service.agent.invoker.HookInvoker;
 import com.ghost616.platform.entity.ModelConfig;
 import com.ghost616.platform.entity.Session;
-import com.ghost616.platform.event.AgentChangedEvent;
 import com.ghost616.agentinteg.model.PlatformType;
 import com.ghost616.platform.repository.ModelConfigMapper;
 import com.ghost616.platform.repository.SessionMapper;
@@ -33,15 +32,11 @@ class DefaultChatDataProviderTest {
     @Mock
     private ApplicationContext applicationContext;
 
-    @Mock
-    private SubSessionWebSocketModeResolver subSessionWebSocketModeResolver;
-
     private DefaultChatDataProvider provider;
 
     @BeforeEach
     void setUp() {
-        provider = new DefaultChatDataProvider(modelConfigMapper, sessionMapper, applicationContext,
-                subSessionWebSocketModeResolver);
+        provider = new DefaultChatDataProvider(modelConfigMapper, sessionMapper, applicationContext);
     }
 
     @Test
@@ -172,31 +167,5 @@ class DefaultChatDataProviderTest {
     void getPostSystemPrompt_sessionId为空_返回null() {
         assertNull(provider.getPostSystemPrompt(null));
         assertNull(provider.getPostSystemPrompt(""));
-    }
-
-    @Test
-    void getPreSystemPrompt_WEBSOCKET子会话_返回前置提示词() {
-        when(subSessionWebSocketModeResolver.isWebSocketSubSession("1")).thenReturn(true);
-
-        String result = provider.getPreSystemPrompt("1");
-
-        assertEquals("你是子会话执行者。完成任务后，请调用 send_result_to_parent 工具，将执行结果作为参数发送给父会话。",
-                result);
-    }
-
-    @Test
-    void getPreSystemPrompt_非WEBSOCKET子会话_返回null() {
-        when(subSessionWebSocketModeResolver.isWebSocketSubSession("1")).thenReturn(false);
-
-        String result = provider.getPreSystemPrompt("1");
-
-        assertNull(result);
-    }
-
-    @Test
-    void onAgentChanged_清空解析器缓存() {
-        provider.onAgentChanged(new AgentChangedEvent(this, 1L));
-
-        verify(subSessionWebSocketModeResolver).clearCache();
     }
 }

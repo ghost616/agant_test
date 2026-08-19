@@ -29,7 +29,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.List;
 
@@ -73,8 +72,6 @@ class AgentConfigUserIsolationTest {
     private AgentKnowledgeBaseService agentKnowledgeBaseService;
     @Mock
     private KnowledgeBaseMapper knowledgeBaseMapper;
-    @Mock
-    private ApplicationEventPublisher applicationEventPublisher;
 
     @Captor
     private ArgumentCaptor<AgentConfig> agentConfigCaptor;
@@ -87,8 +84,7 @@ class AgentConfigUserIsolationTest {
     void setUp() {
         TableInfoHelper.initTableInfo(new MapperBuilderAssistant(new MybatisConfiguration(), ""), AgentConfig.class);
         service = new AgentConfigServiceImpl(agentConfigMapper, agentToolMapper,
-                agentSkillMapper, skillConfigMapper, agentKnowledgeBaseService, knowledgeBaseMapper,
-                applicationEventPublisher);
+                agentSkillMapper, skillConfigMapper, agentKnowledgeBaseService, knowledgeBaseMapper);
         login(USER_A_ID);
     }
 

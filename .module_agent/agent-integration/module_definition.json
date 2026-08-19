@@ -208,6 +208,14 @@
     {
       "description": "SubSessionCallbackTool 单元测试：覆盖 createToolConfig 元数据（CUSTOM 类型/工具名 callback_sub_session/描述与参数 schema 含 thinking 字段）与 execute 全部分支（正常创建子会话、thinking true/false/null 传递、toolNames/skillNames 为 null 或空数组、description 为 null、JSON 解析异常、回调抛异常、toolNames 匹配/部分匹配过滤、会话名已存在复用/不存在新建/其他名称不复用）。",
       "path": "src/test/java/com/ghost616/agentinteg/tool/SubSessionCallbackToolTest.java"
+    },
+    {
+      "description": "自定义工具调用器（继承 CustomToolInvoker，非 SystemTool），工具名 send_result_to_parent。构造函数注入 ToolConfigDTO，提供静态 createToolConfig() 生成 ToolConfigDTO（toolType=CUSTOM、id=null、name=send_result_to_parent，description 描述向父会话发送子会话执行结果，parameterSchema 含单个必填参数 result（string））；execute() 解析 arguments 获取 result 参数，从 ctx.getParentSessionId() 获取父会话 ID，无父会话 ID 时返回 {\"status\":\"error\",\"errMsg\":\"当前会话不是子会话，无法发送结果到父会话\"}，有父会话 ID 时调用 ctx.sendUserMessage(parentSessionId, result, ctx.getModelId(), null) 发送执行结果并返回 {\"status\":\"success\",\"message\":\"已发送执行结果到父会话\"}；缺少 result 参数返回错误 JSON，异常捕获使用 JsonMapper 序列化错误 JSON。",
+      "path": "src/main/java/com/ghost616/agentinteg/tool/SendResultToParentTool.java"
+    },
+    {
+      "description": "SendResultToParentTool 单元测试：覆盖 createToolConfig 元数据（CUSTOM 类型/工具名 send_result_to_parent/id=null/描述非空/参数 schema 含 result 与 required）与 execute 分支（正常路径调用 ctx.sendUserMessage(parentSessionId, result, modelId, null) 返回成功 JSON、无父会话 ID 返回错误 JSON 且不调用 sendUserMessage、缺少 result 参数返回错误 JSON、JSON 解析异常返回错误 JSON）。",
+      "path": "src/test/java/com/ghost616/agentinteg/tool/SendResultToParentToolTest.java"
     }
   ]
 }

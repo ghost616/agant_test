@@ -516,6 +516,18 @@
     {
       "path": "platform-app/src/test/java/com/ghost616/platform/service/agent/DefaultMessageSenderTest.java",
       "description": "DefaultMessageSender 单元测试：SEND_USER_MESSAGE 单次调用 pushToSession(message)、未知消息类型静默跳过、null 消息忽略、UserContext 上下文传递（send 时设置 UserContext，异步线程内经 RecordingPushService 捕获验证上下文已恢复）与缺失场景（无 UserContext 时异步线程内上下文为空）"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/SubSessionWebSocketModeResolver.java",
+      "description": "子会话 WEBSOCKET 打开方式解析器（@Component）：isWebSocketSubSession(String sessionId) 判断指定会话是否为 WEBSOCKET 子会话——查询 Session 要求 isChild=true 且 parentSessionId 非空，沿 parentSessionId 链（HashSet 防环）解析主会话，主会话 agentId 对应 AgentConfig.subSessionOpenMode==WEBSOCKET 时返回 true；解析结果按 sessionId 缓存于 ConcurrentHashMap<String,Boolean>，容量上限 10000（超限清空），clearCache() 供智能体配置变更（AgentChangedEvent）后失效缓存；注入 SessionMapper/AgentConfigMapper 依赖"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/event/AgentChangedEvent.java",
+      "description": "智能体配置变更事件（extends ApplicationEvent）：携带发生变更的智能体 ID（agentId），由 AgentConfigServiceImpl.update 在更新成功后通过 ApplicationEventPublisher 发布，供缓存类组件（如 SubSessionWebSocketModeResolver，经 DefaultChatDataProvider 的 @EventListener）在配置更新后失效相关缓存"
+    },
+    {
+      "path": "platform-app/src/test/java/com/ghost616/platform/service/agent/SubSessionWebSocketModeResolverTest.java",
+      "description": "SubSessionWebSocketModeResolver 单元测试（12 用例，Mockito）：覆盖 WEBSOCKET 子会话返回 true（含多层 parentSessionId 父链）、主会话 TOOL_CALL/AgentConfig 缺失/非子会话/主会话自身/会话缺失/父链断裂/父链成环/空白 sessionId 返回 false、解析结果缓存命中不重复查询、clearCache 后重新解析"
     }
   ]
 }

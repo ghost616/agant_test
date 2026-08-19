@@ -1,0 +1,10 @@
+{
+  "plan_id": "plan_e630ac7f-8a9a-472d-a0cb-2f541afe1019",
+  "module_name": "agent-integration",
+  "development_plan": "新增子会话向父会话发送执行结果的自定义工具 SendResultToParentTool。具体：1) agent-integration/src/main/java/com/ghost616/agentinteg/tool/ 下新增 SendResultToParentTool.java，extends CustomToolInvoker，静态 createToolConfig() 生成 ToolConfigDTO（toolType=CUSTOM、name=send_result_to_parent、description 描述向父会话发送子会话执行结果、parameterSchema 含单个必填参数 result（string，子会话执行结果））；2) execute(AgentExecutionContext ctx, String arguments)：解析 arguments 获取 result 参数，从 ctx.getParentSessionId() 获取父会话 ID；若无父会话 ID（当前非子会话）返回 JSON 错误串 {\"status\":\"error\",\"errMsg\":\"当前会话不是子会话，无法发送结果到父会话\"}；有父会话 ID 时调用 ctx.sendUserMessage(parentSessionId, result, ctx.getModelId(), null) 发送执行结果到父会话，返回成功 JSON（如 {\"status\":\"success\",\"message\":\"已发送执行结果到父会话\"}）；3) 参考 HistoryQueryTool/SubSessionCallbackTool 的错误处理风格（JsonMapper 序列化错误 JSON，异常捕获返回错误 JSON）；4) 新增对应单元测试 SendResultToParentToolTest：覆盖正常发送、无父会话 ID 返回错误 JSON、缺少 result 参数、JSON 解析异常等场景。",
+  "session_id": "61ca88e9-79f3-48fb-b2ca-7ac91f6b01c4",
+  "modified_files": [
+    "agent-integration/src/main/java/com/ghost616/agentinteg/tool/SendResultToParentTool.java",
+    "agent-integration/src/test/java/com/ghost616/agentinteg/tool/SendResultToParentToolTest.java"
+  ]
+}
