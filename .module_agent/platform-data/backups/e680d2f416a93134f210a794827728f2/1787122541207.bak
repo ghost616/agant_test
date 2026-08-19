@@ -65,8 +65,6 @@ class MemoryConfigSchemaTest {
                 "missing migration: agent_config.memory_group_count");
         assertTrue(content.contains("new Migration(\"agent_config\", \"vector_model_id\", \"BIGINT\", null)"),
                 "missing migration: agent_config.vector_model_id");
-        assertTrue(content.contains("new Migration(\"agent_config\", \"sub_session_open_mode\", \"VARCHAR(32)\", \"'TOOL_CALL'\")"),
-                "missing migration: agent_config.sub_session_open_mode");
         assertTrue(content.contains("new Migration(\"session\", \"memory_point_sequence_num\", \"INTEGER\", null)"),
                 "missing migration: session.memory_point_sequence_num");
         assertTrue(content.contains("new Migration(\"session\", \"memory_prompt\", \"VARCHAR(500)\", null)"),

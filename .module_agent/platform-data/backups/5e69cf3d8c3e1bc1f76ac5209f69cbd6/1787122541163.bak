@@ -34,7 +34,6 @@ public class PrimarySchemaMigration extends AbstractSchemaMigration implements A
                 new Migration("agent_config", "memory_enabled", "TINYINT(1)", "0"),
                 new Migration("agent_config", "memory_group_count", "INTEGER", "30"),
                 new Migration("agent_config", "vector_model_id", "BIGINT", null),
-                new Migration("agent_config", "sub_session_open_mode", "VARCHAR(32)", "'TOOL_CALL'"),
                 new Migration("session", "parent_session_id", "BIGINT", null),
                 new Migration("session", "is_child", "TINYINT(1)", "0"),
                 new Migration("session", "description", "VARCHAR(500)", null),

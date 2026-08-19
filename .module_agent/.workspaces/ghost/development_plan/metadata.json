@@ -126,5 +126,21 @@
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
+  },
+  {
+    "plan_id": "plan_c50893b4-bdc6-4fdb-b6d7-08305420a201",
+    "plan_summary": "PrimarySchemaMigration 添加 agent_config.sub_session_open_mode 列迁移，同步测试断言",
+    "starter_session_id": "session-bf647ef4-4b8e-4273-ba6f-50bfb760c7b5",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_d721b886-c82f-4faf-92f1-d19438e3a790",
+    "plan_summary": "SchemaMigrationTest 迁移计数 89→90 适配新增列迁移",
+    "starter_session_id": "session-bf647ef4-4b8e-4273-ba6f-50bfb760c7b5",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
   }
 ]

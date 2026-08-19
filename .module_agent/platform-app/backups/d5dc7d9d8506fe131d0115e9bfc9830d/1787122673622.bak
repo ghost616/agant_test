@@ -153,20 +153,6 @@ class SchemaMigrationTest {
     }
 
     @Test
-    void primary_migration_包含sub_session_open_mode列() {
-        doNothing().when(jdbcTemplate).execute(anyString());
-        when(jdbcTemplate.update(anyString())).thenReturn(0);
-
-        new PrimarySchemaMigration(jdbcTemplate).run(applicationArguments);
-
-        verify(jdbcTemplate, times(PRIMARY_ALTER_COUNT)).execute(sqlCaptor.capture());
-        assertTrue(sqlCaptor.getAllValues().stream()
-                .anyMatch(s -> s.contains("sub_session_open_mode") && s.contains("VARCHAR"))
-                && sqlCaptor.getAllValues().stream()
-                .anyMatch(s -> s.contains("sub_session_open_mode") && s.contains("'TOOL_CALL'")));
-    }
-
-    @Test
     void primary_migration_不含message与agent_log列() {
         doNothing().when(jdbcTemplate).execute(anyString());
         when(jdbcTemplate.update(anyString())).thenReturn(0);

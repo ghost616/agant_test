@@ -22,7 +22,7 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class SchemaMigrationTest {
 
-    private static final int PRIMARY_ALTER_COUNT = 90;
+    private static final int PRIMARY_ALTER_COUNT = 89;
     private static final int MESSAGE_ALTER_COUNT = 11;
 
     @Mock
@@ -150,20 +150,6 @@ class SchemaMigrationTest {
         verify(jdbcTemplate, times(PRIMARY_ALTER_COUNT)).execute(sqlCaptor.capture());
         assertTrue(sqlCaptor.getAllValues().stream()
                 .anyMatch(s -> s.contains("total_token_used") && s.contains("BIGINT")));
-    }
-
-    @Test
-    void primary_migration_包含sub_session_open_mode列() {
-        doNothing().when(jdbcTemplate).execute(anyString());
-        when(jdbcTemplate.update(anyString())).thenReturn(0);
-
-        new PrimarySchemaMigration(jdbcTemplate).run(applicationArguments);
-
-        verify(jdbcTemplate, times(PRIMARY_ALTER_COUNT)).execute(sqlCaptor.capture());
-        assertTrue(sqlCaptor.getAllValues().stream()
-                .anyMatch(s -> s.contains("sub_session_open_mode") && s.contains("VARCHAR"))
-                && sqlCaptor.getAllValues().stream()
-                .anyMatch(s -> s.contains("sub_session_open_mode") && s.contains("'TOOL_CALL'")));
     }
 
     @Test

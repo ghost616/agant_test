@@ -1,0 +1,11 @@
+[
+  {
+    "plan_id": "plan_d721b886-c82f-4faf-92f1-d19438e3a790",
+    "plan": "同步更新 SchemaMigrationTest 的迁移条目计数，适配 PrimarySchemaMigration 新增的 agent_config.sub_session_open_mode 迁移条目；补充 sub_session_open_mode 列验证用例并运行测试确认通过。",
+    "modified_files": [
+      "platform-app/src/test/java/com/ghost616/platform/migration/SchemaMigrationTest.java"
+    ],
+    "summary": "执行总结：本轮修改 platform-app/src/test/java/com/ghost616/platform/migration/SchemaMigrationTest.java。① PRIMARY_ALTER_COUNT 由 89 更新为 90（工作区中已同步，本次确认与 PrimarySchemaMigration 的 90 条 ALTER 迁移条目一致，含新增 agent_config.sub_session_open_mode VARCHAR(32) DEFAULT 'TOOL_CALL' 条目），所有依赖 PRIMARY_ALTER_COUNT 的 execute 次数断言（primary_alterTable_* 系列、primary_migration_* 系列）随常量自动生效；② 新增测试用例 primary_migration_包含sub_session_open_mode列，断言迁移 SQL 包含 sub_session_open_mode 列、VARCHAR 类型及默认值 'TOOL_CALL'。过程中发现并解决环境问题：platform-data/target/classes 为空导致首次运行 NoClassDefFoundError（Maven 增量编译误判 up-to-date），通过 mvn -pl platform-app -am clean test 全量重建后测试通过。\n测试总结：全部测试通过。离朱测试报告：编译测试通过（mvn -pl platform-app -am test-compile 全 5 模块 BUILD SUCCESS）；单元测试 SchemaMigrationTest 15 用例全部通过（Failures 0, Errors 0, Skipped 0），含新增 primary_migration_包含sub_session_open_mode列 用例；接口测试/E2E 不适用（无 HTTP API 与 UI 变更）。静态核验 PRIMARY_ALTER_COUNT=90 与 PrimarySchemaMigration 第 30-119 行 90 条迁移条目一致。",
+    "errors": []
+  }
+]

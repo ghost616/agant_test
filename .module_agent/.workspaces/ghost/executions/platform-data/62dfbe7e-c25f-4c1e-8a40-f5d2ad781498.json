@@ -1,0 +1,13 @@
+[
+  {
+    "plan_id": "plan_c50893b4-bdc6-4fdb-b6d7-08305420a201",
+    "plan": "补齐 PrimarySchemaMigration 中 agent_config.sub_session_open_mode 列增量迁移（VARCHAR(32)，默认 TOOL_CALL），并更新 MemoryConfigSchemaTest 断言",
+    "modified_files": [
+      "platform-data/src/main/java/com/ghost616/platform/config/PrimarySchemaMigration.java",
+      "platform-data/src/test/java/com/ghost616/platform/MemoryConfigSchemaTest.java",
+      "platform-app/src/test/java/com/ghost616/platform/migration/SchemaMigrationTest.java"
+    ],
+    "summary": "执行总结：本轮共修改 3 个文件——1) platform-data/src/main/java/com/ghost616/platform/config/PrimarySchemaMigration.java：runAlterMigrations 的 agent_config 条目区域（vector_model_id 之后）新增 new Migration(\"agent_config\", \"sub_session_open_mode\", \"VARCHAR(32)\", \"'TOOL_CALL'\")，与 schema.sql 中 sub_session_open_mode VARCHAR(32) DEFAULT 'TOOL_CALL' 保持一致，主数据源迁移条目总数 89→90；2) platform-data/src/test/java/com/ghost616/platform/MemoryConfigSchemaTest.java：schemaMigrationContainsMemoryEntries 用例补充 sub_session_open_mode 迁移条目断言；3) platform-app/src/test/java/com/ghost616/platform/migration/SchemaMigrationTest.java：PRIMARY_ALTER_COUNT 常量 89→90 同步更新（该文件不在任何模块定义中，属跨模块计数同步，历史变更中均有此操作）。\n\n测试总结：全部测试通过，通过 22 项，失败 0 项，跳过 0 项。离朱报告关键内容：platform-data mvn install 编译 BUILD SUCCESS；MemoryConfigSchemaTest Tests run: 5, Failures: 0, Errors: 0, Skipped: 0（含新增 sub_session_open_mode 断言）；platform-app SchemaMigrationTest Tests run: 15, Failures: 0, Errors: 0, Skipped: 0（primary_alterTable_* 系列用 verify(times(90)) 验证 PRIMARY_ALTER_COUNT=90 与实际生成的 90 条 ALTER 完全一致）。静态核查确认 PrimarySchemaMigration.java 第 37 行迁移条目存在、迁移条目总数 90 条、schema.sql 第 96 行列定义与迁移条目一致。环境问题均已解决：先 mvn install 更新 platform-data jar 至本地仓库再跑跨模块测试；agent-base 缺 SubSessionOpenMode 枚举经 reactor 全量重编译解决；与并发构建冲突已等待完成。",
+    "errors": []
+  }
+]
