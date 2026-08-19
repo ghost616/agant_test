@@ -949,14 +949,7 @@ class AgentContextManagerTest {
             SessionManager.MessageSaveBuilder msgBuilder = mock(SessionManager.MessageSaveBuilder.class, RETURNS_SELF);
             when(sessionManager.messageSave()).thenReturn(msgBuilder);
 
-            when(dataProvider.loadAgentContext(parentSessionId)).thenReturn(
-                    new ContextDataProvider.AgentContextData(agentId, "parent prompt", "200", 10, List.of(), Map.of(), null, null, null, null));
-            when(sessionManager.getMessages(anyString())).thenReturn(List.of());
-            when(toolManager.getSessionTools(anyString(), anyBoolean())).thenReturn(List.of());
-
             AgentContextManager.AgentSessionContext parentCtx = agentContextManager.build(parentSessionId).build();
-            when(dataProvider.loadAgentContext(childSessionId)).thenReturn(
-                    new ContextDataProvider.AgentContextData(agentId, "child prompt", "200", 10, List.of(), Map.of(), parentSessionId, null, null, null));
             AgentContextManager.AgentSessionContext childCtx = agentContextManager.build(childSessionId).build();
 
             parentCtx.mutator().setConversationId("conv-100");
@@ -972,6 +965,8 @@ class AgentContextManagerTest {
         void 反向_主会话sendParentMessage静默忽略() {
             stubBasicContext();
             registry.setMessageSender(messageSender);
+            SessionManager.MessageSaveBuilder msgBuilder = mock(SessionManager.MessageSaveBuilder.class, RETURNS_SELF);
+            when(sessionManager.messageSave()).thenReturn(msgBuilder);
 
             AgentContextManager.AgentSessionContext ctx = agentContextManager.build(sessionId).build();
             ctx.context().sendParentMessage("hello");
@@ -983,6 +978,8 @@ class AgentContextManagerTest {
         @Test
         void 反向_sendParentMessageCallback为null时静默忽略() throws Exception {
             registry.setMessageSender(messageSender);
+            SessionManager.MessageSaveBuilder msgBuilder = mock(SessionManager.MessageSaveBuilder.class, RETURNS_SELF);
+            when(sessionManager.messageSave()).thenReturn(msgBuilder);
 
             AgentContextManager.AgentSessionContext childCtx = buildParentChild();
             java.lang.reflect.Field f =

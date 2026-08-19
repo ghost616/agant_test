@@ -50,5 +50,7 @@
   "platform-app/src/main/java/com/ghost616/platform/controller/ToolExecutionController.java": "ee3597712b8d84b066d0e042d2419086",
   "platform-app/src/test/java/com/ghost616/platform/controller/ToolExecutionControllerTest.java": "44880c11bb46e315d1c68cf4b93212f6",
   "platform-app/src/test/java/com/ghost616/platform/config/AgentContextConfigurationTest.java": "f5c1f7d685e9dc9b0260dd87c8c8e808",
-  "platform-app/src/test/java/com/ghost616/platform/service/agent/DefaultToolDataProviderTest.java": "cc7faf5824c2271c672f886a4eb9dd5c"
+  "platform-app/src/test/java/com/ghost616/platform/service/agent/DefaultToolDataProviderTest.java": "cc7faf5824c2271c672f886a4eb9dd5c",
+  "agent-integration/src/main/java/com/ghost616/agentinteg/tool/SendResultToParentTool.java": "293fd0c158b9577107c331184cc0d89b",
+  "agent-integration/src/test/java/com/ghost616/agentinteg/tool/SendResultToParentToolTest.java": "fb4614eac73ffd4c7967d9df2c939eb0"
 }

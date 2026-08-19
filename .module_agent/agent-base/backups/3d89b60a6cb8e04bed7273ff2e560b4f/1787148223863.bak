@@ -2,34 +2,37 @@ package com.ghost616.agentbase.service.agent;
 
 import com.ghost616.agentbase.core.AgentComponentRegistry;
 import com.ghost616.agentbase.dto.model.CustomToolCall;
-import com.ghost616.agentbase.dto.model.Message;
 import com.ghost616.agentbase.dto.model.ToolCall;
 import com.ghost616.agentbase.dto.model.UsageInfo;
 import com.ghost616.agentbase.dto.model.WebSearchCall;
 import com.ghost616.agentbase.dto.skill.SkillConfigDTO;
 import com.ghost616.agentbase.dto.tool.McpExpandedToolDTO;
 import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
-import com.ghost616.agentbase.enums.ErrorCode;
+import com.ghost616.agentbase.enums.AgentErrorCode;
 import com.ghost616.agentbase.enums.LogLevel;
 import com.ghost616.agentbase.enums.SessionAuthType;
 import com.ghost616.agentbase.enums.ToolType;
-import com.ghost616.agentbase.exception.BusinessException;
+import com.ghost616.agentbase.exception.AgentException;
 import com.ghost616.agentbase.sendmessage.ChildCreateSession;
 import com.ghost616.agentbase.sendmessage.ConversationIdMessage;
 import com.ghost616.agentbase.sendmessage.HistoryMessage;
+import com.ghost616.agentbase.sendmessage.MessageSender;
+import com.ghost616.agentbase.sendmessage.SendUserMessage;
 import com.ghost616.agentbase.sendmessage.VariableMessage;
 import com.ghost616.agentbase.service.agent.invoker.ToolManager;
 import com.ghost616.agentbase.service.agent.log.AgentLog;
 import com.ghost616.agentbase.service.agent.log.CacheRemoveLogData;
 import com.ghost616.agentbase.service.agent.log.ChildSessionLogData;
 import com.ghost616.agentbase.service.agent.log.ContextBuildLogData;
-import com.ghost616.agentbase.service.agent.log.ErrorLogData;
 import com.ghost616.agentbase.service.agent.log.HandleMessageLogData;
 import com.ghost616.agentbase.service.agent.log.LogData;
 import com.ghost616.agentbase.service.agent.log.RefreshLogData;
+import com.ghost616.agentbase.service.agent.log.SendMessageLogData;
+import com.ghost616.agentbase.service.agent.log.SessionErrorLogData;
 
 import lombok.extern.slf4j.Slf4j;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -113,12 +116,13 @@ public class AgentContextManager {
         private AgentSessionContext doBuild() {
             ContextDataProvider.AgentContextData ctxData = dataProvider.loadAgentContext(sessionId);
             if (ctxData == null) {
-                addLog(ErrorLogData.builder()
+                addLog(SessionErrorLogData.builder()
                         .logLevel(LogLevel.ERROR)
-                        .errorCode(ErrorCode.SESSION_NOT_FOUND.getCode())
+                        .sessionId(sessionId)
+                        .errorCode(AgentErrorCode.SESSION_NOT_FOUND.getCode())
                         .message("会话上下文构建失败: 会话未找到: " + sessionId)
                         .build());
-                throw new BusinessException(ErrorCode.SESSION_NOT_FOUND);
+                throw new AgentException(AgentErrorCode.SESSION_NOT_FOUND);
             }
 
             String agentId = ctxData.agentId();
@@ -195,7 +199,6 @@ public class AgentContextManager {
 
             addLog(ContextBuildLogData.builder()
                     .logLevel(LogLevel.INFO)
-                    .context(context)
                     .sessionId(sessionId)
                     .agentId(agentId)
                     .modelId(effectiveModelId)
@@ -203,6 +206,7 @@ public class AgentContextManager {
                     .historyCount(history.size())
                     .isSubSession(isSubSession)
                     .cacheHit(false)
+                    .sessionVariables(new HashMap<>(ctxData.sessionVariables()))
                     .build());
 
             return new AgentSessionContext(context, mutator, new AtomicBoolean(false));
@@ -211,8 +215,10 @@ public class AgentContextManager {
         private void injectVariableCallbacks(AgentExecutionContext.AgentContextMutator mutator,
                                               String sessionId, String parentSessionId,
                                               AgentSessionContext parentCtx) {
+            String conversationId = null;
             if (parentSessionId != null && parentCtx != null) {
                 AgentExecutionContext parentContext = parentCtx.context();
+                conversationId = parentContext.getConversationId();
                 mutator.sessionVarPutCallback = parentContext::putSessionVariable;
                 mutator.sessionVarRemoveCallback = parentContext::removeSessionVariable;
                 mutator.conversationVarPutCallback = parentContext::putConversationVariable;
@@ -232,33 +238,89 @@ public class AgentContextManager {
                 mutator.conversationVarRemoveCallback = (key) ->
                         dataProvider.deleteSessionVariable(sessionId, key);
             }
+            final String capturedConversationId = conversationId;
             mutator.createChildSessionCallback = (psId, sessionName, description, modelId,
                                                     toolIds, skillIds, prompt) ->
                     createChildSession(psId, sessionName, description, modelId,
-                            toolIds, skillIds, prompt);
+                            toolIds, skillIds, prompt, capturedConversationId);
             mutator.sendUserMessageCallback = (childSessionId, content, modelId, thinking) ->
-                    sendUserMessage(childSessionId, content, modelId, thinking);
+                    sendUserMessage(sessionId, childSessionId, content, modelId, thinking, capturedConversationId);
 
         }
     }
 
     private String createChildSession(String parentSessionId, String sessionName, String description, String modelId,
-                                       List<String> toolIds, List<String> skillIds, String prompt) {
+                                       List<String> toolIds, List<String> skillIds, String prompt, String conversationId) {
         String childSessionId = dataProvider.createChildSession(parentSessionId, sessionName, description, modelId, toolIds, skillIds, prompt);
         addLog(ChildSessionLogData.builder()
                 .logLevel(LogLevel.INFO)
-                .parentSessionId(parentSessionId)
+                .sessionId(parentSessionId)
+                .conversationId(conversationId)
                 .childSessionId(childSessionId)
                 .sessionName(sessionName)
+                .description(description)
+                .modelId(modelId)
+                .toolIds(toolIds)
+                .skillIds(skillIds)
+                .prompt(prompt)
                 .build());
         return childSessionId;
     }
 
-    private Message sendUserMessage(String childSessionId, String content, String modelId, Boolean thinking) {
-        if (agentMessageProxy != null) {
-            return agentMessageProxy.sendUserMessage(childSessionId, content, modelId, thinking);
+    private void sendUserMessage(String parentSessionId, String childSessionId, String content, String modelId, Boolean thinking, String conversationId) {
+        sessionManager.messageSave().sessionId(childSessionId).role("user").content(content)
+                .conversationId(conversationId).save();
+
+        addHistoryEntry(childSessionId, new AgentExecutionContext.HistoryEntry(
+                "user", content, null, null,
+                LocalDateTime.now(),
+                Collections.emptyList(),
+                null, null, null));
+
+        addLog(SendMessageLogData.builder()
+                .logLevel(LogLevel.INFO)
+                .sessionId(parentSessionId)
+                .conversationId(conversationId)
+                .childSessionId(childSessionId)
+                .content(content)
+                .modelId(modelId)
+                .thinking(thinking)
+                .build());
+
+        sendSendUserMessage(childSessionId, content, conversationId);
+    }
+
+    private void sendSendUserMessage(String childSessionId, String content, String conversationId) {
+        MessageSender messageSender = registry.getMessageSender();
+        if (messageSender == null) {
+            return;
         }
-        return null;
+        List<String> parentSessionIds = resolveParentSessionIds(childSessionId);
+        SendUserMessage message = new SendUserMessage(childSessionId, content, conversationId, parentSessionIds);
+        try {
+            messageSender.send(message);
+        } catch (Exception e) {
+            log.warn("发送 SendUserMessage 失败: {}", e.getMessage(), e);
+        }
+    }
+
+    /**
+     * 构建父会话链：沿 parentSessionId 逐级向上解析，
+     * 收集直接父会话 → ... → 主会话（无父会话的根）的完整有序列表，
+     * 第一个元素为直接父会话 ID，最后一个元素为主会话 ID。
+     */
+    private List<String> resolveParentSessionIds(String sessionId) {
+        List<String> parentIds = new ArrayList<>();
+        String current = sessionId;
+        while (current != null) {
+            ContextDataProvider.AgentContextData data = dataProvider.loadAgentContext(current);
+            if (data == null || data.parentSessionId() == null) {
+                break;
+            }
+            current = data.parentSessionId();
+            parentIds.add(current);
+        }
+        return parentIds;
     }
 
     public AgentSessionContext get(String sessionId) {
@@ -299,7 +361,7 @@ public class AgentContextManager {
             }
             history.add(new AgentExecutionContext.HistoryEntry(
                     msg.role(), msg.content(), msg.reasoning(), msg.toolInfo(),
-                    msg.sequenceNum(), msg.createTime(), Collections.unmodifiableList(toolCalls),
+                    msg.createTime(), Collections.unmodifiableList(toolCalls),
                     msg.usage(), toWebSearchCall(msg.webSearchCall()), toCustomToolCall(msg.customToolCall())));
         }
         return history;
@@ -358,15 +420,14 @@ public class AgentContextManager {
         if (ctx == null) {
             return;
         }
-        addLog(RefreshLogData.builder()
-                .logLevel(LogLevel.INFO)
-                .context(ctx.context())
-                .sessionId(sessionId)
-                .refreshTarget("HISTORY")
-                .build());
         List<MessageDataProvider.MessageDTO> messages = dataProvider.getLatestMessages(sessionId);
         List<AgentExecutionContext.HistoryEntry> history = convertMessagesToHistory(messages);
         ctx.mutator().refreshHistory(history);
+        addLog(RefreshLogData.builder()
+                .logLevel(LogLevel.INFO)
+                .context(ctx.context())
+                .refreshTarget("HISTORY")
+                .build());
     }
 
     public void refreshSessionVariables(String sessionId) {
@@ -375,14 +436,13 @@ public class AgentContextManager {
         if (ctx == null) {
             return;
         }
+        Map<String, String> vars = dataProvider.getLatestSessionVariables(sessionId);
+        ctx.mutator().refreshSessionVariables(vars);
         addLog(RefreshLogData.builder()
                 .logLevel(LogLevel.INFO)
                 .context(ctx.context())
-                .sessionId(sessionId)
                 .refreshTarget("SESSION_VARIABLES")
                 .build());
-        Map<String, String> vars = dataProvider.getLatestSessionVariables(sessionId);
-        ctx.mutator().refreshSessionVariables(vars);
     }
 
     public void refreshConversationVariables(String sessionId) {
@@ -391,14 +451,13 @@ public class AgentContextManager {
         if (ctx == null) {
             return;
         }
+        Map<String, String> vars = dataProvider.getLatestConversationVariables(sessionId);
+        ctx.mutator().refreshConversationVariables(vars);
         addLog(RefreshLogData.builder()
                 .logLevel(LogLevel.INFO)
                 .context(ctx.context())
-                .sessionId(sessionId)
                 .refreshTarget("CONVERSATION_VARIABLES")
                 .build());
-        Map<String, String> vars = dataProvider.getLatestConversationVariables(sessionId);
-        ctx.mutator().refreshConversationVariables(vars);
     }
 
     public void refreshChildSessions(String sessionId) {
@@ -407,31 +466,30 @@ public class AgentContextManager {
         if (ctx == null) {
             return;
         }
+        List<AgentExecutionContext.ChildSession> children = dataProvider.getLatestChildSessions(sessionId);
+        ctx.mutator().refreshChildSessions(children);
         addLog(RefreshLogData.builder()
                 .logLevel(LogLevel.INFO)
                 .context(ctx.context())
-                .sessionId(sessionId)
                 .refreshTarget("CHILD_SESSIONS")
                 .build());
-        List<AgentExecutionContext.ChildSession> children = dataProvider.getLatestChildSessions(sessionId);
-        ctx.mutator().refreshChildSessions(children);
     }
 
     public void handleChildCreateSession(ChildCreateSession message) {
         ensureInitialized();
-        String parentSessionId = message.getParentSessionId();
+        List<String> parentIds = message.getParentSessionIds();
+        String parentSessionId = (parentIds != null && !parentIds.isEmpty()) ? parentIds.get(0) : message.getSessionId();
         AgentSessionContext ctx = cache.get(parentSessionId);
         if (ctx != null) {
-            addLog(HandleMessageLogData.builder()
-                    .logLevel(LogLevel.INFO)
-                    .context(ctx.context())
-                    .sessionId(parentSessionId)
-                    .messageType("CHILD_CREATE_SESSION")
-                    .build());
             List<AgentExecutionContext.ChildSession> current = ctx.context().getChildSessions();
             List<AgentExecutionContext.ChildSession> updated = new ArrayList<>(current);
             updated.add(message.getChildSession());
             ctx.mutator().refreshChildSessions(updated);
+            addLog(HandleMessageLogData.builder()
+                    .logLevel(LogLevel.INFO)
+                    .context(ctx.context())
+                    .sessionMessage(message)
+                    .build());
         }
     }
 
@@ -439,16 +497,15 @@ public class AgentContextManager {
         ensureInitialized();
         AgentSessionContext ctx = cache.get(message.getSessionId());
         if (ctx != null) {
-            addLog(HandleMessageLogData.builder()
-                    .logLevel(LogLevel.INFO)
-                    .context(ctx.context())
-                    .sessionId(message.getSessionId())
-                    .messageType("HISTORY_MESSAGE")
-                    .build());
             List<AgentExecutionContext.HistoryEntry> current = ctx.context().getHistory();
             List<AgentExecutionContext.HistoryEntry> updated = new ArrayList<>(current);
             updated.add(message.getHistoryEntry());
             ctx.mutator().refreshHistory(updated);
+            addLog(HandleMessageLogData.builder()
+                    .logLevel(LogLevel.INFO)
+                    .context(ctx.context())
+                    .sessionMessage(message)
+                    .build());
         }
     }
 
@@ -456,12 +513,6 @@ public class AgentContextManager {
         ensureInitialized();
         AgentSessionContext ctx = cache.get(message.getSessionId());
         if (ctx != null) {
-            addLog(HandleMessageLogData.builder()
-                    .logLevel(LogLevel.INFO)
-                    .context(ctx.context())
-                    .sessionId(message.getSessionId())
-                    .messageType("VARIABLE_MESSAGE")
-                    .build());
             if ("SESSION".equals(message.getScope())) {
                 Map<String, String> current = new HashMap<>();
                 for (String key : ctx.context().getSessionVariableKeys()) {
@@ -485,6 +536,11 @@ public class AgentContextManager {
                 }
                 ctx.mutator().refreshConversationVariables(current);
             }
+            addLog(HandleMessageLogData.builder()
+                    .logLevel(LogLevel.INFO)
+                    .context(ctx.context())
+                    .sessionMessage(message)
+                    .build());
         }
     }
 
@@ -492,13 +548,12 @@ public class AgentContextManager {
         ensureInitialized();
         AgentSessionContext ctx = cache.get(message.getSessionId());
         if (ctx != null) {
+            ctx.mutator().refreshConversationId(message.getConversationId());
             addLog(HandleMessageLogData.builder()
                     .logLevel(LogLevel.INFO)
                     .context(ctx.context())
-                    .sessionId(message.getSessionId())
-                    .messageType("CONVERSATION_ID")
+                    .sessionMessage(message)
                     .build());
-            ctx.mutator().refreshConversationId(message.getConversationId());
         }
     }
 

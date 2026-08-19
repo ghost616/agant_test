@@ -49,12 +49,13 @@ class SendResultToParentToolTest {
                 """;
 
         when(ctx.getParentSessionId()).thenReturn("parent-1");
+        when(ctx.getModelId()).thenReturn("100");
 
         String result = tool.execute(ctx, arguments);
 
         assertTrue(result.contains("\"status\":\"success\""));
         assertTrue(result.contains("已发送执行结果到父会话"));
-        verify(ctx).sendParentMessage("子会话执行完成");
+        verify(ctx).sendUserMessage("parent-1", "子会话执行完成", "100", null);
     }
 
     @Test
@@ -71,7 +72,7 @@ class SendResultToParentToolTest {
 
         assertTrue(result.contains("\"status\":\"error\""));
         assertTrue(result.contains("当前会话不是子会话，无法发送结果到父会话"));
-        verify(ctx, never()).sendParentMessage(anyString());
+        verify(ctx, never()).sendUserMessage(anyString(), anyString(), anyString(), any());
     }
 
     @Test
@@ -82,7 +83,7 @@ class SendResultToParentToolTest {
 
         assertTrue(result.contains("\"status\":\"error\""));
         assertTrue(result.contains("缺少 result 参数"));
-        verify(ctx, never()).sendParentMessage(anyString());
+        verify(ctx, never()).sendUserMessage(anyString(), anyString(), anyString(), any());
     }
 
     @Test
@@ -92,6 +93,6 @@ class SendResultToParentToolTest {
         String result = tool.execute(ctx, invalidJson);
 
         assertTrue(result.contains("\"status\":\"error\""));
-        verify(ctx, never()).sendParentMessage(anyString());
+        verify(ctx, never()).sendUserMessage(anyString(), anyString(), anyString(), any());
     }
 }

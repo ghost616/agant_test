@@ -372,6 +372,8 @@ class AgentContextManagerLogTest {
     @Test
     void 主会话sendParentMessage不记录SEND_PARENT_MESSAGE日志() {
         buildContext();
+        SessionManager.MessageSaveBuilder msgBuilder = mock(SessionManager.MessageSaveBuilder.class, RETURNS_SELF);
+        when(sessionManager.messageSave()).thenReturn(msgBuilder);
 
         AgentContextManager.AgentSessionContext ctx = agentContextManager.get(sessionId);
         ctx.context().sendParentMessage("hello");

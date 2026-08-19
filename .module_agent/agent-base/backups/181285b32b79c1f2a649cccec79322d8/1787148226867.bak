@@ -12,7 +12,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -402,105 +401,6 @@ class AgentExecutionContextTest {
             assertEquals("paramTest", capturedContent.get());
             assertEquals("300", capturedModelId.get());
             assertEquals(true, capturedThinking.get());
-        }
-    }
-
-    @Nested
-    class SendParentMessageTest {
-
-        private AgentExecutionContext.AgentContextMutator childMutator;
-        private AgentExecutionContext childContext;
-
-        @BeforeEach
-        void setUpChildContext() {
-            childMutator = new AgentExecutionContext.AgentContextMutator();
-            childContext = new AgentExecutionContext(
-                    "2", "1", "c", "1", 10, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(),
-                    childMutator, new HashMap<>(), new HashMap<>(), "1", null, null, null);
-        }
-
-        private void setCallback(AgentExecutionContext.AgentContextMutator.SendParentMessageCallback cb) {
-            try {
-                Field f = AgentExecutionContext.AgentContextMutator.class.getDeclaredField("sendParentMessageCallback");
-                f.setAccessible(true);
-                f.set(childMutator, cb);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        @Test
-        void 正向_mutator_sendParentMessage_调用回调携带父会话ID与内容() {
-            AtomicReference<String> capturedParent = new AtomicReference<>();
-            AtomicReference<String> capturedContent = new AtomicReference<>();
-            setCallback(new AgentExecutionContext.AgentContextMutator.SendParentMessageCallback() {
-                @Override
-                public void send(String parentSessionId, String content, String conversationId) {
-                    capturedParent.set(parentSessionId);
-                    capturedContent.set(content);
-                }
-            });
-
-            childMutator.sendParentMessage("hello to parent");
-
-            assertEquals("1", capturedParent.get(), "回调应收到子会话的父会话 ID");
-            assertEquals("hello to parent", capturedContent.get());
-        }
-
-        @Test
-        void 正向_sendParentMessage_conversationId经supplier动态获取() {
-            try {
-                Field f = AgentExecutionContext.AgentContextMutator.class.getDeclaredField("conversationIdSupplier");
-                f.setAccessible(true);
-                f.set(childMutator, (Supplier<String>) () -> "conv-999");
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-            AtomicReference<String> capturedConversationId = new AtomicReference<>();
-            setCallback((parentSessionId, content, conversationId) -> capturedConversationId.set(conversationId));
-
-            childMutator.sendParentMessage("hello");
-
-            assertEquals("conv-999", capturedConversationId.get(),
-                    "conversationId 应通过 supplier 动态获取而非一次性捕获");
-        }
-
-        @Test
-        void 反向_mutator_sendParentMessage_回调为null不抛异常() {
-            setCallback(null);
-
-            assertDoesNotThrow(() -> childMutator.sendParentMessage("hello"));
-        }
-
-        @Test
-        void 反向_mutator_sendParentMessage_主会话无父会话时静默忽略() {
-            AtomicBoolean called = new AtomicBoolean(false);
-            try {
-                Field f = AgentExecutionContext.AgentContextMutator.class.getDeclaredField("sendParentMessageCallback");
-                f.setAccessible(true);
-                f.set(mutator, (AgentExecutionContext.AgentContextMutator.SendParentMessageCallback) (p, c, conv) -> called.set(true));
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-
-            mutator.sendParentMessage("hello");
-
-            assertFalse(called.get(), "主会话无父会话时不应调用回调");
-        }
-
-        @Test
-        void 正向_context_sendParentMessage_透传调用mutator() {
-            AtomicReference<String> capturedContent = new AtomicReference<>();
-            setCallback((p, c, conv) -> capturedContent.set(c));
-
-            childContext.sendParentMessage("from context");
-
-            assertEquals("from context", capturedContent.get());
-        }
-
-        @Test
-        void 反向_context_sendParentMessage_无父会话静默忽略() {
-            assertDoesNotThrow(() -> context.sendParentMessage("hello"));
         }
     }
 

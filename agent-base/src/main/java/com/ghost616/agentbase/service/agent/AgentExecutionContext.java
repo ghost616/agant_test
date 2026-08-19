@@ -15,6 +15,7 @@ import com.ghost616.agentbase.sendmessage.ChildMessageEvent;
 import com.ghost616.agentbase.sendmessage.VariableMessage;
 import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -29,6 +30,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+@Slf4j
 @Getter
 public class AgentExecutionContext {
 
@@ -110,6 +112,16 @@ public class AgentExecutionContext {
 
     public void sendUserMessage(String childSessionId, String content, String modelId, Boolean thinking) {
         mutator.sendUserMessage(childSessionId, content, modelId, thinking);
+    }
+
+    /**
+     * 向父会话发送用户消息（子会话 → 父会话）。
+     * 无父会话或回调未注入时静默忽略。
+     *
+     * @param content 要发送的消息内容
+     */
+    public void sendParentMessage(String content) {
+        mutator.sendParentMessage(content);
     }
 
     public record ChildSession(String sessionId, String sessionName, String description, String modelId) {
@@ -214,6 +226,7 @@ public class AgentExecutionContext {
         Supplier<Set<String>> getConversationVarKeysCallback;
         CreateChildSessionCallback createChildSessionCallback;
         SendUserMessageCallback sendUserMessageCallback;
+        SendParentMessageCallback sendParentMessageCallback;
         Supplier<String> conversationIdSupplier;
         private MessageSender messageSender;
 
@@ -226,6 +239,11 @@ public class AgentExecutionContext {
         @FunctionalInterface
         public interface SendUserMessageCallback {
             void send(String childSessionId, String content, String modelId, Boolean thinking);
+        }
+
+        @FunctionalInterface
+        public interface SendParentMessageCallback {
+            void send(String parentSessionId, String content, String conversationId);
         }
 
         public void bind(AgentExecutionContext context) {
@@ -398,6 +416,25 @@ public class AgentExecutionContext {
             }
             if (messageSender != null) {
                 messageSender.send(new ChildMessageEvent(childSessionId, childSessionId, content, modelId, thinking));
+            }
+        }
+
+        /**
+         * 向父会话发送用户消息（子会话 → 父会话）。
+         * 从 context.parentSessionId 获取父会话 ID：为 null 或空白时静默忽略（debug 日志）；
+         * 否则调用 sendParentMessageCallback.send(parentSessionId, content, 动态获取的 conversationId)；
+         * callback 为 null 时静默忽略。
+         *
+         * @param content 要发送的消息内容
+         */
+        public void sendParentMessage(String content) {
+            String parentId = context.parentSessionId;
+            if (parentId == null || parentId.isBlank()) {
+                log.debug("会话 {} 无父会话，忽略 sendParentMessage", context.sessionId);
+                return;
+            }
+            if (sendParentMessageCallback != null) {
+                sendParentMessageCallback.send(parentId, content, getConversationId());
             }
         }
 

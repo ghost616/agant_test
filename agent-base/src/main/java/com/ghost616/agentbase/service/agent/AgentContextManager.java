@@ -28,6 +28,7 @@ import com.ghost616.agentbase.service.agent.log.HandleMessageLogData;
 import com.ghost616.agentbase.service.agent.log.LogData;
 import com.ghost616.agentbase.service.agent.log.RefreshLogData;
 import com.ghost616.agentbase.service.agent.log.SendMessageLogData;
+import com.ghost616.agentbase.service.agent.log.SendParentMessageLogData;
 import com.ghost616.agentbase.service.agent.log.SessionErrorLogData;
 
 import lombok.extern.slf4j.Slf4j;
@@ -215,10 +216,8 @@ public class AgentContextManager {
         private void injectVariableCallbacks(AgentExecutionContext.AgentContextMutator mutator,
                                               String sessionId, String parentSessionId,
                                               AgentSessionContext parentCtx) {
-            String conversationId = null;
             if (parentSessionId != null && parentCtx != null) {
                 AgentExecutionContext parentContext = parentCtx.context();
-                conversationId = parentContext.getConversationId();
                 mutator.sessionVarPutCallback = parentContext::putSessionVariable;
                 mutator.sessionVarRemoveCallback = parentContext::removeSessionVariable;
                 mutator.conversationVarPutCallback = parentContext::putConversationVariable;
@@ -238,14 +237,14 @@ public class AgentContextManager {
                 mutator.conversationVarRemoveCallback = (key) ->
                         dataProvider.deleteSessionVariable(sessionId, key);
             }
-            final String capturedConversationId = conversationId;
             mutator.createChildSessionCallback = (psId, sessionName, description, modelId,
                                                     toolIds, skillIds, prompt) ->
                     createChildSession(psId, sessionName, description, modelId,
-                            toolIds, skillIds, prompt, capturedConversationId);
+                            toolIds, skillIds, prompt, mutator.getConversationId());
             mutator.sendUserMessageCallback = (childSessionId, content, modelId, thinking) ->
-                    sendUserMessage(sessionId, childSessionId, content, modelId, thinking, capturedConversationId);
-
+                    sendUserMessage(sessionId, childSessionId, content, modelId, thinking, mutator.getConversationId());
+            mutator.sendParentMessageCallback = (parentId, content, conversationId) ->
+                    sendParentMessage(sessionId, parentId, content, conversationId);
         }
     }
 
@@ -288,6 +287,36 @@ public class AgentContextManager {
                 .build());
 
         sendSendUserMessage(childSessionId, content, conversationId);
+    }
+
+    /**
+     * 子会话向父会话发送用户消息（与 sendUserMessage 对称）：
+     * 在父会话下持久化 user 消息、更新父会话缓存历史、推送 SendUserMessage 事件并记录日志。
+     *
+     * @param sessionId      当前会话 ID（调用方子会话）
+     * @param parentSessionId 父会话 ID（消息保存与发送目标）
+     * @param content        要发送的消息内容
+     * @param conversationId 对话 ID
+     */
+    private void sendParentMessage(String sessionId, String parentSessionId, String content, String conversationId) {
+        sessionManager.messageSave().sessionId(parentSessionId).role("user").content(content)
+                .conversationId(conversationId).save();
+
+        addHistoryEntry(parentSessionId, new AgentExecutionContext.HistoryEntry(
+                "user", content, null, null,
+                LocalDateTime.now(),
+                Collections.emptyList(),
+                null, null, null));
+
+        addLog(SendParentMessageLogData.builder()
+                .logLevel(LogLevel.INFO)
+                .sessionId(sessionId)
+                .parentSessionId(parentSessionId)
+                .conversationId(conversationId)
+                .content(content)
+                .build());
+
+        sendSendUserMessage(parentSessionId, content, conversationId);
     }
 
     private void sendSendUserMessage(String childSessionId, String content, String conversationId) {

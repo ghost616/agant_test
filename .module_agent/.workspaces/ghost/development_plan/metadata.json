@@ -214,5 +214,21 @@
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
+  },
+  {
+    "plan_id": "plan_e7c217e3-13c6-4325-bc9c-c2d2bd88ee4c",
+    "plan_summary": "AgentExecutionContext 新增 sendParentMessage 方法，AgentContextManager 实现子会话→父会话消息发送，废除 capturedConversationId",
+    "starter_session_id": "18798954-dfde-40ad-adf6-1356d78ebed3",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_4443cd24-6991-44e5-82ab-7e7124658c78",
+    "plan_summary": "SendResultToParentTool 改调 AgentExecutionContext.sendParentMessage 新方法",
+    "starter_session_id": "18798954-dfde-40ad-adf6-1356d78ebed3",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
   }
 ]

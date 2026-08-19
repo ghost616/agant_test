@@ -52,7 +52,7 @@ public class SendResultToParentTool extends CustomToolInvoker {
                 return buildError("当前会话不是子会话，无法发送结果到父会话");
             }
 
-            ctx.sendParentMessage(result);
+            ctx.sendUserMessage(parentSessionId, result, ctx.getModelId(), null);
 
             return JSON_MAPPER.writeValueAsString(Map.of("status", "success", "message", "已发送执行结果到父会话"));
         } catch (Exception e) {

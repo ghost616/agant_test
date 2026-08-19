@@ -3,7 +3,7 @@
   "files": [
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/AgentExecutionContext.java",
-      "description": "Agent 执行上下文。HistoryEntry record 第 4 参为 ToolInfo toolInfo 字段（含 toolCallId/toolName），另含 List<WebSearchCall> webSearchCall 与 List<CustomToolCall> customToolCall 字段（引用独立 DTO 类）。lastResponseId 字段保持 @Getter 无直接 setter，通过内部 AgentContextMutator.setLastResponseId() 修改（由 AgentContextManager.doBuild 构造时注入或 ChatService.toSseStream 流式捕获）。内部 AgentContextMutator 各方法在变更后通过 messageSender.send() 发送 HistoryMessage/VariableMessage/ChildCreateSession/ChildMessageEvent 等事件消息。"
+      "description": "Agent 执行上下文。HistoryEntry record 第 4 参为 ToolInfo toolInfo 字段（含 toolCallId/toolName），另含 List<WebSearchCall> webSearchCall 与 List<CustomToolCall> customToolCall 字段（引用独立 DTO 类）。lastResponseId 字段保持 @Getter 无直接 setter，通过内部 AgentContextMutator.setLastResponseId() 修改（由 AgentContextManager.doBuild 构造时注入或 ChatService.toSseStream 流式捕获）。内部 AgentContextMutator 各方法在变更后通过 messageSender.send() 发送 HistoryMessage/VariableMessage/ChildCreateSession/ChildMessageEvent 等事件消息。sendParentMessage（子会话→父会话）：AgentContextMutator 新增函数式接口 SendParentMessageCallback（void send(String parentSessionId, String content, String conversationId)）与 sendParentMessageCallback 字段、公开方法 sendParentMessage(String content)——从 context.parentSessionId 获取父会话 ID，null/空白时静默忽略（debug 日志），否则调用 callback.send(parentSessionId, content, getConversationId())（动态获取 conversationId），callback null 时静默忽略；AgentExecutionContext 外层新增 sendParentMessage(String content) 透传方法。类标注 @Slf4j。"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/ToolInvoker.java",
@@ -23,7 +23,7 @@
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/AgentContextManager.java",
-      "description": "管理会话上下文缓存 ConcurrentHashMap<String, AgentSessionContext>；doBuild 构造 AgentExecutionContext 后，若 ctxData.lastResponseId() 非空则通过 mutator.setLastResponseId() 注入会话最近响应 ID。提供 build/get/remove/addHistoryEntry 方法及 4 个刷新方法（refreshHistory/refreshSessionVariables/refreshConversationVariables/refreshChildSessions）。sendUserMessage（void）不再委托 AgentMessageProxy 执行模型对话，改为 sessionManager.messageSave() 持久化 user 消息 + addHistoryEntry 更新子会话 context 的 HistoryEntry，保留 SendMessageLogData 日志；并在持久化后通过 registry.getMessageSender() 发送 SendUserMessage（sessionId=childSessionId，conversationId/parentSessionId 透传，mainSessionId 沿 parentSessionId 链经 ContextDataProvider.loadAgentContext 逐级向上解析到无父会话的主会话 ID），仅 MessageSender 非空时发送且发送异常不影响原有保存逻辑（sendSendUserMessage/resolveMainSessionId 私有方法）。injectVariableCallbacks() 在 parentCtx != null 时获取父会话 conversationId 并传入 createChildSession/sendUserMessage 回调，两私有方法签名携带 conversationId 参数，构建 ChildSessionLogData/SendMessageLogData 日志时写入 conversationId。convertMessagesToHistory 将 MessageDTO 的 ToolInfo toolInfo 直接传入 HistoryEntry，并通过 toWebSearchCall/toCustomToolCall 私有方法将 List<WebSearchCallData>/List<CustomToolCallData> 转为独立类 List<WebSearchCall>/List<CustomToolCall>。"
+      "description": "管理会话上下文缓存 ConcurrentHashMap<String, AgentSessionContext>；doBuild 构造 AgentExecutionContext 后，若 ctxData.lastResponseId() 非空则通过 mutator.setLastResponseId() 注入会话最近响应 ID。提供 build/get/remove/addHistoryEntry 方法及 4 个刷新方法（refreshHistory/refreshSessionVariables/refreshConversationVariables/refreshChildSessions）。sendUserMessage（void）不再委托 AgentMessageProxy 执行模型对话，改为 sessionManager.messageSave() 持久化 user 消息 + addHistoryEntry 更新子会话 context 的 HistoryEntry，保留 SendMessageLogData 日志；并在持久化后通过 registry.getMessageSender() 发送 SendUserMessage（sessionId=childSessionId，conversationId 透传，parentSessionIds 沿 parentSessionId 链经 ContextDataProvider.loadAgentContext 逐级向上解析的完整父链），仅 MessageSender 非空时发送且发送异常不影响原有保存逻辑（sendSendUserMessage/resolveParentSessionIds 私有方法）。injectVariableCallbacks() 重构（废除 capturedConversationId 一次性捕获）：createChildSessionCallback/sendUserMessageCallback/sendParentMessageCallback 三个 callback 统一改为调用时经 mutator.getConversationId() 动态获取 conversationId（子会话经 conversationIdSupplier 委托父会话上下文当前值，主会话返回自身 context.conversationId），两私有方法 createChildSession/sendUserMessage 签名仍携带 conversationId 参数，构建 ChildSessionLogData/SendMessageLogData 日志时写入 conversationId。新增私有方法 sendParentMessage(String sessionId, String parentSessionId, String content, String conversationId)：与 sendUserMessage 对称——messageSave 保存到父会话、addHistoryEntry 更新父会话缓存历史、复用 sendSendUserMessage(parentSessionId, content, conversationId) 推送 SendUserMessage 事件（sessionId=父会话 ID）、记录 SendParentMessageLogData 日志（sessionId=调用方子会话/parentSessionId/conversationId/content）。convertMessagesToHistory 将 MessageDTO 的 ToolInfo toolInfo 直接传入 HistoryEntry，并通过 toWebSearchCall/toCustomToolCall 私有方法将 List<WebSearchCallData>/List<CustomToolCallData> 转为独立类 List<WebSearchCall>/List<CustomToolCall>。"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/SystemTool.java",
@@ -219,7 +219,7 @@
     },
     {
       "path": "agent-base/src/test/java/com/ghost616/agentbase/service/agent/AgentContextManagerTest.java",
-      "description": "AgentContextManager 单元测试：覆盖上下文构建（含 MCP 工具展开、父会话构建、子会话构建异常路径）、SendUserMessageSendTest（sendUserMessage 消息保存与父会话链构建发送 SendUserMessage、messageSender 为 null 不发送、发送异常不影响保存）、HandleChildCreateSessionTest（从父会话链首元素解析父会话 ID 更新子会话列表、null/空列表回退、目标不在缓存不抛异常）、刷新方法、变量委托、消息处理与边界场景。"
+      "description": "AgentContextManager 单元测试：覆盖上下文构建（含 MCP 工具展开、父会话构建、子会话构建异常路径）、SendUserMessageSendTest（sendUserMessage 消息保存与父会话链构建发送 SendUserMessage、messageSender 为 null 不发送、发送异常不影响保存）、SendParentMessageSendTest（sendParentMessage 保存到父会话并发送 SendUserMessage、conversationId 调用时动态获取父会话最新值、主会话静默忽略、callback 为 null 静默忽略）、HandleChildCreateSessionTest（从父会话链首元素解析父会话 ID 更新子会话列表、null/空列表回退、目标不在缓存不抛异常）、刷新方法、变量委托、消息处理与边界场景。"
     },
     {
       "path": "agent-base/src/test/java/com/ghost616/agentbase/service/agent/invoker/SystemToolManagerTest.java",
@@ -411,11 +411,11 @@
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/enums/LogType.java",
-      "description": "智能体日志类型枚举，定义 19 个日志类型，提供 getCode/getDescription 方法。包含：REQUEST_ENTRY（请求入口）/ERROR_LOG（错误日志）/ROUTE（路由分发）/MODEL_CALL（模型调用）/STREAM_EVENT（流式事件）/HISTORY_EXPAND（历史展开）/SKILL_LOAD（技能加载）/CONTEXT_BUILD（上下文构建）/CHILD_SESSION（子会话创建）/REFRESH（上下文刷新）/HANDLE_MESSAGE（消息处理）/CACHE_REMOVE（缓存移除）/SEND_MESSAGE（消息发送）/MESSAGE_SAVE（消息保存）/MESSAGE_QUERY（消息查询）/MESSAGE_ROLLBACK（消息回退）/TOOL_EXECUTE（工具执行）/TOOL_CONTINUE（工具执行后继续）/CHAT_CACHE（对话数据缓存）。"
+      "description": "智能体日志类型枚举，定义 20 个日志类型，提供 getCode/getDescription 方法。包含：REQUEST_ENTRY（请求入口）/ERROR_LOG（错误日志）/ROUTE（路由分发）/MODEL_CALL（模型调用）/STREAM_EVENT（流式事件）/HISTORY_EXPAND（历史展开）/SKILL_LOAD（技能加载）/CONTEXT_BUILD（上下文构建）/CHILD_SESSION（子会话创建）/REFRESH（上下文刷新）/HANDLE_MESSAGE（消息处理）/CACHE_REMOVE（缓存移除）/SEND_MESSAGE（消息发送）/MESSAGE_SAVE（消息保存）/MESSAGE_QUERY（消息查询）/MESSAGE_ROLLBACK（消息回退）/TOOL_EXECUTE（工具执行）/TOOL_CONTINUE（工具执行后继续）/CHAT_CACHE（对话数据缓存）/SEND_PARENT_MESSAGE（父会话消息发送）。"
     },
     {
       "path": "agent-base/src/test/java/com/ghost616/agentbase/enums/LogTypeTest.java",
-      "description": "LogType 枚举测试，验证枚举可加载、枚举值数量为 19，以及各枚举值（REQUEST_ENTRY/ERROR_LOG/ROUTE/MODEL_CALL/STREAM_EVENT/HISTORY_EXPAND/SKILL_LOAD/CONTEXT_BUILD/CHILD_SESSION/REFRESH/HANDLE_MESSAGE/CACHE_REMOVE/SEND_MESSAGE/MESSAGE_SAVE/MESSAGE_QUERY/MESSAGE_ROLLBACK/TOOL_EXECUTE/TOOL_CONTINUE/CHAT_CACHE）的 code/description 正确。"
+      "description": "LogType 枚举测试，验证枚举可加载、枚举值数量为 20，以及各枚举值（REQUEST_ENTRY/ERROR_LOG/ROUTE/MODEL_CALL/STREAM_EVENT/HISTORY_EXPAND/SKILL_LOAD/CONTEXT_BUILD/CHILD_SESSION/REFRESH/HANDLE_MESSAGE/CACHE_REMOVE/SEND_MESSAGE/MESSAGE_SAVE/MESSAGE_QUERY/MESSAGE_ROLLBACK/TOOL_EXECUTE/TOOL_CONTINUE/CHAT_CACHE/SEND_PARENT_MESSAGE）的 code/description 正确。"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/log/RequestEntryLogData.java",
@@ -523,7 +523,7 @@
     },
     {
       "path": "agent-base/src/test/java/com/ghost616/agentbase/service/agent/AgentContextManagerLogTest.java",
-      "description": "AgentContextManager 日志接入集成测试，mock AgentLog 验证 12 处 addLog 调用：doBuild CONTEXT_BUILD（含 sessionId/agentId/modelId/toolCount/historyCount/isSubSession/cacheHit 字段断言、子会话、工具历史数量）、会话未找到 ErrorLogData ERROR、createChildSession CHILD_SESSION、4 个 refresh 方法 REFRESH（HISTORY/SESSION_VARIABLES/CONVERSATION_VARIABLES/CHILD_SESSIONS）、4 个 handler 方法 HANDLE_MESSAGE、remove CACHE_REMOVE；另覆盖 agentLog null 静默、缓存无上下文不记录、agentLog 抛异常不中断主流程。"
+      "description": "AgentContextManager 日志接入集成测试，mock AgentLog 验证 addLog 调用：doBuild CONTEXT_BUILD（含 sessionId/agentId/modelId/toolCount/historyCount/isSubSession/cacheHit 字段断言、子会话、工具历史数量）、会话未找到 ErrorLogData ERROR、createChildSession CHILD_SESSION、sendUserMessage SEND_MESSAGE、子会话 sendParentMessage SEND_PARENT_MESSAGE（sessionId=调用方子会话/parentSessionId/conversationId/content 断言）、主会话 sendParentMessage 不记录 SEND_PARENT_MESSAGE、4 个 refresh 方法 REFRESH（HISTORY/SESSION_VARIABLES/CONVERSATION_VARIABLES/CHILD_SESSIONS）、4 个 handler 方法 HANDLE_MESSAGE、remove CACHE_REMOVE；另覆盖 agentLog null 静默、缓存无上下文不记录、agentLog 抛异常不中断主流程。"
     },
     {
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/log/MessageSaveLogData.java",
@@ -652,6 +652,10 @@
     {
       "path": "agent-base/src/test/java/com/ghost616/agentbase/service/agent/invoker/SubSessionCallbackFunctionalTest.java",
       "description": "SubSessionCallback 函数式接口的单元测试，覆盖 @FunctionalInterface 注解保留、抽象方法数量为 1、execute(AgentExecutionContext, String, String, Boolean) 四参数签名返回 Message 及 lambda 实现可用性。"
+    },
+    {
+      "description": "父会话消息发送日志数据，extends SessionLogData（sessionId/conversationId 由父类承载），字段 parentSessionId（父会话 ID，消息发送目标）+ content（消息内容），@SuperBuilder，logType()=LogType.SEND_PARENT_MESSAGE。由 AgentContextManager.sendParentMessage 在子会话向父会话发送用户消息时记录（INFO 级）。",
+      "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/log/SendParentMessageLogData.java"
     }
   ]
 }
