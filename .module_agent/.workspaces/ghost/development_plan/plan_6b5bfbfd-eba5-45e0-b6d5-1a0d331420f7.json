@@ -1,0 +1,9 @@
+{
+  "plan_id": "plan_6b5bfbfd-eba5-45e0-b6d5-1a0d331420f7",
+  "module_name": "platform-app",
+  "development_plan": "DefaultChatDataProvider 实现 ChatDataProvider 新增的两个方法：getPreSystemPrompt(String sessionId) 与 getPostSystemPrompt(String sessionId)，默认返回 null（保持现有行为不变）。同步更新 DefaultChatDataProvider 相关单元测试以覆盖新方法。\n\n重要提示：主体代码已完成——DefaultChatDataProvider 已由前置 agent-base 计划的力牧实现了 getPreSystemPrompt/getPostSystemPrompt 两个方法（均返回 null），请先检查现状确认无误。当前缺少的是测试覆盖：请为 DefaultChatDataProvider 的新方法补充单元测试（覆盖 getPreSystemPrompt/getPostSystemPrompt 返回 null 的默认行为）。若存在现有测试文件则在其上补充，若无则新建。运行相关测试确认通过，勿重复修改已完成的实现代码。",
+  "session_id": "48da77f4-4b23-476f-93ca-8acd9b09e6b5",
+  "modified_files": [
+    "platform-app/src/test/java/com/ghost616/platform/service/agent/DefaultChatDataProviderTest.java"
+  ]
+}

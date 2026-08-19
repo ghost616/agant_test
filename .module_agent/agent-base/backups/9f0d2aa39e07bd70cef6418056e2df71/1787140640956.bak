@@ -207,14 +207,6 @@ public class AgentAssembler {
             return delegate.getHooks(sessionId);
         }
 
-        public String getPreSystemPrompt(String sessionId) {
-            return delegate.getPreSystemPrompt(sessionId);
-        }
-
-        public String getPostSystemPrompt(String sessionId) {
-            return delegate.getPostSystemPrompt(sessionId);
-        }
-
         MessageSavePostHook getMessageSavePostHook() {
             return getOrCreateMessageSavePostHook();
         }

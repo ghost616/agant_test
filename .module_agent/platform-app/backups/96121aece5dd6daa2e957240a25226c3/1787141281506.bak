@@ -146,26 +146,4 @@ class DefaultChatDataProviderTest {
         assertNotNull(hooks);
         assertTrue(hooks.isEmpty());
     }
-
-    @Test
-    void getPreSystemPrompt_默认返回null() {
-        assertNull(provider.getPreSystemPrompt("1"));
-    }
-
-    @Test
-    void getPreSystemPrompt_sessionId为空_返回null() {
-        assertNull(provider.getPreSystemPrompt(null));
-        assertNull(provider.getPreSystemPrompt(""));
-    }
-
-    @Test
-    void getPostSystemPrompt_默认返回null() {
-        assertNull(provider.getPostSystemPrompt("1"));
-    }
-
-    @Test
-    void getPostSystemPrompt_sessionId为空_返回null() {
-        assertNull(provider.getPostSystemPrompt(null));
-        assertNull(provider.getPostSystemPrompt(""));
-    }
 }

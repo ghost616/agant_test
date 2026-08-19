@@ -65,14 +65,4 @@ public class DefaultChatDataProvider implements ChatDataProvider {
     public List<HookInvoker> getHooks(String sessionId) {
         return List.of();
     }
-
-    @Override
-    public String getPreSystemPrompt(String sessionId) {
-        return null;
-    }
-
-    @Override
-    public String getPostSystemPrompt(String sessionId) {
-        return null;
-    }
 }

@@ -144,5 +144,7 @@
   "agent-base/src/main/java/com/ghost616/agentbase/sendmessage/ConversationIdMessage.java": "d8a339c63b45512315a2704c57d3c769",
   "agent-base/src/main/java/com/ghost616/agentbase/sendmessage/SendUserMessage.java": "8c4b105b03bc3b981018a26520209ade",
   "agent-base/src/test/java/com/ghost616/agentbase/sendmessage/SendUserMessageTest.java": "63b7206cceaf845290174ac1f14da652",
-  "platform-app/src/test/java/com/ghost616/platform/service/agent/DefaultMessageSenderTest.java": "66a865cc87668ce6f6c2800901ca53b0"
+  "platform-app/src/test/java/com/ghost616/platform/service/agent/DefaultMessageSenderTest.java": "66a865cc87668ce6f6c2800901ca53b0",
+  "agent-integration/src/main/java/com/ghost616/agentinteg/AgentAssembler.java": "9f0d2aa39e07bd70cef6418056e2df71",
+  "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultChatDataProvider.java": "cd203960d4b3546099c79d7dc731f567"
 }

@@ -729,8 +729,8 @@ class ChatServiceResponsesTest {
     }
 
     @Test
-    @DisplayName("requestType=responses_stateless 时，后置提示词应拼入已加载技能与锚点内容之后（末尾）")
-    void responsesStateless_后置提示词位于技能与锚点内容之后() {
+    @DisplayName("requestType=responses 时，后置提示词应拼入已加载技能与锚点内容之后（末尾）")
+    void responses_后置提示词位于技能与锚点内容之后() {
         SkillConfigDTO loadedSkill = SkillConfigDTO.builder()
                 .name("loaded_skill")
                 .sessionAuth(null)
@@ -756,7 +756,7 @@ class ChatServiceResponsesTest {
                 .content(ChatService.TOOL_CONTINUE_MARKER)
                 .build();
         com.ghost616.agentbase.dto.model.ChatRequest captured =
-                executeChat(apiRequest, harness, RequestType.RESPONSES_STATELESS.getCode(), Flux.empty());
+                executeChat(apiRequest, harness, RequestType.RESPONSES.getCode(), Flux.empty());
 
         String instructions = captured.getInstructions();
         assertTrue(instructions.contains("SKILL_PROMPT_TEXT"), "instructions 应包含已加载技能提示词");

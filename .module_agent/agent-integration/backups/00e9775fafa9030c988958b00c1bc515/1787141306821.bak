@@ -268,54 +268,6 @@ class AgentAssemblerTest {
         assertSame(handler, getRegistry().getThreadVariableHandler());
     }
 
-    // ========== ChatDataProviderProxy 系统提示词委托验证 ==========
-
-    @Test
-    void chatDataProviderProxy_getPreSystemPrompt_委托delegate() throws Exception {
-        when(chatDataProvider.getPreSystemPrompt("s1")).thenReturn("前置提示词");
-        agentAssembler.build();
-
-        ChatDataProvider proxy = getRegistry().getChatDataProvider();
-
-        assertNotNull(proxy);
-        assertEquals("前置提示词", proxy.getPreSystemPrompt("s1"));
-        verify(chatDataProvider).getPreSystemPrompt("s1");
-    }
-
-    @Test
-    void chatDataProviderProxy_getPreSystemPrompt_delegate返回null时返回null() throws Exception {
-        agentAssembler.build();
-
-        ChatDataProvider proxy = getRegistry().getChatDataProvider();
-
-        assertNotNull(proxy);
-        assertNull(proxy.getPreSystemPrompt("s1"));
-        verify(chatDataProvider).getPreSystemPrompt("s1");
-    }
-
-    @Test
-    void chatDataProviderProxy_getPostSystemPrompt_委托delegate() throws Exception {
-        when(chatDataProvider.getPostSystemPrompt("s2")).thenReturn("后置提示词");
-        agentAssembler.build();
-
-        ChatDataProvider proxy = getRegistry().getChatDataProvider();
-
-        assertNotNull(proxy);
-        assertEquals("后置提示词", proxy.getPostSystemPrompt("s2"));
-        verify(chatDataProvider).getPostSystemPrompt("s2");
-    }
-
-    @Test
-    void chatDataProviderProxy_getPostSystemPrompt_delegate返回null时返回null() throws Exception {
-        agentAssembler.build();
-
-        ChatDataProvider proxy = getRegistry().getChatDataProvider();
-
-        assertNotNull(proxy);
-        assertNull(proxy.getPostSystemPrompt("s2"));
-        verify(chatDataProvider).getPostSystemPrompt("s2");
-    }
-
     private AgentComponentRegistry getRegistry() throws Exception {
         Field registryField = AgentAssembler.class.getDeclaredField("registry");
         registryField.setAccessible(true);

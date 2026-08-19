@@ -166,5 +166,29 @@
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
+  },
+  {
+    "plan_id": "plan_c67b0c1d-fb17-4ff0-b837-8ddbed624665",
+    "plan_summary": "ChatDataProvider 接口新增前置/后置系统提示词方法并在 ChatService 三条请求分支注入",
+    "starter_session_id": "18798954-dfde-40ad-adf6-1356d78ebed3",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_6b5bfbfd-eba5-45e0-b6d5-1a0d331420f7",
+    "plan_summary": "DefaultChatDataProvider 实现 getPreSystemPrompt/getPostSystemPrompt 并补充测试（主体已完成，补测试）",
+    "starter_session_id": "18798954-dfde-40ad-adf6-1356d78ebed3",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_fa981a8d-b1f6-4e9e-9db1-d590c0d7572d",
+    "plan_summary": "AgentAssembler.ChatDataProviderProxy 实现 getPreSystemPrompt/getPostSystemPrompt 并补充测试（主体已完成，补测试）",
+    "starter_session_id": "18798954-dfde-40ad-adf6-1356d78ebed3",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
   }
 ]

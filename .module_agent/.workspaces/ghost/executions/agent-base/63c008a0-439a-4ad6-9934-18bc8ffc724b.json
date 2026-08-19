@@ -1,0 +1,16 @@
+[
+  {
+    "plan_id": "plan_c67b0c1d-fb17-4ff0-b837-8ddbed624665",
+    "plan": "ChatDataProvider 接口新增前置/后置系统提示词方法，ChatService 三条请求分支注入",
+    "modified_files": [
+      "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ChatDataProvider.java",
+      "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ChatService.java",
+      "agent-base/src/test/java/com/ghost616/agentbase/service/agent/ChatServiceTest.java",
+      "agent-base/src/test/java/com/ghost616/agentbase/service/agent/ChatServiceResponsesTest.java",
+      "agent-integration/src/main/java/com/ghost616/agentinteg/AgentAssembler.java",
+      "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultChatDataProvider.java"
+    ],
+    "summary": "执行总结：本轮共修改 6 个文件——1) ChatDataProvider 接口新增 String getPreSystemPrompt(String sessionId) 与 String getPostSystemPrompt(String sessionId) 两个方法（返回 null 或空白字符串时跳过注入，异常向上传播不吞）；2) ChatService.chatViaChatCompletions 分支：前置提示词作为 role=system 消息插入主 systemPrompt 消息之后（index 1 位置），后置提示词经新增私有方法 insertPostSystemPrompt 在 insertLoadedSkillMessages/insertAnchorMessages 之后插入最后一条 user 消息之前（无 user 消息时追加列表末尾，复用 findLastUserIndex）；3) ChatService.chatViaResponses/chatViaResponsesStateless 分支：buildInstructions 方法签名新增 preSystemPrompt/postSystemPrompt 两个参数，前置提示词拼入 systemPrompt 之后、后置提示词拼入 instructions 末尾（loadedSkills/锚点内容之后），两个调用处传入 chatDataProvider 获取结果；4) 实现类适配：agent-integration AgentAssembler.ChatDataProviderProxy 新增两方法委托 delegate，platform-app DefaultChatDataProvider 新增两方法返回 null；5) 测试：ChatServiceTest 新增 4 个用例（前置 index 1 + 后置最后 user 前、无 user 后置追加末尾、空白跳过、null 跳过），ChatServiceResponsesTest 新增 5 个用例（responses 前置 systemPrompt 后/后置末尾、后置位于技能与锚点之后[stateless]、responses_stateless 注入、空白跳过、null 跳过）。\n\n测试总结：全部测试通过。编译测试 3/3 通过（agent-base test-compile、agent-integration compile、platform-app compile 均 BUILD SUCCESS）；agent-base 全量单测 508/508 通过，0 失败 0 跳过（含 ChatServiceTest 15 例、ChatServiceResponsesTest 24 例）。第一轮 1 个失败用例（新增的 responses 增量分支锚点断言，根因为 chatViaResponses 增量分支按既有设计不产生折叠/锚点，非本次变更引入的回归）已按离朱修复建议改走 RESPONSES_STATELESS 分支验证锚点+技能+后置顺序，第二轮 508/508 全部通过。无环境阻塞。",
+    "errors": []
+  }
+]

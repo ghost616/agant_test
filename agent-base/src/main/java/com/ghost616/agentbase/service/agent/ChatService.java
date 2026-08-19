@@ -198,6 +198,14 @@ public class ChatService {
                 .content(context.getSystemPrompt() != null ? context.getSystemPrompt() : "")
                 .build());
 
+        String preSystemPrompt = chatDataProvider.getPreSystemPrompt(sessionId);
+        if (preSystemPrompt != null && !preSystemPrompt.isBlank()) {
+            messages.add(1, Message.builder()
+                    .role("system")
+                    .content(preSystemPrompt)
+                    .build());
+        }
+
         List<ToolDefinition> toolDefinitions = systemToolManager.getToolDefinitions();
         ContextSystemInfo systemInfo = buildContextSystemInfo(context, toolDefinitions);
         messages.addAll(systemInfo.systemMessages());
@@ -210,6 +218,7 @@ public class ChatService {
         messages = foldResult.messages();
         messages = insertLoadedSkillMessages(messages, systemInfo.loadedSkillMessages());
         messages = insertAnchorMessages(messages, foldResult.anchorMessages());
+        messages = insertPostSystemPrompt(messages, chatDataProvider.getPostSystemPrompt(sessionId));
 
         ModelInvoker invoker = modelInvokerManager.getInvoker(configData);
 
@@ -250,7 +259,8 @@ public class ChatService {
         FoldResult foldResult = filterAndFold(input, context);
         input = foldResult.messages();
 
-        String instructions = buildInstructions(context, systemInfo, systemInfo.loadedSkillMessages(), foldResult.anchorMessages());
+        String instructions = buildInstructions(context, systemInfo, systemInfo.loadedSkillMessages(), foldResult.anchorMessages(),
+                chatDataProvider.getPreSystemPrompt(sessionId), chatDataProvider.getPostSystemPrompt(sessionId));
 
         ModelInvoker invoker = modelInvokerManager.getInvoker(configData);
 
@@ -288,7 +298,8 @@ public class ChatService {
         FoldResult foldResult = filterAndFold(input, context);
         input = foldResult.messages();
 
-        String instructions = buildInstructions(context, systemInfo, systemInfo.loadedSkillMessages(), foldResult.anchorMessages());
+        String instructions = buildInstructions(context, systemInfo, systemInfo.loadedSkillMessages(), foldResult.anchorMessages(),
+                chatDataProvider.getPreSystemPrompt(sessionId), chatDataProvider.getPostSystemPrompt(sessionId));
 
         ModelInvoker invoker = modelInvokerManager.getInvoker(configData);
 
@@ -312,11 +323,19 @@ public class ChatService {
             AgentExecutionContext context,
             ContextSystemInfo systemInfo,
             List<Message> loadedSkillMessages,
-            List<Message> anchorMessages) {
+            List<Message> anchorMessages,
+            String preSystemPrompt,
+            String postSystemPrompt) {
         StringBuilder instructions = new StringBuilder();
         String systemPrompt = context.getSystemPrompt();
         if (systemPrompt != null) {
             instructions.append(systemPrompt);
+        }
+        if (preSystemPrompt != null && !preSystemPrompt.isBlank()) {
+            if (instructions.length() > 0) {
+                instructions.append("\n\n");
+            }
+            instructions.append(preSystemPrompt);
         }
         for (Message systemMessage : systemInfo.systemMessages()) {
             String content = systemMessage.getContent();
@@ -344,6 +363,12 @@ public class ChatService {
                 }
                 instructions.append(content);
             }
+        }
+        if (postSystemPrompt != null && !postSystemPrompt.isBlank()) {
+            if (instructions.length() > 0) {
+                instructions.append("\n\n");
+            }
+            instructions.append(postSystemPrompt);
         }
         return instructions.toString();
     }
@@ -571,6 +596,24 @@ public class ChatService {
             result.addAll(anchorMessages);
         } else {
             result.addAll(insertIndex, anchorMessages);
+        }
+        return result;
+    }
+
+    private List<Message> insertPostSystemPrompt(List<Message> messages, String postSystemPrompt) {
+        if (postSystemPrompt == null || postSystemPrompt.isBlank()) {
+            return messages;
+        }
+        List<Message> result = new ArrayList<>(messages);
+        Message postMessage = Message.builder()
+                .role("system")
+                .content(postSystemPrompt)
+                .build();
+        int insertIndex = findLastUserIndex(result);
+        if (insertIndex < 0) {
+            result.add(postMessage);
+        } else {
+            result.add(insertIndex, postMessage);
         }
         return result;
     }
