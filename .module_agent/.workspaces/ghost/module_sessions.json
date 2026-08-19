@@ -11,8 +11,7 @@
   "platform-app": [
     "15c35344-f761-4320-abbe-3b0a79977f34",
     "e476edeb-d76d-4f94-a467-92fe27a5ed6f",
-    "6c5c19a6-1746-4734-9c54-aaf5a2f16c5b",
-    "be99ac44-1335-4e37-9c04-b70b6e30711c"
+    "6c5c19a6-1746-4734-9c54-aaf5a2f16c5b"
   ],
   "agent-engine": [
     "3e2b7927-efd3-4def-b6d2-a0dd535c1421"
@@ -21,11 +20,5 @@
     "73e67793-e3e3-45df-9501-6f6d06ea4c1d",
     "5e4036eb-36ac-4674-869a-23993761645d",
     "dc8b69a3-258d-4762-a5c4-c617f8493320"
-  ],
-  "platform-data": [
-    "62dfbe7e-c25f-4c1e-8a40-f5d2ad781498"
-  ],
-  "agent-integration": [
-    "31faa0bd-6466-4e00-904c-2f93e9d74d3a"
   ]
 }
