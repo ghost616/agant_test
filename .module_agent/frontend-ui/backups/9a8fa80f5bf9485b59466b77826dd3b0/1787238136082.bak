@@ -619,7 +619,7 @@ function AgentChat(): JSX.Element {
    * 子会话对话完整执行器（WS 消息分发与主会话工具回调两种触发方式共用）：
    * 写入 childStreams[childId] 初始化状态 → agentChatStream 流式回复（推理+内容）→
    * onDone(hasToolCalls) 为 true 时执行工具循环（executeTools → pollSubToolStatus →
-   * continueChatStream）直至无工具调用 → 工具触发（非 WS）时 completeSubSession 收尾（WS 触发跳过）。
+   * continueChatStream）直至无工具调用 → completeSubSession 收尾。
    * 入口差异仅参数：WS 触发 streamContent 传 SEND_USER_MESSAGE_MARKER，工具触发传 data.userMessage + thinking。
    * @param params 子会话执行参数
    */
@@ -806,12 +806,8 @@ function AgentChat(): JSX.Element {
           if (!ok) break;
           hasToolCalls = await continueChildChat();
         }
-        // 收尾：仅工具触发（streamContent 非 SEND_USER_MESSAGE_MARKER，即 TOOL_CALL 模式）通知后端子会话完成；
-        // WS 触发（streamContent === SEND_USER_MESSAGE_MARKER）跳过——后端 subSessionDataMap 仅 TOOL_CALL 模式写入，
-        // WS 模式调用必然返回 SUB_SESSION_DATA_NOT_FOUND
-        if (streamContent !== SEND_USER_MESSAGE_MARKER) {
-          await completeSubSession(sessionId);
-        }
+        // 收尾：通知后端子会话完成
+        await completeSubSession(sessionId);
       } catch {
         updateChildStream(childId, (s) => ({ ...s, loading: false, error: '子会话流程执行失败' }));
       } finally {

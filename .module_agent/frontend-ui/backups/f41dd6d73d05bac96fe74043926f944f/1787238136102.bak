@@ -145,7 +145,7 @@ describe('AgentChat 子会话相关 (静态验证)', () => {
     expect(source).toContain('await runChildSessionFlowRef.current!({');
   });
 
-  it('统一执行器流程（工具触发）：agentChatStream → 工具循环（executeTools/pollSubToolStatus/continueChatStream）→ 收尾调用 completeSubSession', () => {
+  it('统一执行器流程：agentChatStream → 工具循环（executeTools/pollSubToolStatus/continueChatStream）→ completeSubSession 收尾', () => {
     const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
     const executorBlock = source.match(RUN_CHILD_FLOW_RE);
     expect(executorBlock).not.toBeNull();
@@ -155,24 +155,7 @@ describe('AgentChat 子会话相关 (静态验证)', () => {
       expect(executorBlock[0]).toContain('pollSubToolStatus(childId, execResult.toolId)');
       expect(executorBlock[0]).toContain('continueChatStream(childId');
       expect(executorBlock[0]).toContain('while (hasToolCalls && !subToolAbortRef.current)');
-      // 收尾：仅非 WS 触发（streamContent !== SEND_USER_MESSAGE_MARKER，即 TOOL_CALL 模式）调用 completeSubSession
-      expect(executorBlock[0]).toContain('if (streamContent !== SEND_USER_MESSAGE_MARKER)');
       expect(executorBlock[0]).toContain('await completeSubSession(sessionId)');
-    }
-  });
-
-  it('统一执行器收尾区分：WS 触发（streamContent === SEND_USER_MESSAGE_MARKER）跳过 completeSubSession', () => {
-    const source = readFileSync(resolve(__dirname, '../AgentChat.tsx'), 'utf-8');
-    const executorBlock = source.match(RUN_CHILD_FLOW_RE);
-    expect(executorBlock).not.toBeNull();
-    if (executorBlock) {
-      // completeSubSession 必须被条件包裹：仅 streamContent 非 SEND_USER_MESSAGE_MARKER 时调用，
-      // WS 触发不调用（后端 subSessionDataMap 仅 TOOL_CALL 模式写入，WS 调用必然返回 SUB_SESSION_DATA_NOT_FOUND）
-      const guardedCompletion = executorBlock[0].match(
-        /if \(streamContent !== SEND_USER_MESSAGE_MARKER\) \{\s*\n\s*await completeSubSession\(sessionId\);\s*\n\s*\}/,
-      );
-      expect(guardedCompletion).not.toBeNull();
-      expect(executorBlock[0]).toContain('SUB_SESSION_DATA_NOT_FOUND');
     }
   });
 

@@ -1,0 +1,12 @@
+[
+  {
+    "plan_id": "plan_6e9328a7-dea0-4883-9ed1-558ab0039306",
+    "plan": "修复 WebSocket 模式子会话流程收尾错误调用 complete-sub-session",
+    "modified_files": [
+      "src/pages/sessions/AgentChat.tsx",
+      "src/pages/sessions/__tests__/AgentChat.test.tsx"
+    ],
+    "summary": "执行总结：本轮共修改 2 个文件——1) src/pages/sessions/AgentChat.tsx：runChildSessionFlow 收尾逻辑中，await completeSubSession(sessionId)（原第 810 行）前增加判断 if (streamContent !== SEND_USER_MESSAGE_MARKER)，仅工具触发（TOOL_CALL 模式）才调用 completeSubSession，WS 触发（WebSocket 模式）跳过（后端 subSessionDataMap 仅 TOOL_CALL 模式写入，WS 调用必然返回 SUB_SESSION_DATA_NOT_FOUND），并同步更新 runChildSessionFlow JSDoc；streamReply/runChildTools/continueChildChat/标签切换等其余逻辑保持不变；2) src/pages/sessions/__tests__/AgentChat.test.tsx：收尾断言拆分为两个分支——统一执行器流程（工具触发）用例保留流程断言并新增守卫断言（if streamContent !== SEND_USER_MESSAGE_MARKER + await completeSubSession(sessionId)），新增「统一执行器收尾区分：WS 触发跳过 completeSubSession」用例（guardedCompletion 正则断言被条件包裹 + SUB_SESSION_DATA_NOT_FOUND 注释）。同步更新 module_definition 描述与 change_history。\n\n测试总结：全部测试通过——单元测试 47/47 通过（src/pages/sessions/__tests__/AgentChat.test.tsx，含既有回归用例）；编译检查 tsc --noEmit 变更源码 AgentChat.tsx 零错误，测试文件 +1 为基线同类 __dirname 错误（项目缺 @types/node，非本次引入），stash 基线对比确认零新增真实类型错误；E2E 7/7 通过（e2e/AgentChat.spec.ts，后端 8080/前端 3000 均在运行），标签化展示与路径式导航未回归。failed_count=0，skip_count=0。离朱报告关键内容：单测 47/47（Test Files 9 passed / Tests 259 passed 含 .lizhu_env 历史副本同匹配文件）、编译 0 新增真实错误（基线 288 条：静态测试文件缺 node types 286 + ToolList/EvaluationResultList 2）、E2E 7 passed (10.6s) exit 0。修复建议（非本次变更引入，可另行处理）：npm i -D @types/node 消除静态测试文件基线错误。",
+    "errors": []
+  }
+]

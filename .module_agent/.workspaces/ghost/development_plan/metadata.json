@@ -32,11 +32,19 @@
     "test_passed": true
   },
   {
-    "plan_id": "plan_9dcd8f18-d728-487c-8bf4-ae0de0840657",
-    "plan_summary": "serve.js 升级代理转发 Sec-WebSocket-Extensions 头修复协议错误",
+    "plan_id": "plan_6e9328a7-dea0-4883-9ed1-558ab0039306",
+    "plan_summary": "WebSocket 模式子会话收尾跳过 complete-sub-session",
     "starter_session_id": "session-3f576377-2d9b-4b42-873e-b0aef89b6b25",
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
+  },
+  {
+    "plan_id": "plan_c9d91b15-fdc6-4d58-9ab4-6354d2af8b75",
+    "plan_summary": "WebSocket 模式子会话收尾跳过 complete-sub-session（行尾修复复审）",
+    "starter_session_id": "session-3f576377-2d9b-4b42-873e-b0aef89b6b25",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": false
   }
 ]
