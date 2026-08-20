@@ -6,3 +6,8 @@ target
 *.log
 .lizhu_env
 test-results
+dist/
+classpath.txt
+__pycache__/
+*.pyc
+*_test_out.txt

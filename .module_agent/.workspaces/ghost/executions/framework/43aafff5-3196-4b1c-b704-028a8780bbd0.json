@@ -1,0 +1,11 @@
+[
+  {
+    "plan_id": "plan_e4df189a-3506-4d10-b1ae-9aaea75be63d",
+    "plan": "修改根目录 .gitignore，追加忽略规则",
+    "modified_files": [
+      ".gitignore"
+    ],
+    "summary": "已更新 .gitignore 文件，追加 5 条忽略规则",
+    "errors": []
+  }
+]

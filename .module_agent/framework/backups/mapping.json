@@ -12,5 +12,6 @@
   "src/main/java/com/ghost616/platform/config/SchemaMigration.java": "fed1d4048accefa7f7649a9285dd0ec5",
   "platform-app/src/main/java/com/ghost616/platform/config/WebConfig.java": "d06dc36f57ad1095c105a7ae1568aa31",
   "src/App.tsx": "46ef2374da6211486f3a408db68b2bcb",
-  "src/services/api.ts": "0317459bee0d92a9d4f2159ad1056056"
+  "src/services/api.ts": "0317459bee0d92a9d4f2159ad1056056",
+  ".gitignore": "a084b794bc0759e7a6b77810e01874f2"
 }
