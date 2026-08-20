@@ -34,6 +34,10 @@ import com.ghost616.platform.exception.BusinessException;
 import com.ghost616.agentbase.service.agent.invoker.McpAuthConfigParser;
 import com.ghost616.agentbase.service.agent.invoker.McpJsonRpcClient;
 import com.ghost616.agentbase.service.agent.invoker.ToolManager;
+import com.ghost616.agentinteg.tool.KnowledgeBaseInfoTool;
+import com.ghost616.agentinteg.tool.KnowledgeFileChunkTool;
+import com.ghost616.agentinteg.tool.KnowledgeFileInfoTool;
+import com.ghost616.agentinteg.tool.KnowledgeSearchTool;
 import org.springframework.context.annotation.Lazy;
 
 
@@ -225,29 +229,21 @@ public class ToolConfigServiceImpl implements ToolConfigService {
     @Override
     public ToolConfig getToolConfigBySessionAndName(Long sessionId, String toolName) {
         ToolConfigDTO dto = toolManager.getToolConfig(IdConverter.toString(sessionId), toolName);
-        if (dto == null || dto.getId() == null) {
+        if (dto == null || dto.getId() == null || isKnowledgeToolId(dto.getId())) {
             return null;
         }
-        Long toolConfigId = parseIdQuietly(dto.getId());
-        if (toolConfigId == null) {
-            return null;
-        }
-        ToolConfig entity = toolConfigMapper.selectById(toolConfigId);
+        ToolConfig entity = toolConfigMapper.selectById(IdConverter.parse(dto.getId()));
         if (entity == null) {
             throw new BusinessException(ErrorCode.TOOL_NOT_FOUND);
         }
         return entity;
     }
 
-    /**
-     * 尝试将 ID 字符串解析为 Long，解析失败（如虚拟工具 id 为工具名本身）时返回 null。
-     */
-    private Long parseIdQuietly(String id) {
-        try {
-            return IdConverter.parse(id);
-        } catch (IllegalArgumentException e) {
-            return null;
-        }
+    private boolean isKnowledgeToolId(String id) {
+        return KnowledgeBaseInfoTool.TOOL_NAME.equals(id)
+                || KnowledgeFileInfoTool.TOOL_NAME.equals(id)
+                || KnowledgeSearchTool.TOOL_NAME.equals(id)
+                || KnowledgeFileChunkTool.TOOL_NAME.equals(id);
     }
 
     private String normalizeParameterSchema(String raw) {

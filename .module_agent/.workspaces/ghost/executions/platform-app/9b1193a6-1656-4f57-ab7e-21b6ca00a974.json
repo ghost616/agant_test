@@ -1,0 +1,12 @@
+[
+  {
+    "plan_id": "plan_b2319af1-391a-4f96-9c18-4f83c44ecd4f",
+    "plan": "修复 ToolConfigServiceImpl.getToolConfigBySessionAndName 对虚拟工具名抛 IllegalArgumentException",
+    "modified_files": [
+      "platform-app/src/main/java/com/ghost616/platform/service/tool/ToolConfigServiceImpl.java",
+      "platform-app/src/test/java/com/ghost616/platform/service/tool/ToolConfigServiceImplTest.java"
+    ],
+    "summary": "执行总结：修改 2 个文件——① ToolConfigServiceImpl.java：getToolConfigBySessionAndName 中知识工具 ID 特判（isKnowledgeToolId）替换为通用非数字 ID 判断，新增私有辅助方法 parseIdQuietly(String)（try-catch IdConverter.parse，失败返回 null），dto.getId() 无法解析为 Long 时直接返回 null 不查库不抛异常；数字 ID 行为保持不变（DB 无记录仍抛 TOOL_NOT_FOUND）；删除仅此方法使用的 isKnowledgeToolId 私有方法及 4 个仅被其引用的 import（KnowledgeBaseInfoTool/KnowledgeFileChunkTool/KnowledgeFileInfoTool/KnowledgeSearchTool）。② ToolConfigServiceImplTest.java：GetToolConfigBySessionAndNameTests 现有 5 个用例保持通过，新增 4 个虚拟工具名用例（callback_sub_session/send_result_to_parent/default_tool_memory_search/default_tool_history_query 返回 null 且 selectById 不被调用）。其他方法（getImplByName、getById 等）未改动。\n\n测试总结：全部测试通过，通过 60 项，失败 0 项，跳过 0 项。离朱报告：ToolConfigServiceImplTest 全类回归 47/47（含 GetToolConfigBySessionAndNameTests 9/9，核心断言为虚拟工具名返回 null 且 verify(toolConfigMapper, never()).selectById(any())）；ToolExecutionControllerTest 回归 13/13（getToolConfigBySessionAndName mock 行为不受影响）；编译测试 mvn -pl platform-app -am test-compile exit 0 BUILD SUCCESS（删除 import 后无残留引用）。无失败用例；环境说明仅含 Maven settings.xml snapshotPolicy 警告与 PowerShell 伪 exit code 1（stderr 警告误报，Maven 均 BUILD SUCCESS）。",
+    "errors": []
+  }
+]

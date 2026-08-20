@@ -32,17 +32,9 @@
     "test_passed": true
   },
   {
-    "plan_id": "plan_795ac74d-d565-4850-800d-96266cf18d8c",
-    "plan_summary": "platform-app: callback_sub_session 静态常量 + WebSocket 模式判断增强",
-    "starter_session_id": "d878ad08-7f07-41b8-9ece-11453b007839",
-    "code_reviewed": true,
-    "plan_completed": true,
-    "test_passed": true
-  },
-  {
-    "plan_id": "plan_bf615277-f045-4230-8678-6fd8e3a5374d",
-    "plan_summary": "agent-base: 子会话能力提示词去工具名化改写 + 测试断言适配",
-    "starter_session_id": "d878ad08-7f07-41b8-9ece-11453b007839",
+    "plan_id": "plan_b2319af1-391a-4f96-9c18-4f83c44ecd4f",
+    "plan_summary": "修复 getToolConfigBySessionAndName 对虚拟工具名 parse ID 崩溃",
+    "starter_session_id": "session-3f576377-2d9b-4b42-873e-b0aef89b6b25",
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true

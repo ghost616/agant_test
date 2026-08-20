@@ -9,14 +9,10 @@ import com.ghost616.platform.enums.ErrorCode;
 import com.ghost616.agentbase.enums.ToolType;
 import com.ghost616.platform.exception.BusinessException;
 import com.ghost616.agentbase.service.agent.invoker.ToolManager;
-import com.ghost616.agentinteg.tool.HistoryQueryTool;
 import com.ghost616.agentinteg.tool.KnowledgeBaseInfoTool;
 import com.ghost616.agentinteg.tool.KnowledgeFileChunkTool;
 import com.ghost616.agentinteg.tool.KnowledgeFileInfoTool;
 import com.ghost616.agentinteg.tool.KnowledgeSearchTool;
-import com.ghost616.agentinteg.tool.MemoryQueryTool;
-import com.ghost616.agentinteg.tool.SendResultToParentTool;
-import com.ghost616.agentinteg.tool.SubSessionCallbackTool;
 import com.ghost616.platform.dto.tool.ToolCreateRequest;
 import com.ghost616.platform.dto.tool.ToolDetailDTO;
 import com.ghost616.platform.dto.tool.ToolUpdateRequest;
@@ -794,50 +790,6 @@ class ToolConfigServiceImplTest {
             when(toolManager.getToolConfig("1", KnowledgeBaseInfoTool.TOOL_NAME)).thenReturn(dto);
 
             ToolConfig result = service.getToolConfigBySessionAndName(1L, KnowledgeBaseInfoTool.TOOL_NAME);
-
-            assertNull(result);
-            verify(toolConfigMapper, never()).selectById(any());
-        }
-
-        @Test
-        void whenDtoIdIsCallbackSubSessionToolName_shouldReturnNull() {
-            ToolConfigDTO dto = ToolConfigDTO.builder().id(SubSessionCallbackTool.TOOL_NAME).build();
-            when(toolManager.getToolConfig("1", SubSessionCallbackTool.TOOL_NAME)).thenReturn(dto);
-
-            ToolConfig result = service.getToolConfigBySessionAndName(1L, SubSessionCallbackTool.TOOL_NAME);
-
-            assertNull(result);
-            verify(toolConfigMapper, never()).selectById(any());
-        }
-
-        @Test
-        void whenDtoIdIsSendResultToParentToolName_shouldReturnNull() {
-            ToolConfigDTO dto = ToolConfigDTO.builder().id(SendResultToParentTool.TOOL_NAME).build();
-            when(toolManager.getToolConfig("1", SendResultToParentTool.TOOL_NAME)).thenReturn(dto);
-
-            ToolConfig result = service.getToolConfigBySessionAndName(1L, SendResultToParentTool.TOOL_NAME);
-
-            assertNull(result);
-            verify(toolConfigMapper, never()).selectById(any());
-        }
-
-        @Test
-        void whenDtoIdIsMemoryQueryToolName_shouldReturnNull() {
-            ToolConfigDTO dto = ToolConfigDTO.builder().id(MemoryQueryTool.TOOL_NAME).build();
-            when(toolManager.getToolConfig("1", MemoryQueryTool.TOOL_NAME)).thenReturn(dto);
-
-            ToolConfig result = service.getToolConfigBySessionAndName(1L, MemoryQueryTool.TOOL_NAME);
-
-            assertNull(result);
-            verify(toolConfigMapper, never()).selectById(any());
-        }
-
-        @Test
-        void whenDtoIdIsHistoryQueryToolName_shouldReturnNull() {
-            ToolConfigDTO dto = ToolConfigDTO.builder().id(HistoryQueryTool.TOOL_NAME).build();
-            when(toolManager.getToolConfig("1", HistoryQueryTool.TOOL_NAME)).thenReturn(dto);
-
-            ToolConfig result = service.getToolConfigBySessionAndName(1L, HistoryQueryTool.TOOL_NAME);
 
             assertNull(result);
             verify(toolConfigMapper, never()).selectById(any());
