@@ -32,8 +32,8 @@
     "test_passed": true
   },
   {
-    "plan_id": "plan_b2319af1-391a-4f96-9c18-4f83c44ecd4f",
-    "plan_summary": "修复 getToolConfigBySessionAndName 对虚拟工具名 parse ID 崩溃",
+    "plan_id": "plan_da4b491c-accf-4a5b-9313-bf768e191d7f",
+    "plan_summary": "WebSocketConfig 允许跨源 Origin 握手",
     "starter_session_id": "session-3f576377-2d9b-4b42-873e-b0aef89b6b25",
     "code_reviewed": true,
     "plan_completed": true,

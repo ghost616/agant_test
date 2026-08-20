@@ -1,0 +1,9 @@
+{
+  "plan_id": "plan_da4b491c-accf-4a5b-9313-bf768e191d7f",
+  "module_name": "platform-app",
+  "development_plan": "修复 WebSocket 握手被 Spring 自动追加的 OriginHandshakeInterceptor 拒绝的问题：1）修改 platform-app 的 WebSocketConfig.registerWebSocketHandlers 方法，在 registry.addHandler(sessionWebSocketHandler, WS_ENDPOINT).addInterceptors(authHandshakeInterceptor) 之后追加 .setAllowedOriginPatterns(\"*\")，允许浏览器跨源 Origin 握手（前端经 Vite dev 3000 端口 / serve.js 代理访问，后端 8080，Origin 与 Host 不同源；setAllowedOriginPatterns(\"*\") 为 Spring 6 推荐的通配方式，不使用 setAllowedOrigins(\"*\")）。2）检查 WebSocketConfig 相关测试（如有断言注册配置的测试）同步适配；无测试则仅保持单行配置变更。3）验收：浏览器握手不再 403，SessionWebSocketHandler.afterConnectionEstablished 正常执行、连接绑定成功，getSessionsByUser(userId) 返回连接，WebSocket 推送可达前端。",
+  "session_id": "9b1193a6-1656-4f57-ab7e-21b6ca00a974",
+  "modified_files": [
+    "platform-app/src/main/java/com/ghost616/platform/config/WebSocketConfig.java"
+  ]
+}
