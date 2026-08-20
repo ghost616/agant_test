@@ -3,7 +3,6 @@ package com.ghost616.platform.controller;
 import com.ghost616.agentbase.dto.model.ToolInfo;
 import com.ghost616.agentbase.service.agent.AgentContextManager;
 import com.ghost616.agentbase.service.agent.AgentExecutionContext;
-import com.ghost616.agentbase.service.agent.ContextDataProvider;
 import com.ghost616.platform.dto.AgentContextBasicDTO;
 import com.ghost616.platform.dto.AgentContextDTO;
 import com.ghost616.platform.dto.ApiResponse;
@@ -42,9 +41,13 @@ class AgentContextControllerTest {
         AgentContextManager.AgentSessionContext sessionCtx = mock(AgentContextManager.AgentSessionContext.class);
         AgentExecutionContext ctx = mock(AgentExecutionContext.class);
         when(agentContextManager.get("1")).thenReturn(sessionCtx);
-        when(sessionCtx.agentContextData()).thenReturn(ctxData());
         when(sessionCtx.context()).thenReturn(ctx);
         when(ctx.getSessionId()).thenReturn("1");
+        when(ctx.getAgentId()).thenReturn("100");
+        when(ctx.getSystemPrompt()).thenReturn("prompt");
+        when(ctx.getModelId()).thenReturn("200");
+        when(ctx.getParentSessionId()).thenReturn(null);
+        when(ctx.getRecentMessageCount()).thenReturn(10);
         when(ctx.getHistory()).thenReturn(List.of());
         when(ctx.getTools()).thenReturn(List.of());
         when(ctx.getSkills()).thenReturn(List.of());
@@ -72,7 +75,6 @@ class AgentContextControllerTest {
         AgentContextManager.AgentSessionContext sessionCtx = mock(AgentContextManager.AgentSessionContext.class);
         AgentExecutionContext ctx = mock(AgentExecutionContext.class);
         when(agentContextManager.get("1")).thenReturn(sessionCtx);
-        when(sessionCtx.agentContextData()).thenReturn(ctxData());
         when(sessionCtx.context()).thenReturn(ctx);
 
         AgentExecutionContext.HistoryEntry entry = new AgentExecutionContext.HistoryEntry(
@@ -96,7 +98,6 @@ class AgentContextControllerTest {
         AgentContextManager.AgentSessionContext sessionCtx = mock(AgentContextManager.AgentSessionContext.class);
         AgentExecutionContext ctx = mock(AgentExecutionContext.class);
         when(agentContextManager.get("1")).thenReturn(sessionCtx);
-        when(sessionCtx.agentContextData()).thenReturn(ctxData());
         when(sessionCtx.context()).thenReturn(ctx);
         when(ctx.getHistory()).thenReturn(List.of());
         when(ctx.getSessionVariableKeys()).thenReturn(Set.of("key1", "key2"));
@@ -118,7 +119,6 @@ class AgentContextControllerTest {
         AgentContextManager.AgentSessionContext sessionCtx = mock(AgentContextManager.AgentSessionContext.class);
         AgentExecutionContext ctx = mock(AgentExecutionContext.class);
         when(agentContextManager.get("1")).thenReturn(sessionCtx);
-        when(sessionCtx.agentContextData()).thenReturn(ctxData());
         when(sessionCtx.context()).thenReturn(ctx);
         when(ctx.getHistory()).thenReturn(List.of());
         when(ctx.getSessionVariableKeys()).thenReturn(Set.of());
@@ -136,44 +136,6 @@ class AgentContextControllerTest {
     }
 
     @Test
-    void getContext_shouldReadBasicInfoFromAgentContextData() {
-        AgentContextManager.AgentSessionContext sessionCtx = mock(AgentContextManager.AgentSessionContext.class);
-        AgentExecutionContext ctx = mock(AgentExecutionContext.class);
-        ContextDataProvider.AgentContextData ctxData = new ContextDataProvider.AgentContextData(
-                "100", "dataPrompt", "200", 10, List.of(), Map.of(), "50", List.of(), "resp_001", null);
-        when(agentContextManager.get("1")).thenReturn(sessionCtx);
-        when(sessionCtx.agentContextData()).thenReturn(ctxData);
-        when(sessionCtx.context()).thenReturn(ctx);
-        // ctx 上暴露与 AgentContextData 不同的基本信息，验证 getContext 从 agentContextData 读取而非懒构建 context
-        when(ctx.getSessionId()).thenReturn("1");
-        lenient().when(ctx.getAgentId()).thenReturn("999");
-        lenient().when(ctx.getSystemPrompt()).thenReturn("ctxPrompt");
-        lenient().when(ctx.getModelId()).thenReturn("999");
-        lenient().when(ctx.getParentSessionId()).thenReturn("99");
-        lenient().when(ctx.getRecentMessageCount()).thenReturn(99);
-        when(ctx.getHistory()).thenReturn(List.of());
-        when(ctx.getTools()).thenReturn(List.of());
-        when(ctx.getSkills()).thenReturn(List.of());
-        when(ctx.getProjectDir()).thenReturn("/project");
-        when(ctx.getLastResponseId()).thenReturn("resp_001");
-        when(ctx.getSessionVariableKeys()).thenReturn(Set.of());
-        when(ctx.getConversationVariableKeys()).thenReturn(Set.of());
-
-        ApiResponse<AgentContextDTO> response = controller.getContext(1L);
-
-        assertTrue(response.isSuccess());
-        AgentContextDTO dto = response.getData();
-        assertEquals(100L, dto.getAgentId());
-        assertEquals("dataPrompt", dto.getSystemPrompt());
-        assertEquals(200L, dto.getModelId());
-        assertEquals(50L, dto.getParentSessionId());
-        assertEquals(10, dto.getRecentMessageCount());
-        // 需要完整上下文的字段仍来自懒构建 context
-        assertEquals("/project", dto.getProjectDir());
-        assertEquals("resp_001", dto.getLastResponseId());
-    }
-
-    @Test
     void getContext_shouldReturnErrorWhenSessionContextNotFound() {
         when(agentContextManager.get("999")).thenReturn(null);
 
@@ -181,20 +143,6 @@ class AgentContextControllerTest {
 
         assertFalse(response.isSuccess());
         assertEquals("CONTEXT-001", response.getCode());
-    }
-
-    @Test
-    void getContext_shouldReturnErrorWhenAgentContextDataNull() {
-        AgentContextManager.AgentSessionContext sessionCtx = mock(AgentContextManager.AgentSessionContext.class);
-        when(agentContextManager.get("999")).thenReturn(sessionCtx);
-        when(sessionCtx.agentContextData()).thenReturn(null);
-
-        ApiResponse<AgentContextDTO> response = controller.getContext(999L);
-
-        assertFalse(response.isSuccess());
-        assertEquals("CONTEXT-001", response.getCode());
-        // 兜底分支：agentContextData 为 null 时不应触发懒构建 context
-        verify(sessionCtx, never()).context();
     }
 
     @Test
@@ -303,10 +251,5 @@ class AgentContextControllerTest {
 
         assertTrue(response.isSuccess());
         verify(ctx).putSessionVariable("k", null);
-    }
-
-    private ContextDataProvider.AgentContextData ctxData() {
-        return new ContextDataProvider.AgentContextData(
-                "100", "prompt", "200", 10, List.of(), Map.of(), null, List.of(), "resp_001", null);
     }
 }

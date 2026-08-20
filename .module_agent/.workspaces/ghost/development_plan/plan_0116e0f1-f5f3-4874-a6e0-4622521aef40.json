@@ -1,0 +1,14 @@
+{
+  "plan_id": "plan_0116e0f1-f5f3-4874-a6e0-4622521aef40",
+  "module_name": "agent-base",
+  "development_plan": "1. 将 AgentContextManager.AgentSessionContext 由 record 改为 class：新增 ContextDataProvider.AgentContextData agentContextData 字段（保存防御性拷贝后的会话基本数据），AgentExecutionContext context 字段改为可空。\n2. 新增防御性拷贝逻辑：从 dataProvider.loadAgentContext 取出原始 AgentContextData 后，对其 sessionVariables、skills、childSessions 三个集合分别拷贝为可变副本（如 new HashMap/new ArrayList），构造新的 AgentContextData 后存入 AgentSessionContext，隔离 dataProvider 返回的不可变集合（List.of/Stream.toList）。\n3. 拆分构建流程为轻量构建与懒构建：轻量构建仅执行 loadAgentContext + 防御性拷贝并生成 context 为空的 AgentSessionContext；AgentExecutionContext 懒构建逻辑（原有 doBuild 中加载 messages/history、toolManager.getSessionTools、skills MCP 展开、父会话解析、mutator 回调注入等）提取为独立方法，在 AgentSessionContext.context() 首次访问且为 null 时基于其持有的 AgentContextData 触发构建，构建时共享 AgentContextData 中的 sessionVariables/skills/childSessions 引用（不再重复拷贝），保持 mutator 原地更新机制使两者同步。\n4. get(sessionId) 改为缓存未命中时执行轻量构建（加载 AgentContextData + 防御性拷贝后放入缓存，不构建 AgentExecutionContext）并返回，替代原来直接返回 null；原 record 构造签名变更后同步适配内部所有构造调用。\n5. ToolManager.isSubSession 改为从 get(sessionId) 返回的 AgentSessionContext.agentContextData().parentSessionId() 判断是否子会话（parentSessionId 非空即子会话），不再依赖 context().isMainSession()。\n6. 适配 agent-base 下 4 个测试文件（AgentContextManagerTest、AgentContextManagerLogTest、ChatServiceTest、ChatServiceLogTest 等）中约 40 处 new AgentSessionContext(...) 构造调用为新的 class 构造方式，并新增测试用例覆盖：防御性拷贝（拷贝后为独立可变集合）、懒构建（context 首次访问才构建且仅构建一次）、get 未命中轻量加载（不构建 context 也能拿到 AgentContextData）、共享引用一致性（mutator 更新后 AgentContextData 与 context 同步）。",
+  "session_id": "7cb743cd-b16d-495c-b635-3b68f8da053d",
+  "modified_files": [
+    "agent-base/src/main/java/com/ghost616/agentbase/service/agent/AgentContextManager.java",
+    "agent-base/src/main/java/com/ghost616/agentbase/service/agent/AgentExecutionContext.java",
+    "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/ToolManager.java",
+    "agent-base/src/test/java/com/ghost616/agentbase/service/agent/AgentContextManagerTest.java",
+    "agent-base/src/test/java/com/ghost616/agentbase/service/agent/AgentContextManagerLogTest.java",
+    "agent-base/src/test/java/com/ghost616/agentbase/service/agent/invoker/ToolManagerTest.java"
+  ]
+}

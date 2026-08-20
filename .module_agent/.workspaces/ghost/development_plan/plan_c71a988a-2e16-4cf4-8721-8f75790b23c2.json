@@ -1,0 +1,12 @@
+{
+  "plan_id": "plan_c71a988a-2e16-4cf4-8721-8f75790b23c2",
+  "module_name": "agent-base",
+  "development_plan": "修复以下审查问题：\n- [agent-base/src/main/java/com/ghost616/agentbase/service/agent/AgentContextManager.java] (error, line 399) get(sessionId) 缓存未命中时执行轻量构建并放入缓存（modelIdOverride 恒为 null），而 ChatService.chat 通过 build(sessionId).modelIdOverride(modelId).build() 获取上下文且 build() 优先返回缓存。若 chat 之前同一会话先被 get() 缓存（如 AgentContextController.getContext、ChatController.stopChat、ToolManager 工具执行路径），build() 将命中无 override 的轻量缓存条目，请求指定的 modelId 失效，回退为会话默认模型。原实现 get() 只读缓存不写，无此回归面。请修复：build() 命中缓存时校验 modelIdOverride 一致性并在不匹配时重建（从缓存中移除/绕过缓存重新构建带 override 的上下文），或调整 get() 缓存策略（轻量构建仅作临时查询不写入缓存，或单独缓存策略），避免污染 build(modelIdOverride) 语义；修复后补充/适配相应测试用例覆盖 build(modelIdOverride) 命中轻量缓存条目的场景。\n- [agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/ToolManager.java] (warning, line 152) resolveSkillToolByName 仍通过 ctx.context().isMainSession() 判断主会话（会触发懒构建），与 isSubSession 基于 agentContextData().parentSessionId() 的新判断方式不一致，且 get() 语义变化后行为已改变。请统一为 ctx.agentContextData() != null && ctx.agentContextData().parentSessionId() == null 判断主会话，避免不必要懒构建并保持一致性；同步适配 ToolManagerTest 等相关测试。\n\n修复后执行 agent-base 模块全量测试及跨模块 test-compile，确保所有测试通过。",
+  "session_id": "7cb743cd-b16d-495c-b635-3b68f8da053d",
+  "modified_files": [
+    "agent-base/src/main/java/com/ghost616/agentbase/service/agent/AgentContextManager.java",
+    "agent-base/src/main/java/com/ghost616/agentbase/service/agent/invoker/ToolManager.java",
+    "agent-base/src/test/java/com/ghost616/agentbase/service/agent/AgentContextManagerTest.java",
+    "agent-base/src/test/java/com/ghost616/agentbase/service/agent/invoker/ToolManagerTest.java"
+  ]
+}

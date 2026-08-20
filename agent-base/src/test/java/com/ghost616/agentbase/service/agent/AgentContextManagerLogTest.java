@@ -77,7 +77,8 @@ class AgentContextManagerLogTest {
 
     private void buildContext() {
         stubBasicContext();
-        agentContextManager.build(sessionId).build();
+        // 懒构建：build 仅轻量构建，访问 context() 触发完整构建并记录 CONTEXT_BUILD 日志
+        agentContextManager.build(sessionId).build().context();
     }
 
     @Test
@@ -89,6 +90,8 @@ class AgentContextManagerLogTest {
                 assertDoesNotThrow(() -> agentContextManager.build(sessionId).build());
 
         assertNotNull(ctx);
+        // 懒构建：触发完整构建以使用 stubBasicContext 中的 stub
+        assertDoesNotThrow(ctx::context);
         verify(agentLog, never()).addLog(any());
     }
 
@@ -127,7 +130,8 @@ class AgentContextManagerLogTest {
         when(sessionManager.getMessages(sessionId)).thenReturn(List.of());
         when(toolManager.getSessionTools(eq(sessionId), anyBoolean())).thenReturn(List.of());
 
-        agentContextManager.build(sessionId).build();
+        // 懒构建：build 仅轻量构建，访问 context() 触发完整构建并记录 CONTEXT_BUILD 日志
+        agentContextManager.build(sessionId).build().context();
 
         ArgumentCaptor<LogData> captor = ArgumentCaptor.forClass(LogData.class);
         verify(agentLog, atLeastOnce()).addLog(captor.capture());
@@ -152,7 +156,8 @@ class AgentContextManagerLogTest {
         when(sessionManager.getMessages(anyString())).thenReturn(List.of());
         when(toolManager.getSessionTools(anyString(), anyBoolean())).thenReturn(List.of());
 
-        agentContextManager.build(childSessionId).build();
+        // 懒构建：build 仅轻量构建，访问 context() 触发完整构建并记录 CONTEXT_BUILD 日志
+        agentContextManager.build(childSessionId).build().context();
 
         ArgumentCaptor<LogData> captor = ArgumentCaptor.forClass(LogData.class);
         verify(agentLog, atLeastOnce()).addLog(captor.capture());
@@ -179,7 +184,8 @@ class AgentContextManagerLogTest {
                 new MessageDataProvider.MessageDTO("2", sessionId, "assistant", "hi", null, null,
                         LocalDateTime.now(), null, null, null, null, null, null, null)));
 
-        agentContextManager.build(sessionId).build();
+        // 懒构建：build 仅轻量构建，访问 context() 触发完整构建并记录 CONTEXT_BUILD 日志
+        agentContextManager.build(sessionId).build().context();
 
         ArgumentCaptor<LogData> captor = ArgumentCaptor.forClass(LogData.class);
         verify(agentLog, atLeastOnce()).addLog(captor.capture());
@@ -585,6 +591,7 @@ class AgentContextManagerLogTest {
         stubBasicContext();
         doThrow(new RuntimeException("log failure")).when(agentLog).addLog(any());
 
-        assertDoesNotThrow(() -> agentContextManager.build(sessionId).build());
+        // 懒构建：触发完整构建验证 addLog 异常不中断主流程（addLog 内部 try-catch）
+        assertDoesNotThrow(() -> agentContextManager.build(sessionId).build().context());
     }
 }

@@ -427,7 +427,8 @@ class AgentContextManagerTest {
         @BeforeEach
         void setUp() {
             stubBasicContext();
-            agentContextManager.build(sessionId).build();
+            // 懒构建：build 仅轻量构建，需访问 context() 触发完整构建，保证 setUp 中的 getMessages/getSessionTools stub 生效
+            agentContextManager.build(sessionId).build().context();
         }
 
         @Test
@@ -527,7 +528,8 @@ class AgentContextManagerTest {
             when(sessionManager.getMessages(parentSessionId)).thenReturn(List.of());
             when(toolManager.getSessionTools(eq(parentSessionId), anyBoolean())).thenReturn(List.of());
 
-            agentContextManager.build(parentSessionId).build();
+            // 懒构建：build 仅轻量构建，访问 context() 触发完整构建（等价于旧 doBuild 在 setUp 中完成的完整构建）
+            agentContextManager.build(parentSessionId).build().context();
         }
 
         private void stubChildSession(String childId, String parentId) {
@@ -610,7 +612,11 @@ class AgentContextManagerTest {
 
             stubChildSession(autoChildId, autoParentId);
 
-            assertNull(agentContextManager.get(autoParentId), "构建前父上下文不在缓存中");
+            // 新行为：get 缓存未命中时执行轻量构建（加载 AgentContextData + 防御性拷贝）并放入缓存，不再返回 null
+            AgentContextManager.AgentSessionContext preCtx = agentContextManager.get(autoParentId);
+            assertNotNull(preCtx, "get 未命中时轻量构建并返回");
+            assertNotNull(preCtx.agentContextData(), "轻量构建应包含 AgentContextData");
+            assertSame(preCtx, agentContextManager.get(autoParentId), "轻量构建结果已放入缓存");
 
             AgentContextManager.AgentSessionContext childCtx = agentContextManager.build(autoChildId).build();
 
@@ -618,6 +624,9 @@ class AgentContextManagerTest {
             AgentContextManager.AgentSessionContext autoParentCtx = agentContextManager.get(autoParentId);
             assertNotNull(autoParentCtx, "父上下文被自动构建并缓存");
             assertEquals(autoParentId, autoParentCtx.context().getSessionId());
+
+            // 子上下文懒构建可正常触发，父上下文已缓存可直接复用
+            assertNotNull(childCtx.context(), "子上下文懒构建可正常触发");
         }
 
         @Test
@@ -626,8 +635,9 @@ class AgentContextManagerTest {
             String orphanSessionId = "3";
             stubChildSession(orphanSessionId, nonExistentParent);
 
+            // build 为轻量构建不抛异常，懒构建（context()）解析父会话时才抛出
             assertThrows(AgentException.class,
-                    () -> agentContextManager.build(orphanSessionId).build());
+                    () -> agentContextManager.build(orphanSessionId).build().context());
         }
 
         @Test
@@ -1006,7 +1016,8 @@ class AgentContextManagerTest {
         @BeforeEach
         void setUp() {
             stubBasicContext();
-            agentContextManager.build(sessionId).build();
+            // 懒构建：build 仅轻量构建，需访问 context() 触发完整构建，保证 setUp 中的 getMessages/getSessionTools stub 生效
+            agentContextManager.build(sessionId).build().context();
         }
 
         @Test
@@ -1075,6 +1086,152 @@ class AgentContextManagerTest {
             assertEquals(2, context.getChildSessions().size());
             assertEquals("10", context.getChildSessions().get(0).sessionId());
             assertEquals("11", context.getChildSessions().get(1).sessionId());
+        }
+    }
+
+    @Nested
+    class LightweightAndLazyBuildTest {
+
+        @Test
+        void 防御性拷贝_构建后集合为独立可变副本() {
+            SkillConfigDTO skill = SkillConfigDTO.builder().name("s1").build();
+            var child = new AgentExecutionContext.ChildSession("10", "c", "d", "300");
+            when(dataProvider.loadAgentContext(sessionId)).thenReturn(
+                    new ContextDataProvider.AgentContextData(agentId, "p", "200", 10,
+                            List.of(skill), Map.of("k1", "v1"), null, List.of(child), null, null));
+
+            AgentContextManager.AgentSessionContext sessionContext = agentContextManager.build(sessionId).build();
+
+            ContextDataProvider.AgentContextData copied = sessionContext.agentContextData();
+            assertNotNull(copied);
+            assertNotSame(Map.of("k1", "v1"), copied.sessionVariables(), "sessionVariables 应为独立副本");
+            // sessionVariables 为可变副本
+            copied.sessionVariables().put("k2", "v2");
+            assertEquals("v2", copied.sessionVariables().get("k2"));
+            // skills 为可变副本（数据源 List.of 不可变）
+            copied.skills().add(SkillConfigDTO.builder().name("s2").build());
+            assertEquals(2, copied.skills().size());
+            // childSessions 为可变副本
+            copied.childSessions().add(new AgentExecutionContext.ChildSession("11", "c2", "d2", "301"));
+            assertEquals(2, copied.childSessions().size());
+        }
+
+        @Test
+        void 懒构建_context首次访问才构建且仅构建一次() {
+            stubBasicContext();
+            AgentContextManager.AgentSessionContext sessionContext = agentContextManager.build(sessionId).build();
+
+            // build（轻量构建）后未访问 context：不触发懒构建，getMessages/getSessionTools 均不应被调用
+            verify(sessionManager, never()).getMessages(anyString());
+            verify(toolManager, never()).getSessionTools(anyString(), anyBoolean());
+
+            AgentExecutionContext first = sessionContext.context();
+            assertNotNull(first);
+            verify(sessionManager, times(1)).getMessages(sessionId);
+            verify(toolManager, times(1)).getSessionTools(eq(sessionId), anyBoolean());
+
+            // 第二次访问返回同一实例，不再重复构建
+            AgentExecutionContext second = sessionContext.context();
+            assertSame(first, second);
+            verify(sessionManager, times(1)).getMessages(sessionId);
+            verify(toolManager, times(1)).getSessionTools(eq(sessionId), anyBoolean());
+        }
+
+        @Test
+        void get未命中轻量加载_不构建context也能拿到AgentContextData() {
+            stubBasicContext();
+
+            AgentContextManager.AgentSessionContext ctx = agentContextManager.get(sessionId);
+
+            assertNotNull(ctx, "get 缓存未命中时应轻量构建并返回，不再返回 null");
+            assertNotNull(ctx.agentContextData(), "不构建 context 也能拿到 AgentContextData");
+            assertEquals(agentId, ctx.agentContextData().agentId());
+            // 未触发懒构建：getMessages/getSessionTools 不应被调用
+            verify(sessionManager, never()).getMessages(anyString());
+            verify(toolManager, never()).getSessionTools(anyString(), anyBoolean());
+
+            // 首次 context() 访问时才懒构建
+            assertNotNull(ctx.context());
+            verify(sessionManager, times(1)).getMessages(sessionId);
+        }
+
+        @Test
+        void 共享引用一致性_mutator更新后AgentContextData与context同步() {
+            Map<String, String> sourceVars = new HashMap<>();
+            sourceVars.put("k1", "v1");
+            var child = new AgentExecutionContext.ChildSession("10", "c", "d", "300");
+            when(dataProvider.loadAgentContext(sessionId)).thenReturn(
+                    new ContextDataProvider.AgentContextData(agentId, "p", "200", 10,
+                            List.of(), sourceVars, null, List.of(child), null, null));
+            when(sessionManager.getMessages(sessionId)).thenReturn(List.of());
+            when(toolManager.getSessionTools(eq(sessionId), anyBoolean())).thenReturn(List.of());
+
+            AgentContextManager.AgentSessionContext sessionContext = agentContextManager.build(sessionId).build();
+            ContextDataProvider.AgentContextData data = sessionContext.agentContextData();
+            AgentExecutionContext context = sessionContext.context();
+
+            // skills 共享同一列表引用（不再重复拷贝）
+            assertSame(data.skills(), context.getSkills(), "skills 应共享 AgentContextData 中的引用");
+
+            // sessionVariables 共享引用：context.putSessionVariable 后 agentContextData 同步
+            context.putSessionVariable("k2", "v2");
+            assertEquals("v2", data.sessionVariables().get("k2"));
+
+            // refreshSessionVariables 原地更新后 agentContextData 同步
+            Map<String, String> latest = new HashMap<>();
+            latest.put("n1", "nv1");
+            sessionContext.mutator().refreshSessionVariables(latest);
+            assertEquals("nv1", data.sessionVariables().get("n1"));
+            assertFalse(data.sessionVariables().containsKey("k1"), "refresh 原地更新应清空旧值");
+
+            // childSessions 共享引用：mutator.refreshChildSessions 后 agentContextData 同步
+            var child2 = new AgentExecutionContext.ChildSession("11", "c2", "d2", "301");
+            sessionContext.mutator().refreshChildSessions(List.of(child, child2));
+            assertEquals(2, data.childSessions().size());
+            assertEquals("11", data.childSessions().get(1).sessionId());
+        }
+
+        @Test
+        void build带modelIdOverride_命中get轻量缓存条目时重建并生效() {
+            stubBasicContext();
+            // get() 缓存未命中先写入无 override 的轻量条目（模拟 AgentContextController/ToolManager 先访问）
+            AgentContextManager.AgentSessionContext light = agentContextManager.get(sessionId);
+            assertNotNull(light, "get 应轻量构建并缓存");
+
+            // build 带 override：命中无 override 条目时应重建，使请求指定的 modelId 生效
+            AgentContextManager.AgentSessionContext ctx =
+                    agentContextManager.build(sessionId).modelIdOverride("override-300").build();
+
+            assertNotSame(light, ctx, "override 不一致时应重建而非复用");
+            assertEquals("override-300", ctx.context().getModelId(), "请求指定的 modelId 应生效而非回退默认模型");
+            assertSame(ctx, agentContextManager.get(sessionId), "缓存应已被带 override 的条目替换");
+        }
+
+        @Test
+        void build带modelIdOverride_缓存一致时复用不重建() {
+            stubBasicContext();
+            AgentContextManager.AgentSessionContext first =
+                    agentContextManager.build(sessionId).modelIdOverride("m1").build();
+            assertEquals("m1", first.context().getModelId());
+
+            AgentContextManager.AgentSessionContext second =
+                    agentContextManager.build(sessionId).modelIdOverride("m1").build();
+
+            assertSame(first, second, "override 一致时应复用缓存");
+            verify(sessionManager, times(1)).getMessages(sessionId);
+        }
+
+        @Test
+        void build不带override_命中带override缓存条目时重建为默认模型() {
+            stubBasicContext();
+            AgentContextManager.AgentSessionContext first =
+                    agentContextManager.build(sessionId).modelIdOverride("m1").build();
+            assertEquals("m1", first.context().getModelId());
+
+            AgentContextManager.AgentSessionContext second = agentContextManager.build(sessionId).build();
+
+            assertNotSame(first, second, "override 不一致时应重建");
+            assertEquals("200", second.context().getModelId(), "无 override 时应回退会话默认模型");
         }
     }
 }

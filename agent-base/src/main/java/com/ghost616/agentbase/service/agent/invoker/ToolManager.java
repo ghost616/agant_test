@@ -49,7 +49,8 @@ public class ToolManager {
 
     private boolean isSubSession(String sessionId) {
         AgentContextManager.AgentSessionContext ctx = agentContextManager.get(sessionId);
-        return ctx != null && !ctx.context().isMainSession();
+        // 从轻量构建的 AgentContextData 判断：parentSessionId 非空即子会话，避免触发完整 context 构建
+        return ctx != null && ctx.agentContextData() != null && ctx.agentContextData().parentSessionId() != null;
     }
 
     public ToolInvoker getInvoker(String sessionId, String toolName) {
@@ -148,7 +149,10 @@ public class ToolManager {
 
         AgentContextManager.AgentSessionContext ctx = agentContextManager.get(sessionId);
         for (ToolDataProvider.SkillToolInfo skill : skills) {
-            if (ctx != null && ctx.context().isMainSession() && skill.sessionAuth() == SessionAuthType.CHILD) {
+            // 主会话判断与 isSubSession 一致：基于 agentContextData().parentSessionId() == null，
+            // 避免触发完整 context 懒构建
+            if (ctx != null && ctx.agentContextData() != null && ctx.agentContextData().parentSessionId() == null
+                    && skill.sessionAuth() == SessionAuthType.CHILD) {
                 continue;
             }
             for (String toolId : skill.toolIds()) {

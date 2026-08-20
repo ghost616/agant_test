@@ -6,7 +6,7 @@ import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
 import com.ghost616.agentbase.enums.SessionAuthType;
 import com.ghost616.agentbase.enums.ToolType;
 import com.ghost616.agentbase.service.agent.AgentContextManager;
-import com.ghost616.agentbase.service.agent.ContextDataProvider;
+import com.ghost616.agentbase.service.agent.AgentExecutionContext;
 import com.ghost616.agentbase.service.agent.ToolDataProvider;
 import com.ghost616.agentbase.service.agent.ToolDataProvider.SessionToolInfo;
 import org.junit.jupiter.api.BeforeEach;
@@ -372,9 +372,9 @@ class ToolManagerTest {
                 .thenReturn(List.of(new SessionToolInfo("child-inv-2", SessionAuthType.CHILD)));
 
         AgentContextManager.AgentSessionContext mockCtx = mock(AgentContextManager.AgentSessionContext.class);
-        // isSubSession 改为基于 agentContextData().parentSessionId() 判断（非空即子会话）
-        when(mockCtx.agentContextData()).thenReturn(new ContextDataProvider.AgentContextData(
-                "1", "p", "200", 10, List.of(), Map.of(), "parent-1", null, null, null));
+        AgentExecutionContext mockExecCtx = mock(AgentExecutionContext.class);
+        when(mockCtx.context()).thenReturn(mockExecCtx);
+        when(mockExecCtx.isMainSession()).thenReturn(false);
         when(agentContextManager.get(sessionId)).thenReturn(mockCtx);
 
         ToolInvoker result = toolManager.getInvoker(sessionId, "child-tool-2");
@@ -396,52 +396,6 @@ class ToolManagerTest {
                 .thenReturn(List.of(new SessionToolInfo("normal-inv-1", SessionAuthType.PARENT)));
 
         ToolInvoker result = toolManager.getInvoker(sessionId, "normal-tool");
-
-        assertNotNull(result);
-        assertSame(invoker, result);
-    }
-
-    @Test
-    void 主会话resolveSkillToolByName跳过CHILD技能工具() {
-        String sessionId = "resolve-skill-main";
-        ToolConfigDTO dto = ToolConfigDTO.builder()
-                .id("skill-child-1").name("skill-tool").toolType(ToolType.CUSTOM).build();
-        when(dataProvider.getSessionToolIds(sessionId)).thenReturn(List.of());
-        when(dataProvider.getSkillToolIds(sessionId)).thenReturn(List.of(
-                new ToolDataProvider.SkillToolInfo("skill-1", SessionAuthType.CHILD, List.of("skill-child-1"))));
-
-        AgentContextManager.AgentSessionContext mockCtx = mock(AgentContextManager.AgentSessionContext.class);
-        // parentSessionId 为 null → 主会话；与 isSubSession 判断方式一致，基于 agentContextData 且不触发懒构建
-        when(mockCtx.agentContextData()).thenReturn(new ContextDataProvider.AgentContextData(
-                "1", "p", "200", 10, List.of(), Map.of(), null, null, null, null));
-        when(agentContextManager.get(sessionId)).thenReturn(mockCtx);
-
-        ToolInvoker result = toolManager.getInvoker(sessionId, "skill-tool");
-
-        assertNull(result, "主会话应跳过 CHILD 技能工具");
-        verify(dataProvider, never()).getToolById(any());
-    }
-
-    @Test
-    void 子会话resolveSkillToolByName不跳过CHILD技能工具() {
-        String sessionId = "resolve-skill-sub";
-        ToolConfigDTO dto = ToolConfigDTO.builder()
-                .id("skill-child-2").name("skill-tool-2").toolType(ToolType.CUSTOM).build();
-        CustomToolInvoker invoker = mock(CustomToolInvoker.class);
-        when(dataProvider.getToolById("skill-child-2")).thenReturn(dto);
-        when(dataProvider.getCustomInvoker(any())).thenReturn(invoker);
-
-        when(dataProvider.getSessionToolIds(sessionId)).thenReturn(List.of());
-        when(dataProvider.getSkillToolIds(sessionId)).thenReturn(List.of(
-                new ToolDataProvider.SkillToolInfo("skill-2", SessionAuthType.CHILD, List.of("skill-child-2"))));
-
-        AgentContextManager.AgentSessionContext mockCtx = mock(AgentContextManager.AgentSessionContext.class);
-        // parentSessionId 非空 → 子会话；CHILD 技能工具不跳过
-        when(mockCtx.agentContextData()).thenReturn(new ContextDataProvider.AgentContextData(
-                "1", "p", "200", 10, List.of(), Map.of(), "parent-1", null, null, null));
-        when(agentContextManager.get(sessionId)).thenReturn(mockCtx);
-
-        ToolInvoker result = toolManager.getInvoker(sessionId, "skill-tool-2");
 
         assertNotNull(result);
         assertSame(invoker, result);

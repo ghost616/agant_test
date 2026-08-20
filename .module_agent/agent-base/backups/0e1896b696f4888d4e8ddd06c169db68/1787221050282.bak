@@ -1,17 +1,21 @@
 package com.ghost616.agentbase.service.agent;
 
-import com.ghost616.agentbase.dto.model.Message;
+import com.ghost616.agentbase.dto.model.CustomToolCall;
 import com.ghost616.agentbase.dto.model.ToolCall;
+import com.ghost616.agentbase.dto.model.ToolInfo;
 import com.ghost616.agentbase.dto.model.UsageInfo;
+import com.ghost616.agentbase.dto.model.WebSearchCall;
 import com.ghost616.agentbase.dto.skill.SkillConfigDTO;
 import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
 import com.ghost616.agentbase.sendmessage.ChildCreateSession;
+import com.ghost616.agentbase.sendmessage.ConversationIdMessage;
 import com.ghost616.agentbase.sendmessage.HistoryMessage;
 import com.ghost616.agentbase.sendmessage.MessageSender;
 import com.ghost616.agentbase.sendmessage.ChildMessageEvent;
 import com.ghost616.agentbase.sendmessage.VariableMessage;
 import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -26,6 +30,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+@Slf4j
 @Getter
 public class AgentExecutionContext {
 
@@ -53,6 +58,9 @@ public class AgentExecutionContext {
     /** 最近一次模型响应的 ID（Responses API 有状态续接时作为 previousResponseId） */
     private String lastResponseId;
 
+    /** 对话 ID（会话归属的对话标识，子会话通过 mutator 委托获取父会话的对话 ID） */
+    private String conversationId;
+
     public AgentExecutionContext(String sessionId, String agentId, String systemPrompt, String modelId,
                                   Integer recentMessageCount,
                                  List<HistoryEntry> history, List<ToolConfigDTO> tools,
@@ -60,7 +68,8 @@ public class AgentExecutionContext {
                                  AgentContextMutator mutator,
                                   Map<String, String> sessionVariables,
                                   Map<String, String> conversationVariables,
-                                  String parentSessionId, String projectDir, List<ChildSession> childSessions) {
+                                  String parentSessionId, String projectDir, List<ChildSession> childSessions,
+                                  String conversationId) {
         this.sessionId = sessionId;
         this.agentId = agentId;
         this.systemPrompt = systemPrompt;
@@ -77,7 +86,15 @@ public class AgentExecutionContext {
         if (childSessions != null) {
             this.childSessions.addAll(childSessions);
         }
+        this.conversationId = conversationId;
         this.mutator.bind(this);
+    }
+
+    public String getConversationId() {
+        if (parentSessionId != null) {
+            return mutator.getConversationId();
+        }
+        return conversationId;
     }
 
     public List<ChildSession> getChildSessions() {
@@ -93,8 +110,18 @@ public class AgentExecutionContext {
         return childSessionId;
     }
 
-        public Message sendUserMessage(String childSessionId, String content, String modelId, Boolean thinking) {
-        return mutator.sendUserMessage(childSessionId, content, modelId, thinking);
+    public void sendUserMessage(String childSessionId, String content, String modelId, Boolean thinking) {
+        mutator.sendUserMessage(childSessionId, content, modelId, thinking);
+    }
+
+    /**
+     * 向父会话发送用户消息（子会话 → 父会话）。
+     * 无父会话或回调未注入时静默忽略。
+     *
+     * @param content 要发送的消息内容
+     */
+    public void sendParentMessage(String content) {
+        mutator.sendParentMessage(content);
     }
 
     public record ChildSession(String sessionId, String sessionName, String description, String modelId) {
@@ -181,9 +208,10 @@ public class AgentExecutionContext {
         return stopped.get();
     }
 
-    public record HistoryEntry(String role, String content, String reasoning, String toolCallId,
-                               int sequenceNum, LocalDateTime createTime, List<ToolCall> toolCalls,
-                               UsageInfo usage) {
+    public record HistoryEntry(String role, String content, String reasoning, ToolInfo toolInfo,
+                               LocalDateTime createTime, List<ToolCall> toolCalls,
+                               UsageInfo usage, List<WebSearchCall> webSearchCall,
+                               List<CustomToolCall> customToolCall) {
     }
 
     public static class AgentContextMutator {
@@ -198,6 +226,8 @@ public class AgentExecutionContext {
         Supplier<Set<String>> getConversationVarKeysCallback;
         CreateChildSessionCallback createChildSessionCallback;
         SendUserMessageCallback sendUserMessageCallback;
+        SendParentMessageCallback sendParentMessageCallback;
+        Supplier<String> conversationIdSupplier;
         private MessageSender messageSender;
 
         @FunctionalInterface
@@ -208,7 +238,12 @@ public class AgentExecutionContext {
 
         @FunctionalInterface
         public interface SendUserMessageCallback {
-            Message send(String childSessionId, String content, String modelId, Boolean thinking);
+            void send(String childSessionId, String content, String modelId, Boolean thinking);
+        }
+
+        @FunctionalInterface
+        public interface SendParentMessageCallback {
+            void send(String parentSessionId, String content, String conversationId);
         }
 
         public void bind(AgentExecutionContext context) {
@@ -334,6 +369,24 @@ public class AgentExecutionContext {
             context.lastResponseId = lastResponseId;
         }
 
+        public void setConversationId(String conversationId) {
+            context.conversationId = conversationId;
+            if (messageSender != null) {
+                messageSender.send(new ConversationIdMessage(context.sessionId, conversationId));
+            }
+        }
+
+        public void refreshConversationId(String conversationId) {
+            context.conversationId = conversationId;
+        }
+
+        public String getConversationId() {
+            if (conversationIdSupplier != null) {
+                return conversationIdSupplier.get();
+            }
+            return context.conversationId;
+        }
+
         public String createChildSession(String sessionName, String description, String modelId,
                                            List<String> toolIds, List<String> skillIds, String prompt) {
             if (context.parentSessionId != null) {
@@ -357,15 +410,32 @@ public class AgentExecutionContext {
             return childSessionId;
         }
 
-    public Message sendUserMessage(String childSessionId, String content, String modelId, Boolean thinking) {
-            Message result = null;
+    public void sendUserMessage(String childSessionId, String content, String modelId, Boolean thinking) {
             if (sendUserMessageCallback != null) {
-                result = sendUserMessageCallback.send(childSessionId, content, modelId, thinking);
+                sendUserMessageCallback.send(childSessionId, content, modelId, thinking);
             }
             if (messageSender != null) {
-                messageSender.send(new ChildMessageEvent(childSessionId, childSessionId, content, modelId, thinking, result));
+                messageSender.send(new ChildMessageEvent(childSessionId, childSessionId, content, modelId, thinking));
             }
-            return result;
+        }
+
+        /**
+         * 向父会话发送用户消息（子会话 → 父会话）。
+         * 从 context.parentSessionId 获取父会话 ID：为 null 或空白时静默忽略（debug 日志）；
+         * 否则调用 sendParentMessageCallback.send(parentSessionId, content, 动态获取的 conversationId)；
+         * callback 为 null 时静默忽略。
+         *
+         * @param content 要发送的消息内容
+         */
+        public void sendParentMessage(String content) {
+            String parentId = context.parentSessionId;
+            if (parentId == null || parentId.isBlank()) {
+                log.debug("会话 {} 无父会话，忽略 sendParentMessage", context.sessionId);
+                return;
+            }
+            if (sendParentMessageCallback != null) {
+                sendParentMessageCallback.send(parentId, content, getConversationId());
+            }
         }
 
         public void setMessageSender(MessageSender messageSender) {

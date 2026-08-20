@@ -30,5 +30,29 @@
     "code_reviewed": false,
     "plan_completed": true,
     "test_passed": true
+  },
+  {
+    "plan_id": "plan_0116e0f1-f5f3-4874-a6e0-4622521aef40",
+    "plan_summary": "agent-base: AgentSessionContext 由 record 改造为 class，引入防御性拷贝与懒构建",
+    "starter_session_id": "d878ad08-7f07-41b8-9ece-11453b007839",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_e08d29a8-95af-4eae-913f-cfbd633fefd7",
+    "plan_summary": "platform-app: AgentContextController.getContext 改为从 agentContextData() 读取基本信息",
+    "starter_session_id": "d878ad08-7f07-41b8-9ece-11453b007839",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_c71a988a-2e16-4cf4-8721-8f75790b23c2",
+    "plan_summary": "agent-base 审查修复：get() 轻量缓存污染 modelIdOverride 语义 + resolveSkillToolByName 判断方式统一",
+    "starter_session_id": "d878ad08-7f07-41b8-9ece-11453b007839",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
   }
 ]

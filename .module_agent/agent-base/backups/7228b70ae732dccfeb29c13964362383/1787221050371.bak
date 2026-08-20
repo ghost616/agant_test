@@ -1,7 +1,6 @@
 package com.ghost616.agentbase.service.agent;
 
 import com.ghost616.agentbase.core.AgentComponentRegistry;
-import com.ghost616.agentbase.dto.skill.SkillConfigDTO;
 import com.ghost616.agentbase.dto.tool.ToolConfigDTO;
 import com.ghost616.agentbase.enums.LogLevel;
 import com.ghost616.agentbase.enums.LogType;
@@ -15,14 +14,17 @@ import com.ghost616.agentbase.service.agent.log.AgentLog;
 import com.ghost616.agentbase.service.agent.log.CacheRemoveLogData;
 import com.ghost616.agentbase.service.agent.log.ChildSessionLogData;
 import com.ghost616.agentbase.service.agent.log.ContextBuildLogData;
-import com.ghost616.agentbase.service.agent.log.ErrorLogData;
 import com.ghost616.agentbase.service.agent.log.HandleMessageLogData;
 import com.ghost616.agentbase.service.agent.log.LogData;
 import com.ghost616.agentbase.service.agent.log.RefreshLogData;
+import com.ghost616.agentbase.service.agent.log.SendMessageLogData;
+import com.ghost616.agentbase.service.agent.log.SendParentMessageLogData;
+import com.ghost616.agentbase.service.agent.log.SessionErrorLogData;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -34,6 +36,7 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
@@ -111,6 +114,31 @@ class AgentContextManagerLogTest {
         assertEquals(0, buildLog.getHistoryCount());
         assertFalse(buildLog.isSubSession());
         assertFalse(buildLog.isCacheHit());
+        assertNotNull(buildLog.getSessionVariables());
+        assertTrue(buildLog.getSessionVariables().isEmpty());
+    }
+
+    @Test
+    void doBuild应记录会话变量且为防御性复制() {
+        Map<String, String> sessionVars = new HashMap<>();
+        sessionVars.put("k1", "v1");
+        when(dataProvider.loadAgentContext(sessionId)).thenReturn(
+                new ContextDataProvider.AgentContextData(agentId, "test prompt", "200", 10, List.of(), sessionVars, null, null, null, null));
+        when(sessionManager.getMessages(sessionId)).thenReturn(List.of());
+        when(toolManager.getSessionTools(eq(sessionId), anyBoolean())).thenReturn(List.of());
+
+        agentContextManager.build(sessionId).build();
+
+        ArgumentCaptor<LogData> captor = ArgumentCaptor.forClass(LogData.class);
+        verify(agentLog, atLeastOnce()).addLog(captor.capture());
+        ContextBuildLogData buildLog = captor.getAllValues().stream()
+                .filter(l -> l.logType() == LogType.CONTEXT_BUILD)
+                .map(l -> (ContextBuildLogData) l)
+                .findFirst().orElse(null);
+
+        assertNotNull(buildLog);
+        assertEquals("v1", buildLog.getSessionVariables().get("k1"));
+        assertNotSame(sessionVars, buildLog.getSessionVariables());
     }
 
     @Test
@@ -146,9 +174,9 @@ class AgentContextManagerLogTest {
         when(toolManager.getSessionTools(eq(sessionId), anyBoolean())).thenReturn(List.of(
                 new ToolManager.ToolSessionObject(tool, null, null, List.of(), List.of())));
         when(sessionManager.getMessages(sessionId)).thenReturn(List.of(
-                new MessageDataProvider.MessageDTO("1", sessionId, "user", "hello", null, null, 0,
+                new MessageDataProvider.MessageDTO("1", sessionId, "user", "hello", null, null,
                         LocalDateTime.now(), null, null, null, null, null, null, null),
-                new MessageDataProvider.MessageDTO("2", sessionId, "assistant", "hi", null, null, 1,
+                new MessageDataProvider.MessageDTO("2", sessionId, "assistant", "hi", null, null,
                         LocalDateTime.now(), null, null, null, null, null, null, null)));
 
         agentContextManager.build(sessionId).build();
@@ -169,7 +197,7 @@ class AgentContextManagerLogTest {
     void 会话未找到时应记录ERROR日志() {
         when(dataProvider.loadAgentContext(sessionId)).thenReturn(null);
 
-        assertThrows(com.ghost616.agentbase.exception.BusinessException.class,
+        assertThrows(com.ghost616.agentbase.exception.AgentException.class,
                 () -> agentContextManager.build(sessionId).build());
 
         ArgumentCaptor<LogData> captor = ArgumentCaptor.forClass(LogData.class);
@@ -177,8 +205,9 @@ class AgentContextManagerLogTest {
         LogData logData = captor.getValue();
 
         assertEquals(LogType.ERROR_LOG, logData.logType());
-        ErrorLogData errorLog = (ErrorLogData) logData;
+        SessionErrorLogData errorLog = (SessionErrorLogData) logData;
         assertEquals(LogLevel.ERROR, errorLog.getLogLevel());
+        assertEquals(sessionId, errorLog.getSessionId());
         assertEquals("SESSION-001", errorLog.getErrorCode());
         assertTrue(errorLog.getMessage().contains(sessionId));
     }
@@ -188,11 +217,11 @@ class AgentContextManagerLogTest {
         stubBasicContext();
         String parentId = "1";
         String newChildId = "99";
-        when(dataProvider.createChildSession(eq(parentId), eq("child"), any(), eq("300"), any(), any(), any()))
-                .thenReturn(newChildId);
+        when(dataProvider.createChildSession(eq(parentId), eq("child"), eq("desc"), eq("300"),
+                any(), any(), any())).thenReturn(newChildId);
 
         AgentContextManager.AgentSessionContext ctx = agentContextManager.build(sessionId).build();
-        String result = ctx.context().createChildSession("child", "desc", "300", List.of(), List.of(), "prompt");
+        String result = ctx.context().createChildSession("child", "desc", "300", List.of("t1"), List.of("s1"), "prompt");
 
         assertEquals(newChildId, result);
         ArgumentCaptor<LogData> captor = ArgumentCaptor.forClass(LogData.class);
@@ -204,9 +233,150 @@ class AgentContextManagerLogTest {
 
         assertNotNull(log);
         assertEquals(LogLevel.INFO, log.getLogLevel());
-        assertEquals(parentId, log.getParentSessionId());
+        assertEquals(parentId, log.getSessionId());
+        assertNull(log.getConversationId());
         assertEquals(newChildId, log.getChildSessionId());
         assertEquals("child", log.getSessionName());
+        assertEquals("desc", log.getDescription());
+        assertEquals("300", log.getModelId());
+        assertEquals(List.of("t1"), log.getToolIds());
+        assertEquals(List.of("s1"), log.getSkillIds());
+        assertEquals("prompt", log.getPrompt());
+    }
+
+    @Test
+    void sendUserMessage应记录SEND_MESSAGE日志() {
+        stubBasicContext();
+        SessionManager.MessageSaveBuilder msgBuilder = mock(SessionManager.MessageSaveBuilder.class, RETURNS_SELF);
+        when(sessionManager.messageSave()).thenReturn(msgBuilder);
+
+        AgentContextManager.AgentSessionContext ctx = agentContextManager.build(sessionId).build();
+        ctx.context().sendUserMessage("99", "hello", "300", true);
+
+        verify(msgBuilder).sessionId("99");
+        verify(msgBuilder).role("user");
+        verify(msgBuilder).content("hello");
+        verify(msgBuilder).conversationId(null);
+        verify(msgBuilder).save();
+
+        ArgumentCaptor<LogData> captor = ArgumentCaptor.forClass(LogData.class);
+        verify(agentLog, atLeastOnce()).addLog(captor.capture());
+        SendMessageLogData log = captor.getAllValues().stream()
+                .filter(l -> l.logType() == LogType.SEND_MESSAGE)
+                .map(l -> (SendMessageLogData) l)
+                .findFirst().orElse(null);
+
+        assertNotNull(log);
+        assertEquals(LogLevel.INFO, log.getLogLevel());
+        assertEquals(sessionId, log.getSessionId());
+        assertNull(log.getConversationId());
+        assertEquals("99", log.getChildSessionId());
+        assertEquals("hello", log.getContent());
+        assertEquals("300", log.getModelId());
+        assertTrue(log.getThinking());
+    }
+
+    @Test
+    void 子会话上下文中createChildSession和sendUserMessage日志携带父会话conversationId() {
+        String parentId = "1";
+        String childId = "2";
+        when(dataProvider.loadAgentContext(parentId)).thenReturn(
+                new ContextDataProvider.AgentContextData(agentId, "parent", "200", 10, List.of(), Map.of(), null, null, null, null));
+        when(dataProvider.loadAgentContext(childId)).thenReturn(
+                new ContextDataProvider.AgentContextData(agentId, "child", "200", 10, List.of(), Map.of(), parentId, null, null, null));
+        when(sessionManager.getMessages(anyString())).thenReturn(List.of());
+        when(toolManager.getSessionTools(anyString(), anyBoolean())).thenReturn(List.of());
+
+        AgentContextManager.AgentSessionContext parentCtx = agentContextManager.build(parentId).build();
+        parentCtx.mutator().setConversationId("conv-100");
+
+        AgentContextManager.AgentSessionContext childCtx = agentContextManager.build(childId).build();
+
+        SessionManager.MessageSaveBuilder msgBuilder = mock(SessionManager.MessageSaveBuilder.class, RETURNS_SELF);
+        when(sessionManager.messageSave()).thenReturn(msgBuilder);
+
+        when(dataProvider.createChildSession(eq(parentId), eq("child"), eq("desc"), eq("300"),
+                any(), any(), any())).thenReturn("99");
+
+        String newChildId = childCtx.mutator().createChildSessionCallback.create(parentId, "child", "desc", "300",
+                List.of("t1"), List.of("s1"), "prompt");
+        childCtx.context().sendUserMessage("88", "hello", "300", true);
+
+        verify(msgBuilder).sessionId("88");
+        verify(msgBuilder).role("user");
+        verify(msgBuilder).content("hello");
+        verify(msgBuilder).conversationId("conv-100");
+        verify(msgBuilder).save();
+
+        assertEquals("99", newChildId);
+        ArgumentCaptor<LogData> captor = ArgumentCaptor.forClass(LogData.class);
+        verify(agentLog, atLeastOnce()).addLog(captor.capture());
+
+        ChildSessionLogData childLog = captor.getAllValues().stream()
+                .filter(l -> l.logType() == LogType.CHILD_SESSION)
+                .map(l -> (ChildSessionLogData) l)
+                .findFirst().orElse(null);
+        assertNotNull(childLog);
+        assertEquals("conv-100", childLog.getConversationId());
+
+        SendMessageLogData sendLog = captor.getAllValues().stream()
+                .filter(l -> l.logType() == LogType.SEND_MESSAGE)
+                .map(l -> (SendMessageLogData) l)
+                .findFirst().orElse(null);
+        assertNotNull(sendLog);
+        assertEquals("conv-100", sendLog.getConversationId());
+    }
+
+    @Test
+    void 子会话sendParentMessage应记录SEND_PARENT_MESSAGE日志() {
+        String parentId = "1";
+        String childId = "2";
+        when(dataProvider.loadAgentContext(parentId)).thenReturn(
+                new ContextDataProvider.AgentContextData(agentId, "parent", "200", 10, List.of(), Map.of(), null, null, null, null));
+        when(dataProvider.loadAgentContext(childId)).thenReturn(
+                new ContextDataProvider.AgentContextData(agentId, "child", "200", 10, List.of(), Map.of(), parentId, null, null, null));
+        when(sessionManager.getMessages(anyString())).thenReturn(List.of());
+        when(toolManager.getSessionTools(anyString(), anyBoolean())).thenReturn(List.of());
+
+        AgentContextManager.AgentSessionContext parentCtx = agentContextManager.build(parentId).build();
+        parentCtx.mutator().setConversationId("conv-100");
+
+        AgentContextManager.AgentSessionContext childCtx = agentContextManager.build(childId).build();
+
+        SessionManager.MessageSaveBuilder msgBuilder = mock(SessionManager.MessageSaveBuilder.class, RETURNS_SELF);
+        when(sessionManager.messageSave()).thenReturn(msgBuilder);
+
+        childCtx.context().sendParentMessage("hello from child");
+
+        verify(msgBuilder).sessionId(parentId);
+        verify(msgBuilder).role("user");
+        verify(msgBuilder).content("hello from child");
+        verify(msgBuilder).conversationId("conv-100");
+        verify(msgBuilder).save();
+
+        ArgumentCaptor<LogData> captor = ArgumentCaptor.forClass(LogData.class);
+        verify(agentLog, atLeastOnce()).addLog(captor.capture());
+        SendParentMessageLogData log = captor.getAllValues().stream()
+                .filter(l -> l.logType() == LogType.SEND_PARENT_MESSAGE)
+                .map(l -> (SendParentMessageLogData) l)
+                .findFirst().orElse(null);
+
+        assertNotNull(log);
+        assertEquals(LogLevel.INFO, log.getLogLevel());
+        assertEquals(childId, log.getSessionId(), "日志 sessionId 应为调用方子会话");
+        assertEquals(parentId, log.getParentSessionId());
+        assertEquals("conv-100", log.getConversationId());
+        assertEquals("hello from child", log.getContent());
+    }
+
+    @Test
+    void 主会话sendParentMessage不记录SEND_PARENT_MESSAGE日志() {
+        buildContext();
+
+        AgentContextManager.AgentSessionContext ctx = agentContextManager.get(sessionId);
+        ctx.context().sendParentMessage("hello");
+
+        verify(agentLog, never()).addLog(argThat(l -> l.logType() == LogType.SEND_PARENT_MESSAGE));
     }
 
     @Test
@@ -225,7 +395,7 @@ class AgentContextManagerLogTest {
 
         assertNotNull(log);
         assertEquals(LogLevel.INFO, log.getLogLevel());
-        assertEquals(sessionId, log.getSessionId());
+        assertEquals(sessionId, log.getContext().getSessionId());
         assertEquals("HISTORY", log.getRefreshTarget());
     }
 
@@ -291,11 +461,38 @@ class AgentContextManagerLogTest {
     }
 
     @Test
+    void refreshHistory数据更新先于日志记录() {
+        buildContext();
+        when(dataProvider.getLatestMessages(sessionId)).thenReturn(List.of());
+
+        agentContextManager.refreshHistory(sessionId);
+
+        AgentExecutionContext context = agentContextManager.get(sessionId).context();
+        InOrder inOrder = inOrder(dataProvider, agentLog);
+        inOrder.verify(dataProvider).getLatestMessages(sessionId);
+        inOrder.verify(agentLog).addLog(argThat(l -> l.logType() == LogType.REFRESH));
+        assertEquals(0, context.getHistory().size());
+    }
+
+    @Test
+    void handleVariableMessage业务执行先于日志记录() {
+        buildContext();
+
+        agentContextManager.handleVariableMessage(new VariableMessage(sessionId, "SESSION", "k", "v", "PUT"));
+
+        AgentExecutionContext context = agentContextManager.get(sessionId).context();
+        InOrder inOrder = inOrder(agentLog);
+        inOrder.verify(agentLog).addLog(argThat(l -> l.logType() == LogType.HANDLE_MESSAGE));
+        assertEquals("v", context.getSessionVariable("k"));
+    }
+
+    @Test
     void handleChildCreateSession应记录HANDLE_MESSAGE日志() {
         buildContext();
 
-        agentContextManager.handleChildCreateSession(new ChildCreateSession(sessionId,
-                new AgentExecutionContext.ChildSession("10", "child", "desc", "300")));
+        ChildCreateSession message = new ChildCreateSession(sessionId,
+                new AgentExecutionContext.ChildSession("10", "child", "desc", "300"));
+        agentContextManager.handleChildCreateSession(message);
 
         ArgumentCaptor<LogData> captor = ArgumentCaptor.forClass(LogData.class);
         verify(agentLog, atLeastOnce()).addLog(captor.capture());
@@ -306,17 +503,17 @@ class AgentContextManagerLogTest {
 
         assertNotNull(log);
         assertEquals(LogLevel.INFO, log.getLogLevel());
-        assertEquals(sessionId, log.getSessionId());
-        assertEquals("CHILD_CREATE_SESSION", log.getMessageType());
+        assertSame(message, log.getSessionMessage());
     }
 
     @Test
     void handleHistoryMessage应记录HANDLE_MESSAGE日志() {
         buildContext();
 
-        agentContextManager.handleHistoryMessage(new HistoryMessage(sessionId,
-                new AgentExecutionContext.HistoryEntry("user", "hello", null, null, 0,
-                        LocalDateTime.now(), List.of(), null, null, null)));
+        HistoryMessage message = new HistoryMessage(sessionId,
+                new AgentExecutionContext.HistoryEntry("user", "hello", null, null,
+                        LocalDateTime.now(), List.of(), null, null, null));
+        agentContextManager.handleHistoryMessage(message);
 
         ArgumentCaptor<LogData> captor = ArgumentCaptor.forClass(LogData.class);
         verify(agentLog, atLeastOnce()).addLog(captor.capture());
@@ -326,15 +523,15 @@ class AgentContextManagerLogTest {
                 .findFirst().orElse(null);
 
         assertNotNull(log);
-        assertEquals(sessionId, log.getSessionId());
-        assertEquals("HISTORY_MESSAGE", log.getMessageType());
+        assertSame(message, log.getSessionMessage());
     }
 
     @Test
     void handleVariableMessage应记录HANDLE_MESSAGE日志() {
         buildContext();
 
-        agentContextManager.handleVariableMessage(new VariableMessage(sessionId, "SESSION", "k", "v", "PUT"));
+        VariableMessage message = new VariableMessage(sessionId, "SESSION", "k", "v", "PUT");
+        agentContextManager.handleVariableMessage(message);
 
         ArgumentCaptor<LogData> captor = ArgumentCaptor.forClass(LogData.class);
         verify(agentLog, atLeastOnce()).addLog(captor.capture());
@@ -344,15 +541,15 @@ class AgentContextManagerLogTest {
                 .findFirst().orElse(null);
 
         assertNotNull(log);
-        assertEquals(sessionId, log.getSessionId());
-        assertEquals("VARIABLE_MESSAGE", log.getMessageType());
+        assertSame(message, log.getSessionMessage());
     }
 
     @Test
     void handleConversationIdMessage应记录HANDLE_MESSAGE日志() {
         buildContext();
 
-        agentContextManager.handleConversationIdMessage(new ConversationIdMessage(sessionId, "conv-1"));
+        ConversationIdMessage message = new ConversationIdMessage(sessionId, "conv-1");
+        agentContextManager.handleConversationIdMessage(message);
 
         ArgumentCaptor<LogData> captor = ArgumentCaptor.forClass(LogData.class);
         verify(agentLog, atLeastOnce()).addLog(captor.capture());
@@ -362,8 +559,7 @@ class AgentContextManagerLogTest {
                 .findFirst().orElse(null);
 
         assertNotNull(log);
-        assertEquals(sessionId, log.getSessionId());
-        assertEquals("CONVERSATION_ID", log.getMessageType());
+        assertSame(message, log.getSessionMessage());
     }
 
     @Test

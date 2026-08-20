@@ -39,7 +39,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -107,22 +106,11 @@ public class AgentContextManager {
 
         public AgentSessionContext build() {
             AgentSessionContext cached = cache.get(sessionId);
-            if (cached != null && Objects.equals(cached.modelIdOverride, modelIdOverride)) {
-                return cached;
-            }
-            // 缓存条目存在但 modelIdOverride 不一致（如 get() 轻量构建写入的无 override 条目）：
-            // 移除旧条目后重新构建，保证请求指定的 modelId 生效，避免回退为会话默认模型
             if (cached != null) {
-                cache.remove(sessionId, cached);
+                return cached;
             }
             AgentSessionContext created = doBuild();
             AgentSessionContext raced = cache.putIfAbsent(sessionId, created);
-            if (raced != null && !Objects.equals(raced.modelIdOverride, modelIdOverride)) {
-                // 并发下其他线程写入了不同 override 的条目：替换为本次 override 的上下文
-                cache.remove(sessionId, raced);
-                cache.put(sessionId, created);
-                return created;
-            }
             return raced != null ? raced : created;
         }
 

@@ -2,7 +2,6 @@ package com.ghost616.platform.controller;
 
 import com.ghost616.agentbase.service.agent.AgentContextManager;
 import com.ghost616.agentbase.service.agent.AgentExecutionContext;
-import com.ghost616.agentbase.service.agent.ContextDataProvider;
 import com.ghost616.platform.dto.AgentContextBasicDTO;
 import com.ghost616.platform.dto.AgentContextDTO;
 import com.ghost616.platform.dto.ApiResponse;
@@ -37,19 +36,15 @@ public class AgentContextController {
         if (sessionContext == null) {
             return ApiResponse.fail("CONTEXT-001", "Session context not found: " + sessionId);
         }
-        ContextDataProvider.AgentContextData ctxData = sessionContext.agentContextData();
-        if (ctxData == null) {
-            return ApiResponse.fail("CONTEXT-001", "Session context data not found: " + sessionId);
-        }
         AgentExecutionContext ctx = sessionContext.context();
 
         AgentContextDTO dto = new AgentContextDTO();
         dto.setSessionId(IdConverter.parse(ctx.getSessionId()));
-        dto.setAgentId(IdConverter.parse(ctxData.agentId()));
-        dto.setSystemPrompt(ctxData.systemPrompt());
-        dto.setModelId(IdConverter.parse(ctxData.defaultModelId()));
-        dto.setParentSessionId(IdConverter.parse(ctxData.parentSessionId()));
-        dto.setRecentMessageCount(ctxData.recentMessageCount());
+        dto.setAgentId(IdConverter.parse(ctx.getAgentId()));
+        dto.setSystemPrompt(ctx.getSystemPrompt());
+        dto.setModelId(IdConverter.parse(ctx.getModelId()));
+        dto.setParentSessionId(IdConverter.parse(ctx.getParentSessionId()));
+        dto.setRecentMessageCount(ctx.getRecentMessageCount());
         dto.setHistory(mapHistory(ctx.getHistory()));
         dto.setTools(ctx.getTools());
         dto.setSkills(ctx.getSkills());

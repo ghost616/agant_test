@@ -1,0 +1,10 @@
+{
+  "plan_id": "plan_e08d29a8-95af-4eae-913f-cfbd633fefd7",
+  "module_name": "platform-app",
+  "development_plan": "1. AgentContextController.getContext 接口改造：会话基本信息（agentId、modelId、systemPrompt、parentSessionId、recentMessageCount）改为从 agentContextManager.get(sessionId) 返回的 AgentSessionContext.agentContextData() 中读取（该数据为防御性拷贝后的 AgentContextData）；history、tools、skills 等需要完整上下文的字段仍通过 context() 懒构建获取，整体响应字段与结构保持不变。\n2. 适配 platform-app 下相关测试（AgentContextControllerTest 等）中对 AgentSessionContext 的 mock/构造方式，并补充 getContext 从 AgentContextData 读取基本信息的用例。\n3. 保持 /api/context/{sessionId}/basic 接口行为不变（仍直接查 SessionMapper）。",
+  "session_id": "e4d94e44-047d-48a1-ab1b-133d7bcd6ff9",
+  "modified_files": [
+    "platform-app/src/main/java/com/ghost616/platform/controller/AgentContextController.java",
+    "platform-app/src/test/java/com/ghost616/platform/controller/AgentContextControllerTest.java"
+  ]
+}

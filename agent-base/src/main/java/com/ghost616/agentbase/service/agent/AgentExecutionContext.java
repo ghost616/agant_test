@@ -53,7 +53,7 @@ public class AgentExecutionContext {
     private final String projectDir;
     private final AtomicBoolean stopped = new AtomicBoolean(false);
     @Getter(AccessLevel.NONE)
-    private final List<ChildSession> childSessions = new ArrayList<>();
+    private final List<ChildSession> childSessions;
 
     /** 最近一次模型响应的 ID（Responses API 有状态续接时作为 previousResponseId） */
     private String lastResponseId;
@@ -83,9 +83,9 @@ public class AgentExecutionContext {
         this.sessionVariables = sessionVariables;
         this.conversationVariables = conversationVariables;
         this.projectDir = projectDir;
-        if (childSessions != null) {
-            this.childSessions.addAll(childSessions);
-        }
+        // 共享外部传入的 childSessions 引用（而非拷贝），使 mutator 原地更新（refreshChildSessions/createChildSession）
+        // 能同步反映到持有同一引用的 AgentContextData.childSessions()
+        this.childSessions = childSessions != null ? childSessions : new ArrayList<>();
         this.conversationId = conversationId;
         this.mutator.bind(this);
     }
