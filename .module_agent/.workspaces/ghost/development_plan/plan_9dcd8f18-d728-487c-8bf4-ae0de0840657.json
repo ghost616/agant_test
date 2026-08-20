@@ -1,0 +1,9 @@
+{
+  "plan_id": "plan_9dcd8f18-d728-487c-8bf4-ae0de0840657",
+  "module_name": "framework",
+  "development_plan": "修复 serve.js WebSocket 升级代理丢失扩展协商头导致前端 1002 协议错误重连循环的问题：1）修改根目录 serve.js 的 server.on('upgrade', ...) 中 101 响应构造逻辑——当前仅写入 Upgrade/Connection/Sec-WebSocket-Accept 三行，改为遍历转发后端 proxyRes.headers 中的全部 sec-websocket-* 头（sec-websocket-accept、sec-websocket-extensions、sec-websocket-protocol 等，保留原始头名大小写），使浏览器与后端 permessage-deflate 扩展协商一致，避免后端压缩帧 RSV1 位被浏览器判定为协议错误（1002）。2）保持现有 Upgrade/Connection 行、proxySocket.pipe(socket)/socket.pipe(proxySocket) 双向透传、error 处理与静态服务/API 代理逻辑不变。3）仅修改 serve.js 一个文件，不改动后端 Java 代码。",
+  "session_id": "43aafff5-3196-4b1c-b704-028a8780bbd0",
+  "modified_files": [
+    "serve.js"
+  ]
+}

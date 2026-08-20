@@ -32,8 +32,8 @@
     "test_passed": true
   },
   {
-    "plan_id": "plan_da4b491c-accf-4a5b-9313-bf768e191d7f",
-    "plan_summary": "WebSocketConfig 允许跨源 Origin 握手",
+    "plan_id": "plan_9dcd8f18-d728-487c-8bf4-ae0de0840657",
+    "plan_summary": "serve.js 升级代理转发 Sec-WebSocket-Extensions 头修复协议错误",
     "starter_session_id": "session-3f576377-2d9b-4b42-873e-b0aef89b6b25",
     "code_reviewed": true,
     "plan_completed": true,

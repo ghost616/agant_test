@@ -141,15 +141,9 @@ server.on('upgrade', (req, socket, head) => {
       `Upgrade: ${proxyRes.headers.upgrade || 'websocket'}`,
       `Connection: ${proxyRes.headers.connection || 'Upgrade'}`,
     ];
-    // 透传后端返回的全部 sec-websocket-* 头（sec-websocket-accept、sec-websocket-extensions、
-    // sec-websocket-protocol 等），使用 rawHeaders 保留原始头名大小写，使浏览器与后端的
-    // permessage-deflate 等扩展协商一致，避免后端压缩帧 RSV1 位被浏览器判定为协议错误（1002）
-    const rawHeaders = proxyRes.rawHeaders;
-    for (let i = 0; i < rawHeaders.length; i += 2) {
-      const name = rawHeaders[i];
-      if (name.toLowerCase().startsWith('sec-websocket-')) {
-        lines.push(`${name}: ${rawHeaders[i + 1]}`);
-      }
+    const accept = proxyRes.headers['sec-websocket-accept'];
+    if (accept) {
+      lines.push(`Sec-WebSocket-Accept: ${accept}`);
     }
     socket.write(`${lines.join('\r\n')}\r\n\r\n`);
     if (proxyHead && proxyHead.length) {
