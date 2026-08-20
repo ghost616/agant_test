@@ -411,12 +411,8 @@ class ChatServiceFilteringTest {
             int toolsIdx = capsContent.indexOf("【仅子会话可用】工具");
             int skillsIdx = capsContent.indexOf("【仅子会话可用】技能");
             assertTrue(toolsIdx < skillsIdx, "工具分区应出现在技能分区之前");
-            assertTrue(capsContent.contains("如需使用上述子会话工具/技能"),
-                    "末尾应有子会话能力提示");
-            assertTrue(capsContent.contains("创建或复用子会话") && capsContent.contains("支持指定工具和技能"),
-                    "提示应描述子会话能力（创建或复用子会话并通过回调执行用户消息，支持指定工具和技能）");
-            assertFalse(capsContent.contains("_sys_create_child_session"), "提示不应体现具体工具名");
-            assertFalse(capsContent.contains("callback_sub_session"), "提示不应体现具体工具名");
+            assertTrue(capsContent.contains("如需使用上述子会话工具/技能，请调用 _sys_create_child_session"),
+                    "末尾应有调用提示");
         }
 
         @Test

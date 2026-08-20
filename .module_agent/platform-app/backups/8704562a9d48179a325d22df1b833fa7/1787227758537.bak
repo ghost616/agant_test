@@ -15,14 +15,10 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 子会话 WEBSOCKET 打开方式解析器。
- * <ul>
- *   <li>isWebSocketSubSession：判断指定会话是否为「WEBSOCKET 打开方式」的子会话——isChild=true 且沿
- *       parentSessionId 链解析到主会话（无父会话的根），主会话 agentId 对应 AgentConfig.subSessionOpenMode==WEBSOCKET 时返回 true。</li>
- *   <li>isWebSocketOpenMode：判断指定会话自身对应智能体的 subSessionOpenMode 是否为 WEBSOCKET（不要求 isChild，
- *       不沿父链解析，直接查该会话 agentId 对应的 AgentConfig）。</li>
- * </ul>
- * 两种判断的解析结果分别按 sessionId 缓存于独立 ConcurrentHashMap（避免语义互相污染），
- * 各自容量上限 10000，超限时清空整个缓存；智能体配置变更（AgentChangedEvent）时由监听方调用 clearCache() 失效全部缓存。
+ * 判断指定会话是否为「WEBSOCKET 打开方式」的子会话：isChild=true 且沿 parentSessionId 链
+ * 解析到主会话（无父会话的根），主会话 agentId 对应 AgentConfig.subSessionOpenMode==WEBSOCKET 时返回 true。
+ * 解析结果按 sessionId 缓存于 ConcurrentHashMap，容量上限 10000，超限时清空整个缓存；
+ * 智能体配置变更（AgentChangedEvent）时由监听方调用 clearCache() 失效缓存。
  */
 @Component
 @RequiredArgsConstructor
@@ -34,7 +30,6 @@ public class SubSessionWebSocketModeResolver {
     private final AgentConfigMapper agentConfigMapper;
 
     private final ConcurrentHashMap<String, Boolean> cache = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<String, Boolean> openModeCache = new ConcurrentHashMap<>();
 
     /**
      * 判断指定会话是否为 WEBSOCKET 打开方式的子会话（结果缓存）。
@@ -59,34 +54,10 @@ public class SubSessionWebSocketModeResolver {
     }
 
     /**
-     * 判断指定会话对应智能体的 subSessionOpenMode 是否为 WEBSOCKET（结果缓存）。
-     * 直接查该会话自身 agentId 对应的 AgentConfig，不要求会话为子会话。
-     *
-     * @param sessionId 会话 ID（String）
-     * @return true 表示该会话对应智能体为 WEBSOCKET 打开方式；会话缺失、agentId 缺失或智能体配置缺失时返回 false
-     */
-    public boolean isWebSocketOpenMode(String sessionId) {
-        if (sessionId == null || sessionId.isBlank()) {
-            return false;
-        }
-        Boolean cached = openModeCache.get(sessionId);
-        if (cached != null) {
-            return cached;
-        }
-        boolean result = resolveOpenMode(sessionId);
-        if (openModeCache.size() >= MAX_CACHE_SIZE) {
-            openModeCache.clear();
-        }
-        openModeCache.put(sessionId, result);
-        return result;
-    }
-
-    /**
      * 清空全部缓存（智能体配置变更后调用）。
      */
     public void clearCache() {
         cache.clear();
-        openModeCache.clear();
     }
 
     private boolean resolve(String sessionId) {
@@ -107,23 +78,6 @@ public class SubSessionWebSocketModeResolver {
             return false;
         }
         AgentConfig agentConfig = agentConfigMapper.selectById(mainSession.getAgentId());
-        return agentConfig != null && SubSessionOpenMode.WEBSOCKET == agentConfig.getSubSessionOpenMode();
-    }
-
-    /**
-     * 解析指定会话自身对应智能体的打开方式：查会话 agentId 对应的 AgentConfig，
-     * subSessionOpenMode==WEBSOCKET 时返回 true。会话缺失、agentId 缺失或配置缺失时返回 false。
-     */
-    private boolean resolveOpenMode(String sessionId) {
-        Long sid = IdConverter.parse(sessionId);
-        if (sid == null) {
-            return false;
-        }
-        Session session = sessionMapper.selectById(sid);
-        if (session == null || session.getAgentId() == null) {
-            return false;
-        }
-        AgentConfig agentConfig = agentConfigMapper.selectById(session.getAgentId());
         return agentConfig != null && SubSessionOpenMode.WEBSOCKET == agentConfig.getSubSessionOpenMode();
     }
 

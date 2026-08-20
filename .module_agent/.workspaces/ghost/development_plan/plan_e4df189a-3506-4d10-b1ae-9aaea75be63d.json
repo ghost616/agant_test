@@ -1,9 +1,0 @@
-{
-  "plan_id": "plan_e4df189a-3506-4d10-b1ae-9aaea75be63d",
-  "module_name": "framework",
-  "development_plan": "修改根目录 .gitignore 文件，追加以下忽略规则（保持现有规则 .vscode、data、node_modules、target、.maven、*.log、.lizhu_env、test-results 不变）：dist/（前端构建产物）、classpath.txt（Maven classpath 导出文件）、__pycache__/ 与 *.pyc（Python 字节码缓存）、*_test_out.txt（测试输出日志，如 gaotao_test_out.txt）。仅修改 .gitignore 一个文件。",
-  "session_id": "43aafff5-3196-4b1c-b704-028a8780bbd0",
-  "modified_files": [
-    ".gitignore"
-  ]
-}

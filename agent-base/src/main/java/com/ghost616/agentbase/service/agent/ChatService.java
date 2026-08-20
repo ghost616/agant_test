@@ -564,7 +564,7 @@ public class ChatService {
                         sb.append("\n");
                     }
                 }
-                sb.append("\n如需使用上述子会话工具/技能，请调用 _sys_create_child_session 开启子会话执行任务");
+                sb.append("\n如需使用上述子会话工具/技能，可开启子会话执行任务：创建或复用子会话并通过回调执行用户消息，支持指定工具和技能");
                 systemMessages.add(Message.builder()
                         .role("system")
                         .content(sb.toString())

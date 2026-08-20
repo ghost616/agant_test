@@ -8,5 +8,17 @@
     ],
     "summary": "执行总结：本轮修改 2 个文件——① AgentContextController.getContext 改造完成：agentId/modelId(defaultModelId)/systemPrompt/parentSessionId/recentMessageCount 改为从 sessionContext.agentContextData()（防御性拷贝后的 AgentContextData）读取，新增 ctxData 为 null 时的 CONTEXT-001 兜底分支（不触发懒构建）；history/tools/skills/projectDir/lastResponseId/sessionVariables/conversationVariables 仍通过 context() 懒构建获取，响应字段与结构不变；getContextBasic 仍直接查 SessionMapper 行为不变。② AgentContextControllerTest 适配完成：getContext 相关用例改为 stub agentContextData()（新增 ctxData() 辅助方法）、移除 ctx 上 5 个基本信息 stub，新增 getContext_shouldReadBasicInfoFromAgentContextData 用例（ctx 暴露不同值证明读取来源为 AgentContextData）；离朱补充 getContext_shouldReturnErrorWhenAgentContextDataNull 用例（验证兜底分支 CONTEXT-001 + never() 触发 context()）。\n\n测试总结：全部测试通过，通过 16 项，失败 0 项，跳过 0 项。单元测试 15/15（AgentContextControllerTest，Tests run: 15, Failures: 0, Errors: 0, Skipped: 0，无 UnnecessaryStubbingException），编译检查 1/1（mvn -pl platform-app -am compile BUILD SUCCESS，agent-platform/agent-base/agent-integration/platform-data/platform-app 全部 SUCCESS，javac release 17 编译 151 个主源码文件无错误）。接口测试因环境原因跳过（无运行中的平台服务与 SQLite 数据库，验证点已由 controller 单测覆盖）；E2E 不适用（纯后端逻辑改造）。报告关键结论：未发现任何功能缺陷，源码实现与测试说明完全一致，无需修复。",
     "errors": []
+  },
+  {
+    "plan_id": "plan_795ac74d-d565-4850-800d-96266cf18d8c",
+    "plan": "ToolExecutionController callback_sub_session 常量化 + SubSessionWebSocketModeResolver.isWebSocketOpenMode 扩展 + WebSocket 模式不设置 needsSubSessionFlow + 测试适配",
+    "modified_files": [
+      "platform-app/src/main/java/com/ghost616/platform/controller/ToolExecutionController.java",
+      "platform-app/src/main/java/com/ghost616/platform/service/agent/SubSessionWebSocketModeResolver.java",
+      "platform-app/src/test/java/com/ghost616/platform/controller/ToolExecutionControllerTest.java",
+      "platform-app/src/test/java/com/ghost616/platform/service/agent/SubSessionWebSocketModeResolverTest.java"
+    ],
+    "summary": "执行总结：本轮修改 4 个文件——① ToolExecutionController：toolStatus 中硬编码 \"callback_sub_session\" 替换为 SubSessionCallbackTool.TOOL_NAME 静态常量（import com.ghost616.agentinteg.tool.SubSessionCallbackTool），注入 SubSessionWebSocketModeResolver，callback_sub_session 且存在 SubSessionData 时若 isWebSocketOpenMode(当前会话) 为 true（WEBSOCKET 打开方式）则不设置 needsSubSessionFlow=true，TOOL_CALL 模式保持原样。② SubSessionWebSocketModeResolver：新增公开方法 isWebSocketOpenMode(String sessionId)——直接查该会话自身 agentId 对应 AgentConfig.subSessionOpenMode 是否为 WEBSOCKET（会话缺失/agentId 缺失/配置缺失返回 false），使用独立 openModeCache 复用 MAX_CACHE_SIZE=10000 容量上限与超限清空逻辑，与 isWebSocketSubSession 缓存互不污染，clearCache() 同时清空两个缓存。③ ToolExecutionControllerTest：工具名引用改为 SubSessionCallbackTool.TOOL_NAME（行为不变）、新增 toolStatus_WebSocket模式时不设置needsSubSessionFlow 用例、原设置用例显式 stub resolver=false 验证 TOOL_CALL 行为保持。④ SubSessionWebSocketModeResolverTest：新增 9 个 isWebSocketOpenMode 用例（WEBSOCKET true/TOOL_CALL false/会话缺失/配置缺失/agentId 缺失/null 空白/缓存命中/clearCache 重解析/与 isWebSocketSubSession 独立缓存不互相污染）。\n\n测试总结：全部测试通过，通过 35 项，失败 0 项，跳过 0 项。单元测试 34/34（ToolExecutionControllerTest Tests run: 13 通过 + SubSessionWebSocketModeResolverTest Tests run: 21 通过，无 UnnecessaryStubbingException），编译检查 1/1（mvn -pl platform-app -am compile BUILD SUCCESS，agent-platform/agent-base/agent-integration/platform-data/platform-app 全部 SUCCESS，javac release 17 编译 151 个主源码文件无错误，agent-integration 中 SubSessionCallbackTool.TOOL_NAME 常量正常解析）。接口测试因环境原因跳过（无运行中的平台服务与数据库，验证点已由 controller 单测覆盖）；E2E 不适用（纯后端逻辑改造）。离朱结论：未发现任何功能缺陷，常量替换行为不变、isWebSocketOpenMode 直接解析行为正确、独立缓存语义正确、clearCache 双清正确、Controller 集成逻辑符合预期，无需修复。",
+    "errors": []
   }
 ]

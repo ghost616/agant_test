@@ -2,13 +2,11 @@ package com.ghost616.platform.controller;
 
 import com.ghost616.agentbase.dto.model.ChatChunk;
 import com.ghost616.agentbase.service.agent.ToolExecutionService;
-import com.ghost616.agentinteg.tool.SubSessionCallbackTool;
 import com.ghost616.platform.dto.ApiResponse;
 import com.ghost616.platform.dto.ToolStatusResultDTO;
 import com.ghost616.platform.entity.ToolConfig;
 import com.ghost616.platform.enums.SubToolType;
 import com.ghost616.platform.service.agent.DefaultSubSessionCallback;
-import com.ghost616.platform.service.agent.SubSessionWebSocketModeResolver;
 import com.ghost616.platform.service.tool.ToolConfigService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,9 +32,6 @@ class ToolExecutionControllerTest {
 
     @Mock
     private ToolConfigService toolConfigService;
-
-    @Mock
-    private SubSessionWebSocketModeResolver subSessionWebSocketModeResolver;
 
     @InjectMocks
     private ToolExecutionController controller;
@@ -107,25 +102,22 @@ class ToolExecutionControllerTest {
     @Test
     void toolStatus_检测子会话回调设置needsSubSessionFlow() {
         ToolExecutionService.ToolStatusResult serviceResult =
-                new ToolExecutionService.ToolStatusResult("done", "tc-1", SubSessionCallbackTool.TOOL_NAME, "{}", false, "ok");
+                new ToolExecutionService.ToolStatusResult("done", "tc-1", "callback_sub_session", "{}", false, "ok");
         when(toolExecutionService.getToolStatus(sessionIdStr, "tc-1")).thenReturn(serviceResult);
         DefaultSubSessionCallback.SubSessionData subData = mock(DefaultSubSessionCallback.SubSessionData.class);
         when(defaultSubSessionCallback.getSubSessionData(sessionId)).thenReturn(subData);
-        // TOOL_CALL 打开方式：保持原行为，设置 needsSubSessionFlow=true
-        when(subSessionWebSocketModeResolver.isWebSocketOpenMode(sessionIdStr)).thenReturn(false);
 
         ApiResponse<ToolStatusResultDTO> response = controller.toolStatus(sessionId, "tc-1");
 
         assertTrue(response.isSuccess());
         assertTrue(response.getData().isNeedsSubSessionFlow());
         verify(defaultSubSessionCallback).getSubSessionData(sessionId);
-        verify(subSessionWebSocketModeResolver).isWebSocketOpenMode(sessionIdStr);
     }
 
     @Test
     void toolStatus_子会话回调无数据时不设置needsSubSessionFlow() {
         ToolExecutionService.ToolStatusResult serviceResult =
-                new ToolExecutionService.ToolStatusResult("done", "tc-1", SubSessionCallbackTool.TOOL_NAME, "{}", false, "ok");
+                new ToolExecutionService.ToolStatusResult("done", "tc-1", "callback_sub_session", "{}", false, "ok");
         when(toolExecutionService.getToolStatus(sessionIdStr, "tc-1")).thenReturn(serviceResult);
         when(defaultSubSessionCallback.getSubSessionData(sessionId)).thenReturn(null);
 
@@ -134,24 +126,6 @@ class ToolExecutionControllerTest {
         assertTrue(response.isSuccess());
         assertFalse(response.getData().isNeedsSubSessionFlow());
         verify(defaultSubSessionCallback).getSubSessionData(sessionId);
-    }
-
-    @Test
-    void toolStatus_WebSocket模式时不设置needsSubSessionFlow() {
-        ToolExecutionService.ToolStatusResult serviceResult =
-                new ToolExecutionService.ToolStatusResult("done", "tc-1", SubSessionCallbackTool.TOOL_NAME, "{}", false, "ok");
-        when(toolExecutionService.getToolStatus(sessionIdStr, "tc-1")).thenReturn(serviceResult);
-        DefaultSubSessionCallback.SubSessionData subData = mock(DefaultSubSessionCallback.SubSessionData.class);
-        when(defaultSubSessionCallback.getSubSessionData(sessionId)).thenReturn(subData);
-        // WEBSOCKET 打开方式：子会话经 WebSocket 通道直接收发，不设置 needsSubSessionFlow
-        when(subSessionWebSocketModeResolver.isWebSocketOpenMode(sessionIdStr)).thenReturn(true);
-
-        ApiResponse<ToolStatusResultDTO> response = controller.toolStatus(sessionId, "tc-1");
-
-        assertTrue(response.isSuccess());
-        assertFalse(response.getData().isNeedsSubSessionFlow());
-        verify(defaultSubSessionCallback).getSubSessionData(sessionId);
-        verify(subSessionWebSocketModeResolver).isWebSocketOpenMode(sessionIdStr);
     }
 
     @Test
@@ -212,18 +186,18 @@ class ToolExecutionControllerTest {
     @Test
     void toolStatus_原有子会话回调逻辑不受影响() {
         ToolExecutionService.ToolStatusResult serviceResult =
-                new ToolExecutionService.ToolStatusResult("done", "tc-1", SubSessionCallbackTool.TOOL_NAME, "{}", false, "ok");
+                new ToolExecutionService.ToolStatusResult("done", "tc-1", "callback_sub_session", "{}", false, "ok");
         when(toolExecutionService.getToolStatus(sessionIdStr, "tc-1")).thenReturn(serviceResult);
         DefaultSubSessionCallback.SubSessionData subData = mock(DefaultSubSessionCallback.SubSessionData.class);
         when(defaultSubSessionCallback.getSubSessionData(sessionId)).thenReturn(subData);
-        when(toolConfigService.getToolConfigBySessionAndName(sessionId, SubSessionCallbackTool.TOOL_NAME)).thenReturn(null);
+        when(toolConfigService.getToolConfigBySessionAndName(sessionId, "callback_sub_session")).thenReturn(null);
 
         ApiResponse<ToolStatusResultDTO> response = controller.toolStatus(sessionId, "tc-1");
 
         assertTrue(response.getData().isNeedsSubSessionFlow());
         assertNull(response.getData().getToolConfig());
         verify(defaultSubSessionCallback).getSubSessionData(sessionId);
-        verify(toolConfigService).getToolConfigBySessionAndName(sessionId, SubSessionCallbackTool.TOOL_NAME);
+        verify(toolConfigService).getToolConfigBySessionAndName(sessionId, "callback_sub_session");
     }
 
     @Test

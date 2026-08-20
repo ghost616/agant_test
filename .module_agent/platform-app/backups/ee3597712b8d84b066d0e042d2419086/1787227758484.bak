@@ -2,12 +2,10 @@ package com.ghost616.platform.controller;
 
 import com.ghost616.agentbase.dto.model.ChatChunk;
 import com.ghost616.agentbase.service.agent.ToolExecutionService;
-import com.ghost616.agentinteg.tool.SubSessionCallbackTool;
 import com.ghost616.platform.dto.ApiResponse;
 import com.ghost616.platform.dto.ToolStatusResultDTO;
 import com.ghost616.platform.entity.ToolConfig;
 import com.ghost616.platform.service.agent.DefaultSubSessionCallback;
-import com.ghost616.platform.service.agent.SubSessionWebSocketModeResolver;
 import com.ghost616.platform.service.tool.ToolConfigService;
 import com.ghost616.platform.util.IdConverter;
 import lombok.RequiredArgsConstructor;
@@ -32,7 +30,6 @@ public class ToolExecutionController {
     private final ToolExecutionService toolExecutionService;
     private final DefaultSubSessionCallback defaultSubSessionCallback;
     private final ToolConfigService toolConfigService;
-    private final SubSessionWebSocketModeResolver subSessionWebSocketModeResolver;
 
     @PostMapping("/{sessionId}/execute-tools")
     public ApiResponse<ToolStatusResultDTO> executeTools(@PathVariable Long sessionId) {
@@ -50,10 +47,9 @@ public class ToolExecutionController {
         ToolStatusResultDTO dto = new ToolStatusResultDTO(
                 result.status(), result.toolId(), result.toolName(), result.arguments(),
                 result.hasMore(), result.result(), null, false);
-        if (SubSessionCallbackTool.TOOL_NAME.equals(result.toolName())) {
+        if ("callback_sub_session".equals(result.toolName())) {
             DefaultSubSessionCallback.SubSessionData subData = defaultSubSessionCallback.getSubSessionData(sessionId);
-            // 主会话为 WEBSOCKET 打开方式时无需子会话流转（由 WebSocket 通道直接收发），TOOL_CALL 模式保持原行为
-            if (subData != null && !subSessionWebSocketModeResolver.isWebSocketOpenMode(IdConverter.toString(sessionId))) {
+            if (subData != null) {
                 dto.setNeedsSubSessionFlow(true);
             }
         }

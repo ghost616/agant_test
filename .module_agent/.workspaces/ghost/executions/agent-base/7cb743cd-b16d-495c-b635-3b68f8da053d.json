@@ -24,5 +24,15 @@
     ],
     "summary": "执行总结：本轮修复皋陶审查发现的 2 个问题，共修改 4 个文件：\n1) AgentContextManager.java：Builder.build() 命中缓存时校验 modelIdOverride 一致性（Objects.equals(cached.modelIdOverride, modelIdOverride)），一致直接复用；不一致（如 get() 轻量构建写入的无 override 条目）先 cache.remove(sessionId, cached) 移除旧条目再 doBuild 重建带本次 override 的上下文，保证 ChatService.chat 请求指定的 modelId 生效、避免回退为会话默认模型；并发下 putIfAbsent 竞态返回不同 override 条目时同样 cache.remove+cache.put 替换为本次 override 的上下文；新增 java.util.Objects import。\n2) ToolManager.java：resolveSkillToolByName 主会话判断由 ctx.context().isMainSession() 统一为 ctx.agentContextData() != null && ctx.agentContextData().parentSessionId() == null（与 isSubSession 判断方式一致，避免触发完整 context 懒构建）。\n3) AgentContextManagerTest.java：LightweightAndLazyBuildTest 新增 3 个用例（build 带 override 命中 get 轻量缓存条目时重建并生效 getModelId=override 且缓存被替换、build 带 override 缓存一致时复用不重建 assertSame+getMessages 仅一次、build 不带 override 命中带 override 条目时重建为默认模型）。\n4) ToolManagerTest.java：新增 2 个用例（主会话 resolveSkillToolByName 跳过 CHILD 技能工具且 getToolById 不被调用、子会话 resolveSkillToolByName 不跳过 CHILD 技能工具返回 invoker）；清理子会话 CHILD 工具用例中已不再使用的 context()/isMainSession() mock stub 与 AgentExecutionContext import。\n测试总结：全部测试通过，通过 524 项，失败 0 项，跳过 0 项（agent-base 全量单测，69 suites，较上轮 519 新增 5 用例）；agent-base test-compile 与跨模块（agent-base/agent-integration/platform-data/platform-app）clean test-compile 均 BUILD SUCCESS；新增 5 个用例全绿，既有用例全量回归通过（AgentContextManagerTest 全部分组、AgentContextManagerLogTest 24、ToolManagerTest 19、ToolExecutionServiceTest 28、ChatService 全系列）；E2E 不适用（后端内部逻辑修复，无 UI/HTTP 接口变更），无环境问题。修复目标验证成立：build 指定 modelId 生效（不再被 get() 轻量缓存污染）、主会话跳过 CHILD 技能工具。",
     "errors": []
+  },
+  {
+    "plan_id": "plan_bf615277-f045-4230-8678-6fd8e3a5374d",
+    "plan": "ChatService 子会话能力提示词改写（去除工具名）+ ChatServiceFilteringTest 断言适配",
+    "modified_files": [
+      "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ChatService.java",
+      "agent-base/src/test/java/com/ghost616/agentbase/service/agent/ChatServiceFilteringTest.java"
+    ],
+    "summary": "执行总结：本轮完成 ChatService.buildContextSystemInfo 子会话能力提示词改写与测试断言适配，共修改 2 个文件：\n1) ChatService.java（第 567 行）：子会话能力提示末尾由「如需使用上述子会话工具/技能，请调用 _sys_create_child_session 开启子会话执行任务」改为「如需使用上述子会话工具/技能，可开启子会话执行任务：创建或复用子会话并通过回调执行用户消息，支持指定工具和技能」——按 SubSessionCallbackTool 工具说明（创建或复用子会话并通过回调执行用户消息，支持指定工具和技能）语义描述，不体现任何具体工具名（不出现 _sys_create_child_session/callback_sub_session 等），子会话工具/技能权限说明整体结构（【仅子会话可用】【均可用】分区）与其他分区文案不变。\n2) ChatServiceFilteringTest.java（第 414-419 行）：原「包含请调用 _sys_create_child_session」断言改为校验新文案特征——含「如需使用上述子会话工具/技能」前缀、含「创建或复用子会话」与「支持指定工具和技能」能力描述、不含 _sys_create_child_session 与 callback_sub_session 工具名。\n测试总结：全部测试通过，通过 524 项，失败 0 项，跳过 0 项（agent-base 全量单测，69 suites）；agent-base test-compile BUILD SUCCESS（119 main + 57 test）；ChatServiceFilteringTest Section 3 子会话能力提示合并 6 用例全绿（新断言 4 项校验全部通过，既有合并单条/分区顺序/空不生成/子会话不生成断言回归通过），ChatServiceTest/ChatServiceLogTest/ChatServiceResponsesTest/ChatServiceHistoryGroupJsonTest/ChatServiceNoLoadSkillsTest 等 ChatService 系列及全量其余用例回归通过；E2E 不适用（后端提示词文案变更，无 UI/HTTP 接口变更），无环境问题。新文案满足「不含具体工具名 + 包含子会话能力语义描述」验收标准。",
+    "errors": []
   }
 ]
