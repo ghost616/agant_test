@@ -384,6 +384,9 @@ FinishReason 枚举（com.ghost616.agentbase.enums.FinishReason），定义模�
 ## 线程变量传播
 
 线程变量传播双接口（com.ghost616.agentbase.core）：\n- ThreadVariableHandler 接口：唯一方法 ThreadVariableWrapper wrap()，用于在提交任务的线程捕获当前线程变量快照，供异步执行点传播线程变量\n- ThreadVariableWrapper 接口：唯一方法 void apply()，由 ThreadVariableHandler.wrap() 在提交任务的线程创建，传入异步线程后通过 apply() 将捕获的线程变量赋值到当前线程\n\n两者由外部集成者实现并注入（AgentComponentRegistry.setThreadVariableHandler），实现方决定捕获/恢复的具体线程变量（如 MDC、ThreadLocal 等）。
+ThreadVariableWrapper 接口新增 default void clear() 方法（默认空实现，兼容现有实现）：语义为清理当前线程已恢复的线程变量，供 reactor 共享线程在异步回调 apply() 恢复后清理防串号；实现方可按需覆写。
+
+ChatService.toSseStream 接入线程变量恢复（2026-08-XX）：同步部分（请求线程执行时）经 registry.getThreadVariableHandler() 获取 handler，非 null 时调用 wrap() 捕获当前线程变量快照（捕获时机为请求线程，UserContext 可用），handler 为 null 时跳过保持向后兼容；doOnNext 与 doOnComplete 回调开头在 wrapper 非 null 时 apply() 恢复用户上下文，回调逻辑结束后 finally 中 clear() 清理（触发 AFTER_MESSAGE_RECEIVE HOOK 前恢复，使 SubSessionResultFallbackHook 等 HOOK 内的 sendParentMessage 可正常经 WebSocket 推送，主会话前端可收到 SEND_USER_MESSAGE）。HOOK 触发顺序与逻辑（triggerSessionHooks → triggerHooks → executePostHooks）保持不变。
 ## 发送用户消息事件
 父会话链改造（2026-08-18）：SessionMessage 移除 parentSessionId/mainSessionId 两个单字段，新增 List&lt;String&gt; parentSessionIds 父会话链字段（Lombok @Getter/@Setter，可序列化），语义：第一个 = 直接父会话 ID，最后一个 = 主会话 ID（沿父链向上追溯到无父会话的根），中间为各层父会话；主会话自身无父链时为 null/空列表。所有子类（HistoryMessage/VariableMessage/ChildCreateSession/ChildMessageEvent/ConversationIdMessage/SendUserMessage）自动获得 getParentSessionIds/setParentSessionIds。ChildCreateSession 构造器由 setParentSessionId 改为 setParentSessionIds(List.of(parentSessionId))。SendUserMessage 构造参数由 (sessionId, content, conversationId, parentSessionId, mainSessionId) 改为 (sessionId, content, conversationId, List&lt;String&gt; parentSessionIds)。
 ## 发送用户消息事件

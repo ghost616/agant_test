@@ -12,5 +12,15 @@
     ],
     "summary": "执行总结：本轮共修改 3 个主文件 + 3 个测试文件。1) 新建 SubSessionResultProviderImpl（@Component，实现 agent-integration SubSessionResultProvider）：shouldSendResultToParent 复用 SubSessionWebSocketModeResolver 缓存判断 WEBSOCKET 子会话（非 WEBSOCKET 直接 false），MessageMapper 查询有效消息定位最近一条 role=user 消息之后的消息链，MessageToolCallMapper 按 toolCallName=send_result_to_parent（SendResultToParentTool.TOOL_NAME）检查链上是否已调用，已调用返回 false、未调用返回 true；2) DefaultChatDataProvider.getPreSystemPrompt 加强：新增包级常量 WEB_SOCKET_SUB_SESSION_PRE_SYSTEM_PROMPT（\"你是子会话执行者。完成任务后，必须调用 send_result_to_parent 工具，将执行结果作为参数发送给父会话，禁止不调用工具直接结束；结果内容为最终答案。\"），WEBSOCKET 子会话时返回该加强提示词；3) AgentContextConfiguration 新增 @Bean subSessionResultFallbackHook(SubSessionResultProvider)（new SubSessionResultFallbackHook），注册为 Spring Bean 供 DefaultChatDataProvider.getHooks()（getBeansOfType(HookInvoker.class)）自动收集；4) 测试：新建 SubSessionResultProviderImplTest（8 用例）、DefaultChatDataProviderTest 提示词断言更新为加强版内容断言（必须调用/禁止直接结束/最终答案）、AgentContextConfigurationTest 新增 subSessionResultFallbackHook 创建与 HookInvoker 类型断言。未修改 agent-base，遵守代码规范。测试期间离朱仅调整测试代码（SubSessionResultProviderImplTest lambda 参数显式类型与 TableInfoHelper 初始化、DefaultMessageDataProviderTest 既有死桩清理），生产代码未改动。\n\n测试总结：全部测试通过。编译测试 mvn test-compile BUILD SUCCESS（reactor 全模块）；单元测试 36/36（SubSessionResultProviderImplTest 9/9、DefaultChatDataProviderTest 15/15、AgentContextConfigurationTest 12/12）；回归测试 201/201（SubSessionWebSocketModeResolverTest 21、DefaultToolDataProviderTest 41、DefaultSubSessionCallbackTest 12、DefaultMessageDataProviderTest 46、DefaultContextDataProviderTest 34、ChatServiceTest 4、AgentExecutionContextTest 43）；合计 237 用例通过，失败 0，跳过 0。无环境阻塞。",
     "errors": []
+  },
+  {
+    "plan_id": "plan_2a149234-fa7f-44c4-8dc2-ca93424c7d40",
+    "plan": "UserContextThreadVariableHandler 实现 clear() 方法",
+    "modified_files": [
+      "platform-app/src/main/java/com/ghost616/platform/session/UserContextThreadVariableHandler.java",
+      "platform-app/src/test/java/com/ghost616/platform/session/UserContextThreadVariableHandlerTest.java"
+    ],
+    "summary": "执行总结：本轮修改 1 个主文件 + 1 个测试文件。1) UserContextThreadVariableHandler.java：内部类 UserContextThreadVariableWrapper 新增 @Override clear() 方法，实现为 UserContext.clear()（清理当前线程用户会话上下文），配合 agent-base ThreadVariableWrapper 接口新增的 default clear()，供 ChatService.toSseStream 在 SSE 流式回调（doOnNext/doOnComplete）中 apply() 恢复上下文后清理（reactor 共享线程防串号）；apply() 现有逻辑保持不变（session 非 null 时 UserContext.set，否则 UserContext.clear）；类 Javadoc 补充 clear 语义。2) UserContextThreadVariableHandlerTest.java：新增 3 个 clear 用例（clear 清空已恢复的用户上下文、捕获为空时清空线程残留、clear 不破坏快照可再次 apply 恢复），共 7 用例。两个文件补登记入模块定义并写入变更历史。未修改 agent-base、未修改其他文件，符合代码规范（Java 17、Lombok）。\n\n测试总结：全部测试通过。编译测试 mvn test-compile（reactor 全模块）BUILD SUCCESS，确认 agent-base ThreadVariableWrapper 已含 default clear() 前置依赖满足；单元测试 UserContextThreadVariableHandlerTest 7/7（含 3 个新增 clear 用例）；补充回归 34/34（agent-base ThreadVariableWrapperTest 2、agent-base ChatServiceTest 17、platform-app ChatServiceTest 4、UserContextUtilTest 11）；合计 41 用例通过，失败 0，跳过 0。测试过程无修改任何文件，无环境阻塞。",
+    "errors": []
   }
 ]

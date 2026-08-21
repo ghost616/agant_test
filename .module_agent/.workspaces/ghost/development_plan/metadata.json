@@ -62,5 +62,21 @@
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
+  },
+  {
+    "plan_id": "plan_312cb86f-cb16-4b5c-b3d3-3839dec694c2",
+    "plan_summary": "agent-base：ThreadVariableWrapper 新增 default clear()，ChatService.toSseStream 在 doOnNext/doOnComplete 回调中 apply() 恢复用户上下文并在 finally 中 clear() 清理，含单元测试",
+    "starter_session_id": "27186f3a-67f7-4071-855c-4cf1330b98e1",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_2a149234-fa7f-44c4-8dc2-ca93424c7d40",
+    "plan_summary": "platform-app：UserContextThreadVariableHandler 内部 wrapper 实现 clear()（UserContext.clear()），含单元测试",
+    "starter_session_id": "27186f3a-67f7-4071-855c-4cf1330b98e1",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
   }
 ]

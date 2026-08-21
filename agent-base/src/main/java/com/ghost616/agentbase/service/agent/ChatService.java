@@ -13,6 +13,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.ghost616.agentbase.core.AgentComponentRegistry;
+import com.ghost616.agentbase.core.ThreadVariableHandler;
+import com.ghost616.agentbase.core.ThreadVariableWrapper;
 import com.ghost616.agentbase.util.JsonMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.codec.ServerSentEvent;
@@ -672,45 +674,66 @@ public class ChatService {
             String sessionId) {
         AtomicBoolean hasToolCalls = new AtomicBoolean(false);
 
+        ThreadVariableHandler threadVariableHandler = registry.getThreadVariableHandler();
+        ThreadVariableWrapper threadVariableWrapper = threadVariableHandler != null ? threadVariableHandler.wrap() : null;
+
         return stream
                 .takeWhile(chunk -> !context.isStopped())
                 .doOnNext(chunk -> {
-                    if (chunk.getToolCalls() != null && !chunk.getToolCalls().isEmpty()) {
-                        if (hasToolCalls.compareAndSet(false, true)) {
+                    if (threadVariableWrapper != null) {
+                        threadVariableWrapper.apply();
+                    }
+                    try {
+                        if (chunk.getToolCalls() != null && !chunk.getToolCalls().isEmpty()) {
+                            if (hasToolCalls.compareAndSet(false, true)) {
+                                addLog(StreamEventLogData.builder()
+                                        .logLevel(LogLevel.INFO)
+                                        .context(context)
+                                        .eventType("ToolCallDetected")
+                                        .hasToolCalls(true)
+                                        .build());
+                            }
+                        }
+                        if (chunk.getResponseId() != null) {
+                            contextMutator.setLastResponseId(chunk.getResponseId());
+                        }
+                        if (chunk.getFinishReason() != null) {
+                            chunk.setHasToolCalls(hasToolCalls.get());
                             addLog(StreamEventLogData.builder()
                                     .logLevel(LogLevel.INFO)
                                     .context(context)
-                                    .eventType("ToolCallDetected")
-                                    .hasToolCalls(true)
+                                    .eventType("StreamComplete")
+                                    .hasToolCalls(hasToolCalls.get())
                                     .build());
                         }
+                        hookManager.triggerSessionHooks(sessionId, HookPhase.BEFORE_MESSAGE_SEND, context, new HookData(chunk));
+                        hookManager.triggerHooks(HookPhase.BEFORE_MESSAGE_SEND, context, new HookData(chunk));
+                        hookManager.executePostHooks(context, new HookData(chunk));
+                    } finally {
+                        if (threadVariableWrapper != null) {
+                            threadVariableWrapper.clear();
+                        }
                     }
-                    if (chunk.getResponseId() != null) {
-                        contextMutator.setLastResponseId(chunk.getResponseId());
-                    }
-                    if (chunk.getFinishReason() != null) {
-                        chunk.setHasToolCalls(hasToolCalls.get());
-                        addLog(StreamEventLogData.builder()
-                                .logLevel(LogLevel.INFO)
-                                .context(context)
-                                .eventType("StreamComplete")
-                                .hasToolCalls(hasToolCalls.get())
-                                .build());
-                    }
-                    hookManager.triggerSessionHooks(sessionId, HookPhase.BEFORE_MESSAGE_SEND, context, new HookData(chunk));
-                    hookManager.triggerHooks(HookPhase.BEFORE_MESSAGE_SEND, context, new HookData(chunk));
-                    hookManager.executePostHooks(context, new HookData(chunk));
                 })
                 .map(chunk -> ServerSentEvent.<ChatChunk>builder()
                         .data(chunk)
                         .build())
                 .doOnComplete(() -> {
-                    ChatChunk completeChunk = ChatChunk.builder()
-                            .hasToolCalls(hasToolCalls.get())
-                            .build();
-                    hookManager.triggerSessionHooks(sessionId, HookPhase.AFTER_MESSAGE_RECEIVE, context, new HookData(completeChunk));
-                    hookManager.triggerHooks(HookPhase.AFTER_MESSAGE_RECEIVE, context, new HookData(completeChunk));
-                    hookManager.executePostHooks(context, new HookData(completeChunk));
+                    if (threadVariableWrapper != null) {
+                        threadVariableWrapper.apply();
+                    }
+                    try {
+                        ChatChunk completeChunk = ChatChunk.builder()
+                                .hasToolCalls(hasToolCalls.get())
+                                .build();
+                        hookManager.triggerSessionHooks(sessionId, HookPhase.AFTER_MESSAGE_RECEIVE, context, new HookData(completeChunk));
+                        hookManager.triggerHooks(HookPhase.AFTER_MESSAGE_RECEIVE, context, new HookData(completeChunk));
+                        hookManager.executePostHooks(context, new HookData(completeChunk));
+                    } finally {
+                        if (threadVariableWrapper != null) {
+                            threadVariableWrapper.clear();
+                        }
+                    }
                 })
                 .doOnCancel(() -> {
                     addLog(StreamEventLogData.builder()

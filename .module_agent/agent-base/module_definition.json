@@ -656,6 +656,10 @@
     {
       "description": "父会话消息发送日志数据，extends SessionLogData（sessionId/conversationId 由父类承载），字段 parentSessionId（父会话 ID，消息发送目标）+ content（消息内容），@SuperBuilder，logType()=LogType.SEND_PARENT_MESSAGE。由 AgentContextManager.sendParentMessage 在子会话向父会话发送用户消息时记录（INFO 级）。",
       "path": "agent-base/src/main/java/com/ghost616/agentbase/service/agent/log/SendParentMessageLogData.java"
+    },
+    {
+      "path": "agent-base/src/test/java/com/ghost616/agentbase/core/ThreadVariableWrapperTest.java",
+      "description": "ThreadVariableWrapper 单元测试：覆盖 clear() 默认方法为空操作不抛异常（仅实现 apply 的匿名类可直接调用默认 clear()）及 clear() 可被子类覆写生效两个用例。"
     }
   ]
 }

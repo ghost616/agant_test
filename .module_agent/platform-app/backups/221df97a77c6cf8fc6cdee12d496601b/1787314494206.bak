@@ -9,10 +9,8 @@ import org.springframework.stereotype.Component;
  *
  * <p>实现 agent-base 的 {@link ThreadVariableHandler}，在提交异步任务（如工具执行的
  * {@code CompletableFuture.supplyAsync}）前捕获 {@link UserContext} 线程上下文，
- * 异步线程开始执行时通过 {@link UserContextThreadVariableWrapper#apply()} 恢复；
- * 在 reactor 等共享线程的异步回调中，恢复后通过 {@link UserContextThreadVariableWrapper#clear()}
- * 清理当前线程的用户上下文，防止线程复用导致会话串号。保证异步场景下
- * {@link UserContext#get()} 仍可取到当前登录用户。</p>
+ * 异步线程开始执行时通过 {@link UserContextThreadVariableWrapper#apply()} 恢复，
+ * 保证异步场景下 {@link UserContext#get()} 仍可取到当前登录用户。</p>
  */
 @Component
 public class UserContextThreadVariableHandler implements ThreadVariableHandler {
@@ -41,11 +39,6 @@ public class UserContextThreadVariableHandler implements ThreadVariableHandler {
             } else {
                 UserContext.clear();
             }
-        }
-
-        @Override
-        public void clear() {
-            UserContext.clear();
         }
     }
 }

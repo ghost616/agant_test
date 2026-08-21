@@ -13,14 +13,4 @@ public interface ThreadVariableWrapper {
      * 将捕获的线程变量赋值到当前线程。
      */
     void apply();
-
-    /**
-     * 清理当前线程已恢复的线程变量。
-     * <p>
-     * 供 reactor 等共享线程上的异步回调在 {@link #apply()} 恢复线程变量后调用，
-     * 避免线程变量泄漏到后续复用的任务造成串号。默认空实现，兼容无需清理的实现。
-     */
-    default void clear() {
-        // 默认空实现：无需清理的实现可保持不覆写
-    }
 }

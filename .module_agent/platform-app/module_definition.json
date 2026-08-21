@@ -536,6 +536,14 @@
     {
       "path": "platform-app/src/test/java/com/ghost616/platform/service/agent/SubSessionResultProviderImplTest.java",
       "description": "SubSessionResultProviderImpl 单元测试（Mockito，分步 mock 最后 user 消息查询 selectOne 与后续消息链查询 selectList）：覆盖非 WEBSOCKET 子会话返回 false（不查库）、sessionId 为 null/空白返回 false、无 user 消息返回 false、最近 user 消息后无消息返回 false、消息链已调用 send_result_to_parent 返回 false、消息链未调用返回 true、仅在最近 user 消息之前调用过返回 true（消息 ID 集合不含历史消息 ID）、工具名查询按 send_result_to_parent 过滤（wrapper SQL 段与参数断言）、最后 user 消息查询含 role 过滤与 sequenceNum 倒序、消息链查询按 sequenceNum>索引 过滤，共 10 个用例"
+    },
+    {
+      "description": "用户上下文线程变量处理器（@Component，实现 agent-base 的 ThreadVariableHandler）：wrap() 捕获当前线程 UserContext 中的 UserSession 快照返回内部类 UserContextThreadVariableWrapper（实现 ThreadVariableWrapper）；apply() 恢复（session 非 null 时 UserContext.set，捕获为 null 时 UserContext.clear 清空目标线程残留上下文）；clear() 覆写 ThreadVariableWrapper 默认方法，清理当前线程 UserContext（UserContext.clear()），供 reactor 等共享线程异步回调恢复后清理防串号",
+      "path": "platform-app/src/main/java/com/ghost616/platform/session/UserContextThreadVariableHandler.java"
+    },
+    {
+      "description": "UserContextThreadVariableHandler 单元测试：覆盖 wrap() 捕获/apply() 恢复语义、无上下文时 apply 清空残留、异步线程经 wrapper 传播上下文、多次 apply 可重复恢复，以及新增 clear() 语义（清空已恢复上下文、捕获为空时清空残留、不破坏快照可再次 apply 恢复）共 7 个用例",
+      "path": "platform-app/src/test/java/com/ghost616/platform/session/UserContextThreadVariableHandlerTest.java"
     }
   ]
 }

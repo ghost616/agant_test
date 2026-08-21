@@ -1,8 +1,6 @@
 package com.ghost616.agentbase.service.agent;
 
 import com.ghost616.agentbase.core.AgentComponentRegistry;
-import com.ghost616.agentbase.core.ThreadVariableHandler;
-import com.ghost616.agentbase.core.ThreadVariableWrapper;
 import com.ghost616.agentbase.dto.chat.ChatRequest;
 import com.ghost616.agentbase.dto.model.Message;
 import com.ghost616.agentbase.dto.model.ModelConfigData;
@@ -427,65 +425,5 @@ class ChatServiceTest {
         assertEquals(1, contents.indexOf("hello"), "未注入前置提示词时历史消息从 index 1 开始");
         assertEquals(contents.size() - 1, contents.lastIndexOf("hello"),
                 "未注入后置提示词时最后一条 user 消息仍位于末尾");
-    }
-
-    @Test
-    void chat_配置ThreadVariableHandler时doOnNext与doOnComplete回调中apply恢复且finally清理() {
-        ThreadVariableHandler handler = mock(ThreadVariableHandler.class);
-        ThreadVariableWrapper wrapper = mock(ThreadVariableWrapper.class);
-        when(handler.wrap()).thenReturn(wrapper);
-        registry.setThreadVariableHandler(handler);
-
-        ChatRequest request = ChatRequest.builder().sessionId(sessionId).content("hello").conversationId("conv-1").build();
-        AgentContextManager.AgentSessionContext sessionCtx =
-                new AgentContextManager.AgentSessionContext(context, mutator, new java.util.concurrent.atomic.AtomicBoolean(false));
-
-        when(agentContextManager.build(sessionId)).thenReturn(builder);
-        when(builder.modelIdOverride(any())).thenReturn(builder);
-        when(builder.build()).thenReturn(sessionCtx);
-        when(sessionManager.messageSave()).thenReturn(mock(SessionManager.MessageSaveBuilder.class, RETURNS_SELF));
-        when(context.getSystemPrompt()).thenReturn("");
-        when(context.getHistory()).thenReturn(java.util.Collections.emptyList());
-        when(context.getSkills()).thenReturn(null);
-        when(context.getTools()).thenReturn(java.util.Collections.emptyList());
-        when(context.isMainSession()).thenReturn(false);
-        when(systemToolManager.getToolDefinitions()).thenReturn(java.util.Collections.emptyList());
-        when(chatDataProvider.getModelConfig(any())).thenReturn(new ModelConfigData("1", "key", "url", "model", 0.7, 4096, "openai", null));
-        when(modelInvokerManager.getInvoker(any())).thenReturn(modelInvoker);
-        com.ghost616.agentbase.dto.model.ChatChunk chunk = com.ghost616.agentbase.dto.model.ChatChunk.builder().delta("hi").finishReason(FinishReason.STOP).build();
-        when(modelInvoker.invokeStream(any())).thenReturn(Flux.just(chunk));
-
-        chatService.chat(request).subscribe();
-
-        verify(handler).wrap();
-        verify(wrapper, times(2)).apply();
-        verify(wrapper, times(2)).clear();
-    }
-
-    @Test
-    void chat_未配置ThreadVariableHandler时不抛异常且HOOK正常触发() {
-        ChatRequest request = ChatRequest.builder().sessionId(sessionId).content("hello").conversationId("conv-1").build();
-        AgentContextManager.AgentSessionContext sessionCtx =
-                new AgentContextManager.AgentSessionContext(context, mutator, new java.util.concurrent.atomic.AtomicBoolean(false));
-
-        when(agentContextManager.build(sessionId)).thenReturn(builder);
-        when(builder.modelIdOverride(any())).thenReturn(builder);
-        when(builder.build()).thenReturn(sessionCtx);
-        when(sessionManager.messageSave()).thenReturn(mock(SessionManager.MessageSaveBuilder.class, RETURNS_SELF));
-        when(context.getSystemPrompt()).thenReturn("");
-        when(context.getHistory()).thenReturn(java.util.Collections.emptyList());
-        when(context.getSkills()).thenReturn(null);
-        when(context.getTools()).thenReturn(java.util.Collections.emptyList());
-        when(context.isMainSession()).thenReturn(false);
-        when(systemToolManager.getToolDefinitions()).thenReturn(java.util.Collections.emptyList());
-        when(chatDataProvider.getModelConfig(any())).thenReturn(new ModelConfigData("1", "key", "url", "model", 0.7, 4096, "openai", null));
-        when(modelInvokerManager.getInvoker(any())).thenReturn(modelInvoker);
-        com.ghost616.agentbase.dto.model.ChatChunk chunk = com.ghost616.agentbase.dto.model.ChatChunk.builder().delta("hi").finishReason(FinishReason.STOP).build();
-        when(modelInvoker.invokeStream(any())).thenReturn(Flux.just(chunk));
-
-        assertDoesNotThrow(() -> chatService.chat(request).subscribe());
-
-        verify(hookManager).triggerSessionHooks(sessionId, HookPhase.BEFORE_MESSAGE_SEND, context, new HookData(chunk));
-        verify(hookManager).triggerHooks(HookPhase.BEFORE_MESSAGE_SEND, context, new HookData(chunk));
     }
 }
