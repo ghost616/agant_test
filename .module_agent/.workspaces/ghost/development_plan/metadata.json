@@ -54,5 +54,13 @@
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
+  },
+  {
+    "plan_id": "plan_71a29f7f-071a-47e9-a424-b02bcddf3d56",
+    "plan_summary": "优化 SubSessionResultProviderImpl 分步查询消息链",
+    "starter_session_id": "session-820487d5-72d4-4a5d-b089-d57eba5fd2a5",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
   }
 ]

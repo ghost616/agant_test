@@ -21,10 +21,8 @@ import java.util.stream.Collectors;
  * <ol>
  *   <li>复用 {@link SubSessionWebSocketModeResolver} 缓存判断当前会话是否为 WEBSOCKET 打开方式的子会话，
  *       非 WEBSOCKET 子会话直接返回无需发送；</li>
- *   <li>数据库分步查询（避免全量加载历史消息）：先按 session_id + role='user' + rollback=false 过滤、
- *       sequenceNum 倒序查询最近一条 user 消息作为索引，再按 session_id + rollback=false +
- *       sequenceNum &gt; 索引 过滤查询其后的消息链（含 assistant/tool），
- *       无 user 消息或索引之后无消息时返回无需发送；</li>
+ *   <li>从数据库（MessageMapper）查询子会话全部有效消息，定位最近一条 role=user 的消息，
+ *       取其之后的消息链（含 assistant/tool）；</li>
  *   <li>通过 MessageToolCallMapper 检查消息链上是否已调用 send_result_to_parent 工具
  *       （assistant 消息的 function tool_calls 与 tool 消息的 tool_result 记录均会落库为 toolCallName 匹配行）；</li>
  *   <li>已调用则无需发送（结果已回传），未调用则返回需要向父会话兜底发送。</li>
@@ -50,50 +48,45 @@ public class SubSessionResultProviderImpl implements SubSessionResultProvider {
         if (sid == null) {
             return false;
         }
-        // b. 数据库分步查询：先定位最近一条 role=user 消息的 sequenceNum 作为索引
-        Message lastUserMessage = findLastUserMessage(sid);
-        if (lastUserMessage == null || lastUserMessage.getSequenceNum() == null) {
+        // b. 查询消息，定位最近一条 user 消息之后的消息链
+        List<Message> messages = queryMessages(sid);
+        int lastUserIndex = findLastUserMessageIndex(messages);
+        if (lastUserIndex < 0 || lastUserIndex >= messages.size() - 1) {
             return false;
         }
-        // c. 查询该索引之后的消息链（仅加载链上消息，不加载历史消息）
-        List<Message> chain = queryMessagesAfter(sid, lastUserMessage.getSequenceNum());
-        if (chain.isEmpty()) {
-            return false;
-        }
-        // d. 链上已调用 send_result_to_parent 则无需发送，否则需要兜底回传
+        List<Message> chain = messages.subList(lastUserIndex + 1, messages.size());
+        // c/d. 链上已调用 send_result_to_parent 则无需发送，否则需要兜底回传
         return !hasCalledSendResultToParent(chain);
     }
 
     /**
-     * 查询会话最近一条有效 role=user 消息（过滤已回滚消息），按 sequenceNum 倒序取第一条。
+     * 查询指定会话的全部有效消息（过滤已回滚消息），按 sequenceNum 升序返回。
      *
      * @param sessionId 会话 ID
-     * @return 最近一条 user 消息；无 user 消息时返回 null
+     * @return 消息实体列表
      */
-    private Message findLastUserMessage(Long sessionId) {
+    private List<Message> queryMessages(Long sessionId) {
         LambdaQueryWrapper<Message> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Message::getSessionId, sessionId)
-                .eq(Message::getRole, ROLE_USER)
                 .eq(Message::getRollback, false)
-                .orderByDesc(Message::getSequenceNum)
-                .last("LIMIT 1");
-        return messageMapper.selectOne(wrapper);
+                .orderByAsc(Message::getSequenceNum);
+        return messageMapper.selectList(wrapper);
     }
 
     /**
-     * 查询指定会话中 sequenceNum 大于给定索引的有效消息（过滤已回滚消息），按 sequenceNum 升序返回。
+     * 定位消息列表中最近一条 role=user 消息的下标。
      *
-     * @param sessionId   会话 ID
-     * @param lastUserSeq 最近一条 user 消息的 sequenceNum（索引）
-     * @return 索引之后的消息链
+     * @param messages 消息列表（按 sequenceNum 升序）
+     * @return 最近一条 user 消息的下标；无 user 消息时返回 -1
      */
-    private List<Message> queryMessagesAfter(Long sessionId, Integer lastUserSeq) {
-        LambdaQueryWrapper<Message> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(Message::getSessionId, sessionId)
-                .eq(Message::getRollback, false)
-                .gt(Message::getSequenceNum, lastUserSeq)
-                .orderByAsc(Message::getSequenceNum);
-        return messageMapper.selectList(wrapper);
+    private int findLastUserMessageIndex(List<Message> messages) {
+        int lastIndex = -1;
+        for (int i = 0; i < messages.size(); i++) {
+            if (ROLE_USER.equals(messages.get(i).getRole())) {
+                lastIndex = i;
+            }
+        }
+        return lastIndex;
     }
 
     /**

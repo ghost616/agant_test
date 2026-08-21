@@ -1,0 +1,12 @@
+[
+  {
+    "plan_id": "plan_71a29f7f-071a-47e9-a424-b02bcddf3d56",
+    "plan": "优化 SubSessionResultProviderImpl.shouldSendResultToParent 查询方式",
+    "modified_files": [
+      "platform-app/src/main/java/com/ghost616/platform/service/agent/SubSessionResultProviderImpl.java",
+      "platform-app/src/test/java/com/ghost616/platform/service/agent/SubSessionResultProviderImplTest.java"
+    ],
+    "summary": "执行总结：本轮共修改 2 个文件——1) SubSessionResultProviderImpl.java：shouldSendResultToParent 由全量 queryMessages+内存 findLastUserMessageIndex 改为数据库分步查询，新增 findLastUserMessage（session_id+role='user'+rollback=false 过滤、orderByDesc(sequenceNum)+LIMIT 1，selectOne 取最近 user 消息 sequenceNum 作为索引，无 user 消息或 sequenceNum 为 null 返回 false）与 queryMessagesAfter（session_id+rollback=false+sequenceNum>索引 过滤、orderByAsc(sequenceNum)，selectList 仅加载索引之后的消息链），删除 queryMessages/findLastUserMessageIndex；消息链为空返回 false 保持原行为；非 WEBSOCKET 前置判断（SubSessionWebSocketModeResolver 缓存）与 MessageToolCallMapper send_result_to_parent 检查不变；2) SubSessionResultProviderImplTest.java：mock 方式改为分步 stub（selectOne 最后 user 消息查询 / selectList 消息链查询），保留并适配原 8 用例，新增最后 user 消息查询含 role 过滤与 sequenceNum 倒序断言、消息链查询含 sequenceNum>索引 过滤断言，共 11 用例，@BeforeAll TableInfo 初始化补充 Message.class。未修改 agent-base/agent-integration 接口与 HOOK，模块定义与变更历史已更新。\n\n测试总结：全部测试通过。编译测试 mvn -pl platform-app -am test-compile BUILD SUCCESS（exit 0）；单元测试 SubSessionResultProviderImplTest 11/11 通过（Tests run: 11, Failures: 0, Errors: 0, Skipped: 0），覆盖非 WEBSOCKET 不查库、null/空白 sessionId、无 user 消息、最近 user 消息后无消息、已调用/未调用/仅之前调用、工具名按 send_result_to_parent 过滤、最后 user 消息查询 role+倒序、消息链查询 sequenceNum>索引 全部断言；回归测试 SubSessionWebSocketModeResolverTest(21)+DefaultChatDataProviderTest(15)+AgentContextConfigurationTest(12)=48/48 全部通过。合计 59 用例通过、0 失败、0 跳过。离朱报告无代码问题需要修复（唯一非阻塞事项：直接 surefire:test 缺 -am 导致 NoClassDefFoundError，属运行方式问题非代码缺陷；byte-buddy 动态加载 WARNING 写入 stderr 不影响结果）。",
+    "errors": []
+  }
+]
