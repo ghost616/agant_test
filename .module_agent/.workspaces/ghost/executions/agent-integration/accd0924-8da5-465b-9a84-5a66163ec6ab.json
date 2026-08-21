@@ -1,0 +1,12 @@
+[
+  {
+    "plan_id": "plan_85bf3c4c-0f2a-4af6-8c96-d98d28d389e7",
+    "plan": "修正 SubSessionResultFallbackHook 的 HOOK 类型与触发条件",
+    "modified_files": [
+      "agent-integration/src/main/java/com/ghost616/agentinteg/subsession/SubSessionResultFallbackHook.java",
+      "agent-integration/src/test/java/com/ghost616/agentinteg/subsession/SubSessionResultFallbackHookTest.java"
+    ],
+    "summary": "执行总结：本轮共修改 2 个文件。1) SubSessionResultFallbackHook.java：类声明由 implements SystemPostHook 改为 implements SystemHook（import 同步替换）；保留 getPhase()=AFTER_MESSAGE_RECEIVE 与 getIndex()=POST_SAVE_INDEX(100)，改由 HookManager.triggerHooks(phase) 按 phase 分发（AFTER_MESSAGE_RECEIVE 仅在 ChatService 流式响应 doOnComplete 结束时触发一次，completeChunk 仅含 hasToolCalls、无 finishReason）；移除对 FinishReason.STOP 的判定及 FinishReason import（保留 STOP 判定会导致 completeChunk 因 finishReason=null 永远跳过），改为仅当 chunk.getHasToolCalls() 非 true 时继续兜底回传；类 Javadoc 更新说明 SystemHook + AFTER_MESSAGE_RECEIVE 阶段、doOnComplete 触发一次。2) SubSessionResultFallbackHookTest.java：移除 FinishReason import；stopChunkNoTools() 改为 completeChunkNoTools()（ChatChunk.builder().hasToolCalls(false).build()，与 doOnComplete completeChunk 一致）；原「execute_流式回复未完成chunk_跳过」改为「execute_doOnComplete完整chunk仅含hasToolCalls字段_继续执行」验证无 finishReason 的 completeChunk 可正常兜底回传；hasToolCalls=true 跳过用例移除 finishReason 构造；非子会话跳过、Provider 无需发送跳过、需要时取最后一条 assistant 消息回传、history 无 assistant/空/null/空白跳过、getPhase/getIndex 元数据等用例保留。platform-app 仅通过构造函数实例化该 HOOK Bean（HookManager 按 instanceof 归类，SystemHook 进入 phase 分发），无需改动。\n测试总结：全部测试通过。编译测试（mvn -pl agent-integration -am test-compile 增量 + clean 全量）BUILD SUCCESS；SubSessionResultFallbackHookTest 11/11 通过（getPhase 元数据、getIndex 元数据、非子会话跳过、hasToolCalls=true 跳过、doOnComplete 完整 chunk 继续执行、Provider 无需发送跳过、Provider 需要发送取最后一条 assistant 消息回传、history 无 assistant/为空/null/空白跳过）；agent-integration 全模块回归 212/212 通过，无回归（AgentAssemblerTest 26、SubSessionCallbackToolTest 19、SendResultToParentToolTest 5、invoker 系列 75 均通过）。失败 0，跳过 0（E2E 不适用：纯后端 Java 变更）。无环境阻塞，无失败用例需修复。",
+    "errors": []
+  }
+]

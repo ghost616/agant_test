@@ -23,6 +23,10 @@
     {
       "content": "子会话计数标签未紧贴主会话标签：当前通过 tabBarExtraContent.right 渲染被推到标签栏最右侧，应改为作为 Tabs items 路径项紧贴激活层级标签之后。",
       "timestamp": "2026-08-18T14:10:19.293Z"
+    },
+    {
+      "content": "SubSessionResultFallbackHook 应实现 SystemHook 而非 SystemPostHook，触发条件为 HookPhase.AFTER_MESSAGE_RECEIVE（按 phase 在 triggerHooks 中触发，仅 doOnComplete 一次）；不应作为 SystemPostHook 在 executePostHooks 中无条件执行。相应移除对 FinishReason.STOP 的依赖（doOnComplete 的 completeChunk 无 finishReason），仅保留 hasToolCalls 判定。",
+      "timestamp": "2026-08-21T10:40:56.095Z"
     }
   ]
 }
