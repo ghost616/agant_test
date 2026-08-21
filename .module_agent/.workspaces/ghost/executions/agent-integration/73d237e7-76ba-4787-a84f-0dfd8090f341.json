@@ -1,0 +1,13 @@
+[
+  {
+    "plan_id": "plan_ffc47d0e-4819-4542-810d-8103aa501ce1",
+    "plan": "新增子会话结果兜底回传的 Provider 接口与 HOOK（后端）",
+    "modified_files": [
+      "agent-integration/src/main/java/com/ghost616/agentinteg/subsession/SubSessionResultProvider.java",
+      "agent-integration/src/main/java/com/ghost616/agentinteg/subsession/SubSessionResultFallbackHook.java",
+      "agent-integration/src/test/java/com/ghost616/agentinteg/subsession/SubSessionResultFallbackHookTest.java"
+    ],
+    "summary": "执行总结：本轮新增 3 个文件，实现子会话结果兜底回传能力：1) SubSessionResultProvider 接口（com.ghost616.agentinteg.subsession，integration 定义契约、platform-app 实现），定义 shouldSendResultToParent(String sessionId) 判断子会话是否需向父会话回传执行结果；2) SubSessionResultFallbackHook（implements SystemPostHook/HookInvoker），getPhase=AFTER_MESSAGE_RECEIVE、getIndex=100（在 MessageSavePostHook 之后执行，保证 history 已含本次最终 assistant 消息）；execute() 判定链：仅子会话（非 isMainSession）+ finishReason=STOP + hasToolCalls 非 true 时继续，经 Provider 判定需要后取 ctx.getHistory() 最后一条 assistant 消息 content 通过 ctx.sendParentMessage(content) 复用既有 sendParentMessage 通道回传父会话（保存 user 消息到父会话并推送 SEND_USER_MESSAGE）；非子会话、有工具调用、非 STOP chunk（防 completeChunk 重复触发）、Provider 无需发送、无 assistant 内容等情况一律静默跳过（debug 日志），不影响原有流程，且未修改 agent-base 核心机制、未依赖 platform-app 具体类；3) SubSessionResultFallbackHookTest 单元测试 11 用例覆盖全部判定分支。模块元数据已同步（update_definition 新增 3 文件、update_spec 新增「子会话结果兜底回传」section、append_history 记录变更）。注意：Hook 未接入 HookManager 注册（由 platform-app 在 getHooks() 中注入，留待后续计划）。\n\n测试总结：全部测试通过。编译测试：mvn -pl agent-integration -am test-compile BUILD SUCCESS（无编译冲突）；单元测试：SubSessionResultFallbackHookTest 11/11 通过（Failures 0, Errors 0, Skipped 0），覆盖 getPhase/getIndex 元数据、非子会话跳过、hasToolCalls=true 跳过、非 STOP chunk 跳过、Provider 无需发送跳过、Provider 需要时发送最后一条 assistant 消息、history 无 assistant/为空/null/内容空白跳过；回归测试：agent-integration 全模块 212/212 通过（Failures 0, Errors 0, Skipped 0，17 个测试类无回归）；接口测试/E2E 测试按说明不适用。无环境阻塞。",
+    "errors": []
+  }
+]

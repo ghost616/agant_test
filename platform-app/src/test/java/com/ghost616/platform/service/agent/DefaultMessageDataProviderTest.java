@@ -1048,7 +1048,6 @@ class DefaultMessageDataProviderTest {
         msg.setToolCallId("call-1");
         msg.setCreateTime(LocalDateTime.of(2026, 1, 1, 0, 0));
         msg.setToolResult("result");
-        when(messageMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Collections.singletonList(msg));
 
         MessageToolCall mtc = new MessageToolCall();
         mtc.setToolCallId("call-1");
@@ -1093,7 +1092,6 @@ class DefaultMessageDataProviderTest {
         msg.setContent("hi");
         msg.setSequenceNum(7);
         msg.setCreateTime(LocalDateTime.now());
-        when(messageMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Collections.singletonList(msg));
         when(messageToolCallMapper.selectList(any(LambdaQueryWrapper.class))).thenReturn(Collections.emptyList());
 
         SessionMessageDTO dto = provider.toSessionMessageDTOs(List.of(msg)).get(0);

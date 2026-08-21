@@ -18,6 +18,8 @@ import com.ghost616.agentbase.service.agent.ToolExecutionProvider;
 import com.ghost616.agentbase.sendmessage.MessageSender;
 import com.ghost616.agentinteg.AgentAssembler;
 import com.ghost616.agentinteg.model.invoker.DefaultModelInvokerFactory;
+import com.ghost616.agentinteg.subsession.SubSessionResultFallbackHook;
+import com.ghost616.agentinteg.subsession.SubSessionResultProvider;
 import com.ghost616.platform.repository.ModelConfigMapper;
 import com.ghost616.platform.repository.SessionMapper;
 import com.ghost616.platform.service.agent.DatabaseAgentLog;
@@ -79,6 +81,16 @@ public class AgentContextConfiguration {
     @Bean
     public DefaultToolExecutionProvider toolExecutionProvider() {
         return new DefaultToolExecutionProvider();
+    }
+
+    /**
+     * 子会话结果兜底回传 HOOK，构造注入本模块的 {@link SubSessionResultProvider} 实现。
+     * 注册为 Spring Bean 后，由 {@link DefaultChatDataProvider#getHooks()}
+     * （getBeansOfType(HookInvoker.class)）自动收集进聊天流程。
+     */
+    @Bean
+    public SubSessionResultFallbackHook subSessionResultFallbackHook(SubSessionResultProvider resultProvider) {
+        return new SubSessionResultFallbackHook(resultProvider);
     }
 
     @Bean

@@ -12,7 +12,10 @@ import com.ghost616.agentbase.service.agent.invoker.SystemToolProvider;
 import com.ghost616.agentbase.sendmessage.MessageSender;
 import com.ghost616.agentbase.service.agent.log.LogData;
 import com.ghost616.agentbase.service.model.invoker.ModelInvokerFactory;
+import com.ghost616.agentbase.service.agent.invoker.HookInvoker;
 import com.ghost616.agentinteg.AgentAssembler;
+import com.ghost616.agentinteg.subsession.SubSessionResultFallbackHook;
+import com.ghost616.agentinteg.subsession.SubSessionResultProvider;
 import com.ghost616.agentbase.service.agent.invoker.SystemTool;
 import com.ghost616.platform.repository.ModelConfigMapper;
 import com.ghost616.platform.repository.SessionMapper;
@@ -60,12 +63,25 @@ class AgentContextConfigurationTest {
     @Mock
     private SubSessionWebSocketModeResolver subSessionWebSocketModeResolver;
 
+    @Mock
+    private SubSessionResultProvider subSessionResultProvider;
+
     @Test
     void defaultChatDataProvider_正确创建实例() {
         DefaultChatDataProvider provider = config.defaultChatDataProvider(
                 modelConfigMapper, sessionMapper, applicationContext, subSessionWebSocketModeResolver);
 
         assertNotNull(provider);
+    }
+
+    @Test
+    void subSessionResultFallbackHook_正确创建并注入Provider实现() {
+        SubSessionResultFallbackHook hook = config.subSessionResultFallbackHook(subSessionResultProvider);
+
+        assertNotNull(hook);
+        // 实现 SystemPostHook → SystemHook → HookInvoker，可被 getBeansOfType(HookInvoker.class) 自动收集
+        assertInstanceOf(HookInvoker.class, hook);
+        assertSame(SubSessionResultFallbackHook.class, hook.getClass());
     }
 
     @Test

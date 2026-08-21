@@ -175,17 +175,13 @@ class DefaultChatDataProviderTest {
     }
 
     @Test
-    void getPreSystemPrompt_WEBSOCKET子会话_返回加强后的前置提示词() {
+    void getPreSystemPrompt_WEBSOCKET子会话_返回前置提示词() {
         when(subSessionWebSocketModeResolver.isWebSocketSubSession("1")).thenReturn(true);
 
         String result = provider.getPreSystemPrompt("1");
 
-        assertNotNull(result);
-        assertEquals(DefaultChatDataProvider.WEB_SOCKET_SUB_SESSION_PRE_SYSTEM_PROMPT, result);
-        assertTrue(result.contains("必须调用 send_result_to_parent 工具"));
-        assertTrue(result.contains("将执行结果作为参数发送给父会话"));
-        assertTrue(result.contains("禁止不调用工具直接结束"));
-        assertTrue(result.contains("结果内容为最终答案"));
+        assertEquals("你是子会话执行者。完成任务后，请调用 send_result_to_parent 工具，将执行结果作为参数发送给父会话。",
+                result);
     }
 
     @Test

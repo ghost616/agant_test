@@ -96,3 +96,7 @@
   - **KnowledgeFileChunkTool**（default_tool_rag_file_chunk）：参数 knowledgeBaseId(必填)/fileId(必填)/startLine(默认0)/endLine(默认文件最大行数)。endLine 未传时通过 searchFiles 解析文件 maxLineCount，找不到则用 Integer.MAX_VALUE，调用 getFileChunks 后将 chunkList 按行号升序合并为纯文本字符串返回（块之间以换行分隔，null/空列表返回空字符串）。
 - 以上工具错误 JSON 序列化使用 JsonMapper。
 - **ID 类型统一为 String**：KnowledgeBaseInfo.kbId、FileInfo.fileId、TextChunkWithFile.knowledgeBaseId/fileId 由 Long 改为 String；KnowledgeBaseQueryProvider 的 searchFiles(kbId,...)/searchChunks(kbId, fileId,...)/getFileChunks(kbId, fileId,...) 三个方法 Long 参数改为 String；三个工具类（KnowledgeFileInfoTool/KnowledgeSearchTool/KnowledgeFileChunkTool）execute 解析参数改为 JsonNode.asText()（兼容数字与字符串输入），参数 schema 中 knowledgeBaseId/fileId 类型由 integer 改为 string。
+## 子会话结果兜底回传
+
+- **SubSessionResultProvider**：子会话结果回传 Provider 接口（integration 定义契约，由 platform-app 提供实现）。定义 shouldSendResultToParent(String sessionId) 判断指定子会话是否需要向父会话兜底回传执行结果。
+- **SubSessionResultFallbackHook**：子会话结果兜底回传 HOOK，implements SystemPostHook（即 HookInvoker）。getPhase 返回 AFTER_MESSAGE_RECEIVE，getIndex=100 确保在 MessageSavePostHook（默认 0）之后执行，此时上下文历史已包含本次最终 assistant 消息。execute() 仅在「子会话（非主会话）且本次流式回复完成（finishReason=STOP）且无待执行工具调用（hasToolCalls 非 true）」时继续，经 SubSessionResultProvider 判定需要发送后，取 ctx.getHistory() 最后一条 assistant 消息 content，通过 ctx.sendParentMessage(content) 复用既有 sendParentMessage 通道回传父会话（保存 user 消息到父会话并推送 SEND_USER_MESSAGE）；非子会话、非 WEBSOCKET 子会话（由 Provider 实现内判定）、有工具调用、Provider 判定无需发送等情况一律静默跳过，不影响原有流程。

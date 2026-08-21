@@ -32,19 +32,19 @@
     "test_passed": true
   },
   {
-    "plan_id": "plan_6e9328a7-dea0-4883-9ed1-558ab0039306",
-    "plan_summary": "WebSocket 模式子会话收尾跳过 complete-sub-session",
-    "starter_session_id": "session-3f576377-2d9b-4b42-873e-b0aef89b6b25",
+    "plan_id": "plan_ffc47d0e-4819-4542-810d-8103aa501ce1",
+    "plan_summary": "agent-integration：新增子会话结果兜底回传的 SubSessionResultProvider 接口与 SubSessionResultFallbackHook（实现 HookInvoker，AFTER_MESSAGE_RECEIVE 阶段），含单元测试",
+    "starter_session_id": "27186f3a-67f7-4071-855c-4cf1330b98e1",
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
   },
   {
-    "plan_id": "plan_c9d91b15-fdc6-4d58-9ab4-6354d2af8b75",
-    "plan_summary": "WebSocket 模式子会话收尾跳过 complete-sub-session（行尾修复复审）",
-    "starter_session_id": "session-3f576377-2d9b-4b42-873e-b0aef89b6b25",
+    "plan_id": "plan_4e56148d-5717-4964-90f7-b262ab5a1b4c",
+    "plan_summary": "platform-app：实现 SubSessionResultProvider 实现类、加强 WEBSOCKET 子会话 send_result_to_parent 提示词、注册 SubSessionResultFallbackHook Bean，含单元测试",
+    "starter_session_id": "27186f3a-67f7-4071-855c-4cf1330b98e1",
     "code_reviewed": true,
     "plan_completed": true,
-    "test_passed": false
+    "test_passed": true
   }
 ]
