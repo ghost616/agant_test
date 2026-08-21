@@ -103,8 +103,6 @@ class SubSessionResultProviderImplTest {
 
         verify(messageMapper, never()).selectList(any(LambdaQueryWrapper.class));
         verify(messageToolCallMapper, never()).selectCount(any(LambdaQueryWrapper.class));
-        // 提前返回路径（无 user 消息）也移除运行缓存，避免残留导致子会话被永久判定运行中
-        verify(subSessionRunningCache).remove(1L);
     }
 
     @Test
@@ -118,8 +116,6 @@ class SubSessionResultProviderImplTest {
         assertFalse(provider.shouldSendResultToParent(SESSION_ID));
 
         verify(messageToolCallMapper, never()).selectCount(any(LambdaQueryWrapper.class));
-        // 提前返回路径（链为空，如流以非 STOP 方式结束 assistant 消息未落库）也移除运行缓存
-        verify(subSessionRunningCache).remove(1L);
     }
 
     @Test
@@ -246,7 +242,7 @@ class SubSessionResultProviderImplTest {
 
         assertTrue(provider.shouldSendResultToParent(SESSION_ID));
 
-        // HOOK 触发本方法即代表子会话执行完成，正常判定路径（链非空）同样移除运行缓存，允许后续再次发送
+        // HOOK 在子会话最终回复完成时触发本方法，判定完成后移除运行缓存，允许后续再次发送
         verify(subSessionRunningCache).remove(1L);
     }
 }

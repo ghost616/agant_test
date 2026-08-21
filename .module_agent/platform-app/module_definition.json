@@ -83,7 +83,7 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultSubSessionCallback.java",
-      "description": "SubSessionCallback 默认实现。注入 SessionMapper 通过子会话 ID 获取父会话 ID；维护 ConcurrentHashMap 以 parentSessionId 为键管理 SubSessionData（含 childSessionId、userMessage、thinking、CompletableFuture<Message>）；execute 方法阻塞等待子会话消息结果，完成后自动清理；提供 getSubSessionData 公共方法供外部组件通过父会话 ID 获取数据并完成 future。"
+      "description": "SubSessionCallback 默认实现（@Component，实现 agent-base SubSessionCallback 接口）。注入 SessionMapper/AgentConfigMapper/SubSessionRunningCache：execute 按子会话所属主会话的 subSessionOpenMode 分流——WEBSOCKET 模式先经运行缓存检测子会话是否正在执行中（contains 命中返回错误 JSON「子会话正在运行，请等候」，不执行 sendUserMessage、不写入缓存），未命中记入运行缓存（add）并调用 ctx.sendUserMessage 直接推送，返回提示消息「已发送消息到子会话{会话名}，请等候子会话返回消息」（会话名取 title，无 title 用会话 ID），不写 subSessionDataMap 不阻塞；TOOL_CALL 模式（默认）/主会话解析失败/agentConfig 缺失走 CompletableFuture 阻塞等待 + subSessionDataMap 逻辑（以 parentSessionId 为键管理 SubSessionData：childSessionId/userMessage/thinking/CompletableFuture<Message>），完成后自动清理；提供 getSubSessionData 公共方法供外部组件通过父会话 ID 获取数据并完成 future；isWebSocketMode/resolveMainSessionId 沿 parentSessionId 链解析主会话（HashSet 防环）并查询主会话 agentId 对应 AgentConfig.subSessionOpenMode"
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/dto/ToolStatusResultDTO.java",
@@ -531,11 +531,11 @@
     },
     {
       "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/SubSessionResultProviderImpl.java",
-      "description": "子会话结果兜底回传 Provider 实现（@Component，实现 agent-integration 的 SubSessionResultProvider 接口）：shouldSendResultToParent(sessionId) 复用 SubSessionWebSocketModeResolver 缓存判断 WEBSOCKET 子会话（非 WEBSOCKET 直接返回 false），通过 MessageMapper 数据库分步查询定位最近一条 role=user 消息之后的消息链——先按 session_id+role='user'+rollback=false 过滤、sequenceNum 倒序查询（LIMIT 1）最近一条 user 消息的 sequenceNum 作为索引（无 user 消息或索引后无消息返回 false），再按 session_id+rollback=false+sequenceNum>索引 过滤按 sequenceNum 升序查询消息链（避免全量加载历史消息）；通过 MessageToolCallMapper 检查链上是否已调用 send_result_to_parent 工具（toolCallName 匹配 SendResultToParentTool.TOOL_NAME），已调用返回 false（无需兜底），未调用返回 true（需要向父会话回传）；注入 SubSessionWebSocketModeResolver/MessageMapper/MessageToolCallMapper 依赖"
+      "description": "子会话结果兜底回传 Provider 实现（@Component，实现 agent-integration 的 SubSessionResultProvider 接口）：shouldSendResultToParent(sessionId) 复用 SubSessionWebSocketModeResolver 缓存判断 WEBSOCKET 子会话（非 WEBSOCKET 直接返回 false），sid 解析成功后立即移除 SubSessionRunningCache 中子会话运行标记（HOOK 在子会话最终回复完成 AFTER_MESSAGE_RECEIVE、无待执行工具调用时触发本方法即代表执行完成，remove 幂等，保证无 user 消息/链为空等提前返回路径不残留运行缓存），随后通过 MessageMapper 数据库分步查询定位最近一条 role=user 消息之后的消息链——先按 session_id+role='user'+rollback=false 过滤、sequenceNum 倒序查询（LIMIT 1）最近一条 user 消息的 sequenceNum 作为索引（无 user 消息或索引后无消息返回 false），再按 session_id+rollback=false+sequenceNum>索引 过滤按 sequenceNum 升序查询消息链（避免全量加载历史消息）；通过 MessageToolCallMapper 检查链上是否已调用 send_result_to_parent 工具（toolCallName 匹配 SendResultToParentTool.TOOL_NAME），已调用返回 false（无需兜底），未调用返回 true（需要向父会话回传）；注入 SubSessionWebSocketModeResolver/MessageMapper/MessageToolCallMapper/SubSessionRunningCache 依赖"
     },
     {
       "path": "platform-app/src/test/java/com/ghost616/platform/service/agent/SubSessionResultProviderImplTest.java",
-      "description": "SubSessionResultProviderImpl 单元测试（Mockito，分步 mock 最后 user 消息查询 selectOne 与后续消息链查询 selectList）：覆盖非 WEBSOCKET 子会话返回 false（不查库）、sessionId 为 null/空白返回 false、无 user 消息返回 false、最近 user 消息后无消息返回 false、消息链已调用 send_result_to_parent 返回 false、消息链未调用返回 true、仅在最近 user 消息之前调用过返回 true（消息 ID 集合不含历史消息 ID）、工具名查询按 send_result_to_parent 过滤（wrapper SQL 段与参数断言）、最后 user 消息查询含 role 过滤与 sequenceNum 倒序、消息链查询按 sequenceNum>索引 过滤，共 10 个用例"
+      "description": "SubSessionResultProviderImpl 单元测试（Mockito，分步 mock 最后 user 消息查询 selectOne 与后续消息链查询 selectList）：覆盖非 WEBSOCKET 子会话返回 false（不查库且不操作运行缓存）、sessionId 为 null/空白返回 false、无 user 消息返回 false（提前返回路径也验证 remove 调用）、最近 user 消息后无消息返回 false（链为空提前返回路径也验证 remove 调用）、消息链已调用 send_result_to_parent 返回 false、消息链未调用返回 true、仅在最近 user 消息之前调用过返回 true（消息 ID 集合不含历史消息 ID）、工具名查询按 send_result_to_parent 过滤（wrapper SQL 段与参数断言）、最后 user 消息查询含 role 过滤与 sequenceNum 倒序、消息链查询按 sequenceNum>索引 过滤、正常判定路径移除运行缓存（verify remove(1L)），共 12 个用例"
     },
     {
       "description": "用户上下文线程变量处理器（@Component，实现 agent-base 的 ThreadVariableHandler）：wrap() 捕获当前线程 UserContext 中的 UserSession 快照返回内部类 UserContextThreadVariableWrapper（实现 ThreadVariableWrapper）；apply() 恢复（session 非 null 时 UserContext.set，捕获为 null 时 UserContext.clear 清空目标线程残留上下文）；clear() 覆写 ThreadVariableWrapper 默认方法，清理当前线程 UserContext（UserContext.clear()），供 reactor 等共享线程异步回调恢复后清理防串号",
@@ -544,6 +544,18 @@
     {
       "description": "UserContextThreadVariableHandler 单元测试：覆盖 wrap() 捕获/apply() 恢复语义、无上下文时 apply 清空残留、异步线程经 wrapper 传播上下文、多次 apply 可重复恢复，以及新增 clear() 语义（清空已恢复上下文、捕获为空时清空残留、不破坏快照可再次 apply 恢复）共 7 个用例",
       "path": "platform-app/src/test/java/com/ghost616/platform/session/UserContextThreadVariableHandlerTest.java"
+    },
+    {
+      "path": "platform-app/src/main/java/com/ghost616/platform/service/agent/SubSessionRunningCache.java",
+      "description": "子会话运行缓存组件（@Component）：以子会话 ID 为键的 ConcurrentHashMap<Long,Boolean> 记录正在执行中的 WEBSOCKET 子会话，提供 contains(Long)（childSessionId 为 null 返回 false）/add(Long)（容量上限 10000 超限时清空整个缓存后记录，与 SubSessionWebSocketModeResolver 缓存策略一致）/remove(Long) 方法，基于 ConcurrentHashMap 保证线程安全并防止内存泄漏；执行开始时 add 记录、执行完成（兜底回传判定触发）remove 移除，父会话再次发送命中 contains 时返回错误 JSON「子会话正在运行，请等候」阻止重复触发子会话执行"
+    },
+    {
+      "path": "platform-app/src/test/java/com/ghost616/platform/service/agent/SubSessionRunningCacheTest.java",
+      "description": "SubSessionRunningCache 单元测试（6 用例）：add 后 contains 返回 true、remove 后返回 false、remove 不存在条目无副作用、null 参数安全（contains/add/remove 均不抛异常）、容量上限 10000 超限清空整个缓存（旧条目失效仅保留新增条目）、8 线程并发 add/contains/remove 基本线程安全行为"
+    },
+    {
+      "path": "platform-app/src/test/java/com/ghost616/platform/service/agent/DefaultSubSessionCallbackTest.java",
+      "description": "DefaultSubSessionCallback 单元测试（Mockito，注入 SessionMapper/AgentConfigMapper/SubSessionRunningCache mock）：覆盖 TOOL_CALL 阻塞执行（返回结果/thinking 透传/完成后清理/中断抛异常）、会话缺失或父会话为空返回 null、getSubSessionData 查询与空值、WEBSOCKET 模式直接推送（有 title/无 title 用 sessionId，均验证运行缓存 add）、WEBSOCKET 运行缓存命中返回错误 JSON（不推送不写缓存）、WEBSOCKET 未命中记入缓存并正常推送、TOOL_CALL 模式不调用 sendUserMessage（含 agentConfig 缺失回退 TOOL_CALL），共 14 个用例"
     }
   ]
 }

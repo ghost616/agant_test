@@ -30,16 +30,13 @@ class DefaultSubSessionCallbackTest {
     @Mock
     private AgentConfigMapper agentConfigMapper;
 
-    @Mock
-    private SubSessionRunningCache subSessionRunningCache;
-
     private DefaultSubSessionCallback callback;
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     @BeforeEach
     void setUp() {
-        callback = new DefaultSubSessionCallback(sessionMapper, agentConfigMapper, subSessionRunningCache);
+        callback = new DefaultSubSessionCallback(sessionMapper, agentConfigMapper);
     }
 
     @Test
@@ -226,7 +223,6 @@ class DefaultSubSessionCallbackTest {
         assertNotNull(result);
         assertEquals("已发送消息到子会话子会话A，请等候子会话返回消息", result.getContent());
         verify(ctx).sendUserMessage(String.valueOf(sessionId), userMessage, "model-1", true);
-        verify(subSessionRunningCache).add(sessionId);
         assertNull(callback.getSubSessionData(parentSessionId));
         verify(agentConfigMapper).selectById(agentId);
     }
@@ -263,7 +259,6 @@ class DefaultSubSessionCallbackTest {
 
         assertEquals("已发送消息到子会话" + sessionId + "，请等候子会话返回消息", result.getContent());
         verify(ctx).sendUserMessage(String.valueOf(sessionId), userMessage, "model-2", false);
-        verify(subSessionRunningCache).add(sessionId);
         assertNull(callback.getSubSessionData(parentSessionId));
     }
 
@@ -343,87 +338,6 @@ class DefaultSubSessionCallbackTest {
         Message actual = futureResult.get(3, TimeUnit.SECONDS);
         assertEquals(expectedMessage, actual);
         verify(ctx, never()).sendUserMessage(anyString(), anyString(), any(), any());
-    }
-
-    @Test
-    void executeWithWebSocketModeAndRunningCacheHitReturnsErrorJson() {
-        Long sessionId = 950L;
-        Long parentSessionId = 95L;
-        Long mainSessionId = 59L;
-        Long agentId = 15L;
-        String userMessage = "duplicate send";
-
-        Session childSession = mock(Session.class);
-        when(childSession.getParentSessionId()).thenReturn(parentSessionId);
-        when(sessionMapper.selectById(sessionId)).thenReturn(childSession);
-
-        Session mainSession = mock(Session.class);
-        when(mainSession.getParentSessionId()).thenReturn(null);
-        when(mainSession.getAgentId()).thenReturn(agentId);
-        Session intermediateSession = mock(Session.class);
-        when(intermediateSession.getParentSessionId()).thenReturn(mainSessionId);
-        when(sessionMapper.selectById(parentSessionId)).thenReturn(intermediateSession);
-        when(sessionMapper.selectById(mainSessionId)).thenReturn(mainSession);
-
-        AgentConfig agentConfig = new AgentConfig();
-        agentConfig.setSubSessionOpenMode(SubSessionOpenMode.WEBSOCKET);
-        when(agentConfigMapper.selectById(agentId)).thenReturn(agentConfig);
-
-        // 子会话正在执行中：命中运行缓存
-        when(subSessionRunningCache.contains(sessionId)).thenReturn(true);
-
-        AgentExecutionContext ctx = mock(AgentExecutionContext.class);
-
-        Message result = callback.execute(ctx, String.valueOf(sessionId), userMessage, true);
-
-        assertNotNull(result);
-        assertEquals("assistant", result.getRole());
-        assertEquals("{\"status\":\"error\",\"errMsg\":\"子会话正在运行，请等候\"}", result.getContent());
-        // 命中缓存：不推送消息、不写入运行缓存
-        verify(ctx, never()).sendUserMessage(anyString(), anyString(), any(), any());
-        verify(subSessionRunningCache, never()).add(sessionId);
-        assertNull(callback.getSubSessionData(parentSessionId));
-    }
-
-    @Test
-    void executeWithWebSocketModeAndRunningCacheMissAddsToCache() {
-        Long sessionId = 951L;
-        Long parentSessionId = 96L;
-        Long mainSessionId = 69L;
-        Long agentId = 16L;
-        String userMessage = "first send";
-
-        Session childSession = mock(Session.class);
-        when(childSession.getParentSessionId()).thenReturn(parentSessionId);
-        when(childSession.getTitle()).thenReturn("子会话B");
-        when(sessionMapper.selectById(sessionId)).thenReturn(childSession);
-
-        Session mainSession = mock(Session.class);
-        when(mainSession.getParentSessionId()).thenReturn(null);
-        when(mainSession.getAgentId()).thenReturn(agentId);
-        Session intermediateSession = mock(Session.class);
-        when(intermediateSession.getParentSessionId()).thenReturn(mainSessionId);
-        when(sessionMapper.selectById(parentSessionId)).thenReturn(intermediateSession);
-        when(sessionMapper.selectById(mainSessionId)).thenReturn(mainSession);
-
-        AgentConfig agentConfig = new AgentConfig();
-        agentConfig.setSubSessionOpenMode(SubSessionOpenMode.WEBSOCKET);
-        when(agentConfigMapper.selectById(agentId)).thenReturn(agentConfig);
-
-        // 子会话未在执行中：未命中运行缓存
-        when(subSessionRunningCache.contains(sessionId)).thenReturn(false);
-
-        AgentExecutionContext ctx = mock(AgentExecutionContext.class);
-        when(ctx.getModelId()).thenReturn("model-3");
-
-        Message result = callback.execute(ctx, String.valueOf(sessionId), userMessage, false);
-
-        assertNotNull(result);
-        assertEquals("已发送消息到子会话子会话B，请等候子会话返回消息", result.getContent());
-        // 未命中：记入运行缓存并正常推送
-        verify(subSessionRunningCache).add(sessionId);
-        verify(ctx).sendUserMessage(String.valueOf(sessionId), userMessage, "model-3", false);
-        assertNull(callback.getSubSessionData(parentSessionId));
     }
 
     private DefaultSubSessionCallback.SubSessionData waitForMapEntry(Long key) {

@@ -78,5 +78,21 @@
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
+  },
+  {
+    "plan_id": "plan_40e3ad79-5b32-4d2d-a85e-6a2887a0ddcf",
+    "plan_summary": "实现子会话运行缓存，阻止重复发送并返回错误",
+    "starter_session_id": "session-820487d5-72d4-4a5d-b089-d57eba5fd2a5",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_5246a065-8357-4c68-8b67-ae4e12a9759d",
+    "plan_summary": "修复运行缓存残留：remove 提前到 sid 解析后",
+    "starter_session_id": "session-820487d5-72d4-4a5d-b089-d57eba5fd2a5",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
   }
 ]

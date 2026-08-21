@@ -8,5 +8,29 @@
     ],
     "summary": "执行总结：本轮共修改 2 个文件——1) SubSessionResultProviderImpl.java：shouldSendResultToParent 由全量 queryMessages+内存 findLastUserMessageIndex 改为数据库分步查询，新增 findLastUserMessage（session_id+role='user'+rollback=false 过滤、orderByDesc(sequenceNum)+LIMIT 1，selectOne 取最近 user 消息 sequenceNum 作为索引，无 user 消息或 sequenceNum 为 null 返回 false）与 queryMessagesAfter（session_id+rollback=false+sequenceNum>索引 过滤、orderByAsc(sequenceNum)，selectList 仅加载索引之后的消息链），删除 queryMessages/findLastUserMessageIndex；消息链为空返回 false 保持原行为；非 WEBSOCKET 前置判断（SubSessionWebSocketModeResolver 缓存）与 MessageToolCallMapper send_result_to_parent 检查不变；2) SubSessionResultProviderImplTest.java：mock 方式改为分步 stub（selectOne 最后 user 消息查询 / selectList 消息链查询），保留并适配原 8 用例，新增最后 user 消息查询含 role 过滤与 sequenceNum 倒序断言、消息链查询含 sequenceNum>索引 过滤断言，共 11 用例，@BeforeAll TableInfo 初始化补充 Message.class。未修改 agent-base/agent-integration 接口与 HOOK，模块定义与变更历史已更新。\n\n测试总结：全部测试通过。编译测试 mvn -pl platform-app -am test-compile BUILD SUCCESS（exit 0）；单元测试 SubSessionResultProviderImplTest 11/11 通过（Tests run: 11, Failures: 0, Errors: 0, Skipped: 0），覆盖非 WEBSOCKET 不查库、null/空白 sessionId、无 user 消息、最近 user 消息后无消息、已调用/未调用/仅之前调用、工具名按 send_result_to_parent 过滤、最后 user 消息查询 role+倒序、消息链查询 sequenceNum>索引 全部断言；回归测试 SubSessionWebSocketModeResolverTest(21)+DefaultChatDataProviderTest(15)+AgentContextConfigurationTest(12)=48/48 全部通过。合计 59 用例通过、0 失败、0 跳过。离朱报告无代码问题需要修复（唯一非阻塞事项：直接 surefire:test 缺 -am 导致 NoClassDefFoundError，属运行方式问题非代码缺陷；byte-buddy 动态加载 WARNING 写入 stderr 不影响结果）。",
     "errors": []
+  },
+  {
+    "plan_id": "plan_40e3ad79-5b32-4d2d-a85e-6a2887a0ddcf",
+    "plan": "实现子会话运行缓存机制：阻止父会话向正在执行的子会话重复发送消息",
+    "modified_files": [
+      "platform-app/src/main/java/com/ghost616/platform/service/agent/SubSessionRunningCache.java",
+      "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultSubSessionCallback.java",
+      "platform-app/src/main/java/com/ghost616/platform/service/agent/SubSessionResultProviderImpl.java",
+      "platform-app/src/test/java/com/ghost616/platform/service/agent/SubSessionRunningCacheTest.java",
+      "platform-app/src/test/java/com/ghost616/platform/service/agent/DefaultSubSessionCallbackTest.java",
+      "platform-app/src/test/java/com/ghost616/platform/service/agent/SubSessionResultProviderImplTest.java"
+    ],
+    "summary": "执行总结：本轮共修改/新增 6 个文件——1) 新增 SubSessionRunningCache.java（@Component）：ConcurrentHashMap<Long,Boolean> 以子会话 ID 为键记录运行中子会话，contains（null 返回 false）/add（容量上限 10000 超限清空整个缓存后记录，与 SubSessionWebSocketModeResolver 策略一致）/remove 方法；2) DefaultSubSessionCallback.java：注入 SubSessionRunningCache，WebSocket 分支先 contains(sid) 检测——命中返回错误 Message（role=assistant，content={\"status\":\"error\",\"errMsg\":\"子会话正在运行，请等候\"}），不执行 sendUserMessage、不写入运行缓存；未命中 add(sid) 记入运行缓存后再执行现有 ctx.sendUserMessage 推送，其余行为不变；TOOL_CALL 分支维持原样；补充类 Javadoc；3) SubSessionResultProviderImpl.java：注入 SubSessionRunningCache，shouldSendResultToParent 在 hasCalledSendResultToParent 判定后调用 remove(sid) 移除运行缓存（HOOK 在子会话最终回复完成时触发，代表执行完成，释放后允许再次发送），既有判定逻辑不变；4) 测试：新增 SubSessionRunningCacheTest（6 用例），DefaultSubSessionCallbackTest 适配构造并新增 2 用例（命中错误 JSON/未命中 add 推送，共 14 用例），SubSessionResultProviderImplTest 适配构造并新增 1 用例 + 非 WEBSOCKET 补 never remove 断言（共 12 用例）。未修改 agent-base/agent-integration 接口与 HOOK；模块定义补登记 DefaultSubSessionCallbackTest 并更新 3 个文件描述，变更历史已记录。\n\n测试总结：全部测试通过。编译测试 mvn -pl platform-app -am test-compile BUILD SUCCESS（exit 0）；单元测试 3 个测试类 32/32 通过（Tests run: 32, Failures: 0, Errors: 0, Skipped: 0）——SubSessionRunningCacheTest 6/6（add/contains/remove、remove 不存在无副作用、null 安全、容量超限清空、8 线程并发）、DefaultSubSessionCallbackTest 14/14（WebSocket 缓存命中返回错误 JSON 且 never sendUserMessage/never add、未命中 add 并正常推送、TOOL_CALL 阻塞/thinking/清理/中断/缺失回退等回归）、SubSessionResultProviderImplTest 12/12（判定完成后 remove(1L)、非 WEBSOCKET never remove、分步查询与工具名过滤等回归）；回归测试 SubSessionWebSocketModeResolverTest(21)+DefaultChatDataProviderTest(15)+AgentContextConfigurationTest(12)=48/48 全部通过。合计 80 用例通过、0 失败、0 跳过。离朱确认无调用点遗漏（new DefaultSubSessionCallback 仅测试 1 处且已传新构造参数），无代码问题需修复。",
+    "errors": []
+  },
+  {
+    "plan_id": "plan_5246a065-8357-4c68-8b67-ae4e12a9759d",
+    "plan": "修复子会话运行缓存残留问题（皋陶审查 warning）：remove(sid) 提前到 sid 解析成功后立即执行",
+    "modified_files": [
+      "platform-app/src/main/java/com/ghost616/platform/service/agent/SubSessionResultProviderImpl.java",
+      "platform-app/src/test/java/com/ghost616/platform/service/agent/SubSessionResultProviderImplTest.java"
+    ],
+    "summary": "执行总结：本轮共修改 2 个文件——1) SubSessionResultProviderImpl.java：shouldSendResultToParent 将 subSessionRunningCache.remove(sid) 从 hasCalledSendResultToParent 判定之后提前到 IdConverter.parse 成功后、findLastUserMessage 之前立即执行（remove 幂等，HOOK 在子会话最终回复完成时触发本方法即代表执行完成），无 user 消息/sequenceNum null/链为空等提前返回路径与正常判定路径均不再残留运行缓存；非 WEBSOCKET 前置判断在 sid 解析前返回 false 不触发 remove（非 WEBSOCKET 子会话本就不会写入运行缓存，语义一致）；类 Javadoc 同步更新；2) SubSessionResultProviderImplTest.java：无 user 消息（selectOne 返回 null）与链为空（selectList 返回空）两个提前返回路径用例补充 verify(subSessionRunningCache).remove(1L)，保留非 WEBSOCKET never remove 与正常判定路径 remove 断言，共 12 用例。未修改 agent-base/agent-integration；模块定义 2 文件描述与变更历史已更新。\n\n测试总结：全部测试通过。编译测试 mvn -pl platform-app -am test-compile BUILD SUCCESS（exit 0）；单元测试 SubSessionResultProviderImplTest 12/12 通过（Tests run: 12, Failures: 0, Errors: 0, Skipped: 0），其中两个提前返回路径用例（无 user 消息、链为空）均验证 remove(1L) 被调用，非 WEBSOCKET never remove、正常判定路径 remove 断言保持通过；回归测试 SubSessionRunningCacheTest(6)+DefaultSubSessionCallbackTest(14)+SubSessionWebSocketModeResolverTest(21)+DefaultChatDataProviderTest(15)=56/56 全部通过。合计 68 用例通过、0 失败、0 跳过。离朱确认修复语义正确（remove 幂等覆盖全部返回路径，含 LENGTH/ERROR/用户停止等非 STOP 结束导致链为空的场景），DefaultSubSessionCallback 缓存写入语义无回归，无代码问题需修复。",
+    "errors": []
   }
 ]

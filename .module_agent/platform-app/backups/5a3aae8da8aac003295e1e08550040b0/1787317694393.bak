@@ -18,28 +18,12 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 
-/**
- * 子会话回调默认实现（@Component），实现 agent-base 的 {@link SubSessionCallback} 接口。
- *
- * <p>execute 根据子会话所属主会话的 subSessionOpenMode 分流：</p>
- * <ul>
- *   <li>WEBSOCKET 模式：先经 {@link SubSessionRunningCache} 检测子会话是否正在执行中——
- *       命中返回错误 JSON「子会话正在运行，请等候」阻止重复触发；未命中记入运行缓存并调用
- *       ctx.sendUserMessage 直接推送，返回提示消息，不阻塞、不写 subSessionDataMap；</li>
- *   <li>TOOL_CALL 模式（默认）/主会话解析失败/配置缺失：走 CompletableFuture 阻塞等待 +
- *       subSessionDataMap 逻辑，由前台工具流程回填结果。</li>
- * </ul>
- */
 @Component
 @RequiredArgsConstructor
 public class DefaultSubSessionCallback implements SubSessionCallback {
 
-    /** 子会话运行中错误返回内容（JSON），父会话工具循环可正常解析，不抛异常 */
-    private static final String RUNNING_ERROR_JSON = "{\"status\":\"error\",\"errMsg\":\"子会话正在运行，请等候\"}";
-
     private final SessionMapper sessionMapper;
     private final AgentConfigMapper agentConfigMapper;
-    private final SubSessionRunningCache subSessionRunningCache;
 
     private final ConcurrentHashMap<Long, SubSessionData> subSessionDataMap = new ConcurrentHashMap<>();
 
@@ -53,15 +37,6 @@ public class DefaultSubSessionCallback implements SubSessionCallback {
         Long parentSessionId = session.getParentSessionId();
 
         if (ctx != null && isWebSocketMode(session)) {
-            // a. 子会话运行缓存检测：正在执行中则返回错误 JSON，不重复发送、不写入缓存
-            if (subSessionRunningCache.contains(sid)) {
-                return Message.builder()
-                        .role("assistant")
-                        .content(RUNNING_ERROR_JSON)
-                        .build();
-            }
-            // b. 记录子会话开始执行，再推送消息
-            subSessionRunningCache.add(sid);
             ctx.sendUserMessage(sessionId, userMessage, ctx.getModelId(), thinking);
             String sessionName = session.getTitle();
             if (sessionName == null || sessionName.isBlank()) {

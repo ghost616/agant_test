@@ -29,9 +29,7 @@ import java.util.stream.Collectors;
  *       （assistant 消息的 function tool_calls 与 tool 消息的 tool_result 记录均会落库为 toolCallName 匹配行）；</li>
  *   <li>已调用则无需发送（结果已回传），未调用则返回需要向父会话兜底发送。</li>
  *   <li>本方法由 HOOK 在子会话最终回复完成（AFTER_MESSAGE_RECEIVE、无待执行工具调用）时触发，
- *       即代表子会话执行完成，方法入口（sid 解析成功后）立即移除 {@link SubSessionRunningCache} 中的
- *       子会话运行标记（remove 幂等），保证无 user 消息/链为空等提前返回路径也不残留运行缓存，
- *       释放后允许后续再次发送。</li>
+ *       判定完成后移除 {@link SubSessionRunningCache} 中的子会话运行标记，释放后允许后续再次发送。</li>
  * </ol>
  */
 @Component
@@ -55,21 +53,22 @@ public class SubSessionResultProviderImpl implements SubSessionResultProvider {
         if (sid == null) {
             return false;
         }
-        // b. HOOK 在子会话最终回复完成时触发本方法，即代表子会话执行完成，
-        //    立即移除运行缓存（remove 幂等），避免提前返回路径（无 user 消息/链为空）残留运行缓存
-        subSessionRunningCache.remove(sid);
-        // c. 数据库分步查询：先定位最近一条 role=user 消息的 sequenceNum 作为索引
+        // b. 数据库分步查询：先定位最近一条 role=user 消息的 sequenceNum 作为索引
         Message lastUserMessage = findLastUserMessage(sid);
         if (lastUserMessage == null || lastUserMessage.getSequenceNum() == null) {
             return false;
         }
-        // d. 查询该索引之后的消息链（仅加载链上消息，不加载历史消息）
+        // c. 查询该索引之后的消息链（仅加载链上消息，不加载历史消息）
         List<Message> chain = queryMessagesAfter(sid, lastUserMessage.getSequenceNum());
         if (chain.isEmpty()) {
             return false;
         }
-        // e. 链上已调用 send_result_to_parent 则无需发送，否则需要兜底回传
-        return !hasCalledSendResultToParent(chain);
+        // d. 链上已调用 send_result_to_parent 则无需发送，否则需要兜底回传
+        boolean shouldSend = !hasCalledSendResultToParent(chain);
+        // e. HOOK 在子会话最终回复完成时触发本方法，代表子会话执行完成，
+        //    移除运行缓存释放，允许后续再次发送
+        subSessionRunningCache.remove(sid);
+        return shouldSend;
     }
 
     /**
