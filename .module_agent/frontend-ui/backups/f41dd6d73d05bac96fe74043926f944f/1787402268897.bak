@@ -260,20 +260,6 @@ describe('AgentChat 统一 WebSocket 消息处理 (静态验证)', () => {
     expect(source).toContain('if (loadingRef.current || toolExecutingRef.current) {');
     expect(source).toContain('pendingSessionRefreshRef.current = true;');
     expect(source).toContain('continueMainChatRef.current();');
-    // 子→主回传无条件切回主会话标签：setActivePath([sessionId]) 必须存在，
-    // 且位于空闲判断条件块（if loadingRef/toolExecutingRef）之前——不嵌套在条件块内（无条件执行）
-    const onSessionMessageBlock = source.match(
-      /const onSessionMessage = useCallback[\s\S]*?\n    \[refreshMainMessages, sessionId\],\n  \);/,
-    );
-    expect(onSessionMessageBlock).not.toBeNull();
-    if (onSessionMessageBlock) {
-      const block = onSessionMessageBlock[0];
-      expect(block).toContain('setActivePath([sessionId]);');
-      const switchCallIdx = block.indexOf('setActivePath([sessionId]);');
-      const idleCheckIdx = block.indexOf('if (loadingRef.current || toolExecutingRef.current) {');
-      expect(switchCallIdx).toBeGreaterThan(-1);
-      expect(idleCheckIdx).toBeGreaterThan(switchCallIdx);
-    }
   });
 
   it('主会话空闲续接：continueMainChat 以 SEND_USER_MESSAGE_MARKER 调用 agentChatStream 且含状态守卫', () => {

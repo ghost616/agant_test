@@ -126,5 +126,13 @@
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
+  },
+  {
+    "plan_id": "plan_a03b636c-6108-4dd4-aafb-41d5c008d78c",
+    "plan_summary": "修复 WebSocket 子→主回传消息未按会话 ID 切换标签：AgentChat.tsx onSessionMessage 补充 setActivePath([sessionId]) 无条件切回主会话标签，同步更新静态测试断言",
+    "starter_session_id": "session-7ab39b34-1208-4161-9f8a-1b407db4ec4a",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
   }
 ]

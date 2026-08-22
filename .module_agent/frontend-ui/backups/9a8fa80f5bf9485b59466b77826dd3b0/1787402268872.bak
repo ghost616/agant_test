@@ -1022,8 +1022,6 @@ function AgentChat(): JSX.Element {
         streamChildReplyRef.current(payload);
         return;
       }
-      // 子→主回传：无条件切回主会话标签（不依赖主会话空闲状态），使主会话回复立即可见
-      setActivePath([sessionId]);
       void (async (): Promise<void> => {
         // 先刷新主会话后台消息链，使子会话回传结果立即反映到主会话消息区
         await refreshMainMessages();
