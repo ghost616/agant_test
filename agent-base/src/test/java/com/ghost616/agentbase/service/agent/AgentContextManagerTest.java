@@ -1222,16 +1222,20 @@ class AgentContextManagerTest {
         }
 
         @Test
-        void build不带override_命中带override缓存条目时重建为默认模型() {
+        void build不带override_命中带override缓存条目时复用不重建() {
             stubBasicContext();
             AgentContextManager.AgentSessionContext first =
                     agentContextManager.build(sessionId).modelIdOverride("m1").build();
             assertEquals("m1", first.context().getModelId());
+            // 模拟主会话首轮设置对话 ID（工具续接等未显式指定模型的请求必须沿用该对话 ID）
+            first.mutator().setConversationId("conv-100");
 
             AgentContextManager.AgentSessionContext second = agentContextManager.build(sessionId).build();
 
-            assertNotSame(first, second, "override 不一致时应重建");
-            assertEquals("200", second.context().getModelId(), "无 override 时应回退会话默认模型");
+            assertSame(first, second, "未显式指定模型（modelIdOverride 为 null）时应直接复用缓存条目，不触发重建");
+            assertEquals("m1", second.context().getModelId(), "复用后沿用缓存条目的 modelId，不回退会话默认模型");
+            assertEquals("conv-100", second.context().getConversationId(), "conversationId 应保持不变（未重建上下文）");
+            verify(sessionManager, times(1)).getMessages(sessionId);
         }
     }
 }

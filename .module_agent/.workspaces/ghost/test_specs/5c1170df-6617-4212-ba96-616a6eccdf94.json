@@ -1,0 +1,5 @@
+{
+  "session_id": "5c1170df-6617-4212-ba96-616a6eccdf94",
+  "content": "# 待测试功能说明\n\n## 变更背景\n修复 AgentContextManager.Builder.build() 在 modelIdOverride 为空（未显式指定模型）时误重建上下文，导致主会话 conversationId 丢失的问题。\n\n## 涉及代码文件\n- agent-base/src/main/java/com/ghost616/agentbase/service/agent/AgentContextManager.java（Builder.build() 缓存命中逻辑）\n- agent-base/src/test/java/com/ghost616/agentbase/service/agent/AgentContextManagerTest.java（用例适配）\n\n## 需要测试的功能点\n1. **编译测试**：agent-base 模块 `mvn -pl agent-base -am test-compile` 编译通过。\n2. **AgentContextManagerTest 全部通过**（含以下关键用例）：\n   - build 不带 override（modelIdOverride 为 null）命中带 override 缓存条目时：直接复用缓存不重建（assertSame 同一实例）；modelId 沿用缓存条目 override；conversationId 保持不变（先 setConversationId 再 build 不带 override，conversationId 不被清空）；getMessages 不被重复调用（仅 1 次）。\n   - build 带 override 且与缓存条目一致时：复用不重建（既有用例保留）。\n   - build 带 override 且与 get() 轻量条目（无 override）不一致时：移除重建，请求指定的 modelId 生效（既有用例保留）。\n   - 其余既有用例（MCP 展开、懒构建、防御性拷贝、父子会话、conversationId、refresh、消息发送等）无回归。\n3. **agent-base 模块回归测试**：运行 agent-base 全部单测确认无回归（重点 AgentContextManagerTest / AgentContextManagerLogTest / ChatService 系列测试）。",
+  "timestamp": "2026-08-22T05:50:38.677Z"
+}

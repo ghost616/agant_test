@@ -94,5 +94,13 @@
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
+  },
+  {
+    "plan_id": "plan_440fac54-42b7-465f-98cb-71a5adc749e8",
+    "plan_summary": "修复 build 在 modelIdOverride 为空时误重建致 conversationId 丢失",
+    "starter_session_id": "session-820487d5-72d4-4a5d-b089-d57eba5fd2a5",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
   }
 ]

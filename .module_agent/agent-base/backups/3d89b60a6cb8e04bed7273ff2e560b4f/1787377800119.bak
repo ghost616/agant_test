@@ -107,18 +107,12 @@ public class AgentContextManager {
 
         public AgentSessionContext build() {
             AgentSessionContext cached = cache.get(sessionId);
+            if (cached != null && Objects.equals(cached.modelIdOverride, modelIdOverride)) {
+                return cached;
+            }
+            // 缓存条目存在但 modelIdOverride 不一致（如 get() 轻量构建写入的无 override 条目）：
+            // 移除旧条目后重新构建，保证请求指定的 modelId 生效，避免回退为会话默认模型
             if (cached != null) {
-                // 请求未显式指定模型（modelIdOverride 为 null，如工具续接 TOOL_CONTINUE_MARKER、子会话执行请求）：
-                // 直接复用缓存条目，沿用当前会话上下文（含 conversationId、modelId），不参与一致性比较、不触发重建
-                if (modelIdOverride == null) {
-                    return cached;
-                }
-                // 请求显式指定模型且与缓存条目一致：直接复用
-                if (Objects.equals(cached.modelIdOverride, modelIdOverride)) {
-                    return cached;
-                }
-                // 缓存条目存在但请求显式指定的 modelId 与条目不一致（如 get() 轻量构建写入的无 override 条目）：
-                // 移除旧条目后重新构建，保证请求指定的 modelId 生效，避免回退为会话默认模型
                 cache.remove(sessionId, cached);
             }
             AgentSessionContext created = doBuild();
