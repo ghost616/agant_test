@@ -32,14 +32,12 @@ import {
 interface Handler {
   mainSessionId: string;
   streamChildReply: Mock<(message: SendUserMessagePayload) => void>;
-  onSessionMessage: Mock<(message: SendUserMessagePayload) => void>;
 }
 
 function makeHandler(mainSessionId: string): Handler {
   return {
     mainSessionId,
     streamChildReply: vi.fn((_message: SendUserMessagePayload) => {}),
-    onSessionMessage: vi.fn((_message: SendUserMessagePayload) => {}),
   };
 }
 
@@ -155,43 +153,21 @@ describe('handleSendUserMessage 分发', () => {
     unregisterSessionPage('m1');
   });
 
-  it('sessionId 等于页面主会话（子→主回传）→ 调用 onSessionMessage 而非 streamChildReply', () => {
+  it('sessionId 匹配 → 命中页面（消息所在会话即页面主会话自身，父链为空）', () => {
     const handler = makeHandler('m1');
     registerSessionPage(handler);
     const msg = makeMessage('m1');
     handleSendUserMessage(msg);
-    expect(handler.onSessionMessage).toHaveBeenCalledWith(msg);
-    expect(handler.streamChildReply).not.toHaveBeenCalled();
-    unregisterSessionPage('m1');
-  });
-
-  it('sessionId 为子会话（主→子发送）→ 调用 streamChildReply 而非 onSessionMessage', () => {
-    const handler = makeHandler('m1');
-    registerSessionPage(handler);
-    const msg = makeMessage('c1', ['m1']);
-    handleSendUserMessage(msg);
     expect(handler.streamChildReply).toHaveBeenCalledWith(msg);
-    expect(handler.onSessionMessage).not.toHaveBeenCalled();
     unregisterSessionPage('m1');
   });
 
-  it('message.sessionId 为空时仍调用 streamChildReply（页面侧守卫空会话 ID，不误入 onSessionMessage）', () => {
+  it('message.sessionId 为空时仍调用 streamChildReply（页面侧守卫空会话 ID）', () => {
     const handler = makeHandler('m1');
     registerSessionPage(handler);
     const msg = makeMessage('', ['m1']);
     handleSendUserMessage(msg);
     expect(handler.streamChildReply).toHaveBeenCalledWith(msg);
-    expect(handler.onSessionMessage).not.toHaveBeenCalled();
-    unregisterSessionPage('m1');
-  });
-
-  it('sessionId 等于主会话时 onSessionMessage 透传完整消息负载（含父链与 conversationId）', () => {
-    const handler = makeHandler('m1');
-    registerSessionPage(handler);
-    const msg = makeMessage('m1', [], { conversationId: 'conv-1', content: '子会话结果' });
-    handleSendUserMessage(msg);
-    expect(handler.onSessionMessage).toHaveBeenCalledWith(msg);
-    expect(handler.streamChildReply).not.toHaveBeenCalled();
     unregisterSessionPage('m1');
   });
 

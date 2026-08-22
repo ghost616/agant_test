@@ -433,16 +433,6 @@ function AgentChat(): JSX.Element {
   const childListPromisesRef = useRef<Partial<Record<string, Promise<Session[] | null>>>>({});
   const childStreamsRef = useRef<Record<string, ChildStreamState>>({});
   const streamChildReplyRef = useRef<(message: SendUserMessagePayload) => void>(() => {});
-  // 子→主回传（SEND_USER_MESSAGE sessionId=主会话）统一处理入口 ref（供注册处理器读取最新实现）
-  const onSessionMessageRef = useRef<(message: SendUserMessagePayload) => void>(() => {});
-  // 主会话状态 ref（供 WS 回调在异步流程中读取最新 loading/toolExecuting，避免闭包过期）
-  const loadingRef = useRef(false);
-  const toolExecutingRef = useRef(false);
-  // 待刷新主会话消息链标记：主会话工具循环/续接期间收到子→主回传时置位，当前流程结束处消费
-  const pendingSessionRefreshRef = useRef(false);
-  // 主会话 marker 续接与待刷新消费入口 ref（两者相互引用，用 ref 破除 useCallback 循环依赖）
-  const continueMainChatRef = useRef<() => void>(() => {});
-  const consumePendingMainMessageRef = useRef<() => Promise<void>>(async () => {});
 
   /** 当前激活视图会话 ID（路径末位）。 */
   const activeTab = activePath[activePath.length - 1];
@@ -469,20 +459,6 @@ function AgentChat(): JSX.Element {
       message.error('加载历史消息失败');
     } finally {
       setHistoryLoading(false);
-    }
-  }, [sessionId]);
-
-  /**
-   * 刷新主会话后台消息链（getSessionMessages → messages），
-   * 供子→主回传（SEND_USER_MESSAGE sessionId=主会话）到达时同步最新消息，
-   * 使子会话结果在前端立即可见（不重置模型/思考等页面状态）。
-   */
-  const refreshMainMessages = useCallback(async (): Promise<void> => {
-    try {
-      const historyMessages = await getSessionMessages(sessionId);
-      setMessages(mapSessionMessages(historyMessages));
-    } catch {
-      // 刷新失败静默处理，不阻塞主会话继续（后续刷新兜底）
     }
   }, [sessionId]);
 
@@ -878,20 +854,14 @@ function AgentChat(): JSX.Element {
   );
 
   /**
-   * 子会话消息分发（主→子发送，WS 触发）：收到 SEND_USER_MESSAGE 时按父会话链展开/补出路径标签，
+   * 子会话消息分发（WS 触发）：收到 SEND_USER_MESSAGE 时按父会话链展开/补出路径标签，
    * 并以特殊标记 [send_user_message] 调用统一子会话执行器，流式展示该子会话的 AI 回复。
-   * 子→主回传（sessionId === 页面主会话）不在此处理，转由 onSessionMessage 统一入口。
    * @param payload SEND_USER_MESSAGE 消息负载
    */
   const streamChildReply = useCallback(
     (payload: SendUserMessagePayload): void => {
       const childId = payload.sessionId;
       if (!childId) return;
-      // 子→主回传（sessionId 为页面主会话自身）：转由 onSessionMessage 统一处理
-      if (childId === sessionId) {
-        onSessionMessageRef.current(payload);
-        return;
-      }
       void (async (): Promise<void> => {
         // 按父会话链展开/补出对应路径标签（失败时仍继续执行流式回复）
         const expanded = await expandPathFromPayload(payload);
@@ -908,139 +878,6 @@ function AgentChat(): JSX.Element {
   );
 
   streamChildReplyRef.current = streamChildReply;
-
-  /**
-   * 主会话基于新消息链续接（子→主回传且主会话空闲时触发）：
-   * 以 SEND_USER_MESSAGE_MARKER 作为 content 调用 agentChatStream，使主会话处理子会话回传
-   * 结果并继续对话（marker 不会被后端保存为重复用户消息）；流式回复渲染进主会话消息区，
-   * onDone 有工具调用时进入主会话工具循环。
-   */
-  const continueMainChat = useCallback((): void => {
-    // 主会话已有流程进行中（工具循环/续接/普通对话）时忽略，避免并发重复调用 chat
-    if (loadingRef.current || toolExecutingRef.current) return;
-    loadingRef.current = true;
-    toolExecutingRef.current = false;
-    setLoading(true);
-    setToolExecuting(false);
-    setCurrentResponse('');
-    setCurrentReasoning('');
-    setCurrentWebSearchCall([]);
-    hasResponseRef.current = false;
-    webSearchCallRef.current = [];
-    toolAbortRef.current = false;
-    abortRef.current = agentChatStream(
-      { sessionId, content: SEND_USER_MESSAGE_MARKER, modelId, thinking },
-      {
-        onDelta: (text: string) => {
-          hasResponseRef.current = true;
-          setCurrentResponse((prev) => prev + text);
-        },
-        onReasoning: (text: string) => {
-          hasResponseRef.current = true;
-          setCurrentReasoning((prev) => prev + text);
-        },
-        onResponseId: (id: string) => {
-          responseIdRef.current = id;
-        },
-        onWebSearchCall: (calls: WebSearchCall[]) => {
-          webSearchCallRef.current = calls;
-          setCurrentWebSearchCall(calls);
-        },
-        onDone: (hasToolCalls: boolean) => {
-          setCurrentResponse((prev) => {
-            setCurrentReasoning((reasoning) => {
-              if ((prev && prev.trim()) || (reasoning && reasoning.trim())) {
-                setMessages((msgs) => [
-                  ...msgs,
-                  {
-                    role: 'assistant',
-                    content: prev,
-                    reasoning: reasoning || undefined,
-                    webSearchCall: webSearchCallRef.current.length ? webSearchCallRef.current : undefined,
-                  },
-                ]);
-              }
-              return '';
-            });
-            return '';
-          });
-          if (hasToolCalls) {
-            executeToolLoopRef.current?.();
-          } else {
-            loadingRef.current = false;
-            toolExecutingRef.current = false;
-            setLoading(false);
-            abortRef.current = null;
-            // 续接期间若有新的子→主回传（标记待刷新），消费后基于新消息链继续
-            void consumePendingMainMessageRef.current();
-          }
-        },
-        onError: (err: Error) => {
-          message.error(err.message || '请求失败');
-          loadingRef.current = false;
-          toolExecutingRef.current = false;
-          setLoading(false);
-          abortRef.current = null;
-        },
-      },
-    );
-  }, [sessionId, modelId, thinking]);
-
-  continueMainChatRef.current = continueMainChat;
-
-  /**
-   * 消费待刷新标记：主会话工具循环/续接期间收到子→主回传时置位，
-   * 当前流程结束处（pollToolStatus 返回后、续接 onDone 后）调用——
-   * 先刷新主会话消息链；若主会话已空闲且期间有新回传，则触发主会话 marker 续接。
-   */
-  const consumePendingMainMessage = useCallback(async (): Promise<void> => {
-    if (!pendingSessionRefreshRef.current) return;
-    pendingSessionRefreshRef.current = false;
-    await refreshMainMessages();
-    if (!loadingRef.current && !toolExecutingRef.current) {
-      continueMainChatRef.current();
-    }
-  }, [refreshMainMessages]);
-
-  consumePendingMainMessageRef.current = consumePendingMainMessage;
-
-  /**
-   * 子→主回传统一处理（WS 触发，sessionId === 页面主会话）：
-   * 1. 先刷新主会话消息链（getSessionMessages → messages），使子会话结果在前端立即可见；
-   * 2. 再按主会话当前状态继续：
-   *    - 工具循环/续接中（loading/toolExecuting 为 true）：仅标记待刷新，由当前流程
-   *      poll/续接完成后刷新并继续（不额外调用 chat，避免重复总结）；
-   *    - 主会话空闲：以 SEND_USER_MESSAGE_MARKER 调用 agentChatStream 触发主会话基于新消息链继续。
-   * @param payload SEND_USER_MESSAGE 消息负载
-   */
-  const onSessionMessage = useCallback(
-    (payload: SendUserMessagePayload): void => {
-      const targetId = payload.sessionId;
-      if (!targetId) return;
-      // 防御：消息非主会话自身（主→子发送）时转由子会话执行器处理
-      if (targetId !== sessionId) {
-        streamChildReplyRef.current(payload);
-        return;
-      }
-      void (async (): Promise<void> => {
-        // 先刷新主会话后台消息链，使子会话回传结果立即反映到主会话消息区
-        await refreshMainMessages();
-        if (loadingRef.current || toolExecutingRef.current) {
-          // 主会话工具循环/续接进行中：标记待刷新，当前流程结束处消费（避免重复调用 chat 造成重复总结）
-          pendingSessionRefreshRef.current = true;
-          return;
-        }
-        // 主会话空闲：基于新消息链触发主会话继续（marker 避免重复保存用户消息）
-        continueMainChatRef.current();
-      })();
-    },
-    [refreshMainMessages, sessionId],
-  );
-
-  onSessionMessageRef.current = onSessionMessage;
-  // 同步主会话状态到 ref（供 WS 回调读取最新值）
-  loadingRef.current = loading;
-  toolExecutingRef.current = toolExecuting;
 
   /**
    * 子会话回调工具流程（工具触发）：主会话工具轮询检测到 needsSubSessionFlow 时，
@@ -1080,7 +917,6 @@ function AgentChat(): JSX.Element {
     const handler: SessionPageHandler = {
       mainSessionId: sessionId,
       streamChildReply: (msg) => streamChildReplyRef.current(msg),
-      onSessionMessage: (msg) => onSessionMessageRef.current(msg),
     };
     registerSessionPage(handler);
     return () => {
@@ -1193,11 +1029,6 @@ function AgentChat(): JSX.Element {
           },
         ]);
         const succeeded = await pollToolStatus(sessionId, execResult.toolId);
-        // 子→主回传在工具轮询期间到达：poll 完成后先刷新主会话消息链，再进入 executeToolLoop 下一轮
-        // （仅刷新不额外调用 chat，主会话续接由本循环的 continueChatStream 承接，避免重复总结）
-        if (pendingSessionRefreshRef.current) {
-          await consumePendingMainMessageRef.current();
-        }
         if (!succeeded) hasMore = false;
       }
       if (toolAbortRef.current) {
@@ -1255,12 +1086,8 @@ function AgentChat(): JSX.Element {
               executeToolLoopRef.current?.();
             } else {
               toolCallCounts.current.clear();
-              loadingRef.current = false;
-              toolExecutingRef.current = false;
               setLoading(false);
               abortRef.current = null;
-              // 续接期间收到子→主回传（标记待刷新）：刷新消息链后基于新消息继续（空闲时触发主会话 marker 续接）
-              void consumePendingMainMessageRef.current();
             }
           },
           onError: (err) => {
@@ -1306,11 +1133,6 @@ function AgentChat(): JSX.Element {
     hasResponseRef.current = false;
     webSearchCallRef.current = [];
     toolAbortRef.current = false;
-    // 同步主会话状态到 ref（WS 回调在异步流程中读取最新状态，避免 setState 尚未渲染时的竞态）
-    loadingRef.current = true;
-    toolExecutingRef.current = false;
-    // 用户手动发送开启全新对话流程：清除遗留的待刷新标记，避免旧回传触发多余续接
-    pendingSessionRefreshRef.current = false;
 
     abortRef.current = agentChatStream(
       { sessionId, content: inputValue, modelId, thinking, previousResponseId, conversationId },

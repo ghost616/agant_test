@@ -102,5 +102,29 @@
     "code_reviewed": true,
     "plan_completed": true,
     "test_passed": true
+  },
+  {
+    "plan_id": "plan_1a68cac1-77cc-47fe-89a4-3bb8ac926784",
+    "plan_summary": "platform-app：加强 WEBSOCKET 子会话前置提示词「无需轮询、专注任务并回传结果」，适配 DefaultChatDataProviderTest",
+    "starter_session_id": "27186f3a-67f7-4071-855c-4cf1330b98e1",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_5d17d880-193b-4808-8bb6-afdfc67f5a09",
+    "plan_summary": "agent-base：ChatService 子会话权限说明提示词追加「不要轮询、只需等候」引导，适配 ChatServiceTest",
+    "starter_session_id": "27186f3a-67f7-4071-855c-4cf1330b98e1",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
+  },
+  {
+    "plan_id": "plan_e49f9f57-66db-4950-a84c-f9ce69026d5c",
+    "plan_summary": "frontend-ui：统一 SEND_USER_MESSAGE 处理为「按 sessionId 刷新消息链 + 按状态继续」，修复子会话回传重复总结、消息不可见、主会话反复询问，含测试",
+    "starter_session_id": "27186f3a-67f7-4071-855c-4cf1330b98e1",
+    "code_reviewed": true,
+    "plan_completed": true,
+    "test_passed": true
   }
 ]

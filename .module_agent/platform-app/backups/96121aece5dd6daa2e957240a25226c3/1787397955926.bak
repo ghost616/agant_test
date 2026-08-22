@@ -175,7 +175,7 @@ class DefaultChatDataProviderTest {
     }
 
     @Test
-    void getPreSystemPrompt_WEBSOCKET子会话_返回含无需轮询引导的前置提示词() {
+    void getPreSystemPrompt_WEBSOCKET子会话_返回加强后的前置提示词() {
         when(subSessionWebSocketModeResolver.isWebSocketSubSession("1")).thenReturn(true);
 
         String result = provider.getPreSystemPrompt("1");
@@ -186,8 +186,6 @@ class DefaultChatDataProviderTest {
         assertTrue(result.contains("将执行结果作为参数发送给父会话"));
         assertTrue(result.contains("禁止不调用工具直接结束"));
         assertTrue(result.contains("结果内容为最终答案"));
-        assertTrue(result.contains("无需轮询获取父会话或其他会话状态"));
-        assertTrue(result.contains("只需完成分配的任务并回传结果"));
     }
 
     @Test

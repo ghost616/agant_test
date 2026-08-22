@@ -1,0 +1,14 @@
+[
+  {
+    "plan_id": "plan_e49f9f57-66db-4950-a84c-f9ce69026d5c",
+    "plan": "前端统一 WebSocket 消息处理：收到任意 SEND_USER_MESSAGE 先按 sessionId 刷新目标会话消息链，再按状态继续（工具循环中标记待刷新、空闲调 chat）",
+    "modified_files": [
+      "src/services/messageDispatcher.ts",
+      "src/pages/sessions/AgentChat.tsx",
+      "src/services/__tests__/messageDispatcher.test.ts",
+      "src/pages/sessions/__tests__/AgentChat.test.tsx"
+    ],
+    "summary": "执行总结：本轮共修改 4 个文件，实现前端统一 WebSocket 消息处理——(1) src/services/messageDispatcher.ts：SessionPageHandler 新增 onSessionMessage（子→主回传）回调，handleSendUserMessage 命中页面后按 message.sessionId 分流：sessionId===主会话 → onSessionMessage，否则 → streamChildReply（主→子发送），matchesPage 与 childSessionsChanged 兜底保持不变；(2) src/pages/sessions/AgentChat.tsx（核心）：新增 refreshMainMessages（getSessionMessages→setMessages 刷新主会话消息链）、continueMainChat（空闲时以 SEND_USER_MESSAGE_MARKER 调用 agentChatStream 触发主会话续接，含 loadingRef/toolExecutingRef 守卫防并发重复）、consumePendingMainMessage（消费待刷新标记）、onSessionMessage（统一入口：先刷新消息链再按状态继续——工具循环/续接中仅置 pendingSessionRefreshRef 不额外调 chat 避免重复总结，空闲时 marker 续接）；streamChildReply 增加 sessionId===主会话时转 onSessionMessage 的守卫；executeToolLoop 在 pollToolStatus 返回后进入下一轮前消费待刷新标记、continueChatStream 续接完成（onDone）后同样消费；handleSend 同步 ref 并清除遗留待刷新标记；注册处理器新增 onSessionMessage；(3) 测试：messageDispatcher.test.ts 新增 onSessionMessage 分流断言（Handler 增加 mock、sessionId===主会话/子会话/空 sessionId 路由与负载透传），AgentChat.test.tsx 新增「统一 WebSocket 消息处理 (静态验证)」块 9 个用例并更新处理器注册断言。三个问题均已修复：子会话回传不再走 runChildSessionFlow(主会话) 造成重复总结；子→主回传先刷新主会话消息链使子会话结果前端立即可见；工具循环中不再重复调用 chat 避免主会话反复询问。\n测试总结：全部测试通过——messageDispatcher 单元测试 17/17（通过 17，失败 0，跳过 0）；AgentChat 静态验证 55/55（通过 55，失败 0，跳过 0），其中新增统一消息处理块 9 用例全过；编译检查变更源码 tsc 零错误（仅项目已知基线错误：EvaluationResultList/ToolList 2 个 + 静态测试文件缺 node types，与本次变更无关）；回归 websocket/session/会话页 92/92 通过，主项目全量 709 通过 / 14 失败（均为既有 toolExecutor 测试在 jsdom 下缺浏览器扩展全局 ToolHostBridge 的环境依赖问题，与本次变更无关，独立运行与历史快照均呈现一致失败）；E2E AgentChat 路径式导航 7/7 通过（8080/3000 均在运行可执行）。无失败用例归因于本次变更。",
+    "errors": []
+  }
+]

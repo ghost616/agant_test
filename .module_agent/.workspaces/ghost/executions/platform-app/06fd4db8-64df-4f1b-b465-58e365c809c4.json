@@ -22,5 +22,15 @@
     ],
     "summary": "执行总结：本轮修改 1 个主文件 + 1 个测试文件。1) UserContextThreadVariableHandler.java：内部类 UserContextThreadVariableWrapper 新增 @Override clear() 方法，实现为 UserContext.clear()（清理当前线程用户会话上下文），配合 agent-base ThreadVariableWrapper 接口新增的 default clear()，供 ChatService.toSseStream 在 SSE 流式回调（doOnNext/doOnComplete）中 apply() 恢复上下文后清理（reactor 共享线程防串号）；apply() 现有逻辑保持不变（session 非 null 时 UserContext.set，否则 UserContext.clear）；类 Javadoc 补充 clear 语义。2) UserContextThreadVariableHandlerTest.java：新增 3 个 clear 用例（clear 清空已恢复的用户上下文、捕获为空时清空线程残留、clear 不破坏快照可再次 apply 恢复），共 7 用例。两个文件补登记入模块定义并写入变更历史。未修改 agent-base、未修改其他文件，符合代码规范（Java 17、Lombok）。\n\n测试总结：全部测试通过。编译测试 mvn test-compile（reactor 全模块）BUILD SUCCESS，确认 agent-base ThreadVariableWrapper 已含 default clear() 前置依赖满足；单元测试 UserContextThreadVariableHandlerTest 7/7（含 3 个新增 clear 用例）；补充回归 34/34（agent-base ThreadVariableWrapperTest 2、agent-base ChatServiceTest 17、platform-app ChatServiceTest 4、UserContextUtilTest 11）；合计 41 用例通过，失败 0，跳过 0。测试过程无修改任何文件，无环境阻塞。",
     "errors": []
+  },
+  {
+    "plan_id": "plan_1a68cac1-77cc-47fe-89a4-3bb8ac926784",
+    "plan": "加强 WEBSOCKET 子会话前置提示词（追加无需轮询引导）",
+    "modified_files": [
+      "platform-app/src/main/java/com/ghost616/platform/service/agent/DefaultChatDataProvider.java",
+      "platform-app/src/test/java/com/ghost616/platform/service/agent/DefaultChatDataProviderTest.java"
+    ],
+    "summary": "执行总结：本轮修改 1 个主文件 + 1 个测试文件。1) DefaultChatDataProvider.java：WEB_SOCKET_SUB_SESSION_PRE_SYSTEM_PROMPT 常量在原有「必须调用 send_result_to_parent 工具回传结果、禁止不调用工具直接结束、结果内容为最终答案」基础上追加「无需轮询获取父会话或其他会话状态，只需完成分配的任务并回传结果」引导（主会话在子会话执行期间可能反复调用发消息工具询问结果，子会话自身系统提示词引导模型专注完成任务、无需轮询）；getPreSystemPrompt 返回路径与 isWebSocketSubSession 判断保持不变；常量 Javadoc 同步补充。2) DefaultChatDataProviderTest.java：WEBSOCKET 提示词用例重命名为「getPreSystemPrompt_WEBSOCKET子会话_返回含无需轮询引导的前置提示词」，新增 2 条无需轮询短语断言，原 4 段关键短语断言保留。模块定义描述与变更历史已同步更新。未修改其他文件、未修改 agent-base，符合代码规范。\n\n测试总结：全部测试通过。编译测试 mvn test-compile（reactor 全模块）BUILD SUCCESS；单元测试 DefaultChatDataProviderTest 15/15（核心用例断言与常量完全一致且覆盖 6 段关键短语）；轻量回归 33/33（AgentContextConfigurationTest 12、SubSessionWebSocketModeResolverTest 21）；合计 48 用例通过，失败 0，跳过 0。测试过程未修改任何文件，无环境阻塞。",
+    "errors": []
   }
 ]

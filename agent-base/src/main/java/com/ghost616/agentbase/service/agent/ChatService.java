@@ -567,6 +567,7 @@ public class ChatService {
                     }
                 }
                 sb.append("\n如需使用上述子会话工具/技能，可开启子会话执行任务：创建或复用子会话并通过回调执行用户消息，支持指定工具和技能");
+                sb.append("\n子会话执行期间请勿反复调用 callback_sub_session（发消息工具）轮询询问子会话结果，只需等候子会话通过 send_result_to_parent 返回执行结果；如需与子会话多轮交互可等待其返回后再发下一条消息。");
                 systemMessages.add(Message.builder()
                         .role("system")
                         .content(sb.toString())

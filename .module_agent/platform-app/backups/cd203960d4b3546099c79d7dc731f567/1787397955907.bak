@@ -20,11 +20,10 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class DefaultChatDataProvider implements ChatDataProvider {
 
-    /** WEBSOCKET 子会话前置系统提示词：任务完成后必须调用 send_result_to_parent 工具回传结果，禁止不调用工具直接结束；无需轮询获取父会话或其他会话状态 */
+    /** WEBSOCKET 子会话前置系统提示词：任务完成后必须调用 send_result_to_parent 工具回传结果，禁止不调用工具直接结束 */
     static final String WEB_SOCKET_SUB_SESSION_PRE_SYSTEM_PROMPT =
             "你是子会话执行者。完成任务后，必须调用 send_result_to_parent 工具，将执行结果作为参数发送给父会话，"
-                    + "禁止不调用工具直接结束；结果内容为最终答案。无需轮询获取父会话或其他会话状态，"
-                    + "只需完成分配的任务并回传结果。";
+                    + "禁止不调用工具直接结束；结果内容为最终答案。";
 
     private final ModelConfigMapper modelConfigMapper;
     private final SessionMapper sessionMapper;

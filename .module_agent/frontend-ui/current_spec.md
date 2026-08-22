@@ -181,13 +181,15 @@
   - 测试模式（vitest MODE=test）与无 WebSocket 环境（jsdom）静默跳过连接
 - 消息分发处理（src/services/messageDispatcher.ts）：
   - 订阅全局 WS 客户端，按 messageName 分发 SEND_USER_MESSAGE（与后端 SendUserMessage/SessionMessage 序列化结构一致：sessionId/parentSessionIds/conversationId/content/messageName；parentSessionIds 为父会话链有序数组：第一个=直接父会话 ID，最后一个=主会话 ID，中间为各层父会话，主会话自身无父链时为 null 或空列表）
-  - 会话页面注册机制：registerSessionPage/unregisterSessionPage（SessionPageHandler：mainSessionId/streamChildReply，当前仅支持继续会话页面 AgentChat 注册）
+  - 会话页面注册机制：registerSessionPage/unregisterSessionPage（SessionPageHandler：mainSessionId/streamChildReply/onSessionMessage，当前仅支持继续会话页面 AgentChat 注册）
   - 定位规则：消息 sessionId 等于页面主会话 ID，或消息 parentSessionIds 包含页面主会话 ID（消息来自页面主会话的某层子会话）即归属该页面
-  - 分发结果：命中 → streamChildReply 以特殊标记 [send_user_message]（SEND_USER_MESSAGE_MARKER，对应后端 ChatService.SEND_USER_MESSAGE_MARKER）调用对话接口流式展示回复（页面负责按父会话链展开/补出路径标签）；找不到对应会话页面 → 触发子会话列表变更事件（subscribeChildSessionsChanged/unsubscribeChildSessionsChanged，SessionList 订阅后 fetchList 刷新）
-- AgentChat.tsx 接入（路径式导航 + WS 消息驱动路径展开）：
-  - 挂载时 registerSessionPage（unmount 时 unregisterSessionPage）
+  - 分发结果（统一 WebSocket 消息处理，按 message.sessionId 分流）：命中页面后——sessionId 等于页面主会话（子→主回传）→ 调用 onSessionMessage，由页面先刷新主会话消息链再按主会话状态决定继续工具或调用 chat；sessionId 为子会话（主→子发送）→ 调用 streamChildReply，以特殊标记 [send_user_message]（SEND_USER_MESSAGE_MARKER，对应后端 ChatService.SEND_USER_MESSAGE_MARKER）调用对话接口流式展示回复（页面负责按父会话链展开/补出路径标签）；找不到对应会话页面 → 触发子会话列表变更事件（subscribeChildSessionsChanged/unsubscribeChildSessionsChanged，SessionList 订阅后 fetchList 刷新）
+- AgentChat.tsx 接入（路径式导航 + WS 消息驱动路径展开 + 统一消息处理）：
+  - 挂载时 registerSessionPage（unmount 时 unregisterSessionPage），注册处理器含 mainSessionId/streamChildReply/onSessionMessage（均经 ref 读取最新实现）
   - ChildSessionView 新增 stream 属性（ChildStreamState：messages/currentResponse/currentReasoning/loading/toolExecuting/error）：合并渲染历史消息与实时流式消息（历史末条与流式首条相同用户消息去重），流式中展示思考过程块/流式气泡/加载指示；滚动容器 childContainerRef 内容变化自动滚动到底部
-  - WS 消息驱动路径展开：streamChildReply 收到 SEND_USER_MESSAGE 时按 payload.parentSessionIds（第一个=直接父，最后一个=主会话）调用 expandPathFromPayload 确定目标子会话在路径中的位置并逐级补出路径标签（链：主会话→...→直接父→目标子会话，逐级 ensureChildList 补出名称），随后沿用统一子会话执行器 runChildSessionFlow 流式展示回复（switchTab=false，childStreams 状态 + childStreamsRef/streamChildReplyRef 供回调读取最新值，同一子会话流式中忽略新消息）
+  - WS 消息驱动路径展开：streamChildReply（主→子发送）收到 SEND_USER_MESSAGE 时按 payload.parentSessionIds（第一个=直接父，最后一个=主会话）调用 expandPathFromPayload 确定目标子会话在路径中的位置并逐级补出路径标签（链：主会话→...→直接父→目标子会话，逐级 ensureChildList 补出名称），随后沿用统一子会话执行器 runChildSessionFlow 流式展示回复（switchTab=false，childStreams 状态 + childStreamsRef/streamChildReplyRef 供回调读取最新值，同一子会话流式中忽略新消息）；streamChildReply 对 sessionId===页面主会话的消息转由 onSessionMessage 处理
+  - 统一消息处理 onSessionMessage（子→主回传，sessionId===页面主会话）：先 refreshMainMessages（getSessionMessages → setMessages，不重置模型/思考状态）刷新主会话消息链使子会话结果在前端立即可见；再按主会话状态继续——工具循环/续接中（loadingRef/toolExecutingRef 为 true）仅置 pendingSessionRefreshRef 待刷新标记（不额外调用 chat，避免重复总结），主会话空闲时 continueMainChat 以 SEND_USER_MESSAGE_MARKER 调用 agentChatStream 触发基于新消息链继续（marker 不被后端保存为重复用户消息，流式回复渲染进主会话消息区，onDone 有工具调用则进入主会话工具循环）
+  - 工具循环与 WS 消息交互：executeToolLoop 在 pollToolStatus 返回后、进入下一轮 executeTools 前消费待刷新标记（consumePendingMainMessage：刷新消息链，主会话空闲则触发 marker 续接）；continueChatStream 续接完成（onDone 无更多工具）后同样消费待刷新标记；handleSend 用户手动发送时同步 loadingRef/toolExecutingRef 并清除遗留待刷新标记
   - 路径展开成功后直接父会话为 payload.parentSessionIds[0]，作为 runChildSessionFlow 的 parentId 用于标签缺失刷新
 ## WebSocket 实时消息
 

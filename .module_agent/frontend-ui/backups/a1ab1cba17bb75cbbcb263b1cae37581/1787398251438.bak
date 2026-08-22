@@ -4,11 +4,8 @@
  * <p>订阅全局 WebSocket 客户端的服务端推送，按 messageName 分发：
  * 收到 SEND_USER_MESSAGE 消息后，根据消息的 parentSessionIds 父会话链
  * （第一个=直接父会话，最后一个=主会话）定位对应会话页面（当前仅支持继续会话
- * 页面 AgentChat），命中后按 message.sessionId 分流：
- * sessionId 等于页面主会话时为子→主回传，调用 onSessionMessage（页面先刷新
- * 主会话消息链，再按主会话状态决定继续工具或调用 chat）；sessionId 为子会话
- * 时为主→子发送，调用 streamChildReply（页面按父会话链展开路径并流式展示
- * 子会话回复）；找不到对应会话页面时触发子会话列表变更事件（供会话列表页刷新）。</p>
+ * 页面 AgentChat），命中后调用 streamChildReply 由页面按父会话链展开路径并
+ * 流式展示回复；找不到对应会话页面时触发子会话列表变更事件（供会话列表页刷新）。</p>
  */
 
 import {
@@ -43,10 +40,8 @@ export type ChildSessionsChangedListener = (payload: SendUserMessagePayload) => 
 export interface SessionPageHandler {
   /** 页面所属主会话 ID（用于匹配消息的 parentSessionIds/sessionId）。 */
   mainSessionId: string;
-  /** 主→子发送：消息 sessionId 为页面主会话的某层子会话时，以特殊标记调用对话接口流式展示回复（页面负责按父会话链展开/补出路径标签）。 */
+  /** 以特殊标记调用对话接口，流式展示回复（页面负责按父会话链展开/补出路径标签）。 */
   streamChildReply: (message: SendUserMessagePayload) => void;
-  /** 子→主回传：消息 sessionId 等于页面主会话自身时，页面先刷新主会话消息链，再按主会话状态继续（工具循环中标记待刷新，空闲时触发主会话续接）。 */
-  onSessionMessage: (message: SendUserMessagePayload) => void;
 }
 
 /** 已注册的会话页面处理器（按主会话 ID 索引）。 */
@@ -104,9 +99,8 @@ function matchesPage(handler: SessionPageHandler, message: SendUserMessagePayloa
 
 /**
  * 分发 SEND_USER_MESSAGE 消息：
- * - 定位到对应会话页面（当前支持继续会话页面 AgentChat）：按 message.sessionId 分流——
- *   sessionId 等于页面主会话时调用 onSessionMessage（子→主回传：页面刷新主会话消息链并按状态继续），
- *   否则调用 streamChildReply（主→子发送：页面按父会话链展开/补出路径标签并流式展示回复）；
+ * - 定位到对应会话页面（当前支持继续会话页面 AgentChat）：调用 streamChildReply，
+ *   由页面按消息父会话链展开/补出路径标签并流式展示回复；
  * - 找不到对应会话页面时触发子会话列表变更事件（会话列表页刷新）。
  * @param message 消息负载
  */
@@ -130,11 +124,7 @@ export function handleSendUserMessage(message: SendUserMessagePayload): void {
     return;
   }
 
-  if (message.sessionId === matched.mainSessionId) {
-    matched.onSessionMessage(message);
-  } else {
-    matched.streamChildReply(message);
-  }
+  matched.streamChildReply(message);
 }
 
 // 订阅全局 WebSocket 客户端消息，按 messageName 分发

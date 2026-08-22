@@ -10,5 +10,15 @@
     ],
     "summary": "执行总结：本轮共修改 4 个文件，实现 SSE 流式回调线程用户上下文恢复：\n1. ThreadVariableWrapper.java：新增 default void clear() 方法（默认空实现，兼容现有实现），语义为清理当前线程已恢复的线程变量，供 reactor 共享线程恢复后清理防串号；\n2. ChatService.java toSseStream：同步部分（请求线程）经 registry.getThreadVariableHandler() 获取 handler，非 null 时调用 wrap() 捕获线程变量快照（UserContext 可用），null 时跳过保持向后兼容；doOnNext/doOnComplete 回调开头 wrapper 非 null 时 apply() 恢复用户上下文，回调逻辑结束后 finally 中 clear() 清理；HOOK 触发顺序（triggerSessionHooks → triggerHooks → executePostHooks）与逻辑不变，使 SubSessionResultFallbackHook 在 AFTER_MESSAGE_RECEIVE 阶段的 sendParentMessage 可正常经 WebSocket 推送（主会话前端可收到 SEND_USER_MESSAGE）；\n3. ChatServiceTest.java：新增 2 个用例（配置 ThreadVariableHandler mock 后 handler.wrap() 调用 1 次、wrapper.apply()/clear() 各 2 次；未配置 handler 时不抛异常且 HOOK 正常触发）；\n4. ThreadVariableWrapperTest.java（新建）：2 个用例（默认 clear 空实现不抛异常、覆写 clear 生效）。\n同时更新模块元数据（current_spec.md 线程变量传播章节、module_definition.json 新增测试文件、change_history.log 追加记录）。\n\n测试总结：全部测试通过。编译测试 test-compile BUILD SUCCESS；全量单测 528 个用例全部通过（Tests run: 528, Failures: 0, Errors: 0, Skipped: 0），其中 ThreadVariableWrapperTest 2 用例、ChatServiceTest 17 用例（含 2 个新增）通过，AgentComponentRegistryTest（7 用例）与 ToolExecutionServiceTest（28 用例）无回归；4 个变更文件均无 BOM、Java 17 语法编译无告警；接口测试与 E2E 不适用（无 REST 接口/前端变更）。无环境阻塞问题。",
     "errors": []
+  },
+  {
+    "plan_id": "plan_5d17d880-193b-4808-8bb6-afdfc67f5a09",
+    "plan": "加强子会话提示词：ChatService.buildContextSystemInfo 子会话权限说明 system 消息尾部追加「不要轮询获取子会话结果，只需等候」引导；适配 ChatServiceFilteringTest 断言",
+    "modified_files": [
+      "agent-base/src/main/java/com/ghost616/agentbase/service/agent/ChatService.java",
+      "agent-base/src/test/java/com/ghost616/agentbase/service/agent/ChatServiceFilteringTest.java"
+    ],
+    "summary": "执行总结：本轮共修改 2 个文件，实现子会话提示词防轮询引导：\n1. ChatService.java（buildContextSystemInfo 主会话分支）：在「如需使用上述子会话工具/技能，可开启子会话执行任务…」能力提示之后追加引导语句「子会话执行期间请勿反复调用 callback_sub_session（发消息工具）轮询询问子会话结果，只需等候子会话通过 send_result_to_parent 返回执行结果；如需与子会话多轮交互可等待其返回后再发下一条消息。」，位于权限说明 system 消息末尾；既有【仅子会话可用】/【均可用】工具与技能分区内容及能力提示保持不变；\n2. ChatServiceFilteringTest.java（bothToolsAndSkills_shouldMergeToolsBeforeSkills）：原「提示不应体现 callback_sub_session 工具名」断言（与本次追加引导冲突）调整为验证引导语句存在（含「请勿反复调用 callback_sub_session」「只需等候子会话通过 send_result_to_parent 返回执行结果」）且位于「如需使用上述子会话工具/技能」之后（权限说明末尾）；「提示不应体现 _sys_create_child_session 工具名」断言保留。\n已确认全项目无其他测试断言子会话提示不体现 callback_sub_session；change_history.log 已追加记录。\n\n测试总结：全部测试通过。编译测试 test-compile BUILD SUCCESS；全量单测 528 个用例全部通过（Tests run: 528, Failures: 0, Errors: 0, Skipped: 0），其中 ChatServiceFilteringTest 三个嵌套测试类（ChildSessionCapabilitiesMergeTest 6 用例 / LoadedSkillsPromptFilteringTest 5 / SkillsFilteringTest 5）全部通过、ChatServiceTest 17 用例、ChatServiceResponsesTest 24、ChatServiceLogTest 7、ChatServiceNoLoadSkillsTest 7 均无回归；2 个变更文件无 BOM、Java 17 编译通过；接口测试与 E2E 不适用（纯提示词内容变更，无接口/前端变更）。无环境阻塞问题。",
+    "errors": []
   }
 ]

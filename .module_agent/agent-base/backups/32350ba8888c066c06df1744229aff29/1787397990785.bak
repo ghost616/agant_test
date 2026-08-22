@@ -415,14 +415,8 @@ class ChatServiceFilteringTest {
                     "末尾应有子会话能力提示");
             assertTrue(capsContent.contains("创建或复用子会话") && capsContent.contains("支持指定工具和技能"),
                     "提示应描述子会话能力（创建或复用子会话并通过回调执行用户消息，支持指定工具和技能）");
-            assertFalse(capsContent.contains("_sys_create_child_session"), "提示不应体现 _sys_create_child_session 工具名");
-            assertTrue(capsContent.contains("请勿反复调用 callback_sub_session"),
-                    "应引导不要轮询子会话结果");
-            assertTrue(capsContent.contains("只需等候子会话通过 send_result_to_parent 返回执行结果"),
-                    "应引导等候子会话返回执行结果");
-            int guideIdx = capsContent.indexOf("请勿反复调用 callback_sub_session");
-            int abilityIdx = capsContent.indexOf("如需使用上述子会话工具/技能");
-            assertTrue(guideIdx > abilityIdx, "不轮询引导应位于子会话能力提示之后（权限说明末尾）");
+            assertFalse(capsContent.contains("_sys_create_child_session"), "提示不应体现具体工具名");
+            assertFalse(capsContent.contains("callback_sub_session"), "提示不应体现具体工具名");
         }
 
         @Test
